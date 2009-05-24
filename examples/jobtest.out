@@ -1,0 +1,12 @@
+/opt/gridengine/default/spool/compute-0-12/active_jobs/48267.1/pe_hostfile
+compute-0-12
+compute-0-12
+compute-0-12
+compute-0-12
+compute-0-12
+compute-0-12
+compute-0-12
+compute-0-12
+Warning: no access to tty (Bad file descriptor).
+Thus no job control in this shell.
+rm: cannot remove `/tmp/48267.1.shortpara.q/rsh': No such file or directory

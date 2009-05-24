@@ -1,0 +1,29 @@
+#!/bin/tcsh
+#PBS -l ncpus=8,nodes=2:dualcore:ppn=4
+#PBS -k eo 
+#PBS -V                 
+
+/usr/local/bin/lamboot $PBS_NODEFILE
+
+#######################################################
+#                                                     #
+#                 general settings                    #
+#                                                     #
+#######################################################
+
+set NPROC = 8
+
+set MPIRUN  = /usr/local/bin/mpirun
+set HOME    = /home/giustino
+set SCRATCH = /nfs/scratch/giustino
+
+set GWHS    = $HOME/test/gwhs-0.4.8_devel-1/gwhs.x
+set JDIR    = $HOME/test/gwhs-0.4.8_devel-1
+
+cd $JDIR 
+$MPIRUN -np $NPROC $GWHS -npool 8 > test.out
+
+/usr/local/bin/lamhalt $PBS_NODEFILE
+
+exit
+

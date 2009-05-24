@@ -1,0 +1,32 @@
+#!/bin/tcsh
+#$ -S /bin/tcsh
+#$ -l qname=shortpara.q
+#$ -l h_rt=00:20:00
+#$ -N jobtest
+#$ -o jobtest.out 
+#$ -e jobtest.err
+#$ -cwd
+#$ -pe mpi 8
+#$ -j y
+#$ -R y
+
+set TDIR=$TMPDIR/$SGE_O_WORKDIR:t
+mkdir $TDIR
+
+set MPIRUN  = /opt/mpich/intel/bin/mpirun
+set HOME    = /home/giustino
+set GWHS    = $HOME/test/gwhs-0.4.8_devel-1/gwhs.x
+set JDIR    = $HOME/test/gwhs-0.4.8_devel-1
+
+cd $TDIR 
+cp $GWHS ./
+cp $JDIR/klist.dat ./
+$MPIRUN -np $NSLOTS -machinefile $TMP/machines $GWHS -npool 8 > test.out
+
+cd $JDIR
+mv $TDIR/test.out ./
+
+rm -r $TDIR
+
+exit
+
