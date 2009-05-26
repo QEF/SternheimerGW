@@ -442,7 +442,6 @@
   open ( iungreen, file = "./silicon.green", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
 
-  !
   write(6,'(4x,"Screened Coulomb interaction:")')
   !
   ! loop over {q} for the screened Coulomb interaction
