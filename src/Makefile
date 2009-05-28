@@ -1,11 +1,11 @@
 
 # x61
 
-#F90 = ifort -- sigsev with the intel compiler 10.1.015
-F90 = f95 -O3
-LDFLAGS = -lfftw -llapack
-CPP = cpp 
-CPPFLAGS = -C -ansi
+##F90 = ifort -- sigsev with the intel compiler 10.1.015
+#F90 = f95 -O3
+#LDFLAGS = -lfftw -llapack
+#CPP = cpp 
+#CPPFLAGS = -C -ansi
 
 # hbar
 
@@ -22,9 +22,23 @@ CPPFLAGS = -C -ansi
 # slater has ifort 9.0
 
 #F90 = mpif90 
-#LDFLAGS = -llapack  -lblas -L/home/giustino/libs/lib -lfftw
+#LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
 #CPP = cpp -C -ansi
 #CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
+
+# pople (ifort 11)
+#
+# -i-static -openmp are needed when using MKL libs for ifort>9
+# (from Espresso)
+
+F90 = mpif90
+LDFLAGS = -i-static -openmp -lmkl_em64t -L/home/giustino/code/fftw-2.1.5/lib -lfftw
+CPP = cpp 
+CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
+
+
+#########################################################################
+
 
 MODULES = \
 parameters.o \
@@ -89,15 +103,17 @@ ccgdiagg.o
 # serial
 #
 
-gwhs.x : $(MODULES) $(OBJS)
-	$(F90) -o gwhs.x $(MODULES) $(OBJS) $(LDFLAGS) 
+#gwhs.x : $(MODULES) $(OBJS)
+#	$(F90) -o gwhs.x $(MODULES) $(OBJS) $(LDFLAGS) 
+#	- ( cd ../bin ; ln -fs ../src/gwhs.x . )
 
 #
 # parallel
 #
 
-#gwhs.x : $(MODULES) $(PARA) $(OBJS)
-#	$(F90) -o gwhs.x $(MODULES) $(PARA) $(OBJS) $(LDFLAGS) 
+gwhs.x : $(MODULES) $(PARA) $(OBJS)
+	$(F90) -o gwhs.x $(MODULES) $(PARA) $(OBJS) $(LDFLAGS) 
+	- ( cd ../bin ; ln -fs ../src/gwhs.x . )
 
 clean: 
 	rm *.o *.mod *.x *.F90
