@@ -1,0 +1,938 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{soul}   
+\usepackage{color}   
+\usepackage{epsfig}   
+
+\definecolor{yellow}{rgb}{1,1,0}
+\definecolor{lightblue}{rgb}{0.6,0.6,0.9}
+
+\sethlcolor{yellow}
+
+\addtolength{\textheight}{1cm}
+\addtolength{\textwidth}{2cm}
+\addtolength{\voffset}{0.2cm}
+\setlength{\oddsidemargin}{0.5cm}
+
+\newcommand{\boxedeqn}[1]{%
+  \[\fbox{%
+      \addtolength{\linewidth}{-2\fboxsep}%
+      \addtolength{\linewidth}{-2\fboxrule}%
+      \begin{minipage}{\linewidth}%
+      \begin{equation}#1\end{equation}%
+      \end{minipage}%
+    }\]%
+}
+
+\def\G{{\bf G}}
+\def\Gp{{\bf G}^\prime}
+\def\k{{\bf k}}
+\def\kp{{\bf k}^\prime}
+\def\kpp{{\bf k}^{\prime\prime}}
+\def\q{{\bf q}}
+\def\r{{\bf r}}
+\def\R{{\bf R}}
+\def\rp{{\bf r}^\prime}
+\def\Rp{{\bf R}^\prime}
+\def\rpp{{\bf r}^{\prime\prime}}
+\def\rppp{{\bf r}^{\prime\prime\prime}}
+\def\e{{\bf e}}
+\def\T{{\bf T}}
+\def\w{\omega}
+\def\wp{\omega^\prime}
+\def\wpp{\omega^{\prime\prime}}
+\def\s{\star}
+
+
+\begin{document}
+\small
+
+\section*{GW-HS (GW-Haydock-Sternheimer)}
+\subsection*{GW calculations using Haydock's recursion and density-functional perturbation theory}
+\subsubsubsection{Feliciano Giustino, University of California at Berkeley, \today}
+\newline
+
+\noindent
+The electron self-energy due to the electron-electron interaction in the GW approximation
+reads [Eq.\ (10) of Ref.\ \cite{hl86}]:
+  \begin{equation} \label{eq.sigma}
+  \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \int_{-\infty}^{+\infty} d\wp 
+    e^{-i\delta\wp} \, G(\r,\rp,\w-\wp) \, W(\r,\rp,\wp),
+  \end{equation}
+where $\delta$ is a positive infinitesimal.
+The calculation of the screened Coulomb interaction requires a sum over empty states
+through the static dielectric matrix $\epsilon_{\G\Gp}(\q,\w=0)$, cf.\
+Eqs.\ (23), (25) of Ref.\ \cite{hl86}.
+The calculation of the noninteracting Green's function  requires a sum over empty states,
+Eq.\ (15) of Ref.\ \cite{hl86}. This latter sum only appears in the Coulomb hole term
+in Eq.\ (34b) Ref.\ \cite{hl86}.
+The purpose of the present notes is to discuss the feasibility of GW calculations
+without resorting to the expansion over empty states. The main idea is that
+the dielectric response can in principle be calculated using a self-consistent 
+Sternheimer equation, as it is commonly done in linear-response calculations of phonons 
+in the spirit of Ref.\ \cite{baroni}.
+
+\subsubsection*{Self-consistent linear-response calculation of the screened Coulomb interaction}
+
+In this section we describe the main idea by writing down a few equations. We consider
+the static screened Coulomb interaction ($\w=0$), and we temporarily ignore the translational
+invariance of the crystal lattice ($\q=0$) [Eq.\ (20) of Ref.\ \cite{hl86}]:
+  \begin{equation}
+  W(\r,\rp;\w=0) = \int d\rp \epsilon^{-1}(\r,\rpp;\w=0) v(\rpp,\rp).
+  \end{equation}
+We note that the previous expression assumes a linear response for the dielectric screening.
+We now rewrite this expression by introducing a Dirac delta:
+  \begin{equation}\label{eq.delta}
+  W(\r,\rp;\w=0) = \underbrace{ \int d\rpp \epsilon^{-1}(\r,\rpp;\w=0) 
+  \underbrace{ \int d\rppp v(\rpp,\rppp) \underbrace{\delta(\rppp,\rp)}_{\rm pert.\ \, charge}}_{\rm bare \, perturbation}}
+  _{\rm screened \, perturbation}.
+  \end{equation}
+In order to stress the analogy with the linear-response methods for phonons, we rewrite the bare perturbation
+and the screened perturbation as parametric functions of the real-space coordinate $\rp$ as follows:
+  \begin{eqnarray} \label{eq.deltavs}
+  \Delta V_{\rm b}^{(\rp)} (\r)   &=& \int d\rppp v(\r,\rppp) \delta(\rppp,\rp),\\
+  \Delta V_{\rm s}^{(\rp)} (\r) &=& W(\r,\rp;\w=0).
+  \end{eqnarray}
+At this point we can rewrite Eq.\ (\ref{eq.delta}):
+   \begin{equation}\label{eq.delta2}
+  \Delta V_{\rm s}^{(\rp)} (\r) = \int d\rpp \epsilon_0^{-1}(\r,\rpp) \Delta V_{\rm b}^{(\rp)} (\rpp),
+  \end{equation}
+where $\epsilon_0^{-1}$ indicates the static dielectric matrix.
+In order to calculate {\it precisely} the same expression for the screened Coulomb interaction
+as given in Ref.\ \cite{hl86}, we derive a Dyson-like equation for $W$ using Eqs.\ (20)-(26) of 
+that work.
+From Eq.\ (20) of Ref.\ \cite{hl86} (omitting the frequency for simplicity):
+ \begin{equation} \label{eq.new.1}
+ W(\r,\rp) = \int d\rpp \epsilon^{-1}(\r,\rpp) v(\rpp,\rp).  
+ \end{equation}
+The explicit expression for $\epsilon(\r,\rp)$ (not its inverse!) in real space can be taken from
+Eq.\ (16) of Ref.\ \cite{tiago}:
+ \begin{equation}  \label{eq.new.2}
+ \epsilon(\r,\rp) = \delta(\r,\rp) - \int d\rpp v(\r,\rpp) \chi_0 (\rpp,\rp),
+ \end{equation} 
+which corresponds to Eq.\ (23) of Ref.\ \cite{hl86}. Now we take the susceptibility $\chi_0$ from
+Eq.\ (166) of Ref.\ \cite{baroni}:
+ \begin{equation} \label{eq.new.3}
+ \chi_0 (\r,\rp) = \sum_{n,m} \frac{f_n-f_m}{\epsilon_n-\epsilon_m} \psi_n^\star (\r) \psi_m (\r) \psi_m^\star (\rp) \psi_n (\rp).
+ \end{equation}
+
+It is precisely the last equation which will allow us to rewrite the screened Coulomb interaction
+in terms of a self-consistent linear-response problem.
+For this we need to get rid of $ \epsilon^{-1}$ in Eq.\ (\ref{eq.new.1}). We first multiply both
+sides of this equation by $\epsilon$, integrate, and take into account that $\epsilon \epsilon^{-1} = \delta$:
+ \begin{equation} \label{eq.new.4}
+ v(\r,\rp) = \int d\rpp \epsilon(\r,\rpp) W(\rpp,\rp).  
+ \end{equation}
+Now we use Eq.\ (\ref{eq.new.2}) in the last equation and rearrange:
+ \begin{equation} \label{eq.new.5}
+ W(\r,\rp) =  v(\r,\rp) + \int d\rppp v(\r,\rppp) \int d\rpp \chi_0 (\rppp,\rpp) W(\rpp,\rp).
+ \end{equation}
+This equation corresponds to Eq.\ (5a) of Ref.\ \cite{hl86}, i.\e.\ it is
+one of Hedin's equations. In the following $\chi_0$ will be taken at the
+RPA level, i.\e.\ we will make use of Eq.\ (7) of Ref.\ \cite{hl86} instead
+of Eq.\ (5b) of Ref.\ \cite{hl86}.
+%
+At this point we replace Eq.\ (\ref{eq.new.3}) in the last equation:
+ \begin{equation} \label{eq.new.6}
+ W(\r,\rp) =  v(\r,\rp) + \int d\rppp v(\r,\rppp) \int d\rpp \sum_{n,m} \frac{f_n-f_m}{\epsilon_n-\epsilon_m} \psi_n^\star (\rppp) \psi_m (\rppp) \psi_m^\star (\rpp) \psi_n (\rpp) W(\rpp,\rp).
+ \end{equation}
+After some manipulations we obtain:
+ \begin{equation} \label{eq.new.7}
+ \Delta V_{\rm s}^{(\rp)}(\r) =  v(\r,\rp) + \int d\rppp v(\r,\rppp) \sum_n \psi_n^\star (\rppp) \sum_m \frac{f_n-f_m}{\epsilon_n-\epsilon_m} 
+ \langle m | \Delta V_{\rm s}^{(\rp)} | n \rangle \psi_m (\rppp),
+ \end{equation}
+where $\langle m | \Delta V_{\rm s}^{(\rp)} | n \rangle = \int d\rpp  \psi_m^\star (\rpp) W(\rpp,\rp) \psi_n (\rpp)$
+and we have used the notation of Eq.\ (\ref{eq.deltavs}) for the screened Coulomb interaction.
+Now we note that the sum connects only occupied to empty states and every $(m,n)$ pair appears twice. Therefore
+we can restrict $n$ to the occupied manifold, let $m$ span all states, and include a factor 2 (this is not the spin factor!):
+ \begin{equation} \label{eq.dyson0}
+ \Delta V_{\rm s}^{(\rp)}(\r) =  v(\r,\rp) + \int d\rppp v(\r,\rppp) \, 
+ \underbrace{2 \sum_{n \in {\rm occ}} \psi_n^\star (\rppp) 
+ \underbrace{\sum_m \frac{f_n-f_m}{\epsilon_n-\epsilon_m}
+ \langle m | \Delta V_{\rm s}^{(\rp)} | n \rangle \psi_m (\rppp)}_{\Delta \psi_n(\rppp)}}_{\Delta n(\rppp)[\Delta V_{\rm s}^{(\rp)}]}.
+ \end{equation}
+The main step at this stage is to realize that $\Delta \psi_n(\r)}$ defined by
+ \begin{equation}
+ \Delta \psi_n(\r)} = \sum_m \frac{f_n-f_m}{\epsilon_n-\epsilon_m}
+ \langle m | \Delta V_{\rm s}^{(\rp)} | n \rangle \psi_m (\r),
+ \end{equation} 
+is the change of the wavefunction $\psi_n(\r)$ induced by the {\it screened} perturbation $\Delta V_{\rm s}^{(\rp)}$.
+After some manipulations, it can be shown that $\Delta \psi_n(\r)}$ is the solution of the following linear
+system ({\it self-consistent Sternheimer equation}):
+  \begin{equation} \label{eq.stern}
+  (H_{\rm SCF} - \epsilon_n ) | \Delta \psi_n \rangle =
+  - \Delta V_{\rm s} | \psi_n \rangle.
+  \end{equation}
+As a consequence, the quantity $\Delta n(\r)$ defined by
+  \begin{equation} 
+  \Delta n(\r) = 2 \sum_{n \in {\rm occ}} \psi_n^\star (\r) \Delta \psi_n(\r)}
+  \end{equation}
+is the variation of the electronic charge density induced by the screened perturation $\Delta V_{\rm s}$.
+Using again the notation of  Eq.\ (\ref{eq.deltavs}) for the Coulomb interaction, we can now
+rewrite Eq.\ (\ref{eq.dyson0}) as follows:
+ \begin{equation}
+ \Delta V_{\rm s}(\r) =  \underbrace{\Delta V_{\rm b}(\r)}_{\rm bare \, perturbation}
+   + \underbrace{\int d\rp \frac{\Delta n(\rp)[\Delta V_{\rm s}]}{|\r-\rp|}}_{\rm Hartree \; screening}.
+ \end{equation}
+This is similar to Eq.\ (27) of Ref.\ \cite{baroni} used to calculate lattice-dynamical properties.
+In that case the bare perturbation is the change of the
+ionic potential corresponding to some displacement pattern. In addition, here we do not include
+the exchange and correlation contribution as it is done in the case of phonons. The neglect of
+the XC contribution corresponds to the RPA approximation.
+%
+The procedure to obtain the screened Coulomb interaction can be summarized as follows:
+\begin{itemize}
+\item[1] start with a delta function charge distribution
+centered in $\r_0$, 
+\item[2] calculate the corresponding Hartree potential - this is going to be the bare perturbation.
+\item[3] calculate self-consistently the screened perturbation using Eq.\ (25) of Ref.\ \cite{baroni}, {\it without}
+ the XC term.
+\item[4] This is going to be $W(\r,\r_0)$. 
+\item[5] Repeat the procedure for all $\r_0$.
+\end{itemize}
+%
+Note that we certainly need to use the Kohn-Sham Hamiltonian, but when we make the update of the bare perturbation
+in the SCF procedure we do not include the XC term. This is the only way to obtain the RPA response. 
+The bare perturbation discussed so far is a Dirac delta function. This choice is motivated by some
+localization requirements for the Haydock method used in the calculation of the Green's function.
+This is not strictly necessary, since the screened Coulomb interaction
+can be calculated by using plane-wave like bare perturbations. The use of localized perturbations
+could be convenient to accelerate the self-consistent solution of the linear system, since the first
+iteration could be performed with the screened perturbation corresponding to a neighboring delta function...
+
+\subsubsection*{Vertex correction}
+If we include the XC term in the SCF response, do we end up with the approximate vertex correction 
+of Ref.\ \cite{hl86} ? I think the answer is yes, we do. Let try to look at the derivation quickly.
+We begin from the Sternheimer equation:
+ \begin{equation} 
+  (H_{\rm SCF} - \epsilon_n ) | \Delta \psi_n \rangle =
+  - \Delta V_{\rm SCF} | \psi_n \rangle.
+  \end{equation}
+This is precisely the equation solved for the calculation of the dynamical matrix.
+Note the $\Delta V_{\rm SCF}$ on the right-end side - we need a self-consistent loop for this.
+The variation of the SCF potential is given by the bare potential plus the Hartree potential plus
+the XC potential, as in Eq.\ (27) of Ref.\ \cite{baroni}:
+ \begin{equation}
+ \Delta V_{\rm SCF} = \Delta V_{\rm b} + v\Delta n[\Delta V_{\rm SCF}] + K_{\rm xc} \Delta n[\Delta V_{\rm SCF}].
+ \end{equation}
+Here I used the notation $K_{\rm xc}=\delta V_{\rm xc}/\delta n$ borrowed from Ref.\ \cite{hl86}.
+Using Eqs.\ (49) and (56) we can write the induced charge density as follows:
+ \begin{equation}
+ \Delta n[\Delta V_{\rm SCF}] = \chi_0 \Delta V_{\rm SCF}.
+ \end{equation}
+By combining the previous two equations we obtain:
+ \begin{equation}
+ \Delta n[\Delta V_{\rm SCF}] = [1-\chi_0 (v+K_{\rm xc})]^{-1}\chi_0 \Delta V_{\rm b}.
+ \end{equation}
+Let now construct the total electrostatic potential seen by a test charge (i.e. the bare potential plus
+the Hartree screening):
+ \begin{equation}
+ \Delta V_{\rm s} = \Delta V_{\rm b} + v \Delta n[\Delta V_{\rm SCF}].
+ \end{equation}
+By combining the two previous equations we obtain:
+ \begin{equation}
+ \Delta V_{\rm s} = \{ 1 + v [1-\chi_0 (v+K_{\rm xc})]^{-1}\chi_0 \} \Delta V_{\rm b}.
+ \end{equation}
+Using $\Delta V_{\rm b} = v$ and $\Delta V_{\rm s} = W$ we have 
+ \begin{equation}
+ W = v \{ 1 + v [1-\chi_0 (v+K_{\rm xc})]^{-1}\chi_0 \},
+ \end{equation}
+which is the screened Coulomb interaction in the ``$GW+K_{\rm xc}$'' approximation introduced
+in Ref.\ \cite{hl86} and investigated further in Ref.\ \cite{reining94} (see pag. 8026, above Table I).
+%
+To summarize, the procedure to obtain the approximate vertex correction in $W$ is the following:
+\begin{itemize}
+\item[1] start with a delta function charge distribution
+centered in $\r_0$,
+\item[2] calculate the corresponding Hartree potential - this is going to be the bare perturbation.
+\item[3] calculate self-consistently the screened perturbation using Eq.\ (25) of Ref.\ \cite{baroni}, {\it including}
+ the XC term.
+\item[4] This is going to be $W(\r,\r_0)$.
+\item[5] Repeat the procedure for all $\r_0$.
+\end{itemize}
+%
+In conclusion, the difference between the RPA and the RPA+XC calculation consists in the way
+we update the variation of the self-consistent potential: only through the Hartree term
+in the former case, and including the XC term in the latter. In both cases, the final $W$
+is constructed only using the Hartree term (electrostatic potential for a test charge).
+Both approaches can be tested quite easily since the entire infrastructure is exactly
+the same as the one used in the calculation of phonons using density-functional perturbation theory
+(the XC term can be included or neglected by commenting one line of code...).
+
+\subsubsection*{Plasmon-pole approximation}
+
+The plasmon-pole model of Ref.\ \cite{hl86} is a way to take into account the frequency dependence of the
+screened Coulomb interaction $W(\r,\rp,\w)$ based on the calculated static interaction $W(\r,\rp,\w=0)$,
+a sum rule relating the dielectric function to the charge density, and the Kramers-Kr\"onig relations.
+%
+Technically, the plasmon-pole model consists in assuming the following $\w-$dependence for the inverse
+dielectric matrix [Eq.\ (26) of Ref.\ \cite{hl86}]:
+  \begin{equation}
+  {\rm Im} \epsilon^{-1}_{\G\Gp}(\q,\w) = A_{\G\Gp}(\q) \big\{ \delta [ \w -\tilde{\w}_{\G\Gp}(\q) ] - \delta [ \w +\tilde{\w}_{\G\Gp}(\q) ] \big\}.
+  \end{equation}
+For every planewave component, the free parameters are the peak frequency and strength. These parameters
+are determined by using the dielectric function at $\w=0$ and a generalized $f-$sum rule.
+The real part of $\epsilon^{-1}_{\G\Gp}(\q,\w)$ is then obtained by causality.
+This model is based on the observation that ``realistic calculations of the response function show that
+${\rm Im} \epsilon^{-1}_{\G\Gp}(\q,\w)$ is generally a peaked function in $\w$. [...] For cases where
+there is not a single well-defined peak, the amplitude tends to be small and fluctuates in sign'' (Ref.\ \cite{hl86}).
+%
+Willing to rewrite a plasmon-pole model for the screened Coulomb interaction, we realize that the various
+planewave components become mixed in $W(\r,\rp,\w)$, therefore the ``single-peak'' approximation no longer applies.
+Furthermore, Steven made the observation that the plasmon is a long-wavelenght excitation, therefore
+a ``local'' plasmon-pole approximation on $(\r,\rp)$ it is not physically motivated and will not work.
+%
+This is to say that the only way to implement the plasmon-pole model seems to use exactly the same prescription
+as in Ref.\ \cite{hl86}:
+\begin{itemize}
+\item[1.]
+Calculate $W(\r,\rp,\q,\w=0)$,
+\item[2.]
+Fourier-transform to  $W(\G,\Gp,\q,\w=0)$,
+\item[3.]
+Obtain $\epsilon^{-1}_{\G\Gp}(\q,\w=0)$ through $W(\G,\Gp,\q,\w=0)/v(\q+\Gp)$,
+\item[4.]
+Apply the plasmon-pole model using Eqs.\ (26)-(32) of Ref.\ \cite{hl86},
+\item[5.]
+Obtain $W(\G,\Gp,\q,\w)/v(\q+\Gp)$ through $\epsilon^{-1}_{\G\Gp}(\q,\w)v(\q+\Gp)$,
+\item[6.]
+Fourier-transform to $W(\r,\rp,\q,\w)$.
+\end{itemize}
+In principle the Sternheimer calculation of the screened Coulomb interaction can be conducted directly
+in Fourier space (the localized basis is only needed for the recursive calculation of the Green's function), 
+therefore we could in principle replace steps [1.] and [2.] by
+\begin{itemize}
+\item[1.-2.]
+Calculate $W(\G,\Gp,\q,\w=0)$.
+\end{itemize}
+An important alternative to this expensive procedure is to avoid the plasmon-pole approximation and evaluate
+the frequency-dependence directly by modifying the Sternheimer equation as discussed at the end of the 
+corresponding paragraph (cf.\ above).
+The frequency-dependent RPA suscepibility is [Eq.\ (14) of Ref.\ \cite{tiago}]
+ \begin{equation}
+ \chi_0 (\r,\rp;\omega) = \sum_{n,m} \Big[ \frac{f_n-f_m}{\epsilon_n-\epsilon_m+\omega+i\delta} +
+ \frac{f_n-f_m}{\epsilon_n-\epsilon_m-\omega+i\delta} \Big] \psi_n^\star (\r) \psi_m (\r) \psi_m^\star (\rp) \psi_n (\rp).
+ \end{equation}
+This can be obtained by simply replacing $\epsilon_n$ by $\epsilon_n\pm\omega+i\delta$. It should be still possible
+to perform the calculation using the self-consistent Sternheimer equation. Note that this is only a mathematical
+tool for obtaining the frequency-dependent RPA response, and does not require any considerations on time-dependent
+density-functional theorems or else.
+Indeed, by performing the perturbation expansion
+of the modified Eq.\ (\ref{eq.stern}), I obtain the frequency-dependent Adler-Wiser
+dielectric function. 
+We note that the frequency grid needed for a direct evaluation of $W(\w)$ does not need to be uniform:
+the plasmon-pole aims at describing correctly the first few eV's of the excitation spectrum. Accordingly,
+one may use a grid which is fine below the plasmon energy and coarse above that (a bit like the
+logarithmic grids used in the construction of pseudopotentials).
+
+\noindent
+OLD QUESTION: 
+The imaginary component $i\delta$ makes the operator in the left-hand side of
+the Sternheimer equation $(H_{\rm KS}-\epsilon_n\mp\omega-i\delta)$ non-Hermitian.
+Does the iterative solution of the self-consistent Sternheimer equation work in this case?
+
+\noindent
+ANSWER: 
+The iterative solution works, although we need to use the Biorthogonal Conjugate Gradients
+algorithm since the standard Conjugate Gradients only applies to Hermitian operators.
+Cf. the section ``Sternheimer and Conjugate Gradients''.
+
+
+\subsubsection*{Recursive calculation of the Green's function}
+
+We wish to calculate the Green's function $G(\r,\rp;\w)$ without resorting 
+to the sum over empty states Eq.\ (15) of Ref.\ \cite{hl86}. 
+In Ref.\ \cite{bg92} the authors argue that the calculation of the
+diagonal elements of the Green's function in a localized basis can be performed with a linear scaling
+using the recursion method by Haydock \cite{haydock.ssp,kelly.ssp}. The matrix elements are calculated
+by generating orthogonal states which ``propagate'' an initial state. 
+If the initial state is localized, the recursion method generates new 
+states which probe the neighborhood of that state, and then farther
+regions at higher orders. 
+%
+The determination of the non-diagonal elements of the Green's function 
+in the psinc basis can be done using either 4 chains \cite{haydock.ssp} 
+or 2 chains \cite{ballentine}. In both cases one has the propagation 
+of delocalized objects (size $|\r-\rp|$) therefore it is not clear to me
+whether the algorithm should converge as fast as for the diagonal case. Maybe a test calculation
+with a model Hamiltonian would be appropariate. Note that the simplest model, corresponding to
+free electrons (Sec. 6 of Ref.\ \cite{haydock.ssp}), is not appropriate in this case since the
+chain does not terminate [Eqs.\ (6.11) and (6.12) of the same reference].
+
+\noindent
+UPDATE: I have performed tests with the p-sinc basis \cite{mostofi} 
+(this is an orthonormal basis and it is localized - a periodic Dirac delta function). 
+I have noticed that the initial
+wavefunction becomes delocalized very soon, after only a couple of iterations.
+Nonetheless, the procedure appears to converge smoothly. Motivated by this finding
+I tried to perform the calculation directly within a plane-waves basis set
+and again I found that the method converges. This results seems new to me, insofar
+all of the literature I found on the argument discusses localized basis sets.
+The intuitive explanation for the convergence in the plane wave basis is that
+by using the Bloch Hamiltonian $H_\k$ we effectively solve a ``molecular-like''
+problem with complicated boundary conditions. Since the spectrum of this problem
+is discrete, we do not incur in the convergence problems observed for the Haydock
+method applied to metallic systems.
+
+\noindent
+Let consider the representation of the Green's function in the plane-waves basis
+for clarity:
+ \begin{equation}
+ G_{\G\Gp}(\w) = \langle \G | G(\r,\rp;\w)| \Gp \rangle,
+ \end{equation}
+where $|\G\rangle$ stands for the function ${\rm exp}(i\G\cdot\r)$.
+In Sec.\ II(17) of Ref.\ \cite{haydock.ssp} it is shown that such (possibly) non-diagonal matrix
+element can be rewritten in terms of diagonal matrix elements as follows:
+ \begin{equation} \label{eq.hay1}
+ \langle \G | G(\w)| \Gp \rangle = \big[\langle u | G(\w)| u \rangle - \langle v | G(\w)| v \rangle\big] 
+    - i \big[\langle w | G(\w)| w \rangle - \langle z | G(\w)| z \rangle\big],
+ \end{equation}
+with the definitions:
+ \begin{eqnarray}
+ |u\rangle &=& \frac{1}{2}(|\G\rangle + \phantom{i}|\Gp\rangle), \\
+ |v\rangle &=& \frac{1}{2}(|\G\rangle - \phantom{i}|\Gp\rangle), \\
+ |w\rangle &=& \frac{1}{2}(|\G\rangle + i|\Gp\rangle),\\
+ |z\rangle &=& \frac{1}{2}(|\G\rangle - i|\Gp\rangle).
+ \end{eqnarray}
+With respect to Ref.\ \cite{haydock.ssp} I included a factor $1/2$ in the definitions in order to
+ensure the normalization of the new functions.
+As a consequence, we miss a factor $1/4$ in the right-hand side of Eq.\ (\ref{eq.hay1}).
+In the following we focus on the first matrix element $G_{u,u}(\w) = \langle u | G(\w)| u \rangle$, the others are calculated
+similarly. The calculation of each diagonal matrix element requires a Lanczos chain, therefore each nondiagonal
+matrix element requires 4 chains. In Ref.\ \cite{ballentine} an alternative procedure has been proposed which
+only involves 2 chains per element. We will be exploring that possibility only after the preliminary practical 
+implementations. 
+
+\noindent
+The diagonal matrix element $G_{u,u}(\w)$ can be calculated from the continued fraction:
+  \begin{equation}
+  G_{u,u}(\w) = G^{(0)}_{u,u}(\w),
+  \end{equation}
+  \begin{equation}
+  G^{(n)}_{u,u}(\w) = [\w - a_n - b_{n+1}^2 G^{(n+1)}_{u,u}(\w)]^{-1},
+  \end{equation}
+once the sets of coefficients $\{a_n\}$ and $\{b_n\}$ have been determined.
+Importantly, these coefficients do not depend on the frequency $\w$, therefore they must be computed once for all.
+The coefficients are determined from a recursive calculation. Ideally, the chain is terminated when the coefficients
+no longer change in the recursion procedure. Practically, one has to use ``terminators'' for the $G^{(N)}_{u,u}(\w)$
+element (e.g. zero) if the chain is truncated at the $N$-th iteration.
+
+\noindent
+The chain is generated by propagating the state $|u^{(0)}\rangle = |u\rangle$ as follows [Eq.\ (5.11) of Ref.\ \cite{haydock.ssp}]:
+  \begin{equation}
+  b_n |u^{(n)}\rangle = (H_{\rm KS}-a_{n-1})|u^{(n-1)}\rangle - b_{n-1} |u^{(n-2)}\rangle.
+  \end{equation}
+In this expression, $|u^{(n-1)}\rangle$ and $|u^{(n-2)}\rangle$ are known from previous iterations (we start with
+$|u^{(-1)}\rangle=0$), while the coefficients on the right-hand side are given by:
+  \begin{eqnarray}
+  a_{n-1}&=& \langle u^{(n-1)}|H_{\rm KS}|u^{(n-1)}\rangle\\
+  b_{n-1}&=& \langle u^{(n-1)}|H_{\rm KS}|u^{(n-2)}\rangle.
+  \end{eqnarray}
+The coefficient $b_n$ on the left-hand side is determined by requiring $|u^{(n)}\rangle$ to be normalized:
+  \begin{equation}
+  |b_n|^2 = \big[(H_{\rm KS}-a_{n-1})|u^{(n-1)}\rangle - b_{n-1} |u^{(n-2)}\rangle \big]^\dagger 
+            \big[(H_{\rm KS}-a_{n-1})|u^{(n-1)}\rangle - b_{n-1} |u^{(n-2)}\rangle \big].
+  \end{equation}
+In Ref.\ \cite{haydock.ssp} the authors claim that $b_n^2$ is real and positive and that it is convenient
+to choose the positive root for $b_n$. In Ref.\ \cite{ballentine} the authors claim that it is not guaranteed
+to have real and positive values of $b_n^2$ and that this does not constitute a problem. Some careful
+analysis should be done here using test cases.
+
+\subsubsection*{Periodic-Sinc basis}
+
+For the computation of the Green's function by the recursion method, it could be convenient to use a localized basis,
+since the chain probes first the surroundings of the initial state (faster convergence).
+In order to choose the basis, we require the following: (i) the new basis should preserve the ``direct'' product
+form of the self-energy in terms of G and W Eq.\ (\ref{eq.sigma}). (ii) the new basis should preserve the accuracy
+of the plane-waves calculation (real-space grids would lead to inaccuracies in the treatment of the kinetic
+energy). (iii) the new basis should be compatible with existing plane-waves implementations (for ease of
+implementation).
+
+\noindent
+After some literature survey, it appears that the periodic-Sinc (psinc) basis introduced in Ref.\ \cite{mostofi}
+satisfies all of the above criteria. The psinc function is a periodic Dirac delta function represented using
+a finite number of G-vectors:
+  \begin{equation}
+  D_n(\r) = \frac{1}{N}\sum_{\G} {\rm e}^{i\G\cdot(\r-\r_n)}.
+  \end{equation}
+By expanding a real-space function $f(\r)$ in terms of psinc functions we have:
+  \begin{equation}
+  f(\r) = \sum_n f_n D_n(\r),
+  \end{equation}
+where the coefficients $f_n$ in the psinc basis correspond simply to the values of the function $f(\r)$
+on the grid points where the psinc's are centered:
+  \begin{equation}
+  f_n = f(\r_n). 
+  \end{equation}
+This indicates that in order to switch from the G-space to the psinc space and vice-versa, 
+we simply need to perform an ordinary Fourier transform (already implemented as FFT in plane-waves codes).
+
+\noindent
+PROBLEM: the one-to-one correspondece between the psinc basis and the reciprocal space only
+applies when the {\entire} box of G-vectors is considered. In practical calculations, out of the
+G-vectors box we retain only the sphere of vectors smaller than the plane-wave cutoff.
+Therefore the one-to-one correspondence is lost. On the other hand, willing to keep all of
+the G-vectors in the box, we may create a strange anisotropy in the system since some directions
+will have more G-vectors than others...
+
+\noindent
+UPDATE: I still think the p-sinc basis may be useful, but at this stage I abandon
+the idea in favour of the plane-wave basis set. 
+
+\subsubsection*{Factorization and crystal periodicity}
+
+Now we need to make sure that, within the psinc representation, the self-energy can still be written
+as a direct $(\r,\rp) \times (\r,\rp)$ product. The crystal periodicity will lead to $\q-$dependent
+quantities. 
+%
+Let first state Bloch's theorem. The self-energy $\Sigma(\r,\rp)$ must be invariant under the crystal
+translations (I am omitting the frequency dependence for ease of notation). We expand the self-energy
+in terms of Bloch states (complete basis):
+  \begin{equation}
+  \Sigma(\r,\rp) = \Sigma_{mn}\Sigma_{\k,\kp} \, \Sigma_{mn}(\k,\kp) \psi^\star_{m\kp}(\rp) \psi_{n\k}(\r).
+  \end{equation}
+The condition of translationa invariace reads:
+  \begin{equation}
+  \Sigma(\r+{\bf T},\rp+{\bf T}) =  \Sigma(\r,\rp).
+  \end{equation}
+By combining the previous two equations we obtain:
+  \begin{equation}
+  \Sigma_{mn}(\k,\kp) =  \Sigma_{mn}(\k,\kp) {\rm e}^{i(\k-\kp)\cdot{\bf T}}, \; \forall {\bf T},
+  \end{equation}
+which implies:
+  \begin{equation}
+  \Sigma_{mn}(\k,\kp) =  \Sigma_{mn}(\k) \delta(\k-\kp).
+  \end{equation}
+Introducing the Bloch-periodic part of the wavefunctions we can rewrite the self-energy as follows:
+  \begin{equation}
+  \Sigma(\r,\rp) = \Sigma_\k \, \underbrace{\Sigma_{mn} \, \Sigma_{mn}^\k u^\star_{m\k}(\rp) u_{n\k}(\r)}_{\rm cell-periodic \, part} 
+  {\rm e}^{i\k\cdot(\r-\rp)}.
+  \end{equation}
+At this point the cell-periodic part can be expanded in the psinc basis introduced earlier:
+  \begin{equation}
+  \Sigma(\r,\rp;\w) = \Sigma_\k \, \Sigma_{mn} \, \sigma_{mn}(\k;\w) D^\star_m(\rp) D_n(\r) {\rm e}^{i\k\cdot(\r-\rp)},
+  \end{equation}
+where $\sigma_{mn}(\k;\w)$ indicates the components of the self-energy in the psinc-basis.
+The Green's function and the screened Coulomb interaction can be written in a similar way:
+  \begin{equation}
+  G(\r,\rp;\w) = \Sigma_\k \, \Sigma_{mn} \, g_{mn}(\k;\w) D^\star_m(\rp) D_n(\r) {\rm e}^{i\k\cdot(\r-\rp)},
+  \end{equation}
+  \begin{equation}
+  W(\r,\rp;\w) = \Sigma_\k \, \Sigma_{mn} \, w_{mn}(\k;\w) D^\star_m(\rp) D_n(\r) {\rm e}^{i\k\cdot(\r-\rp)}.
+  \end{equation}
+At this stage we wish to rewrite Eq.\ (\ref{eq.sigma}) in the psinc basis. The idea is that the basis function
+are orthonormal, so we do the usual scalar product on both sides and see what happens. 
+We need the following two generalized orthonormality properties:
+  \begin{equation}
+  \int d\r D_m^\star(\r) D_n(\r)  {\rm e}^{i(\k-\kp)\cdot\r} = \delta(\k,\kp) \delta_{mn},
+  \end{equation}
+  \begin{equation}
+  \int d\r D_m^\star(\r) D_n(\r) D_p(\r)  {\rm e}^{i(\k-\kp-\kpp)\cdot\r} = \delta(\k,\kp+\kpp) \delta_{mn}\delta_{mp},
+  \end{equation}
+which can be obtained starting from the definition of the psinc functions through a direct calculation.
+Using these two properties we find:
+  \begin{equation} 
+  \sigma_{mn}(\k,\w) = \frac{i}{2\pi} \int_{-\infty}^{+\infty} d\wp \int d\q \,
+    e^{-i\delta\wp} \, g_{mn}(\k-\q,\w-\wp) \, w_{mn}(\q,\wp).
+  \end{equation}
+The last equation indicates that the direct product form of the self-energy in terms of $(\r,\rp)$ is maintained
+when transforming to the psinc basis (this is somewhat obvious since this is a basis of Dirac deltas on the real-space
+grid points).
+
+\noindent
+UPDATE: The present implementation calculates the screened Coulomb interaction
+and the Green's function both in a plane-waves basis set. In order to calculate
+the self-energy I use fast Fourier-transforms to real space of both $G$ and $W$,
+perform the product, and transform $\Sigma$ back to reciprocal space.
+
+
+\subsubsection*{q-dependent Haydock}
+
+The recursive calculation of the Green's function has been discussed for the $\q=0$ case, i.e.\ for $G(\r,\rp,\w)$.
+In the general case, we need to consider that the Green's function is [Eq.\ (15) of Ref.\ \cite{hl86}]:
+  \begin{equation}
+  G(\r,\rp,\w) = \sum_{n\k} \frac{\psi^\star_{n\k}(\rp)\psi_{n\k}(\r)}{\w-\epsilon_{n\k}},
+  \end{equation} 
+where I omitted the imaginary infinitesimal for clarity (we will not need it in the following).
+This Green's function is the resolvent of the Kohn-Sham Hamiltonian $H_{KS}$. We can also write:
+  \begin{equation}
+  G(\r,\rp;\w) = \sum_\k G(\r,\rp;\k,\w) {\rm e}^{i\k\cdot(\r-\rp)},
+  \end{equation} 
+with the definition:
+  \begin{equation}
+  G(\r,\rp;\q,\w) = \sum_n \frac{u^\star_{n\k}(\rp)u_{n\k}(\r)}{\w-\epsilon_{n\k}}.
+  \end{equation}
+It can easily be verifyied that (as expected) $G(\r,\rp;\q,\w)$ is the resolvent of the $\k-$dependent Hamiltonian:
+  \begin{equation} \label{eq.Hk}
+  H_\k = H_{KS} + \frac{k^2}{2} + \k\cdot\frac{1}{i}\nabla.
+  \end{equation}
+Therefore, in order to calculate $G(\r,\rp;\q,\w)$ we need to apply the Haydock recursion to the new Hamiltonian
+$H_\k$. 
+
+\noindent
+OLD QUESTIONS:
+(i) Does the recursion method work for this modified Hamiltonian? (ii)
+The propagation of a periodic delta-function is compatible with the recursion method or we need a truly
+localized function?
+
+\noindent
+ANSWER: It seems that the method converges for both the diagonal and the off-diagonal matrix elements.
+The requirement of localization does not seem to be necessary (although I am not certain at this stage).
+The difference between Haydock's calculations and the present ones is that we are solving for the
+Bloch-periodic wavefunctions, therefore we are dealing with a {\it discrete} spectrum. This is
+very different from the situation originally considered by Haydock.
+
+
+\subsubsection*{Test calculation}
+
+It is important to assess the feasibility of the entire procedure using a test calculation.
+In particular the calculation of the off-diagonal elements of the Green's function using
+Haydock's recursion has never been attempted to my knowledge.
+A good test-case carrying (almost) the full complexity of a real density-functional calculation
+is the one of a tetrahedral semiconductor within the {\it empirical
+pseudopotential model} as given in Ref.\ \cite{epm} for silicon and other semiconductors,
+and in Ref.\ \cite{epm-diamond} for diamond.
+Probably the diamond case is better than silicon since the gaps are larger.
+In a second step we may try to fit the form factors to a LDA calculation.
+
+\subsubsection*{Decomposition of the Coulomb interaction into monochromatic perturbation}
+
+In the previous sections we have seen how to separate the problem of calculating the self-energy,
+the Green's function and the screened Coulomb interaction by using periodic real-space variables
+and $\k$-vectors. In the case of the screened Coulomb interaction we have:
+  \begin{equation}
+  W(\r,\rp) = \sum_\q w_\q (\r,\rp) \, {\rm e}^{i\q\cdot(\r-\rp)},
+  \end{equation}
+with $w_\q(\r,\rp)$ cell-periodic. In the same way, the bare Coulomb interaction can be written as
+  \begin{equation}
+  v(\r,\rp) = \sum_\q v_\q (\r,\rp) \, {\rm e}^{i\q\cdot(\r-\rp)}.
+  \end{equation}
+Let use $\rp = \r_0$ as a parametric coordinate. The bare perturbation needed to start the SCF
+linear response calculation is (coefficients not checked)
+  \begin{equation}
+  \Delta v_\q (\G;\r_0) = v_\q (\G,\r_0) = \frac{4\pi e^2}{\Omega} \frac{{\rm e}^{-i\G\cdot\r_0}}{|\q+\G|^2}.
+  \end{equation}
+Now, in order to calculate the charge-density response to this perturbation, we need to perform
+a {\it sampling} over the Brillouin zone. The SCF equation to be solved is [Eq.\ (33) of Ref.\ \cite{baroni}]:
+  \begin{equation}
+  (H_{\k+\q} +\alpha\sum_{m\in{\rm occ}} |u_{m,\k+\q}\rangle\langle u_{m,\k+\q}| -\epsilon_{n\k}})\Delta u_{n,\k+\q} = 
+  - \big[ 1- \sum_{m\in{\rm occ}} |u_{m,\k+\q}\rangle\langle u_{m,\k+\q}| \big] \Delta v_{{\rm SCF},\q} u_{n\k},
+  \end{equation}
+with $n$ referring to occupied states. The use of the projector on the valence manifold (left) is to
+lift the singularity of the operator $(H-\epsilon_n)^{-1}$ at $\w=\epsilon_n$. 
+The induced charge density is [Eq.\ (35) of Ref.\ \cite{baroni}]:
+  \begin{equation}
+  \Delta n_\q (\r) = \sum_{n\in{\rm occ}} u_{n\k}^\star(\r) \Delta u_{n,\k+\q} (\r).
+  \end{equation}
+In practice, for every $\q$ we need to sample the whole BZ in $\k$. Since we will need a uniform
+grid of $\q$ for performing the convolution with the Green's function, it may be convienent
+to choose uniform and identical $\q$ and $\k$ grids from the very beginning.
+  
+\subsubsection*{Frequency dependence of the screened Coulomb interaction}
+
+The RPA polarizability contains two frequencies $+\omega$ and $-\omega$, and if
+we want to perform calcultions of $\chi_0$ using Sternheimer we need to actually
+perform two separate calculations.
+When we need to calculate $\epsilon^{-1}(\omega)$, we need to solve the linear system
+twice (once for $+\omega$ and once for $-\omega$). However, the self-consistent
+solution must correspond to the SCF potential including {\it both} positive and negative
+frequencies. In order to do this, the procedure to be adopted is the following.
+We start from
+  \begin{equation}
+  W = v + v \chi_0 W, 
+  \end{equation}
+with the polarizability containing both the positive and negative frequency terms:
+  \begin{equation}
+  \chi_0 = \frac{\chi_0^+ + \chi_0^-}{2}.
+  \end{equation}
+The positive and negative terms of the polarizability are obtained through Sternheimer
+equations carrying the appropriate frequency $\pm \omega$:
+  \begin{equation}
+  \chi_0^\pm = \sum \psi^* \Delta \psi^\pm,
+  \end{equation}
+  \begin{equation}
+  (H-\epsilon \mp \omega) \Delta \psi^\pm = \Delta V^{\rm SCF} \psi.
+  \end{equation}
+Note that the variation of the self-consistent potential is the same for
+both the $\pm \omega$ equations. 
+The self-consistent potential is updated at each iteration using 
+  \begin{equation}
+  \Delta V^{\rm SCF} = v + v\frac{\chi_0^+ + \chi_0^-}{2}.
+  \end{equation}
+I tested this procedure and it works fine (plasmon peak and absorption edge 
+in silicon come out just perfect). {\it I am not sure whether the extension from the RPA
+to the approximate LDA vertex correction is still as easy as in the case of the
+static dielectric response, I need to think about this.}
+
+\subsubsection*{Sternheimer and Conjugate Gradients}
+
+The Sternheimer equation is actually solved for frequencies slightly off the
+real axis ($\w+i\delta$) for convergence purposes.
+The presence of the $i\delta$ term leads to a 
+non-homogeneous linear system where the matrix is no longer Hermitian.
+In this case the regular Conjugate Gradients method 
+(which is designed for Hermitian problems) is not appropriate. In fact,
+I tried to solve the Sternheimer equation by performing a straight CG minimization
+and it did not work.
+By searching the linear algebra literature I found two methods appropriate 
+to the present situation: the Bi-orthogonal Conjugate Gradients method 
+and the Quasi-Minimal Residual method \cite{linsys}. 
+I implemented the BiConjugate Gradients methods \cite{BCG} since it is a fairly
+easy generalization of the standard Conjugate Gradients method.
+In practice this method consists of generating two sequences of mutually
+orthogonal vectors for the search of the minimum residual solution.
+Unfortunately I could not find a generalization of the BiConjugate
+Gradients method for the case of complex Hermitian matrices including preconditioning.
+My test calculations work fine without preconditioning, but for more
+difficult situations I may need to include preconditioning in some form.
+Probably I should design some preconditioning scheme on my own by looking
+at how it is done in standard Conjugate Gradients methods.
+
+\subsubsection*{Scaling}
+
+In this section we estimate how many operations are needed for completing a $GW$ calculation
+within the method presented here (GWHS) and within the standard implementation of Ref.\ \cite{hl86} (HL86).
+We make the following assumptions: the $q-$point grid for the convolution of the Green's function and the screened
+Coulomb interaction contains $N_q$ points. The plane-wave basis 
+contain $N_G^{\rm s}$ G-vectors, where the superscript ``s'' stands for small - the cutoff for
+the dielectric matrix is typically smaller than the one for the wavefunctions.
+The number of frequency bins is $N_\omega$. The iterative
+algorithms will require in average $N_{\rm it}^{\rm SCF}$, $N_{\rm it}^{\rm CG}$,
+and $N_{\rm it}^{\rm L}$ iterations for the self-consistency loop of the screened
+Coulomb interaction, the number of conjugat gradients steps required in the
+solution of the Sternheimer equation, and the number of Lanczos iterations
+for the Green's function, respectively. The number of occupied and empty states at a given
+$k-$point are $N_{\rm v}$ and $N_{\rm c}$, respectively.
+
+\noindent
+{\it GWHS - Green's function} 
+
+\noindent
+For the Green's function we need $N_q \times 4 \times (N_G^{\rm s} \times 
+(N_G^{\rm s} -1 )/2)$ Lanczos chains. This estimate includes the number $N_q$ of $k-$points for which we evaluate
+the Green's function, and the number of inequivalent
+nondigonal matrix elements ($\G,\Gp$). Each nondiagonal matrix element requires 4 Lanczos chains.
+Every Lanczos chain involves $N_{\rm it}^{\rm L}\times $(2 scalar products +
+1 Hamiltonian application) operations. The frequency dependence of the
+Green's function is obtained as a post-processing step after the
+Haydock coefficients have been determined. Therefore the frequency-dependence
+of the Green's function does not contribute to the scaling.
+
+\noindent
+{\it GWHS - Screened Coulomb interaction} 
+
+\noindent
+For the screened Coulomb interaction we need 
+$N_\omega \times N_q \times N_G^{\rm s} \times (N_{\rm it}^{\rm SCF}\times(N_q \times 4 ))$
+Conjugate Gradients sequences. This estimate includes the solution of the self-consistent
+Sternheimer equation for each of the $N_\omega$ frequency bins, each of the $N_q$ $q-$points, and each
+of the $N_G^{\rm s}$ $G-$vectors. Let keep in mind that for every vector $\G$ the solution
+of the Sternheimer equation yields the results for all of the $\Gp$ vectors at once.
+Each Sternheimer equation involves $N_{\rm it}^{\rm SCF}$ self-consistent iterations
+and each of them requires the determination of the perturbation to the wavefunctions
+for each $k-$point (to obtain the BZ-integrated charge density). Each single wavefunction
+perturbation requires 1 BiConjugate Gradients sequence (corresponding to 2 Conjugate Gradients
+sequences) for both the frequencies $+\omega$ and $-\omega$.
+Every Conjugate Gradients minimization requires $N_{\rm it}^{\rm CG}$ iterations for each
+of the $N_{\rm v}$ occupied states. Each iteration comprises (2 scalar products +
+1 Hamiltonian application) operations.
+
+\noindent
+{\it GWHS - Summary} 
+
+\noindent
+If we neglect the scalar products w.r.t. the application of the Hamiltonian, the
+total workload for the GWHS calculation consists of $N_{H|\psi\rangle}^{\rm GWHS}$
+Hamiltonian applications with:
+  \begin{equation}
+  N_{H|\psi\rangle}^{\rm GWHS} = 4 N_q  N_G^{\rm s} [N_{\rm it}^{\rm L} (N_G^{\rm s} -1 )/2 +
+  N_{\rm it}^{\rm SCF} N_{\rm it}^{\rm CG} N_\omega N_q N_{\rm v} ]. 
+  \end{equation}
+If we take the simplification that the system is large enough that the BZ sampling
+is not required, the previous expression simplifies as follows:
+  \begin{equation}
+  N_{H|\psi\rangle,\Gamma}^{\rm GWHS} = 4 N_G^{\rm s} [N_{\rm it}^{\rm L} (N_G^{\rm s} -1 )/2 +
+  N_{\rm it}^{\rm SCF} N_{\rm it}^{\rm CG} N_\omega N_{\rm v} ]. 
+  \end{equation}
+The previous considerations remain valid even for non-planewave basis sets.
+In the latter case $N_G$ represents the number of basis functions. This is particularly
+true for localized basis sets.
+It is clear from the previous two equations that, since $N_{\rm v}$ and $N_G$ scale both
+as the number of atoms, the global scaling is $N_{\rm at}^2$. In addition, the Hamiltonian
+application scales as $N_{\rm at}^2$ for a {\it dense} Hamiltonian and as $N_{\rm at}$
+for a {\it sparse} Hamiltonian. In the case of a planewave representation, the use of 
+Fast Fourier Transforms leads to a slightly better scaling corresponding to $N_{\rm at}\log N_{\rm at}$
+operations. In summary, the scaling of the GWHS method is $N_{\rm at}^4$ for dense Hamiltonian
+matrices ($N_{\rm at}^3\log N_{\rm at}$ in planewaves) and $N_{\rm at}^3$ for sparse Hamiltonians.
+
+\noindent
+{\it HL86 - Empty states} 
+
+\noindent
+The calculation of the empty states needed for the polarizability requires
+$N_{\rm c}\times N_q$ Conjugate Gradients sequences. Each sequece involves
+$N_{\rm it}^{\rm CG}$ (2 scalar products + 1 Hamiltonian application).
+
+\noindent
+{\it HL86 - Optical matrix elements} 
+
+\noindent
+The optical matrix elements require $N_{\rm v} \times N_{\rm c}\times N_q\times N_q$
+scalar products for each of the $N_G^{\rm s}$ G-vectors of the screened Coulomb interaction.
+
+\noindent
+{\it HL86 - Inversion of dielectric matrix} 
+
+\noindent
+This requires $N_\omega \times N_q$ inversions by LU decompositions. Each inversion
+costs $4/3(N_G^{\rm s})^3$ operations.
+
+\noindent
+{\it HL86 - Summary} 
+
+\noindent
+The calculation of the empty states and the inversion of the dielectric matrix are
+less time-consuming than the optical matrix elements. Therefore we consider only the
+cost of the optical matrix elements ($\langle\psi|\psi\rangle$ 
+indicates scalar products between wavefunctions):
+  \begin{equation}
+  N_{\langle\psi|\psi\rangle}^{\rm HL86} = N_{\rm v} N_{\rm c} N_q^2 N_G^{\rm s},
+  \end{equation}
+and in the case of large systems and $\Gamma-$point sampling:
+  \begin{equation}
+  N_{\langle\psi|\psi\rangle,\Gamma}^{\rm HL86} = N_{\rm v} N_{\rm c} N_G^{\rm s}.
+  \end{equation}
+Since the number of occupied en empty states scale as the number of atoms and
+the scalar products require $N_G^{\rm s}$ operations, we have a global scaling of
+the HL86 method given by $N_{\rm at}^4$. If we calculate the optical matrix elements
+in a plane-wave basis we can exploit Fast Fourier Transform as above and the
+calculation will scale as $N_{\rm at}^3\log N_{\rm at}$.
+
+The important difference between the two methods (taken aside the prefactors)
+is that on factor $N_{\rm c}$ of the HL86 case is replaced by a factor $N_G^{\rm s}$
+in the GWHS method. Therefore the latter method is probably going to be convenient
+in thoses cases where the basis set is smaller than the number of unoccupied states.
+This is probably the case only for localized basis sets, hence the need for implementations
+on local orbital codes or using p-sinc functions.
+It should be noted however that we are performing a comparison between a full
+self-energy (GWHS) and the matrix elements of the self-energy calculated only
+on a few ($N_{\rm v}$) states (HL86). In other words, within HL86 we are not obtaining
+the self-energy on a complete basis. If we compare the two methods on the same
+footing (self-energy in a complete basis in both cases), then the factor $N_{\rm v} N_G^{\rm s}$
+in GWHS is replaced by the factor $N_{\rm c} N_{\rm c}$ in HL86 and the the GWHS
+method can become more convenient.
+
+\subsubsection*{Related work}
+
+There are other groups who have been exploring essentially the same idea.
+In Refs. \cite{kunc1,kunc2} the authors used
+the Sternheimer equation to calculate the dielectric matrix and the
+inverse dielectric matrix, respectively. These works are also cited
+in Ref. \cite{hl86}. The main computational advance since those works
+is the decomposition of the perturbation into monochromatic components
+\cite{baroni}. At the time Ref.\ \cite{hl86} was published
+such decomposition was not available
+yet and the ``direct'' calculations using Sternheimer were not convenient
+from the computational point of view.
+At a later stage the decomposition into $q-$components has actually been
+implemented for the {\it direct} dielectric matrix \cite{reining}, purposely
+for performing GW calculations without unoccupied states.
+The main differences between what we describe here and Ref.\ \cite{reining}
+are that (i) we address directly the screened Coulomb interaction (essentially
+equivalent to the inverse dielectric matrix). This means that we perform
+a self-consistent iterative solution as for the case of phonons, and we do not
+need to invert the dielectric matrix. (ii) we find the Green's function
+without using empty states (Haydock).
+
+\begin{thebibliography}{99}
+
+\bibitem{hl86}
+M. S. Hybertsen and S. G. Louie,
+Phys.\ Rev.\ B {\bf 34}, 5390 (1986).
+
+\bibitem{baroni}
+S. Baroni, S. de Gironcoli, A. Dal Corso, P. Giannozzi,
+Rev.\ Mod.\ Phys.\ {\bf 73}, 515 (2001).
+
+\bibitem{pcm}
+R. M. Pick, M. H. Cohen, and R. M. Martin,
+Phys. Rev. B {\bf 1}, 910 (1970).
+
+\bibitem{bg92}
+S. Baroni and P. Giannozzi,
+Europhys.\ Lett.\ {\bf 17}, 547 (1992).
+
+\bibitem{haydock72}
+R. Haydock, V. Heine, and M. J. Kelly,
+J.\ Phys.\ C {\bf 5}, 2845 (1972).
+
+\bibitem{haydock.ssp}
+R. Haydock, in {\it Solid State Physics}, eds.\ H. Ehrenreich, F. Seitz and D. Turnbull 
+(Academic Press, New York, 1980) Vol. 35, p. 215.
+
+\bibitem{kelly.ssp}
+M. J. Kelly, in {\it Solid State Physics}, eds.\ H. Ehrenreich, F. Seitz and D. Turnbull 
+(Academic Press, New York, 1980) Vol. 35, p. 295.
+
+\bibitem{ballentine}
+L. E. Ballentine and M Kol\'a\v r,
+J.\ Phys.\ C {\bf 19}, 981 (1986).
+
+\bibitem{mostofi}
+A. A. Mostofi, C. Skylaris, P. D. Haynes, and M. C. Payne,
+Comp.\ Phys.\ Comm.\ {\bf 147}, 788 (2002).
+
+\bibitem{giannozzi}
+P. Giannozzi, G. Grosso, S. Moroni, and G. Pastori Parravicini,
+Appl.\ Numer.\ Math.\ {\bf 4}, 273 (1988).
+
+\bibitem{brustel}
+U. Br\"ustel and K. Unger,
+Phys.\ Stat.\ Sol.\ B {\bf 123}, 229 (1984).
+
+\bibitem{epm}
+M. L. Cohen and T. K. Bergstresser,
+Phys.\ Rev.\ {\bf 141}, 789 (1966).
+
+\bibitem{cordelli}
+A. Cordelli, G. Grosso, and G. Pastori Parravicini,
+Phys.\ Rev.\ B {\bf 38}, 2154 (1988).
+
+\bibitem{epm-diamond}
+W. Saslow, T. K. Bergstresser, and M. L. Cohen,
+Phys.\ Rev.\ Lett.\ {\bf 16}, 354 (1966).
+
+\bibitem{tiago}
+M. L. Tiago and J. R. Chelikowsky,
+Phys. Rev. B {\bf 73}, 205334 (2006).
+
+\bibitem{reining94}
+R. Del Sole, L. Reining, and R. W. Godby,
+Phys.\ Rev.\ B {\bf 49}, 8024 (1994).
+
+\bibitem{linsys}
+R. Barrett, M. Berry, T. F. Chan, J. Demmel, J. Donato, J. Dongarra, 
+V. Eijkhout, R. Pozo, C. Romine, and H. van der Vorst, 
+{\it Templates for the Solution of Linear Systems: 
+Building Blocks for Iterative Methods}, (SIAM, Philadelphia, 1994). 
+
+\bibitem{BCG}
+D. A. H. Jacobs, 
+IMA J.\ Numer.\ Anal.\ {\bf 6}, 447 (1986).
+
+\bibitem{kunc1}
+K. Kunc and R. Resta, 
+Phys.\ Rev.\ Lett.\ {\bf 51}, 686 (1983).
+
+\bibitem{kunc2}
+K. Kunc and E. Tosatti, 
+Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
+
+\bibitem{reining}
+L. Reining, G. Onida, and R. W. Godby, 
+Phys.\ Rev.\ B {\bf 56}, 4301 (1997). 
+
+\end{thebibliography}
+
+
+\end{document}
