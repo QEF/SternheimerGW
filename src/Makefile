@@ -30,6 +30,8 @@ CPPFLAGS = -C -ansi
 #
 # -i-static -openmp are needed when using MKL libs for ifort>9
 # (from Espresso)
+#
+# at this time the code blows up - need to fix something in the libraries
 
 #F90 = mpif90
 #LDFLAGS = -i-static -openmp -lmkl_em64t -L/home/giustino/code/fftw-2.1.5/lib -lfftw
