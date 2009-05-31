@@ -1,11 +1,11 @@
 
 # x61
 
-##F90 = ifort -- sigsev with the intel compiler 10.1.015
-#F90 = f95 -O3
-#LDFLAGS = -lfftw -llapack
-#CPP = cpp 
-#CPPFLAGS = -C -ansi
+#F90 = ifort -- sigsev with the intel compiler 10.1.015
+F90 = f95 -O3
+LDFLAGS = -lfftw -llapack
+CPP = cpp 
+CPPFLAGS = -C -ansi
 
 # hbar
 
@@ -31,10 +31,10 @@
 # -i-static -openmp are needed when using MKL libs for ifort>9
 # (from Espresso)
 
-F90 = mpif90
-LDFLAGS = -i-static -openmp -lmkl_em64t -L/home/giustino/code/fftw-2.1.5/lib -lfftw
-CPP = cpp 
-CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
+#F90 = mpif90
+#LDFLAGS = -i-static -openmp -lmkl_em64t -L/home/giustino/code/fftw-2.1.5/lib -lfftw
+#CPP = cpp 
+#CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
 
 
 #########################################################################
