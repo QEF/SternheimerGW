@@ -13,7 +13,7 @@
 set MPIRUN  = /opt/mpich/intel/bin/mpirun
 set HOME    = /home/giustino
 set GWHS    = $HOME/GWHS/trunk/bin/gwhs.x
-set JDIR    = $HOME/GWHS/trubk/examples
+set JDIR    = $HOME/GWHS/trunk/examples
 
 cd $JDIR 
 $MPIRUN -np $NSLOTS -machinefile $TMP/machines $GWHS -npool 8 > test.out
