@@ -178,12 +178,12 @@
       !                       / (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
               ! original preconditioning used in PH 
               !
-       h_diag(ig,ibnd) = 1.d0/(max(1.d0,x)-et(ibnd,ikk)+w) ! preconditioner as in VdW code
+      ! h_diag(ig,ibnd) = 1.d0/(max(1.d0,x)-et(ibnd,ikk)+w) ! preconditioner as in VdW code
                                                            ! gmres by mauri in PH ???
               ! 
               ! NO preconditioning
               !
-      !       h_diag(ig,ibnd) = 1.d0
+              h_diag(ig,ibnd) = 1.d0
               !
            enddo
         enddo

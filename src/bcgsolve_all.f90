@@ -251,9 +251,9 @@
 
   enddo
   if (iter.lt.maxter) then 
-     write(6,'(4x,"bcgsolve_all: ",2i5)') ik, iter
+!    write(6,'(4x,"bcgsolve_all: ",2i5)') ik, iter
   else
-     write(6,'(4x,"bcgsolve_all: ",2i5,e12.4)') ik, iter, anorm
+!    write(6,'(4x,"bcgsolve_all: ",2i5,e12.4)') ik, iter, anorm
   endif
   !
   deallocate ( r , q , p , pold, rt, qt, pt, ptold, aux1, aux2)

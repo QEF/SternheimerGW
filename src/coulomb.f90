@@ -59,10 +59,10 @@
   open ( iudwfm, file = dwfmfile, iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
 !@@
-!@  maxscf = 1
-!@  maxbcgsolve = 8
-  maxscf = 100000000
-  maxbcgsolve = 100000000
+  maxscf = 1
+  maxbcgsolve = 8
+!@  maxscf = 100000000
+!@  maxbcgsolve = 100000000
   alpha_mix = 0.3
 !@@
 
@@ -171,13 +171,14 @@
   !  loop on bare perturbations ig and fixed q point
   !
 !@  do ig = igstart, igstop 
-  do ig = 111,112
+!@@  do ig = 111,112
+  do ig = 1,2
     !
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
-!@    do iw = 1, 2 !@ nw
-    do iw = 12, 13
+    do iw = 1, 2 !@ nw
+!@@    do iw = 12, 13
       !
       write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
          xxq,g(:,ig), w(iw)
