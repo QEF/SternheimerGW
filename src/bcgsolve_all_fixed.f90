@@ -9,35 +9,36 @@
   !
   !-----------------------------------------------------------------------
   !
-  !   iterative solution of the linear system:
+  !   Iterative solution of the linear system:
   !
   !                 ( h - e + w + i * eta ) * x = b         
   !
   !   where h is a complex hermitian matrix, e, w, and eta are
   !   real scalar, x and b are complex vectors
   !
-  !   we use the biorthogonal conjugate gradient method as described in
+  !   I use the biorthogonal conjugate gradient method as described in
   !   D. A. H. Jacobs, A generalization of the conjugate-gradient method to
   !   solve complex systems, IMA Journal of Numerical Analysis 6, 447 (1986).
-  !
-  !   Note that this is the only paper wher I found the algorithm for
-  !   complex and non-hermitian operators. Most available versions 
-  !   consider the complex and symmetric case, which is not what we need.
+  !   Most subsequent relevant CG methods are based on this paper.
   !
   !   Felix Giustino, Berkeley Aug 2008
+  !   
+  !   As the paper does not treat preconditioning, I followed the general
+  !   procedure described by J. R. Shewchuk (An introduction to the
+  !   conjugate gradient method without the agonizing pain, Carnegie Mellon 
+  !   University, 1994, pp. 39-40) to work out the preconditioned Jacobs algorithm   
+  !   (cf. my hand-written notes)
+  !   I use the Teter-Payne-Allan preconditioner.
+  !
+  !   Felix Giustino, Oxford Jan-May 2009
   !
   !   I did the profiling and the most time-consuming part (by a factor 9:1)
   !   is the application of the Hamiltonian, and in particular the FFT forth
-  !   and back to do the product V*psi. We cannot save much on that, better
-  !   to look at preconditioning to decrease the number of iterations.
+  !   and back to do the product V*psi. 
   !
-  !   Preconditioner added 5 Jan 2009 - (Teter-Payne-Allan)
-  !   In order to add the preconditioner I simply modified the linear
-  !   system from Ax = b to (MA)x = Mb with M given by h_diag
-  !   and replaced everywhere in the procedure A by MA and b by Mb.
-  !   The new matrix MA is still complex, and does not need to be symmetric
-  !   or Hermitian in the complex-BCG algorithm by Jacobs - so no problem here.
-  !   In practice the preconditioner is applied in only three locations.
+  !   rp  = r preconditioned [ inv(M) * r ]
+  !   rt  = r tilda
+  !   rtp = r tidla preconditioned [ inv(M) * rt ]
   !
   !-----------------------------------------------------------------------
   !
@@ -78,6 +79,7 @@
   integer :: iter, ibnd, jbnd
   complex(kind=DP), allocatable :: r  (:,:), q  (:,:), p  (:,:), pold  (:,:)
   complex(kind=DP), allocatable :: rt (:,:), qt (:,:), pt (:,:), ptold (:,:)
+  complex(kind=DP), allocatable :: rp (:,:), rtp (:,:)
   complex(kind=DP), allocatable :: aux1 (:,:), aux2 (:,:)
   complex(kind=DP) :: a, c, beta, alpha, ZDOTC
   logical :: conv (nbnd), conv_all
@@ -92,6 +94,7 @@
   !
   allocate ( r (ndmx,nbnd), q (ndmx,nbnd), p (ndmx,nbnd), pold (ndmx ,nbnd) )    
   allocate ( rt(ndmx,nbnd), qt(ndmx,nbnd), pt(ndmx,nbnd), ptold(ndmx ,nbnd) )    
+  allocate ( rp(ndmx,nbnd), rtp(ndmx,nbnd) )    
   allocate ( aux1 (ndmx,nbnd), aux2 (ndmx,nbnd) )    
   !
   conv = .false.
@@ -101,8 +104,7 @@
 
   !
 ! do while ( iter.lt.maxter .and. .not.conv_all )
-  do while ( iter.le.maxbcgsolve )
-
+  do while ( iter.lt.maxbcgsolve )
     !
     iter = iter + 1
     !
@@ -115,13 +117,17 @@
        !
        call ZAXPY (ndim*nbnd, -cone, b, 1, r, 1)
        call ZSCAL (ndim*nbnd, -cone, r, 1)
-
-       ! TPA preconditioner
-       do ibnd = 1, nbnd
-         call cg_psi (ndmx, ndim, 1, r(1,ibnd), h_diag(1,ibnd) )
-       enddo
-
+       ! 
        rt = conjg ( r )
+       !
+       ! p  = inv(M) * r
+       ! pt = conjg ( p )
+       !
+       do ibnd = 1, nbnd
+         call ZCOPY (ndim, r  (1, ibnd), 1, p  (1, ibnd), 1)
+         call cg_psi (ndmx, ndim, 1, p  (1,ibnd), h_diag(1,ibnd) )
+       enddo
+       pt = conjg ( p )
        !
     endif
     !
@@ -136,39 +142,6 @@
     enddo
     if ( conv_all ) exit
     !
-    do ibnd = 1, nbnd
-       if ( .not.conv(ibnd) ) then
-         !
-         if (iter.eq.1) then
-           !
-           ! p  = r
-           ! pt = rt
-           !
-           call ZCOPY (ndim, r  (1, ibnd), 1, p  (1, ibnd), 1)
-           call ZCOPY (ndim, rt (1, ibnd), 1, pt (1, ibnd), 1)
-         else
-           !
-           !  beta = - <qt|r>/<pt|q>
-           !
-           a = ZDOTC (ndim, qt(1,ibnd), 1, r(1,ibnd), 1)
-           c = ZDOTC (ndim, pt(1,ibnd), 1, q(1,ibnd), 1)
-           beta = - a / c
-           !
-           !  p  = r  +       beta  * pold
-           !  pt = rt + conjg(beta) * ptold
-           !
-           call ZCOPY (ndim, r  (1, ibnd), 1, p  (1, ibnd), 1)
-           call ZAXPY (ndim,       beta,  pold  (1,ibnd), 1, p (1,ibnd), 1)
-           call ZCOPY (ndim, rt (1, ibnd), 1, pt (1, ibnd), 1)
-           call ZAXPY (ndim, conjg(beta), ptold (1,ibnd), 1, pt(1,ibnd), 1)
-           !
-         endif
-         !
-       endif
-    enddo
-    !
-
-    !
     ! Here we calculate q = A * p and qt = A^\dagger * pt
     ! In order to avoid building the Hamiltonian for each band, 
     ! we apply the Hamiltonian to all of the nonconverged bands.
@@ -176,76 +149,80 @@
     ! apply H, and then unpack.
     !
     !  q  = A * p 
-    !
-    jbnd = 0
-    do ibnd = 1, nbnd
-       if ( .not.conv(ibnd) ) then
-         jbnd = jbnd + 1
-         call ZCOPY (ndim, p  (1, ibnd), 1, aux1  (1, jbnd), 1)
-         eu (jbnd) = e (ibnd)
-       endif
-    enddo
-
-    call Ax ( aux1, aux2, eu, ik, jbnd, g2kin, vr, evq, + eta )
-
-    ! TPA preconditioner
-    do ibnd = 1, jbnd
-      call cg_psi (ndmx, ndim, 1, aux2(1,ibnd), h_diag(1,ibnd) )
-    enddo
-
-    jbnd = 0
-    do ibnd = 1, nbnd
-       if ( .not.conv(ibnd) ) then
-         jbnd = jbnd + 1
-         call ZCOPY (ndim, aux2 (1, jbnd), 1, q  (1, ibnd), 1)
-       endif
-    enddo
-
-    !
     !  qt = A^\dagger * pt
     !
+!
+! packing does not work: when I do this the bands converge
+! until very close to the threshold, and then the unconverged
+! ones start to diverge badly. Without the packing the algorithm
+! seems very stable and the gain from preconditioning is about
+! a factor 3.5 in the number of iterations
+!
+
+!    jbnd = 0
+!    do ibnd = 1, nbnd
+!      if ( .not.conv(ibnd) ) then
+!         jbnd = jbnd + 1
+!         call ZCOPY (ndim, p  (1, ibnd), 1, aux1 (1, jbnd), 1)
+!         call ZCOPY (ndim, pt (1, ibnd), 1, aux2 (1, jbnd), 1)
+!         eu (jbnd) = e (ibnd)
+!      endif
+!    enddo
+!    !
+!    call Ax ( aux1, q , eu, ik, jbnd, g2kin, vr, evq, + eta )
+!    call Ax ( aux2, qt, eu, ik, jbnd, g2kin, vr, evq, - eta )
+
+    !
+    ! no packing
+    !
+    call Ax ( p , q , e, ik, nbnd, g2kin, vr, evq, + eta )
+    call Ax ( pt, qt, e, ik, nbnd, g2kin, vr, evq, - eta )
+
+    !
     jbnd = 0
     do ibnd = 1, nbnd
        if ( .not.conv(ibnd) ) then
-         jbnd = jbnd + 1
-         call ZCOPY (ndim, pt (1, ibnd), 1, aux1 (1, jbnd), 1)
-         eu (jbnd) = e (ibnd)
-       endif
-    enddo
-
-    ! TPA preconditioner
-    do ibnd = 1, jbnd
-      call cg_psi (ndmx, ndim, 1, aux1(1,ibnd), h_diag(1,ibnd) )
-    enddo
-
-    call Ax ( aux1, aux2, eu, ik, jbnd, g2kin, vr, evq, - eta )
-
-    jbnd = 0
-    do ibnd = 1, nbnd
-       if ( .not.conv(ibnd) ) then
-         jbnd = jbnd + 1
-         call ZCOPY (ndim, aux2 (1, jbnd), 1, qt (1, ibnd), 1)
-       endif
-    enddo
-    !
-
-    !
-    do ibnd = 1, nbnd
-       if ( .not.conv(ibnd) ) then
          !
-         ! alpha = <rt|r>/<pt|q>
+!        ! remember only q and qt carry the packed jbnd index
+!        !
+!        jbnd = jbnd + 1
+         jbnd = ibnd
          !
-         a = ZDOTC (ndim, rt(1,ibnd), 1, r(1,ibnd), 1)
-         c = ZDOTC (ndim, pt(1,ibnd), 1, q(1,ibnd), 1)
-         alpha = a / c
+         !  rp  = inv(M) * r
+         !
+         ! M must be real and symmetric in order to decompose as M = transp(E) * E
+         ! the TPA preconditioner is real and diagonal, so ok
+         !
+         call ZCOPY (ndim, r  (1, ibnd), 1, rp  (1, ibnd), 1)
+         call cg_psi (ndmx, ndim, 1, rp  (1,ibnd), h_diag(1,ibnd) )
+         !
+         ! alpha = <rt|rp>/<pt|q>
+         ! [ the denominator is stored for subsequent use in beta ]
+         !
+         a = ZDOTC (ndim, rt(1,ibnd), 1, rp(1,ibnd), 1) 
+         c = ZDOTC (ndim, pt(1,ibnd), 1, q (1,jbnd), 1) 
+         alpha = a / c 
          !
          !  x  = x  + alpha        * p
          !  r  = r  - alpha        * q 
          !  rt = rt - conjg(alpha) * qt
          !
          call ZAXPY (ndim,  alpha,        p  (1,ibnd), 1, x  (1,ibnd), 1)
-         call ZAXPY (ndim, -alpha,        q  (1,ibnd), 1, r  (1,ibnd), 1)
-         call ZAXPY (ndim, -conjg(alpha), qt (1,ibnd), 1, rt (1,ibnd), 1)
+         call ZAXPY (ndim, -alpha,        q  (1,jbnd), 1, r  (1,ibnd), 1)
+         call ZAXPY (ndim, -conjg(alpha), qt (1,jbnd), 1, rt (1,ibnd), 1)
+         !
+         !  rp  = inv(M) * r
+         !  rtp = inv(M) * rt
+         !
+         call ZCOPY (ndim, r  (1, ibnd), 1, rp  (1, ibnd), 1)
+         call ZCOPY (ndim, rt (1, ibnd), 1, rtp (1, ibnd), 1)
+         call cg_psi (ndmx, ndim, 1, rp  (1,ibnd), h_diag(1,ibnd) )
+         call cg_psi (ndmx, ndim, 1, rtp (1,ibnd), h_diag(1,ibnd) )
+         !
+         !  beta = - <qt|rp>/<pt|q>
+         !
+         a = ZDOTC (ndim, qt(1,jbnd), 1, rp(1,ibnd), 1)
+         beta = - a / c 
          !
          ! pold  = p
          ! ptold = pt
@@ -253,15 +230,27 @@
          call ZCOPY (ndim, p  (1, ibnd), 1, pold  (1, ibnd), 1)
          call ZCOPY (ndim, pt (1, ibnd), 1, ptold (1, ibnd), 1)
          !
+         !  p  = rp  +       beta  * pold
+         !  pt = rtp + conjg(beta) * ptold
+         !
+         call ZCOPY (ndim, rp  (1, ibnd), 1, p  (1, ibnd), 1)
+         call ZCOPY (ndim, rtp (1, ibnd), 1, pt (1, ibnd), 1)
+         call ZAXPY (ndim,       beta,  pold  (1,ibnd), 1, p (1,ibnd), 1)
+         call ZAXPY (ndim, conjg(beta), ptold (1,ibnd), 1, pt(1,ibnd), 1)
+         !
        endif
     enddo
     !
-
   enddo
-! write(6,'(4x,"bcgsolve_all: ",2i5)') ik, iter
+  if (iter.lt.maxter) then 
+!    write(6,'(4x,"bcgsolve_all_fixed: ",2i5)') ik, iter
+  else
+!    write(6,'(4x,"bcgsolve_all_fixed: ",2i5,e12.4)') ik, iter, anorm
+  endif
   !
   deallocate ( r , q , p , pold, rt, qt, pt, ptold, aux1, aux2)
   !
   return
   end subroutine bcgsolve_all_fixed
   !
+

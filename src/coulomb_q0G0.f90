@@ -17,6 +17,11 @@
   use constants
   use gspace
   use kspace
+#ifdef __PARA
+  USE para
+  USE mp_global,  ONLY : nproc, mpime, nproc_pool, my_pool_id, me_pool
+  USE mp, ONLY:  mp_barrier
+#endif
   implicit none
   !
   real(dbl) :: xq0(3), ui, uj, uk, qg2, xktmp(3), g0(3), alpha_mix
@@ -34,23 +39,39 @@
   ! these are for +w and -w
   complex(kind=DP) :: aux (ngm, nbnd_occ), evq (ngm, nbnd_occ)
   real(dbl) :: kplusg(3)
+  character (len=3) :: nd_nmbr0
+  character (len=256) :: barfile, dwfpfile, dwfmfile
+  !
+  logical :: convt
+  ! return .true. is convergence has been achieved in solve_linter_dyn
   !
   recl = 2 * nbnd_occ * ngm  ! 2 stands for complex
   unf_recl = DIRECT_IO_FACTOR * recl
-  open ( iubar, file = "./silicon.bar", iostat = ios, form = 'unformatted', &
+  barfile  = './silicon'//'.bar'
+  dwfpfile = './silicon'//'.dwfp'
+  dwfmfile = './silicon'//'.dwfm'
+  !
+#ifdef __PARA
+  call set_ndnmbr ( mypool, me_pool, nprocp, npool, nd_nmbr0)
+  barfile =  trim(barfile)//'.'//nd_nmbr0
+  dwfpfile = trim(dwfpfile)//'.'//nd_nmbr0
+  dwfmfile = trim(dwfmfile)//'.'//nd_nmbr0
+#endif
+  !
+  open ( iubar, file = barfile, iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
-  open ( iudwfp, file = "./silicon.dwfp", iostat = ios, form = 'unformatted', &
+  open ( iudwfp, file = dwfpfile, iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
-  open ( iudwfm, file = "./silicon.dwfm", iostat = ios, form = 'unformatted', &
+  open ( iudwfm, file = dwfmfile, iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
   !
-!@@
+!@
   ! this simply means that we perform the brute-force minimization
   ! by fully relaxing dpsi at every dvscf update
-  maxscf = 100000
-  maxbcgsolve = 100
-  alpha_mix = 0.6
-!@@
+  maxscf = 1000
+  maxbcgsolve = 5
+  alpha_mix = 0.5
+!@
 
 
   ! initialize
@@ -126,7 +147,8 @@
   !
 ! write(6,'(4x,"ig = ",i5)') ig
   !
-  do iw = 1, 2 !@ nw
+! do iw = 1, nw
+  do iw = 1, 1 !@ nw
     !
 !   write(6,'(4x,3x,"iw = ",i5)') iw
     write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
@@ -162,7 +184,8 @@
     ! solve self-consistently the linear system for this perturbation 
     ! _dyn is for the dynamical case (w/=0)
     !
-    call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix )
+!@    call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .false., convt )
+    call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
     !
     ! transform dvscf to G space 
     !

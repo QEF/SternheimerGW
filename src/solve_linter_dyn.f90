@@ -1,6 +1,6 @@
   !
   !-----------------------------------------------------------------------
-  subroutine solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w, maxscf, maxbcgsolve, alpha_mix)
+  subroutine solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w, maxscf, maxbcgsolve, alpha_mix, tprec, convt)
   !-----------------------------------------------------------------------
   !
   ! this works for one perturbation at a time
@@ -20,6 +20,8 @@
   implicit none
   !
   integer :: maxscf, maxbcgsolve
+  logical :: tprec
+  ! switches on/off preconditioning
   !
   complex(kind=DP) :: dvbare(nr)
   ! the perturbation in real space
@@ -45,6 +47,7 @@
   logical :: conv_root, convt
   integer :: lter
   external ch_psi_all, ch_psi_all_eta
+
 
   !
   !  loop over the iterations
@@ -133,10 +136,16 @@
             !
           enddo
           !
-          !  read dpsi for this k-point from iudwf
+   !      !  read dpsi for this k-point from iudwf
+   !      !
+   !      read ( iudwfp, rec = ik, iostat = ios) dpsip
+   !      read ( iudwfm, rec = ik, iostat = ios) dpsim
           !
-          read ( iudwfp, rec = ik, iostat = ios) dpsip
-          read ( iudwfm, rec = ik, iostat = ios) dpsim
+          ! initial guess set to zero - this seems to work better
+          ! than the reading from previous scf cycle
+          !
+          dpsip = czero
+          dpsim = czero
           !
         endif
         !
@@ -159,34 +168,38 @@
         ! (H-et)*dpsi=   - ( 1 - P_occ^{k+q} ) * (dvbare+dvscf)*psi
         !              [                  dvpsi                     ]
 
-        !
-        ! I use the preconditioner of Teter, Payne, Allan [PRB 40, 12255 (1988)]
-        !
-        do ibnd = 1, nbnd_occ
-           do ig = 1, ngm
-               auxg (ig) = g2kin (ig) * evq (ig, ibnd)
-           enddo
-           ! the misterious factor 1.35 seems to be a way to match 
-           ! approxiately the TPA preconditioner and the simple one 1/x. FG
-           eprec (ibnd) = 1.35d0 * ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
-    !      eprec (ibnd) = ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
-        enddo
-        do ibnd = 1, nbnd_occ
-           do ig = 1, ngm
-              x = g2kin(ig)/eprec (ibnd)
-      !       h_diag(ig,ibnd) = (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-      !                       / (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
-              ! original preconditioning used in PH 
-              !
-      ! h_diag(ig,ibnd) = 1.d0/(max(1.d0,x)-et(ibnd,ikk)+w) ! preconditioner as in VdW code
-                                                           ! gmres by mauri in PH ???
-              ! 
-              ! NO preconditioning
-              !
-              h_diag(ig,ibnd) = 1.d0
-              !
-           enddo
-        enddo
+        if (tprec) then
+          !
+          ! I use the preconditioner of Teter, Payne, Allan [PRB 40, 12255 (1988)]
+          !
+          do ibnd = 1, nbnd_occ
+             do ig = 1, ngm
+                 auxg (ig) = g2kin (ig) * evq (ig, ibnd)
+             enddo
+             ! the misterious factor 1.35 seems to be a way to match 
+             ! approxiately the TPA preconditioner and the simple one 1/x. FG
+      !      eprec (ibnd) = 1.35d0 * ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
+             eprec (ibnd) = ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
+          enddo
+          do ibnd = 1, nbnd_occ
+             do ig = 1, ngm
+                x = g2kin(ig)/eprec (ibnd)
+                h_diag(ig,ibnd) = (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+                                / (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+                !
+                ! original preconditioning used in PH 
+                !
+                ! h_diag(ig,ibnd) = 1.d0/(max(1.d0,x)-et(ibnd,ikk)+w) ! preconditioner as in VdW code
+                ! 
+             enddo
+          enddo
+          !
+        else
+          ! NO preconditioning
+          !
+          h_diag = 1.d0
+          !
+        endif
         !
         ! --- now obtain dpsi from cBiCG
         !

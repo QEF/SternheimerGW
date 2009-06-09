@@ -25,7 +25,7 @@
   !
   real(dbl), parameter :: ecut0 = 1.1 ! NOTE: ecut0 must be SMALLER than ecut 
   ! energy cutoff for trial diagonalization of Hamiltonian (input to CG - Rydbergs )
-  real(dbl), parameter :: ecuts = 0.4 
+  real(dbl), parameter :: ecuts = 1.1
   ! energy cutoff for G, W, and Sigma, Ry
   real(dbl), parameter :: eps = 1.d-10
   ! threshold for conjugate gradient convergence
@@ -73,7 +73,7 @@
   !
   ! threshold for the iterative solution of the linear system
   ! with thresh>1d-5 the potential does not converge
-  real(DP), parameter :: tr_cgsolve = 1.0d-8
+  real(DP), parameter :: tr_cgsolve = 1.0d-8 
   !
   ! Heydock steps
   integer, parameter :: nstep = 50

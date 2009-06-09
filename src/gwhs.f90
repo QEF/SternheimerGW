@@ -182,11 +182,14 @@
     !
     write (stdout,'(4x,"Coulomb: max n. of PW perturbations per pool = ",i5)') igstop-igstart+1
     !
+  else
+#endif
+    !
+    igstart = 1
+    igstop = ngms
+    !
+#ifdef __PARA
   endif
-  !
-#else
-  igstart = 1
-  igstop = ngms
 #endif
   !
   !----------------------------------------------------------------
@@ -446,8 +449,7 @@
   !
   ! loop over {q} for the screened Coulomb interaction
   !
-  do iq = 1, 2 !@ nq
-!  do iq = 2, 2 !@ nq
+  do iq = 1, nq
     !
     write(6,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero

@@ -32,7 +32,8 @@
   !
   ! ----------------------------------------------------------------------
   !
-  USE parameters, only : DP
+  USE parameters, only : DP, maxter => nmax_iter 
+  ! max number of iterations used in mixing: n_iter must be .le. maxter
   implicit none
   !
   !   First the dummy variables
@@ -43,10 +44,6 @@
   logical :: conv
   !
   !   Here the local variables
-  !
-  ! max number of iterations used in mixing: n_iter must be .le. maxter
-  integer :: maxter
-  parameter (maxter = 8)
   !
   integer :: iunit, iunmix, n, i, j, iwork (maxter), info, iter_used, &
        ipos, inext, ndimtot

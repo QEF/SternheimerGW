@@ -24,7 +24,7 @@
   integer :: iq, count, i, j, k, ik, ipol, ikk, ikq, ig0, igmg0, nw
   ! igmg0 = i of (G - G0)
   !
-  integer ::  maxscf, maxbcgsolve
+  integer ::  maxscf, maxbcgsolve, maxscf_
   integer :: ngpool, igs, ngr, igstart, igstop
   integer :: shift(nks)
   integer, parameter :: ng0vec = 27
@@ -37,6 +37,9 @@
   complex(kind=DP) :: aux (ngm, nbnd_occ), evq (ngm, nbnd_occ)
   character (len=3) :: nd_nmbr0
   character (len=256) :: barfile, dwfpfile, dwfmfile
+  !
+  logical :: convt
+  ! return .true. from solve_linter if convergence has been achieved
 
   !
   recl = 2 * nbnd_occ * ngm  ! 2 stands for complex
@@ -58,13 +61,15 @@
        status = 'unknown', access = 'direct', recl = unf_recl)
   open ( iudwfm, file = dwfmfile, iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
-!@@
+!@
+  !
+  ! IMPORTANT: if we decrease maxbcgsolve down to 1 or 2, the
+  ! final result can become wrong (as compared to maxbcgsolve = Inf)
+  !
   maxscf = 1
-  maxbcgsolve = 8
-!@  maxscf = 100000000
-!@  maxbcgsolve = 100000000
-  alpha_mix = 0.3
-!@@
+  maxbcgsolve = 5
+  alpha_mix = 0.5
+!@
 
   ! initialize
   scrcoul = 0.d0
@@ -170,15 +175,16 @@
   !
   !  loop on bare perturbations ig and fixed q point
   !
-!@  do ig = igstart, igstop 
-!@@  do ig = 111,112
-  do ig = 1,2
+  !  [note: no barriers inside this loop as the number of perturbation
+  !  is different across processors]
+  !
+  do ig = igstart, igstop 
     !
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
-    do iw = 1, 2 !@ nw
-!@@    do iw = 12, 13
+!   do iw = 1, nw
+    do iw = 1, 1
       !
       write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
          xxq,g(:,ig), w(iw)
@@ -217,7 +223,19 @@
         ! solve self-consistently the linear system for this perturbation 
         ! _dyn is for the dynamical case (w/=0)
         !
-        call solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix )
+        call solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
+        !
+        if (.not.convt) then
+          !
+          ! force full CG minimization at each SCF step
+          !
+          write(800,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
+             xxq,g(:,ig), w(iw)
+          write(800,'(4x,"Convergence of mixed minimization not achieved: forcing full SCF minimization")')
+          maxscf_ = 10000
+          call solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w_ryd(iw), maxscf_, maxbcgsolve, alpha_mix, .true., convt )
+          if (.not.convt) call error ('solve_linter_dyn','scf convergence not achieved',1)
+        endif
         !
         ! transform dvscf to G space 
         !
