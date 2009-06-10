@@ -16,7 +16,7 @@ set GWHS    = $HOME/GWHS/trunk/bin/gwhs.x
 set JDIR    = $HOME/GWHS/trunk/examples
 
 cd $JDIR 
-$MPIRUN -np $NSLOTS -machinefile $TMP/machines $GWHS -npool 8 > test.out
+$MPIRUN -np $NSLOTS -machinefile $TMP/machines $GWHS -npool $NSLOTS > test.out
 
 exit
 
