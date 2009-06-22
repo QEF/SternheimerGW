@@ -84,6 +84,7 @@ green_lib.o \
 hpsort_eps.o \
 cgdiag.o \
 ktokpmq.o \
+pade.o \
 rw_haydock.o \
 solve_linter_dyn.o \
 solve_linter_dyn_nonSCF.o \
