@@ -17,6 +17,9 @@
   use constants
   use gspace
   use kspace
+#ifdef __PARA
+  use para, only : mypool
+#endif
   implicit none
   !
   integer :: maxscf, maxbcgsolve
@@ -42,7 +45,7 @@
   complex(kind=DP) :: dpsip(ngm,nbnd_occ), dpsim(ngm,nbnd_occ)
   complex(kind=DP) :: aux(nr), aux1(nr), aux2(nr)
   complex(kind=DP) :: ps(nbnd_occ), auxg(ngm)
-  complex(kind=DP) :: ZDOTC
+  complex(kind=DP) :: ZDOTC, cw
   real(DP) :: eprec(nbnd_occ), h_diag(ngm, nbnd_occ), anorm, meandvb
   logical :: conv_root, convt
   integer :: lter
@@ -57,6 +60,7 @@
   do while (iter.lt.nmax_iter .and. .not.convt)
      !
      iter = iter + 1
+     lter = 0
      drhoscf = czero
      !
      do ik = 1, nksq
@@ -136,16 +140,18 @@
             !
           enddo
           !
-   !      !  read dpsi for this k-point from iudwf
-   !      !
-   !      read ( iudwfp, rec = ik, iostat = ios) dpsip
-   !      read ( iudwfm, rec = ik, iostat = ios) dpsim
+          !  read dpsi for this k-point from iudwf
+          !  this saves us about 10% of the total CG iterations on 1 scf cycle
+          !  (although we cannot use it if we want to go for multishift solvers)
+          !
+          read ( iudwfp, rec = ik, iostat = ios) dpsip
+          read ( iudwfm, rec = ik, iostat = ios) dpsim
           !
           ! initial guess set to zero - this seems to work better
           ! than the reading from previous scf cycle
           !
-          dpsip = czero
-          dpsim = czero
+   !      dpsip = czero
+   !      dpsim = czero
           !
         endif
         !
@@ -204,31 +210,32 @@
         ! --- now obtain dpsi from cBiCG
         !
         !
-        ! include the dynamnical part inside the local potential 
-        ! (which is already complex)
+        ! complex frequency +w
+        ! [ The following works for any complex frequency: in order to obtain
+        !   points on the real axis, just set cw = dcmplx (w, 0.d0) 
         !
-        vr_dyn = vr - w 
+        cw = dcmplx (0.d0, w)
         !
         if ( iter.le.maxscf ) then 
           call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
                ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr_dyn, evq )
+               g2kin, vr, evq, cw )
         else
           call bcgsolve_all_fixed (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
                ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr_dyn, evq, maxbcgsolve )
+               g2kin, vr, evq, maxbcgsolve, cw )
         endif
         !
-        vr_dyn = vr + w
+        ! complex frequency -w
         !
         if ( iter.le.maxscf ) then 
           call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
                ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr_dyn, evq )
+               g2kin, vr, evq, - cw )
         else
           call bcgsolve_all_fixed (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
                ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr_dyn, evq, maxbcgsolve )
+               g2kin, vr, evq, maxbcgsolve, - cw )
         endif
         !
         dpsi = 0.5d0 * ( dpsip + dpsim )
@@ -323,7 +330,17 @@
      !
      convt = dr2.lt.tr2_ph
      !
-     write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2)') iter, dr2
+!    write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2)') iter, dr2
+     !
+     ! the factor 2 below is because we actually run +iw and -iw
+     ! so the average number for each one of +iw and -iw is lter/nksq/2 
+     !
+     write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
+       iter, dr2, float(lter)/float(nksq)/float(2)
+#ifdef __PARA
+     write(1000+mypool,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
+       iter, dr2, float(lter)/float(nksq)/float(2)
+#endif
      !
   enddo
   !

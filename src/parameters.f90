@@ -64,9 +64,7 @@
   real(DP), parameter :: tr2_ph = 1.d-10
   ! convergence threshold for dvscf
   !
-!  real(DP), parameter :: alpha_pv = 0.d0 
   real(DP), parameter :: alpha_pv = 25.234/13.606 ! (this is 2(emax-emin)
-!@  real(DP), parameter :: alpha_pv = (25.234+50.0)/13.606 ! (this is 2(emax-emin) + 20 eV for w
   ! parameter for the projection over the valence manifold
   ! this is to avoid null eigenvalues in (H-e+alpha_pv*P_v)dpsi
   ! in PH it is calculated as 2*(emax-emin)
@@ -81,11 +79,10 @@
   !
   ! frequency range for the self-energy (wsigmamin<0, sigmamax>0) - eV
   ! and for the Coulomb  (wcoulmax>0)
-  real(DP), parameter :: wsigmamin = -10.d0, wsigmamax = 10.d0, deltaw = 0.5
-  real(DP), parameter :: wcoulmax = 20.d0
-  ! smearing for dielectric function, Green's function, and GW exp^ideltaw sum - Ry
+  real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 5.0
+  real(DP), parameter :: wcoulmax = 50.d0
+  ! smearing for Green's function, and GW exp^ideltaw sum - Ry
   real(DP), parameter :: eta = 0.01
-  !
 
   !
   end module parameters

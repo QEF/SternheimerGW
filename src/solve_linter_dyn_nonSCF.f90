@@ -32,8 +32,8 @@
   complex(kind=DP) :: dpsip(ngm,nbnd_occ), dpsim(ngm,nbnd_occ)
   complex(kind=DP) :: aux(nr), aux1(nr), aux2(nr)
   complex(kind=DP) :: ps(nbnd_occ), auxg(ngm)
-  complex(kind=DP) :: ZDOTC
-  real(DP) :: eprec(nbnd_occ), h_diag(ngm, nbnd_occ), anorm, meandvb
+  complex(kind=DP) :: ZDOTC, cw
+  real(DP) :: eprec(nbnd_occ), h_diag(ngm, nbnd_occ), anorm, meandvb, x
   logical :: conv_root, convt
   integer :: lter
   external ch_psi_all, ch_psi_all_eta
@@ -73,11 +73,8 @@
             !
             !  dpsi and dvscfin are set to zero
             !
-!@@@
-!           dpsi = czero
             dpsip = czero
             dpsim = czero
-!@@@
             dvscfin = czero
             !
             ! dvbare*psi is calculated for this k point and all bands...
@@ -131,11 +128,8 @@
           !
           !  read dpsi for this k-point from iudwf
           !
-!@@
-!         read ( iudwf, rec = ik, iostat = ios) dpsi
           read ( iudwfp, rec = ik, iostat = ios) dpsip
           read ( iudwfm, rec = ik, iostat = ios) dpsim
-!@@
           !
         endif
         !
@@ -157,26 +151,33 @@
         ! iterative solution of the linear system 
         ! (H-et)*dpsi=   - ( 1 - P_occ^{k+q} ) * (dvbare+dvscf)*psi
         !              [                  dvpsi                     ]
-!
-!       !
-!       ! this preconditioner sounds complicated...
-!       !
-!       do ibnd = 1, nbnd_occ
-!          do ig = 1, ngm
-!             auxg (ig) = g2kin (ig) * evq (ig, ibnd)
-!          enddo
-!          eprec (ibnd) = 1.35d0 * ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
-!       enddo
-!       do ibnd = 1, nbnd_occ
-!          do ig = 1, ngm
-!             h_diag(ig,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd))
-!          enddo
-!       enddo
-!
-! this seems to work even better...
-!
-        h_diag=1.d0 
-!
+        !
+          !
+          ! I use the preconditioner of Teter, Payne, Allan [PRB 40, 12255 (1988)]
+          !
+          do ibnd = 1, nbnd_occ
+             do ig = 1, ngm
+                 auxg (ig) = g2kin (ig) * evq (ig, ibnd)
+             enddo
+             ! the misterious factor 1.35 seems to be a way to match 
+             ! approxiately the TPA preconditioner and the simple one 1/x. FG
+      !      eprec (ibnd) = 1.35d0 * ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
+             eprec (ibnd) = ZDOTC (ngm, evq (1, ibnd), 1, auxg, 1)
+          enddo
+          do ibnd = 1, nbnd_occ
+             do ig = 1, ngm
+                x = g2kin(ig)/eprec (ibnd)
+                h_diag(ig,ibnd) = (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+                                / (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+                !
+                ! original preconditioning used in PH 
+                !
+                ! h_diag(ig,ibnd) = 1.d0/(max(1.d0,x)-et(ibnd,ikk)+w) ! preconditioner as in VdW code
+                ! 
+             enddo
+          enddo
+          !
+
         !
         ! --- now obtain dpsi from cBiCG
         !
@@ -184,17 +185,20 @@
         ! include the dynamnical part inside the local potential 
         ! (which is already complex)
         !
-        vr_dyn = vr - w 
+!@        vr_dyn = vr - w 
+vr_dyn = vr 
+cw = dcmplx (0.d0, -w)
         !
         call bcgsolve_all (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
              ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-             g2kin, vr_dyn, evq )
+             g2kin, vr_dyn, evq, cw )
         !
-        vr_dyn = vr + w
+!@        vr_dyn = vr + w
+cw = dcmplx (0.d0, +w)
         !
         call bcgsolve_all (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
              ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-             g2kin, vr_dyn, evq )
+             g2kin, vr_dyn, evq, cw )
         !
         dpsi = 0.5d0 * ( dpsip + dpsim )
         !
@@ -226,11 +230,8 @@
         !
         ! writes dpsi for this k point on iunit iudwf
         !
-!@@
-!       write ( iudwf, rec = ik, iostat = ios) dpsi
         write ( iudwfp, rec = ik, iostat = ios) dpsip
         write ( iudwfm, rec = ik, iostat = ios) dpsim
-!@@
         !
         ! contribution to drhoscf from this kpoint
         !

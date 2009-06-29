@@ -1,7 +1,7 @@
   !
   !-----------------------------------------------------------------------
   subroutine bcgsolve_all (Ax, e, b, x, h_diag, &
-     ndmx, ndim, ethr, ik, kter, conv_all, anorm, nbnd, g2kin, vr, evq)
+     ndmx, ndim, ethr, ik, kter, conv_all, anorm, nbnd, g2kin, vr, evq, cw)
   !-----------------------------------------------------------------------
   !
   !   Iterative solution of the linear system:
@@ -42,7 +42,7 @@
   use constants
   implicit none
   integer :: i
-  complex(DP) :: vr(nr)
+  complex(DP) :: vr(nr), cw
   real(DP) :: g2kin (ngm)
   complex(kind=DP) :: evq (ngm, nbnd_occ)
   !
@@ -106,7 +106,7 @@
        ! r  = b - A*x
        ! rt = conjg ( r )
        !
-       call Ax ( x, r, e, ik, nbnd, g2kin, vr, evq, + eta)  
+       call Ax ( x, r, e, ik, nbnd, g2kin, vr, evq, cw)  
        !
        call ZAXPY (ndim*nbnd, -cone, b, 1, r, 1)
        call ZSCAL (ndim*nbnd, -cone, r, 1)
@@ -168,8 +168,9 @@
     !
     ! no packing
     !
-    call Ax ( p , q , e, ik, nbnd, g2kin, vr, evq, + eta )
-    call Ax ( pt, qt, e, ik, nbnd, g2kin, vr, evq, - eta )
+
+    call Ax ( p , q , e, ik, nbnd, g2kin, vr, evq, cw )
+    call Ax ( pt, qt, e, ik, nbnd, g2kin, vr, evq, conjg(cw) )
 
     !
     jbnd = 0
@@ -240,6 +241,8 @@
   else
 !    write(6,'(4x,"bcgsolve_all: ",2i5,e12.4)') ik, iter, anorm
   endif
+  !
+  kter = kter + iter
   !
   deallocate ( r , q , p , pold, rt, qt, pt, ptold, aux1, aux2)
   !

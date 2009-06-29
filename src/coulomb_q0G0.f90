@@ -37,6 +37,8 @@
   complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), dvbare(nr), dvscf(nr)
   complex(dbl) :: dvscfp (nr), dvscfm (nr) 
   ! these are for +w and -w
+  complex(dbl) :: z(nw), u(nw), a(nw)
+  ! these are for the Pade continuation to the real axis
   complex(kind=DP) :: aux (ngm, nbnd_occ), evq (ngm, nbnd_occ)
   real(dbl) :: kplusg(3)
   character (len=3) :: nd_nmbr0
@@ -147,8 +149,7 @@
   !
 ! write(6,'(4x,"ig = ",i5)') ig
   !
-! do iw = 1, nw
-  do iw = 1, 1 !@ nw
+  do iw = 1, nw
     !
 !   write(6,'(4x,3x,"iw = ",i5)') iw
     write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
@@ -184,7 +185,6 @@
     ! solve self-consistently the linear system for this perturbation 
     ! _dyn is for the dynamical case (w/=0)
     !
-!@    call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .false., convt )
     call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
     !
     ! transform dvscf to G space 
@@ -194,6 +194,12 @@
     write(6,'(4x,2f9.5)') dvscf ( nl(1) )
     !                     ^^^^^^^^^^^^^^^
     !                      eps^-1(0,0,q)
+#ifdef __PARA
+    write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
+#endif
+
+
+!    write(6,*) 'SCF1 ', 0.d0, w(iw), real(dvscf ( nl(1) )), aimag(dvscf ( nl(1) ))
 
 
 !      !
@@ -219,6 +225,30 @@
 ! should we include the 1/Omega ?? 
 !
       scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qg2), zero )
+    enddo
+    !
+  enddo
+  !
+  ! Here goes the Pade continuation to real axis
+  !
+  do igp = 1, ngms
+    !
+    ! Pade input points on the imaginary axis
+    !
+    do iw = 1, nw
+      z(iw) = dcmplx( 0.d0, w_ryd(iw))
+      u(iw) = scrcoul (ig,igp,iw)
+    enddo
+    !
+    ! Pade coefficients
+    !
+    call pade_coeff ( nw, z, u, a)
+    !
+    ! Pade output points on the real axis (at a distance eta)
+    ! (I use the same grid for simplicity - this can be changed)
+    !
+    do iw = 1, nw
+      call pade_eval ( nw, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
     enddo
     !
   enddo

@@ -32,8 +32,10 @@
   integer :: ig, iw, igp, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
   real(dbl) :: g2kin(ngm), et(nbnd_occ, nks), w(nw), w_ryd(nw)
   complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), dvbare(nr), dvscf(nr)
-  complex(dbl) :: dvscfp (nr), dvscfm (nr) 
+  complex(dbl) :: dvscfp (nr), dvscfm (nr)
   ! these are for +w and -w
+  complex(dbl) :: z(nw), u(nw), a(nw)
+  ! these are for the Pade continuation to the real axis
   complex(kind=DP) :: aux (ngm, nbnd_occ), evq (ngm, nbnd_occ)
   character (len=3) :: nd_nmbr0
   character (len=256) :: barfile, dwfpfile, dwfmfile
@@ -66,7 +68,7 @@
   ! IMPORTANT: if we decrease maxbcgsolve down to 1 or 2, the
   ! final result can become wrong (as compared to maxbcgsolve = Inf)
   !
-  maxscf = 1
+  maxscf = 1000
   maxbcgsolve = 5
   alpha_mix = 0.5
 !@
@@ -183,8 +185,7 @@
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
-!   do iw = 1, nw
-    do iw = 1, 1
+    do iw = 1, nw
       !
       write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
          xxq,g(:,ig), w(iw)
@@ -244,6 +245,10 @@
         write(6,'(4x,2f9.5)') dvscf ( nl(1) )
         !                     ^^^^^^^^^^^^^^^
         !                      eps^-1(0,0,q)
+#ifdef __PARA
+        write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
+#endif
+
       else
         write(6,'(4x,"This will be done separately")') 
       endif
@@ -260,6 +265,30 @@
       enddo
       !
       ! scrcoul (-,igp,-) is now in SIZE order of G-vectors
+      !
+    enddo
+    !
+    ! Here goes the Pade continuation to real axis
+    !
+    do igp = 1, ngms
+      !
+      ! Pade input points on the imaginary axis
+      !
+      do iw = 1, nw
+        z(iw) = dcmplx( 0.d0, w_ryd(iw))
+        u(iw) = scrcoul (ig,igp,iw)
+      enddo 
+      ! 
+      ! Pade coefficients
+      !
+      call pade_coeff ( nw, z, u, a)
+      !
+      ! Pade output points on the real axis (at a distance eta)
+      ! (I use the same grid for simplicity - this can be changed)
+      !
+      do iw = 1, nw
+        call pade_eval ( nw, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
+      enddo
       !
     enddo
     !

@@ -1,6 +1,6 @@
   !
   !-----------------------------------------------------------------------
-  subroutine ch_psi_all_eta ( h, ah, e, ik, nb, g2kin, vr, evq, idelta)
+  subroutine ch_psi_all_eta ( h, ah, e, ik, nb, g2kin, vr, evq, cw) 
   !-----------------------------------------------------------------------
   !
   ! This routine applies the operator ( H - \epsilon S + alpha_pv P_v)
@@ -18,6 +18,7 @@
   ! input: the number of bands
   ! input: the k point
   real(kind=DP) :: e (nb), idelta
+  complex (kind=DP) :: cw 
   ! input: the eigenvalue
   !input : the imaginary component
   complex(kind=DP) :: h (ngm, nb), ah (ngm, nb)
@@ -57,11 +58,11 @@
      enddo
   enddo
   !
-  !   imaginary component
+  !  complex frequency
   !
   do ibnd = 1, nb
      do ig = 1, ngm
-        ah (ig, ibnd) = ah (ig, ibnd) + ci * idelta * h (ig, ibnd)
+        ah (ig, ibnd) = ah (ig, ibnd) - cw * h (ig, ibnd)
      enddo
   enddo
   !

@@ -1,7 +1,7 @@
   !
   !-----------------------------------------------------------------------
   subroutine bcgsolve_all_fixed (Ax, e, b, x, h_diag, &
-     ndmx, ndim, ethr, ik, kter, conv_all, anorm, nbnd, g2kin, vr, evq, maxbcgsolve)
+     ndmx, ndim, ethr, ik, kter, conv_all, anorm, nbnd, g2kin, vr, evq, maxbcgsolve, cw)
   !-----------------------------------------------------------------------
   !
   ! This is the same as bcgsolve_all, except that I run only maxbcgsolve iterations
@@ -81,7 +81,7 @@
   complex(kind=DP), allocatable :: rt (:,:), qt (:,:), pt (:,:), ptold (:,:)
   complex(kind=DP), allocatable :: rp (:,:), rtp (:,:)
   complex(kind=DP), allocatable :: aux1 (:,:), aux2 (:,:)
-  complex(kind=DP) :: a, c, beta, alpha, ZDOTC
+  complex(kind=DP) :: a, c, beta, alpha, ZDOTC, cw
   logical :: conv (nbnd), conv_all
   !
 !  ! timing setup
@@ -113,7 +113,7 @@
        ! r  = b - A*x
        ! rt = conjg ( r )
        !
-       call Ax ( x, r, e, ik, nbnd, g2kin, vr, evq, + eta)  
+       call Ax ( x, r, e, ik, nbnd, g2kin, vr, evq, cw)  
        !
        call ZAXPY (ndim*nbnd, -cone, b, 1, r, 1)
        call ZSCAL (ndim*nbnd, -cone, r, 1)
@@ -175,8 +175,8 @@
     !
     ! no packing
     !
-    call Ax ( p , q , e, ik, nbnd, g2kin, vr, evq, + eta )
-    call Ax ( pt, qt, e, ik, nbnd, g2kin, vr, evq, - eta )
+    call Ax ( p , q , e, ik, nbnd, g2kin, vr, evq, cw )
+    call Ax ( pt, qt, e, ik, nbnd, g2kin, vr, evq, conjg(cw) )
 
     !
     jbnd = 0
@@ -247,6 +247,8 @@
   else
 !    write(6,'(4x,"bcgsolve_all_fixed: ",2i5,e12.4)') ik, iter, anorm
   endif
+  !
+  kter = kter + iter
   !
   deallocate ( r , q , p , pold, rt, qt, pt, ptold, aux1, aux2)
   !
