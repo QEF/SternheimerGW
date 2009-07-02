@@ -126,6 +126,10 @@ So probably 10 freqs scf is ok, more than 10 is not.
 Also: for large systems we need large memory requirements - unless we do parallel inversion -
 while the scf procedure only requires a small memory (store the deltapsi).
 
+NOTE THAT I DID NOT WANT TO DO THE MANUAL INVERSION BECAUSE THAT
+WAS THE PROCEDURE ADOPTED BY REINING LONG TIME AGO.
+
+
 \section{Scaling properties}
 
 To compare scaling of HL86 and GWHS is better to state from the start that
@@ -230,7 +234,7 @@ plasmon-pole model of the screened Coulomb interaction:\cite{hl86}
 $\w_{\rm p}$ being the pole energy and $W_0$ the static screened Coulomb interation.
 Analytical continuation of this function to the imaginary axis (with $\w=i\beta$ and $\beta$ real)
 yields
-  \begin{equation}
+  \begin{equation} \label{eq.pp.im}
   W(\w=i\beta) = v + (W_0 -v) \frac{1}{1+(\beta/w_{\rm p})^2}.
   \end{equation}
 Hence, the screened Coulomb interaction along the imaginary axis contains the same
@@ -313,6 +317,37 @@ The additional cost associated with the use of the preconditioner is negligible
 with respect to the overall cost of the {\tt comp-BiCG} method.
 In this work we successfully have used the algorithm derived above by adopting the
 Teter-Payne-Allan preconditioner.\cite{tpa}
+
+\section{Analytical continuation using Pad\'e approximants}
+
+In order to perform the analytic continuation of the screened Coulomb interaction
+from the imaginary frequency axis to the real axis, we employ diagonal Pad\'e 
+approximants.\cite{pade1,pade2,pade3}
+A Pad\'e approximant of order $N$ is a rational function matching the fitted function
+in $N$ distinct points. For instance, in the case of odd $N$, the Pad\'e approximant
+reads
+  \begin{equation}
+  P_N(x) = \frac{p_0+p_1x+p_2x^2+\cdots+p_{(N-1)/2}x^{(N-1)/2}}{1+q_1x+q_2x^2+\cdots+q_{(N-1)/2}x^{(N-1)/2}},
+  \end{equation}
+where the coefficients have to be determined in such a way that $P_N(x_n)=f(x_n)$ for $n=1,\cdots,N$
+if $f(x)$ is the target function.
+Empirical tests show that, in order to reproduce correctly the main features in the 
+frequency dependence of the screened Coulomb interaction, the order of the approximant
+must be at least $N\ge5$.
+This observation can be rationalized by looking once more at the simple plasmon-pole
+model given by Eq.\ (\ref{eq.pp.im}). From this expression is clear that the gross
+features of the functions are defined once we fix the following parameters:
+(i) the value at $w=0$; (ii) the asymptotic value of 1; (iii) the asymptotic derivative
+going to zero; (iv) the flat slope at $w=0$; (v) the half-width at half maximum.
+In practice a Pad\'e approximant with fewer than $N=5$ points will not in general
+be able to capture the plasmon-pole structure of $W(\w)$.
+Although this appear as a limitation, we recongnize that 3 out of the 5 constraints
+needed to reproduce the plasmon pole approximation can be imposed without performing
+any calculations. There remains two points to be calculated, which is the same
+amount of information needed for the PP approximation.
+It remains to investigate the possibility of a multipole expansion as suggested
+by Godby and Needs. This latter seems a more natural choice.
+
 
 \begin{thebibliography}{99}
 
