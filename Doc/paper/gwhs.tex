@@ -90,15 +90,6 @@ pseudopotential code {\tt OxfordGW} or {\tt GWdfpt}.
 
 \section{Conclusions and outlook}
 
-\begin  {figure}
-\begin  {center}
-%\includegraphics[width=7.5cm]{fig1.eps}
-\end    {center}
-\caption{\label{fig1} 
-        ciao
-        }
-\end    {figure}
-
 \begin{acknowledgments}
 Computational resources were provided by the Oxford Supercomputing Centre.
 This work was partly supported by the National Science Foundation Grant No. DMR04-39768 and by
@@ -323,7 +314,7 @@ Teter-Payne-Allan preconditioner.\cite{tpa}
 In order to perform the analytic continuation of the screened Coulomb interaction
 from the imaginary frequency axis to the real axis, we employ diagonal Pad\'e 
 approximants.\cite{pade1,pade2,pade3}
-A Pad\'e approximant of order $N$ is a rational function matching the fitted function
+A Pad\'e approximant of order $N$ is a rational function which matches exactly the fitted function
 in $N$ distinct points. For instance, in the case of odd $N$, the Pad\'e approximant
 reads
   \begin{equation}
@@ -345,8 +336,35 @@ Although this appear as a limitation, we recongnize that 3 out of the 5 constrai
 needed to reproduce the plasmon pole approximation can be imposed without performing
 any calculations. There remains two points to be calculated, which is the same
 amount of information needed for the PP approximation.
+
 It remains to investigate the possibility of a multipole expansion as suggested
-by Godby and Needs. This latter seems a more natural choice.
+by Godby and Needs. This latter seems a more natural choice, since it enforces
+from the outset the functional shape of the dielectric function.
+However, after some experimentation (we used the simplex downhill method of 
+Nelder and Mead as implemented in the NAG library) we have found that the nonlinear 
+optimization problem associated with the search of the energy, strengths, and widths of the
+plasmon-like poles is extremely sensitive to the choice of the initial guess.
+Therefore, while a multipole expansion may represent an advantageous choice
+for simple cases where some information about the system is available,
+it does not seem appropriate for an automatic procedure where the analytic
+continuation is performed for every $\G$, $\Gp$, and $\q$ of the screened
+Coulomb interaction without manual intervention.
+The Pad\'e approximants appear much more robust in this respect, and a few
+imaginary frequencies are sufficient to reproduce the plasmon-pole structure
+along the real axis, together with information on the pole width.
+Our investigation supports the view already expressed in Ref.\ \onlinecite{pade3}.
+
+\begin  {figure}
+\begin  {center}
+%\includegraphics[width=7.5cm]{fig1.eps}
+\end    {center}
+\caption{\label{fig1}
+        Comparison of the dielectric function calculated for silicon 
+        on the real axis and the analytically continued function starting
+        from imaginary frequencies. The three panels correspond to the
+        cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
+        }
+\end    {figure}
 
 
 \begin{thebibliography}{99}
