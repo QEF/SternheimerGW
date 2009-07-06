@@ -17,6 +17,10 @@
 \def\Gp{{\bf G^\prime}}
 \def\rt{\tilde{r}}
 \def\pt{\tilde{p}}
+\def\r{{\bf r}}
+\def\rp{{\bf r^\prime}}
+\def\rpp{{\bf r^{\prime\prime}}}
+\def\rppp{{\bf r^{\prime\prime\prime}}}
 
 % -------
 \usepackage{soul}
@@ -74,14 +78,78 @@ Explanation of where we are and how the manuscript is organized.
 
 \section{Screened Coulomb interaction}
 
+The screened Coulomb interaction $W(\r,\rp;\w)$ can be calculated by using
+the second one of Hedin's equations in space-frequency representation
+[Eq.\ (13.19b) of Ref.~\onlinecite{hl}]:
+  \begin{eqnarray}\label{eq.w}
+  W(\r,\rp;\w) & = & v(\r,\rp) + \int d\rpp \int d\rppp\, W(\r,\rpp;\w) \times \nonumber \\
+   & \times & P(\rpp,\rppp;\w) v(\rppp,\rp), \nonumber \\
+  \end{eqnarray}
+$v(\r,\rp)=|\r-\rp|^{-1}$ being the bare Coulomb interaction (in Hartree units) and
+$P(\r,\rp;\w)$ the irreducible polarization propagator. 
+Within the random phase approximation the polarization propagator reads 
+[Eqs.\ (13.21) and (14.8) of Ref.~\onlinecite{hl}]:
+  \begin{equation}\label{eq.p}
+  P(\r,\rp;\w) = 2\sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
+  \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
+  \end{equation}
+the summation extending over all the occupied as well as the unoccupied states,
+and the factor of 2 taking into account the spin.
+Our goal is to derive a procedure for calculating the screened interaction
+by usign density-functional perturbation theory. In order to simplify the
+notation, we consider $W(\r,\rp;\w)$ as a function of one space variable,
+parametric in the second space variable and in the frequency: 
+  \begin{equation} \label{eq.param}
+  \Delta V_{\r,\w}(\rp) = W(\r,\rp;\w).
+  \end{equation}
+Analogously it is convenient to rewrite the bare Coulomb interaction
+as follows:
+  \begin{equation} \label{eq.vbare}
+  \Delta V_{{\rm b},\r}(\rp) = v(\r,\rp).
+  \end{equation}
+By combining Eqs.\ (\ref{eq.w}), (\ref{eq.p}), and (\ref{eq.param})  
+we obtain after some manipulations:
+  \begin{eqnarray}\label{eq.deltav}
+  \Delta V_{\r,\w}(\rp) & = & \Delta V_{{\rm b},\r}(\rp) \nonumber \\
+  & + & \int d\rpp \Delta n_+ [\Delta V_{\r,\w} (\rpp) ]v(\rpp,\rp) \nonumber \\
+  & + & \int d\rpp \Delta n_-^\star [\Delta V_{\r,\w}^\star (\rpp) ]v(\rpp,\rp). 
+  \end{eqnarray}
+In the above equations $\Delta n_+$ ($\Delta n_-$) is the charge density
+response of the system to the perturbation $\Delta V_{\r,\w}$
+($\Delta V_{\r,\w}^\star$). The charge-density responses can be calculated
+following the standard prescription from density-functional perturbation theory:
+  \begin{equation}\label{eq.deltan}
+  \Delta n_\pm (\r) = 2 \sum_v \psi_v^\star(\r) \Delta\psi_v^\pm(\r), 
+  \end{equation}  
+where the sum is restricted to occupied states and the factor of 2 takes into
+account the spin degeneracy. The first-order variations of the wavefunctions
+due to the perturbations $\Delta V_{\r,\w}$ and $\Delta V_{\r,\w}^\star$
+are obtained as solutions of the linear systems:
+  \begin{eqnarray}\label{eq.deltapsi}
+  (H-\E_v+\w) \Delta\psi_v^+(\r) & = & \Delta V_{\r,\w} \psi_v, \\
+  (H-\E_v-\w) \Delta\psi_v^-(\r) & = & \Delta V_{\r,\w}^\star \psi_v. 
+  \end{eqnarray}
+It is a tedious but straightforward excercise to verify that by combining
+Eqs.\ (\ref{eq.deltav})-(\ref{eq.deltapsi}) on obtains again Eqs.\ (\ref{eq.w})
+and (\ref{eq.p}).
+
+\noindent
+1. CONTROLLA I NUMERI E TUTTO
+\\
+2. SPIEGA LA PROCEDURA IN MODO GENERALE
+\\
+2. SPIEGA LA FISICA - DELTA FUNCTION - CAN BE DONE WITH LOCAL BASIS OR GSPACE
+
+
+\section{Implementation}
+
+
+3. SPIEGA alpha PV NEL LINEAR SYSTEM
+
 \begin{equation}\label{eq.linsys.1}
-(H - \epsilon -\w) \Delta\psi = \Delta V \psi
-\end{equation}
-\begin{equation}\label{eq.linsys.2}
 (H - \epsilon +\w) \Delta\psi = \Delta V \psi
 \end{equation}
 
-\section{Implementation}
 
 The approach described above is currently implemented in the empirical
 pseudopotential code {\tt OxfordGW} or {\tt GWdfpt}. 
