@@ -249,13 +249,13 @@ and $\pt_0=p_0^\star$.
 Subsequently for each iteration the solution
 vector, the search directions, and the residuals are updated as follows:
   \begin{eqnarray}
-  \alpha_n & = & \<\rt_n|r_n\>/\<\pt_n|Ap_n\> \nonumber \\ \nonumber
-  x_{n+1} & = & x_n + \alpha_n p_n \\ \nonumber
-  r_{n+1} & = & r_n - \alpha_n Ap_n \\ \nonumber
-  \rt_{n+1} & = & \rt_n - \alpha_n^\star A^\dagger \pt_n \\ \nonumber
-  \beta_n & = & - \<A^\dagger\pt_n|r_{n+1}\>/\<\pt_n|Ap_n\> \\ \nonumber
-  p_{n+1} & = & r_{n+1} + \beta_n p_n \\ \nonumber
-  \pt_{n+1} & = & \rt_{n+1} + \beta_n^\star \pt_n. \nonumber
+  \alpha_n & = & \<\rt_n|r_n\>/\<\pt_n|Ap_n\> \label{eq.cg1}  \\ 
+  x_{n+1} & = & x_n + \alpha_n p_n \label{eq.cg2} \\ 
+  r_{n+1} & = & r_n - \alpha_n Ap_n \label{eq.cg3} \\ 
+  \rt_{n+1} & = & \rt_n - \alpha_n^\star A^\dagger \pt_n \label{eq.cg4}\\ 
+  \beta_n & = & - \<A^\dagger\pt_n|r_{n+1}\>/\<\pt_n|Ap_n\> \label{eq.cg5}\\ 
+  p_{n+1} & = & r_{n+1} + \beta_n p_n \label{eq.cg6}\\ 
+  \pt_{n+1} & = & \rt_{n+1} + \beta_n^\star \label{eq.cg7} \pt_n. 
   \end{eqnarray}
 The time-consuming step in this algorithm is the application of the operators
 $A$ and $A^\dagger$ to the search directions $p_n$ and $\pt_n$. 
@@ -280,13 +280,13 @@ $A$, $b$, and $x$. For this purpose we make the substitutions
 $r^\prime = E^{-1}r$ and $p^\prime=E^{\rm T} p$. Some algebra leads straightforwardly
 to the preconditioned version of the {\tt cBiCG} algorithm:
   \begin{eqnarray}
-  \alpha_n & = & \<\rt_n|M^{-1}r_n\>/\<\pt_n|Ap_n\> \nonumber \\ \nonumber
-  x_{n+1} & = & x_n + \alpha_n p_n \\ \nonumber
-  r_{n+1} & = & r_n - \alpha_n Ap_n \\ \nonumber
-  \rt_{n+1} & = & \rt_n - \alpha_n^\star A^\dagger \pt_n \\ \nonumber
-  \beta_n & = & - \<A^\dagger\pt_n|M^{-1}r_{n+1}\>/\<\pt_n|Ap_n\> \\ \nonumber
-  p_{n+1} & = & M^{-1}r_{n+1} + \beta_n p_n \\ \nonumber
-  \pt_{n+1} & = & M^{-1}\rt_{n+1} + \beta_n^\star \pt_n, \nonumber
+  \alpha_n & = & \<\rt_n|M^{-1}r_n\>/\<\pt_n|Ap_n\>  \\
+  x_{n+1} & = & x_n + \alpha_n p_n \\ 
+  r_{n+1} & = & r_n - \alpha_n Ap_n \\ 
+  \rt_{n+1} & = & \rt_n - \alpha_n^\star A^\dagger \pt_n \\ 
+  \beta_n & = & - \<A^\dagger\pt_n|M^{-1}r_{n+1}\>/\<\pt_n|Ap_n\> \\ 
+  p_{n+1} & = & M^{-1}r_{n+1} + \beta_n p_n \\ 
+  \pt_{n+1} & = & M^{-1}\rt_{n+1} + \beta_n^\star \pt_n, 
   \end{eqnarray}
 with the initializations: $r_0=b-Ax_0$, $p_0=M^{-1}r_0$, $\rt_0=r_0^\star$,
 $\pt_0=p_0^\star$.
@@ -342,7 +342,7 @@ the screened Coulomb interaction by using a multi-pole expansion
 as suggested in Ref.\ \onlinecite{godby1}. The multi-pole approach
 seems a more natural choice, as it incorporates the non-analyticity
 of the dielectric function. We tried one-, two-, and three-pole
-expansions by determining the coefficients using the simplex downhill
+expansions by determining the coefficients using the simplex 
 method of Nelder and Mead.\cite{nelder-mead}
 The single-pole approximation appears robust but the quality
 of the real-axis continuation is poorer than what we obtained
@@ -367,26 +367,79 @@ already expressed in Ref.\ \onlinecite{pade3}.
         }
 \end    {figure}
 
-\section{All frequencies in one shot}
+\section{Simultaneous calculation of the susceptibility at multiple frequencies}
 
-Need to discuss pro and cons. In principle it is interesting (I tested it and it works).
-The limitations: 1) cannot do selfconsistency (or can do but only one scf iteration),
-hence we have to do matrix inversion for every frequency.
-THIS MATRIX INVERSION IS EXPENSIVE OR NOT??
-In terms of scaling it seems that mat inversion is N3 while my scf is N4...
-The problem with the one-shot is that we cannot use the preconditioner,
-therefore we may need many iterations for a system with a large cutoff
-(say 300 iterations). 300 its / 10 frequencies = 30 -> if we can do the
-scf in 3 steps (in average over the frequencies) at 20 it/scf -> 60 steps
-and we are only a factor 2 above.
-In cases where we need a shitload of frequencies (>100) it could be
-more convenient to go through the inversion.
-So probably 10 freqs scf is ok, more than 10 is not.
-Also: for large systems we need large memory requirements - unless we do parallel inversion -
-while the scf procedure only requires a small memory (store the deltapsi).
+The linear system given by Eq.\ (\ref{eq.linsys.1}) 
+can also be solved efficiently by using a ``multishift'' 
+{\tt cBiCG} method.\cite{frommer} 
+Multishift methods exploit the knowledge gained during the iterative
+solution of the ``seed'' system $Ax=b$ in order to determine the solutions 
+of the ``shifted'' system $Ax+\w x=b$, without adding to the the computational 
+cost. The logic behind such method is that the seed system and the
+shifted system share the same Krilov subspaces $\{b,Ab,A^2b,\cdots\}$,
+therefore the residuals of the seed and of the shifted
+systems can be taken to be collinear.\cite{frommer}
 
-NOTE THAT I DID NOT WANT TO DO THE MANUAL INVERSION BECAUSE THAT
-WAS THE PROCEDURE ADOPTED BY REINING LONG TIME AGO.
+In practice we can determine the
+full frequency-dependent susceptibility 
+by performing one single static calculation for each $\q$, $\G$, and $\Gp$.
+For the seed system the algorithm is still given by Eqs.\ (\ref{eq.cg1})-(\ref{eq.cg7}).
+For the shifted system we replace the calculation of the residuals
+$r_{n,\w}$ and of the coefficients $\alpha_{n,\w}$, $\beta_{n,\w}$ by the following relations:
+  \begin{equation} \label{eq.shift.1}
+  r_{n,\w}  =\frac{r_n}{\pi_{n,\w}};
+  \hspace{0.2cm}
+  \alpha_{n,\w}  =  \frac{\pi_{n,\w}}{\pi_{n+1,\w}}\alpha_n ;
+  \hspace{0.2cm}
+  \beta_{n,\w}  =  \Big(\frac{\pi_{n,\w}}{\pi_{n+1,\w}}\Big)^2\beta_n,
+  \end{equation}
+where the scaling factor $\pi_{n+1,\w}$ is calculated through the recurrence relation
+  \begin{equation}\label{eq.shift.2}
+  \pi_{n+1,\w} = (1+\w\alpha_n) \pi_{n,\w} + \frac{\alpha_n\beta_{n-1}}{\alpha_{n-1}}(\pi_{n,\w}-\pi_{n-1,\w}).
+  \end{equation}
+In order to guarantee the collinearity of the residuals, the method
+is initialized with $x_0=0$.
+The use of Eqs.~(\ref{eq.shift.1}) and (\ref{eq.shift.2}) allows us to
+skip the time-consuming operations involving the Hamiltonian in
+Eqs.\ (\ref{eq.cg1}) and~(\ref{eq.cg5}).
+This method is extremely convienient for determining the frequency-dependent
+susceptibility for many frequencies at the cost of one single frequency calculation.
+Nevertheless the method presents some practical limitations.
+
+The first major limitation is that the rhs $b$ of the linear system $Ax+\w x=b$
+must be the same for all the frequencies considered. In our case
+the rhs corresponds to the self-consistent screened perturbation, 
+and does depend on the frequency. Therefore if we want to use the
+shifted {\tt cBiCG} method we also need to abandon the idea of 
+calculating self-consistently the screened Coulomb interaction. 
+Instead, we would need to replace this 
+by the non-selfconsistent calculation of the susceptibility, followed 
+by the explicit inversion of the dielectric matrix for each frequency.
+The resulting method constitutes an improved version of the technique
+already proposed in Ref.\ \onlinecite{reining}.
+
+The second important limitation is that the shifted {\tt cBiCG} methods
+does not allow for the use of effective preconditioners. In fact,
+after preconditioning the seed system $M^{-1}Ax=M^{-1}b$ and the shifted
+system $M^{-1}Ax+\w M^{-1}x=M^{-1}b$ no longer share the same Krilov subspaces, 
+hence the residuals are no longer collinear.\cite{simoncini} 
+The practical consequence is that for systems with
+large basis set energy cutoffs and small band gaps, the number of iterations
+required to achieve convergence can be extremely large.
+In addition, the convergence rate of the shifted method is dictated
+by the worst-conditioned system, therefore also in this case
+we need to perform calculations along the imaginary axis and then anaytically
+continue the function to real frequencies.
+
+If we consider that we need approximately 10 frequency points for the
+Pad\'e approximants, and each preconditioned calculation requires
+in average approximately 10 iterations and 5 self-consistency cycles, 
+we conclude that the direct calculation of the screened Coulomb interaction
+will be convenient as long as the (non-preconditioned)
+shifted {\tt cBiCG} method requires more than $10\times10\times5=500$ 
+iterations (assuming that the cost of matrix inversion is negligible).
+On the other hand, if we need an ultra-fine sampling of the frequency
+dependence, then the shifted method would prove advantageous.
 
 \begin{thebibliography}{99}
 
@@ -433,7 +486,23 @@ H. N. Rojas, R. W. Godby, and R. J. Needs,
 Phys.\ Rev.\ Lett.\ {\bf 10}, 1827 (1995).
 
 \bibitem{nelder-mead}
+J. A. Nelder and R. Mead, 
+Comput. J. {\bf 7}, 308 (1965).
+We used the implementation available from the
+{\tt E04CCF} routine of the {\tt NAG} library
+({\tt www.nag.co.uk}).
 
+\bibitem{frommer}
+A. Frommer,
+Computing {\bf 70}, 87 (2003).
+
+\bibitem{reining}
+L. Reining, G. Onida, and R. W. Godby, 
+Phys.\ Rev.\ B {\bf 56} R4301 (1997).
+
+\bibitem{simoncini}
+V. Simoncini and D. B. Szyld,
+Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
 
 \end{thebibliography}
 
