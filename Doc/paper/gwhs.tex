@@ -10,6 +10,7 @@
 \def\>{\rangle}
 \def\<{\langle}
 \def\H{\hat{H}}
+\def\P{\hat{P}_{\rm occ}}
 \def\E{\varepsilon}
 \def\vp{{v^\prime}}
 \def\q{{\bf q}}
@@ -72,9 +73,7 @@ approaches and illustrate our future development plans.
 Importance of GW calculations, Motivation, History of the idea,
 Explanation of where we are and how the manuscript is organized.
 
-\section{Methodology overview}
-
-\section{Green's function}
+\section{Overview of the methodology}
 
 \section{Screened Coulomb interaction}
 
@@ -88,63 +87,77 @@ the second one of Hedin's equations in space-frequency representation
 $v(\r,\rp)=|\r-\rp|^{-1}$ being the bare Coulomb interaction (in Hartree units) and
 $P(\r,\rp;\w)$ the irreducible polarization propagator. 
 Within the random phase approximation the polarization propagator reads 
-[Eqs.\ (13.21) and (14.8) of Ref.~\onlinecite{hl}]:
+[Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
   \begin{equation}\label{eq.p}
   P(\r,\rp;\w) = 2\sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
   \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
   \end{equation}
 the summation extending over all the occupied as well as the unoccupied states,
-and the factor of 2 taking into account the spin.
-Our goal is to derive a procedure for calculating the screened interaction
-by usign density-functional perturbation theory. In order to simplify the
-notation, we consider $W(\r,\rp;\w)$ as a function of one space variable,
-parametric in the second space variable and in the frequency: 
-  \begin{equation} \label{eq.param}
-  \Delta V_{\r,\w}(\rp) = W(\r,\rp;\w).
+and the factor of 2 taking into account the spin degeneracy.\cite{note.w.even}
+The polarization has been derived for real frequencies, but here we ``continue''
+$P$ in the complex plane using Eq.\ (\ref{eq.p}). Therefore $\w$ is in general complex
+in the following.
+
+In what follows it is convenient to regard the screened interaction
+as a perturbation to the electronic system which is a function of the 
+second space variable $\rp$ and is parametric in the first space variable 
+$\r$ and in the frequency $\w$: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
+In the language of density-functional perturbation theory, the first-order
+change of the occupied electronic wavefunctions in response to the perturbation
+$\Delta V_{[\r,\w]}$ can be obtained by solving twice the linear system
+  \begin{equation}
+  (\H-\E_v+\w\,\,) \Delta \psi_{v[\r,\w]}  =  -(1-\P)  \Delta V_{[\r,\w]} \psi_v,
   \end{equation}
-Analogously it is convenient to rewrite the bare Coulomb interaction
-as follows:
-  \begin{equation} \label{eq.vbare}
-  \Delta V_{{\rm b},\r}(\rp) = v(\r,\rp).
+once for $\w$, yielding $\Delta \psi_{v[\r,\w]}$ and once for $-\w^\star$,
+yielding $\Delta \psi_{v[\r,-\w^\star]}$.
+%
+% note: (1-P_occ) applies to everything which is found on the rhs: (1-P_occ)(dVpsi)
+%
+From the variation of the wavefunctions we can construct the frequency-dependent
+linear change in the charge density:
+  \begin{equation}
+  \Delta n_{[\r,\w]} = 2\sum_v \psi_v^\star \Delta \psi_{v[\r,\w]} +
+      \psi_v \Delta \psi^\star_{v[\r,-\w^\star]} .
   \end{equation}
-By combining Eqs.\ (\ref{eq.w}), (\ref{eq.p}), and (\ref{eq.param})  
-we obtain after some manipulations:
-  \begin{eqnarray}\label{eq.deltav}
-  \Delta V_{\r,\w}(\rp) & = & \Delta V_{{\rm b},\r}(\rp) \nonumber \\
-  & + & \int d\rpp \Delta n_+ [\Delta V_{\r,\w} (\rpp) ]v(\rpp,\rp) \nonumber \\
-  & + & \int d\rpp \Delta n_-^\star [\Delta V_{\r,\w}^\star (\rpp) ]v(\rpp,\rp). 
-  \end{eqnarray}
-In the above equations $\Delta n_+$ ($\Delta n_-$) is the charge density
-response of the system to the perturbation $\Delta V_{\r,\w}$
-($\Delta V_{\r,\w}^\star$). The charge-density responses can be calculated
-following the standard prescription from density-functional perturbation theory:
-  \begin{equation}\label{eq.deltan}
-  \Delta n_\pm (\r) = 2 \sum_v \psi_v^\star(\r) \Delta\psi_v^\pm(\r), 
-  \end{equation}  
-where the sum is restricted to occupied states and the factor of 2 takes into
-account the spin degeneracy. The first-order variations of the wavefunctions
-due to the perturbations $\Delta V_{\r,\w}$ and $\Delta V_{\r,\w}^\star$
-are obtained as solutions of the linear systems:
-  \begin{eqnarray}\label{eq.deltapsi}
-  (H-\E_v+\w) \Delta\psi_v^+(\r) & = & \Delta V_{\r,\w} \psi_v, \\
-  (H-\E_v-\w) \Delta\psi_v^-(\r) & = & \Delta V_{\r,\w}^\star \psi_v. 
-  \end{eqnarray}
-It is a tedious but straightforward excercise to verify that by combining
-Eqs.\ (\ref{eq.deltav})-(\ref{eq.deltapsi}) on obtains again Eqs.\ (\ref{eq.w})
-and (\ref{eq.p}).
+As expected: $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$, which
+is consistent with the result $\Delta V_{[\r,\w]}^\star = \Delta V_{[\r,-\w^\star]}$.\cite{note.w.even}
+This is exactly the variation of the density-matrix $\Delta\rho(\r,\rp;\w)$
+as obtained from the time-dependent Hartree method (Eq.\ 5.23 of HL).
+The associated Hartree potential reads
+  \begin{equation}
+    \Delta V^{\rm H}_{[\r,\w]}(\rp) = \int d\rpp \Delta n_{[\r,\w]}(\rpp) \, v(\rpp,\rp).
+  \end{equation}
+By combining the previous equations we can rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p}) as
+  \begin{equation}
+  W(\r,\rp;\w) = v(\r,\rp) + \Delta V^{\rm H}_{[\r,\w]}(\rp).
+  \end{equation}
+At this stage, the calculation of the screened interaction is performed
+by solving the linear systems self-consistently (the changes in the wfs depend
+implicitely on the screened perturbation). The machinery required for this
+calculations has been developed within the frameworkd of DFPT for lattice-dynamics.
+Interestingly, in the case of purely imaginary frequencies $\w=i\beta$,
+we need to solve only one linear systemi because $-\w^\star=\w$, 
+as in the static case (for purely real frequencies we need to solve two systems).
 
-\noindent
-1. CONTROLLA I NUMERI E TUTTO
-\\
-2. SPIEGA LA PROCEDURA IN MODO GENERALE
-\\
-2. SPIEGA LA FISICA - DELTA FUNCTION - CAN BE DONE WITH LOCAL BASIS OR GSPACE
+The above scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
+Had we stopped at the first iteration (no self-consistency), we would have
+simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
+The latter possibility has already been discussed in Ref.\ \onlinecite{reining}.
+Our additional step is to fully exlpoint density-functional perturbation theory
+in terms of self-consistent solution of the linear system.
+
+DISCUSS THE PHYSICS OF SCREENING A POINT CHARGE.
 
 
-\section{Implementation}
+\section{Green's function}
 
+\section{Technical implementation}
 
-3. SPIEGA alpha PV NEL LINEAR SYSTEM
+0. REWRITE LIN SYS IN G-SPACE
+
+1. SPIEGA alpha PV NEL LINEAR SYSTEM
+
+2. k,q dependent calculations - full formulas
 
 \begin{equation}\label{eq.linsys.1}
 (H - \epsilon +\w) \Delta\psi = \Delta V \psi
@@ -571,6 +584,12 @@ Phys.\ Rev.\ B {\bf 56} R4301 (1997).
 \bibitem{simoncini}
 V. Simoncini and D. B. Szyld,
 Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
+
+\bibitem{note.w.even}
+Note that from Eq.\ (\ref{eq.p}) it follows that $P(\r,\rp;-\w^\star)=P^\star(\r,\rp;\w)$,
+therefore using twice Eq.\ (\ref{eq.w}) (once for $w$ and once for $-w^\star$ and taking
+the cc) we obtain $W(\r,\rp;-\w^\star)=W^\star(\r,\rp;\w)$. In other words
+the screened interaction is even w.r.t. the imaginary axis.
 
 \end{thebibliography}
 
