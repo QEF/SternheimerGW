@@ -81,19 +81,19 @@ The screened Coulomb interaction $W(\r,\rp;\w)$ can be calculated by using
 the second one of Hedin's equations in space-frequency representation
 [Eq.\ (13.19b) of Ref.~\onlinecite{hl}]:
   \begin{eqnarray}\label{eq.w}
-  W(\r,\rp;\w) & = & v(\r,\rp) + \int d\rpp \int d\rppp\, W(\r,\rpp;\w) \times \nonumber \\
-   & \times & P(\rpp,\rppp;\w) v(\rppp,\rp), \nonumber \\
+  W(\r,\rp;\w) & = & v(\r,\rp) + \int d\rpp \,W(\r,\rpp;\w)  \nonumber \\
+   & \times & \int d\rppp P(\rpp,\rppp;\w) v(\rppp,\rp), 
   \end{eqnarray}
 $v(\r,\rp)=|\r-\rp|^{-1}$ being the bare Coulomb interaction (in Hartree units) and
 $P(\r,\rp;\w)$ the irreducible polarization propagator. 
 Within the random phase approximation the polarization propagator reads 
 [Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
   \begin{equation}\label{eq.p}
-  P(\r,\rp;\w) = 2\sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
+  P(\r,\rp;\w) = \sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
   \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
   \end{equation}
-the summation extending over all the occupied as well as the unoccupied states,
-and the factor of 2 taking into account the spin degeneracy.\cite{note.w.even}
+the summation extending over occupied and unoccupied states, as well as
+over the spin indices.\cite{note.w.even}
 The polarization has been derived for real frequencies, but here we ``continue''
 $P$ in the complex plane using Eq.\ (\ref{eq.p}). Therefore $\w$ is in general complex
 in the following.
@@ -119,10 +119,21 @@ linear change in the charge density:
   \Delta n_{[\r,\w]} = 2\sum_v \psi_v^\star \Delta \psi_{v[\r,\w]} +
       \psi_v \Delta \psi^\star_{v[\r,-\w^\star]} .
   \end{equation}
+Note that the index $v$ indicates the state and the factor of 2 takes into
+account the spin degeneracy (the indices $m,n$ before contained the spin instead).
 As expected: $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$, which
 is consistent with the result $\Delta V_{[\r,\w]}^\star = \Delta V_{[\r,-\w^\star]}$.\cite{note.w.even}
-This is exactly the variation of the density-matrix $\Delta\rho(\r,\rp;\w)$
+This is exactly the variation of the density-matrix 
 as obtained from the time-dependent Hartree method (Eq.\ 5.23 of HL).
+In particular, in the special case when $\w$ is purely imaginary:
+  \begin{equation}
+  \Delta n_{[\r,\w]} = 4 {\rm Re} \sum_v \psi_v^\star \Delta \psi_{v[\r,\w]},
+  \end{equation}
+and we need to solve only one linear systemi because $-\w^\star=\w$,
+as in the static case (The factor 4 is for twice the real part times the spin degeneracy).
+Note also that for imaginary frequencies the screened interaction is purely real
+(in $\r$ space), therefore we need to compute the parturbation for half of the $\G$ vectors in
+the small grid (factor 2 speedup).
 The associated Hartree potential reads
   \begin{equation}
     \Delta V^{\rm H}_{[\r,\w]}(\rp) = \int d\rpp \Delta n_{[\r,\w]}(\rpp) \, v(\rpp,\rp).
@@ -131,13 +142,10 @@ By combining the previous equations we can rewrite Eqs.\ (\ref{eq.w}) and (\ref{
   \begin{equation}
   W(\r,\rp;\w) = v(\r,\rp) + \Delta V^{\rm H}_{[\r,\w]}(\rp).
   \end{equation}
-At this stage, the calculation of the screened interaction is performed
+The calculation of the screened interaction is performed
 by solving the linear systems self-consistently (the changes in the wfs depend
 implicitely on the screened perturbation). The machinery required for this
 calculations has been developed within the frameworkd of DFPT for lattice-dynamics.
-Interestingly, in the case of purely imaginary frequencies $\w=i\beta$,
-we need to solve only one linear systemi because $-\w^\star=\w$, 
-as in the static case (for purely real frequencies we need to solve two systems).
 
 The above scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
 Had we stopped at the first iteration (no self-consistency), we would have
