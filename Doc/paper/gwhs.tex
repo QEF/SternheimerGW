@@ -181,21 +181,51 @@ The induced charge density reads now
   \Delta n_{[\G,\w]} = 2\sum_v \psi_v^\star \Delta \psi_{v[\G,\w]} +
       \psi_v \Delta \psi^\star_{v[-\G,-\w^\star]} .
   \end{equation}
-The Hartree potential is
-  \begin{equation}
-  \Delta V^{\rm H}_{[\G,\w]}(\rp) = \int d\rpp \Delta n_{[\G,\w]}(\rpp) \, v(\rpp,\rp),
-  \end{equation}
-and the screened interaction reads finally:
-  \begin{equation}
-  \Delta V_{[\G,\w]}(\rp) = v_{[\G]}(\rp) + \Delta V^{\rm H}_{[\G\w]}(\rp).
-  \end{equation}
+The Hartree potential and the screened interaction follow immediately.\cite{note.grep.1}
 As expected $\Delta n_{[-\G,-\w^\star]}=\Delta n^\star_{[\G,\w]}$,
 hence $\Delta V_{[-\G,-\w^\star]}=\Delta V^\star_{[\G,\w]}$.\cite{note.imag1}
 In practice, for every $[\G,\w]$ we need to solve the linear system twice,
 once for $[\G,\w]$ and once for $[-\G,-\w^\star]$. Note that the self-consistent
 potential is calculated only once because in the two
 systems we have $\Delta V_{[\G,\w]}$ and $\Delta V^\star_{[\G,\w]}$.
-
+Note also that since we are dealing with a linear problem, we do not need to initialize
+the system with $v_{[\G]}(\rp)={\rm e}^{i\G\cdot\rp}/|\G|$ (CHECK THIS). 
+Instead we can start from the plane wave ${\rm e}^{i\G\cdot\rp}$ and scale the result
+afterwards.
+After we calculated the screened interaction $\Delta V_{[\G,\w]}(\rp)$ for a given
+$\G$ perturbation, we perform a Fourier transform to reciprocal space
+($\Delta V_{[\G,\w]}(\rp)=\sum_\Gp W_{\G\Gp}(\w){\rm e}^{i\Gp\cdot\rp}$)
+to obtain the screened Coulomb interaction
+  \begin{equation}
+  W(\r,\rp;\w) = \sum_{\G\Gp} W_{\G\Gp}(\w) \, {\rm e}^{i(\G\cdot\r+\Gp\cdot\rp)} 
+  \end{equation}
+(Note the sign convention for $\Gp$ is opposite in HL86).
+From the properties of $W(\r,\rp;\w)$ we obtain:
+  \begin{equation}
+  W_{-\G,-\Gp}(\w) = W^\star_{\G\Gp}(-\w^\star), 
+  \end{equation}
+therefore if we perform calculations along the imaginary frequency axis
+($-\w^\star=\w$) we only need to determine the response to 
+$1/2$ of the $\G$ perturbations. This corresponds to $\sim (N_\r/2)/2$
+perturbations times two linear systems each, i.e. $\sim N_\r/2$
+solutions. In the case of a real-space calculation we would have
+$N_\r$ perturbations times one linear system each (along the imag axis,
+because of reality), corresponding to $\sim N_\r$ solutions.
+Therefore the reciprocal space is more convenient by a factor of 2
+({\it unless we can speed up the process by more than a factor 2 by 
+initializing the dvscf and dpsi at each point using nearby points}).
+Within the real-space representation we would need to (1) define
+a small G-grid (already done), (2) create a delta on the small r-grid,
+(3) small-fft on the small G-grid, (4) pad with 0s, (5) go back to
+real space (dense grid) using normal fft.
+NOTA: The necessity of going to reciprocal space is mainly associated
+with the fact that the use of Pad\'e approximants relies on a functional
+shape similar to plasmon-pole, therefore plane waves seems more appropriate
+than local perturbations. However, by working in real space we could
+enforce reality on the imag axis and use $P_N(\w^2)$ because of the
+nice properties of $W(\r,\rp;\w)$ on the imag axis. It is not clear to
+me whether the Pad\'e thing would work even if we do not have a nice
+plasmon-pole structure.
 
 \section{Green's function}
 
@@ -657,6 +687,16 @@ the small grid (factor 2 speedup).
 In particular, in case of purely imginary frequency we have 
 $\Delta n_{[-\G,\w]}=\Delta n^\star{[\G,\w]}$ and $\Delta V_{[-\G,\w]}=\Delta V^\star_{[\G,\w]}$
 (reality).
+
+
+\bibitem{note.grep.1}
+  \begin{equation}
+  \Delta V^{\rm H}_{[\G,\w]}(\rp) = \int d\rpp \Delta n_{[\G,\w]}(\rpp) \, v(\rpp,\rp),
+  \end{equation}
+and the screened interaction reads finally:
+  \begin{equation}
+  \Delta V_{[\G,\w]}(\rp) = v_{[\G]}(\rp) + \Delta V^{\rm H}_{[\G\w]}(\rp).
+  \end{equation}
 
 \end{thebibliography}
 
