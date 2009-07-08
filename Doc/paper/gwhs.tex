@@ -202,30 +202,29 @@ to obtain the screened Coulomb interaction
 (Note the sign convention for $\Gp$ is opposite in HL86).
 From the properties of $W(\r,\rp;\w)$ we obtain:
   \begin{equation}
-  W_{-\G,-\Gp}(\w) = W^\star_{\G\Gp}(-\w^\star), 
+  W_{-\G,\Gp}(\w) = W^\star_{\G,-\Gp}(-\w^\star), 
   \end{equation}
 therefore if we perform calculations along the imaginary frequency axis
 ($-\w^\star=\w$) we only need to determine the response to 
 $1/2$ of the $\G$ perturbations. This corresponds to $\sim (N_\r/2)/2$
 perturbations times two linear systems each, i.e. $\sim N_\r/2$
-solutions. In the case of a real-space calculation we would have
+solutions. 
+
+In the case of a real-space calculation we would have
 $N_\r$ perturbations times one linear system each (along the imag axis,
 because of reality), corresponding to $\sim N_\r$ solutions.
-Therefore the reciprocal space is more convenient by a factor of 2
-({\it unless we can speed up the process by more than a factor 2 by 
-initializing the dvscf and dpsi at each point using nearby points}).
+Therefore the reciprocal space is more convenient by a factor of 2,
+{\it unless we can speed up the process by more than a factor 2 by 
+initializing the dvscf and dpsi at each point using nearby points}.
 Within the real-space representation we would need to (1) define
-a small G-grid (already done), (2) create a delta on the small r-grid,
-(3) small-fft on the small G-grid, (4) pad with 0s, (5) go back to
-real space (dense grid) using normal fft.
-NOTA: The necessity of going to reciprocal space is mainly associated
-with the fact that the use of Pad\'e approximants relies on a functional
-shape similar to plasmon-pole, therefore plane waves seems more appropriate
-than local perturbations. However, by working in real space we could
-enforce reality on the imag axis and use $P_N(\w^2)$ because of the
-nice properties of $W(\r,\rp;\w)$ on the imag axis. It is not clear to
-me whether the Pad\'e thing would work even if we do not have a nice
-plasmon-pole structure.
+a small G-grid (already done), and put in 1-to-1 correspondence to
+the r-grid (i.e. box to box, not box to sphere); (2) create a delta 
+on the small r-grid,
+(3) small-fft (special box to box) on the small G-grid, 
+(4) pad with 0s, (5) go back to
+real space (dense grid) using normal fft. Enter solve-linter,
+get the result in r-space, normal FFT back to G-space, and chop
+on the small cutoff.
 
 \section{Green's function}
 
