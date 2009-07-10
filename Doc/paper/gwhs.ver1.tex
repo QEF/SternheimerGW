@@ -14,7 +14,6 @@
 \def\E{\varepsilon}
 \def\vp{{v^\prime}}
 \def\q{{\bf q}}
-\def\s{\sigma}
 \def\k{{\bf k}}
 \def\qp{{\bf q^\prime}}
 \def\G{{\bf G}}
@@ -105,30 +104,27 @@ In what follows it is convenient to regard the screened interaction
 as a perturbation to the electronic system which is a function of the 
 second space variable $\rp$ and is parametric in the first space variable 
 $\r$ and in the frequency $\w$: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
-The first-order change of the occupied electronic wavefunctions in response to the perturbation
-$\Delta V_{[\r,\w]}$ can be obtained by solving the two linear systems
-  \begin{equation}\label{eq.linsys}\label{eq.linsys.1}
-  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_v, \\
+In the language of density-functional perturbation theory, the first-order
+change of the occupied electronic wavefunctions in response to the perturbation
+$\Delta V_{[\r,\w]}$ can be obtained by solving twice the linear system
+  \begin{equation}\label{eq.linsys}
+  (\H-\E_v+\w\,\,) \Delta \psi_{v[\r,\w]}  =  -(1-\P)  \Delta V_{[\r,\w]} \psi_v,
   \end{equation}
-yielding $\Delta \psi^\pm_{v[\r,\w]}$. In deriving these two systems we made
-use of the time-reversal symmetry in the system ($\psi_v = \psi_v^\star$). 
+once for $\w$, yielding $\Delta \psi_{v[\r,\w]}$ and once for $-\w^\star$,
+yielding $\Delta \psi_{v[\r,-\w^\star]}$.
+%
+% note: (1-P_occ) applies to everything which is found on the rhs: (1-P_occ)(dVpsi)
+%
 From the variation of the wavefunctions we can construct the frequency-dependent
 linear change in the charge density $\Delta n(\r,\rp;\w)=\Delta n_{[\r,\w]}(\rp)$:
-  \begin{equation}\label{eq.deltan}
-  \Delta n_{[\r,\w]} = 2\sum_{v\s} \psi_v^\star  \Delta \psi^\s_{v[\r,\w]},
+  \begin{equation}
+  \Delta n_{[\r,\w]} = 2\sum_v \psi_v^\star \Delta \psi_{v[\r,\w]} +
+      \psi_v \Delta \psi^\star_{v[\r,-\w^\star]} .
   \end{equation}
-where $\s=\pm$ and must not be confused with the spin.
 Note that the index $v$ indicates the state and the factor of 2 takes into
 account the spin degeneracy (the indices $m,n$ before contained the spin instead).
-Direct substitution indicates that $\Delta \psi^\s_{v[\r,-\w^\star]} = \Delta \psi_{v[\r,\w]}^{-\s\star}$.
 As expected: $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$, which
 is consistent with the result $\Delta V_{[\r,\w]}^\star = \Delta V_{[\r,-\w^\star]}$.\cite{note.w.even}
-This property of the density matrix does not require TRS to hold,
-and derives directly from Eq. (2).
-Equation (\ref{eq.deltan}) is the generalization of the DFPT result
-to perturbations at finite frequencies. In the special case $\w=0$
-we recover the expression by Baroni et al. (considering that teh induced
-charge is purely real as $-\w^\star=\w$).
 This is exactly the variation of the density-matrix 
 as obtained from the time-dependent Hartree method (Eq.\ 5.23 of HL).
 The associated Hartree potential reads
@@ -164,89 +160,120 @@ every point $\r$.
 
 \subsection{Screened Coulomb interaction in the Bloch representation}
 
-It is convenient to work within the Bloch representation. We rewrite the
-linear system and the induced chareg density by explicitely showing the
-wavevector index $\k$ (nothing else is changed):
+It is convenient to work with Bloch-periodic functions.
+We define the coefficients
+$f_{[\r,\w]}(\rp) = \frac{1}{N_\q}\sum_\q f_{[\r,\q,\w]}(\rp) \, {\rm e}^{i\q\cdot\r}$
+for $\Delta V_{[\r,\q,\w]}$, $\Delta\psi_{v[\r,\q,\w]}$, $\Delta n_{[\r,\q,\w]}$.
+Substituting in Eq.\ (\ref{eq.linsys}) we see that ${\rm e}^{i\q\cdot\r}$ factors out:
+  \begin{equation}\label{eq.lynsys.g}
+  (\H-\E_v+\w) \Delta \psi_{v[\r,\q,\w]}  =  -(1-\P)  \Delta V_{[\r,\q,\w]} \psi_v.
+  \end{equation}
+The induced charge density reads now
+  \begin{equation}\label{eq.dens}
+  \Delta n_{[\r,\q,\w]} = 2\sum_v \psi_v^\star \Delta \psi_{v[\r,\q,\w]} +
+      \psi_v \Delta \psi^\star_{v[\r,-\q,-\w^\star]} .
+  \end{equation}
+Here comes the main difference with standard DFPT: in the latter we factor out
+the wave dependence $\qp$ in $\rp$ inside the perturbation $\Delta V_{[\r,\q,\w]}(\rp)$.
+This allows to treat all $\qp$ perturbations at the same cost (no large supercells).
+In other words: $\Delta V_{[\r,\q,\w]}(\rp)=\frac{1}{N_\q}\sum_\qp \Delta V_{[\r,\q,\w]}^{(\qp)}(\rp) {\rm e}^{i\qp\cdot\rp}$.
+Here the situation is more subtle because $\qp$ and $\q$ are related.
+In general, if we try to solve the linear system Eq.\ (\ref{eq.lynsys.g}) after factoring out the ${\rm e}^{i\qp\cdot\rp}$
+we obtain [with $\psi_{v\k}(\rp)=u_{v\k}(\rp){\rm e}^{i\k\cdot\rp}$,
+$\Delta\psi_{v\k}(\rp)=\Delta u_{v\k}(\rp){\rm e}^{i\k\cdot\rp}$,
+and $\P^\k=|u_{v\k}\>\<u_{v\k}|$]:
+  \begin{equation}\label{eq.linsys.bloch}
+  (\H_{\k+\qp}-\E_{v\k}+\w) \Delta u_{v,\k+\qp}^{[\r,\q,\w]}  =  
+  -(1-\P^{\k+\qp})  \Delta V_{[\r,\q,\w]}^{(\qp)} u_{v\k}.
+  \end{equation}
+We can rewrite Eq.\ (\ref{eq.dens}) as follows:
+  \begin{equation}\label{eq.deltarho.qprime}
+  \Delta n_{[\r,\q,\w]}^{(\qp)} = \frac{2}{N_\k}\sum_{v\k} u_{v\k}^\star \Delta u_{v,\k+\qp}^{[\r,\q,\w]} +
+      u_{v\k} \Delta u_{v,\k-\qp}^{\star[\r,-\q,-\w^\star]} .
+  \end{equation}
+Now the extra bit of physics which is specific to our study: the induced
+Hartree potential is translationally invariant (as the screened interaction
+and the induced charge density itself): $\Delta V_{\rm H}(\r+{\bf R},\rp+{\bf R};\w)=\Delta V_{\rm H}(\r,\rp;\w)$.
+By imposing this condition we find:
   \begin{equation}
-  (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k}.
+  \Delta n_{[\r,\q,\w]}(\rp) % =\frac{1}{N_\q}\sum_\qp \Delta n_{[\r,\q,\w]}^{(\qp)}(\rp) {\rm e}^{i\qp\cdot\rp}
+  = \Delta n_{[\r,\q,\w]}^{(-\q)}(\rp) {\rm e}^{-i\q\cdot\rp},
+  \end{equation}
+and the density matrix reads
+  \begin{equation}
+  \Delta n(\r,\rp;\w) = \frac{1}{N_\q} \sum_\q \Delta n_{[\r,\q,\w]}^{(-\q)}(\rp) {\rm e}^{i\q\cdot(\r-\rp)}.
+  \end{equation}
+Now we move to the dielectric matrix:
+  \begin{equation}
+  W(\r,\r;\w) = \int d\rpp \epsilon^{-1}(\r,\rpp;\w) v(\rpp,\rp)
+  \end{equation}
+From the previous paragraph it follows that
+  \begin{equation}\label{eq.epsil}
+  \epsilon^{-1}(\r,\rp;\w) = \delta(\r,\rp) + \Delta n(\r,\rp;\w)
+  \end{equation}
+If we transform $\epsilon^{-1}(\r,\rp;\w)$ with the following convention
+  \begin{equation}
+  \epsilon^{-1}(\r,\rp;\w) = \frac{1}{N_\q} \sum_{\q\G\Gp} \epsilon^{-1}_{\G\Gp}(\q;\w) 
+  {\rm e}^{i\q\cdot(\r-\rp)} {\rm e}^{i(\G\cdot\r-\Gp\cdot\rp)},
+  \end{equation}
+(note the opposite sign for $\Gp$: this is in accord with HL86. I tried to avoid it
+but the minus sign comes back in other places) then we obtain:
+  \begin{equation}
+  \epsilon^{-1}_{\G\Gp}(\q;\w) = \delta_{\G\Gp} + \Delta n_{[\G,\q,\w]}^{(-\q)}(-\Gp) 
+  \end{equation}
+where a FFT has been taken also on the variable $\r$. 
+In practice as a starting bare perturbation we use a plane wave ${\rm e}^{i\G\cdot\rp}$.
+If we use for the screened interaction the same FFT convention as for the dielectric
+matrix, then we obtain
+  \begin{equation}
+  W_{\G\Gp}(\q;\w)  = \epsilon^{-1}_{\G\Gp}(\q;\w)  v(\q+\Gp)
+  \end{equation}
+The minus sign in the FFT of $\Delta n$ is due to the fact that we are using two
+different conventions: standard FFT for one-dimensional objects (such as $\Delta n_{[\r]}(\rp)$
+as a parametric function), and opposite-sign FFT when the $\rp$ appears in Eq.\ (\ref{eq.epsil}).
+IMPORTANT: we need to take this into account when performing FFT and back-FFT of W in
+order to constrict GW.
+
+\hl{
+NOTE THIS IS DIFFERENT FROM THE CODE NOW.
+IN THE CODE IF WE WANT EPS-1 WE NEED TO AVOID MULTIPLYING BY COULOMB - IT'S JUST THE CHARGE.
+(MAYBE I NEVER SEEN THIS BECAUSE I ALWYAS TESTED CAREFULLY ONLY THE BEHAVIOR AT G=0)
+ALSO: TO OBTAIN THE FFT OF THE CHARGE AT $-\Gp$ we simply FFT the conjg and take the cong 
+of the result.}
+
+Which systems do we need to solve? We need to calculate $\Delta n_{[\r,\q,\w]}^{(-\q)}$,
+or equivalently $\Delta n_{[\r,-\q,\w]}^{(\q)}$ (this latter will lead us to 
+$\epsilon^{-1}_{\G\Gp}(-\q;\w)$.
+Let rewrite then Eq.\ (\ref{eq.deltarho.qprime}) for $\qp=\q$:
+  \begin{equation}
+  \Delta n_{[\r,-\q,\w]}^{(\q)} = \frac{2}{N_\k}\sum_{v\k} u_{v\k}^\star \Delta u_{v,\k+\q}^{[\r,-\q,\w]} +
+      u_{v\k} \Delta u_{v,\k-\q}^{\star[\r,\q,-\w^\star]} .
+  \end{equation}
+The linear systems be to sloved are copied from Eq.\ (\ref{eq.linsys.bloch}):
+  \begin{equation}
+  (\H_{\k+\q}-\E_{v\k}+\w) \Delta u_{v,\k+\q}^{[\r,-\q,\w]}  =  
+  -(1-\P^{\k+\q})  \Delta V_{[\r,-\q,\w]}^{(\q)} u_{v\k}
   \end{equation}
 and
   \begin{equation}
-  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
+  (\H_{\k-\q}-\E_{v\k}+\w) \Delta u_{v,\k-\q}^{[\r,\q,-\w^\star]}  =  
+  -(1-\P^{\k-\q})  \Delta V_{[\r,\q,\w^\star]}^{(-\q)} u_{v\k}
   \end{equation}
-Here we made use again of the property of TRS yielding $\psi_{v\k}^\star=\psi_{v,-\k}$
-and swapped $\k$ and $-\k$ in the sum.
-The transformation of the variations are $\Delta \psi^\pm_{v\k[\r,-\w^\star]}=\Delta \psi^{\mp\star}_{v,-\k[\r,\w]}$.
-%
-Now we introduce the following convention for the Fourier transform of our functions:
-  \begin{eqnarray}
-  f(\r,\rp;\w) & = & \frac{1}{N_\q} \sum_{\q\G} f_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \\
-  f_{[\q\G\w]}(\rp) & = & \sum_\Gp f_{[\q\G\w]}(\Gp) {\rm e}^{i\Gp\r}.
-  \end{eqnarray}
-$f_{[\q\G\w]}(\rp)$ is Bloch-periodic in $\rp$ with wavevector $\q$.
-It can be seen that we use two opposite conventions for the variables $\r$ and $\rp$.
-This is done to save us a cumbersome notation that would arise from using the same
-convention (involving many $-\q$ and $-\Gp$). This necessity arises from the fact
-that the screened Coulomb interaction is translationally invariant, leading to 
-the exponential ${\rm e}^{i\q(\rp-\r)}$ where the two ocnventions coexist.
-In HL86 the choice of the convention is the opposite. We decided to use the
-direct convention for $\rp$ because this is our standard work variable.
-In particular:
-  \begin{equation}
-  \Delta V_{[\r,\w]} = \frac{1}{N_\q} \sum_{\q\G} \Delta V_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}.
-  \end{equation}
+NOT SURE ABOUT THE LINEAR SYSTEMS, IT SEEMS A MESS.
 
-Now we expand the variations of the wavefunctions using the previous convention.
-We note that the variations are generally not translationally invariant, therefore
-we find two wavevectors $\q$ and $\qp$:
-  \begin{equation}
-  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \frac{1}{N_\q^2} \sum_{\q\qp\G} \Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp) 
-  {\rm e}^{i\qp\rp} {\rm e}^{-i(\q+\G)\r}, 
-  \end{equation}
-where $\Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp)$ are Bloch-periodic for the wavevector $\qp$.
-By direct substitution in the linear system we have that the only nonzero component
-are those corresponding to $\qp=\k+\q$ as expected:
-  \begin{equation}
-  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V_{[\q\G\w]} u_{v\k},
-  \end{equation}
-therefore
-  \begin{equation}
-  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \frac{1}{N_\q} \sum_{\q\G} \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]} (\rp)
-  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
-  \end{equation}
-The charge density can now be rewritten as:
-  \begin{equation}
-  \Delta n_{[\r,\w]} = \frac{1}{N_\q} \sum_{\q\G} \Delta n_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r},
-  \end{equation}
-hence
-  \begin{equation}
-  \Delta n_{[\q\G\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
-  \end{equation}
-The induced Hartree potential can then be written as (NOT SURE IF I AM MISSING A PREFACTOR)
-  \begin{equation}
-  \Delta V^{\rm H}_{[\q\G\w]}(\Gp) = \Delta n_{[\q\G\w]}(\Gp) v(\q+\Gp), 
-  \end{equation}
-therefore the screened Coulomb interaction reads
-  \begin{equation}
-  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp),
-  \end{equation}
-and the inverse dielectric matrix is
-  \begin{equation}
-  \epsilon^{-1}_{\G\Gp}(\q;\w) = \delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) .
-  \end{equation}
-The convention used for the Coulomb potential is
-  \begin{equation}
-  v(\r,\rp) = \frac{1}{N_\q} \sum_{\q\G} v(\q+\G) {\rm e}^{i\q\cdot(\rp-\r)} {\rm e}^{i\G\cdot(\rp-\r)}.
-  \end{equation}
-
-  
-
+\hl{MUST SIMPLIFY NOTATION. AT w=0 THE +q and -q MUST COLLAPSE!!}
+ 
 
 \section{Green's function}
 
 \section{Implementation}
 
 SPIEGA alpha PV NEL LINEAR SYSTEM
+
+\begin{equation}\label{eq.linsys.1}
+(H - \epsilon +\w) \Delta\psi = \Delta V \psi
+\end{equation}
+
 
 The approach described above is currently implemented in the empirical
 pseudopotential code {\tt OxfordGW} or {\tt GWdfpt}. 
