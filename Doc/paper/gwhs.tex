@@ -176,7 +176,7 @@ and
   \end{equation}
 Here we made use again of the property of TRS yielding $\psi_{v\k}^\star=\psi_{v,-\k}$
 and swapped $\k$ and $-\k$ in the sum.
-The transformation of the variations are $\Delta \psi^\pm_{v\k[\r,-\w^\star]}=\Delta \psi^{\mp\star}_{v,-\k[\r,\w]}$.
+The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
 %
 Now we introduce the following convention for the Fourier transform of our functions:
   \begin{eqnarray}
@@ -222,6 +222,13 @@ hence
   \begin{equation}
   \Delta n_{[\q\G\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
   \end{equation}
+By direct substitution we can see that
+  \begin{equation}
+  \Delta n_{[-\q,-\G,-\w^\star]} = \Delta n^\star_{[\q,\G,\w]},
+  \end{equation}
+which indicates that in the case of purely imaginary frequencies we can perform
+the calculations for half of the $\q$ perturbations (or equivalently, half of the
+$\G$ perturbations in a $\Gamma$-point representation).
 The induced Hartree potential can then be written as (NOT SURE IF I AM MISSING A PREFACTOR)
   \begin{equation}
   \Delta V^{\rm H}_{[\q\G\w]}(\Gp) = \Delta n_{[\q\G\w]}(\Gp) v(\q+\Gp), 
