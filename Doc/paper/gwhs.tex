@@ -182,116 +182,6 @@ every point $\r$.
 
 \subsection{Screened Coulomb interaction in the Bloch representation}
 
-It is convenient to work within the Bloch representation. We rewrite the
-linear system and the induced chareg density by explicitely showing the
-wavevector index $\k$ (nothing else is changed):
-  \begin{equation}
-  (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k}.
-  \end{equation}
-and
-  \begin{equation}
-  \Delta n_{[\r,\w]} = 2\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
-  \end{equation}
-Here we made use again of the property of TRS yielding $\psi_{v\k}^\star=\psi_{v,-\k}$
-and swapped $\k$ and $-\k$ in the sum.
-The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
-%
-Now we introduce the following convention for the Fourier transform of our functions:
-  \begin{eqnarray}
-  f(\r,\rp;\w) & = & \sum_{\q\G} f_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \\
-  f_{[\q\G\w]}(\rp) & = & \sum_\Gp f_{[\q\G\w]}(\Gp) {\rm e}^{i\Gp\r}.
-  \end{eqnarray}
-$f_{[\q\G\w]}(\rp)$ is Bloch-periodic in $\rp$ with wavevector $\q$.
-It can be seen that we use two opposite conventions for the variables $\r$ and $\rp$.
-This is done to save us a cumbersome notation that would arise from using the same
-convention (involving many $-\q$ and $-\Gp$). This necessity arises from the fact
-that the screened Coulomb interaction is translationally invariant, leading to 
-the exponential ${\rm e}^{i\q(\rp-\r)}$ where the two ocnventions coexist.
-In HL86 the choice of the convention is the opposite. We decided to use the
-direct convention for $\rp$ because this is our standard work variable.
-In particular:
-  \begin{equation}
-  \Delta V_{[\r,\w]} = \sum_{\q\G} \Delta V_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}.
-  \end{equation}
-
-Now we expand the variations of the wavefunctions using the previous convention.
-We note that the variations are generally not translationally invariant, therefore
-we find two wavevectors $\q$ and $\qp$:
-  \begin{equation}
-  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \sum_{\q\qp\G} \Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp) 
-  {\rm e}^{i\qp\rp} {\rm e}^{-i(\q+\G)\r}, 
-  \end{equation}
-where $\Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp)$ are Bloch-periodic for the wavevector $\qp$.
-By direct substitution in the linear system we have that the only nonzero component
-are those corresponding to $\qp=\k+\q$ as expected:
-  \begin{equation}
-  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V_{[\q\G\w]} u_{v\k},
-  \end{equation}
-therefore
-  \begin{equation}
-  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \sum_{\q\G} \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]} (\rp)
-  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
-  \end{equation}
-The charge density can now be rewritten as:
-  \begin{equation}
-  \Delta n_{[\r,\w]} = \sum_{\q\G} \Delta n_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r},
-  \end{equation}
-hence [THE CODE HAS A 1/VOLUME PREFACTOR FOR THE CHARGE]
-  \begin{equation}
-  \Delta n_{[\q\G\w]} = 2\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
-  \end{equation}
-By direct substitution we can see that
-  \begin{equation}
-  \Delta n_{[-\q,-\G,-\w^\star]} = \Delta n^\star_{[\q,\G,\w]},
-  \end{equation}
-which indicates that in the case of purely imaginary frequencies we can perform
-the calculations for half of the $\q$ perturbations (or equivalently, half of the
-$\G$ perturbations in a $\Gamma$-point representation).
-The induced Hartree potential can then be written as 
-  \begin{equation}
-  \Delta V^{\rm H}_{[\q\G\w]}(\Gp) = \Delta n_{[\q\G\w]}(\Gp) v(\q+\Gp), 
-  \end{equation}
-therefore the screened Coulomb interaction reads
-  \begin{equation}
-  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp).
-  \end{equation}
-It is convenient to introduce the inverse dielectric matrix [Eq.\ (13.12) of HL,
-this is the ``right-'' dielectric matrix as opposed to the left-diel mat]
-  \begin{equation}
-  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
-  \end{equation}
-which implies
-  \begin{equation}
-  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w)  
-  \end{equation}
-The convention used for the Coulomb potential is
-  \begin{equation}
-  v(\r,\rp) = \sum_{\q\G} v(\q+\G) {\rm e}^{i\q\cdot(\rp-\r)} {\rm e}^{i\G\cdot(\rp-\r)}.
-  \end{equation}
-
-In practice we proceed as follows: we initialize the linear system as
-  \begin{equation}
-  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V^{\rm bare}_{[\q\G\w]} u_{v\k},
-  \end{equation}
-with $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$, or
-equivalently $\Delta V^{\rm bare}_{[\q\G\w]}(\Gp) = v(\q+\G)\delta_{\G\Gp}$.
-We solve the systems, calculate the induced charge, {\it construct the Hartree potential}
-(this involves the use of the Coulomb potential), and update the $\Delta V$ on the rhs
-to obatin $\Delta V^{\rm scr}_{[\q\G\w]}(\rp)$. When self-consistency is achieved, we have
-  \begin{equation}
-  \Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = W_{\G\Gp}(\q;\w) = v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w).
-  \end{equation}
-As we are dealing with a linear problem, we can change the scale of the initial
-perturbation and start from $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = {\rm e}^{i\G\cdot\rp}$,
-thereby ending up with $\Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = \epsilon^{-1}_{\G\Gp}(\q;\w)$.
-Note that this result is strictly linked to the choice of working with a right-dielectric
-matrix. [AFTER HAVING EPS WE NEED TO MULTIPLY ALL G' FOR THE SAME VqG, NOW IT'S DONE
-THE OTHER WAY AROUND]. In particular:
-  \begin{equation}
-  v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w) =[\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp).
-  \end{equation}
-
-
 
 
 \section{Green's function}
@@ -325,6 +215,129 @@ and Engineering Division, U.\ S.\ Department of Energy under Contract No. DE-AC0
 \end{acknowledgments}
 
 \appendix
+
+\section{Calculation of the screened Coulomb interaction in reciprocal space}
+
+It is convenient to work within the Bloch representation. We rewrite the
+linear system and the induced chareg density by relabeling the states
+$\psi_v\rightarrow \psi_{v\k}$:
+  \begin{equation}
+  (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k},
+  \end{equation}
+As the states $\psi_v$ are normalized 
+in the crystal volume, while the states $\psi_{v\k}$ are typically normalized
+in the unit cell, we have $\psi_{v\k} = \sqrt{N_\k} \psi_v$ for the same state.
+For the same reason, the variation of teh wavefunction in the linear system
+must be scaled to reflect the $\sqrt{N_\k} \psi_v$ on the rhs, and the induced charge
+therefore reads:
+  \begin{equation}
+  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
+  \end{equation}
+Here we made use again of the property of TRS yielding $\psi_{v\k}^\star=\psi_{v,-\k}$
+and swapped $\k$ and $-\k$ in the sum.
+The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
+%
+Now we introduce the following convention for the Fourier transform of our functions
+($\Omega$ is the unit cell volume - this convention assigns the inverse of the crystal
+volume to the pair $\q,\G$):
+  \begin{eqnarray}
+  f(\r,\rp;\w) & = & \Omega^{-1}N_\q^{-1} \sum_{\q\G} f_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \\
+  f_{[\q\G\w]}(\rp) & = & \sum_\Gp f_{[\q\G\w]}(\Gp) {\rm e}^{i\Gp\r}.
+  \end{eqnarray}
+$f_{[\q\G\w]}(\rp)$ is Bloch-periodic in $\rp$ with wavevector $\q$.
+It can be seen that we use two opposite conventions for the variables $\r$ and $\rp$.
+This is done to save us a cumbersome notation that would arise from using the same
+convention (involving many $-\q$ and $-\Gp$). This necessity arises from the fact
+that the screened Coulomb interaction is translationally invariant, leading to 
+the exponential ${\rm e}^{i\q(\rp-\r)}$ where the two ocnventions coexist.
+In HL86 the choice of the convention is the opposite. We decided to use the
+direct convention for $\rp$ because this is our standard work variable.
+In particular:
+  \begin{eqnarray}
+  \Delta V_{[\r,\w]} (\rp) & = & \Omega^{-1}N_\q^{-1}  \sum_{\q\G} \Delta V_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \nonumber \\
+  \Delta n_{[\r,\w]} (\rp) & = & \Omega^{-1}N_\q^{-1}  \sum_{\q\G} \Delta n_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}. \nonumber 
+  \end{eqnarray}
+Within the same convention the Coulomb potential reads
+  \begin{equation}
+  v(\r,\rp)  =  \Omega^{-1}N_\q^{-1} \sum_{\q\G} v(\q+\G) {\rm e}^{i\q\cdot(\rp-\r)} {\rm e}^{i\G\cdot(\rp-\r)}. 
+  \end{equation}
+Since we have
+  \begin{equation}
+  |\r|^{-1} = \frac{4\pi}{(2\pi)^3}\int d\q \, |\q|^{-2}{\rm e}^{i\q\cdot\r},
+  \end{equation}
+we obtain
+  \begin{equation}
+  v(\q+\G) = \frac{4\pi e^2}{|\q+\G|^2}.
+  \end{equation}
+\hl{WHY STEVE HAS A FACTOR 1/OMEGA HERE ??}
+
+
+Now we expand the variations of the wavefunctions using the previous convention.
+We note that the variations are generally not translationally invariant, therefore
+we find two wavevectors $\q$ and $\qp$ (the prefactor is a choice in order to
+obtain the linear system without an ugly volume factor in the middle):
+  \begin{equation}
+  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \Omega^{-1}N_\q^{-1}\sum_{\q\qp\G} \Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp) 
+  {\rm e}^{i\qp\rp} {\rm e}^{-i(\q+\G)\r}, 
+  \end{equation}
+where $\Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp)$ are Bloch-periodic for the wavevector $\qp$.
+By direct substitution in the linear system we have that the only nonzero component
+are those corresponding to $\qp=\k+\q$ as expected:
+  \begin{equation}
+  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V_{[\q\G\w]} u_{v\k},
+  \end{equation}
+therefore
+  \begin{equation}
+  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \Omega^{-1}N_\q^{-1} \sum_{\q\G} \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]} (\rp)
+  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
+  \end{equation}
+The charge density can now be rewritten as 
+  \begin{equation}
+  \Delta n_{[\q\G\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
+  \end{equation}
+\hl{WHY THE HELL THE CODE HAS 1/OMEGA IN THE CHARGE DENSITY???}
+By direct substitution we can see that
+  \begin{equation}
+  \Delta n_{[-\q,-\G,-\w^\star]} = \Delta n^\star_{[\q,\G,\w]},
+  \end{equation}
+which indicates that in the case of purely imaginary frequencies we can perform
+the calculations for half of the $\q$ perturbations (or equivalently, half of the
+$\G$ perturbations in a $\Gamma$-point representation).
+The induced Hartree potential can then be written as 
+  \begin{equation}
+  \Delta V^{\rm H}_{[\q\G\w]}(\Gp) = \Delta n_{[\q\G\w]}(\Gp) v(\q+\Gp), 
+  \end{equation}
+therefore the screened Coulomb interaction reads
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp).
+  \end{equation}
+It is convenient to introduce the inverse dielectric matrix [Eq.\ (13.12) of HL,
+this is the ``right-'' dielectric matrix as opposed to the left-diel mat]
+  \begin{equation}
+  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
+  \end{equation}
+which implies
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w)  
+  \end{equation}
+
+In practice we proceed as follows: we initialize the linear system as
+  \begin{equation}
+  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V^{\rm bare}_{[\q\G\w]} u_{v\k},
+  \end{equation}
+with $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$, or
+equivalently $\Delta V^{\rm bare}_{[\q\G\w]}(\Gp) = v(\q+\G)\delta_{\G\Gp}$.
+We solve the systems, calculate the induced charge, {\it construct the Hartree potential}
+(this involves the use of the Coulomb potential), and update the $\Delta V$ on the rhs
+to obatin $\Delta V^{\rm scr}_{[\q\G\w]}(\rp)$. When self-consistency is achieved, we have
+  \begin{equation}
+  \Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = W_{\G\Gp}(\q;\w) = v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w).
+  \end{equation}
+As we are dealing with a linear problem, we can change the scale of the initial
+perturbation and start from $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = {\rm e}^{i\G\cdot\rp}$,
+thereby ending up with $\Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = \epsilon^{-1}_{\G\Gp}(\q;\w)$.
+Note that this result is strictly linked to the choice of working with a right-dielectric
+matrix. 
 
 \section{Condition number of the linear system}
 
