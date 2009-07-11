@@ -76,10 +76,24 @@ approaches and illustrate our future development plans.
 Importance of GW calculations, Motivation, History of the idea,
 Explanation of where we are and how the manuscript is organized.
 
+Must cite work of HL-dielectric where they discuss the direct approach
+and find it problematic because of the supercell required.
+Must cite Fleszar-Resta and Reining - they calculate epsilon.
+Kunc-Tosatti calculate inveps but they do finite differences
+(calculations with the KS potential + perturbation).
+
+Our novelty is that we do self-consistency by using DFPT
+and generalize DFPT to finite frequency calculations.
+
 \section{Overview of the methodology}
 
 \section{Screened Coulomb interaction}
 
+We assume insulators with a finite gap. Generalization to the case of metals
+can be done following De Gironcoli.
+In the following we assume Rydberg atomic units (hence the Coulomb potential
+will be $e^2/r$ with $e^2=2$ and $1/(4\pi\epsilon_0)=1$, and the kinetic energy $-\nabla^2$, since $\hbar=1$ 
+and $2m_{\rm e}=1$).
 The screened Coulomb interaction $W(\r,\rp;\w)$ can be calculated by using
 the second one of Hedin's equations in space-frequency representation
 [Eq.\ (13.19b) of Ref.~\onlinecite{hl}]:
@@ -120,6 +134,10 @@ linear change in the charge density $\Delta n(\r,\rp;\w)=\Delta n_{[\r,\w]}(\rp)
 where $\s=\pm$ and must not be confused with the spin.
 Note that the index $v$ indicates the state and the factor of 2 takes into
 account the spin degeneracy (the indices $m,n$ before contained the spin instead).
+In principle we shoud work with variables ${\bf x}=(\r,\xi)$ including the spin.
+However, if we neglect the $W_{\uparrow\downarrow}$ component of $W$, then
+the expression we wrote are correct (note there is a double sum over spin,
+but the previous approx gives a delta in spin inside the matrix element).
 Direct substitution indicates that $\Delta \psi^\s_{v[\r,-\w^\star]} = \Delta \psi_{v[\r,\w]}^{-\s\star}$.
 As expected: $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$, which
 is consistent with the result $\Delta V_{[\r,\w]}^\star = \Delta V_{[\r,-\w^\star]}$.\cite{note.w.even}
@@ -172,7 +190,7 @@ wavevector index $\k$ (nothing else is changed):
   \end{equation}
 and
   \begin{equation}
-  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
+  \Delta n_{[\r,\w]} = 2\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
   \end{equation}
 Here we made use again of the property of TRS yielding $\psi_{v\k}^\star=\psi_{v,-\k}$
 and swapped $\k$ and $-\k$ in the sum.
@@ -180,7 +198,7 @@ The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\De
 %
 Now we introduce the following convention for the Fourier transform of our functions:
   \begin{eqnarray}
-  f(\r,\rp;\w) & = & \frac{1}{N_\q} \sum_{\q\G} f_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \\
+  f(\r,\rp;\w) & = & \sum_{\q\G} f_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \\
   f_{[\q\G\w]}(\rp) & = & \sum_\Gp f_{[\q\G\w]}(\Gp) {\rm e}^{i\Gp\r}.
   \end{eqnarray}
 $f_{[\q\G\w]}(\rp)$ is Bloch-periodic in $\rp$ with wavevector $\q$.
@@ -193,14 +211,14 @@ In HL86 the choice of the convention is the opposite. We decided to use the
 direct convention for $\rp$ because this is our standard work variable.
 In particular:
   \begin{equation}
-  \Delta V_{[\r,\w]} = \frac{1}{N_\q} \sum_{\q\G} \Delta V_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}.
+  \Delta V_{[\r,\w]} = \sum_{\q\G} \Delta V_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}.
   \end{equation}
 
 Now we expand the variations of the wavefunctions using the previous convention.
 We note that the variations are generally not translationally invariant, therefore
 we find two wavevectors $\q$ and $\qp$:
   \begin{equation}
-  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \frac{1}{N_\q^2} \sum_{\q\qp\G} \Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp) 
+  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \sum_{\q\qp\G} \Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp) 
   {\rm e}^{i\qp\rp} {\rm e}^{-i(\q+\G)\r}, 
   \end{equation}
 where $\Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp)$ are Bloch-periodic for the wavevector $\qp$.
@@ -211,16 +229,16 @@ are those corresponding to $\qp=\k+\q$ as expected:
   \end{equation}
 therefore
   \begin{equation}
-  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \frac{1}{N_\q} \sum_{\q\G} \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]} (\rp)
+  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \sum_{\q\G} \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]} (\rp)
   {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
   \end{equation}
 The charge density can now be rewritten as:
   \begin{equation}
-  \Delta n_{[\r,\w]} = \frac{1}{N_\q} \sum_{\q\G} \Delta n_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r},
+  \Delta n_{[\r,\w]} = \sum_{\q\G} \Delta n_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r},
   \end{equation}
-hence
+hence [THE CODE HAS A 1/VOLUME PREFACTOR FOR THE CHARGE]
   \begin{equation}
-  \Delta n_{[\q\G\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
+  \Delta n_{[\q\G\w]} = 2\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
   \end{equation}
 By direct substitution we can see that
   \begin{equation}
@@ -229,24 +247,51 @@ By direct substitution we can see that
 which indicates that in the case of purely imaginary frequencies we can perform
 the calculations for half of the $\q$ perturbations (or equivalently, half of the
 $\G$ perturbations in a $\Gamma$-point representation).
-The induced Hartree potential can then be written as (NOT SURE IF I AM MISSING A PREFACTOR)
+The induced Hartree potential can then be written as 
   \begin{equation}
   \Delta V^{\rm H}_{[\q\G\w]}(\Gp) = \Delta n_{[\q\G\w]}(\Gp) v(\q+\Gp), 
   \end{equation}
 therefore the screened Coulomb interaction reads
   \begin{equation}
-  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp),
+  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp).
   \end{equation}
-and the inverse dielectric matrix is
+It is convenient to introduce the inverse dielectric matrix [Eq.\ (13.12) of HL,
+this is the ``right-'' dielectric matrix as opposed to the left-diel mat]
   \begin{equation}
-  \epsilon^{-1}_{\G\Gp}(\q;\w) = \delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) .
+  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
+  \end{equation}
+which implies
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w)  
   \end{equation}
 The convention used for the Coulomb potential is
   \begin{equation}
-  v(\r,\rp) = \frac{1}{N_\q} \sum_{\q\G} v(\q+\G) {\rm e}^{i\q\cdot(\rp-\r)} {\rm e}^{i\G\cdot(\rp-\r)}.
+  v(\r,\rp) = \sum_{\q\G} v(\q+\G) {\rm e}^{i\q\cdot(\rp-\r)} {\rm e}^{i\G\cdot(\rp-\r)}.
   \end{equation}
 
-  
+In practice we proceed as follows: we initialize the linear system as
+  \begin{equation}
+  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V^{\rm bare}_{[\q\G\w]} u_{v\k},
+  \end{equation}
+with $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$, or
+equivalently $\Delta V^{\rm bare}_{[\q\G\w]}(\Gp) = v(\q+\G)\delta_{\G\Gp}$.
+We solve the systems, calculate the induced charge, {\it construct the Hartree potential}
+(this involves the use of the Coulomb potential), and update the $\Delta V$ on the rhs
+to obatin $\Delta V^{\rm scr}_{[\q\G\w]}(\rp)$. When self-consistency is achieved, we have
+  \begin{equation}
+  \Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = W_{\G\Gp}(\q;\w) = v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w).
+  \end{equation}
+As we are dealing with a linear problem, we can change the scale of the initial
+perturbation and start from $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = {\rm e}^{i\G\cdot\rp}$,
+thereby ending up with $\Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = \epsilon^{-1}_{\G\Gp}(\q;\w)$.
+Note that this result is strictly linked to the choice of working with a right-dielectric
+matrix. [AFTER HAVING EPS WE NEED TO MULTIPLY ALL G' FOR THE SAME VqG, NOW IT'S DONE
+THE OTHER WAY AROUND]. In particular:
+  \begin{equation}
+  v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w) =[\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp).
+  \end{equation}
+
+
 
 
 \section{Green's function}
