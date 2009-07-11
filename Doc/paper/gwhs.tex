@@ -224,6 +224,7 @@ and Engineering Division, U.\ S.\ Department of Energy under Contract No. DE-AC0
 
 \section{Calculation of the screened Coulomb interaction in reciprocal space}
 
+Note: all the integrals are performed over the volume of the crystal.
 It is convenient to work within the Bloch representation. We rewrite the
 linear system and the induced chareg density by relabeling the states
 $\psi_v\rightarrow \psi_{v\k}$:
@@ -275,8 +276,7 @@ we obtain
   \begin{equation}
   v(\q+\G) = \frac{4\pi e^2}{|\q+\G|^2}.
   \end{equation}
-\hl{WHY STEVE HAS A FACTOR 1/OMEGA HERE ??}
-
+[Note HL86 has a factor $1/\Omega$ which comes from a different convention].
 
 Now we expand the variations of the wavefunctions using the previous convention.
 We note that the variations are generally not translationally invariant, therefore
@@ -301,7 +301,21 @@ The charge density can now be rewritten as
   \begin{equation}
   \Delta n_{[\q\G\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
   \end{equation}
-\hl{WHY THE HELL THE CODE HAS 1/OMEGA IN THE CHARGE DENSITY???}
+[Note the code has an extra factor $1/\Omega$ in the construction of the
+charge density. The explanation is the following.
+
+The FFT is performed in {\tt fftw.f90} as $\sum_\G c(\G) \exp{i\G\r}$
+and $1/N_\r \sum_\r \psi(\r) \exp{-i\G\r}$, while what we really need 
+is $\psi(\r) = 1/\sqrt{\Omega}\sum_\G c(\G) \exp{i\G\r}$
+and $c(\G) = 1/(\sqrt{\Omega} N_\r) \sum_\r \psi(\r) \exp{-i\G\r}$
+Therefore in order to calculate the induced charge density
+in real space we need to multiply by $1/\sqrt{\Omega}$ for the
+wavefunction. At the same time, the linear system is solved
+for a $\psi_v$ which misses the volume factor. As a consequence,
+$\Delta\psi_v$ misses the same factor and we need to put it back.
+That is why we multiply the induced charge by $1/\Omega$.
+\hl{ This will apply to the transformations of W and G as well, be careful}]
+
 By direct substitution we can see that
   \begin{equation}
   \Delta n_{[-\q,-\G,-\w^\star]} = \Delta n^\star_{[\q,\G,\w]},
