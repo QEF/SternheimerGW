@@ -25,6 +25,8 @@
 \def\rp{{\bf r^\prime}}
 \def\rpp{{\bf r^{\prime\prime}}}
 \def\rppp{{\bf r^{\prime\prime\prime}}}
+\def\mo{$\overline{1}$}
+\def\mt{$\overline{2}$}
 
 % -------
 \usepackage{soul}
@@ -186,13 +188,35 @@ every point $\r$.
 
 \section{Technical implementation}
 
-\subsection{Screened Coulomb interaction in the Bloch representation}
-
+% table: 1col, table* 2col
+\begin{table}
+\caption{\label{tab.1} Comparison between the symmetrized inverse dielectric matrix
+$\tilde\epsilon^{-1}_{\G\Gp}(\q;\w=0)$
+calculated here using density functional perturbation theory and that one obtained
+by using the expansion over empty states in Ref.\ \onlinecite{balde_tosa}. The latter has
+been calculated by inverting the symmetrized dielectric matrix.
+For the calculation we used a uniform unshifted grid $6\times6\times6$ while in
+Ref.\ \onlinecite{balde_tosa} 10 Chadi-Cohen points were used. The empirical
+pseudopotential parameters are the same, from Ref.\ \onlinecite{cohen_berg}.}
+\begin{ruledtabular}
+\begin{tabular}{c|c|c}
+(0,0,0) (0,0,0) & \phantom{-}0.083 &  \phantom{-}0.0797  \\
+(1,1,1)  (1,1,1)   &   \phantom{-}0.605    & \phantom{-}0.6055 \\
+(\mo,1,1) (1,1,1)   &   \phantom{-}0.008  & \phantom{-}0.0076 \\
+ (1,\mo,1) (\mo,1,1)  & \phantom{-}0.010 & \phantom{-}0.0102 \\
+ (1,\mo,\mo) (\mo,1,1) & \phantom{-}0.045 & \phantom{-}0.0463 \\
+ (2,0,0) (1,1,1)    &    -0.038 & -0.0382 \\
+ (2,0,0) (\mo,1,1)   &    -0.005 & -0.0049 \\
+ (2,0,0) (2,0,0)    &  \phantom{-}0.667 & \phantom{-}0.6671 \\
+ (\mt,0,0) (2,0,0)   & \phantom{-}0.006 & \phantom{-}0.0063 \\
+ (0,2,0) (2,0,0)    &  \phantom{-}0.016 & \phantom{-}0.0166 \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
 
 
 \section{Green's function}
 
-\section{Implementation}
 
 SPIEGA alpha PV NEL LINEAR SYSTEM
 
@@ -358,6 +382,23 @@ perturbation and start from $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = {\rm e}^{i\G\
 thereby ending up with $\Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = \epsilon^{-1}_{\G\Gp}(\q;\w)$.
 Note that this result is strictly linked to the choice of working with a right-dielectric
 matrix. 
+
+In order to avoid the singular behavior of the wings of the inverse dielectric matrix 
+at long wavelenght $\q\rightarrow 0$ it is convenient to define the symmetrized inverse
+dielectric matrix as follows:\cite{balde_tosa}
+  \begin{equation}
+  \tilde\epsilon^{-1}_{\G\Gp}(\q;\w) = \epsilon^{-1}_{\G\Gp}(\q;\w)  \frac{|\q+\Gp|}{|\q+\G\phantom{^\prime}|}.
+  \end{equation}
+It can be verified by direct calculation that $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$
+has finite limits for $\q\rightarrow 0$, unlike its unsymmetrized counterpart
+which diverges as $|\q|^{-1}$ in its wing $(\G\ne 0,\Gp=0)$.
+Within this notation, the screened Coulomb interaction reads
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) =   \frac{4\pi e^2}{|\q+\G||\q+\Gp|} \tilde\epsilon^{-1}_{\G\Gp}(\q;\w)
+  \end{equation}
+[I BELIEVE THAT THE LEFT MATRIX IS OBTAINED BY SWAPPING THE RIGHT MATRIX - CHECK THIS.
+PCM USES LEFT]
+
 
 \section{Condition number of the linear system}
 
@@ -779,7 +820,6 @@ In particular, in case of purely imginary frequency we have
 $\Delta n_{[-\G,\w]}=\Delta n^\star{[\G,\w]}$ and $\Delta V_{[-\G,\w]}=\Delta V^\star_{[\G,\w]}$
 (reality).
 
-
 \bibitem{note.grep.1}
   \begin{equation}
   \Delta V^{\rm H}_{[\G,\w]}(\rp) = \int d\rpp \Delta n_{[\G,\w]}(\rpp) \, v(\rpp,\rp),
@@ -788,6 +828,14 @@ and the screened interaction reads finally:
   \begin{equation}
   \Delta V_{[\G,\w]}(\rp) = v_{[\G]}(\rp) + \Delta V^{\rm H}_{[\G\w]}(\rp).
   \end{equation}
+
+\bibitem{balde_tosa}
+A. Baldereschi and E. Tosatti,
+Phys.\ Rev.\ B {\bf 17}, 4710 (1978).
+
+\bibitem{cohen_berg}
+M. L. Cohen and T. K. Bergstresser,
+Phys.\ Rev.\ {\bf 141}, 789 (1966).
 
 \end{thebibliography}
 
