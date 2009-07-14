@@ -252,7 +252,7 @@ couple to the $\q$ component of the potential:
   \end{equation}
 where $\Delta u^\sigma_{v\k[\q,\G,\w]}$ is cell-periodic in $\rp$.
 As a consequence the linear system simplifies to
-  \begin{equation}
+  \begin{equation}\label{eq.linsys.4}
   (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  = -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k},
   \end{equation}
 and the $\q$ component of the induced charge density can be written as
@@ -317,25 +317,43 @@ perturbation theory of the inverse dielectric matrix. The main achievement is th
 possibility of calculating the dielectric response at finite wavevectors without
 resorting to supercell calculations.
 
+As a technical note we point out that, as routinely done in DFPT calculations, 
+it is convenient to modify the linear operator on the lhs of Eq.\ (\ref{eq.linsys.4}) by adding
+a term $\alpha \P^\k$:
+ \begin{eqnarray} \label{eq.linsys.5}
+&  (\H_{\k+\q}-\E_{v\k}+\alpha\P^\k \pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  & = \nonumber \\
+&   -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k}, & 
+  \end{eqnarray}
+with $\alpha$ set to twice the occupied bandwith.
+While it does not affect the solutions $\Delta u^\pm_{v\k[\q,\G,\w]}$ which have
+vanishing projections on the occupied manifold, this additional term removes
+the null eigenvalues of the linear system thereby making it non singular.
+This is discusses in detail in Appendix \ref{app.condition}.
+
+Our approach is currently implemented in the empirical
+pseudopotential code {\tt OxfordGW}.\cite{oxfordgw}
+
+\section{Green's function}
+
 \section{Results}
 
 % table: 1col, table* 2col
-\begin{table}
-\caption{\label{tab.1} Comparison between the symmetrized inverse dielectric matrix
-$\tilde\epsilon^{-1}_{\G\Gp}(\q;\w=0)$
-calculated here using density functional perturbation theory and that one obtained
-by using the expansion over empty states in Ref.\ \onlinecite{balde_tosa}. The latter has
-been calculated by inverting the symmetrized dielectric matrix.
-For the calculation we used a uniform unshifted grid $6\times6\times6$ and a cutoff
-of 5 Ry (while in Ref.\ \onlinecite{balde_tosa} 10 Chadi-Cohen points and 2 Ry were used). The empirical
-pseudopotential parameters are the same, from Ref.\ \onlinecite{cohen_berg}.
-The head of the inverse dielectric matrix is sensitive to the BZ sampling.
-Using an unshifted $8\times8\times8$ grid we find $\tilde\epsilon^{-1}_{00}(\q\rightarrow 0;\w=0)=0.0911$.
-The same sensitivity has been reported in Ref.\ \onlinecite{baroni-resta} and discussed
-in Ref.\ \onlinecite{balde_tosa}. The body of the inverse dielectric matrix is far
-less sensitive to the BZ sampling.}
-\begin{ruledtabular}
-\begin{tabular}{c|c|c}
+\begin{table}[b!]
+\caption{\label{tab.1} Long-wavelenght limit of the static (symmetrized)
+inverse dielectric matrix of silicon: $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ for
+$\q=(0.01,0,0)$ and $\w=0$. We compare our calculations performed within
+DFPT and the results obtained in Ref.\ \onlinecite{balde_tosa}
+using the expansion over empty states and the inversion of the dielectric matrix.
+For the calculations we sampled the Brillouin zone with $6\times6\times6$ grid
+points and a plane wave cutoff of 5 Ry. Following Ref.\ \onlinecite{balde_tosa}
+we employed the empirical pseudopotential parameters from Ref.\ \onlinecite{cohen_berg}.
+\vspace{0.5cm}}
+\begin{tabular}{c c c}
+\hline
+\hline
+$\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
+% & (Ref.\ \onlinecite{balde_tosa})    &    \\
+\hline
     (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0797  \\
  (1,1,1)  (1,1,1)     &   \phantom{-}0.605  & \phantom{-}0.6055 \\
 (\mo,1,1) (1,1,1)     &   \phantom{-}0.008  & \phantom{-}0.0076 \\
@@ -346,18 +364,10 @@ less sensitive to the BZ sampling.}
  (2,0,0) (2,0,0)      &  \phantom{-}0.667   & \phantom{-}0.6671 \\
  (\mt,0,0) (2,0,0)    & \phantom{-}0.006    & \phantom{-}0.0063 \\
  (0,2,0) (2,0,0)      &  \phantom{-}0.016   & \phantom{-}0.0166 \\
+\hline
+\hline
 \end{tabular}
-\end{ruledtabular}
 \end{table}
-
-
-\section{Green's function}
-
-
-SPIEGA alpha PV NEL LINEAR SYSTEM
-
-The approach described above is currently implemented in the empirical
-pseudopotential code {\tt OxfordGW} or {\tt GWdfpt}. 
 
 \subsection{Calculation of epsilon}
 
@@ -368,15 +378,12 @@ The latter possibility has already been discussed in Ref.\ \onlinecite{reining}.
 Our additional step is to fully exlpoint density-functional perturbation theory
 in terms of self-consistent solution of the linear system.
 
-
 \subsection{Polarization propagator beyond the random-phase approximation}\label{sec.beyond_rpa}
 
 \section{Scaling properties}
 
 To compare scaling of HL86 and GWHS is better to state from the start that
 we consider only w=0.
-
-\section{Results}
 
 \section{Conclusions and outlook}
 
@@ -394,7 +401,7 @@ and Engineering Division, U.\ S.\ Department of Energy under Contract No. DE-AC0
 
 \appendix
 
-\section{Condition number of the linear system}
+\section{Condition number of the linear system}\label{app.condition}
 
 The iterative calculation of the screened Coulomb interaction at finite real
 frequencies $\w$ can be considerably more time-consuming than in the static
@@ -821,6 +828,10 @@ Phys.\ Rev.\ B {\bf 1}, 910 (1970).
 \bibitem{kunc}
 K. Kunc and E. Tosatti,
 Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
+
+\bibitem{oxfordgw}
+Borrowing some subs from espresso - developed by FG - will become
+GNU - need to be ported to main packages.
 
 \end{thebibliography}
 
