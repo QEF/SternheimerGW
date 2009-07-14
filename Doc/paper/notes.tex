@@ -95,229 +95,98 @@ derivatives. Also we can address directly the quasiparticle equation.
 
 \section{Overview of the methodology}
 
-\section{Screened Coulomb interaction}\label{sec.coulomb}
+\section{Screened Coulomb interaction}
 
-In this section we describe in general terms how to exploit density-functional
-perturbation theory in order to calculate the screened Coulomb interaction
-$W(\r,\rp;\w)$ (where $\r$, $\rp$ are the space variables and $\w$ is the
-excitation frequency). We assume Rydberg atomic units throughout this manuscript. 
-The Hedin's equation which defines the screened Coulomb 
-interaction reads:\cite{hl}
-%[Eq.\ (13.19b) of Ref.~\onlinecite{hl}] 
+We assume insulators with a finite gap. Generalization to the case of metals
+can be done following De Gironcoli.
+In the following we assume Rydberg atomic units (hence the Coulomb potential
+will be $e^2/r$ with $e^2=2$ and $1/(4\pi\epsilon_0)=1$, and the kinetic energy $-\nabla^2$, since $\hbar=1$ 
+and $2m_{\rm e}=1$).
+The screened Coulomb interaction $W(\r,\rp;\w)$ can be calculated by using
+the second one of Hedin's equations in space-frequency representation
+[Eq.\ (13.19b) of Ref.~\onlinecite{hl}]:
   \begin{eqnarray}\label{eq.w}
   W(\r,\rp;\w) & = & v(\r,\rp) + \int d\rpp \,W(\r,\rpp;\w)  \nonumber \\
-   & \times & \int d\rppp P(\rpp,\rppp;\w) v(\rppp,\rp),
+   & \times & \int d\rppp P(\rpp,\rppp;\w) v(\rppp,\rp), 
   \end{eqnarray}
-$v(\r,\rp)=e^2/|\r-\rp|$ being the bare Coulomb interaction and 
+$v(\r,\rp)=|\r-\rp|^{-1}$ being the bare Coulomb interaction (in Hartree units) and
 $P(\r,\rp;\w)$ the irreducible polarization propagator. 
-Since Eq.\ (\ref{eq.w}) is a self-consistent Dyson equation for the
-screened interaction, it is in principle possible to solve it
-recursively, in the spirit of density-functional perturbation theory.
-For simplicity, we here specialize to the case of the random-phase approximation (RPA)
-for the polarization propagator. We will show in Sec.\ \ref{sec.beyond_rpa}
-that the generalization of this procedure to include exchange and correlation
-effects can be performed without difficulties.
-Within the random-phase approximation the polarization propagator can be written as:\cite{hl}
-% [Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
+Within the random phase approximation the polarization propagator reads 
+[Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
   \begin{equation}\label{eq.p}
   P(\r,\rp;\w) = \sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
   \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
   \end{equation}
-where $\psi_n(\r)$ indicates an electronic wavefunctions for the
-effective single-particle Hamiltonian (say the Kohn-Sham states)
-with energy eigenvalue $\E_n$ and occupation number $f_n$. 
-In Eq.\ (\ref{eq.p}) the summation indices $m$ and $n$ run over
-occupied and unoccupied states, as well as the spin index.
-Although the expression for the RPA polarization Eq.\ (\ref{eq.p})
-has been derived for real frequencies,\cite{hl} we can continue
-$P(\r,\rp;\w)$ throughout the complex plane by using Eq.~(\ref{eq.p})
-as a definition outside of the real axis.
-From Eq.\ (\ref{eq.p}) we derive immediately the property 
-$P(\r,\rp;-\w^\star)=P^\star(\r,\rp;\w)$.
+the summation extending over occupied and unoccupied states, as well as
+over the spin indices.\cite{note.w.even}
+The polarization has been derived for real frequencies, but here we ``continue''
+$P$ in the complex plane using Eq.\ (\ref{eq.p}). Therefore $\w$ is in general complex
+in the following.
 
-Our goal now is to rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p})
-without performing summations over the unoccupied states.
-For this purpose it is convenient to regard the screened interaction
-$W(\r,\rp;\w)$ as a function of the 
-second space variable $\rp$, parametric in the first space variable 
+In what follows it is convenient to regard the screened interaction
+as a perturbation to the electronic system which is a function of the 
+second space variable $\rp$ and is parametric in the first space variable 
 $\r$ and in the frequency $\w$: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
-The perturbation $\Delta V_{[\r,\w]}(\rp)$ induces to first-order 
-a frequency-dependent variation $\Delta n_{[\r,\w]}$ of the single-particle 
-dielectric matrix. Within the RPA approximation such
-variation can be calculated as:
-  \begin{equation}\label{eq.deltan}
-  \Delta n_{[\r,\w]} = 2\sum_{v\s} \psi_v^\star  \Delta \psi^\s_{v[\r,\w]}.
-  \end{equation}
-In Eq.\ (\ref{eq.deltan}) the index $v$ stands for ``valence'' and runs
-over the occupied states only, the factor of 2 takes into account the
-spin degeneracy, and $\sigma=\pm$ (not to be confused with the spin).
-The linear variations of the occupied wavefunctions $\Delta \psi^\s_{v[\r,\w]}$
-are obtained by solving the inhomogeneous linear systems
+The first-order change of the occupied electronic wavefunctions in response to the perturbation
+$\Delta V_{[\r,\w]}$ can be obtained by solving the two linear systems
   \begin{equation}\label{eq.linsys}\label{eq.linsys.1}
-  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_v, 
+  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_v, \\
   \end{equation}
-where $\H$ is the effective single-particle Hamiltonian and $\P$ is the projector
-on the occupied manifold.
-Equation (\ref{eq.deltan}) is the generalization to finite-frequency perturbations
-of the induced charge found in density-functional perturbation theory.\cite{baroni.rmp} 
-The standard DFPT result is recovered for $\w=0$ as the $\sigma=\pm$ variations
-of the wavefunctions do coincide in that case.
-The Hartree potential associated with the induced charge $\Delta n_{[\r,\w]}$
-can be calculated as
+yielding $\Delta \psi^\pm_{v[\r,\w]}$. In deriving these two systems we made
+use of the time-reversal symmetry in the system ($\psi_v = \psi_v^\star$). 
+From the variation of the wavefunctions we can construct the frequency-dependent
+linear change in the charge density $\Delta n(\r,\rp;\w)=\Delta n_{[\r,\w]}(\rp)$:
+  \begin{equation}\label{eq.deltan}
+  \Delta n_{[\r,\w]} = 2\sum_{v\s} \psi_v^\star  \Delta \psi^\s_{v[\r,\w]},
+  \end{equation}
+where $\s=\pm$ and must not be confused with the spin.
+Note that the index $v$ indicates the state and the factor of 2 takes into
+account the spin degeneracy (the indices $m,n$ before contained the spin instead).
+In principle we shoud work with variables ${\bf x}=(\r,\xi)$ including the spin.
+However, if we neglect the $W_{\uparrow\downarrow}$ component of $W$, then
+the expression we wrote are correct (note there is a double sum over spin,
+but the previous approx gives a delta in spin inside the matrix element).
+Direct substitution indicates that $\Delta \psi^\s_{v[\r,-\w^\star]} = \Delta \psi_{v[\r,\w]}^{-\s\star}$.
+As expected: $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$, which
+is consistent with the result $\Delta V_{[\r,\w]}^\star = \Delta V_{[\r,-\w^\star]}$.\cite{note.w.even}
+This property of the density matrix does not require TRS to hold,
+and derives directly from Eq. (2).
+Equation (\ref{eq.deltan}) is the generalization of the DFPT result
+to perturbations at finite frequencies. In the special case $\w=0$
+we recover the expression by Baroni et al. (considering that teh induced
+charge is purely real as $-\w^\star=\w$).
+This is exactly the variation of the density-matrix 
+as obtained from the time-dependent Hartree method (Eq.\ 5.23 of HL).
+The associated Hartree potential reads
   \begin{equation}
-  \Delta V^{\rm H}_{[\r,\w]}(\rp) = \int d\rpp \Delta n_{[\r,\w]} (\rpp) \, v(\rpp,\rp),
+    \Delta V_{\rm H}(\r,\rp;\w) = \int d\rpp \Delta n(\r,\rpp;\w) \, v(\rpp,\rp).
   \end{equation}
-and finally the screened Coulomb interaction in the RPA approximation becomes
-  \begin{equation}\label{eq.w.dfpt}
-  W(\r,\rp;\w) = \Delta V_{[\r,\w]}(\rp) = v(\r,\rp) + \Delta V^{\rm H}_{[\r,\w]}(\rp).
+By combining the previous equations we can rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p}) as
+  \begin{equation}
+  W(\r,\rp;\w) = v(\r,\rp) + \Delta V_{\rm H}(\r,\rp;\w).
   \end{equation}
-It is straightforward to verify that Eqs.\ (\ref{eq.deltan})-(\ref{eq.w.dfpt})
-are {\it equivalent} to our original Eqs.\ (\ref{eq.w})-(\ref{eq.p}).
-The only assumptions made in the derivations are that (i) time-reversal symmetry applies,
-(ii) the off-diagonal components of the screened interaction in the spin space
-can be neglected, and (iii) that the system under consideration presents a finite 
-energy gap. The assumption on time-reversal symmetry is not essential and is mainly used to
-obtain a compact expression for the wavefunction perturbations at
-$\pm\w$. The assumption on the finite gap can be removed by following the extension
-of DFPT to metallic systems developed in Ref.\ \onlinecite{degironcoli}. 
-Direct substitution into Eq.\ (\ref{eq.linsys.1}) shows that 
-$\Delta \psi^\s_{v[\r,-\w^\star]} = \Delta \psi_{v[\r,\w]}^{-\s\star}$,
-therefore $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$ as expected
-from the properties of the RPA polarization propagator.
+One can verify that the SCF equations yield precisely the first two equations
+without any additional assumptions. This is the same strategy as teh one used
+in lattice-dynamical calculations.
+The above scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
+Had we stopped at the first iteration (no self-consistency), we would have
+simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
+The latter possibility has already been discussed in Ref.\ \onlinecite{reining}.
+Our additional step is to fully exlpoint density-functional perturbation theory
+in terms of self-consistent solution of the linear system.
 
-There is an intuitive physical meaning associated with the calculation scheme developed above.
-We consider an external point charge introduced in the system
-at the point $\r$. This charge generates a bare Coulomb potential $v(\r,\rp)$,
-and the system reacts to the perturbation by generating an induced charge
-at the points $\rp$ given by $\Delta n_{[\r,\w]}(\rp)$ and the associated 
-screening potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$.
-The sum of the external perturbation $v(\r,\rp)$ and the screening
-potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$ gives the (RPA) screened Coulomb
-interaction $W(\r,\rp;\w)$ at the point $\rp$.
-
-The linear systems Eq.\ (\ref{eq.linsys.1}) must be solved self-consistently.
-For this purpose we begin by initializing the screened
-interaction $W$ using the bare interaction $v$. 
-Then we calculate the perturbations to the wavefunctions $\Delta \psi_v$.
-Using the latter we update the induced charge density $\Delta n$
-and the associated screening potential $\Delta V^{\rm H}$. This allow us to
-generate a better estimate of the screened interaction $W$.
-We repeat this cycle until convergence in the screened Coulomb
-interaction is achieved. This procedure can be regarded as the extension
-of the DFPT for lattice-dynamical calculations to finite-frequency
-point-charge perturbations.
+The physics behind the present scheme is that we consider a perturbation to
+the system given by a point charge at $\r$ which generates a Coulomb potential
+at $\rp$ given by $v(\r,\rp)$. Then we calculate the build up of the charge
+in response to this perturbation, leading to the potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$
+(which depends on the position of the point charge and on the frequency).
+The total potential (perturbation + screening) at point $\rp$ is given then
+by $W(\r,\rp;\w) = v(\r,\rp) + \Delta V_{\rm H}(\r,\rp;\w)$.
+At variance with phonon calculations, we here consider perturbations corresponding
+to the potential generated by point charge. We repeat this calculation for
+every point $\r$.
 
 \section{Technical implementation}
-
-\section{Screened Coulomb interaction in reciprocal space}
-
-We have implemented the scheme presented in Sec.\ \ref{sec.coulomb}
-within a reciprocal space formalism. This choice allows us to make
-contact with the existing literature on the 
-calculation of dielectric properties and quasiparticle 
-corrections from first-principles.\cite{hl86,balde_tosa,baroni-resta,hl86-prb,reining,cpm}
-%
-We begin by rewriting 
-the linear systems Eq.\ (\ref{eq.linsys.1})
-by relabeling the wavefunctions $\psi_v$ into Bloch states
-$\psi_{v\k}=u_{v\k} {\rm e}^{i\k\cdot\rp}$, $u_{v\k}$ being
-lattice-periodic in $\rp$:
-  \begin{equation}\label{eq.linsys.3}
-  (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k}.
-  \end{equation}
-From the perturbations to the wavefunctions we can construct the
-induced charge density
-  \begin{equation}
-  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]},
-  \end{equation}
-where the factor $N_\k$ takes into account the normalization of
-the Bloch states over the unit cell of volume $\Omega$
-[while the $\psi_v$'s in Eq.\ (\ref{eq.linsys.1}) are normalized to the crystal volume
-$N_\k \Omega$].
-%Note: all the integrals are performed over the volume of the crystal.
-%The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
-Then we expand the screened Coulomb interaction in terms
-of the Bloch waves ${\rm exp}[-i(\q+\G)\cdot\r]$ and ${\rm exp}[i\q\cdot\r]$:
-  \begin{equation}\label{eq.dv.bloch}
-  \Delta V_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\q}  \sum_{\q\G} \Delta v_{[\q,\G,\w]}(\rp) 
-   {\rm e}^{-i(\q+\G)\cdot\r} {\rm e}^{i\q\cdot\rp}, 
-  \end{equation}
-where $\Delta v_{[\q,\G,\w]}$ is cell-periodic in $\rp$.
-When we replace Eq.\ (\ref{eq.dv.bloch}) into Eq.\ (\ref{eq.linsys.3})
-we discover that only the $\k+\q$ component of the changes in the wavefunctions
-couple to the $\q$ component of the potential:
-  \begin{equation}
-  \Delta \psi^\sigma_{v\k[\r,\w]} = \frac{1}{\Omega N_\q} \sum_{\q\G} \Delta u^\sigma_{v\k[\q,\G,\w]} 
-  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
-  \end{equation}
-where $\Delta u^\sigma_{v\k[\q,\G,\w]}$ is cell-periodic in $\rp$.
-As a consequence the linear system simplifies to
-  \begin{equation}
-  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  = -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k},
-  \end{equation}
-and the $\q$ component of the induced charge density can be written as
-  \begin{equation} \label{eq.deltan.bloch}
-  \Delta n_{[\q,\G,\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^\s_{v\k[\q,\G,\w]}.
-  \end{equation}
-This result is analogous to the case of standard DFPT. The only difference is that
-here the translational invariance of the screened interaction induces a coupling
-between the perturbation ${\rm e}^{-i\q\cdot\r}$ in the variable $\r$ and the response
-${\rm e}^{i\q\cdot\rp}$ in the variable $\rp$ ($-\q \rightarrow \q$).
-The sign convention used in Eq.\ (\ref{eq.dv.bloch}) is crucial to obtain
-the compact expression Eq.\ (\ref{eq.deltan.bloch}) for the induced charge,
-and is opposite to the convention used in Ref.\ \onlinecite{hl86}.
-If we further expand the periodic function $\Delta n_{[\q,\G,\w]}$ in plane
-waves $\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
-we can write the screened Coulomb interaction Eq.\ (\ref{eq.w.dfpt}) as
-  \begin{equation}
-  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q,\G,\w]}(\Gp) ]v(\q+\Gp),
-  \end{equation}
-with $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
-If we introduce the ``right-sided'' inverse dielectric matrix using
-  \begin{equation}
-  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
-  \end{equation}
-then we have
-  \begin{equation}
-  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w).
-  \end{equation}
-In practical calculations we proceed as follows: we first initialize the perturbation
-in the linear systems using $\Delta V^{\rm bare}_{[\q,\G,\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$.
-The solution of the linear systems yields the change in the wavefunctions,
-which are then used to constructr the induced charge, the induced Hartree potential,
-and the updated screened interaction. At convergence the perturbation corresponds to
-the screened interaction $v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w)$.
-%
-As we are dealing with a linear problem, we can change the scale of the initial
-perturbation and start from a bare perturbation given by ${\rm e}^{i\G\cdot\rp}$,
-thereby ending up with $\epsilon^{-1}_{\G\Gp}(\q;\w)$ as the self-consistent potential.
-Note that this result is strictly linked to the choice of working with a right-sided 
-inverse dielectric matrix. 
-%
-In order to avoid the singular behavior of the wings of the inverse dielectric matrix 
-at long wavelenght ($\q\rightarrow 0$) it is convenient to define the symmetrized inverse
-dielectric matrix as follows:\cite{balde_tosa}
-  \begin{equation}
-  \tilde\epsilon^{-1}_{\G\Gp}(\q;\w) = \epsilon^{-1}_{\G\Gp}(\q;\w)  \frac{|\q+\Gp|}{|\q+\G\phantom{^\prime}|}.
-  \end{equation}
-It can be verified by direct calculation that, unlike its unsymmetrized counterpart,
-the wings of $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ have finite limits for $\q\rightarrow 0$.
-%Within this notation, the screened Coulomb interaction reads
-%  \begin{equation}
-%  W_{\G\Gp}(\q;\w) =   \frac{4\pi e^2}{|\q+\G||\q+\Gp|} \tilde\epsilon^{-1}_{\G\Gp}(\q;\w)
-%  \end{equation}
-%[I BELIEVE THAT THE LEFT MATRIX IS OBTAINED BY SWAPPING THE RIGHT MATRIX - CHECK THIS.
-%PCM USES LEFT]
-
-The scheme introduced here allows us to calculate one row (in $\Gp$) of the inverse dielectric
-matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
-perturbation ${\rm e}^{i(\q+\G)\cdot\r}$. This idea has been discussed in Ref.\ \onlinecite{kunc}
-in the framework of nonperturbative methods. We here developed the density-functional
-perturbation theory of the inverse dielectric matrix. The main achievement is the
-possibility of calculating the dielectric response at finite wavevectors without
-resorting to supercell calculations.
-
-\section{Results}
 
 % table: 1col, table* 2col
 \begin{table}
@@ -336,16 +205,16 @@ in Ref.\ \onlinecite{balde_tosa}. The body of the inverse dielectric matrix is f
 less sensitive to the BZ sampling.}
 \begin{ruledtabular}
 \begin{tabular}{c|c|c}
-    (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0797  \\
- (1,1,1)  (1,1,1)     &   \phantom{-}0.605  & \phantom{-}0.6055 \\
-(\mo,1,1) (1,1,1)     &   \phantom{-}0.008  & \phantom{-}0.0076 \\
- (1,\mo,1) (\mo,1,1)  & \phantom{-}0.010    & \phantom{-}0.0102 \\
- (1,\mo,\mo) (\mo,1,1)& \phantom{-}0.045    & \phantom{-}0.0463 \\
- (2,0,0) (1,1,1)      &    -0.038           & -0.0382 \\
- (2,0,0) (\mo,1,1)    &    -0.005           & -0.0049 \\
- (2,0,0) (2,0,0)      &  \phantom{-}0.667   & \phantom{-}0.6671 \\
- (\mt,0,0) (2,0,0)    & \phantom{-}0.006    & \phantom{-}0.0063 \\
- (0,2,0) (2,0,0)      &  \phantom{-}0.016   & \phantom{-}0.0166 \\
+(0,0,0) (0,0,0) & \phantom{-}0.083 &  \phantom{-}0.0797  \\
+(1,1,1)  (1,1,1)   &   \phantom{-}0.605    & \phantom{-}0.6055 \\
+(\mo,1,1) (1,1,1)   &   \phantom{-}0.008  & \phantom{-}0.0076 \\
+ (1,\mo,1) (\mo,1,1)  & \phantom{-}0.010 & \phantom{-}0.0102 \\
+ (1,\mo,\mo) (\mo,1,1) & \phantom{-}0.045 & \phantom{-}0.0463 \\
+ (2,0,0) (1,1,1)    &    -0.038 & -0.0382 \\
+ (2,0,0) (\mo,1,1)   &    -0.005 & -0.0049 \\
+ (2,0,0) (2,0,0)    &  \phantom{-}0.667 & \phantom{-}0.6671 \\
+ (\mt,0,0) (2,0,0)   & \phantom{-}0.006 & \phantom{-}0.0063 \\
+ (0,2,0) (2,0,0)    &  \phantom{-}0.016 & \phantom{-}0.0166 \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
@@ -358,18 +227,6 @@ SPIEGA alpha PV NEL LINEAR SYSTEM
 
 The approach described above is currently implemented in the empirical
 pseudopotential code {\tt OxfordGW} or {\tt GWdfpt}. 
-
-\subsection{Calculation of epsilon}
-
-Our scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
-Had we stopped at the first iteration (no self-consistency), we would have
-simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
-The latter possibility has already been discussed in Ref.\ \onlinecite{reining}.
-Our additional step is to fully exlpoint density-functional perturbation theory
-in terms of self-consistent solution of the linear system.
-
-
-\subsection{Polarization propagator beyond the random-phase approximation}\label{sec.beyond_rpa}
 
 \section{Scaling properties}
 
@@ -393,6 +250,160 @@ and Engineering Division, U.\ S.\ Department of Energy under Contract No. DE-AC0
 \end{acknowledgments}
 
 \appendix
+
+\section{Calculation of the screened Coulomb interaction in reciprocal space}
+
+Note: all the integrals are performed over the volume of the crystal.
+It is convenient to work within the Bloch representation. We rewrite the
+linear system and the induced chareg density by relabeling the states
+$\psi_v\rightarrow \psi_{v\k}$:
+  \begin{equation}
+  (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k},
+  \end{equation}
+As the states $\psi_v$ are normalized 
+in the crystal volume, while the states $\psi_{v\k}$ are typically normalized
+in the unit cell, we have $\psi_{v\k} = \sqrt{N_\k} \psi_v$ for the same state.
+For the same reason, the variation of teh wavefunction in the linear system
+must be scaled to reflect the $\sqrt{N_\k} \psi_v$ on the rhs, and the induced charge
+therefore reads:
+  \begin{equation}
+  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
+  \end{equation}
+Here we made use again of the property of TRS yielding $\psi_{v\k}^\star=\psi_{v,-\k}$
+and swapped $\k$ and $-\k$ in the sum.
+The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
+%
+Now we introduce the following convention for the Fourier transform of our functions
+($\Omega$ is the unit cell volume - this convention assigns the inverse of the crystal
+volume to the pair $\q,\G$):
+  \begin{eqnarray}
+  f(\r,\rp;\w) & = & \Omega^{-1}N_\q^{-1} \sum_{\q\G} f_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \\
+  f_{[\q\G\w]}(\rp) & = & \sum_\Gp f_{[\q\G\w]}(\Gp) {\rm e}^{i\Gp\r}.
+  \end{eqnarray}
+$f_{[\q\G\w]}(\rp)$ is Bloch-periodic in $\rp$ with wavevector $\q$.
+It can be seen that we use two opposite conventions for the variables $\r$ and $\rp$.
+This is done to save us a cumbersome notation that would arise from using the same
+convention (involving many $-\q$ and $-\Gp$). This necessity arises from the fact
+that the screened Coulomb interaction is translationally invariant, leading to 
+the exponential ${\rm e}^{i\q(\rp-\r)}$ where the two ocnventions coexist.
+In HL86 the choice of the convention is the opposite. We decided to use the
+direct convention for $\rp$ because this is our standard work variable.
+In particular:
+  \begin{eqnarray}
+  \Delta V_{[\r,\w]} (\rp) & = & \Omega^{-1}N_\q^{-1}  \sum_{\q\G} \Delta V_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}, \nonumber \\
+  \Delta n_{[\r,\w]} (\rp) & = & \Omega^{-1}N_\q^{-1}  \sum_{\q\G} \Delta n_{[\q\G\w]}(\rp) {\rm e}^{i\q(\rp-\r)} {\rm e}^{-i\G\r}. \nonumber 
+  \end{eqnarray}
+Within the same convention the Coulomb potential reads
+  \begin{equation}
+  v(\r,\rp)  =  \Omega^{-1}N_\q^{-1} \sum_{\q\G} v(\q+\G) {\rm e}^{i\q\cdot(\rp-\r)} {\rm e}^{i\G\cdot(\rp-\r)}. 
+  \end{equation}
+Since we have
+  \begin{equation}
+  |\r|^{-1} = \frac{4\pi}{(2\pi)^3}\int d\q \, |\q|^{-2}{\rm e}^{i\q\cdot\r},
+  \end{equation}
+we obtain
+  \begin{equation}
+  v(\q+\G) = \frac{4\pi e^2}{|\q+\G|^2}.
+  \end{equation}
+[Note HL86 has a factor $1/\Omega$ which comes from a different convention].
+
+Now we expand the variations of the wavefunctions using the previous convention.
+We note that the variations are generally not translationally invariant, therefore
+we find two wavevectors $\q$ and $\qp$ (the prefactor is a choice in order to
+obtain the linear system without an ugly volume factor in the middle):
+  \begin{equation}
+  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \Omega^{-1}N_\q^{-1}\sum_{\q\qp\G} \Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp) 
+  {\rm e}^{i\qp\rp} {\rm e}^{-i(\q+\G)\r}, 
+  \end{equation}
+where $\Delta u^{\qp\pm}_{v\k[\q\G\w]} (\rp)$ are Bloch-periodic for the wavevector $\qp$.
+By direct substitution in the linear system we have that the only nonzero component
+are those corresponding to $\qp=\k+\q$ as expected:
+  \begin{equation}
+  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V_{[\q\G\w]} u_{v\k},
+  \end{equation}
+therefore
+  \begin{equation}
+  \Delta \psi^\pm_{v\k[\r,\w]} (\rp) = \Omega^{-1}N_\q^{-1} \sum_{\q\G} \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]} (\rp)
+  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
+  \end{equation}
+The charge density can now be rewritten as 
+  \begin{equation}
+  \Delta n_{[\q\G\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^{\k+\q,\s}_{v\k[\q\G\w]}.
+  \end{equation}
+[Note the code has an extra factor $1/\Omega$ in the construction of the
+charge density. The explanation is the following.
+
+The FFT is performed in {\tt fftw.f90} as $\sum_\G c(\G) \exp{i\G\r}$
+and $1/N_\r \sum_\r \psi(\r) \exp{-i\G\r}$, while what we really need 
+is $\psi(\r) = 1/\sqrt{\Omega}\sum_\G c(\G) \exp{i\G\r}$
+and $c(\G) = 1/(\sqrt{\Omega} N_\r) \sum_\r \psi(\r) \exp{-i\G\r}$
+Therefore in order to calculate the induced charge density
+in real space we need to multiply by $1/\sqrt{\Omega}$ for the
+wavefunction. At the same time, the linear system is solved
+for a $\psi_v$ which misses the volume factor. As a consequence,
+$\Delta\psi_v$ misses the same factor and we need to put it back.
+That is why we multiply the induced charge by $1/\Omega$.
+\hl{ This will apply to the transformations of W and G as well, be careful}]
+
+By direct substitution we can see that
+  \begin{equation}
+  \Delta n_{[-\q,-\G,-\w^\star]} = \Delta n^\star_{[\q,\G,\w]},
+  \end{equation}
+which indicates that in the case of purely imaginary frequencies we can perform
+the calculations for half of the $\q$ perturbations (or equivalently, half of the
+$\G$ perturbations in a $\Gamma$-point representation).
+The induced Hartree potential can then be written as 
+  \begin{equation}
+  \Delta V^{\rm H}_{[\q\G\w]}(\Gp) = \Delta n_{[\q\G\w]}(\Gp) v(\q+\Gp), 
+  \end{equation}
+therefore the screened Coulomb interaction reads
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q\G\w]}(\Gp) ]v(\q+\Gp).
+  \end{equation}
+It is convenient to introduce the inverse dielectric matrix [Eq.\ (13.12) of HL,
+this is the ``right-'' dielectric matrix as opposed to the left-diel mat]
+  \begin{equation}
+  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
+  \end{equation}
+which implies
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w)  
+  \end{equation}
+
+In practice we proceed as follows: we initialize the linear system as
+  \begin{equation}
+  (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^{\k+\q,\pm}_{v\k[\q\G\w]}  = -(1-\P^{\k+\q}) \Delta V^{\rm bare}_{[\q\G\w]} u_{v\k},
+  \end{equation}
+with $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$, or
+equivalently $\Delta V^{\rm bare}_{[\q\G\w]}(\Gp) = v(\q+\G)\delta_{\G\Gp}$.
+We solve the systems, calculate the induced charge, {\it construct the Hartree potential}
+(this involves the use of the Coulomb potential), and update the $\Delta V$ on the rhs
+to obatin $\Delta V^{\rm scr}_{[\q\G\w]}(\rp)$. When self-consistency is achieved, we have
+  \begin{equation}
+  \Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = W_{\G\Gp}(\q;\w) = v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w).
+  \end{equation}
+As we are dealing with a linear problem, we can change the scale of the initial
+perturbation and start from $\Delta V^{\rm bare}_{[\q\G\w]}(\rp) = {\rm e}^{i\G\cdot\rp}$,
+thereby ending up with $\Delta V^{\rm scr}_{[\q\G\w]}(\Gp) = \epsilon^{-1}_{\G\Gp}(\q;\w)$.
+Note that this result is strictly linked to the choice of working with a right-dielectric
+matrix. 
+
+In order to avoid the singular behavior of the wings of the inverse dielectric matrix 
+at long wavelenght $\q\rightarrow 0$ it is convenient to define the symmetrized inverse
+dielectric matrix as follows:\cite{balde_tosa}
+  \begin{equation}
+  \tilde\epsilon^{-1}_{\G\Gp}(\q;\w) = \epsilon^{-1}_{\G\Gp}(\q;\w)  \frac{|\q+\Gp|}{|\q+\G\phantom{^\prime}|}.
+  \end{equation}
+It can be verified by direct calculation that $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$
+has finite limits for $\q\rightarrow 0$, unlike its unsymmetrized counterpart
+which diverges as $|\q|^{-1}$ in its wing $(\G\ne 0,\Gp=0)$.
+Within this notation, the screened Coulomb interaction reads
+  \begin{equation}
+  W_{\G\Gp}(\q;\w) =   \frac{4\pi e^2}{|\q+\G||\q+\Gp|} \tilde\epsilon^{-1}_{\G\Gp}(\q;\w)
+  \end{equation}
+[I BELIEVE THAT THE LEFT MATRIX IS OBTAINED BY SWAPPING THE RIGHT MATRIX - CHECK THIS.
+PCM USES LEFT]
+
 
 \section{Condition number of the linear system}
 
@@ -794,6 +805,35 @@ Phys.\ Rev.\ B {\bf 56} R4301 (1997).
 V. Simoncini and D. B. Szyld,
 Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
 
+\bibitem{note.w.even}
+Note that from Eq.\ (\ref{eq.p}) it follows that $P(\r,\rp;-\w^\star)=P^\star(\r,\rp;\w)$,
+therefore using twice Eq.\ (\ref{eq.w}) (once for $w$ and once for $-w^\star$ and taking
+the cc) we obtain $W(\r,\rp;-\w^\star)=W^\star(\r,\rp;\w)$. In other words
+the screened interaction is even w.r.t. the imaginary axis.
+In particular, in the special case when $\w$ is purely imaginary:
+  \begin{equation}
+  \Delta n_{[\r,\w]} = 4 {\rm Re} \sum_v \psi_v^\star \Delta \psi_{v[\r,\w]},
+  \end{equation}
+and we need to solve only one linear systemi because $-\w^\star=\w$,
+as in the static case (The factor 4 is for twice the real part times the spin degeneracy).
+Note also that for imaginary frequencies the screened interaction is purely real
+(in $\r$ space), therefore we need to compute the parturbation for half of the $\G$ vectors in
+the small grid (factor 2 speedup).
+
+\bibitem{note.imag1}
+In particular, in case of purely imginary frequency we have 
+$\Delta n_{[-\G,\w]}=\Delta n^\star{[\G,\w]}$ and $\Delta V_{[-\G,\w]}=\Delta V^\star_{[\G,\w]}$
+(reality).
+
+\bibitem{note.grep.1}
+  \begin{equation}
+  \Delta V^{\rm H}_{[\G,\w]}(\rp) = \int d\rpp \Delta n_{[\G,\w]}(\rpp) \, v(\rpp,\rp),
+  \end{equation}
+and the screened interaction reads finally:
+  \begin{equation}
+  \Delta V_{[\G,\w]}(\rp) = v_{[\G]}(\rp) + \Delta V^{\rm H}_{[\G\w]}(\rp).
+  \end{equation}
+
 \bibitem{balde_tosa}
 A. Baldereschi and E. Tosatti,
 Phys.\ Rev.\ B {\bf 17}, 4710 (1978).
@@ -805,22 +845,6 @@ Phys.\ Rev.\ {\bf 141}, 789 (1966).
 \bibitem{baroni-resta}
 S. Baroni and R. Resta,
 Phys.\ Rev.\ B {\bf 33}, 7017 (1986).
-
-\bibitem{degironcoli}
-S. de Gironcoli,
-Phys.\ Rev.\ B {\bf 51}, 6773 (1995).
-
-\bibitem{hl86-prb}
-M. S. Hybertsen and S. G. Louie,
-Phys.\ Rev.\ B {\bf 35}, 5585 (1976).
-
-\bibitem{cpm}
-R. M. Pick, M. H. Cohen, and R. M. Martin,
-Phys.\ Rev.\ B {\bf 1}, 910 (1970). 
-
-\bibitem{kunc}
-K. Kunc and E. Tosatti,
-Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
 
 \end{thebibliography}
 
