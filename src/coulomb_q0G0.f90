@@ -24,7 +24,7 @@
 #endif
   implicit none
   !
-  real(dbl) :: xq0(3), ui, uj, uk, qg2, xktmp(3), g0(3), alpha_mix
+  real(dbl) :: xq0(3), ui, uj, uk, qg2, qgg, xktmp(3), g0(3), alpha_mix
   integer :: iq, count, i, j, k, ik, ipol, ikk, ikq, ig0, igmg0, nw
   ! igmg0 = i of (G - G0)
   !
@@ -197,34 +197,25 @@
 #ifdef __PARA
     write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
 #endif
-
-
-!    write(6,*) 'SCF1 ', 0.d0, w(iw), real(dvscf ( nl(1) )), aimag(dvscf ( nl(1) ))
-
-
-!      !
-!      ! DEBUG - tested - OK when I use 555-111. NOT OK when I use 555-000
-!      !
-!      ! transform dvbare to G space
-!      call cfft3 ( dvbare, nr1, nr2, nr3, -1)
-!      ! write(6,'(f9.5,5x,2f9.5,5x,2f9.5)') xq0(1), dvbare ( nl(1) ), dvscf ( nl(1) )
-!      !                                                               ^^^^^^^^^^^^^^^
-!      !                                                                eps^-1(0,0,q)
-!      write(6,*)  w(iw), real ( dvscf ( nl(1) ) ), aimag ( dvscf ( nl(1) )  )
-!      !
-!      ! END DEBUG
-!      !
-
+    !
+    ! symmetrized inverse dielectric matrix (finite limits for q->0)
+    !
+    do igp = 1, ngms
+      dvscf ( nl(igp) ) = dvscf ( nl(igp) ) * &
+         sqrt ( (g(1,igp)+xq0(1))**2.d0 + (g(2,igp)+xq0(2))**2.d0 + (g(3,igp)+xq0(3))**2.d0 ) / &
+         sqrt ( (g(1,ig )+xq0(1))**2.d0 + (g(2,ig )+xq0(2))**2.d0 + (g(3,ig )+xq0(3))**2.d0 )
+!     write(6,'("INVEPS",2x,2i4,2f20.10,6(2x,f9.1))') ig, igp,    &
+!         real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) )),      &
+!         g(1,ig), g(2,ig), g(3,ig), g(1,igp), g(2,igp), g(3,igp)
+!     write(500+iw,'(2i4,2f20.10)') ig, igp, real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) ))
+    enddo
     ! 
     ! keep only the G-vectors 1:ngms for the screened Coulomb 
     !
     do igp = 1, ngms
-
-! not sure wheather it's this or the transpose      
-!
-! should we include the 1/Omega ?? 
-!
-      scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qg2), zero )
+       qgg = sqrt( (g(1,ig )+xq0(1))**2.d0 + (g(2,ig )+xq0(2))**2.d0 + (g(3,ig )+xq0(3))**2.d0 ) &
+           * sqrt( (g(1,igp)+xq0(1))**2.d0 + (g(2,igp)+xq0(2))**2.d0 + (g(3,igp)+xq0(3))**2.d0 )
+       scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qgg), zero )
     enddo
     !
   enddo

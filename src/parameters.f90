@@ -79,8 +79,8 @@
   !
   ! frequency range for the self-energy (wsigmamin<0, sigmamax>0) - eV
   ! and for the Coulomb  (wcoulmax>0)
-  real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 5.0
-  real(DP), parameter :: wcoulmax = 50.d0
+  real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 0.5
+  real(DP), parameter :: wcoulmax = 15.d0
   ! smearing for Green's function, and GW exp^ideltaw sum - Ry
   real(DP), parameter :: eta = 0.01
 

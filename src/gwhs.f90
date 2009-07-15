@@ -454,11 +454,6 @@
     write(6,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
     !
-    ! the grids {k} and {k+q} for the dVscf will be obtained
-    ! by shuffling the {q} grid
-    !
-    call coulomb ( vr, xq(:,iq), nwcoul, wcoul, scrcoul, igstart, igstop )
-    !
     if (igstart.eq.1) then
       !
       ! In the case (q=0, G=0) we perform a separate
@@ -469,6 +464,11 @@
       if ( ( xq(1,iq)*xq(1,iq) + xq(2,iq)*xq(2,iq) + xq(3,iq)*xq(3,iq) ) .lt. 1.d-10 ) &
       call coulomb_q0G0 ( vr, xq0, nwcoul, wcoul, scrcoul )
     endif
+    !
+    ! the grids {k} and {k+q} for the dVscf will be obtained
+    ! by shuffling the {q} grid
+    !
+    call coulomb ( vr, xq(:,iq), nwcoul, wcoul, scrcoul, igstart, igstop )
     !
 #ifdef __PARA
     !
@@ -680,9 +680,12 @@
 
   deallocate( vr, g2kin, greenf, scrcoul, sigma, gmap)
   close (iunwfc, status = 'delete')
-  close (iuncoul, status = 'keep')
-  close (iungreen, status = 'keep')
-  close (iuncoeff, status = 'keep')
+! close (iuncoul, status = 'keep')
+! close (iungreen, status = 'keep')
+! close (iuncoeff, status = 'keep')
+  close (iuncoul, status = 'delete')
+  close (iungreen, status = 'delete')
+  close (iuncoeff, status = 'delete')
 100 format (4x,"Green's function:   q     G     G'   status")
 101 format (4x,15x,3i6,"     done")
   !

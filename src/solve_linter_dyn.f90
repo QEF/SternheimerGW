@@ -41,7 +41,7 @@
   complex(kind=DP) :: dpsi(ngm,nbnd_occ), dvpsi(ngm,nbnd_occ), &
                       dvpsi0(ngm,nbnd_occ), dvscfin(nr), hpsi(ngm), &
                       hpsi2(ngm,nbnd_occ), ps2(nbnd_occ,nbnd_occ), &
-                      dpsi0(ngm,nbnd_occ), drhoscf(nr), dvscfout(nr)
+                      drhoscf(nr), dvscfout(nr)
   complex(kind=DP) :: dpsip(ngm,nbnd_occ), dpsim(ngm,nbnd_occ)
   complex(kind=DP) :: aux(nr), aux1(nr), aux2(nr)
   complex(kind=DP) :: ps(nbnd_occ), auxg(ngm)
@@ -49,8 +49,7 @@
   real(DP) :: eprec(nbnd_occ), h_diag(ngm, nbnd_occ), anorm, meandvb
   logical :: conv_root, convt
   integer :: lter
-  external ch_psi_all, ch_psi_all_eta
-
+  external ch_psi_all_eta
 
   !
   !  loop over the iterations
@@ -83,32 +82,19 @@
         !
         if (iter.eq.1) then
           !
+          !  dpsi and dvscfin are set to zero
+          !
+          dpsip = czero
+          dpsim = czero
+          dvscfin = czero
+          !
+          ! dvbare*psi is calculated for this k point and all bands...
+          ! (we compute the product in real space)
+          !
+          dvpsi = czero
+          !
           do ibnd = 1, nbnd_occ
-            !
-            !  dpsi and dvscfin are set to zero
-            !
-            dpsip = czero
-            dpsim = czero
-            dvscfin = czero
-            !
-            ! dvbare*psi is calculated for this k point and all bands...
-            ! (we compute the product in real space)
-            !
-            aux = czero
-            do ig = 1, ngm
-              aux ( nl ( ig ) ) = evc (ig, ibnd)
-            enddo
-            call cfft3 ( aux, nr1, nr2, nr3,  1)
-            do ir = 1, nr
-              aux (ir) = aux(ir) * dvbare (ir)
-            enddo
-            ! back to G-space (fft order of G-vectors)
-            call cfft3 ( aux, nr1, nr2, nr3, -1)
-            ! switch to magnitude-order of G-vectors
-            do ig = 1, ngm
-              dvpsi(ig, ibnd) = aux( nl(ig) ) 
-            enddo
-            !
+            call dv_psi ( dvbare, evc (1:ngm, ibnd), dvpsi (1:ngm,ibnd) )
           enddo
           !
           ! writes dvpsi for this k-point on iunit iubar
@@ -124,20 +110,7 @@
           ! dvpsi =  dvbare*psi + dvscfin*psi 
           !
           do ibnd = 1, nbnd_occ
-            !
-            aux = czero
-            do ig = 1, ngm
-              aux ( nl ( ig ) ) = evc (ig, ibnd)
-            enddo
-            call cfft3 ( aux, nr1, nr2, nr3,  1)
-            do ir = 1, nr
-               aux (ir) = aux (ir) * dvscfin (ir)
-            enddo
-            call cfft3 ( aux, nr1, nr2, nr3, -1)
-            do ig = 1, ngm
-              dvpsi (ig, ibnd) = dvpsi (ig, ibnd) + aux ( nl(ig) )
-            enddo
-            !
+            call dv_psi ( dvscfin, evc (1:ngm, ibnd), dvpsi (1:ngm,ibnd) )
           enddo
           !
           !  read dpsi for this k-point from iudwf
@@ -155,25 +128,14 @@
           !
         endif
         !
-        !  ( 1 - P_occ^{k+q} ) * dvpsi
+        !  - ( 1 - P_occ^{k+q} ) * dvpsi
         !
-        do ibnd = 1, nbnd_occ
-           auxg = czero
-           do jbnd = 1, nbnd_occ
-              ps(jbnd) = - ZDOTC(ngm, evq(:,jbnd), 1, dvpsi(:,ibnd), 1)
-              call ZAXPY (ngm, ps (jbnd), evq (:, jbnd), 1, auxg, 1)
-           enddo
-           call DAXPY (2 * ngm, one, auxg, 1, dvpsi (:, ibnd), 1)
-        enddo
-        !
-        !  change the sign of the known term
-        !
-        call DSCAL (2 * ngm * nbnd_occ, - 1.d0, dvpsi, 1)
+        call emptyproj ( evq, dvpsi)       
         !
         ! iterative solution of the linear system 
         ! (H-et)*dpsi=   - ( 1 - P_occ^{k+q} ) * (dvbare+dvscf)*psi
         !              [                  dvpsi                     ]
-
+        !
         if (tprec) then
           !
           ! I use the preconditioner of Teter, Payne, Allan [PRB 40, 12255 (1988)]
@@ -209,44 +171,29 @@
         !
         ! --- now obtain dpsi from cBiCG
         !
-        !
-        ! complex frequency +w
         ! [ The following works for any complex frequency: in order to obtain
         !   points on the real axis, just set cw = dcmplx (w, 0.d0) 
         !
         cw = dcmplx (0.d0, w)
+     !  cw = dcmplx ( w, 0.00734981) ! 0.1 eV imaginary component
         !
-        if ( iter.le.maxscf ) then 
-          call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
-               ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr, evq, cw )
-        else
-          call bcgsolve_all_fixed (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
-               ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr, evq, maxbcgsolve, cw )
-        endif
+        ! complex frequency +w
+        !
+        call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
+             ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
+             g2kin, vr, evq,  cw )
         !
         ! complex frequency -w
         !
-        if ( iter.le.maxscf ) then 
-          call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
-               ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr, evq, - cw )
-        else
-          call bcgsolve_all_fixed (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
-               ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
-               g2kin, vr, evq, maxbcgsolve, - cw )
-        endif
+        call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
+             ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
+             g2kin, vr, evq, -cw )
         !
-        dpsi = 0.5d0 * ( dpsip + dpsim )
-        !
-
-
 !       if (.not.conv_root) &
 !          write( 6, '(4x,"ik",i4," linter: one or more roots not converged ",e10.3)') &
 !          ik , anorm
 !       write(6,'("cgsolve_all:",2x,3i5,3x,e9.3)') iter, ik, lter, anorm
-        !
+!       !
 !       !
 !       ! DEBUG: calculate (H-et+alpha*Pv)*dpsi-dvpsi, this should be zero 
 !       ! if dpsi is the correct solution - O.K. this is checked
@@ -273,9 +220,29 @@
         !
         ! contribution to drhoscf from this kpoint
         !
-        wgt = 2.d0 * wk(ikk) / omega
+        wgt = wk(ikk) / omega
+!
+! My interpretation of the factor 1/omega (which in principle
+! does not exist in my notes):
+! The fft is performed in fftw.f90 as
+! G->r: sum_G c(G) exp(iGr)
+! r->G: sum_r psi(r) exp(-iGr) / Nr 
+! while what we really need is the following:
+! psi(r) = 1/sqrt(Omega) sum_G c(G) exp(iGr)
+! c(G) = 1/sqrt(Omega) sum_r psi(r) exp(-iGr) / Nr
+! Therefore in order to calculate the induced charge density
+! in real space we need to multiply by 1/sqrt(Omega) for evc.
+! At the same time, the linear system which is solved has
+! -(1-P_occ)dV psi on the rhs, and psi is the "wrong" one,
+! in the sense that it misses the 1/sqrt(Omega) factor.
+! As a consequence, the dpsi misses the 1/sqrt(Omega) factor
+! and we need to bring it back. That is why we multiply drho by 1/Omega
+! NOTE: this will apply to the transformation of W and G as well.
+!
         !
         do ibnd = 1, nbnd_occ
+          !
+          ! psi^\star * ( dpsip + dpsim )
           !
           aux1 = czero
           do ig = 1, ngm
@@ -285,7 +252,7 @@
           !
           aux2 = czero
           do ig = 1, ngm
-            aux2 ( nl ( ig ) ) = dpsi (ig, ibnd)
+            aux2 ( nl ( ig ) ) = dpsip (ig, ibnd) + dpsim (ig, ibnd)
           enddo
           call cfft3 ( aux2, nr1, nr2, nr3,  1)
           !
@@ -315,7 +282,6 @@
        qg2 = (g(1,ig)+xxq(1))**2 + (g(2,ig)+xxq(2))**2 + (g(3,ig)+xxq(3))**2
        if (qg2 > 1.d-8) &
          dvscfout ( nl(ig) ) =  e2 * fpi * drhoscf ( nl(ig) ) / (tpiba2 * qg2)
-
      enddo
      !
      call cfft3 ( dvscfout, nr1, nr2, nr3,  1)
@@ -353,4 +319,60 @@
   end subroutine solve_linter_dyn
   !
   !-----------------------------------------------------------------------
+  subroutine dv_psi (dv, psi, dvpsi)
+  !-----------------------------------------------------------------------
   !
+  use parameters
+  use constants
+  use gspace
+  use kspace
+  implicit none
+  !
+  complex(kind=DP) :: dv(nr), dvpsi(ngm)
+  complex(kind=DP) :: dvscf(nr)
+  integer :: ibnd, ig, ir
+  complex(kind=DP) :: psi (ngm)
+  complex(kind=DP) :: aux(nr)
+  !
+  aux = czero
+  do ig = 1, ngm
+    aux ( nl ( ig ) ) = psi (ig)
+  enddo
+  call cfft3 ( aux, nr1, nr2, nr3,  1)
+  do ir = 1, nr
+    aux (ir) = aux(ir) * dv (ir)
+  enddo
+  ! back to G-space (fft order of G-vectors)
+  call cfft3 ( aux, nr1, nr2, nr3, -1)
+  ! switch to magnitude-order of G-vectors
+  do ig = 1, ngm
+    dvpsi(ig) = dvpsi(ig) + aux( nl(ig) )
+  enddo
+  !
+  end subroutine dv_psi
+  !-----------------------------------------------------------------------
+  subroutine emptyproj ( evq, dvpsi )
+  !-----------------------------------------------------------------------
+  !
+  use parameters
+  use constants
+  use gspace
+  use kspace
+  implicit none
+  !
+  complex(kind=DP) :: evq (ngm, nbnd_occ), dvpsi(ngm,nbnd_occ) 
+  complex(kind=DP) :: ps(nbnd_occ), auxg(ngm)
+  integer :: ibnd, jbnd
+  complex(kind=DP) :: ZDOTC
+  !
+  do ibnd = 1, nbnd_occ
+    auxg = czero
+    do jbnd = 1, nbnd_occ
+      ps(jbnd) = - ZDOTC(ngm, evq(:,jbnd), 1, dvpsi(:,ibnd), 1)
+      call ZAXPY (ngm, ps (jbnd), evq (:, jbnd), 1, auxg, 1)
+    enddo
+    call DAXPY (2 * ngm, one, auxg, 1, dvpsi (:, ibnd), 1)
+  enddo
+  call DSCAL (2 * ngm * nbnd_occ, - 1.d0, dvpsi, 1)
+  !
+  end subroutine emptyproj

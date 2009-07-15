@@ -20,7 +20,7 @@
 #endif
   implicit none
   !
-  real(dbl) :: xxq(3), ui, uj, uk, qg2, xktmp(3), g0(3), alpha_mix
+  real(dbl) :: xxq(3), ui, uj, uk, qg2, qgg, xktmp(3), g0(3), alpha_mix
   integer :: iq, count, i, j, k, ik, ipol, ikk, ikq, ig0, igmg0, nw
   ! igmg0 = i of (G - G0)
   !
@@ -248,20 +248,29 @@
 #ifdef __PARA
         write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
 #endif
-
+        !
       else
         write(6,'(4x,"This will be done separately")') 
       endif
       !
+      ! symmetrized inverse dielectric matrix (finite limits for q->0)
+      !
+      do igp = 1, ngms
+        dvscf ( nl(igp) ) = dvscf ( nl(igp) ) * &
+           sqrt ( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 ) / &
+           sqrt ( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
+!       write(6,'("INVEPS",2x,2i4,2f20.10,6(2x,f9.1))') ig, igp,    &
+!           real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) )),      &
+!           g(1,ig), g(2,ig), g(3,ig), g(1,igp), g(2,igp), g(3,igp)
+!       write(500+iw,'(2i4,2f20.10)') ig, igp, real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) ))
+      enddo
+      !
       ! keep only the G-vectors 1:ngms for the screened Coulomb 
       !
       do igp = 1, ngms
-!
-! not sure wheather it's this or the transpose      
-!
-! should we include the 1/Omega ?? 
-!
-        scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qg2), zero )
+        qgg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 ) &
+            * sqrt( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 )
+        scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qgg), zero )
       enddo
       !
       ! scrcoul (-,igp,-) is now in SIZE order of G-vectors
