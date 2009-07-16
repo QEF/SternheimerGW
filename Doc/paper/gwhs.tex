@@ -414,7 +414,7 @@ Eq.\ (\ref{eq.green.3}) becomes
 with 
   \begin{equation}
  b_{[\k,\G,\w]}(\rp)  =  {\rm e}^{i\G\cdot\rp} +  
- i\,2\delta \sum_v \frac{u^\star_{v\k}(\G)}{\w-\E_{v\k}-i\delta} u_{v\k} (\rp).
+ i\,2\delta \sum_v \frac{\sqrt{\Omega}\,u^\star_{v\k}(\G)}{\w-\E_{v\k}-i\delta} u_{v\k} (\rp).
   \end{equation}
 In deriving the last equation we made use of time-reversal symmetry, yielding
 $u^\star_{v\k}(\G) = u_{v,-\k}(-\G)$.
@@ -423,6 +423,14 @@ linear system Eq.\ (\ref{eq.green.3.g}) for a set of $[\k,\G,\w]$ parameters
 we obtain an entire row $\Gp$ of the Green's function $g_{[\k,\G,\w]}(\Gp)$.
 
 \begin{itemize}
+\item 
+The following equation is only for myself - to show consistency with the code:
+\begin{equation}
+ b_{[\k,\G,\w]}(\Gp)  =  \delta_{\G\Gp} + 
+ i\,2\delta \sum_v \frac{u^\star_{v\k}(\G)u_{v\k} (\Gp)}{\w-\E_{v\k}-i\delta}. 
+  \end{equation}
+Now G and W should be perfectly consistent in the code and here in the paper - and 
+with the same convention.
 \item
 problem with ill-conditioning
 \item
