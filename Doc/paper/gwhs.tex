@@ -152,12 +152,12 @@ In Eq.\ (\ref{eq.deltan}) the index $v$ stands for ``valence'' and runs
 over the occupied states only, the factor of 2 takes into account the
 spin degeneracy, and $\sigma=\pm$ (not to be confused with the spin).
 The linear variations of the occupied wavefunctions $\Delta \psi^\s_{v[\r,\w]}$
-are obtained by solving the inhomogeneous linear systems
+are obtained by solving the inhomogeneous linear systems (Sternheimer equation):
   \begin{equation}\label{eq.linsys}\label{eq.linsys.1}
   (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_v, 
   \end{equation}
 where $\H$ is the effective single-particle Hamiltonian and $\P$ is the projector
-on the occupied manifold.
+on the occupied manifold. 
 Equation (\ref{eq.deltan}) is the generalization to finite-frequency perturbations
 of the induced charge found in density-functional perturbation theory.\cite{baroni.rmp} 
 The standard DFPT result is recovered for $\w=0$ as the $\sigma=\pm$ variations
@@ -207,9 +207,60 @@ interaction is achieved. This procedure can be regarded as the extension
 of the DFPT for lattice-dynamical calculations to finite-frequency
 point-charge perturbations.
 
+\section{Green's function}\label{sec.green}
+
+In this section we describe our scheme for calculating the noninteracting
+Green's function without having the determine unoccupied electronic states.
+The calculation of the Green's function can be performed very efficiently
+by following a strategy which is similar in spirit to the DFPT approach
+described for the screened Coulomb interaction in Sec.\ \ref{sec.coulomb}.
+We define the non-interacting Green's function following Ref.\ \onlinecite{hl}:
+  \begin{equation}\label{eq.green.1}
+  G(\r,\rp,\w) = 2\sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\delta_n},
+  \end{equation}
+the sum extending over all states and the factors of 2 accounting for the
+spin degeneracy. The infinitesimal $\delta_n$ is positive ($\delta_n=\delta$) 
+for occupied states and negative ($\delta_n=-\delta$) for unoccupied states.\cite{hl,hl86}
+Following the notation introduced in Sec.\ \ref{sec.coulomb} we can split the
+sum in Eq.~(\ref{eq.green.1}) into occupied and unoccupied states:
+  \begin{equation}\label{eq.green.2}
+  G(\r,\rp,\w) = 2\sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\delta}
+  + 2\sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\delta}.
+  \end{equation}
+As in the case of the screened Coulomb interaction,
+it is convenient to regard the Green's function as a parametric
+function of the the first space variable
+and of the frequency: $G_{[\r,\w]}(\rp) = G(\r,\rp;\w)$.
+If we act of both sides of Eq.\ (\ref{eq.green.2}) with the operator
+$\H-\w-i\delta$ we find immediately:
+  \begin{equation}\label{eq.green.3}
+  (\H-\w-i\delta) G_{[\r,\w]} = -2\Big[ \delta_{[\r]} + i \sum_v \frac{2\psi_v(\r)\delta}{\w-\E_v-i\delta} \psi_v^\star\Big],
+  \end{equation}
+where we used the definition $\delta_{[\r]}(\rp)=\delta(\r,\rp)$. In order to arrive at
+Eq.\ (\ref{eq.green.3}) we made use of time-reversal symmetry and the
+completeness relation $\sum_n \psi_v(\r)\psi_v^\star(\rp) = \delta(\r,\rp)$.
+In practice, by using Eq.\ (\ref{eq.green.3}) we can determine the propagation
+from a point $\r$ to every other point $\rp$ by solving a inhomogeneous
+linear system. As Eq.\ (\ref{eq.green.3}) does not contain unoccupied
+electronic states, this procedure mimics the DFPT approach for the
+screened Coulomb interaction that we developed in Sec.\ \ref{sec.coulomb}.
+In the present case of the Green's function, we do not need to update
+self-consistently the rhs of Eq.\ (\ref{eq.green.3}), therefore the
+effort for computing the Green's function is considerably smaller
+than for the screened Coulomb interaction.
+
+Prior to developing the above procedure, our initial strategy was to adopt 
+the Haydock's recursion method.\cite{haydock1}
+However we found out that, in terms of computational effort,
+the recursion method is not competitive with the calculation using
+the expansion over unoccupied states Eq.\ (\ref{eq.green.3}).
+Our efforts along the lines of Haydock's recursion are summarized in
+Appendix~\ref{app.haydock}.
+
+
 \section{Technical implementation}
 
-\section{Screened Coulomb interaction in reciprocal space}
+\subsection{Screened Coulomb interaction in reciprocal space}
 
 We have implemented the scheme presented in Sec.\ \ref{sec.coulomb}
 within a reciprocal space formalism. This choice allows us to make
@@ -333,7 +384,10 @@ This is discusses in detail in Appendix \ref{app.condition}.
 Our approach is currently implemented in the empirical
 pseudopotential code {\tt OxfordGW}.\cite{oxfordgw}
 
-\section{Green's function}
+\subsection{Green's function in reciprocal space}\label{sec.green.g}
+
+Need to explain ill-conditioning of the linear system, but that the situation
+is still ok if we use TPA.
 
 \section{Results}
 
@@ -738,6 +792,8 @@ iterations (assuming that the cost of matrix inversion is negligible).
 On the other hand, if we need an ultra-fine sampling of the frequency
 dependence, then the shifted method would prove advantageous.
 
+\section{Calculation of the Green's function using Haydock's recursion method}\label{app.haydock}
+
 \begin{thebibliography}{99}
 
 \bibitem{hl}
@@ -832,6 +888,8 @@ Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
 \bibitem{oxfordgw}
 Borrowing some subs from espresso - developed by FG - will become
 GNU - need to be ported to main packages.
+
+\bibitem{haydock1}
 
 \end{thebibliography}
 
