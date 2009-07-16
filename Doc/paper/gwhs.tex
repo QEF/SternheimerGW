@@ -95,6 +95,9 @@ derivatives. Also we can address directly the quasiparticle equation.
 
 \section{Overview of the methodology}
 
+Our approach is currently implemented in the empirical
+pseudopotential code {\tt OxfordGW}.\cite{oxfordgw}
+
 \section{Screened Coulomb interaction}\label{sec.coulomb}
 
 In this section we describe in general terms how to exploit density-functional
@@ -216,7 +219,7 @@ by following a strategy which is similar in spirit to the DFPT approach
 described for the screened Coulomb interaction in Sec.\ \ref{sec.coulomb}.
 We define the non-interacting Green's function following Ref.\ \onlinecite{hl}:
   \begin{equation}\label{eq.green.1}
-  G(\r,\rp,\w) = 2\sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\delta_n},
+  G(\r,\rp;\w) = 2\sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\delta_n},
   \end{equation}
 the sum extending over all states and the factors of 2 accounting for the
 spin degeneracy. The infinitesimal $\delta_n$ is positive ($\delta_n=\delta$) 
@@ -224,7 +227,7 @@ for occupied states and negative ($\delta_n=-\delta$) for unoccupied states.\cit
 Following the notation introduced in Sec.\ \ref{sec.coulomb} we can split the
 sum in Eq.~(\ref{eq.green.1}) into occupied and unoccupied states:
   \begin{equation}\label{eq.green.2}
-  G(\r,\rp,\w) = 2\sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\delta}
+  G(\r,\rp;\w) = 2\sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\delta}
   + 2\sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\delta}.
   \end{equation}
 As in the case of the screened Coulomb interaction,
@@ -234,14 +237,18 @@ and of the frequency: $G_{[\r,\w]}(\rp) = G(\r,\rp;\w)$.
 If we act of both sides of Eq.\ (\ref{eq.green.2}) with the operator
 $\H-\w-i\delta$ we find immediately:
   \begin{equation}\label{eq.green.3}
-  (\H-\w-i\delta) G_{[\r,\w]} = -2\Big[ \delta_{[\r]} + i \sum_v \frac{2\psi_v(\r)\delta}{\w-\E_v-i\delta} \psi_v^\star\Big],
+  (\H-\w-i\delta) G_{[\r,\w]} = -2 b_{[\r,\w]},
   \end{equation}
-where we used the definition $\delta_{[\r]}(\rp)=\delta(\r,\rp)$. In order to arrive at
-Eq.\ (\ref{eq.green.3}) we made use of time-reversal symmetry and the
+with
+  \begin{equation}\label{eq.green.3b}
+  b_{[\r,\w]}(\rp) = \delta(\r,\rp) + i\,2\delta \sum_v \frac{\psi^\star_v(\r)}{\w-\E_v-i\delta} \psi_v(\rp).
+  \end{equation}
+In order to arrive at
+Eqs.\ (\ref{eq.green.3}),(\ref{eq.green.3b}) we made use of time-reversal symmetry and the
 completeness relation $\sum_n \psi_v(\r)\psi_v^\star(\rp) = \delta(\r,\rp)$.
-In practice, by using Eq.\ (\ref{eq.green.3}) we can determine the propagation
+In practice, by using Eqs.\ (\ref{eq.green.3}),(\ref{eq.green.3b}) we can determine the propagation
 from a point $\r$ to every other point $\rp$ by solving a inhomogeneous
-linear system. As Eq.\ (\ref{eq.green.3}) does not contain unoccupied
+linear system. As Eq.\ (\ref{eq.green.3b}) does not contain unoccupied
 electronic states, this procedure mimics the DFPT approach for the
 screened Coulomb interaction that we developed in Sec.\ \ref{sec.coulomb}.
 In the present case of the Green's function, we do not need to update
@@ -288,7 +295,7 @@ $N_\k \Omega$].
 %Note: all the integrals are performed over the volume of the crystal.
 %The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
 Then we expand the screened Coulomb interaction in terms
-of the Bloch waves ${\rm exp}[-i(\q+\G)\cdot\r]$ and ${\rm exp}[i\q\cdot\r]$:
+of the Bloch waves ${\rm exp}[-i(\q+\G)\cdot\r]$ and ${\rm exp}[i\q\cdot\rp]$:
   \begin{equation}\label{eq.dv.bloch}
   \Delta V_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\q}  \sum_{\q\G} \Delta v_{[\q,\G,\w]}(\rp) 
    {\rm e}^{-i(\q+\G)\cdot\r} {\rm e}^{i\q\cdot\rp}, 
@@ -381,13 +388,46 @@ vanishing projections on the occupied manifold, this additional term removes
 the null eigenvalues of the linear system thereby making it non singular.
 This is discusses in detail in Appendix \ref{app.condition}.
 
-Our approach is currently implemented in the empirical
-pseudopotential code {\tt OxfordGW}.\cite{oxfordgw}
-
 \subsection{Green's function in reciprocal space}\label{sec.green.g}
 
-Need to explain ill-conditioning of the linear system, but that the situation
-is still ok if we use TPA.
+We here derive the formalism for the calculation of the Green's function
+in reciprocal space, using the procedure outlined in Sec.\ \ref{sec.green}.
+We first rewrite Eq.\ (\ref{eq.green.1}) by relabeling the states
+$\psi_n$ into Bloch states $\psi_{n\k}$ and taking into account the
+normalization:
+  \begin{equation}\label{eq.green.1.g}
+  G(\r,\rp;\w) = \frac{2}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\delta_{n\k}},
+  \end{equation}
+Then we expand the Green's function in terms
+of the Bloch waves ${\rm exp}[-i(\k+\G)\cdot\r]$ and ${\rm exp}[i\k\cdot\rp]$:
+  \begin{equation}\label{eq.green.bloch}
+  G_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\k}  \sum_{\k\G} g_{[\k,\G,\w]}(\rp)
+   {\rm e}^{-i(\k+\G)\cdot\r} {\rm e}^{i\k\cdot\rp}.
+  \end{equation}
+Following the same convention we expand the wavefunctions as
+$\psi_{n\k}(\rp)=\Omega^{-1/2}\sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp)$.
+Using these definitions and exploiting again time-reversal symmetry
+Eq.\ (\ref{eq.green.3}) becomes
+  \begin{equation}\label{eq.green.3.g}
+   (\H_\k-\w-i\delta)  g_{[\k,\G,\w]}  =  -2\, b_{[\k,\G,\w]},
+  \end{equation}
+with 
+  \begin{equation}
+ b_{[\k,\G,\w]}(\rp)  =  {\rm e}^{i\G\cdot\rp} +  
+ i\,2\delta \sum_v \frac{u^\star_{v\k}(\G)}{\w-\E_{v\k}-i\delta} u_{v\k} (\rp).
+  \end{equation}
+In deriving the last equation we made use of time-reversal symmetry, yielding
+$u^\star_{v\k}(\G) = u_{v,-\k}(-\G)$.
+Similarly to the case of the screened Coulomb interaction, by solving the
+linear system Eq.\ (\ref{eq.green.3.g}) for a set of $[\k,\G,\w]$ parameters
+we obtain an entire row $\Gp$ of the Green's function $g_{[\k,\G,\w]}(\Gp)$.
+
+\begin{itemize}
+\item
+problem with ill-conditioning
+\item
+good scaling.
+\end{itemize}
 
 \section{Results}
 
@@ -435,9 +475,6 @@ in terms of self-consistent solution of the linear system.
 \subsection{Polarization propagator beyond the random-phase approximation}\label{sec.beyond_rpa}
 
 \section{Scaling properties}
-
-To compare scaling of HL86 and GWHS is better to state from the start that
-we consider only w=0.
 
 \section{Conclusions and outlook}
 
