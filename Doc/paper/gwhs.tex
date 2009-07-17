@@ -155,8 +155,8 @@ variation can be calculated as:
   \Delta n_{[\r,\w]} = 2\sum_{v\s} \psi_v^\star  \Delta \psi^\s_{v[\r,\w]}.
   \end{equation}
 In Eq.\ (\ref{eq.deltan}) the index $v$ stands for ``valence'' and runs
-over the occupied states only, the factor of 2 takes into account the
-spin degeneracy, and $\sigma=\pm$ (not to be confused with the spin).
+over the occupied states only, the factor of 2 is for the spin degeneracy, 
+and $\sigma=\pm$ (not to be confused with the spin).
 The linear variations of the occupied wavefunctions $\Delta \psi^\s_{v[\r,\w]}$
 are obtained by solving the inhomogeneous linear systems (Sternheimer equation):
   \begin{equation}\label{eq.linsys.1}
@@ -224,8 +224,9 @@ We define the non-interacting Green's function following Ref.\ \onlinecite{hl}:
   \begin{equation}\label{eq.green.1}
   G(\r,\rp;\w) = 2\sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\eta_n},
   \end{equation}
-the sum extending over all states and the factors of 2 accounting for the
-spin degeneracy. The infinitesimal $\eta_n$ is positive ($\eta_n=\eta$) 
+the sum extending over all states and the factor of 2 taking into account the
+spin degeneracy.
+The infinitesimal $\eta_n$ is positive ($\eta_n=\eta$) 
 for occupied states and negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl86}
 Following the notation introduced in Sec.\ \ref{sec.coulomb} we can split the
 sum in Eq.~(\ref{eq.green.1}) into occupied and unoccupied states:
@@ -233,39 +234,48 @@ sum in Eq.~(\ref{eq.green.1}) into occupied and unoccupied states:
   G(\r,\rp;\w) = 2\sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\eta}
   + 2\sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\eta}.
   \end{equation}
-As in the case of the screened Coulomb interaction,
-it is convenient to regard the Green's function as a parametric
-function of the the first space variable
-and of the frequency: $G_{[\r,\w]}(\rp) = G(\r,\rp;\w)$.
-If we act of both sides of Eq.\ (\ref{eq.green.2}) with the operator
-$\H-\w^+$, having set $\w^+ = \w+i\eta$, we find immediately:
-  \begin{equation}\label{eq.green.3}
-  (\H-\w^+) G_{[\r,\w]}(\rp) = -2 [ \delta(\r,\rp) + p_{[\r,\w]}(\rp) ],
+By adding and subtracting terms like $\psi_v\psi_v^\star/(\w-\E_v+i\eta)$
+we can rewrite the last equation as follows:
+  \begin{equation}\label{eq.green.split}
+  G(\r,\rp;\w) = G^{\rm A}(\r,\rp;\w) + G^{\rm N}(\r,\rp;\w),
   \end{equation}
-with
-  \begin{equation}\label{eq.green.3b}
-  p_{[\r,\w]}(\rp) = 2\pi i \sum_v (\w^+-\E_v)\delta(\w-\E_v) \psi^\star_v(\r)\psi_v(\rp).
-  \end{equation}
-In order to arrive at
-Eqs.\ (\ref{eq.green.3}),(\ref{eq.green.3b}) we made use of time-reversal symmetry and the
-completeness relation $\sum_n \psi_v(\r)\psi_v^\star(\rp) = \delta(\r,\rp)$.
-We also used the Lorentzian representation of the Dirac's delta function
-$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$.
-Whenever $\w$ is in the conduction bands energy range ($\w\ge\E_c^{\rm min}$) 
-Eq.\ (\ref{eq.green.3b}) vanishes and can be ignored.
+with 
+  \begin{eqnarray}\label{eq.green.split.2}
+\!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  2\sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w^+-\E_n},  \\ 
+\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\cdot 2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
+  \end{eqnarray}
+where we used time-reversal symmetry, the Lorentzian representation of the Dirac's delta function
+$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we set $\w^+ = \w+i\eta$.
+Whenever $\w$ is in the conduction bands energy range ($\w\ge\E_c^{\rm min}$)
+$G^{\rm N}$ vanishes and can be ignored.
 On the other hand, when $\w$ is in the valence bands energy range ($\w\le\E_v^{\rm max}$),
-$p_{[\r,\w]}(\rp)$ exhibits poles associated with the occupied states.
+$G^{\rm N}$ introduces the poles associated with the occupied states.
 Such poles reflect the fact that the Green's function is analytic in the upper
 half of the complex plane when $\w$ is above the chemical potential, and in the lower half
 of the complex plane when $\w$ is below the chemical potential.
-In the latter case ($\w\le\E_v^{\rm max}$) we cross branch cuts when we move
-from $\w^+=\w+i\eta$ to $\w$ and a proper account of the pole structure 
-through Eq.\ (\ref{eq.green.3b}) is necessary. A detailed discussion of this
+In the latter case ($\w\le\E_v^{\rm max}$), when we move from $\w^+=\w+i\eta$ to $\w$ 
+we cross branch cuts and a proper account of the poles is necessary. A detailed discussion of this
 aspect is provided in Ref.\ \onlinecite{hl}.
 
-In practice, by using Eqs.\ (\ref{eq.green.3}),(\ref{eq.green.3b}) we can determine the propagation
+The computation of the non-analytic component $G^{\rm N}$ in Eq.\ (\ref{eq.green.split.3})
+is straightforward once we obtained the occupied eigenstates.
+For the analytic component $G^{\rm A}$ it is convenient to
+proceed as in the case of the screened Coulomb interaction,
+and regard it as a parametric
+function of the the first space variable
+and of the frequency: $G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
+Then, if we act of both sides of Eq.\ (\ref{eq.green.split.2})
+with the operator $\H-\w^+$ we find immediately:
+  \begin{equation}\label{eq.green.3}
+  (\H-\w^+) G^{\rm A}_{[\r,\w]}(\rp) = -2\, \delta(\r,\rp), 
+  \end{equation}
+where we made use of the 
+completeness relation $\sum_n \psi_v(\r)\psi_v^\star(\rp) = \delta(\r,\rp)$.
+
+In practice, by using Eqs.\ (\ref{eq.green.split}),(\ref{eq.green.split.3}), and
+(\ref{eq.green.3}) we can determine the propagation
 from a point $\r$ to every other point $\rp$ by solving a inhomogeneous
-linear system. As Eq.\ (\ref{eq.green.3b}) does not contain unoccupied
+linear system. As Eq.\ (\ref{eq.green.3}) does not contain unoccupied
 electronic states, this procedure mimics the DFPT approach for the
 screened Coulomb interaction that we developed in Sec.\ \ref{sec.coulomb}.
 In the present case of the Green's function, we do not need to update
@@ -302,7 +312,7 @@ lattice-periodic in $\rp$:
   \end{equation}
 From the perturbations to the wavefunctions we can construct the
 induced charge density
-  \begin{equation}
+  \begin{equation}\label{eq.ch}
   \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]},
   \end{equation}
 where the factor $N_\k$ takes into account the normalization of
@@ -418,30 +428,31 @@ normalization:
 Then we expand the Green's function in terms
 of the Bloch waves ${\rm exp}[-i(\k+\G)\cdot\r]$ and ${\rm exp}[i\k\cdot\rp]$:
   \begin{equation}\label{eq.green.bloch}
-  G_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\k}  \sum_{\k\G} g_{[\k,\G,\w]}(\rp)
+  G^{\rm A,N}_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\k}  \sum_{\k\G} g^{\rm A,N}_{[\k,\G,\w]}(\rp)
    {\rm e}^{-i(\k+\G)\cdot\r} {\rm e}^{i\k\cdot\rp}.
   \end{equation}
 By using the same convention for the wavefunctions 
 $\psi_{n\k}(\rp)=\Omega^{-1/2}\sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp)$
-and the driving term $p_{[\k,\G,\w]}(\rp)  = \sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} p_{[\k,\G,\w]}(\Gp)$,
-Eqs.~(\ref{eq.green.3}),(\ref{eq.green.3b}) become
+and the lattice-periodic part of the Green's function 
+$g^{\rm A,N}_{[\k,\G,\w]}(\rp)  = \sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} g^{\rm A,N}_{[\k,\G,\w]}(\Gp)$,
+Eqs.~(\ref{eq.green.3}),(\ref{eq.green.split.3}) become
   \begin{equation}\label{eq.green.3.g}
-   (\H_\k-\w^+)  g_{[\k,\G,\w]}(\Gp)  =  -2 [ \delta_{\G\Gp} + p_{[\k,\G,\w]}(\Gp)],
+   (\H_\k-\w^+)  g^{\rm A}_{[\k,\G,\w]}(\Gp)  =  -2 \,\delta_{\G\Gp},
   \end{equation}
   \begin{equation} \label{eq.green.4b.g}
-  p_{[\k,\G,\w]}(\Gp)  =  
-  2\pi i \sum_v (\w^+-\E_{v\k})\delta(\w-\E_{v\k}) u^\star_{v\k}(\G)u_{v\k} (\Gp).
+  g^{\rm N}_{[\k,\G,\w]}(\Gp)  =  
+  2 \cdot 2\pi i \sum_v \delta(\w-\E_{v\k}) u^\star_{v\k}(\G)u_{v\k} (\Gp).
   \end{equation}
 In deriving Eqs.\ (\ref{eq.green.3.g}),(\ref{eq.green.4b.g}) we made use of time-reversal symmetry, yielding
 $u^\star_{v\k}(\G) = u_{v,-\k}(-\G)$.
 Similarly to the case of the screened Coulomb interaction, by solving the
 linear system Eq.\ (\ref{eq.green.3.g}) for a set of $[\k,\G,\w]$ parameters
-we obtain an entire row $\Gp$ of the Green's function $g_{[\k,\G,\w]}(\Gp)$.
+we obtain an entire row $\Gp$ of the analytic component of the
+Green's function $g^{\rm A}_{[\k,\G,\w]}(\Gp)$.
 
-Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency
-when $\w\ge\E_c^{\rm min}$, within this frequency range it is possible
-to perform the simultaneous calculation of all the frequency responses using multishift
-methods (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
+Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency, 
+it is possible to perform the simultaneous calculation of all the frequency responses 
+using a {\it multishift} method (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
 advantageous as we can obtain the whole frequency-dependence by performing one
 single calculation. In addition, as we show in Sec.\ \ref{sec.green.scaling},
 the scaling of the present scheme with the number of atoms $N$ in the system 
