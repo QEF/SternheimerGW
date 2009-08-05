@@ -21,7 +21,7 @@
   complex(kind=DP) :: vr (nr)
   real(kind=DP) :: g2kin (ngm)
   integer :: ig1, ig2, i, j, k, ir, ih, ik, nw
-  real(DP) :: w(nw)
+  real(DP) :: w(nw), delta
   !
   ! notation as in Haydock - review (pag 227)
   ! e.g.: bnpunp = b_{n+1} * u_{n+1}, hun = H * u_n
@@ -57,8 +57,8 @@
   b_term = zero
   norm = zero
   !
-  do ig1 = 1, 2 !@ ngms
-   do ig2 = 1, 2 !@ ngms
+  do ig1 = 2, 2 !@ ngms
+   do ig2 = 2, 2 !@ ngms
      !
      ! define planewaves for projecting the Green's function
      !
@@ -83,7 +83,7 @@
        ctmp1 = ZDOTC (ngm, psi(:,ibnd), 1, d1, 1)
        ctmp2 = ZDOTC (ngm, psi(:,ibnd), 1, d2, 1)
        do iw = 1, nw
-         gr_exp(iw) = gr_exp(iw) + conjg(ctmp1)*ctmp2 / ( w(iw) - eval(ibnd)*ryd2ev + ci * eta*ryd2ev)
+         gr_exp(iw) = gr_exp(iw) + conjg(ctmp1)*ctmp2 / ( w(iw) - eval(ibnd)*ryd2ev - ci * delta * eta*ryd2ev)
        enddo
      enddo
      do iw = 1, nw

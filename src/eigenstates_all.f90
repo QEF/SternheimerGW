@@ -87,6 +87,9 @@
   call ccgdiagg (ngm, ngm, nbnd, psi, et, precondition, eps, &
      maxter, .true., notconv, avg_iter, g2kin, vr)
   !
+  ! set to zero top of valence band
+  et = et - eshift
+  !
   deallocate ( eval, hk, u, fv1, fv2, ss, vs )
   !
   return

@@ -88,7 +88,11 @@
   call ccgdiagg (ngm, ngm, nbnd_occ, psi, et, precondition, eps, &
      maxter, .true., notconv, avg_iter, g2kin, vr)
   !
+  ! set to zero top of valence band
+  et = et - eshift
+  !
   deallocate ( eval, hk, u, fv1, fv2, ss, vs )
+  !
   !
   return
   end subroutine eigenstates2

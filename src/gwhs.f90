@@ -449,6 +449,9 @@
   !
   ! loop over {q} for the screened Coulomb interaction
   !
+!@@
+goto 123
+!@@
   do iq = 1, nq
     !
     write(6,'(4x,3x,"iq = ",i3)') iq
@@ -487,6 +490,9 @@
     write (6,'(4x,"Written scrcoul for iq = ",i3)') iq
     !
   enddo 
+!@@
+123 continue
+!@@
 
 #ifdef __PARA
   if (me.eq.1.and.mypool.eq.1) then
@@ -502,7 +508,7 @@
     !
     ! loop over the {k0-q} grid for the Green's function
     !
-    do iq = 1, 3 !@ nq
+    do iq = 1, nq
       !
       write(6,'(4x,3x,"iq = ",i3)') iq
       greenf = czero
@@ -519,8 +525,12 @@
         g2kin ( ig ) = tpiba2 * dot_product ( kplusg, kplusg )
       enddo
       !
-      call green_coeff ( iq, g2kin, vr, nwgreen, wgreen) !frequency passed for test purposes
-      call green_fraction ( iq, nwgreen, wgreen, greenf ) 
+      ! need to use multishift in green
+      call green_linsys ( vr, g2kin, k0mq, nwgreen, wgreen, greenf, igstart, igstop )
+      !
+!     obsolete haydock
+!     call green_coeff ( iq, g2kin, vr, nwgreen, wgreen) !frequency passed for test purposes
+!     call green_fraction ( iq, nwgreen, wgreen, greenf ) 
       !
       ! now greenf (nrs,nrs,nwgreen) contains the Green's function
       ! for this k0mq point, all frequencies, and in G-space
