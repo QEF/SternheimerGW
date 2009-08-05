@@ -64,8 +64,7 @@
   real(DP), parameter :: tr2_ph = 1.d-10
   ! convergence threshold for dvscf
   !
-!@  real(DP), parameter :: alpha_pv = 25.234/13.606 ! (this is 2(emax-emin)
-  real(DP), parameter :: alpha_pv = 0.d0
+  real(DP), parameter :: alpha_pv = 25.234/13.606 ! (this is 2(emax-emin)
   ! parameter for the projection over the valence manifold
   ! this is to avoid null eigenvalues in (H-e+alpha_pv*P_v)dpsi
   ! in PH it is calculated as 2*(emax-emin)

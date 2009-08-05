@@ -54,6 +54,7 @@
   complex(DP), allocatable :: psi(:,:)
   complex(dbl), allocatable :: vr(:), aux(:)
   complex(dbl), allocatable :: scrcoul (:,:,:), greenf (:,:,:), sigma(:,:,:)
+  complex(dbl), allocatable :: scrcoul_g (:,:,:), greenf_g (:,:,:)
   logical :: allowed, foundp, foundm
   CHARACTER (LEN=9)   :: code = 'GWHS'
   CHARACTER(len=3)  :: nd_nmbr = '000' ! node number (used only in parallel case)
@@ -277,13 +278,13 @@
   ! nks = 2 * nq
   allocate ( xk (3,nks), wk(nks) )
   !
-  write(6,'(/4x,a)') repeat('-',67)
-  write(6,'(4x,"Uniform q-point grid for the screened Coulomb interaction"/)') 
+  write(stdout,'(/4x,a)') repeat('-',67)
+  write(stdout,'(4x,"Uniform q-point grid for the screened Coulomb interaction"/)') 
   do iq = 1, nq
-     write ( 6, '(4x,"q(",i3," ) = (",3f12.7," ), wq =",f12.7)') &
+     write ( stdout, '(4x,"q(",i3," ) = (",3f12.7," ), wq =",f12.7)') &
          iq, (xq (ipol, iq) , ipol = 1, 3) , wq (iq)
   enddo
-  write(6,'(4x,a/)') repeat('-',67)
+  write(stdout,'(4x,a/)') repeat('-',67)
   !
   ! generate the occupied eigenstates on the uniform grid
   ! this will be needed for the screened Coulomb below
@@ -299,9 +300,9 @@
   open ( iunwfc, file = wfcfile, iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
   !
-  write(6,'(/4x,a)') repeat('-',67)
-  write(6,'(4x,"Occupied eigenvalues (eV)")') 
-  write(6,'(4x,a/)') repeat('-',67)
+  write(stdout,'(/4x,a)') repeat('-',67)
+  write(stdout,'(4x,"Occupied eigenvalues (eV)")') 
+  write(stdout,'(4x,a/)') repeat('-',67)
   !
   allocate ( psi (ngm, nbnd_occ) )
   do iq = 1, nq
@@ -320,11 +321,11 @@
     !
     write ( iunwfc, rec = 2 * iq - 1, iostat = ios) psi
     !
-    write ( 6, '(4x,"k(",i3," )",10(3x,f7.3))') iq, eval_occ(:,iq)*ryd2ev
+    write ( stdout, '(4x,"k(",i3," )",10(3x,f7.3))') iq, eval_occ(:,iq)*ryd2ev
     !
   enddo
   deallocate( psi )
-  write(6,'(4x,a/)') repeat('-',67)
+  write(stdout,'(4x,a/)') repeat('-',67)
   !
   ! here we generate the G-map for the folding into the first BZ
   !
@@ -428,11 +429,14 @@
   allocate ( scrcoul (nrs, nrs, nwcoul) )
   allocate ( greenf (nrs, nrs, nwgreen) )
   allocate ( sigma (nrs, nrs, nwsigma) )
+  allocate ( scrcoul_g (ngms, ngms, nwcoul) )
+  allocate ( greenf_g (ngms, ngms, nwgreen) )
   !
   ! prepare the unit to write the Coulomb potential
   ! each q-point is associated with one record
   !
-  recl = 2 * nrs * nrs * nwcoul
+! recl = 2 * nrs * nrs * nwcoul
+  recl = 2 * ngms * ngms * nwcoul
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iuncoul, file = "./silicon.coul", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
@@ -440,21 +444,20 @@
   ! prepare the unit to write the Green's function 
   ! each (k0-q)-point is associated with one record
   !
-  recl = 2 * nrs * nrs * nwgreen
+! recl = 2 * nrs * nrs * nwgreen
+  recl = 2 * ngms * ngms * nwgreen
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iungreen, file = "./silicon.green", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
 
-  write(6,'(4x,"Screened Coulomb interaction:")')
+  write(stdout,'(4x,"Screened Coulomb interaction:")')
   !
   ! loop over {q} for the screened Coulomb interaction
   !
-!@@
-goto 123
-!@@
-  do iq = 1, nq
+!@  do iq = 1, nq
+  do iq = 2, 2
     !
-    write(6,'(4x,3x,"iq = ",i3)') iq
+    write(stdout,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
     !
     if (igstart.eq.1) then
@@ -482,35 +485,29 @@ goto 123
     if (me.eq.1.and.mypool.eq.1) then
 #endif
       !
-      write ( iuncoul, rec = iq, iostat = ios) scrcoul
+      scrcoul_g = scrcoul(1:ngms,1:ngms,:)
+      write ( iuncoul, rec = iq, iostat = ios) scrcoul_g
       !
 #ifdef __PARA
     endif
 #endif
-    write (6,'(4x,"Written scrcoul for iq = ",i3)') iq
+    write (stdout,'(4x,"Written scrcoul for iq = ",i3)') iq
     !
   enddo 
-!@@
-123 continue
-!@@
-
-#ifdef __PARA
-  if (me.eq.1.and.mypool.eq.1) then
-  write(6,'(4x,"Green''s function done only by proc 1 for now")')
-#endif
   !
-  write(6,'(4x,"Green''s function:")')
+  write(stdout,'(4x,"Green''s function:")')
   ! loop over the {k0} set for the Self-Energy
   !
   do ik0 = 1, 1 !@ nk0
     !
-    write(6,'(4x,"ik0 = ",i3)') ik0
+    write(stdout,'(4x,"ik0 = ",i3)') ik0
     !
     ! loop over the {k0-q} grid for the Green's function
     !
-    do iq = 1, nq
+!@    do iq = 1, nq
+    do iq = 1, 2
       !
-      write(6,'(4x,3x,"iq = ",i3)') iq
+      write(stdout,'(4x,3x,"iq = ",i3)') iq
       greenf = czero
       !
       !  k0mq = k0 - q
@@ -532,10 +529,25 @@ goto 123
 !     call green_coeff ( iq, g2kin, vr, nwgreen, wgreen) !frequency passed for test purposes
 !     call green_fraction ( iq, nwgreen, wgreen, greenf ) 
       !
-      ! now greenf (nrs,nrs,nwgreen) contains the Green's function
+      ! now greenf contains the Green's function
       ! for this k0mq point, all frequencies, and in G-space
-      rec0 = (ik0-1) * nq + (iq-1) + 1 
-      write ( iungreen, rec = rec0, iostat = ios) greenf 
+      !
+#ifdef __PARA
+      !
+      ! use poolreduce to bring together the results from each pool
+      !
+      call poolreduce ( 2 * nrs * nrs * nwgreen, greenf)
+      !
+      if (me.eq.1.and.mypool.eq.1) then
+#endif
+        !
+        rec0 = (ik0-1) * nq + (iq-1) + 1 
+        greenf_g = greenf(1:ngms,1:ngms,:)
+        write ( iungreen, rec = rec0, iostat = ios) greenf_g 
+        !
+#ifdef __PARA
+      endif
+#endif
       !
       ! end loop on {k0-q} and {q}
     enddo 
@@ -544,22 +556,33 @@ goto 123
   enddo 
   !
   ! G TIMES W PRODUCT
-!
-! *** NOT TESTED ***
-!
   !
   w_ryd = wcoul / ryd2ev
   do ik0 = 1, 1 !@ nk0 
     !
+    write(stdout,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') &
+      ik0, (xk0 (ipol, ik0) , ipol = 1, 3)
+    !
     ! now sum over {q} the products G(k0-q)W(q) 
     !
+    sigma = czero
+    !
+#ifdef __PARA
+    ! only proc 0 reads from file and does the product
+    ! (need some sort of parallelization here)
+    if (me.eq.1.and.mypool.eq.1) then
+#endif
     do iq = 1, nq
+      !
+      write(stdout,'(4x,"Summing iq = ",i4)') iq
       !
       ! go to R-space to perform the direct product with W
       ! both indeces are in SIZE order of G-vectors
       !
       rec0 = (ik0-1) * nq + (iq-1) + 1 
-      read ( iungreen, rec = rec0, iostat = ios) greenf 
+      read ( iungreen, rec = rec0, iostat = ios) greenf_g 
+      greenf = czero
+      greenf(1:ngms,1:ngms,:) = greenf_g
       !
       do iw = 1, 2 !@ nwgreen
         do ig = 1, ngms
@@ -579,9 +602,11 @@ goto 123
           greenf(ir,:,iw) = aux
         enddo
       enddo
-      write(6,'(4x,"FFTW of Green''s function passed"/)') 
+!     write(stdout,'(4x,"FFTW of Green''s function passed"/)') 
       !
-      read ( iuncoul, rec = iq, iostat = ios) scrcoul
+      read ( iuncoul, rec = iq, iostat = ios) scrcoul_g
+      scrcoul = czero
+      scrcoul(1:ngms,1:ngms,:) = scrcoul_g
       !
       ! now scrcoul(nrs,nrs,nwcoul) contains the screened Coulomb
       ! interaction for this q point, all frequencies, and in G-space:
@@ -606,11 +631,9 @@ goto 123
           scrcoul(ir,:,iw) = aux
         enddo 
       enddo
-      write(6,'(4x,"FFTW of Coulomb passed"/)') 
+!     write(stdout,'(4x,"FFTW of Coulomb passed"/)') 
       !
       ! combine Green's function and screened Coulomb ( sum_q wq = 1 )
-      !
-      sigma = czero
       !
       do iw = 1, nwcoul
         !
@@ -677,18 +700,34 @@ goto 123
       enddo
      enddo
     enddo
+    !
+    ! At this point, since we did FFT back and forth,
+    ! the self-energy should be in (G,G') space within
+    ! the same convention adopted for G and W and explained
+    ! in the paper.
+    !
+#ifdef __PARA
+    endif
+    !
+    ! use poolreduce to bring together the results from each pool
+    !
+    call poolreduce ( 2 * nrs * nrs * nwsigma, sigma)
+#endif
+
 !
-! need to store somewhere sigma(:,:,:) for this k0
+! now need to store somewhere sigma(:,:,:) for this k0
+! or to calculate the matrix elements
 !
     !
     ! end loop on {k0}
   enddo 
   !
-#ifdef __PARA
-  endif
-#endif
+  write(stdout,'(/4x,"End of program GWHS")')
+  write(stdout,'(4x,a/)') repeat('-',67)
+  call mp_barrier()
 
   deallocate( vr, g2kin, greenf, scrcoul, sigma, gmap)
+  deallocate( greenf_g, scrcoul_g)
   close (iunwfc, status = 'delete')
 ! close (iuncoul, status = 'keep')
 ! close (iungreen, status = 'keep')

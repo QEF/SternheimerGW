@@ -304,8 +304,8 @@
      write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
        iter, dr2, float(lter)/float(nksq)/float(2)
 #ifdef __PARA
-     write(1000+mypool,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
-       iter, dr2, float(lter)/float(nksq)/float(2)
+!    write(1000+mypool,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
+!      iter, dr2, float(lter)/float(nksq)/float(2)
 #endif
      !
   enddo

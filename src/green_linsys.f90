@@ -7,25 +7,29 @@
   use constants
   use gspace
   use kspace
+!#ifdef __PARA
+!  USE para
+!  USE mp_global,  ONLY : nproc, mpime, nproc_pool, my_pool_id, me_pool
+!  USE mp, ONLY:  mp_barrier
+!#endif
   implicit none
   !
   real(dbl) :: xxk(3)
   integer :: ig, igp, nw
   integer :: igstart, igstop
-  integer :: lter
+  integer :: lter, n1
   real(DP) :: h_diag(ngm), anorm, rdummy
   logical :: conv_root, tprec
   integer :: ig1, ig2, idummy, iw, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
   real(dbl) :: x, delta, kplusg(3), g2kin(ngm), eval(nbnd_occ)
   real(dbl) :: eval_all(nbnd), w(nw), w_ryd(nw)
-  complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), rhs(nr), gr(ngm), cw, gr_A(ngm), gr_N(ngm)
+  complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), rhs(ngm), gr(ngm), cw, gr_A(ngm), gr_N(ngm)
   complex(dbl) :: psi_all(ngm,nbnd), gr_exp(nw)
-  complex(dbl) :: green(nrs,nrs,nw), cdummy(ngm)
+  complex(dbl) :: green(nrs,nrs,nw), cdummy(ngm, nbnd_occ)
   logical :: convt, found
   complex(kind=DP) ::  auxg(ngm)
   complex(kind=DP) :: ZDOTC
   real(DP) :: eprec(nbnd_occ), dirac
-
   external ch_psi_all_eta
 
 !  !
@@ -36,7 +40,7 @@
   w_ryd = w/ryd2ev
 
   lter = 0
-
+  n1 = 1
   rdummy = 0.d0
   cdummy = (0.d0,0.d0)
   idummy = 0
@@ -91,11 +95,12 @@
   !
   do iw = 1, nw
     !
-!   write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
+    write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
     !
     do ig = igstart, igstop 
+!   do ig = 2,2
       !
-!     write(6,'(4x,"ig = ",i5)') ig
+      write(6,'(4x,"ig = ",i5)') ig
       !
 !     write(6,'(4x,"Green linsys: k =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
 !        xxk,g(:,ig), w(iw)
@@ -108,7 +113,7 @@
       lter = 0
       gr_A = czero
       call bcgsolve_all (ch_psi_all_eta, rdummy, rhs, gr_A, h_diag, &
-         ngm, ngm, tr_cgsolve, idummy, lter, conv_root, anorm, 1, g2kin, vr, cdummy, cw)
+         ngm, ngm, tr_cgsolve, idummy, lter, conv_root, anorm, n1, g2kin, vr, cdummy, cw)
       !
 !     write(6,'(4x,"bcgsolve_all iterations:",i5)') lter
       !
@@ -121,7 +126,7 @@
       !
       gr = gr_A + gr_N
       !
-!     write(6,*) 'GREEN',ig,44,w(iw),real(gr(44)),aimag(gr(44))
+!     write(400+mypool,*) w(iw),real(gr(4)),aimag(gr(4))
       !
       ! keep only the G-vectors 1:ngms for the Green's function
       !
@@ -138,8 +143,8 @@
 !  ! direct calculation - debug only
 !  ! The Sternheimer method and the direct calculation match perfectly
 !  !
-!  ig1 = 22
-!  ig2 = 44
+!  ig1 = 2
+!  ig2 = 4
 !  call  eigenstates_all ( vr, g2kin, psi_all, eval_all )
 !  !
 !  gr_exp = czero
@@ -156,7 +161,7 @@
 !  enddo
 !  gr_exp = 2.d0 * gr_exp ! spin
 !  do iw = 1, nw
-!    write(300,'(3f15.10)') w(iw), gr_exp(iw)
+!    write(300+mypool,'(3f15.10)') w(iw), gr_exp(iw)
 !  enddo
   ! 
   return

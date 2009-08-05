@@ -149,10 +149,11 @@
   !
 ! write(6,'(4x,"ig = ",i5)') ig
   !
-  do iw = 1, nw
+!@  do iw = 1, nw
+  do iw = 1, 2
     !
 !   write(6,'(4x,3x,"iw = ",i5)') iw
-    write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
+    write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
       xq0,g(:,ig), w(iw)
     !
     dvbare = czero
@@ -195,7 +196,7 @@
     !                     ^^^^^^^^^^^^^^^
     !                      eps^-1(0,0,q)
 #ifdef __PARA
-    write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
+!   write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
 #endif
     !
     ! symmetrized inverse dielectric matrix (finite limits for q->0)
