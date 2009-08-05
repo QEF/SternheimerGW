@@ -1,11 +1,11 @@
 
 # x61
 
-##F90 = ifort -- sigsev with the intel compiler 10.1.015
-#F90 = f95 -O3
-#LDFLAGS = -lfftw -llapack
-#CPP = cpp 
-#CPPFLAGS = -C -ansi
+#F90 = ifort -- sigsev with the intel compiler 10.1.015
+F90 = f95 -O3
+LDFLAGS = -lfftw -llapack
+CPP = cpp 
+CPPFLAGS = -C -ansi
 
 # hbar
 
@@ -21,10 +21,10 @@
 # 
 # slater has ifort 9.0
 
-F90 = mpif90 
-LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
-CPP = cpp -C -ansi
-CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
+#F90 = mpif90 
+#LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
+#CPP = cpp -C -ansi
+#CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
 
 # pople (ifort 11)
 #

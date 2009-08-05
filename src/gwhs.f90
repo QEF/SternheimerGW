@@ -724,7 +724,9 @@
   !
   write(stdout,'(/4x,"End of program GWHS")')
   write(stdout,'(4x,a/)') repeat('-',67)
+#ifdef __PARA
   call mp_barrier()
+#endif
 
   deallocate( vr, g2kin, greenf, scrcoul, sigma, gmap)
   deallocate( greenf_g, scrcoul_g)
