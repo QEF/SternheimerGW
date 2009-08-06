@@ -54,7 +54,7 @@
   complex(DP), allocatable :: psi(:,:)
   complex(dbl), allocatable :: vr(:), aux(:)
   complex(dbl), allocatable :: scrcoul (:,:,:), greenf (:,:,:), sigma(:,:,:)
-  complex(dbl), allocatable :: scrcoul_g (:,:,:), greenf_g (:,:,:)
+  complex(dbl), allocatable :: scrcoul_g (:,:,:), greenf_g (:,:,:), sigma_g(:,:,:)
   logical :: allowed, foundp, foundm
   CHARACTER (LEN=9)   :: code = 'GWHS'
   CHARACTER(len=3)  :: nd_nmbr = '000' ! node number (used only in parallel case)
@@ -426,6 +426,7 @@
   allocate ( sigma (nrs, nrs, nwsigma) )
   allocate ( scrcoul_g (ngms, ngms, nwcoul) )
   allocate ( greenf_g (ngms, ngms, nwgreen) )
+  allocate ( sigma_g (ngms, ngms, nwsigma) )
   !
   ! prepare the unit to write the Coulomb potential
   ! each q-point is associated with one record
@@ -444,7 +445,15 @@
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iungreen, file = "./silicon.green", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
-
+  !
+  ! prepare the unit to write the self-energy 
+  ! each k0-point is associated with one record
+  !
+  recl = 2 * ngms * ngms * nwsigma
+  unf_recl = DIRECT_IO_FACTOR * recl
+  open ( iunsigma, file = "./silicon.sigma", iostat = ios, form = 'unformatted', &
+       status = 'unknown', access = 'direct', recl = unf_recl)
+  !
   write(stdout,'(4x,"Screened Coulomb interaction:")')
   !
   ! loop over {q} for the screened Coulomb interaction
@@ -701,15 +710,23 @@
     ! use poolreduce to bring together the results from each pool
     !
     call poolreduce ( 2 * nrs * nrs * nwsigma, sigma)
+    !
+    if (me.eq.1.and.mypool.eq.1) then
 #endif
-
-!
-! now need to store somewhere sigma(:,:,:) for this k0
-! or to calculate the matrix elements
-!
+      sigma_g = sigma(1:ngms,1:ngms,:)
+      write ( iunsigma, rec = ik0, iostat = ios) sigma_g
+#ifdef __PARA
+    endif
+#endif
     !
     ! end loop on {k0}
   enddo 
+  !
+  ! CALCULATION OF THE MATRIX ELEMENTS
+  !
+  do ik0 = 1, 1 !@ nk0 
+    call sigma_matel ( ik0, vr, xk0, nwsigma, wsigma)
+  enddo
   !
   write(stdout,'(/4x,"End of program GWHS")')
   write(stdout,'(4x,a/)') repeat('-',67)
@@ -718,12 +735,11 @@
 #endif
 
   deallocate( vr, g2kin, greenf, scrcoul, sigma, gmap)
-  deallocate( greenf_g, scrcoul_g)
+  deallocate( greenf_g, scrcoul_g, sigma_g)
   close (iunwfc, status = 'delete')
-! close (iuncoul, status = 'keep')
-! close (iungreen, status = 'keep')
   close (iuncoul, status = 'delete')
   close (iungreen, status = 'delete')
+  close (iunsigma, status = 'keep')
 100 format (4x,"Green's function:   q     G     G'   status")
 101 format (4x,15x,3i6,"     done")
   !
