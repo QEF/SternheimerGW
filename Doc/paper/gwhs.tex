@@ -363,7 +363,7 @@ If we introduce the ``right-sided'' inverse dielectric matrix using
   W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
   \end{equation}
 then we have
-  \begin{equation}
+  \begin{equation}\label{eq.Wg}
   W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
 In practical calculations we proceed as follows: we first initialize the perturbation
@@ -394,6 +394,27 @@ the wings of $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ have finite limits for $\q\rig
 %[I BELIEVE THAT THE LEFT MATRIX IS OBTAINED BY SWAPPING THE RIGHT MATRIX - CHECK THIS.
 %PCM USES LEFT]
 
+The screened Coulomb interaction of Eq.\ (\ref{eq.Wg}) is now rewritten as
+  \begin{equation}\label{eq.Wg_symm}
+  W_{\G\Gp}(\q;\w) = \frac{4\pi e^2}{|\q+\G||\q+\Gp|}  \tilde\epsilon^{-1}_{\G\Gp}(\q;\w).
+  \end{equation}
+While the symmetrized inverse dielectric matrix has finite limits for $\q\rightarrow 0$,
+the screened Coulomb interaction still presents a divergence corresponding to the
+long-range tail of the Coulomb potential in real space. This divergence requires special
+care when performing the Brillouin zone integration to obtain the GW self-energy.\cite{hl86}
+We here overcome this difficulty by replacing the bare Coulomb potential 
+by the truncated potential $v_{\rm tr}(\r,\rp)=v(\r,\rp)[1-\theta(|\r-\rp|-R_{\rm c})]$, $\theta(x)$ being the Heaviside step function, following the prescription of 
+Ref.~\onlinecite{alavi}. The truncation radius is obtained as 
+$4\pi R_{\rm c}^3/3=N_\q\Omega$. The final expression for the
+screened Coulomb interaction in reciprocal space reads
+  \begin{equation}\label{eq.Wg_symm}
+  W^{\rm tr}_{\G\Gp}(\q;\w) = 4\pi e^2 \, \frac{1-\cos{R_{\rm c}|\q+\G|}}{|\q+\G||\q+\Gp|}\,
+     \tilde\epsilon^{-1}_{\G\Gp}(\q;\w).
+  \end{equation}
+In the long-wavelenght limit $\q\rightarrow 0$ and for $\G=\Gp=0$ the truncated
+screened interaction it goes to
+the finite limit $2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\rightarrow 0;\w)$.
+
 The scheme introduced here allows us to calculate one row (in $\Gp$) of the inverse dielectric
 matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
 perturbation ${\rm e}^{i(\q+\G)\cdot\r}$. This idea has been discussed in Ref.\ \onlinecite{kunc}
@@ -402,7 +423,10 @@ perturbation theory of the inverse dielectric matrix. The main achievement is th
 possibility of calculating the dielectric response at finite wavevectors without
 resorting to supercell calculations.
 
-As a technical note we point out that, as routinely done in DFPT calculations, 
+
+  
+
+We point out that, as routinely done in DFPT calculations, 
 it is convenient to modify the linear operator on the lhs of Eq.\ (\ref{eq.linsys.4}) by adding
 a term $\alpha \P^\k$:
  \begin{eqnarray} \label{eq.linsys.5}
@@ -524,6 +548,7 @@ examples: delta functions and plane waves. There is certainly scope to consider
 all the many possinilities in between.
 
 \begin{acknowledgments}
+F.G. is grateful to Manish Jain for drawing Ref.\ \onlinecite{alavi} to his attention.
 Computational resources were provided by the Oxford Supercomputing Centre.
 This work was partly supported by the National Science Foundation Grant No. DMR04-39768 and by
 the Director, Office of Science, Office of Basic Energy Sciences, Materials Sciences
@@ -981,6 +1006,10 @@ Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
 \bibitem{oxfordgw}
 Borrowing some subs from espresso - developed by FG - will become
 GNU - need to be ported to main packages.
+
+\bibitem{alavi}
+J. Spencer and A. Alavi.
+Phys.\ Rev.\ B {\bf 77} 193110 (2008).
 
 \bibitem{haydock1}
 
