@@ -449,11 +449,7 @@
   !
   ! loop over {q} for the screened Coulomb interaction
   !
-!@@
-goto 123
-!@@
-!@  do iq = 1, nq
-  do iq = 1, 2
+  do iq = 1, nq
     !
     write(stdout,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
@@ -496,17 +492,13 @@ goto 123
   write(stdout,'(4x,"Green''s function:")')
   ! loop over the {k0} set for the Self-Energy
   !
-!@@
-123 continue
-!@@
   do ik0 = 1, 1 !@ nk0
     !
     write(stdout,'(4x,"ik0 = ",i3)') ik0
     !
     ! loop over the {k0-q} grid for the Green's function
     !
-!@    do iq = 1, nq
-    do iq = 1, 2
+    do iq = 1, nq
       !
       write(stdout,'(4x,3x,"iq = ",i3)') iq
       greenf = czero

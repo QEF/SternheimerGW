@@ -175,7 +175,6 @@
 ! write(6,'(4x,"ig = ",i5)') ig
   !
   do iw = 1, nwim
-!@  do iw = 1, 2
     !
 !   write(6,'(4x,3x,"iw = ",i5)') iw
     write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
