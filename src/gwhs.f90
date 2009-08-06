@@ -245,6 +245,10 @@
   !
   deallocate ( ss, vs)
   !
+  ! set to zero top of valence band by shifting the
+  ! local potential
+  vr = vr - eshift
+  !
 
   !
   allocate ( g2kin (ngm) )
@@ -330,15 +334,6 @@
   ! here we generate the G-map for the folding into the first BZ
   !
   call refold ( )
-  !
-  ! now prepare the unit to write the Haydock's coefficients
-  !
-  recl = 2 * 4 * ( nstep+2 ) + 2 * 4 + 4 
-  ! this correspond to a(nstep+2,4), b(nstep+2,4), a_term(4), b_term(4) and norm(4)      
-  ! (all of them are real)
-  unf_recl = DIRECT_IO_FACTOR * recl
-  open ( iuncoeff, file = "./silicon.coeff", iostat = ios, form = 'unformatted', &
-       status = 'unknown', access = 'direct', recl = unf_recl)
   !
   !  ------------------------------------------------
   !  MAIN: CALCULATE G AND W AND PERFORM CONVOLUTIONS
@@ -454,8 +449,11 @@
   !
   ! loop over {q} for the screened Coulomb interaction
   !
+!@@
+goto 123
+!@@
 !@  do iq = 1, nq
-  do iq = 2, 2
+  do iq = 1, 2
     !
     write(stdout,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
@@ -498,6 +496,9 @@
   write(stdout,'(4x,"Green''s function:")')
   ! loop over the {k0} set for the Self-Energy
   !
+!@@
+123 continue
+!@@
   do ik0 = 1, 1 !@ nk0
     !
     write(stdout,'(4x,"ik0 = ",i3)') ik0
@@ -524,10 +525,6 @@
       !
       ! need to use multishift in green
       call green_linsys ( vr, g2kin, k0mq, nwgreen, wgreen, greenf, igstart, igstop )
-      !
-!     obsolete haydock
-!     call green_coeff ( iq, g2kin, vr, nwgreen, wgreen) !frequency passed for test purposes
-!     call green_fraction ( iq, nwgreen, wgreen, greenf ) 
       !
       ! now greenf contains the Green's function
       ! for this k0mq point, all frequencies, and in G-space
@@ -733,10 +730,8 @@
   close (iunwfc, status = 'delete')
 ! close (iuncoul, status = 'keep')
 ! close (iungreen, status = 'keep')
-! close (iuncoeff, status = 'keep')
   close (iuncoul, status = 'delete')
   close (iungreen, status = 'delete')
-  close (iuncoeff, status = 'delete')
 100 format (4x,"Green's function:   q     G     G'   status")
 101 format (4x,15x,3i6,"     done")
   !

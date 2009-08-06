@@ -78,14 +78,10 @@ ggens.o \
 h_psi.o \
 h_psi_c.o \
 fftw.o \
-green_coeff.o \
-green_fraction.o \
-green_lib.o \
 hpsort_eps.o \
 cgdiag.o \
 ktokpmq.o \
 pade.o \
-rw_haydock.o \
 solve_linter_dyn.o \
 green_linsys.o \
 solve_linter_dyn_nonSCF.o \

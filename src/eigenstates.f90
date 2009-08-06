@@ -108,10 +108,6 @@
   !
   deallocate ( eval, hk, u, fv1, fv2, ss, vs )
   !
-  !
-  ! set to zero top of valence band
-  et = et - eshift
-  !
   return
   end subroutine eigenstates
   !----------------------------------------------------------------

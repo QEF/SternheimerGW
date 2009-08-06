@@ -30,13 +30,17 @@
   integer :: shift(nks)
   integer, parameter :: ng0vec = 27
   complex(dbl) :: scrcoul(nrs, nrs, nw)
+  integer :: nwim
+  ! number of frequencies on the imaginary axis
+  real(dbl), allocatable :: wim(:), wim_ryd(:)
+  ! frequencies on the imaginary axis
+  complex(dbl), allocatable :: z(:), u(:), a(:)
+  ! these are for the Pade continuation to the real axis
   integer :: ig, iw, igp, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
   real(dbl) :: g2kin(ngm), et(nbnd_occ, nks), w(nw), w_ryd(nw)
   complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), dvbare(nr), dvscf(nr)
   complex(dbl) :: dvscfp (nr), dvscfm (nr)
   ! these are for +w and -w
-  complex(dbl) :: z(nw), u(nw), a(nw)
-  ! these are for the Pade continuation to the real axis
   complex(kind=DP) :: aux (ngm, nbnd_occ), evq (ngm, nbnd_occ)
   character (len=3) :: nd_nmbr0
   character (len=256) :: barfile, dwfpfile, dwfmfile
@@ -74,9 +78,31 @@
   alpha_mix = 0.5
 !@
 
+  !
+  ! read from file the frequencies on the imaginary axis (eV)
+  ! (every node reads in parallel - it's a tiny file)
+  !
+  open ( 45, file = "./imfreq.dat", form = 'formatted', status = 'unknown')
+  read (45, *)
+  read (45, *) nwim
+  if (.not.allocated(wim)) allocate ( wim(nwim) )
+  if (.not.allocated(wim_ryd)) allocate ( wim_ryd(nwim) )
+  if (.not.allocated(z)) allocate ( z(nwim) )
+  if (.not.allocated(u)) allocate ( u(nwim) )
+  if (.not.allocated(a)) allocate ( a(nwim) )
+  do iw = 1, nwim
+    read (45,*) wim(iw)
+    if (wim(iw).lt.0.d0) call error ('coulomb','imaginary frequencies must be positive',1)
+  enddo
+  if (nwim.gt.20) call error ('coulomb','too many imaginary frequencies',nwim)
+  close(45)
+  !
+
+
   ! initialize
   scrcoul = 0.d0
   w_ryd = w/ryd2ev
+  wim_ryd = wim/ryd2ev
 
   !
   !  generate uniform {k} and {k+q} grids 
@@ -186,15 +212,14 @@
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
-!@    do iw = 1, nw
-   do iw = 1, 2
+    do iw = 1, nwim
       !
       dvbare = czero
       dvscf  = czero
       if (qg2 > 1.d-8) then
         !
         write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
-          xxq,g(:,ig), w(iw)
+          xxq,g(:,ig), wim(iw)
         !
         write(6,'(4x,3x,"iw = ",i5)') iw
         !
@@ -226,27 +251,18 @@
         ! solve self-consistently the linear system for this perturbation 
         ! _dyn is for the dynamical case (w/=0)
         !
-        call solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
+        call solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, wim_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
         !
-        if (.not.convt) then
-          !
-          ! force full CG minimization at each SCF step
-          !
-          write(800,'(4x,"Screened Coulomb: q =",3f7.3,"  G'' =",3f7.3,"  w(eV) =",3f7.3)') &
-             xxq,g(:,ig), w(iw)
-          write(800,'(4x,"Convergence of mixed minimization not achieved: forcing full SCF minimization")')
-          maxscf_ = 10000
-          call solve_linter_dyn ( dvbare, dvscf, xxq, et, vr, w_ryd(iw), maxscf_, maxbcgsolve, alpha_mix, .true., convt )
-          if (.not.convt) call error ('solve_linter_dyn','scf convergence not achieved',1)
-        endif
+        if (.not.convt) call error ('coulomb','scf convergence not achieved',1)
         !
         ! transform dvscf to G space 
         !
         call cfft3 ( dvscf , nr1, nr2, nr3, -1)
         !
-        write(6,'(4x,2f9.5)') dvscf ( nl(1) )
-        !                     ^^^^^^^^^^^^^^^
-        !                      eps^-1(0,0,q)
+!       write(6,'(4x,"INVEPS: ",3f9.5)') wim(iw), dvscf ( nl(1) )
+!       !                                         ^^^^^^^^^^^^^^^
+        !                                          eps^-1(0,0,q)
+
 #ifdef __PARA
 !       write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
 #endif
@@ -276,6 +292,8 @@
       ! Spencer/Alavi truncation of the bare coulomb interaction
       ! [PRB 77,193110 (2008]
       !
+      ! WARNING: I tested epsilon, but never tested W
+      !
       rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
       qg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
       spal = one - cos ( rcut * tpiba * qg )
@@ -294,25 +312,29 @@
       !
       ! Pade input points on the imaginary axis
       !
-      do iw = 1, nw
-        z(iw) = dcmplx( 0.d0, w_ryd(iw))
+      do iw = 1, nwim
+        z(iw) = dcmplx( 0.d0, wim_ryd(iw))
         u(iw) = scrcoul (ig,igp,iw)
       enddo 
       ! 
       ! Pade coefficients
       !
-      call pade_coeff ( nw, z, u, a)
+      call pade_coeff ( nwim, z, u, a)
       !
       ! Pade output points on the real axis (at a distance eta)
       ! (I use the same grid for simplicity - this can be changed)
       !
       do iw = 1, nw
-        call pade_eval ( nw, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
+        call pade_eval ( nwim, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
       enddo
       !
     enddo
     !
   enddo
+  !
+! do iw = 1, nw
+!   write(6,'(4x,"PADE INVEPS: ",3f9.5)') w(iw), scrcoul (1,1,iw) 
+! enddo
   ! 
   close ( iubar, status = 'delete' ) 
   close ( iudwfp, status = 'delete' ) 
