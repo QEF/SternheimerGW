@@ -21,6 +21,7 @@
   implicit none
   !
   real(dbl) :: xxq(3), ui, uj, uk, qg2, qgg, xktmp(3), g0(3), alpha_mix
+  real(dbl) :: qg, rcut, spal
   integer :: iq, count, i, j, k, ik, ipol, ikk, ikq, ig0, igmg0, nw
   ! igmg0 = i of (G - G0)
   !
@@ -270,6 +271,17 @@
         qgg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 ) &
             * sqrt( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 )
         scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qgg), zero )
+      enddo
+      !
+      ! Spencer/Alavi truncation of the bare coulomb interaction
+      ! [PRB 77,193110 (2008]
+      !
+      rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+      qg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
+      spal = one - cos ( rcut * tpiba * qg )
+      !
+      do igp = 1, ngms
+        scrcoul (ig,igp,iw) = scrcoul (ig,igp,iw) * dcmplx ( spal, zero)
       enddo
       !
       ! scrcoul (-,igp,-) is now in SIZE order of G-vectors
