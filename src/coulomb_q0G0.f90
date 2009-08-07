@@ -52,6 +52,8 @@
   logical :: convt
   ! return .true. is convergence has been achieved in solve_linter_dyn
   !
+  call start_clock('coulomb_q0G0')
+  !
   recl = 2 * nbnd_occ * ngm  ! 2 stands for complex
   unf_recl = DIRECT_IO_FACTOR * recl
   barfile  = './silicon'//'.bar'
@@ -174,7 +176,8 @@
   !
 ! write(6,'(4x,"ig = ",i5)') ig
   !
-  do iw = 1, nwim
+!@  do iw = 1, nwim
+  do iw = 2, 2
     !
 !   write(6,'(4x,3x,"iw = ",i5)') iw
     write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
@@ -289,6 +292,8 @@
   close ( iubar, status = 'delete' ) 
   close ( iudwfp, status = 'delete' ) 
   close ( iudwfm, status = 'delete' ) 
+  !
+  call stop_clock('coulomb_q0G0')
   !
   return
   end subroutine coulomb_q0G0

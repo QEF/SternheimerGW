@@ -48,6 +48,8 @@
   logical :: convt
   ! return .true. from solve_linter if convergence has been achieved
 
+  call start_clock ('coulomb')
+ 
   !
   recl = 2 * nbnd_occ * ngm  ! 2 stands for complex
   unf_recl = DIRECT_IO_FACTOR * recl
@@ -207,12 +209,14 @@
   !  [note: no barriers inside this loop as the number of perturbation
   !  is different across processors]
   !
-  do ig = igstart, igstop 
+!@  do ig = igstart, igstop 
+  do ig = igstart, igstart
     !
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
-    do iw = 1, nwim
+!@    do iw = 1, nwim
+    do iw = 2, 2
       !
       dvbare = czero
       dvscf  = czero
@@ -339,6 +343,8 @@
   close ( iubar, status = 'delete' ) 
   close ( iudwfp, status = 'delete' ) 
   close ( iudwfm, status = 'delete' ) 
+  !
+  call stop_clock ('coulomb')
   !
   return
   end subroutine coulomb

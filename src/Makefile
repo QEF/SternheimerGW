@@ -61,6 +61,7 @@ date_and_tim.o \
 cg_psi.o \
 ch_psi_all.o \
 ch_psi_all_eta.o \
+clocks.o \
 coulomb.o \
 coulomb_q0G0.o \
 cgsolve_all.o \
@@ -84,6 +85,7 @@ ktokpmq.o \
 pade.o \
 solve_linter_dyn.o \
 green_linsys.o \
+scnds.o \
 solve_linter_dyn_nonSCF.o \
 set_ndnmbr.o \
 sigma_matel.o \

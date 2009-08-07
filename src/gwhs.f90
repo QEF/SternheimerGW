@@ -62,18 +62,16 @@
   CHARACTER (LEN=6) :: version_number = '0.4.8'
   character (len=256) :: wfcfile
   !
-#ifdef __PARA
   !
-  ! initialize parallel environment
+  ! start serial code OR initialize parallel environment
   !
   CALL startup( nd_nmbr, code, version_number )
   !
-  if (me.ne.1.or.mypool.ne.1) then
-    open (unit=stdout,file='/dev/null',status='unknown')
-  endif
-  !
+#ifdef __PARA
+  if (me.ne.1.or.mypool.ne.1) open (unit=stdout,file='/dev/null',status='unknown')
 #endif
 
+  call start_clock ('GWHS')
   !
   !----------------------------------------------------------------
   ! DEFINE THE CRYSTAL LATTICE
@@ -458,7 +456,8 @@
   !
   ! loop over {q} for the screened Coulomb interaction
   !
-  do iq = 1, nq
+!@  do iq = 1, nq
+  do iq = 1, 1
     !
     write(stdout,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
@@ -507,7 +506,8 @@
     !
     ! loop over the {k0-q} grid for the Green's function
     !
-    do iq = 1, nq
+!@    do iq = 1, nq
+    do iq = 2, 2
       !
       write(stdout,'(4x,3x,"iq = ",i3)') iq
       greenf = czero
@@ -555,6 +555,8 @@
   !
   ! G TIMES W PRODUCT
   !
+  call start_clock ('GW product')
+  !
   w_ryd = wcoul / ryd2ev
   do ik0 = 1, 1 !@ nk0 
     !
@@ -570,7 +572,8 @@
     ! (need some sort of parallelization here)
     if (me.eq.1.and.mypool.eq.1) then
 #endif
-    do iq = 1, nq
+!@    do iq = 1, nq
+    do iq = 2, 2 
       !
       write(stdout,'(4x,"Summing iq = ",i4)') iq
       !
@@ -582,7 +585,7 @@
       greenf = czero
       greenf(1:ngms,1:ngms,:) = greenf_g
       !
-      do iw = 1, 2 !@ nwgreen
+      do iw = 1, nwgreen
         do ig = 1, ngms
           aux = czero
           do igp = 1, ngms
@@ -721,6 +724,8 @@
     !
     ! end loop on {k0}
   enddo 
+  ! 
+  call stop_clock ('GW product')
   !
   ! CALCULATION OF THE MATRIX ELEMENTS
   !
@@ -734,14 +739,21 @@
   call mp_barrier()
 #endif
 
-  deallocate( vr, g2kin, greenf, scrcoul, sigma, gmap)
-  deallocate( greenf_g, scrcoul_g, sigma_g)
   close (iunwfc, status = 'delete')
   close (iuncoul, status = 'delete')
   close (iungreen, status = 'delete')
   close (iunsigma, status = 'keep')
 100 format (4x,"Green's function:   q     G     G'   status")
 101 format (4x,15x,3i6,"     done")
+  !
+  call stop_clock ('GWHS')
+  !
+  call print_clock('GWHS')
+  call print_clock('coulomb')
+  call print_clock('coulomb_q0G0')
+  call print_clock('green_linsys')
+  call print_clock('GW product')
+  call print_clock('sigma_matel')
   !
   end program gwhs
   !----------------------------------------------------------------

@@ -20,6 +20,8 @@
   complex(kind=DP) :: ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nw)
   real(dbl) :: resig_diag(nw), et_qp(nbnd_sig)
   !
+  call start_clock ('sigma_matel')
+  !
   w_ryd = w/ryd2ev
   !
   write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk0 (ipol) , ipol = 1, 3)
@@ -81,6 +83,8 @@
   endif
 #endif
   write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3))') et_qp*ryd2ev
+  !
+  call stop_clock ('sigma_matel')
   ! 
   return
   end subroutine sigma_matel

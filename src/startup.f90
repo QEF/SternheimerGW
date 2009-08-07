@@ -216,23 +216,23 @@ SUBROUTINE startup( nd_nmbr, code, version )
      !
      CALL date_and_tim( cdate, ctime )
      !
-     WRITE( stdout, '(/5X,"Program ",A9," v.",A6," starts ...",&
-                     &/5X,"Today is ",A9," at ",A9)' ) &
+     WRITE( stdout, '(/4X,"Program ",A9," v.",A6," starts ...",&
+                     &/4X,"Today is ",A9," at ",A9)' ) &
          code, version, cdate, ctime
      !
-     WRITE( stdout, '(/5X,"Parallel version (MPI)",/)' )
+     WRITE( stdout, '(/4X,"Parallel version (MPI)",/)' )
      !
-     WRITE( stdout, '(5X,"Number of processors in use:    ",I4)' ) nproc
+     WRITE( stdout, '(4X,"Number of processors in use:    ",I4)' ) nproc
      !
      IF ( nimage > 1 ) &
         WRITE( UNIT = stdout, &
-               FMT = '(5X,"path-images division:  nimage = ",I4)' ) nimage
+               FMT = '(4X,"path-images division:  nimage = ",I4)' ) nimage
      IF ( npool > 1 ) &
         WRITE( UNIT = stdout, &
-               FMT = '(5X,"K-points division:     npool  = ",I4)' ) npool
+               FMT = '(4X,"K-points division:     npool  = ",I4)' ) npool
      IF ( nproc_pool > 1 ) &
         WRITE( UNIT = stdout, &
-               FMT = '(5X,"R & G space division:  nprocp = ",I4)' ) nproc_pool
+               FMT = '(4X,"R & G space division:  nprocp = ",I4)' ) nproc_pool
      !
   END IF   
   !
@@ -244,8 +244,8 @@ SUBROUTINE startup( nd_nmbr, code, version )
   !
   CALL date_and_tim( cdate, ctime )
   !
-  WRITE( stdout, '(/5X,"Program ",A9," v.",A6," starts ...",&
-                  &/5X,"Today is ",A9," at ",A9)' ) code, version, cdate, ctime
+  WRITE( stdout, '(/4X,"Program ",A9," v.",A6," starts ...",&
+                  &/4X,"Today is ",A9," at ",A9)' ) code, version, cdate, ctime
   !
 #endif
   !

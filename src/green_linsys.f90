@@ -32,6 +32,8 @@
   real(DP) :: eprec(nbnd_occ), dirac
   external ch_psi_all_eta
 
+  call start_clock('green_linsys')
+ 
 !  !
 !  do iw=1,nw
 !    w(iw) = float(iw-1)/float(nw-1)*50-25
@@ -93,12 +95,13 @@
   !  [note: no barriers inside this loop as the number of perturbation
   !  is different across processors]
   !
-  do iw = 1, nw
+!@  do iw = 1, nw
+  do iw = 2, 2
     !
     write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
     !
-    do ig = igstart, igstop 
-!   do ig = 2,2
+!@    do ig = igstart, igstop 
+    do ig = igstart, igstart
       !
       write(6,'(4x,"ig = ",i5)') ig
       !
@@ -163,6 +166,8 @@
 !  do iw = 1, nw
 !    write(300+mypool,'(3f15.10)') w(iw), gr_exp(iw)
 !  enddo
+  !
+  call stop_clock('green_linsys')
   ! 
   return
   end subroutine green_linsys
