@@ -733,10 +733,17 @@
     call sigma_matel ( ik0, vr, xk0, nwsigma, wsigma)
   enddo
   !
+!
+! it looks like I have a problem in closing these
+! files in parallel - tried several things (only headnode
+! or everybody; only keep; keep some and delete some; all delete)
+! should not matter that much as long as it finishes smoothly
+!
+! close (iuncoul)
+! close (iungreen)
+! close (iunsigma)
+
   close (iunwfc, status = 'delete')
-  close (iuncoul, status = 'delete')
-  close (iungreen, status = 'delete')
-  close (iunsigma, status = 'keep')
   !
   call stop_clock ('GWHS')
   !
@@ -749,10 +756,12 @@
   !
   write(stdout,'(/4x,"End of program GWHS")')
   write(stdout,'(4x,a/)') repeat('-',67)
+#ifdef __PARA
+  call mp_barrier()
+#endif
+  stop
   !
   stop
   end program gwhs
   !----------------------------------------------------------------
   !
-
-
