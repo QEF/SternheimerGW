@@ -43,15 +43,15 @@
      endif
   enddo
   !
-  write(6,'(4x,"ngms  = ",i5)') ngms
+  write(6,'(4x,"ngms = ",i10)') ngms
   !
   ! total number of real-space grid points
   !
   nrs = nr1s * nr2s * nr3s
-  write(6,'(4x,"nr1s  = ",i10)') nr1s
-  write(6,'(4x,"nr2s  = ",i10)') nr2s
-  write(6,'(4x,"nr3s  = ",i10)') nr3s
-  write(6,'(4x,"nrs   = ",i10)') nrs
+  write(6,'(4x,"nr1s = ",i10)') nr1s
+  write(6,'(4x,"nr2s = ",i10)') nr2s
+  write(6,'(4x,"nr3s = ",i10)') nr3s
+  write(6,'(4x,"nrs  = ",i10)') nrs
   !
   end subroutine ggens
   !

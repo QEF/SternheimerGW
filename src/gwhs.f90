@@ -179,7 +179,7 @@
     igstart = igs
     igstop = igs - 1 + ngpool
     !
-    write (stdout,'(4x,"Coulomb: max n. of PW perturbations per pool = ",i5)') igstop-igstart+1
+    write (stdout,'(/4x,"Max n. of PW perturbations per pool = ",i5)') igstop-igstart+1
     !
   else
 #endif
@@ -457,7 +457,7 @@
   ! loop over {q} for the screened Coulomb interaction
   !
 !@  do iq = 1, nq
-  do iq = 1, 1
+  do iq = 1, 2
     !
     write(stdout,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
@@ -507,7 +507,7 @@
     ! loop over the {k0-q} grid for the Green's function
     !
 !@    do iq = 1, nq
-    do iq = 2, 2
+    do iq = 1, 2
       !
       write(stdout,'(4x,3x,"iq = ",i3)') iq
       greenf = czero
@@ -573,7 +573,7 @@
     if (me.eq.1.and.mypool.eq.1) then
 #endif
 !@    do iq = 1, nq
-    do iq = 2, 2 
+    do iq = 1, 2 
       !
       write(stdout,'(4x,"Summing iq = ",i4)') iq
       !
@@ -733,18 +733,10 @@
     call sigma_matel ( ik0, vr, xk0, nwsigma, wsigma)
   enddo
   !
-  write(stdout,'(/4x,"End of program GWHS")')
-  write(stdout,'(4x,a/)') repeat('-',67)
-#ifdef __PARA
-  call mp_barrier()
-#endif
-
   close (iunwfc, status = 'delete')
   close (iuncoul, status = 'delete')
   close (iungreen, status = 'delete')
   close (iunsigma, status = 'keep')
-100 format (4x,"Green's function:   q     G     G'   status")
-101 format (4x,15x,3i6,"     done")
   !
   call stop_clock ('GWHS')
   !
@@ -755,6 +747,10 @@
   call print_clock('GW product')
   call print_clock('sigma_matel')
   !
+  write(stdout,'(/4x,"End of program GWHS")')
+  write(stdout,'(4x,a/)') repeat('-',67)
+  !
+  stop
   end program gwhs
   !----------------------------------------------------------------
   !

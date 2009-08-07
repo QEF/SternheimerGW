@@ -210,13 +210,13 @@
   !  is different across processors]
   !
 !@  do ig = igstart, igstop 
-  do ig = igstart, igstart
+  do ig = igstart, igstart+1
     !
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
 !@    do iw = 1, nwim
-    do iw = 2, 2
+    do iw = 1, 2
       !
       dvbare = czero
       dvscf  = czero

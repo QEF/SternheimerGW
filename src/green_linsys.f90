@@ -96,12 +96,12 @@
   !  is different across processors]
   !
 !@  do iw = 1, nw
-  do iw = 2, 2
+  do iw = 1, 2
     !
     write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
     !
 !@    do ig = igstart, igstop 
-    do ig = igstart, igstart
+    do ig = igstart, igstart+1
       !
       write(6,'(4x,"ig = ",i5)') ig
       !

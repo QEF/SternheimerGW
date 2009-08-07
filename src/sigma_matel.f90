@@ -82,7 +82,7 @@
 #ifdef __PARA
   endif
 #endif
-  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3))') et_qp*ryd2ev
+  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3)/)') et_qp*ryd2ev
   !
   call stop_clock ('sigma_matel')
   ! 

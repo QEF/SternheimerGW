@@ -158,7 +158,7 @@ SUBROUTINE startup( nd_nmbr, code, version )
   !
   IF ( nproc_image < 10 ) THEN
      !
-     WRITE( nd_nmbr(1:1), '(I1)' ) node_number
+!    WRITE( nd_nmbr(1:1), '(I1)' ) node_number
      !
   ELSE IF ( nproc_image < 100 ) THEN
      !
@@ -166,11 +166,11 @@ SUBROUTINE startup( nd_nmbr, code, version )
         !
         nd_nmbr = '0'
         !
-        WRITE( nd_nmbr(2:2), '(I1)' ) node_number
+!       WRITE( nd_nmbr(2:2), '(I1)' ) node_number
         !
      ELSE
         !
-        WRITE( nd_nmbr(1:2), '(I2)' ) node_number
+!       WRITE( nd_nmbr(1:2), '(I2)' ) node_number
         !
      END IF
      !
@@ -180,17 +180,17 @@ SUBROUTINE startup( nd_nmbr, code, version )
         !
         nd_nmbr = '00'
         !     
-        WRITE( nd_nmbr(3:3), '(I1)' ) node_number
+!       WRITE( nd_nmbr(3:3), '(I1)' ) node_number
         !
      ELSE IF ( node_number < 100 ) THEN
         !
         nd_nmbr = '0'
         !
-        WRITE( nd_nmbr(2:3), '(I2)' ) node_number
+!       WRITE( nd_nmbr(2:3), '(I2)' ) node_number
         !
      ELSE
         !
-        WRITE( nd_nmbr, '(I3)' ) node_number
+!       WRITE( nd_nmbr, '(I3)' ) node_number
         !
      END IF
      !

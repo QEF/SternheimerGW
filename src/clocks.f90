@@ -225,21 +225,21 @@ SUBROUTINE print_this_clock( n )
      nsec  = nsec - 60 * nmin
      !
      IF ( nday > 0 ) THEN
-        WRITE( stdout, '(5X,A12," : ",3X,I2,"d",3X,I2,"h",I2, "m CPU time"/)')&
+        WRITE( stdout, '(4X,A12," : ",3X,I2,"d",3X,I2,"h",I2, "m CPU time"/)')&
              clock_label(n), nday, nhour, nmin
      ELSE IF ( nhour > 0 ) THEN
-        WRITE( stdout, '(5X,A12," : ",3X,I2,"h",I2,"m CPU time"/)') &
+        WRITE( stdout, '(4X,A12," : ",3X,I2,"h",I2,"m CPU time"/)') &
              clock_label(n), nhour, nmin
      ELSE IF ( nmin > 0 ) THEN
-        WRITE( stdout, '(5X,A12," : ",I2,"m",F5.2,"s CPU time"/)') &
+        WRITE( stdout, '(4X,A12," : ",I2,"m",F5.2,"s CPU time"/)') &
              clock_label(n), nmin, nsec
      ELSE
-        WRITE( stdout, '(5X,A12," : ",3X,F5.2,"s CPU time"/)') &
+        WRITE( stdout, '(4X,A12," : ",3X,F5.2,"s CPU time"/)') &
              clock_label(n), nsec
      END IF
   ELSE IF ( called(n) == 1 .OR. t0(n) /= notrunning ) THEN
      ! For clocks that have been called only once
-     WRITE( stdout, '(5X,A12," :",F9.2,"s CPU")') &
+     WRITE( stdout, '(4X,A12," :",F9.2,"s CPU")') &
           clock_label(n), elapsed_cpu_time
   ELSE IF ( called(n) == 0 ) THEN
      ! For clocks that have never been called
@@ -247,7 +247,7 @@ SUBROUTINE print_this_clock( n )
               & " never called !")') n, clock_label(n)
   ELSE
      ! For all other clocks
-     WRITE( stdout, '(5X,A12," :",F9.2,"s CPU (", &
+     WRITE( stdout, '(4X,A12," :",F9.2,"s CPU (", &
               & I8," calls,",F8.3," s avg)")') clock_label(n), &
           elapsed_cpu_time, called(n) , ( elapsed_cpu_time / called(n) )
   END IF

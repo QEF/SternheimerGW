@@ -157,7 +157,7 @@
     if (gg(ng).le.ecut0/ecutwfc*gcutm) ngm0 = ng
   enddo  
   !
-  write(6,'(4x,"ngm       = ",i5/4x,"ngm0      = ",i5)') ngm, ngm0
+  write(6,'(4x,"ngm  = ",i10/4x,"ngm0 = ",i10)') ngm, ngm0
   !
   deallocate ( gg )
   !
