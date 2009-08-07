@@ -52,8 +52,6 @@
   logical :: convt
   ! return .true. is convergence has been achieved in solve_linter_dyn
   !
-  call start_clock('coulomb_q0G0')
-  !
   recl = 2 * nbnd_occ * ngm  ! 2 stands for complex
   unf_recl = DIRECT_IO_FACTOR * recl
   barfile  = './silicon'//'.bar'
@@ -292,8 +290,6 @@
   close ( iubar, status = 'delete' ) 
   close ( iudwfp, status = 'delete' ) 
   close ( iudwfm, status = 'delete' ) 
-  !
-  call stop_clock('coulomb_q0G0')
   !
   return
   end subroutine coulomb_q0G0

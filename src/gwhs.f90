@@ -739,9 +739,9 @@
 ! or everybody; only keep; keep some and delete some; all delete)
 ! should not matter that much as long as it finishes smoothly
 !
-! close (iuncoul)
-! close (iungreen)
-! close (iunsigma)
+! close (iuncoul, status = 'delete')
+! close (iungreen, status = 'delete')
+! close (iunsigma, status = 'keep')
 
   close (iunwfc, status = 'delete')
   !
@@ -749,7 +749,6 @@
   !
   call print_clock('GWHS')
   call print_clock('coulomb')
-  call print_clock('coulomb_q0G0')
   call print_clock('green_linsys')
   call print_clock('GW product')
   call print_clock('sigma_matel')
