@@ -11,7 +11,7 @@
   !
   ! STRUCTURE AND POTENTIAL FOR SILICON
   !
-  integer, parameter :: nat = 2, nbnd_occ = 4, nbnd = 50, nbnd_sig = 10
+  integer, parameter :: nat = 2, nbnd_occ = 4, nbnd = 50, nbnd_sig = 8
   real(dbl), parameter :: alat = 10.26
   ! lattice parameter of silicon (5.43 A)
   ! without the factor 4 we have the volume of 8 atoms...

@@ -453,6 +453,9 @@
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iunsigma, file = "./silicon.sigma", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
+!@@@
+goto 123 
+!@@@
   !
   write(stdout,'(4x,"Screened Coulomb interaction:")')
   !
@@ -721,6 +724,9 @@
     !
     ! end loop on {k0}
   enddo 
+!@@@
+123 continue
+!@@@
   !
   ! CALCULATION OF THE MATRIX ELEMENTS
   !
