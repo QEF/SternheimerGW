@@ -21,10 +21,20 @@
 # 
 # slater has ifort 9.0
 
-F90 = mpif90 
-LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
+#F90 = mpif90 
+#LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
+#CPP = cpp -C -ansi
+#CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
+
+# redqueen
+
+F90 = mpif90
+F90FLAGS = -O3 
+LDFLAGS = -lmkl -lmkl_lapack -lguide -lpthread \
+          -L/export/home/fgiustino/giustino/redqueen/code/fftw-2.1.5/lib -lfftw
 CPP = cpp -C -ansi
-CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
+CPPFLAGS = -D__PARA -D__MPI 
+
 
 # pople (ifort 11)
 #

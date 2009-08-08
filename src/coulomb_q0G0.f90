@@ -217,7 +217,7 @@
     !
     call cfft3 ( dvscf , nr1, nr2, nr3, -1)
     !
-!   write(6,'(4x,"INVEPS: ",3f9.5)') wim(iw), dvscf ( nl(1) )
+    write(6,'(4x,"INVEPS: ",3f9.5)') wim(iw), dvscf ( nl(1) )
     !                                         ^^^^^^^^^^^^^^^
     !                                          eps^-1(0,0,q)
 #ifdef __PARA
