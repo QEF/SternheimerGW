@@ -1,0 +1,17 @@
+
+How to set the scr 3s pseudo as the pseudo for all l
+
+   1) Calculate phi^AE_l0'
+   2) Generate the smooth phi^PS_l0'
+   3) Invert the Schr Eq to obtain the screened V^PS_l0(r)'
+   4) Use the screened V^PS_l0(r) to calculate the ps wf for l/=l0 phi^PS_l'
+   5) Unscreen using the pseudo charge density obtained from pseudo s + pseudo p
+
+   --> The resulting radial ionic potentials are the same for every channel'
+   --> and the DFT solution yields the pseudo wavefunctions'
+         
+ *** I cannot use the p wave because in that case the s wf is not bound
+
+ The resulting p-wave does not obey the norm-conserving condition,
+ however it looks ok beyond the cutoff radius of 1 au (but not perfect).
+

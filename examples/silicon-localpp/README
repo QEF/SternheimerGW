@@ -1,0 +1,24 @@
+#
+# Si.ini is configured for a local potential in the s channel, with the energy of the 3p state
+#
+
+> desktop> fhi98PP/bin/Tools/psgen -o Si si.ini
+
+> espresso-4.0.5/upftools/fhi2upf.x
+Input file > Si.cpi
+Atom name > Si
+l local (max: 1) > 0
+DFT > PZ
+
+#
+# I modified ncpp.f in fhi98PP/src in order to generate the p pseudo wf
+# using the s pseudo - and then unscreen the pseudo using this pseudocharge
+#
+# when fhi2upf is used, there is an +Infinity in the KB projector coefficient,
+# this is spurious (we do not use projectors) and needs to be set to zero
+#
+# (pw.x does not like it when we have no projectors - in this way we put in a
+# fake projector with a vanishing contirbution)
+#
+
+> cat Si.UPF | sed -e "s/Infinity/0.0/g" > Si.UPF
