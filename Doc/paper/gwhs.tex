@@ -213,6 +213,73 @@ interaction is achieved. This procedure can be regarded as the extension
 of the DFPT for lattice-dynamical calculations to finite-frequency
 point-charge perturbations.
 
+\subsection{Screened Coulomb interaction using maximally localized Wannier functions}\label{sec.coulomb.wannier}
+
+The solution of the linear system Eq.\ (\ref{eq.linsys.1}) requires a computational
+cost which scales as $N_{\rm at}^4$, where $N_{\rm at}$ indicates the number of atoms 
+in the simulation cell (cf.\ Sec.\ \ref{sec.coulomb.scaling}). 
+In order to improve the scaling of the linear system we observe
+that the solution of the linear system can be split in two components:
+  \begin{equation}
+  \Delta \psi^\pm_{v[\r,\w]} = \Delta \psi^\pm_{v[\r,\w],{\rm P}} + \Delta \psi^\pm_{v[\r,\w],{\rm S}}
+  \end{equation}
+which are the solutions of the linear systems
+  \begin{equation}
+  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w],{\rm P}}  = \P \Delta V_{[\r,\w]} \psi_v,
+  \end{equation}
+and
+  \begin{equation}\label{dpsi.S}
+  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w],{\rm S}}  = -\Delta V_{[\r,\w]} \psi_v,
+  \end{equation}
+respectively. The solution of the former system can be written down explicitely
+by performing an expansion over the eigenstates of the Hamiltonian and observing
+that only the occupied states are retained in the expansion:
+  \begin{equation}
+  \Delta \psi^\pm_{v[\r,\w],{\rm P}}  = \sum_{v^\prime} 
+  \frac{\< \psi_{v^\prime} | \Delta V_{[\r,\w]} | \psi_v \>}{\E_{v^\prime}-\E_v\pm\w}\psi_{v^\prime},
+  \end{equation}
+hence the subscript ``P'' standing for ``perturbation''. This component does
+not require the iterative solution of a linear system as all the occupied
+eigenstates are known from the outset.
+The other component $\Delta \psi^\pm_{v[\r,\w],{\rm S}}$ requires the solution
+of the Sternheimer equation Eq.\ (\ref{dpsi.S}) (hence the subscript ``S'' for ``Sternheimer'').
+It is the solution of Eq.\ (\ref{dpsi.S}) which leads to the $N_{\rm at}^4$ scaling
+of the calculation.
+
+Since we are dealing with an insulator, we can express the occupied wavefunctions
+in terms of maximally-localized Wannier functions using an appropriate unitary
+transformation $U_{v m}$:\cite{marzari}
+  \begin{equation}
+  \psi_v = \sum_m U_{v m} w_m.
+  \end{equation}
+Correspondingly, we can further split the solution $\Delta \psi^\pm_{v[\r,\w],{\rm S}}$
+into the components $\Delta \psi^\pm_{v[\r,\w],{\rm S},m}$ associated with each Wannier function $w_m$:
+  \begin{equation}\label{dpsi.wannier}
+  \Delta \psi^\pm_{v[\r,\w],{\rm S}}  = \sum_m U_{v m} \Delta \psi^\pm_{v[\r,\w],{\rm S},m}.
+  \end{equation}
+By comparing Eqs.\ (\ref{dpsi.S}) and (\ref{dpsi.wannier}) we see that each Wannier-component
+is the solution of the linear system:
+  \begin{equation}\label{dpsi.S.wannier}
+  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w],{\rm S},m}  = -\Delta V_{[\r,\w]} w_m.
+  \end{equation}
+The advantage of using this fomulation is that now the r.h.s. of Eq.\ (\ref{dpsi.S.wannier})
+is {\it exponentially localized} in real-space due to the properties of maximally-localized
+Wannier functions\cite{exp-localization} and to the local nature of the single-particle
+Hamiltonian.
+
+The price to pay for calculating the screened Coulomb interaction using Wannier functions
+is that for each occupied state we now need to solve one Sternheimer equation for every
+Wannier function. Therefore the computational cost of the procedure increases by a factor
+$N_{\rm at}$. On the other hand, the advantage of this strategy is that the linear system
+Eq.\ (\ref{dpsi.S.wannier}) can be solved in a reduced simulation cell which encloses the
+Wannier function $w_m$. As the size of the Wannier function is independent of the number
+of atoms $N_{\rm at}$, the final scaling of the procedure decreases by a factor $N_{\rm at}^2$,
+bringing the total cost to $N_{\rm at}^3$.
+
+This finding leads to an enormous advantage in the case of large systems and finally brings
+GW calculations down to $N_{\rm at}^3$ scaling, i.e. essentially the same cost of standard
+density-functional ground-state calculations.
+
 \section{Green's function}\label{sec.green}
 
 In this section we describe our scheme for calculating the noninteracting
@@ -1010,6 +1077,8 @@ GNU - need to be ported to main packages.
 \bibitem{alavi}
 J. Spencer and A. Alavi.
 Phys.\ Rev.\ B {\bf 77} 193110 (2008).
+
+\bibitem{marzari}
 
 \bibitem{haydock1}
 
