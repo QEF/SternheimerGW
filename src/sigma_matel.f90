@@ -18,7 +18,7 @@
   real(dbl) :: xk0(3), kplusg(3), g2kin(ngm), et(nbnd), w(nw), w_ryd(nw)
   complex(dbl) :: vr(nr), evc(ngm,nbnd), sigma(ngms,ngms,nw), aux(ngms)
   complex(kind=DP) :: ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nw)
-  real(dbl) :: resig_diag(nw), et_qp(nbnd_sig)
+  real(dbl) :: resig_diag(nw), imsig_diag(nw), et_qp(nbnd_sig), a_diag(nw)
   !
   call start_clock ('sigma_matel')
   !
@@ -71,8 +71,15 @@
   !
   do ibnd = 1, nbnd_sig
     !
+    write(stdout,*)
     do iw = 1, nw
       resig_diag (iw) = real( sigma_band (ibnd, ibnd, iw) )
+      imsig_diag (iw) = aimag ( sigma_band (ibnd, ibnd, iw) )
+      a_diag (iw) = one/pi * abs ( imsig_diag (iw) ) / &
+         ( abs ( w_ryd(iw) - et(ibnd) - resig_diag (iw) )**2.d0 &
+          + abs ( imsig_diag (iw) )**2.d0 ) 
+!     write(stdout,'(5f15.8)') et(ibnd)*ryd2ev, w_ryd(iw)*ryd2ev, &
+!        resig_diag (iw)*ryd2ev, imsig_diag (iw)*ryd2ev, a_diag (iw)*ryd2ev
     enddo
     !
     call qp_eigval ( nw, w_ryd, resig_diag, et(ibnd), et_qp (ibnd) )  
@@ -114,6 +121,10 @@
   sig2 = sig(iw2)
   !
   et_qp0 = sig1 + ( sig2 - sig1 ) * (et-w1) / (w2-w1)
+  !
+  ! temporary - until I do not have Vxc
+  !
+  et_qp = et_qp0
   !
   end subroutine qp_eigval
   !----------------------------------------------------------------

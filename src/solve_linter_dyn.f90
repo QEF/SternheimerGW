@@ -222,14 +222,17 @@
         !
         wgt = wk(ikk) / omega
 !
-! My interpretation of the factor 1/omega (which in principle
-! does not exist in my notes):
+! My interpretation of the factor 1/omega
+!
 ! The fft is performed in fftw.f90 as
 ! G->r: sum_G c(G) exp(iGr)
 ! r->G: sum_r psi(r) exp(-iGr) / Nr 
 ! while what we really need is the following:
 ! psi(r) = 1/sqrt(Omega) sum_G c(G) exp(iGr)
-! c(G) = 1/sqrt(Omega) sum_r psi(r) exp(-iGr) / Nr
+!        = 1/sqrt(Omega) FFT_[G->r] {c(G)}
+! c(G)   = 1/sqrt(Omega) sum_r psi(r) exp(-iGr) * ( Omega / Nr )
+!        = sqrt(Omega) sum_r psi(r) exp(-iGr) / Nr
+!        = sqrt(Omega) FFT_[r->G] {psi(r)}
 ! Therefore in order to calculate the induced charge density
 ! in real space we need to multiply by 1/sqrt(Omega) for evc.
 ! At the same time, the linear system which is solved has
@@ -237,7 +240,12 @@
 ! in the sense that it misses the 1/sqrt(Omega) factor.
 ! As a consequence, the dpsi misses the 1/sqrt(Omega) factor
 ! and we need to bring it back. That is why we multiply drho by 1/Omega
-! NOTE: this will apply to the transformation of W and G as well.
+! Note that after obtaining drho(ir), when going back to drho(ig)
+! we do not need the omega because in the definition of drho we did
+! not include omega (it is included for G, not for G', see paper).
+! In this case drho(G) = FFT_[r->G]{drho(r)}
+!
+! NOTE: similar considerations apply to the transformations of W and G as well.
 !
         !
         do ibnd = 1, nbnd_occ
@@ -301,8 +309,8 @@
      ! the factor 2 below is because we actually run +iw and -iw
      ! so the average number for each one of +iw and -iw is lter/nksq/2 
      !
-     write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
-       iter, dr2, float(lter)/float(nksq)/float(2)
+!    write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
+!      iter, dr2, float(lter)/float(nksq)/float(2)
 #ifdef __PARA
 !    write(1000+mypool,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
 !      iter, dr2, float(lter)/float(nksq)/float(2)

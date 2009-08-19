@@ -50,9 +50,9 @@
   !
   !  generate occupied wavefunctions for the k0-q point
   !
-  write(6,'(/4x,a)') repeat('-',67)
-  write(6,'(4x,"k0-q point: occupied eigenvalues (eV)")')
-  write(6,'(4x,a/)') repeat('-',67)
+! write(6,'(/4x,a)') repeat('-',67)
+! write(6,'(4x,"k0-q point: occupied eigenvalues (eV)")')
+! write(6,'(4x,a/)') repeat('-',67)
   !
   ! the k-dependent kinetic energy in Ry
   !
@@ -63,8 +63,7 @@
   !
   call eigenstates2 ( xxk, vr, g2kin, psi, eval )
   !
-  write ( 6, '(4x,10(3x,f7.3))') eval*ryd2ev
-  write(6,'(4x,a/)') repeat('-',67)
+  write ( stdout, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xxk, eval*ryd2ev
   !
   tprec = .true.
   if (tprec) then
@@ -95,15 +94,13 @@
   !  [note: no barriers inside this loop as the number of perturbation
   !  is different across processors]
   !
-!@  do iw = 1, nw
-  do iw = 1, 2
+  do iw = 1, nw
     !
-    write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
+!   write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
     !
-!@    do ig = igstart, igstop 
-    do ig = igstart, igstart+1
+    do ig = igstart, igstop 
       !
-      write(6,'(4x,"ig = ",i5)') ig
+!     write(6,'(4x,"ig = ",i5)') ig
       !
 !     write(6,'(4x,"Green linsys: k =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
 !        xxk,g(:,ig), w(iw)

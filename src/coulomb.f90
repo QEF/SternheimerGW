@@ -102,7 +102,6 @@
 
 
   ! initialize
-  scrcoul = 0.d0
   w_ryd = w/ryd2ev
   wim_ryd = wim/ryd2ev
 
@@ -209,23 +208,24 @@
   !  [note: no barriers inside this loop as the number of perturbation
   !  is different across processors]
   !
-!@  do ig = igstart, igstop 
-  do ig = igstart, igstart+1
+  do ig = igstart, igstop 
     !
 !   write(6,'(4x,"ig = ",i5)') ig
     qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
     !
-!@    do iw = 1, nwim
-    do iw = 1, 2
+    if (qg2 > 1.d-8) then
       !
-      dvbare = czero
-      dvscf  = czero
-      if (qg2 > 1.d-8) then
+      scrcoul = czero
+      !
+      do iw = 1, nwim
+        !
+        dvbare = czero
+        dvscf  = czero
         !
         write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
           xxq,g(:,ig), wim(iw)
         !
-        write(6,'(4x,3x,"iw = ",i5)') iw
+!       write(6,'(4x,3x,"iw = ",i5)') iw
         !
         dvbare ( nl ( ig ) ) = cone ! this is in SIZE-order of G-vectors 
         !                           ! (look at fft_test.f90)
@@ -263,76 +263,89 @@
         !
         call cfft3 ( dvscf , nr1, nr2, nr3, -1)
         !
-        write(6,'(4x,"INVEPS: ",3f9.5)') wim(iw), dvscf ( nl(1) )
-        !                                         ^^^^^^^^^^^^^^^
-        !                                          eps^-1(0,0,q)
+	write(6,'(4x,4x,"inveps_{GG}(q,w) = ",2f9.5)') dvscf ( nl(ig) )
+        !                                              ^^^^^^^^^^^^^^^
+        !                                               eps^-1(G,G,q)
 
 #ifdef __PARA
 !       write(1000+mypool,'(4x,2f9.5)') dvscf ( nl(1) )
 #endif
+
+!        !
+!        ! debug only - |q+G'| can be zero and we get NaN
+!        !
+!        ! symmetrized inverse dielectric matrix (finite limits for q->0)
+!        !
+!        do igp = 1, ngms
+!          dvscf ( nl(igp) ) = dvscf ( nl(igp) ) * &
+!             sqrt ( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 ) / &
+!             sqrt ( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
+!          write(6,'("INVEPS",2x,2i4,2f20.10,6(2x,f9.1))') ig, igp,    &
+!              real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) )),      &
+!              g(1,ig), g(2,ig), g(3,ig), g(1,igp), g(2,igp), g(3,igp)
+!          write(500+iw,'(2i4,2f20.10)') ig, igp, real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) ))
+!        enddo
+!        !
+!        ! keep only the G-vectors 1:ngms for the screened Coulomb 
+!        !
+!        do igp = 1, ngms
+!          qgg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 ) &
+!              * sqrt( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 )
+!          scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qgg), zero )
+!        enddo
+!        !
+
         !
-      endif
+        ! keep only the G-vectors 1:ngms for the screened Coulomb
+        !
+        do igp = 1, ngms
+          scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qg2), zero )
+        enddo
+        !
+
+        !
+        ! Spencer/Alavi truncation of the bare coulomb interaction
+        ! [PRB 77,193110 (2008]
+        !
+        ! WARNING: I tested epsilon, but never tested W
+        !
+        rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+        qg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
+        spal = one - cos ( rcut * tpiba * qg )
+        !
+        do igp = 1, ngms
+          scrcoul (ig,igp,iw) = scrcoul (ig,igp,iw) * dcmplx ( spal, zero)
+        enddo
+        !
+        ! scrcoul (-,igp,-) is now in SIZE order of G-vectors
+        !
+      enddo
       !
-      ! symmetrized inverse dielectric matrix (finite limits for q->0)
+      ! Here goes the Pade continuation to real axis
       !
       do igp = 1, ngms
-        dvscf ( nl(igp) ) = dvscf ( nl(igp) ) * &
-           sqrt ( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 ) / &
-           sqrt ( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
-!       write(6,'("INVEPS",2x,2i4,2f20.10,6(2x,f9.1))') ig, igp,    &
-!           real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) )),      &
-!           g(1,ig), g(2,ig), g(3,ig), g(1,igp), g(2,igp), g(3,igp)
-!       write(500+iw,'(2i4,2f20.10)') ig, igp, real(dvscf ( nl(igp) )), aimag(dvscf ( nl(igp) ))
+        !
+        ! Pade input points on the imaginary axis
+        !
+        do iw = 1, nwim
+          z(iw) = dcmplx( 0.d0, wim_ryd(iw))
+          u(iw) = scrcoul (ig,igp,iw)
+        enddo 
+        ! 
+        ! Pade coefficients
+        !
+        call pade_coeff ( nwim, z, u, a)
+        !
+        ! Pade output points on the real axis (at a distance eta)
+        ! (I use the same grid for simplicity - this can be changed)
+        !
+        do iw = 1, nw
+          call pade_eval ( nwim, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
+        enddo
+        !
       enddo
       !
-      ! keep only the G-vectors 1:ngms for the screened Coulomb 
-      !
-      do igp = 1, ngms
-        qgg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 ) &
-            * sqrt( (g(1,igp)+xxq(1))**2.d0 + (g(2,igp)+xxq(2))**2.d0 + (g(3,igp)+xxq(3))**2.d0 )
-        scrcoul (ig,igp,iw) = dvscf ( nl(igp) ) * dcmplx ( e2 * fpi / (tpiba2*qgg), zero )
-      enddo
-      !
-      ! Spencer/Alavi truncation of the bare coulomb interaction
-      ! [PRB 77,193110 (2008]
-      !
-      ! WARNING: I tested epsilon, but never tested W
-      !
-      rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-      qg = sqrt( (g(1,ig )+xxq(1))**2.d0 + (g(2,ig )+xxq(2))**2.d0 + (g(3,ig )+xxq(3))**2.d0 )
-      spal = one - cos ( rcut * tpiba * qg )
-      !
-      do igp = 1, ngms
-        scrcoul (ig,igp,iw) = scrcoul (ig,igp,iw) * dcmplx ( spal, zero)
-      enddo
-      !
-      ! scrcoul (-,igp,-) is now in SIZE order of G-vectors
-      !
-    enddo
-    !
-    ! Here goes the Pade continuation to real axis
-    !
-    do igp = 1, ngms
-      !
-      ! Pade input points on the imaginary axis
-      !
-      do iw = 1, nwim
-        z(iw) = dcmplx( 0.d0, wim_ryd(iw))
-        u(iw) = scrcoul (ig,igp,iw)
-      enddo 
-      ! 
-      ! Pade coefficients
-      !
-      call pade_coeff ( nwim, z, u, a)
-      !
-      ! Pade output points on the real axis (at a distance eta)
-      ! (I use the same grid for simplicity - this can be changed)
-      !
-      do iw = 1, nw
-        call pade_eval ( nwim, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
-      enddo
-      !
-    enddo
+    endif ! endif of (qg2 > 1.d-8) 
     !
   enddo
   !

@@ -262,13 +262,13 @@
   count = 0
   do i = 1, nq1
     ui = (i - 1.d0) / float (nq1)
-!@    ui = (q1 + 2.d0 * i - nq1 - 1.d0) / (2.d0 * nq1)
+!   ui = (q1 + 2.d0 * i - nq1 - 1.d0) / (2.d0 * nq1)
     do j = 1, nq2
       uj = (j - 1.d0) / float (nq2)
-!@      uj = (q2 + 2.d0 * j - nq2 - 1.d0) / (2.d0 * nq2)
+!     uj = (q2 + 2.d0 * j - nq2 - 1.d0) / (2.d0 * nq2)
       do k = 1, nq3
         uk = (k - 1.d0) / float (nq3)
-!@        uk = (q3 + 2.d0 * k - nq3 - 1.d0) / (2.d0 * nq3)
+!       uk = (q3 + 2.d0 * k - nq3 - 1.d0) / (2.d0 * nq3)
         count = count + 1
         xq (:, count) = ui * bg(:,1) + uj * bg(:,2) + uk * bg(:,3)
       enddo
@@ -456,10 +456,9 @@
   !
   ! loop over {q} for the screened Coulomb interaction
   !
-!@  do iq = 1, nq
-  do iq = 1, 2
+  do iq = 1, nq
     !
-    write(stdout,'(4x,3x,"iq = ",i3)') iq
+!   write(stdout,'(4x,3x,"iq = ",i3)') iq
     scrcoul = czero
     !
     if (igstart.eq.1) then
@@ -493,21 +492,20 @@
 #ifdef __PARA
     endif
 #endif
-    write (stdout,'(4x,"Written scrcoul for iq = ",i3)') iq
+!   write (stdout,'(4x,"Written scrcoul for iq = ",i3)') iq
     !
   enddo 
   !
   write(stdout,'(4x,"Green''s function:")')
   ! loop over the {k0} set for the Self-Energy
   !
-  do ik0 = 1, 1 !@ nk0
+  do ik0 = 1, nk0
     !
     write(stdout,'(4x,"ik0 = ",i3)') ik0
     !
     ! loop over the {k0-q} grid for the Green's function
     !
-!@    do iq = 1, nq
-    do iq = 1, 2
+    do iq = 1, nq
       !
       write(stdout,'(4x,3x,"iq = ",i3)') iq
       greenf = czero
@@ -558,7 +556,7 @@
   call start_clock ('GW product')
   !
   w_ryd = wcoul / ryd2ev
-  do ik0 = 1, 1 !@ nk0 
+  do ik0 = 1, nk0 
     !
     write(stdout,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') &
       ik0, (xk0 (ipol, ik0) , ipol = 1, 3)
@@ -572,8 +570,7 @@
     ! (need some sort of parallelization here)
     if (me.eq.1.and.mypool.eq.1) then
 #endif
-!@    do iq = 1, nq
-    do iq = 1, 2 
+    do iq = 1, nq
       !
       write(stdout,'(4x,"Summing iq = ",i4)') iq
       !
@@ -592,7 +589,7 @@
             aux(nls(igp)) = greenf(igp,ig,iw)
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          greenf(:,ig,iw) = aux
+          greenf(:,ig,iw) = aux / omega
         enddo
         do ir = 1, nrs
           aux = czero
@@ -600,7 +597,7 @@
             aux(nls(igp)) = greenf(ir,igp,iw)
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          greenf(ir,:,iw) = aux
+          greenf(ir,:,iw) = aux 
         enddo
       enddo
 !     write(stdout,'(4x,"FFTW of Green''s function passed"/)') 
@@ -611,7 +608,7 @@
       !
       ! now scrcoul(nrs,nrs,nwcoul) contains the screened Coulomb
       ! interaction for this q point, all frequencies, and in G-space:
-      ! go to R-space to perform the direct product with G
+      ! go to R-space 
       ! both indeces are in SIZE order of G-vectors
       !
       do iw = 1, nwcoul
@@ -621,7 +618,7 @@
             aux(nls(igp)) = scrcoul(igp,ig,iw)
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          scrcoul(:,ig,iw) = aux
+          scrcoul(:,ig,iw) = aux / omega
         enddo 
         do ir = 1, nrs
           aux = czero
@@ -629,7 +626,7 @@
             aux(nls(igp)) = scrcoul(ir,igp,iw)
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          scrcoul(ir,:,iw) = aux
+          scrcoul(ir,:,iw) = aux 
         enddo 
       enddo
 !     write(stdout,'(4x,"FFTW of Coulomb passed"/)') 
@@ -677,7 +674,7 @@
         enddo
         call cfft3s ( aux, nr1s, nr2s, nr3s, -1)
         do ig = 1, ngms
-          sigma (ir,ig,iw) = aux(nls(ig))
+          sigma (ir,ig,iw) = aux(nls(ig)) 
         enddo
       enddo
       do ig = 1, ngms
@@ -687,7 +684,7 @@
         enddo
         call cfft3s ( aux, nr1s, nr2s, nr3s, -1)
         do igp = 1, ngms
-          sigma (igp,ig,iw) = aux(nls(igp))
+          sigma (igp,ig,iw) = aux(nls(igp)) * omega
         enddo
       enddo
     enddo
@@ -729,7 +726,7 @@
   !
   ! CALCULATION OF THE MATRIX ELEMENTS
   !
-  do ik0 = 1, 1 !@ nk0 
+  do ik0 = 1, nk0 
     call sigma_matel ( ik0, vr, xk0, nwsigma, wsigma)
   enddo
   !
@@ -757,8 +754,8 @@
   write(stdout,'(4x,a/)') repeat('-',67)
 #ifdef __PARA
   call mp_barrier()
+  call mp_end()
 #endif
-  stop
   !
   stop
   end program gwhs

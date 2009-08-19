@@ -35,7 +35,7 @@
   !
   ! BRILLOUIN ZONE SAMPLING
   !
-  integer, parameter :: nk0 = 166
+  integer, parameter :: nk0 = 1
   integer, parameter :: nq1 = 6, nq2 = 6, nq3 = 6
   integer, parameter :: q1 = 1, q2 = 1, q3 = 1    
   integer, parameter :: nq = nq1 * nq2 * nq3
