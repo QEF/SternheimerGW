@@ -44,6 +44,7 @@
   complex(DP) :: g(N,N), a(N)
   ! g(p,i) = g_p (z_i) in the notation of Vidberg and Serene
   integer :: i, j, p
+  real(DP) :: ar, ai
   !
   do p = 1, N
     if (p.eq.1) then
@@ -54,9 +55,27 @@
       do i = p, N
          g (p,i) = ( g(p-1,p-1) - g(p-1,i) ) / &
                    ( ( z(i) - z(p-1) ) * g (p-1,i) )
+         !
+         ! this seems necessary to avoid nasty NaN when
+         ! two almost identical numbers are subtracted
+         ! - the procedure becomes unstable in that case
+         !
+         if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
       enddo
     endif
     a(p) = g (p,p)
+    !
+    ! check whether a(p) is not NaN
+    !
+    ar = real(a(p))
+    ai = aimag(a(p))
+    if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+       write(6,*) (z(i),i=1,N)
+       write(6,*) (u(i),i=1,N)
+       write(6,*) (a(i),i=1,N)
+       call error ('pade_coeff','one or more coefficients are NaN',1)
+    endif
+    !
   enddo
   !
   end subroutine pade_coeff
