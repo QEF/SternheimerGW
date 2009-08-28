@@ -61,6 +61,8 @@
   character (len=3) :: nd_nmbr0
   CHARACTER (LEN=6) :: version_number = '0.4.8'
   character (len=256) :: wfcfile
+  real(kind=8) :: xr, xi
+  logical :: nanno
   !
   !
   ! start serial code OR initialize parallel environment
@@ -191,6 +193,90 @@
   endif
 #endif
   !
+  ! ----------------------------------------------------------------
+  ! generate frequency bins 
+  ! ----------------------------------------------------------------
+  !
+  ! Here I assume Sigma is needed for w0 between wsigmamin and wsigmamax
+  ! The convolution requires W for positive frequencies w up to wcoulmax
+  ! (even function - cf Shishkin and Kress) and the GF spanning w0+-w.
+  ! Therefore the freq. range of GF is 
+  ! from (wsigmamin-wcoulmax) to (wsigmamax+wcoulmax)
+  ! the freq. dependence of the GF is inexpensive, so we use the same spacing
+  ! 
+  ! NB: I assume wcoulmax>0, wsigmamin=<0, wsigmamax>0 and zero of energy at the Fermi level
+  !
+  wgreenmin = wsigmamin-wcoulmax
+  wgreenmax = wsigmamax+wcoulmax
+  !
+  nwalloc = 1 + ceiling( (wgreenmax-wgreenmin)/deltaw )
+  allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc), w_ryd(nwalloc) )
+  wcoul = zero
+  wgreen = zero
+  wsigma = zero
+  !
+  do iw = 1, nwalloc
+    wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
+  enddo
+  ! align the bins with the zero of energy
+  wtmp = wtmp - minval ( abs ( wgreen) )
+  !
+  nwgreen = 0
+  nwcoul = 0
+  nwsigma = 0
+  !
+  do iw = 1, nwalloc
+    if ( ( wtmp(iw) .ge. wgreenmin ) .and. ( wtmp(iw) .le. wgreenmax) ) then
+       nwgreen = nwgreen + 1
+       wgreen(nwgreen) = wtmp(iw)
+    endif
+    if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
+       nwcoul = nwcoul + 1
+       wcoul(nwcoul) = wtmp(iw)
+    endif
+    if ( ( wtmp(iw) .ge. wsigmamin ) .and. ( wtmp(iw) .le. wsigmamax) ) then
+       nwsigma = nwsigma + 1
+       wsigma(nwsigma) = wtmp(iw)
+    endif
+  enddo
+  ! 
+  ! now find the correspondence between the arrays
+  ! This is needed for the convolution G(w0-w)W(w) at the end
+  !
+  allocate ( ind_w0mw (nwsigma,nwcoul), ind_w0pw (nwsigma,nwcoul) )
+  !
+  do iw0 = 1, nwsigma
+    do iw = 1, nwcoul
+      !
+      w0mw = wsigma(iw0)-wcoul(iw)
+      w0pw = wsigma(iw0)+wcoul(iw)
+      !
+      foundp = .false.
+      foundm = .false.
+      !
+      do iwp = 1, nwgreen
+        if ( abs(w0mw-wgreen(iwp)) .lt. 1.d-10 ) then
+          foundm = .true.
+          iw0mw = iwp
+        endif
+        if ( abs(w0pw-wgreen(iwp)) .lt. 1.d-10 ) then
+          foundp = .true.
+          iw0pw = iwp
+        endif
+      enddo
+      !
+      if ( ( .not. foundm ) .or. ( .not. foundp ) ) then
+         call errore ('gwhs','frequency correspondence not found',1)
+      else
+         ind_w0mw(iw0,iw) = iw0mw 
+         ind_w0pw(iw0,iw) = iw0pw 
+      endif
+      !
+    enddo
+  enddo
+  !
+  write (stdout,'(/4x,"nwcoul = ",i5,", nwgreen = ",i5,", nwsigma = ",i5/)') &
+     nwcoul, nwgreen, nwsigma
   !----------------------------------------------------------------
   !
 #ifdef __PARA
@@ -332,92 +418,6 @@
   ! here we generate the G-map for the folding into the first BZ
   !
   call refold ( )
-  !
-  !  ------------------------------------------------
-  !  MAIN: CALCULATE G AND W AND PERFORM CONVOLUTIONS
-  !  ------------------------------------------------
-  !
-  ! ----------------------------------------------------------------
-  ! generate frequency bins 
-  ! ----------------------------------------------------------------
-  !
-  ! Here I assume Sigma is needed for w0 between wsigmamin and wsigmamax
-  ! The convolution requires W for positive frequencies w up to wcoulmax
-  ! (even function - cf Shishkin and Kress) and the GF spanning w0+-w.
-  ! Therefore the freq. range of GF is 
-  ! from (wsigmamin-wcoulmax) to (wsigmamax+wcoulmax)
-  ! the freq. dependence of the GF is inexpensive, so we use the same spacing
-  ! 
-  ! NB: I assume wcoulmax>0, wsigmamin=<0, wsigmamax>0 and zero of energy at the Fermi level
-  !
-  wgreenmin = wsigmamin-wcoulmax
-  wgreenmax = wsigmamax+wcoulmax
-  !
-  nwalloc = 1 + ceiling( (wgreenmax-wgreenmin)/deltaw )
-  allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc), w_ryd(nwalloc) )
-  wcoul = zero
-  wgreen = zero
-  wsigma = zero
-  !
-  do iw = 1, nwalloc
-    wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
-  enddo
-  ! align the bins with the zero of energy
-  wtmp = wtmp - minval ( abs ( wgreen) )
-  !
-  nwgreen = 0
-  nwcoul = 0
-  nwsigma = 0
-  !
-  do iw = 1, nwalloc
-    if ( ( wtmp(iw) .ge. wgreenmin ) .and. ( wtmp(iw) .le. wgreenmax) ) then
-       nwgreen = nwgreen + 1
-       wgreen(nwgreen) = wtmp(iw)
-    endif
-    if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
-       nwcoul = nwcoul + 1
-       wcoul(nwcoul) = wtmp(iw)
-    endif
-    if ( ( wtmp(iw) .ge. wsigmamin ) .and. ( wtmp(iw) .le. wsigmamax) ) then
-       nwsigma = nwsigma + 1
-       wsigma(nwsigma) = wtmp(iw)
-    endif
-  enddo
-  ! 
-  ! now find the correspondence between the arrays
-  ! This is needed for the convolution G(w0-w)W(w) at the end
-  !
-  allocate ( ind_w0mw (nwsigma,nwcoul), ind_w0pw (nwsigma,nwcoul) )
-  !
-  do iw0 = 1, nwsigma
-    do iw = 1, nwcoul
-      !
-      w0mw = wsigma(iw0)-wcoul(iw)
-      w0pw = wsigma(iw0)+wcoul(iw)
-      !
-      foundp = .false.
-      foundm = .false.
-      !
-      do iwp = 1, nwgreen
-        if ( abs(w0mw-wgreen(iwp)) .lt. 1.d-10 ) then
-          foundm = .true.
-          iw0mw = iwp
-        endif
-        if ( abs(w0pw-wgreen(iwp)) .lt. 1.d-10 ) then
-          foundp = .true.
-          iw0pw = iwp
-        endif
-      enddo
-      !
-      if ( ( .not. foundm ) .or. ( .not. foundp ) ) then
-         call errore ('gwhs','frequency correspondence not found',1)
-      else
-         ind_w0mw(iw0,iw) = iw0mw 
-         ind_w0pw(iw0,iw) = iw0pw 
-      endif
-      !
-    enddo
-  enddo
   !
   allocate ( scrcoul (nrs, nrs, nwcoul) )
   allocate ( greenf (nrs, nrs, nwgreen) )
