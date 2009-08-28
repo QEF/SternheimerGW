@@ -507,7 +507,7 @@
     !
     do iq = 1, nq
       !
-      write(stdout,'(4x,3x,"iq = ",i3)') iq
+!     write(stdout,'(4x,3x,"iq = ",i3)') iq
       greenf = czero
       !
       !  k0mq = k0 - q

@@ -1,11 +1,11 @@
 
 # x61
 
-#F90 = ifort -- sigsev with the intel compiler 10.1.015
-F90 = f95 -O3
-LDFLAGS = -lfftw -llapack
-CPP = cpp 
-CPPFLAGS = -C -ansi
+##F90 = ifort -- sigsev with the intel compiler 10.1.015
+#F90 = f95 -O3
+#LDFLAGS = -lfftw -llapack
+#CPP = cpp 
+#CPPFLAGS = -C -ansi
 
 # hbar
 
@@ -22,6 +22,7 @@ CPPFLAGS = -C -ansi
 # slater has ifort 9.0
 
 #F90 = mpif90 
+#F90FLAGS = -assume byterecl
 #LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
 #CPP = cpp -C -ansi
 #CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
@@ -36,13 +37,16 @@ CPPFLAGS = -C -ansi
 #CPPFLAGS = -D__PARA -D__MPI 
 
 # hal
+#
+# -assume byterecl tells the compiler that recl in direct IO is in bytes
+# (otherwise the default is 4 bytes words)
 
-#F90 = mpif90
-#F90FLAGS = -O3
-#LDFLAGS = -lmkl -lmkl_lapack -lguide -lpthread \
-#          -L/export/home/fgiustino/giustino/hal/code/fftw-2.1.5/lib -lfftw
-#CPP = cpp -C -ansi
-#CPPFLAGS = -D__PARA -D__MPI
+F90 = mpif90
+F90FLAGS = -O3 -assume byterecl
+LDFLAGS = -lmkl -lmkl_lapack -lguide -lpthread \
+          -L/export/home/fgiustino/giustino/hal/code/fftw-2.1.5/lib -lfftw
+CPP = cpp -C -ansi
+CPPFLAGS = -D__PARA -D__MPI
 
 
 # pople (ifort 11)
