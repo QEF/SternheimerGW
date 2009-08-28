@@ -18,7 +18,9 @@
   real(dbl) :: xk0(3), kplusg(3), g2kin(ngm), et(nbnd), w(nw), w_ryd(nw)
   complex(dbl) :: vr(nr), evc(ngm,nbnd), sigma(ngms,ngms,nw), aux(ngms)
   complex(kind=DP) :: ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nw)
-  real(dbl) :: resig_diag(nw), imsig_diag(nw), et_qp(nbnd_sig), a_diag(nw)
+  real(dbl) :: resig_diag(nw,nbnd_sig), imsig_diag(nw,nbnd_sig), et_qp(nbnd_sig), a_diag(nw,nbnd_sig)
+  real(dbl) :: resig_diag_tr(nw), imsig_diag_tr(nw), a_diag_tr(nw), et_qp_tr
+  integer :: iman, nman, ndeg(nbnd_sig), ideg
   !
   call start_clock ('sigma_matel')
   !
@@ -71,25 +73,80 @@
   !
   do ibnd = 1, nbnd_sig
     !
-    write(stdout,*)
     do iw = 1, nw
-      resig_diag (iw) = real( sigma_band (ibnd, ibnd, iw) )
-      imsig_diag (iw) = aimag ( sigma_band (ibnd, ibnd, iw) )
-      a_diag (iw) = one/pi * abs ( imsig_diag (iw) ) / &
-         ( abs ( w_ryd(iw) - et(ibnd) - resig_diag (iw) )**2.d0 &
-          + abs ( imsig_diag (iw) )**2.d0 ) 
-!     write(stdout,'(5f15.8)') et(ibnd)*ryd2ev, w_ryd(iw)*ryd2ev, &
-!        resig_diag (iw)*ryd2ev, imsig_diag (iw)*ryd2ev, a_diag (iw)*ryd2ev
+      resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) )
+      imsig_diag (iw,ibnd) = aimag ( sigma_band (ibnd, ibnd, iw) )
+      a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
+         ( abs ( w_ryd(iw) - et(ibnd) - resig_diag (iw,ibnd) )**2.d0 &
+          + abs ( imsig_diag (iw,ibnd) )**2.d0 ) 
     enddo
     !
-    call qp_eigval ( nw, w_ryd, resig_diag, et(ibnd), et_qp (ibnd) )  
+    call qp_eigval ( nw, w_ryd, resig_diag(1,ibnd), et(ibnd), et_qp (ibnd) )  
     !
+  enddo
+  !
+  ! Now take the trace (get rid of phase arbitrariness of the wfs)
+  ! (alternative and more approrpiate: calculate the nondiag on the
+  ! deg subspaces and diagonalize)
+  !
+  ! count degenerate manifolds and degeneracy...
+  !
+  nman = 1
+  ndeg = 1
+  do ibnd = 2, nbnd_sig
+    if ( abs( et (ibnd) - et (ibnd-1)  ) .lt. 1.d-5 ) then
+      ndeg (nman) = ndeg(nman) + 1
+    else
+      nman = nman + 1
+    endif
+  enddo
+! write (stdout, *) nman, (ndeg (iman) ,iman=1,nman)
+  !
+  ! ...and take the trace over the manifold
+  !
+  ibnd = 0
+  jbnd = 0
+  do iman = 1, nman
+    !
+    resig_diag_tr = 0.d0
+    imsig_diag_tr = 0.d0
+    a_diag_tr = 0.d0
+    et_qp_tr = 0.d0
+    !
+    do ideg = 1, ndeg(iman)
+      ibnd = ibnd + 1
+      resig_diag_tr = resig_diag_tr + resig_diag (:,ibnd)
+      imsig_diag_tr = imsig_diag_tr + imsig_diag (:,ibnd)
+      a_diag_tr = a_diag_tr + a_diag (:,ibnd)
+      et_qp_tr = et_qp_tr + et_qp (ibnd)
+    enddo
+    !
+    do ideg = 1, ndeg(iman)
+      jbnd = jbnd + 1 
+      resig_diag (:,jbnd) = resig_diag_tr / float( ndeg(iman) )
+      imsig_diag (:,jbnd) = imsig_diag_tr / float( ndeg(iman) )
+      a_diag (:,jbnd) = a_diag_tr / float( ndeg(iman) )
+      et_qp (jbnd) = et_qp_tr / float( ndeg(iman) )
+    enddo
+    !
+  enddo
+  !
+  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3)/)') et_qp(1:nbnd_sig)*ryd2ev
+  do iw = 1, nw
+    write(stdout,'(9f15.8)') w(iw), (resig_diag (iw,ibnd)*ryd2ev, ibnd=1,nbnd_sig)
+  enddo
+  write(stdout,*)
+  do iw = 1, nw
+    write(stdout,'(9f15.8)') w(iw), (imsig_diag (iw,ibnd)*ryd2ev, ibnd=1,nbnd_sig)
+  enddo
+  write(stdout,*)
+  do iw = 1, nw
+    write(stdout,'(9f15.8)') w(iw), (    a_diag (iw,ibnd)*ryd2ev, ibnd=1,nbnd_sig)
   enddo
   !
 #ifdef __PARA
   endif
 #endif
-  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3)/)') et_qp*ryd2ev
   !
   call stop_clock ('sigma_matel')
   ! 
