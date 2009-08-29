@@ -17,43 +17,18 @@
   real(dbl) :: xxk(3)
   integer :: ig, igp, nw
   integer :: igstart, igstop
-  integer :: lter, n1
-  real(DP) :: h_diag(ngm), anorm, rdummy
-  logical :: conv_root, tprec
   integer :: ig1, ig2, idummy, iw, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
   real(dbl) :: x, delta, kplusg(3), g2kin(ngm), eval(nbnd_occ)
   real(dbl) :: eval_all(nbnd), w(nw), w_ryd(nw)
-  complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), rhs(ngm), gr(ngm), cw, gr_A(ngm), gr_N(ngm)
-  complex(dbl) :: psi_all(ngm,nbnd), gr_exp(nw)
-  complex(dbl) :: green(nrs,nrs,nw), cdummy(ngm, nbnd_occ)
-  logical :: convt, found
-  complex(kind=DP) ::  auxg(ngm)
-  complex(kind=DP) :: ZDOTC
-  real(DP) :: eprec(nbnd_occ), dirac
-  external ch_psi_all_eta
+  complex(dbl) :: vr(nr), gr(ngm), cw
+  complex(dbl) :: psi_all(ngm,nbnd)
+  complex(dbl) :: green(nrs,nrs,nw)
+  complex(kind=DP) ::  ost(ngms,ngms,nbnd), cf(nw,nbnd)
 
   call start_clock('green_linsys')
- 
-!  !
-!  do iw=1,nw
-!    w(iw) = float(iw-1)/float(nw-1)*50-25
-!  enddo
 
   w_ryd = w/ryd2ev
 
-  lter = 0
-  n1 = 1
-  rdummy = 0.d0
-  cdummy = (0.d0,0.d0)
-  idummy = 0
-
-  !
-  !  generate occupied wavefunctions for the k0-q point
-  !
-! write(6,'(/4x,a)') repeat('-',67)
-! write(6,'(4x,"k0-q point: occupied eigenvalues (eV)")')
-! write(6,'(4x,a/)') repeat('-',67)
-  !
   ! the k-dependent kinetic energy in Ry
   !
   do ig = 1, ngm
@@ -61,71 +36,46 @@
     g2kin ( ig ) = tpiba2 * dot_product ( kplusg, kplusg )
   enddo
   !
-  call eigenstates2 ( xxk, vr, g2kin, psi, eval )
-  !
-  write ( stdout, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xxk, eval*ryd2ev
-  !
-  tprec = .true.
-  if (tprec) then
-    !
-    ! I use the preconditioner of Teter, Payne, Allan [PRB 40, 12255 (1988)]
-    ! I set the kinetic energy reference to the highest occupied state
-    !
-    ibnd = nbnd_occ
-    do ig = 1, ngm
-        auxg (ig) = g2kin (ig) * psi (ig, ibnd)
-    enddo
-    eprec (ibnd) = ZDOTC (ngm, psi (1, ibnd), 1, auxg, 1)
-    do ig = 1, ngm
-       x = g2kin(ig)/eprec (ibnd)
-       h_diag(ig) = (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-                   / (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
-    enddo
-    !
-  else
-    ! NO preconditioning
-    !
-    h_diag = 1.d0
-    !
-  endif
-  !
   call  eigenstates_all ( vr, g2kin, psi_all, eval_all )
+  !
+  do ibnd = 1, nbnd
+    if (ibnd.le.nbnd_occ) then
+      delta =  1.d0
+    else
+      delta = -1.d0
+    endif
+    do iw = 1, nw
+       ! 2 is for the spin
+       cf(iw,ibnd) = 2.d0 / ( w_ryd(iw) - eval_all(ibnd) - ci * delta * eta)
+    enddo
+  enddo
+  do ig = igstart, igstop
+    do igp = 1, ngms
+      do ibnd = 1, nbnd
+         ost(ig,igp,ibnd) = psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) 
+      enddo
+    enddo
+  enddo
   !
   !  loop on bare perturbations ig and fixed k point
   !
-  !  [note: no barriers inside this loop as the number of perturbation
-  !  is different across processors]
-  !
-    !
-    do ig = igstart, igstop 
-      do igp = 1, ngms
-        !
-        gr = czero
+  green = czero
+  do iw = 1, nw
+    do igp = 1, ngms
+      do ig = igstart, igstop 
         do ibnd = 1, nbnd
-          if (ibnd.le.nbnd_occ) then
-            delta =  1.d0
-          else
-            delta = -1.d0
-          endif
-          do iw = 1, nw
-             gr(iw) = gr(iw) + psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) &
-                  / ( w_ryd(iw) - eval_all(ibnd) - ci * delta * eta)
-          enddo
+           green (ig,igp,iw) = green (ig,igp,iw) + ost(ig,igp,ibnd) * cf(iw,ibnd)
         enddo
-        gr = 2.d0 * gr ! spin
-        do iw = 1, nw
-          green (ig,igp,iw) = gr (iw) 
-          write(100,*) w(iw), real(green (ig,igp,iw)),aimag(green (ig,igp,iw))
-        enddo
-        !
       enddo
-      ! green (-,igp,-) is in SIZE order of G-vectors
-      !
     enddo
-    !
-
-!  do iw = 1, nw
-!    write(300+mypool,'(3f15.10)') w(iw), gr_exp(iw)
+  enddo
+  !
+!  do ig = igstart, igstop
+!    do igp = 1, ngms
+!      do iw = 1, nw
+!        write(100,*) w(iw), real(green (ig,igp,iw)),aimag(green (ig,igp,iw))
+!      enddo
+!    enddo
 !  enddo
   !
   call stop_clock('green_linsys')
