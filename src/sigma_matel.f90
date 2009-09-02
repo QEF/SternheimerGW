@@ -28,11 +28,16 @@
   !
   write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk0 (ipol) , ipol = 1, 3)
   !
-  ! the k-dependent kinetic energy in Ry
-  ! [Eq. (14) of Ihm,Zunger,Cohen J Phys C 12, 4409 (1979)]
+  ! NOTE - I calculate the eigenstates of -xk0
+  ! in order to have c_k(-G) = [c_-k(G)]*
+  ! Because of my convention on the FFTs on G,G' in the paper,
+  ! below we mix G and -G in the sandwitches. The easiest way
+  ! to perform the calculation is to use teh eigenvectors for -xk0  
+  ! and take their cc to obtain c(-G) for xk0
   !
   do ig = 1, ngm
-    kplusg = xk0 + g(:,ig)
+    ! note the -xk0 for the reason above!
+    kplusg = -xk0 + g(:,ig)
     g2kin ( ig ) = tpiba2 * dot_product ( kplusg, kplusg )
   enddo
   !
@@ -48,6 +53,10 @@
   read ( iunsigma, rec = ik0, iostat = ios) sigma
   !
   ! matrix elements of the self-energy
+  !
+  ! following the convention in the paper, thsi should be
+  ! <i|Sigma|j> = sum_G,G' u_ik^*(-G) <G|Sigma|G'> u_jk(-G')
+  !             = sum_G,G' u_i,-k(G) <G|Sigma|G'> [u_j,-k(G')]*
   !
   do ibnd = 1, nbnd_sig 
    do jbnd = 1, nbnd_sig
