@@ -451,6 +451,9 @@
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iunsigma, file = "./silicon.sigma", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
+!@@
+goto 123
+!@@
   !
   write(stdout,'(4x,"Screened Coulomb interaction:")')
   !
@@ -556,7 +559,7 @@
   call start_clock ('GW product')
   !
   w_ryd = wcoul / ryd2ev
-  do ik0 = 1, nk0 
+!@  do ik0 = 1, nk0 
     !
     write(stdout,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') &
       ik0, (xk0 (ipol, ik0) , ipol = 1, 3)
@@ -647,7 +650,7 @@
       ! combine Green's function and screened Coulomb ( sum_q wq = 1 )
       !
 !@@
-! FREQUENCY INTEGRATION AND BZ INTEGRATION TO BE TESTED WITH 1D TEST FUNCTION
+! FREQUENCY INTEGRATION TO BE TESTED WITH 1D TEST FUNCTION
 !@@
       do iw = 1, nwcoul
         !
@@ -681,8 +684,16 @@
     ! Now we have summed over q in G(k0-q)W(q) and we can go back
     ! to G-space before calculating the sandwitches with the wavefunctions
     ! note: we go to SIZE order of G-vectors
+!@@
+123 continue
+!@@
     !
-    do iw = 1, nwsigma
+iw = 1
+
+sigma = czero
+sigma(12,45,iw) = 1.d0
+
+!@    do iw = 1, nwsigma
       do ir = 1, nrs
         aux = czero
         do irp = 1, nrs
@@ -708,7 +719,35 @@
           sigma (ig,igp,iw) = conjg ( aux(nls(ig)) ) * omega
         enddo
       enddo
-    enddo
+!@    enddo
+
+ir = 12
+irp = 45
+      i = mod ( ir-1, nr1s) + 1
+      j = mod ( (ir - (i-1))/nr1s, nr2s) + 1
+      k = (ir - (i-1) - (j-1)*nr2s )/(nr1s * nr2s) + 1
+      r1 = float(i-1)/float(nr1s) * at(:,1) &
+         + float(j-1)/float(nr2s) * at(:,2) &
+         + float(k-1)/float(nr3s) * at(:,3)
+      i = mod ( irp-1, nr1s) + 1
+      j = mod ( (irp - (i-1))/nr1s, nr2s) + 1
+      k = (irp - (i-1) - (j-1)*nr2s )/(nr1s * nr2s) + 1
+      r2 = float(i-1)/float(nr1s) * at(:,1) &
+         + float(j-1)/float(nr2s) * at(:,2) &
+         + float(k-1)/float(nr3s) * at(:,3)
+do ig = 1, ngms
+do igp = 1, ngms
+      arg = twopi * ( g(1,ig) * r1( 1) + g(2,ig) * r1( 2) + g(3,ig) * r1( 3) ) &
+          - twopi * ( g(1,igp) * r2( 1) + g(2,igp) * r2( 2) + g(3,igp) * r2( 3) )
+      write(6,'(2i5,2f9.5)') ig,igp,sigma(ig,igp,iw)- dcmplx(cos(arg), sin(arg))/float(nrs)/float(nrs)*omega
+enddo
+enddo
+
+
+!@@@
+stop
+!@@@
+
     !
     ! everything beyond ngms is garbage
     !
@@ -736,7 +775,7 @@
 #endif
     !
     ! end loop on {k0}
-  enddo 
+!@  enddo 
   ! 
   call stop_clock ('GW product')
   !
