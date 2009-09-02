@@ -301,7 +301,20 @@ within a reciprocal space formalism. This choice allows us to make
 contact with the existing literature on the 
 calculation of dielectric properties and quasiparticle 
 corrections from first-principles.\cite{hl86,balde_tosa,baroni-resta,hl86-prb,reining,cpm}
-%
+
+We adopt the following convention for the transformation from real
+to reciprocal space:
+  \begin{equation}
+  W(\r,\rp;\w) = \frac{1}{\Omega N_\q}  \sum_{\q\G\Gp} W_{\G\Gp}(\q;\w)
+  {\rm e}^{-i(\q+\G)\cdot\r}
+  {\rm e}^{i(\q+\Gp)\cdot\rp},
+  \end{equation}
+  \begin{equation}
+  \psi_{n\k}(\rp)=\Omega^{-1/2}\sum_\Gp 
+  {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp).
+  \end{equation}
+
+
 We begin by rewriting 
 the linear systems Eq.\ (\ref{eq.linsys.1})
 by relabeling the wavefunctions $\psi_v$ into Bloch states
