@@ -61,7 +61,7 @@
   character (len=3) :: nd_nmbr0
   CHARACTER (LEN=6) :: version_number = '0.4.8'
   character (len=256) :: wfcfile
-  real(kind=8) :: xr, xi
+  real(kind=8) :: xr, xi, r1(3), r2(3)
   logical :: nanno
   !
   !
@@ -583,22 +583,29 @@
       greenf(1:ngms,1:ngms,:) = greenf_g
       !
       do iw = 1, nwgreen
+        !
         do ig = 1, ngms
           aux = czero
           do igp = 1, ngms
-            aux(nls(igp)) = greenf(igp,ig,iw)
+            aux(nls(igp)) = greenf(ig,igp,iw)
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          greenf(:,ig,iw) = aux / omega
+          greenf(ig,1:nrs,iw) = aux / omega
         enddo
-        do ir = 1, nrs
+        !
+        ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
+        ! following teh convention set in the paper
+        ! [because the standard transform is sum_G f(G) exp(iGr) ]
+        !
+        do irp = 1, nrs
           aux = czero
-          do igp = 1, ngms
-            aux(nls(igp)) = greenf(ir,igp,iw)
+          do ig = 1, ngms
+            aux(nls(ig)) = conjg ( greenf(ig,irp,iw) )
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          greenf(ir,:,iw) = aux 
+          greenf(1:nrs,irp,iw) = conjg ( aux )
         enddo
+        !
       enddo
 !     write(stdout,'(4x,"FFTW of Green''s function passed"/)') 
       !
@@ -608,25 +615,31 @@
       !
       ! now scrcoul(nrs,nrs,nwcoul) contains the screened Coulomb
       ! interaction for this q point, all frequencies, and in G-space:
-      ! go to R-space 
+      ! go to r-space 
       ! both indeces are in SIZE order of G-vectors
       !
       do iw = 1, nwcoul
+        !
         do ig = 1, ngms
           aux = czero
           do igp = 1, ngms
-            aux(nls(igp)) = scrcoul(igp,ig,iw)
+            aux(nls(igp)) = scrcoul(ig,igp,iw) 
           enddo
-          call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          scrcoul(:,ig,iw) = aux / omega
+          call cfft3s ( aux, nr1s, nr2s, nr3s,  1) 
+          scrcoul(ig,1:nrs,iw) = aux / omega
         enddo 
-        do ir = 1, nrs
+        !
+        ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
+        ! following teh convention set in the paper
+        ! [because the standard transform is sum_G f(G) exp(iGr) ]
+        !
+        do irp = 1, nrs
           aux = czero
-          do igp = 1, ngms
-            aux(nls(igp)) = scrcoul(ir,igp,iw)
+          do ig = 1, ngms
+            aux(nls(ig)) = conjg ( scrcoul(ig,irp,iw) )
           enddo
           call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          scrcoul(ir,:,iw) = aux 
+          scrcoul(1:nrs,irp,iw) = conjg ( aux ) 
         enddo 
       enddo
 !     write(stdout,'(4x,"FFTW of Coulomb passed"/)') 
