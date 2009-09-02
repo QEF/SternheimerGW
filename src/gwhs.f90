@@ -646,13 +646,17 @@
       !
       ! combine Green's function and screened Coulomb ( sum_q wq = 1 )
       !
-!@@
-! FREQUENCY INTEGRATION AND BZ INTEGRATION TO BE TESTED WITH 1D TEST FUNCTION
-!@@
+      ! the frequency integration should be done at least with trapz,
+      ! now it's pretty miserable - maybe we move to imag frequencies?
+      !
       do iw = 1, nwcoul
         !
-        cexpm = exp ( -ci * eta * w_ryd(iw) )
-        cexpp = exp (  ci * eta * w_ryd(iw) )
+!        cexpm = exp ( -ci * eta * w_ryd(iw) )
+!        cexpp = exp (  ci * eta * w_ryd(iw) )
+        ! the convergence factor should be dimensionless! it is only for
+        ! carrying out analytical calculations I believe, here it does not matter
+        cexpm = 1.d0
+        cexpp = 1.d0
         !
         do iw0 = 1, nwsigma
           !
