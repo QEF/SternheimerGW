@@ -142,18 +142,16 @@
   !
   write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3)/)') et_qp(1:nbnd_sig)*ryd2ev
   !
-  ! sigma is already in eV  
-  !
   do iw = 1, nw
-    write(stdout,'(9f15.8)') w(iw), (resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
+    write(stdout,'(9f15.8)') w(iw), (ryd2ev*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
   enddo
   write(stdout,*)
   do iw = 1, nw
-    write(stdout,'(9f15.8)') w(iw), (imsig_diag (iw,ibnd), ibnd=1,nbnd_sig)
+    write(stdout,'(9f15.8)') w(iw), (ryd2ev*imsig_diag (iw,ibnd), ibnd=1,nbnd_sig)
   enddo
   write(stdout,*)
   do iw = 1, nw
-    write(stdout,'(9f15.8)') w(iw), (    a_diag (iw,ibnd), ibnd=1,nbnd_sig)
+    write(stdout,'(9f15.8)') w(iw), (a_diag (iw,ibnd)/ryd2ev, ibnd=1,nbnd_sig)
   enddo
   !
 #ifdef __PARA

@@ -50,7 +50,7 @@
   real(DP) :: et(nbnd_occ, nq)
   real(DP), allocatable :: g2kin (:)
   real(DP), allocatable :: wtmp(:), wcoul(:), wgreen(:), wsigma(:), w_ryd(:)
-  complex(DP) :: cexpp, cexpm
+  complex(DP) :: cexpp, cexpm, cprefac
   complex(DP), allocatable :: psi(:,:)
   complex(dbl), allocatable :: vr(:), aux(:)
   complex(dbl), allocatable :: scrcoul (:,:,:), greenf (:,:,:), sigma(:,:,:)
@@ -646,38 +646,39 @@
       !
       ! combine Green's function and screened Coulomb ( sum_q wq = 1 )
       !
-      ! the frequency integration should be done at least with trapz,
-      ! now it's pretty miserable - maybe we move to imag frequencies?
-      !
       do iw = 1, nwcoul
         !
 !        cexpm = exp ( -ci * eta * w_ryd(iw) )
 !        cexpp = exp (  ci * eta * w_ryd(iw) )
         ! the convergence factor should be dimensionless! it is only for
         ! carrying out analytical calculations I believe, here it does not matter
-        cexpm = 1.d0
-        cexpp = 1.d0
+        !
+        ! simpson quadrature: int_w1^wN f(w)dw = deltaw * [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
+        ! (does not seem very important cosidered that we truncate the integration at an arbitrary frequency)
+        !
+        cprefac = deltaw/ryd2ev * wq (iq) * ci / twopi
+   !
+   ! a simple test on int_0^1 sin(x)dx seems to say that this is not effective
+   ! we should anyway get the same effect when using a smearing on the green's function
+   !     if ( iw/2*2.eq.iw ) then
+   !        cprefac = cprefac * 4.d0/3.d0
+   !     else
+   !        cprefac = cprefac * 2.d0/3.d0
+   !     endif
+   !     if ( (iw.eq.1) .or. (iw.eq.nwcoul) ) cprefac = cprefac * 1.d0/3.d0
         !
         do iw0 = 1, nwsigma
           !
           iw0mw = ind_w0mw (iw0,iw)
           iw0pw = ind_w0pw (iw0,iw)
           !
-          do ir = 1, nrs
-            do irp = 1, nrs
-              !
-              sigma(ir,irp,iw0) = sigma(ir,irp,iw0) + wq (iq) * ci / twopi        &
-                * ( cexpm * greenf(ir,irp,iw0mw) + cexpp * greenf(ir,irp,iw0pw) ) &
-                * scrcoul (ir,irp,iw)
-              !
-            enddo
-          enddo
+          sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * &
+            ( greenf(:,:,iw0mw) + greenf(:,:,iw0pw) ) * scrcoul (:,:,iw)
           !
         enddo
         !
       enddo
-      ! deltaw is in eV here - so if everythin is ok also sigma is in eV
-      sigma = sigma * deltaw 
+      ! sigma in Ry here
       !
       ! end loop on {k0-q} and {q}
     enddo 
