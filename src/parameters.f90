@@ -43,9 +43,13 @@
   !
   ! ENERGY SAMPLING
   !
-  real(DP), parameter :: wsigmamin = -15.d0, wsigmamax = 15.d0, deltaw = 0.5, wcoulmax = 30.d0
+! real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 0.4, wcoulmax = 50.d0
+  real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 0.25, wcoulmax = 50.d0
   ! frequency range for the self-energy (wsigmamin<0, sigmamax>0) - eV
   ! and for the Coulomb  (wcoulmax>0)
+  real(DP), parameter :: wgreen_safe = 50.d0
+  ! the largest frequency of the Green's function must be at least this value
+  ! (otherwise we miss the empty states and the Sigma comes out wrong)
   !
   ! CONVERGENCE PARAMETERS AND ENERGY OFFSET 
   !
@@ -62,7 +66,8 @@
   real(DP), parameter :: tr_cgsolve = 1.0d-8 
   ! threshold for the iterative solution of the linear system
   ! with thresh>1d-5 the potential does not converge
-  real(DP), parameter :: eta = 0.01
+! real(DP), parameter :: eta = 0.03
+  real(DP), parameter :: eta = 0.04
   ! smearing for Green's function, and GW exp^ideltaw sum - Ry
   real(DP), parameter :: alpha_pv = 25.234/13.606 ! (this is 2(emax-emin)
   ! parameter for the projection over the valence manifold

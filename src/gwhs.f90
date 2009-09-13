@@ -277,6 +277,10 @@
   !
   write (stdout,'(/4x,"nwcoul = ",i5,", nwgreen = ",i5,", nwsigma = ",i5/)') &
      nwcoul, nwgreen, nwsigma
+  write (stdout,'(/4x,"wgreenmin = ",f6.1," eV, wgreenmax = ",f6.1," eV, wgreen_safe = ",f6.1/)') &
+     wgreen(1), wgreen(nwgreen), wgreen_safe
+  if ( wgreen(nwgreen) .lt. wgreen_safe ) call errore ('gwhs','Green''s function frequency grid too small',1)
+  write (stdout,'(/4x,"eta = ",f6.1," eV, deltaw = ",f6.1," eV")') eta*ryd2ev, deltaw
   !----------------------------------------------------------------
   !
 #ifdef __PARA
