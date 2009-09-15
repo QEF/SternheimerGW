@@ -11,7 +11,7 @@
   !
   ! STRUCTURE AND POTENTIAL FOR SILICON
   !
-  integer, parameter :: nat = 2, nbnd_occ = 4, nbnd = 50, nbnd_sig = 8
+  integer, parameter :: nat = 2, nbnd_occ = 4, nbnd = 60, nbnd_sig = 8
   real(dbl), parameter :: alat = 10.26
   ! lattice parameter of silicon (5.43 A)
   ! without the factor 4 we have the volume of 8 atoms...
@@ -44,7 +44,7 @@
   ! ENERGY SAMPLING
   !
 ! real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 0.4, wcoulmax = 50.d0
-  real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 0.25, wcoulmax = 50.d0
+  real(DP), parameter :: wsigmamin = -100.d0, wsigmamax = 100.d0, deltaw = 0.25, wcoulmax = 50.d0
   ! frequency range for the self-energy (wsigmamin<0, sigmamax>0) - eV
   ! and for the Coulomb  (wcoulmax>0)
   real(DP), parameter :: wgreen_safe = 50.d0
