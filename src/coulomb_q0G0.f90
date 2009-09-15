@@ -247,6 +247,17 @@
 !    enddo
 
     !
+    ! This is to calculate W-v: inv(eps) - \delta_GG'
+    !
+    dvscf ( nl(ig) ) = dvscf ( nl(ig) ) - cone
+    !
+    ! This is to calculate v: no screening
+    !
+ !  dvscf = czero
+ !  dvscf ( nl(ig) ) = cone
+    !
+
+    !
     ! keep only the G-vectors 1:ngms for the screened Coulomb
     !
     do igp = 1, ngms
