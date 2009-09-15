@@ -8,6 +8,8 @@
 %
 
 \def\w{\omega}
+\def\wp{\omega^\prime}
+\def\wc{{\omega_{\rm C}}}
 \def\>{\rangle}
 \def\<{\langle}
 \def\H{\hat{H}}
@@ -290,6 +292,51 @@ the recursion method is not competitive with the calculation using
 the expansion over unoccupied states Eq.\ (\ref{eq.green.3}).
 Our efforts along the lines of Haydock's recursion are summarized in
 Appendix~\ref{app.haydock}.
+
+\section{Self-energy}\label{sec.sigma}
+
+The self-energy in the GW approximation reads \cite{hl86}:
+  \begin{equation} \label{eq.sigma}
+  \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\infty}^{+\infty} d\wp 
+    G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp},
+  \end{equation}
+where $\delta$ is a positive infinitesimal. In this work we perform
+the energy integration explicitely, therefore we need to introduce
+a cutoff $\wc$ in the above integral:
+  \begin{equation}
+  \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc d\wp
+    G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp}.
+  \end{equation}
+A careful analysis shows however that the truncated integral will yield
+a self-energy qualitatively wrong. This problem can be traced back
+to the exchange term. Indeed if we explicitely separate the exchange
+contribution in the self-energy we obtain
+$\Sigma = \Sigma^{\rm ex} + \Sigma^{\rm c}$ where $\Sigma^{\rm ex}=Gv$
+and $\Sigma^{\rm c}=G(W-v)$.\cite{pade3}
+The Coulmb term $\Sigma^{\rm c}$ is well behaved and is not affected
+by the trunctation of the energy integral. On the contary, the exchange
+term needs some attention. If we write it as $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$,
+we realize that the integration of the term $G^{\rm A}v$ gives a
+vanishing quantity because the poles of $G^{\rm A}$ lie in the lower half 
+of the complex plane, while the integration $G^{\rm N}v$ gives a constant term.
+If we truncate the integral along the real axis, then the $\Sigma^{\rm xc}$
+will acquire a spurious frequency dependence (essentially associated with
+the semicircle closing the complex integration path - this contribution
+goes to zero as $\wc$ goes to $\infty$).
+
+Therefore the correct way to perform the integration is the following:
+  \begin{equation}
+  \Sigma(\r,\rp;\w) = \Sigma^{\rm c}(\r,\rp;\w) + \Sigma^{\rm ex}(\r,\rp),
+  \end{equation}
+with
+  \begin{equation}
+  \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc d\wp
+    G(\r,\rp,\w+\wp) [W(\r,\rp,\wp)-v(\r,\rp)],
+  \end{equation}
+and
+  \begin{equation}
+  \Sigma^{\rm ex}(\r,\rp) = - 2 \sum_v \psi_v^\star(\r)\psi_v(\rp) v(\r,\rp).
+  \end{equation}
 
 
 \section{Technical implementation}
