@@ -295,42 +295,36 @@ Appendix~\ref{app.haydock}.
 
 \section{Self-energy}\label{sec.sigma}
 
-The self-energy in the GW approximation reads \cite{hl86}:
+The self-energy in the GW approximation reads:\cite{hl86}
   \begin{equation} \label{eq.sigma}
   \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\infty}^{+\infty} d\wp 
     G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp},
   \end{equation}
-where $\delta$ is a positive infinitesimal. In this work we perform
-the energy integration explicitely, therefore we need to introduce
-a cutoff $\wc$ in the above integral:
-  \begin{equation}
-  \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc d\wp
-    G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp}.
-  \end{equation}
-A careful analysis shows however that the truncated integral will yield
-a self-energy qualitatively wrong. This problem can be traced back
-to the exchange term. Indeed if we explicitely separate the exchange
-contribution in the self-energy we obtain
+where $\delta$ is a positive infinitesimal. 
+At large energy $G$ goes like $\w^{-1}$ and $W$ tends to the costant 
+bare interaction $v$, therefore the integrand goes like $\w^{-1}$
+and the integration requires some care.
+If we explicitely separate the exchange contribution in the self-energy we obtain
 $\Sigma = \Sigma^{\rm ex} + \Sigma^{\rm c}$ where $\Sigma^{\rm ex}=Gv$
 and $\Sigma^{\rm c}=G(W-v)$.\cite{pade3}
-The Coulmb term $\Sigma^{\rm c}$ is well behaved and is not affected
-by the trunctation of the energy integral. On the contary, the exchange
-term needs some attention. If we write it as $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$,
+The integrand in the Coulmb term $\Sigma^{\rm c}$ goes like $\w^{-2}$ 
+hence the integral is well behaved and the result is not affected
+(apart from numerical error) if we replace the $\pm \infty$ by finite cutoffs $\pm \wc$.
+For the exchange term, if we write $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$,
 we realize that the integration of the term $G^{\rm A}v$ gives a
 vanishing quantity because the poles of $G^{\rm A}$ lie in the lower half 
-of the complex plane, while the integration $G^{\rm N}v$ gives a constant term.
-If we truncate the integral along the real axis, then the $\Sigma^{\rm xc}$
-will acquire a spurious frequency dependence (essentially associated with
-the semicircle closing the complex integration path - this contribution
-goes to zero as $\wc$ goes to $\infty$).
-
-Therefore the correct way to perform the integration is the following:
+of the complex plane, while the integration $G^{\rm N}v$ gives a energy-independent contribution.
+Had we truncated the integral along the real axis, the $\Sigma^{\rm xc}$
+would acquire a spurious frequency dependence associated with
+the semicircle closing the complex integration path.
+Therefore the correct way to perform the integration is to evaluate numerically
+the Coulomb term using a energy cutoff, and integrate analitycally the exchange term:
   \begin{equation}
   \Sigma(\r,\rp;\w) = \Sigma^{\rm c}(\r,\rp;\w) + \Sigma^{\rm ex}(\r,\rp),
   \end{equation}
 with
   \begin{equation}
-  \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc d\wp
+  \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc \!\! d\wp
     G(\r,\rp,\w+\wp) [W(\r,\rp,\wp)-v(\r,\rp)],
   \end{equation}
 and
