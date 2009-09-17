@@ -45,6 +45,7 @@
   ! g(p,i) = g_p (z_i) in the notation of Vidberg and Serene
   integer :: i, j, p
   real(DP) :: ar, ai
+  complex(DP) :: tmp1, tmp2
   !
   do p = 1, N
     if (p.eq.1) then
@@ -53,14 +54,18 @@
       enddo
     else
       do i = p, N
-         g (p,i) = ( g(p-1,p-1) - g(p-1,i) ) / &
-                   ( ( z(i) - z(p-1) ) * g (p-1,i) )
+   !     g (p,i) = ( g(p-1,p-1) - g(p-1,i) ) / &
+   !               ( ( z(i) - z(p-1) ) * g (p-1,i) )
          !
          ! this seems necessary to avoid nasty NaN when
-         ! two almost identical numbers are subtracted
-         ! - the procedure becomes unstable in that case
+         ! still don't quite understand why the procedure
+         ! becomes unstable - certainly it happens only
+         ! when u(:) is very small
          !
-         if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
+         tmp1 = g(p-1,p-1)/g(p-1,i)
+         tmp2 = g(p-1,i)/g(p-1,i) 
+         g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
+         !
       enddo
     endif
     a(p) = g (p,p)
