@@ -39,7 +39,7 @@
   integer :: ig, ik, ig1, ig2, iq, nk, ik0, i, j, k, ios
   integer :: iw, iwp, iw0, iw0pw, iw0mw, count, ipol, ir
   integer :: recl, unf_recl, irp, igp, rec0, igstart, igstop
-  integer :: ngpool, ngr, igs
+  integer :: ngpool, ngr, igs, ibnd
   integer :: nwcoul, nwgreen, nwalloc, nwsigma
   integer, allocatable :: ind_w0mw (:,:), ind_w0pw (:,:)
   real(dbl) :: ui, uj, uk, wgreenmin, wgreenmax, w0mw, w0pw
@@ -48,12 +48,14 @@
   real(dbl), allocatable :: ss(:), vs(:)
   real(DP), parameter :: eps8 = 1.0D-8
   real(DP) :: et(nbnd_occ, nq)
+  real(DP), allocatable :: eval_all(:)
   real(DP), allocatable :: g2kin (:)
   real(DP), allocatable :: wtmp(:), wcoul(:), wgreen(:), wsigma(:), w_ryd(:)
   complex(DP) :: cexpp, cexpm, cprefac
-  complex(DP), allocatable :: psi(:,:)
+  complex(DP), allocatable :: psi(:,:), psi_all(:,:)
   complex(dbl), allocatable :: vr(:), aux(:)
   complex(dbl), allocatable :: scrcoul (:,:,:), greenf (:,:,:), sigma(:,:,:)
+  complex(dbl), allocatable :: barcoul (:,:), greenf_na (:,:), sigma_ex(:,:)
   complex(dbl), allocatable :: scrcoul_g (:,:,:), greenf_g (:,:,:), sigma_g(:,:,:)
   logical :: allowed, foundp, foundm
   CHARACTER (LEN=9)   :: code = 'GWHS'
@@ -63,6 +65,7 @@
   character (len=256) :: wfcfile
   real(kind=8) :: xr, xi, r1(3), r2(3)
   logical :: nanno
+  real(dbl) :: qg2, rcut, spal
   !
   !
   ! start serial code OR initialize parallel environment
@@ -426,6 +429,7 @@
   allocate ( scrcoul (nrs, nrs, nwcoul) )
   allocate ( greenf (nrs, nrs, nwgreen) )
   allocate ( sigma (nrs, nrs, nwsigma) )
+  allocate ( barcoul(nrs, nrs), greenf_na(nrs,nrs), sigma_ex (nrs, nrs) )
   allocate ( scrcoul_g (ngms, ngms, nwcoul) )
   allocate ( greenf_g (ngms, ngms, nwgreen) )
   allocate ( sigma_g (ngms, ngms, nwsigma) )
@@ -569,11 +573,6 @@
     !
     sigma = czero
     !
-#ifdef __PARA
-    ! only proc 0 reads from file and does the product
-    ! (need some sort of parallelization here)
-    if (me.eq.1.and.mypool.eq.1) then
-#endif
     do iq = 1, nq
       !
       write(stdout,'(4x,"Summing iq = ",i4)') iq
@@ -581,10 +580,21 @@
       ! go to R-space to perform the direct product with W
       ! both indices are in SIZE order of G-vectors
       !
-      rec0 = (ik0-1) * nq + (iq-1) + 1 
-      read ( iungreen, rec = rec0, iostat = ios) greenf_g 
       greenf = czero
-      greenf(1:ngms,1:ngms,:) = greenf_g
+      !
+      ! read Green's function and broadcast
+      ! 
+#ifdef __PARA
+      if (me.eq.1.and.mypool.eq.1) then
+#endif
+        rec0 = (ik0-1) * nq + (iq-1) + 1 
+        read ( iungreen, rec = rec0, iostat = ios) greenf_g 
+        greenf(1:ngms,1:ngms,:) = greenf_g
+#ifdef __PARA
+      endif
+      ! use poolreduce to broadcast the results to every pool
+      call poolreduce ( 2 * nrs * nrs * nwgreen, greenf)
+#endif
       !
       do iw = 1, nwgreen
         !
@@ -613,9 +623,20 @@
       enddo
 !     write(stdout,'(4x,"FFTW of Green''s function passed"/)') 
       !
-      read ( iuncoul, rec = iq, iostat = ios) scrcoul_g
+      ! read screened coulomb interaction (W-v) and broadcast
+      ! 
       scrcoul = czero
-      scrcoul(1:ngms,1:ngms,:) = scrcoul_g
+      !
+#ifdef __PARA
+      if (me.eq.1.and.mypool.eq.1) then
+#endif
+        read ( iuncoul, rec = iq, iostat = ios) scrcoul_g
+        scrcoul(1:ngms,1:ngms,:) = scrcoul_g
+#ifdef __PARA
+      endif
+      ! use poolreduce to broadcast the results to every pool
+      call poolreduce ( 2 * nrs * nrs * nwcoul, scrcoul)
+#endif
       !
       ! now scrcoul(nrs,nrs,nwcoul) contains the screened Coulomb
       ! interaction for this q point, all frequencies, and in G-space:
@@ -657,8 +678,10 @@
         ! the convergence factor should be dimensionless! it is only for
         ! carrying out analytical calculations I believe, here it does not matter
         !
-        ! simpson quadrature: int_w1^wN f(w)dw = deltaw * [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
-        ! (does not seem very important cosidered that we truncate the integration at an arbitrary frequency)
+        ! simpson quadrature: int_w1^wN f(w)dw = deltaw * 
+        !   [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
+        ! (does not seem very important cosidered that we truncate 
+        !  the integration at an arbitrary frequency)
         !
         cprefac = deltaw/ryd2ev * wq (iq) * ci / twopi
    !
@@ -686,6 +709,128 @@
       !
       ! end loop on {k0-q} and {q}
     enddo 
+
+    !
+    ! EXCHANGE PART OF THE SELF-ENERGY
+    !
+    sigma_ex = czero
+    allocate ( psi_all (ngm, nbnd), eval_all(nbnd) )
+    !
+    do iq = 1, nq
+      !
+      ! NON-ANALYTIC PART OF THE GREEN'S FUNCTION
+      !
+      k0mq = xk0(:,ik0) - xq(:,iq)
+      !
+      ! the k-dependent kinetic energy in Ry
+      ! [Eq. (14) of Ihm,Zunger,Cohen J Phys C 12, 4409 (1979)]
+      !
+      do ig = 1, ngm
+        kplusg = k0mq + g(:,ig)
+        g2kin ( ig ) = tpiba2 * dot_product ( kplusg, kplusg )
+      enddo
+      !
+      ! this should be replaced by a solution of only the occ states - temporary
+      call  eigenstates_all ( vr, g2kin, psi_all, eval_all )
+      !
+      greenf_na = czero
+      do ig = igstart, igstop 
+        do igp = 1, ngms
+          do ibnd = 1, nbnd_occ
+            greenf_na (ig,igp) = greenf_na (ig,igp) + &
+              2.d0 * twopi * ci * psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) 
+          enddo
+        enddo
+      enddo
+      !
+#ifdef __PARA
+      ! use poolreduce to bring together the results from each pool
+      call poolreduce ( 2 * nrs * nrs, greenf_na)
+#endif
+      !
+      do ig = 1, ngms
+        aux = czero
+        do igp = 1, ngms
+          aux(nls(igp)) = greenf_na(ig,igp)
+        enddo
+        call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
+        greenf_na(ig,1:nrs) = aux / omega
+      enddo
+      !
+      ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
+      ! following teh convention set in the paper
+      ! [because the standard transform is sum_G f(G) exp(iGr) ]
+      !
+      do irp = 1, nrs
+        aux = czero
+        do ig = 1, ngms
+          aux(nls(ig)) = conjg ( greenf_na(ig,irp) )
+        enddo
+        call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
+        greenf_na(1:nrs,irp) = conjg ( aux )
+      enddo
+      !
+      ! COULOMB EXCHANGE TERM
+      !
+      rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+      xq0 = (/ 0.01 , 0.00, 0.00 /) ! this should be set from input
+      barcoul = 0.d0
+      do ig = igstart, igstop
+        !
+        xxq = xq(:,iq)
+        qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
+        if (qg2 < 1.d-8) xxq = xq0
+        qg2 = (g(1,ig)+xxq(1))**2.d0 + (g(2,ig)+xxq(2))**2.d0 + (g(3,ig)+xxq(3))**2.d0
+        ! Spencer/Alavi factor
+        spal = one - cos ( rcut * tpiba * sqrt(qg2) )
+        !
+        barcoul (ig,ig) = e2 * fpi / (tpiba2*qg2) * spal 
+        !
+      enddo
+#ifdef __PARA
+      !
+      ! use poolreduce to bring together the results from each pool
+      call poolreduce ( 2 * nrs * nrs, barcoul)
+      !
+#endif
+      !
+      do ig = 1, ngms
+        aux = czero
+        do igp = 1, ngms
+          aux(nls(igp)) = barcoul(ig,igp) 
+        enddo
+        call cfft3s ( aux, nr1s, nr2s, nr3s,  1) 
+        barcoul(ig,1:nrs) = aux / omega
+      enddo 
+      !
+      ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
+      ! following teh convention set in the paper
+      ! [because the standard transform is sum_G f(G) exp(iGr) ]
+      !
+      do irp = 1, nrs
+        aux = czero
+        do ig = 1, ngms
+          aux(nls(ig)) = conjg ( barcoul(ig,irp) )
+        enddo
+        call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
+        barcoul(1:nrs,irp) = conjg ( aux ) 
+      enddo 
+      !
+      ! EXCHANGE PART OF SELF-ENERGY
+      !
+      sigma_ex = sigma_ex + wq (iq) * ci / twopi * greenf_na * barcoul 
+      ! sigma in Ry here
+      !
+      ! end loop on {k0-q} and {q}
+    enddo 
+    !
+    ! \Sigma = \Sigma^c + \Sigma^ex
+    !
+    do iw = 1, nwsigma
+      sigma(:,:,iw) = sigma(:,:,iw) + sigma_ex 
+    enddo
+    !
+
     !
     ! Now we have summed over q in G(k0-q)W(q) and we can go back
     ! to G-space before calculating the sandwitches with the wavefunctions
@@ -730,12 +875,6 @@
     enddo
     !
 #ifdef __PARA
-    endif
-    !
-    ! use poolreduce to broadcast the results to every pool
-    !
-    call poolreduce ( 2 * nrs * nrs * nwsigma, sigma)
-    !
     if (me.eq.1.and.mypool.eq.1) then
 #endif
       sigma_g = sigma(1:ngms,1:ngms,:)
@@ -785,4 +924,4 @@
   stop
   end program gwhs
   !----------------------------------------------------------------
-  !
+  ! 
