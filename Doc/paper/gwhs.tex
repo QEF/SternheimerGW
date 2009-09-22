@@ -128,20 +128,23 @@ effects can be performed without difficulties.
 Within the random-phase approximation the polarization propagator can be written as:\cite{hl}
 % [Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
   \begin{equation}\label{eq.p}
-  P(\r,\rp;\w) = \sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
+  P(\r,\rp;\w) = 2\sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
   \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
   \end{equation}
 where $\psi_n(\r)$ indicates an electronic wavefunctions for the
 effective single-particle Hamiltonian (say the Kohn-Sham states)
 with energy eigenvalue $\E_n$ and occupation number $f_n$. 
 In Eq.\ (\ref{eq.p}) the summation indices $m$ and $n$ run over
-occupied and unoccupied states, as well as the spin index.
+occupied and unoccupied states, and the factor 2 accounts for the
+spin degeneracy.\cite{hl}
 Although the expression for the RPA polarization Eq.\ (\ref{eq.p})
 has been derived for real frequencies,\cite{hl} we can continue
 $P(\r,\rp;\w)$ throughout the complex plane by using Eq.~(\ref{eq.p})
 as a definition outside of the real axis.
 From Eq.\ (\ref{eq.p}) we derive immediately the property 
 $P(\r,\rp;-\w^\star)=P^\star(\r,\rp;\w)$.
+In addition, by using time-reversal symmetry we obtain $P(\r,\rp;-\w)=P^\star(\r,\rp;\w)$,
+therefore $W(\r,\rp;-\w)=W^\star(\r,\rp;\w)$.
 
 Our goal now is to rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p})
 without performing summations over the unoccupied states.
@@ -224,17 +227,18 @@ by following a strategy which is similar in spirit to the DFPT approach
 described for the screened Coulomb interaction in Sec.\ \ref{sec.coulomb}.
 We define the non-interacting Green's function following Ref.\ \onlinecite{hl}:
   \begin{equation}\label{eq.green.1}
-  G(\r,\rp;\w) = 2\sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\eta_n},
+  G(\r,\rp;\w) = \sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\eta_n},
   \end{equation}
-the sum extending over all states and the factor of 2 taking into account the
-spin degeneracy.
+the sum extending over all states. The spin degeneracy factor is not included
+since only states with the same spin couple when forming the matrix elements
+of teh self-energy.\cite{hl86}
 The infinitesimal $\eta_n$ is positive ($\eta_n=\eta$) 
 for occupied states and negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl86}
 Following the notation introduced in Sec.\ \ref{sec.coulomb} we can split the
 sum in Eq.~(\ref{eq.green.1}) into occupied and unoccupied states:
   \begin{equation}\label{eq.green.2}
-  G(\r,\rp;\w) = 2\sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\eta}
-  + 2\sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\eta}.
+  G(\r,\rp;\w) = \sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\eta}
+  + \sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\eta}.
   \end{equation}
 By adding and subtracting terms like $\psi_v\psi_v^\star/(\w-\E_v+i\eta)$
 we can rewrite the last equation as follows:
@@ -243,11 +247,11 @@ we can rewrite the last equation as follows:
   \end{equation}
 with 
   \begin{eqnarray}\label{eq.green.split.2}
-\!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  2\sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w^+-\E_n},  \\ 
-\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\cdot 2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
+\!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  \sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w-\E_n^-},  \\ 
+\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
   \end{eqnarray}
 where we used time-reversal symmetry, the Lorentzian representation of the Dirac's delta function
-$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we set $\w^+ = \w+i\eta$.
+$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we set $\E_n^- = \E_n - i\eta$.
 Whenever $\w$ is in the conduction bands energy range ($\w\ge\E_c^{\rm min}$)
 $G^{\rm N}$ vanishes and can be ignored.
 On the other hand, when $\w$ is in the valence bands energy range ($\w\le\E_v^{\rm max}$),
@@ -255,9 +259,7 @@ $G^{\rm N}$ introduces the poles associated with the occupied states.
 Such poles reflect the fact that the Green's function is analytic in the upper
 half of the complex plane when $\w$ is above the chemical potential, and in the lower half
 of the complex plane when $\w$ is below the chemical potential.
-In the latter case ($\w\le\E_v^{\rm max}$), when we move from $\w^+=\w+i\eta$ to $\w$ 
-we cross branch cuts and a proper account of the poles is necessary. A detailed discussion of this
-aspect is provided in Ref.\ \onlinecite{hl}.
+A detailed discussion of this aspect is provided in Ref.\ \onlinecite{hl}.
 
 The computation of the non-analytic component $G^{\rm N}$ in Eq.\ (\ref{eq.green.split.3})
 is straightforward once we obtained the occupied eigenstates.
@@ -267,9 +269,9 @@ and regard it as a parametric
 function of the the first space variable
 and of the frequency: $G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
 Then, if we act of both sides of Eq.\ (\ref{eq.green.split.2})
-with the operator $\H-\w^+$ we find immediately:
+with the operator $\H-\w + i\eta$ we find immediately:
   \begin{equation}\label{eq.green.3}
-  (\H-\w^+) G^{\rm A}_{[\r,\w]}(\rp) = -2\, \delta(\r,\rp), 
+  (\H-\w + i\eta) G^{\rm A}_{[\r,\w]}(\rp) = -\, \delta(\r,\rp), 
   \end{equation}
 where we made use of the 
 completeness relation $\sum_n \psi_v(\r)\psi_v^\star(\rp) = \delta(\r,\rp)$.
@@ -310,6 +312,8 @@ and $\Sigma^{\rm c}=G(W-v)$.\cite{pade3}
 The integrand in the Coulmb term $\Sigma^{\rm c}$ goes like $\w^{-2}$ 
 hence the integral is well behaved and the result is not affected
 (apart from numerical error) if we replace the $\pm \infty$ by finite cutoffs $\pm \wc$.
+In particular, it can be shown that the $\Sigma^{\rm c}(\w)$ must go to zero
+as $\w^{-1}$ at large frequency.
 For the exchange term, if we write $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$,
 we realize that the integration of the term $G^{\rm A}v$ gives a
 vanishing quantity because the poles of $G^{\rm A}$ lie in the lower half 
@@ -329,7 +333,7 @@ with
   \end{equation}
 and
   \begin{equation}
-  \Sigma^{\rm ex}(\r,\rp) = - 2 \sum_v \psi_v^\star(\r)\psi_v(\rp) v(\r,\rp).
+  \Sigma^{\rm ex}(\r,\rp) = - \sum_v \psi_v^\star(\r)\psi_v(\rp) v(\r,\rp).
   \end{equation}
 
 
@@ -352,8 +356,24 @@ to reciprocal space:
   \end{equation}
   \begin{equation}
   \psi_{n\k}(\rp)=\Omega^{-1/2}\sum_\Gp 
-  {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp).
+  {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp),
   \end{equation}
+  \begin{equation}
+  v(\r,\rp) = \frac{1}{\Omega N_\q}  \sum_{\q\G} v(\q+\G)
+  {\rm e}^{i(\q+\G)\cdot(\rp-\r)},
+  \end{equation}
+with $v(\r,\rp) = e^2/|\r-\rp|$ and $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
+We note that the above expression for $v(\q+\G)$ is arrived at by replacing
+the integration $\int_{\rm crystal} \exp(i\q\cdot\r)/r d\r$ with
+$\int_{\rm space} \exp(i\q\cdot\r)/r d\r$, i.\ e.\ by assuming that we
+have a very large crystal or equivalently a very fine sampling of the Brillouin zone.
+If we performed instead the integration on a crystal volume of spherical
+shape with a radius $R_{\rm c}$ defined by the volume $N_\q \Omega$, then we would obtain
+  \begin{equation}
+  v_{\rm tr} (\q+\G) = 4\pi e^2/|\q+\G|^2 (1-\cos |\q+\G| R_{\rm c}),
+  \end{equation}
+which corresponds to the truncated Coulomb potential discussed below.
+Improved truncation methods can be defined for non-isotropic materials.\cite{sohrab}
 
 
 We begin by rewriting 
@@ -409,9 +429,8 @@ If we further expand the periodic function $\Delta n_{[\q,\G,\w]}$ in plane
 waves $\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
 we can write the screened Coulomb interaction Eq.\ (\ref{eq.w.dfpt}) as
   \begin{equation}
-  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q,\G,\w]}(\Gp) ]v(\q+\Gp),
+  W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q,\G,\w]}(\Gp) ]v(\q+\Gp).
   \end{equation}
-with $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
 If we introduce the ``right-sided'' inverse dielectric matrix using
   \begin{equation}
   W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
@@ -501,7 +520,7 @@ We first rewrite Eq.\ (\ref{eq.green.1}) by relabeling the states
 $\psi_n$ into Bloch states $\psi_{n\k}$ and taking into account the
 normalization:
   \begin{equation}\label{eq.green.1.g}
-  G(\r,\rp;\w) = \frac{2}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\eta_{n\k}},
+  G(\r,\rp;\w) = \frac{1}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\eta_{n\k}},
   \end{equation}
 Then we expand the Green's function in terms
 of the Bloch waves ${\rm exp}[-i(\k+\G)\cdot\r]$ and ${\rm exp}[i\k\cdot\rp]$:
@@ -515,11 +534,11 @@ and the lattice-periodic part of the Green's function
 $g^{\rm A,N}_{[\k,\G,\w]}(\rp)  = \sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} g^{\rm A,N}_{[\k,\G,\w]}(\Gp)$,
 Eqs.~(\ref{eq.green.3}),(\ref{eq.green.split.3}) become
   \begin{equation}\label{eq.green.3.g}
-   (\H_\k-\w^+)  g^{\rm A}_{[\k,\G,\w]}(\Gp)  =  -2 \,\delta_{\G\Gp},
+   (\H_\k-\w^+)  g^{\rm A}_{[\k,\G,\w]}(\Gp)  =  -\,\delta_{\G\Gp},
   \end{equation}
   \begin{equation} \label{eq.green.4b.g}
   g^{\rm N}_{[\k,\G,\w]}(\Gp)  =  
-  2 \cdot 2\pi i \sum_v \delta(\w-\E_{v\k}) u^\star_{v\k}(\G)u_{v\k} (\Gp).
+  2\pi i \sum_v \delta(\w-\E_{v\k}) u^\star_{v\k}(\G)u_{v\k} (\Gp).
   \end{equation}
 In deriving Eqs.\ (\ref{eq.green.3.g}),(\ref{eq.green.4b.g}) we made use of time-reversal symmetry, yielding
 $u^\star_{v\k}(\G) = u_{v,-\k}(-\G)$.
