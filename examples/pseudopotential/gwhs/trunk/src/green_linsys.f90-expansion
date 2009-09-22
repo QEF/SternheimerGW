@@ -1,0 +1,86 @@
+  !
+  !----------------------------------------------------------------
+  subroutine green_linsys ( vr, g2kin, xxk, nw, w, green, igstart, igstop)
+  !----------------------------------------------------------------
+  ! 
+  use parameters
+  use constants
+  use gspace
+  use kspace
+!#ifdef __PARA
+!  USE para
+!  USE mp_global,  ONLY : nproc, mpime, nproc_pool, my_pool_id, me_pool
+!  USE mp, ONLY:  mp_barrier
+!#endif
+  implicit none
+  !
+  real(dbl) :: xxk(3)
+  integer :: ig, igp, nw
+  integer :: igstart, igstop
+  integer :: ig1, ig2, idummy, iw, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
+  real(dbl) :: x, delta, kplusg(3), g2kin(ngm), eval(nbnd_occ)
+  real(dbl) :: eval_all(nbnd), w(nw), w_ryd(nw)
+  complex(dbl) :: vr(nr), gr(ngm), cw
+  complex(dbl) :: psi_all(ngm,nbnd)
+  complex(dbl) :: green(nrs,nrs,nw)
+  complex(kind=DP) ::  ost(ngms,ngms,nbnd), cf(nw,nbnd)
+
+  call start_clock('green_linsys')
+
+  w_ryd = w/ryd2ev
+
+  ! the k-dependent kinetic energy in Ry
+  !
+  do ig = 1, ngm
+    kplusg = xxk + g(:,ig)
+    g2kin ( ig ) = tpiba2 * dot_product ( kplusg, kplusg )
+  enddo
+  !
+  call  eigenstates_all ( vr, g2kin, psi_all, eval_all )
+  !
+  do ibnd = 1, nbnd
+    if (ibnd.le.nbnd_occ) then
+      delta =  1.d0
+    else
+      delta = -1.d0
+    endif
+    do iw = 1, nw
+       ! 2 is for the spin
+       cf(iw,ibnd) = 2.d0 / ( w_ryd(iw) - eval_all(ibnd) - ci * delta * eta)
+    enddo
+  enddo
+  do ig = igstart, igstop
+    do igp = 1, ngms
+      do ibnd = 1, nbnd
+         ost(ig,igp,ibnd) = psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) 
+      enddo
+    enddo
+  enddo
+  !
+  !  loop on bare perturbations ig and fixed k point
+  !
+  green = czero
+  do iw = 1, nw
+    do igp = 1, ngms
+      do ig = igstart, igstop 
+        do ibnd = 1, nbnd
+           green (ig,igp,iw) = green (ig,igp,iw) + ost(ig,igp,ibnd) * cf(iw,ibnd)
+        enddo
+      enddo
+    enddo
+  enddo
+  !
+!  do ig = igstart, igstop
+!    do igp = 1, ngms
+!      do iw = 1, nw
+!        write(100,*) w(iw), real(green (ig,igp,iw)),aimag(green (ig,igp,iw))
+!      enddo
+!    enddo
+!  enddo
+  !
+  call stop_clock('green_linsys')
+  ! 
+  return
+  end subroutine green_linsys
+  !----------------------------------------------------------------
+  !
