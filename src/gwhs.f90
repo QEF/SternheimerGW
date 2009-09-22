@@ -737,8 +737,12 @@
       do ig = igstart, igstop 
         do igp = 1, ngms
           do ibnd = 1, nbnd_occ
+            ! no spin factor here! in <nk|Sigma|nk> only states of the same spin couple
+            ! [cf HL86]
+!           greenf_na (ig,igp) = greenf_na (ig,igp) + &
+!             2.d0 * twopi * ci * psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) 
             greenf_na (ig,igp) = greenf_na (ig,igp) + &
-              2.d0 * twopi * ci * psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) 
+              twopi * ci * psi_all(ig,ibnd)*conjg(psi_all(igp,ibnd)) 
           enddo
         enddo
       enddo

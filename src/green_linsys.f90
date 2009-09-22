@@ -108,7 +108,12 @@
       cw = dcmplx(w_ryd(iw),eta)
       !
       rhs = czero
-      rhs ( ig ) = (-2.d0,0.d0)
+      !
+      ! rhs must be -1: the spin factor does not enter since in <nk|Sigma|nk>
+      ! only states of the same spin couple [cf HL86]
+      !
+!     rhs ( ig ) = (-2.d0,0.d0)
+      rhs ( ig ) = -cone
       !
       lter = 0
       gr_A = czero
@@ -121,7 +126,10 @@
       do ibnd = 1, nbnd_occ
          x = w_ryd(iw) - eval(ibnd)
          dirac = eta / pi / (x**2.d0+eta**2.d0)
-         gr_N = gr_N + 2.d0 * twopi * ci * conjg ( psi(ig,ibnd) ) * psi(1:ngm,ibnd) * dirac
+         !
+         ! no spin factor (see above)
+!        gr_N = gr_N + 2.d0 * twopi * ci * conjg ( psi(ig,ibnd) ) * psi(1:ngm,ibnd) * dirac
+         gr_N = gr_N + twopi * ci * conjg ( psi(ig,ibnd) ) * psi(1:ngm,ibnd) * dirac
       enddo
       !
       gr = gr_A + gr_N
