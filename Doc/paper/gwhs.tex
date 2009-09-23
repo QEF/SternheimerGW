@@ -299,7 +299,7 @@ Appendix~\ref{app.haydock}.
 
 The self-energy in the GW approximation reads:\cite{hl86}
   \begin{equation} \label{eq.sigma}
-  \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\infty}^{+\infty} d\wp 
+  \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\infty}^{+\infty} \!\!\!\!d\wp 
     G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp},
   \end{equation}
 where $\delta$ is a positive infinitesimal. 
@@ -327,10 +327,11 @@ the Coulomb term using a energy cutoff, and integrate analitycally the exchange 
   \Sigma(\r,\rp;\w) = \Sigma^{\rm c}(\r,\rp;\w) + \Sigma^{\rm ex}(\r,\rp),
   \end{equation}
 with
-  \begin{equation}
-  \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc \!\! d\wp
-    G(\r,\rp,\w+\wp) [W(\r,\rp,\wp)-v(\r,\rp)],
-  \end{equation}
+  \begin{eqnarray}
+  \!\!\!\! \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc \!\!& \!\!d\wp &
+    \!\!\! G(\r,\rp,\w+\wp) \nonumber \\ 
+  & \times \!\!& \!\!\!\! [W(\r,\rp,\wp)-v(\r,\rp)],
+  \end{eqnarray}
 and
   \begin{equation}
   \Sigma^{\rm ex}(\r,\rp) = - \sum_v \psi_v^\star(\r)\psi_v(\rp) v(\r,\rp).
@@ -350,16 +351,21 @@ corrections from first-principles.\cite{hl86,balde_tosa,baroni-resta,hl86-prb,re
 We adopt the following convention for the transformation from real
 to reciprocal space:
   \begin{equation}
-  W(\r,\rp;\w) = \frac{1}{\Omega N_\q}  \sum_{\q\G\Gp} W_{\G\Gp}(\q;\w)
+  W(\r,\rp;\w) = \!\!\frac{1}{N_\q\Omega} \!\! \sum_{\q\G\Gp} 
   {\rm e}^{-i(\q+\G)\cdot\r}
+  W_{\G\Gp}(\q;\w)
   {\rm e}^{i(\q+\Gp)\cdot\rp},
   \end{equation}
   \begin{equation}
-  \psi_{n\k}(\rp)=\Omega^{-1/2}\sum_\Gp 
-  {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp),
+  \psi_{n\k}(\r)=\frac{1}{\sqrt{\Omega}}\sum_\G
+  {\rm e}^{i(\k+\G)\cdot\r} u_{n\k}(\G),
   \end{equation}
   \begin{equation}
-  v(\r,\rp) = \frac{1}{\Omega N_\q}  \sum_{\q\G} v(\q+\G)
+  V_{\rm xc}(\r)=\frac{1}{\Omega}\sum_\G
+  {\rm e}^{i\G\cdot\r} V_{\rm xc}(\G),
+  \end{equation}
+  \begin{equation}
+  v(\r,\rp) = \frac{1}{N_\q\Omega}  \sum_{\q\G} v(\q+\G)
   {\rm e}^{i(\q+\G)\cdot(\rp-\r)},
   \end{equation}
 with $v(\r,\rp) = e^2/|\r-\rp|$ and $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
