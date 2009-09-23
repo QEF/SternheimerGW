@@ -14,12 +14,12 @@
 #endif
   implicit none
   !
-  integer :: ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0
-  real(dbl) :: xk0(3), kplusg(3), g2kin(ngm), et(nbnd), w(nw), w_ryd(nw)
-  complex(dbl) :: vr(nr), evc(ngm,nbnd), sigma(ngms,ngms,nw), aux(ngms)
-  complex(kind=DP) :: ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nw)
+  integer :: ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir
+  real(dbl) :: xk0(3), kplusg(3), g2kin(ngm), et(nbnd), w(nw), w_ryd(nw), v_xc(nr)
+  complex(dbl) :: vr(nr), evc(ngm,nbnd), sigma(ngms,ngms,nw), aux(ngms), vpsi(ngm), psic(nr)
+  complex(kind=DP) :: ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nw), vxc(nbnd_sig,nbnd_sig)
   real(dbl) :: resig_diag(nw,nbnd_sig), imsig_diag(nw,nbnd_sig), et_qp(nbnd_sig), a_diag(nw,nbnd_sig)
-  real(dbl) :: resig_diag_tr(nw), imsig_diag_tr(nw), a_diag_tr(nw), et_qp_tr
+  real(dbl) :: resig_diag_tr(nw), imsig_diag_tr(nw), a_diag_tr(nw), et_qp_tr, z_tr, z(nbnd_sig)
   integer :: iman, nman, ndeg(nbnd_sig), ideg
   !
   call start_clock ('sigma_matel')
@@ -50,9 +50,43 @@
   ! (need some sort of parallelization here)
   if (me.eq.1.and.mypool.eq.1) then
 #endif
-  read ( iunsigma, rec = ik0, iostat = ios) sigma
   !
-  ! matrix elements of the self-energy
+  ! MATRIX ELEMENTS OF THE XC POTENTIAL
+  !
+  open(unit=110,file='vxc.dat')
+  rewind(110)
+  do ir = 1, nr
+    read(110,*) v_xc(ir)
+  enddo 
+  close(110)
+  !
+  do jbnd = 1, nbnd_sig
+    !
+    psic = czero
+    do ig = 1, ngm
+      psic ( nl ( ig ) ) = evc(ig, jbnd)
+    enddo
+    call cfft3 ( psic, nr1, nr2, nr3,  1)
+    do ir = 1, nr
+      psic (ir) = psic(ir) * v_xc (ir)
+    enddo
+    call cfft3 ( psic, nr1, nr2, nr3, -1)
+    do ig = 1, ngm
+      vpsi(ig) = psic( nl(ig) )
+    enddo
+    !
+    do ibnd = 1, nbnd_sig
+       vxc(ibnd,jbnd) = ZDOTC (ngm, evc (1, ibnd), 1, vpsi, 1)
+    enddo
+    !
+  enddo
+  !
+  ! MATRIX ELEMENTS OF THE SELF-ENERGY
+  !
+  read ( iunsigma, rec = ik0, iostat = ios) sigma
+!@
+!sigma = sigma / 2.d0 ! HAL silicon.sigma had a wrong spin factor 2
+!@
   !
   ! following the convention in the paper, thsi should be
   ! <i|Sigma|j> = sum_G,G' u_ik^*(-G) <G|Sigma|G'> u_jk(-G')
@@ -83,14 +117,14 @@
   do ibnd = 1, nbnd_sig
     !
     do iw = 1, nw
-      resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) )
+      resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) - vxc(ibnd,ibnd) )
       imsig_diag (iw,ibnd) = aimag ( sigma_band (ibnd, ibnd, iw) )
       a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
          ( abs ( w_ryd(iw) - et(ibnd) - resig_diag (iw,ibnd) )**2.d0 &
           + abs ( imsig_diag (iw,ibnd) )**2.d0 ) 
     enddo
     !
-    call qp_eigval ( nw, w_ryd, resig_diag(1,ibnd), et(ibnd), et_qp (ibnd) )  
+    call qp_eigval ( nw, w_ryd, resig_diag(1,ibnd), et(ibnd), et_qp (ibnd), z(ibnd) )  
     !
   enddo
   !
@@ -121,6 +155,7 @@
     imsig_diag_tr = 0.d0
     a_diag_tr = 0.d0
     et_qp_tr = 0.d0
+    z_tr = 0.d0
     !
     do ideg = 1, ndeg(iman)
       ibnd = ibnd + 1
@@ -128,6 +163,7 @@
       imsig_diag_tr = imsig_diag_tr + imsig_diag (:,ibnd)
       a_diag_tr = a_diag_tr + a_diag (:,ibnd)
       et_qp_tr = et_qp_tr + et_qp (ibnd)
+      z_tr = z_tr + z (ibnd)
     enddo
     !
     do ideg = 1, ndeg(iman)
@@ -136,11 +172,13 @@
       imsig_diag (:,jbnd) = imsig_diag_tr / float( ndeg(iman) )
       a_diag (:,jbnd) = a_diag_tr / float( ndeg(iman) )
       et_qp (jbnd) = et_qp_tr / float( ndeg(iman) )
+      z (jbnd) = z_tr / float( ndeg(iman) )
     enddo
     !
   enddo
   !
-  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3)/)') et_qp(1:nbnd_sig)*ryd2ev
+  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3))') et_qp(1:nbnd_sig)*ryd2ev
+  write(stdout,'(4x,"GW  renorm       ",8(1x,f7.3)/)') z(1:nbnd_sig)
   !
   do iw = 1, nw
     write(stdout,'(9f15.8)') w(iw), (ryd2ev*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
@@ -163,14 +201,14 @@
   return
   end subroutine sigma_matel
   !----------------------------------------------------------------
-  subroutine qp_eigval ( nw, w, sig, et, et_qp )  
+  subroutine qp_eigval ( nw, w, sig, et, et_qp, z )  
   !----------------------------------------------------------------
   !
   use parameters
   use constants
   implicit none
   integer :: nw, iw, iw1, iw2
-  real(DP) :: w(nw), sig(nw), et, et_qp, dw, w1, w2, et_qp0, sig1, sig2
+  real(DP) :: w(nw), sig(nw), et, et_qp, dw, w1, w2, sig_et, sig1, sig2, z, sig_der
   !
   dw = w(2)-w(1)
   !
@@ -187,11 +225,14 @@
   sig1 = sig(iw1)
   sig2 = sig(iw2)
   !
-  et_qp0 = sig1 + ( sig2 - sig1 ) * (et-w1) / (w2-w1)
+  sig_et = sig1 + ( sig2 - sig1 ) * (et-w1) / (w2-w1)
+  !
+  sig_der = ( sig2 - sig1 ) / ( w2 - w1 )
+  z = one / ( one - sig_der)
   !
   ! temporary - until I do not have Vxc
   !
-  et_qp = et_qp0
+  et_qp = et + z * sig_et
   !
   end subroutine qp_eigval
   !----------------------------------------------------------------
