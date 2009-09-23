@@ -12,7 +12,7 @@
     celldm(1) =10.26, 
     nat=  2, 
     ntyp= 1,
-    ecutwfc = 80.0,
+    ecutwfc = 20.0,
  /
  &electrons
     diagonalization='david'
