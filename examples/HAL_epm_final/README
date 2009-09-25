@@ -1,0 +1,10 @@
+
+ This calculation has been done using vxc taken from an espresso-pseudopotential
+ calculation (at the ridiculous cutoff of 5Ry - which actually is not too bad
+ when comparing to vxc at 20Ry).
+
+ The reason is that within EPM I cannot define properly a vxc (well I coul but
+ the density is not necessarily self-consistent with the empirical potential).
+
+
+
