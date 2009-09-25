@@ -19,6 +19,7 @@
   complex(dbl) :: vr(nr), evc(ngm,nbnd), sigma(ngms,ngms,nw), aux(ngms), vpsi(ngm), psic(nr)
   complex(kind=DP) :: ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nw), vxc(nbnd_sig,nbnd_sig)
   real(dbl) :: resig_diag(nw,nbnd_sig), imsig_diag(nw,nbnd_sig), et_qp(nbnd_sig), a_diag(nw,nbnd_sig)
+  real(dbl) :: dresig_diag(nw,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig)
   real(dbl) :: resig_diag_tr(nw), imsig_diag_tr(nw), a_diag_tr(nw), et_qp_tr, z_tr, z(nbnd_sig)
   integer :: iman, nman, ndeg(nbnd_sig), ideg
   !
@@ -43,7 +44,6 @@
   !
   call  eigenstates_all ( vr, g2kin, evc, et )
   !
-  write(stdout,'(4x,"LDA eigenval (eV)",8(1x,f7.3))') et(1:nbnd_sig)*ryd2ev
   !
 #ifdef __PARA
   ! only proc 0 reads from file and does the product
@@ -84,11 +84,8 @@
   ! MATRIX ELEMENTS OF THE SELF-ENERGY
   !
   read ( iunsigma, rec = ik0, iostat = ios) sigma
-!@
-!sigma = sigma / 2.d0 ! HAL silicon.sigma had a wrong spin factor 2
-!@
   !
-  ! following the convention in the paper, thsi should be
+  ! following the convention in the paper, this should be
   ! <i|Sigma|j> = sum_G,G' u_ik^*(-G) <G|Sigma|G'> u_jk(-G')
   !             = sum_G,G' u_i,-k(G) <G|Sigma|G'> [u_j,-k(G')]*
   !
@@ -117,14 +114,15 @@
   do ibnd = 1, nbnd_sig
     !
     do iw = 1, nw
-      resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) - vxc(ibnd,ibnd) )
+      resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) )
+      dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) - real( vxc(ibnd,ibnd) )
       imsig_diag (iw,ibnd) = aimag ( sigma_band (ibnd, ibnd, iw) )
       a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
          ( abs ( w_ryd(iw) - et(ibnd) - resig_diag (iw,ibnd) )**2.d0 &
           + abs ( imsig_diag (iw,ibnd) )**2.d0 ) 
     enddo
     !
-    call qp_eigval ( nw, w_ryd, resig_diag(1,ibnd), et(ibnd), et_qp (ibnd), z(ibnd) )  
+    call qp_eigval ( nw, w_ryd, dresig_diag(1,ibnd), et(ibnd), et_qp (ibnd), z(ibnd) )  
     !
   enddo
   !
@@ -156,6 +154,7 @@
     a_diag_tr = 0.d0
     et_qp_tr = 0.d0
     z_tr = 0.d0
+    vxc_tr = 0.d0
     !
     do ideg = 1, ndeg(iman)
       ibnd = ibnd + 1
@@ -164,6 +163,7 @@
       a_diag_tr = a_diag_tr + a_diag (:,ibnd)
       et_qp_tr = et_qp_tr + et_qp (ibnd)
       z_tr = z_tr + z (ibnd)
+      vxc_tr = vxc_tr + real(vxc(ibnd,ibnd))
     enddo
     !
     do ideg = 1, ndeg(iman)
@@ -173,12 +173,15 @@
       a_diag (:,jbnd) = a_diag_tr / float( ndeg(iman) )
       et_qp (jbnd) = et_qp_tr / float( ndeg(iman) )
       z (jbnd) = z_tr / float( ndeg(iman) )
+      vxc_diag (jbnd) = vxc_tr / float( ndeg(iman) )
     enddo
     !
   enddo
   !
-  write(stdout,'(4x,"GW  expt val (eV)",8(1x,f7.3))') et_qp(1:nbnd_sig)*ryd2ev
-  write(stdout,'(4x,"GW  renorm       ",8(1x,f7.3)/)') z(1:nbnd_sig)
+  write(stdout,'(/4x,"LDA eigenval (eV)",8(1x,f7.3))') et(1:nbnd_sig)*ryd2ev
+  write(stdout,'(4x,"Vxc expt val (eV)",8(1x,f7.3))') vxc_diag(1:nbnd_sig)*ryd2ev
+  write(stdout,'(4x,"GW qp energy (eV)",8(1x,f7.3))') et_qp(1:nbnd_sig)*ryd2ev
+  write(stdout,'(4x,"GW qp renorm     ",8(1x,f7.3)/)') z(1:nbnd_sig)
   !
   do iw = 1, nw
     write(stdout,'(9f15.8)') w(iw), (ryd2ev*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
