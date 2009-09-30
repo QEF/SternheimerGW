@@ -1,0 +1,42 @@
+
+ The idea of using finite differences is a good one in principle,
+ because one could achieve linear scaling.
+
+ However in practice it is not very helpful because the cost of the
+ G-space calculation is
+
+ 2 * 34/9 * nr * log2 ( nr )   (there are two ffts when doing v*psi)
+
+ while the cost of the real-space calculation with a laplacian
+ correct to order h^{2N} is
+
+ NPC * nr * 6 * ( 2 * N + 1 )
+
+ Here NPC takes into account that in ral space the preconditioning
+ cannot be done with a diagonal matrix - by excluding it the number
+ of iterations becomes about 5 times larger than for G-space calcs -
+ therefore we can assume NPC ~ 5.
+
+ Some examples
+
+ nr     G-space ops  R-space ops (order 4)     R-space ops (order 6)
+
+  1,000      52,192           150,000                210,000
+ 10,000     695,892         1,500,000              2,100,000
+ 50,000   4,087,470         7,500,000             10,500,000      
+100,000   8,698,650        15,000,000             21,000,000
+
+ In practice with NPC ~ 5 the G-space technique is always more convenient.
+ This is because log ( x ) is actually very small:
+
+  nr      log( nr ) 
+
+  1,000     6.9
+ 10,000     9.2
+ 50,000    10.8 
+100,000    11.5
+
+ This means that we need to improve the minimization technique (less iterations)
+ as opposed to change the structure of the code.
+ 
+
