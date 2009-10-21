@@ -78,30 +78,67 @@ approaches and illustrate our future development plans.
 
 \section{Introduction}
 
-Importance of GW calculations, Motivation, History of the idea,
-Explanation of where we are and how the manuscript is organized.
+During the past two and a half decades the $GW$ method\cite{hedin1,hl86}
+for the study of electron quasiparticle excitations
+accomulated a number of successes and witnessed a significant growth of interest
+within the computational electronic structure community.
+The $GW$ method is currently being used for predicting electron quasiparticle
+excitation spectra as well as optical spectra in a variety of materials
+ranging from bulk solids to nanostructures and organic systems. The
+$GW$ method is also of widespread use as a starting point for Bethe-Salpeter calculations
+of two-particle neutral excitations.\cite{onida,rolfing,reining-review}
+Current implementations find many diverse applications,
+including among others the simulation of the optical response of nanostructures,\cite{catalin} quantum transport in nanoscale
+junctions,\cite{rubio} pump-probe spectroscopy,\cite{catalin-lw} angle-resolved photoemission
+spectroscopy,\cite{cheolhwan} and strongly-correlated systems.\cite{bruneval-oxide}
 
-Must cite work of HL-dielectric where they discuss the direct approach
-and find it problematic because of the supercell required.
-Must cite Fleszar-Resta and Reining - they calculate epsilon.
-Kunc-Tosatti calculate inveps but they do finite differences
-(calculations with the KS potential + perturbation).
+Current trends in the development of improved computational approaches for
+quasiparticle excitations based on the $GW$ method include the refinement
+of the initial guess for the non-interacting Green's function and for the
+polarization operator,\cite{rinke,schilfegarde}
+the inclusion of approximate vertex corrections or higher-order self-energy
+diagrams\cite{york,bruneval} and the description of the frequency-dependent
+dielectric response beyond the original plasmon-pole approximation.\cite{spacetime,blochl}
+Detailed reviews of past and current developments in $GW$ techniques can be
+found in Refs.\ \onlinecite{hl,gunnarsson,reining,rinke}.
 
-Our novelty is that we do self-consistency by using DFPT
-and generalize DFPT to finite frequency calculations.
+The majority of current implementations obtain the screened Coulomb interaction
+$W$ and the non-interacting Green's function $G$ by using a perturbative
+expansion over the Kohn-Sham wavefunctions (cf. Sec.\ \ref{sec.coulomb}). This expansion
+requires the calculation of both occupied and unoccupied electronic states,
+as well as their associated optical matrix elements.\cite{hl86} A common bottleneck 
+of this approach is that the convergence of the results with the number $N_{\rm c}$ 
+of unoccupied states is rather slow.\cite{sohrab} This is especially true for
+the absolute values of the quasiparticle excitation energies.\cite{bruneval-gonze}
+%
+Several avenues have been explored so far in order to circumvent such bottleneck 
+and to perform $GW$ calculations by employing occupied electronic states only,\cite{reining-sternheimer,umari1,gygi}
+or only a limited number of unoccupied states.\cite{bruneval-gonze}
 
-Important: mention that within this direct scheme we can investigate
-the performance of many XC functionals - doing this using the HL86
-method is very difficult as one need to evaluate complicated functional
-derivatives. 
+In this work we propose a new approach to $GW$ calculations entirely based on
+density functional perturbation theory (DFPT).\cite{baroni.rmp}
+In practice we adopt the principles of DFPT in order to (i) determine the {\it frequency-dependent 
+screened Coulomb interaction} directly
+by solving self-consistent linear response Sternheimer equations,
+and (ii) to determine the non-interacting Green's function by solving
+non self-consistent Sternheimer equations. The main advantage of the proposed method 
+is that it does not make use of unoccupied electronic states.
+The use of the Sternheimer equations for calculating the polarizability
+in the random-phase approximation (RPA) or even the inverse dielectric matrix 
+have already been discussed in Refs.\ \onlinecite{fleszar-resta,kunc-tosatti} 
+within the context of supercell calculations (without DFPT). After the advent
+of DFPT, the authors of Ref.\ \onlinecite{reining-sternheimer} proposed the
+application of non self-consistent Sternheimer methods to the calculation
+of the dielectric matrix.
+The main aim of the present work is to demonstrate the feasibility of $GW$ calculations
+based on {\it self-consistent} DFPT. In addition we investigate the possibility
+of fast evaluations of the frequency dependence of the screened Coulomb interaction
+based on {\it multishift} linear-system solvers.\cite{frommer}
 
-Very important: we can address directly the quasiparticle equation.
-
+The paper is organized as follows. 
 
 \section{Overview of the methodology}
 
-Our approach is currently implemented in the empirical
-pseudopotential code {\tt OxfordGW}.\cite{oxfordgw}
 
 \section{Screened Coulomb interaction}\label{sec.coulomb}
 
@@ -993,6 +1030,66 @@ dependence, then the shifted method would prove advantageous.
 
 \begin{thebibliography}{99}
 
+\bibitem{hedin1}
+L. Hedin,
+Phys.\ Rev.\ {\bf 139}, A796 (1965).
+
+\bibitem{hl86}
+M. Hybertsen and S. G. Louie,
+Phys.\ Rev.\ B {\bf 34}, 5390 (1986).
+
+\bibitem{onida}
+G. Onida, L. Reining, R. W. Godby, R. Del Sole, and W. Andreoni, 
+Phys.\ Rev.\ Lett.\ {\bf 75}, 818 (1995).
+
+\bibitem{rolfing}
+M. Rohlfing and S. G. Louie,
+Phys.\ Rev.\ B {\bf 62}, 4927 (2000).
+
+\bibitem{reining-review}
+G. Onida, L. Reining, and A. Rubio,
+Rev.\ Mod.\ Phys.\ {\bf 74}, 601 (2002).
+
+\bibitem{catalin} 
+C. D. Spataru, S. Ismail-Beigi, L. X. Benedict, and S. G. Louie,
+Phys.\ Rev.\ Lett.\ {\bf 92}, 077402 (2004).
+
+\bibitem{rubio} 
+K. S. Thygesen1 and A. Rubio,
+Phys.\ Rev.\ B {\bf 77}, 115333 (2008).
+
+\bibitem{catalin-lw} 
+C. D. Spataru, M. A. Cazalilla, A. Rubio, L. X. Benedict, P. M. Echenique, and S. G. Louie,
+Phys.\ Rev.\ Lett.\ {\bf 87}, 246405 (2001).
+
+\bibitem{cheolhwan}
+C.-H. Park, F. Giustino, M. L. Cohen, and S. G. Louie,
+Nano Lett.\ {\bf XX}, XXXX (2009).
+
+\bibitem{bruneval-oxide}
+M. Gatti, F. Bruneval, V. Olevano, and L. Reining,
+Phys.\ Rev.\ Lett.\ {\bf 99} 266402 (2007).
+
+\bibitem{rinke}
+P. Rinke, A. Qteish, J. Neugebauer, C. Freysoldt, and M. Scheffler, 
+New J.\ Phys.\ {\bf 7}, 126 (2005). 
+
+\bibitem{schilfegarde}
+M. van Schilfgaarde, T. Kotani, and S. Faleev,
+Phys.\ Rev.\ Lett.\ {\bf 96}, 226402 (2006).
+
+\bibitem{york}
+higher-order diagrams?
+
+\bibitem{bruneval}
+higher-order diagrams? 
+
+\bibitem{spacetime}
+H. N. Rojas, R. W. Godby, and R. J. Needs,
+Phys.\ Rev.\ Lett.\ {\bf 74}, 1827 (1995).
+
+\bibitem{blochl}
+
 \bibitem{hl}
 L. Hedin and S. Lundqvist,
 Effects of the electron-electron and the electron-phonon interaction in
@@ -1000,9 +1097,41 @@ the one-electron states of solids,
 in {\it Solid State Physics}, ed. by F. Seitz, D. Turnbull, and
 H. Ehrenreich, (Academic, New York, 1969), vol.\ 23, pag. 1.
 
-\bibitem{hl86}
-M. Hybertsen and S. G. Louie, 
-Phys.\ Rev.\ B {\bf 34}, 5390 (1986).
+\bibitem{gunnarsson}
+
+\bibitem{reining}
+
+\bibitem{sohrab} 
+
+\bibitem{bruneval-gonze}
+F. Bruneval and X. Gonze,
+Phys.\ Rev.\ B {\bf 78} 085125 (2008).
+
+\bibitem{reining-sternheimer}
+L. Reining, G. Onida, and R. W. Godby, 
+Phys.\ Rev.\ B {\bf 56} R4301 (1997).
+
+
+\bibitem{umari1}
+
+\bibitem{gygi}
+
+\bibitem{baroni.rmp}
+S. Baroni, S. de Gironcoli, A. Dal Corso, and P. Giannozi, 
+Rev.\ Mod.\ Phys.\ {\bf 73}, 515 (2001).
+
+\bibitem{fleszar-resta}
+
+\bibitem{kunc-tosatti}
+K. Kunc and E. Tosatti,
+Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
+
+\bibitem{frommer}
+A. Frommer,
+Computing {\bf 70}, 87 (2003).
+
+
+
 
 \bibitem{painless.cg}
 G.\ H.\ Golub and C.\ F.\ Van Loan, {\it Matrix Computations} (John Hopkins University Press, Baltimore, 1983).
@@ -1010,10 +1139,6 @@ G.\ H.\ Golub and C.\ F.\ Van Loan, {\it Matrix Computations} (John Hopkins Univ
 \bibitem{jacobs}
 D.\ A.\ H.\ Jacobs,
 IMA J.\ Numer.\ Anal.\ {\bf 6}, 446 (1986).
-
-\bibitem{baroni.rmp}
-S. Baroni, S. de Gironcoli, A. Dal Corso, and P. Giannozi, 
-Rev.\ Mod.\ Phys.\ {\bf 73}, 515 (2001).
 
 \bibitem{tpa}
 M. P. Teter, M. C. Payne, and D. C. Allan,
@@ -1042,14 +1167,6 @@ We used the implementation available from the
 {\tt E04CCF} routine of the {\tt NAG} library
 ({\tt www.nag.co.uk}).
 
-\bibitem{frommer}
-A. Frommer,
-Computing {\bf 70}, 87 (2003).
-
-\bibitem{reining}
-L. Reining, G. Onida, and R. W. Godby, 
-Phys.\ Rev.\ B {\bf 56} R4301 (1997).
-
 \bibitem{simoncini}
 V. Simoncini and D. B. Szyld,
 Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
@@ -1077,14 +1194,6 @@ Phys.\ Rev.\ B {\bf 35}, 5585 (1976).
 \bibitem{cpm}
 R. M. Pick, M. H. Cohen, and R. M. Martin,
 Phys.\ Rev.\ B {\bf 1}, 910 (1970). 
-
-\bibitem{kunc}
-K. Kunc and E. Tosatti,
-Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
-
-\bibitem{oxfordgw}
-Borrowing some subs from espresso - developed by FG - will become
-GNU - need to be ported to main packages.
 
 \bibitem{alavi}
 J. Spencer and A. Alavi.
