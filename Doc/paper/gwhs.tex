@@ -112,35 +112,61 @@ of unoccupied states is rather slow.\cite{sohrab} This is especially true for
 the absolute values of the quasiparticle excitation energies.\cite{bruneval-gonze}
 %
 Several avenues have been explored so far in order to circumvent such bottleneck 
-and to perform $GW$ calculations by employing occupied electronic states only,\cite{reining-sternheimer,umari1,gygi}
+and to perform $GW$ calculations by employing occupied electronic states only,\cite{reining-sternheimer,umari1,umari2,gygi}
 or only a limited number of unoccupied states.\cite{bruneval-gonze}
 
-In this work we propose a new approach to $GW$ calculations entirely based on
-density functional perturbation theory (DFPT).\cite{baroni.rmp}
-In practice we adopt the principles of DFPT in order to (i) determine the {\it frequency-dependent 
-screened Coulomb interaction} directly
+
+The main aim of the present work is to demonstrate the feasibility of $GW$ calculations
+entirely based on density functional perturbation theory (DFPT).\cite{baroni.rmp}
+In practice we adopt the principles of DFPT in order to (i) determine 
+the {\it frequency-dependent screened Coulomb interaction} directly
 by solving self-consistent linear response Sternheimer equations,
 and (ii) to determine the non-interacting Green's function by solving
 non self-consistent Sternheimer equations. The main advantage of the proposed method 
 is that it does not make use of unoccupied electronic states.
-The use of the Sternheimer equations for calculating the polarizability
-in the random-phase approximation (RPA) or even the inverse dielectric matrix 
-have already been discussed in Refs.\ \onlinecite{fleszar-resta,kunc-tosatti} 
-within the context of supercell calculations (without DFPT). After the advent
-of DFPT, the authors of Ref.\ \onlinecite{reining-sternheimer} proposed the
-application of non self-consistent Sternheimer methods to the calculation
-of the dielectric matrix.
-The main aim of the present work is to demonstrate the feasibility of $GW$ calculations
-based on {\it self-consistent} DFPT. In addition we investigate the possibility
-of fast evaluations of the frequency dependence of the screened Coulomb interaction
+Additionally we investigate the possibility of fast evaluations of 
+the frequency dependence of the screened Coulomb interaction
 based on {\it multishift} linear-system solvers.\cite{frommer}
+%
+As a proof of concept we have implemented the method within
+a planewaves empirical pseudopotential approach,\cite{cohen_berg} 
+and tested it for the case of silicon.
 
-The paper is organized as follows. 
+The uses of the Sternheimer equation for calculating the polarizability
+in the random-phase approximation (RPA) or the inverse dielectric matrix 
+have already been discussed in Refs.\ \onlinecite{fleszar-resta,kunc-tosatti} 
+within the context of supercell calculations. After the introduction 
+of DFPT in the context of lattice-dynamical calculations,\cite{giannozzi} 
+the authors of Ref.\ \onlinecite{reining-sternheimer} proposed the
+use of the non self-consistent Sternheimer method for the calculation
+of the dielectric matrix. The elimination of unoccupied electronic states
+in the evaluation of the screened Coulomb interaction has also been 
+proposed recently within the framework of a Wannier-like representation
+of the polarization propagator, based on the Lanczos method.\cite{umari1,umari2}
 
-\section{Overview of the methodology}
+The paper is organized as follows. In Sec.\ \ref{sec.theory} we describe
+how the DFPT formalism can be adapted in order to perform $GW$ calculations.
+In particular we outline the procedure to obtain the screened Coulomb
+interaction $W$ in Sec.\ \ref{sec.coulomb}, the non-interacting Green's function
+$G$ in Sec.\ \ref{sec.green}, and their product $GW$ in Sec.\ \ref{sec.sigma}.
+In Sec.\ \ref{sec.theory.g} we specialize to a planewave basis set representation
+and we derive the key equations for the case of Bloch electrons.
+Sections \ref{sec.coulomb.g}, \ref{sec.green.g}, \ref{sec.sigma.g}
+parallel the corresponding sections in the general theory part, respectively.
+In Sec.\ \ref{sec.results} we report the results of our test calculations
+for silicon and compare with the existing literature.
+In Sec.\ \ref{sec.discussion} we critically analyze the advantages 
+and disadvantages of the present approach, with an emphasis on the
+scaling of the calculations with system size. We also discuss
+present and future developments of our method.
+Section \ref{sec.conclusion} summarizes our findings and put them
+in context with respect to alternative existing approaches.
+The Appendices provide technical details on some numerical algorithms adopted
+in this work.
 
+\section{General theory}\label{sec.theory}
 
-\section{Screened Coulomb interaction}\label{sec.coulomb}
+\subsection{Screened Coulomb interaction}\label{sec.coulomb}
 
 In this section we describe in general terms how to exploit density-functional
 perturbation theory in order to calculate the screened Coulomb interaction
@@ -255,7 +281,7 @@ interaction is achieved. This procedure can be regarded as the extension
 of the DFPT for lattice-dynamical calculations to finite-frequency
 point-charge perturbations.
 
-\section{Green's function}\label{sec.green}
+\subsection{Green's function}\label{sec.green}
 
 In this section we describe our scheme for calculating the noninteracting
 Green's function without having the determine unoccupied electronic states.
@@ -332,7 +358,7 @@ the expansion over unoccupied states Eq.\ (\ref{eq.green.3}).
 Our efforts along the lines of Haydock's recursion are summarized in
 Appendix~\ref{app.haydock}.
 
-\section{Self-energy}\label{sec.sigma}
+\subsection{Self-energy}\label{sec.sigma}
 
 The self-energy in the GW approximation reads:\cite{hl86}
   \begin{equation} \label{eq.sigma}
@@ -375,9 +401,9 @@ and
   \end{equation}
 
 
-\section{Technical implementation}
+\section{Implementation in a basis of planewaves}\label{sec.theory.g}
 
-\subsection{Screened Coulomb interaction in reciprocal space}
+\subsection{Screened Coulomb interaction}\label{sec.coulomb.g}
 
 We have implemented the scheme presented in Sec.\ \ref{sec.coulomb}
 within a reciprocal space formalism. This choice allows us to make
@@ -555,7 +581,7 @@ vanishing projections on the occupied manifold, this additional term removes
 the null eigenvalues of the linear system thereby making it non singular.
 This is discusses in detail in Appendix \ref{app.condition}.
 
-\subsection{Green's function in reciprocal space}\label{sec.green.g}
+\subsection{Green's function}\label{sec.green.g}
 
 We here derive the formalism for the calculation of the Green's function
 in reciprocal space, using the procedure outlined in Sec.\ \ref{sec.green}.
@@ -605,8 +631,9 @@ However the system can become ill-conditioned, therefore the use of appropriate
 preconditioners is required in this case. We discuss this point
 in Appendix~\ref{app.condition}.
  
+\subsection{Self-energy}\label{sec.sigma.g}
 
-\section{Results}
+\section{Results}\label{sec.results}
 
 % table: 1col, table* 2col
 \begin{table}[b!]
@@ -651,12 +678,12 @@ in terms of self-consistent solution of the linear system.
 
 \subsection{Polarization propagator beyond the random-phase approximation}\label{sec.beyond_rpa}
 
-\section{Scaling properties}
+\section{Discussion}
 
 \subsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
 \subsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
 
-\section{Conclusions and outlook}
+\section{Conclusions}
 
 In practice other solutions are possible such as $f(\r,\rp;\w) = \sum_i f_{[i,\w]}(\rp) \, \phi_i(\r)$
 if the basis $\phi_i(\r)$ is complete and orthonormal. We considered two classical
@@ -1114,6 +1141,8 @@ Phys.\ Rev.\ B {\bf 56} R4301 (1997).
 
 \bibitem{umari1}
 
+\bibitem{umari2}
+
 \bibitem{gygi}
 
 \bibitem{baroni.rmp}
@@ -1129,6 +1158,10 @@ Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
 \bibitem{frommer}
 A. Frommer,
 Computing {\bf 70}, 87 (2003).
+
+\bibitem{cohen_berg}
+M. L. Cohen and T. K. Bergstresser,
+Phys.\ Rev.\ {\bf 141}, 789 (1966).
 
 
 
@@ -1174,10 +1207,6 @@ Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
 \bibitem{balde_tosa}
 A. Baldereschi and E. Tosatti,
 Phys.\ Rev.\ B {\bf 17}, 4710 (1978).
-
-\bibitem{cohen_berg}
-M. L. Cohen and T. K. Bergstresser,
-Phys.\ Rev.\ {\bf 141}, 789 (1966).
 
 \bibitem{baroni-resta}
 S. Baroni and R. Resta,
