@@ -172,7 +172,7 @@ the susceptibility at multiple frequencies (Appendix \ref{app.multishift}).
 
 \subsection{Screened Coulomb interaction}\label{sec.coulomb}
 
-In this section we describe in general terms how to exploit density-functional
+In this section we describe how to exploit density-functional
 perturbation theory in order to calculate the screened Coulomb interaction
 $W(\r,\rp;\w)$ (where $\r$, $\rp$ are the space variables and $\w$ is the
 excitation frequency). We assume Rydberg atomic units throughout this manuscript. 
@@ -183,61 +183,66 @@ interaction reads:\cite{hl}
   W(\r,\rp;\w) & = & v(\r,\rp) + \int d\rpp \,W(\r,\rpp;\w)  \nonumber \\
    & \times & \int d\rppp P(\rpp,\rppp;\w) v(\rppp,\rp),
   \end{eqnarray}
-$v(\r,\rp)=e^2/|\r-\rp|$ being the bare Coulomb interaction and 
+where $v(\r,\rp)=e^2/|\r-\rp|$ denotes the bare Coulomb interaction and 
 $P(\r,\rp;\w)$ the irreducible polarization propagator. 
 Since Eq.\ (\ref{eq.w}) is a self-consistent Dyson equation for the
 screened interaction, it is in principle possible to solve it
 recursively, in the spirit of density-functional perturbation theory.
 For simplicity, we here specialize to the case of the random-phase approximation (RPA)
-for the polarization propagator. We will show in Sec.\ \ref{sec.beyond_rpa}
-that the generalization of this procedure to include exchange and correlation
-effects can be performed without difficulties.
+for the polarization propagator. 
+The generalization of this procedure to include exchange and correlation
+effects can be performed without difficulties (cf.\ Sec.\ \ref{sec.beyond_rpa}).
 Within the random-phase approximation the polarization propagator can be written as:\cite{hl}
 % [Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
   \begin{equation}\label{eq.p}
-  P(\r,\rp;\w) = 2\sum_{n,m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
+  P(\r,\rp;\w) = 2\sum_{n m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
   \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
   \end{equation}
 where $\psi_n(\r)$ indicates an electronic wavefunctions for the
-effective single-particle Hamiltonian (say the Kohn-Sham states)
+effective single-particle Hamiltonian 
 with energy eigenvalue $\E_n$ and occupation number $f_n$. 
+In the following we assume that the $\psi_n(\r)$ are Kohn-Sham
+eigenstates for definitness.
 In Eq.\ (\ref{eq.p}) the summation indices $m$ and $n$ run over
-occupied and unoccupied states, and the factor 2 accounts for the
+both occupied and unoccupied states, and the factor of 2 accounts for the
 spin degeneracy.\cite{hl}
-Although the expression for the RPA polarization Eq.\ (\ref{eq.p})
-has been derived for real frequencies,\cite{hl} we can continue
-$P(\r,\rp;\w)$ throughout the complex plane by using Eq.~(\ref{eq.p})
-as a definition outside of the real axis.
-From Eq.\ (\ref{eq.p}) we derive immediately the property 
-$P(\r,\rp;-\w^\star)=P^\star(\r,\rp;\w)$.
-In addition, by using time-reversal symmetry we obtain $P(\r,\rp;-\w)=P^\star(\r,\rp;\w)$,
-therefore $W(\r,\rp;-\w)=W^\star(\r,\rp;\w)$.
+Although the expression for the RPA polarization Eq.~(\ref{eq.p})
+has been derived for real frequencies in Ref.\ \onlinecite{hl}, it
+is possible to continue the polarization $P$ throughout the complex 
+plane by using Eq.~(\ref{eq.p}) as a definition outside of the real axis.
+In the absence of external magnetic fields we can exploit time-reversal 
+symmetry in Eq.\ (\ref{eq.p}) to obtain $P(\r,\rp;-\w)=P(\r,\rp;\w)$.
+As a consequence we have also $W(\r,\rp;-\w)=W(\r,\rp;\w)$ from Eq.\ (\ref{eq.w}).
 
-Our goal now is to rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p})
-without performing summations over the unoccupied states.
+Our goal is now to rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p})
+in such a way to avoid explicit summations over the unoccupied states.
 For this purpose it is convenient to regard the screened interaction
 $W(\r,\rp;\w)$ as a function of the 
-second space variable $\rp$, parametric in the first space variable 
-$\r$ and in the frequency $\w$: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
-The perturbation $\Delta V_{[\r,\w]}(\rp)$ induces to first-order 
-a frequency-dependent variation $\Delta n_{[\r,\w]}$ of the single-particle 
-dielectric matrix. Within the RPA approximation such
-variation can be calculated as:
+second space variable $\rp$, with the first space variable 
+$\r$ and the frequency $\w$ taken as parameters: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
+If the system under consideration is subject to the perturbation
+$\Delta V_{[\r,\w]}(\rp)$, then within the RPA the first-order variation 
+of the single-particle density matrix $\Delta n_{[\r,\w]}$ reads
   \begin{equation}\label{eq.deltan}
   \Delta n_{[\r,\w]} = 2\sum_{v\s} \psi_v^\star  \Delta \psi^\s_{v[\r,\w]}.
   \end{equation}
 In Eq.\ (\ref{eq.deltan}) the index $v$ stands for ``valence'' and runs
 over the occupied states only, the factor of 2 is for the spin degeneracy, 
-and $\sigma=\pm$ (not to be confused with the spin).
-The linear variations of the occupied wavefunctions $\Delta \psi^\s_{v[\r,\w]}$
-are obtained by solving the inhomogeneous linear systems (Sternheimer equation):
+and the superscript $\sigma=\pm$ refer to the positive and negative
+frequency components of the induced charge.
+The first-order variations of the occupied wavefunctions $\Delta \psi^\s_{v[\r,\w]}$
+can be determined by solving the following two inhomogeneous linear systems (Sternheimer equations):
   \begin{equation}\label{eq.linsys.1}
   (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_v, 
   \end{equation}
-where $\H$ is the effective single-particle Hamiltonian and $\P$ is the projector
+where $\H$ is the effective (Kohn-Sham) single-particle Hamiltonian and 
+$\P=\sum_v |\psi_v\rangle\langle\psi_v|$ is the projector
 on the occupied manifold. 
-Equation (\ref{eq.deltan}) is the generalization to finite-frequency perturbations
-of the induced charge found in density-functional perturbation theory.\cite{baroni.rmp} 
+Equations (\ref{eq.deltan}),(\ref{eq.linsys.1}) can be regarded as 
+the generalization to finite-frequency perturbations of the corresponding DFPT equations
+used for lattice-dynamical calculations.\cite{baroni.rmp} 
+
+@@@@@@@@@@@@@@@@@@
 The standard DFPT result is recovered for $\w=0$ as the $\sigma=\pm$ variations
 of the wavefunctions do coincide in that case.
 The Hartree potential associated with the induced charge $\Delta n_{[\r,\w]}$
