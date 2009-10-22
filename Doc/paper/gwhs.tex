@@ -59,16 +59,16 @@ Berkeley, California 94720, USA}
 \date{\today}
 
 \begin{abstract}
-We propose a new approach to quasiparticle GW calculations based on the
-direct evaluation of the Green's function and of the screened Coulomb interaction.
-The Green's function is computed by using Haydock's recursion method,
-and the screened Coulomb interaction is computed by using density-functional
-perturbation theory. The frequency-dependent screened Coulomb interaction 
-is explicitely calculated along the imaginary axis and analytically continued 
-to the real axis using Pad\'e functions. We implemented the
-proposed method within the empirical pseudopotential formalism and 
-we studied silicon as a test case. We compare our new method with existing
-approaches and illustrate our future development plans.
+We propose a new approach to quasiparticle GW calculations which 
+is based on density-functional perturbation theory and
+does not require the calculation of unoccupied electronic states. The screened Coulomb interaction
+is evaluated by solving self-consistent linear-response Sternheimer equations,
+and the noninteracting Green's function is evaluated by solving non self-consistent
+Sternheimer equations. The frequency-dependence of the screened Coulomb interaction 
+is explicitely taken into account by performing calculations along the imaginary
+frequency axis and then using Pad\'e approximants for the analytical continuation
+to real frequencies. As a proof of concept we implemented the proposed method 
+within the empirical pseudopotential formalism and we studied silicon as a test case. 
 \end{abstract}
 
 \pacs{71.15.-m, % Methods of electronic structure calculations
@@ -97,10 +97,10 @@ quasiparticle excitations based on the $GW$ method include the refinement
 of the initial guess for the non-interacting Green's function and for the
 polarization operator,\cite{rinke,schilfegarde}
 the inclusion of approximate vertex corrections or higher-order self-energy
-diagrams\cite{york,bruneval} and the description of the frequency-dependent
+diagrams\cite{york} and the description of the frequency-dependent
 dielectric response beyond the original plasmon-pole approximation.\cite{spacetime,blochl}
 Detailed reviews of past and current developments in $GW$ techniques can be
-found in Refs.\ \onlinecite{hl,gunnarsson,reining,rinke}.
+found in Refs.\ \onlinecite{hl,gunnarsson,reining-review,rinke}.
 
 The majority of current implementations obtain the screened Coulomb interaction
 $W$ and the non-interacting Green's function $G$ by using a perturbative
@@ -162,7 +162,11 @@ present and future developments of our method.
 Section \ref{sec.conclusion} summarizes our findings and put them
 in context with respect to alternative existing approaches.
 The Appendices provide technical details on some numerical algorithms adopted
-in this work.
+in this work, in particular
+the preconditioned complex biconjugate gradient method (Appendix \ref{app.cbcg}),
+the analytic continuation using Pad\'e approximants (Appendix \ref{app.pade}),
+and the use of multishift methods for the simultaneous calculation of 
+the susceptibility at multiple frequencies (Appendix \ref{app.multishift}).
 
 \section{General theory}\label{sec.theory}
 
@@ -349,14 +353,6 @@ In the present case of the Green's function, we do not need to update
 self-consistently the rhs of Eq.\ (\ref{eq.green.3}), therefore the
 effort for computing the Green's function is considerably smaller
 than for the screened Coulomb interaction.
-
-Prior to developing the above procedure, our initial strategy was to adopt 
-the Haydock's recursion method.\cite{haydock1}
-However we found out that, in terms of computational effort,
-the recursion method is not competitive with the calculation using
-the expansion over unoccupied states Eq.\ (\ref{eq.green.3}).
-Our efforts along the lines of Haydock's recursion are summarized in
-Appendix~\ref{app.haydock}.
 
 \subsection{Self-energy}\label{sec.sigma}
 
@@ -678,12 +674,12 @@ in terms of self-consistent solution of the linear system.
 
 \subsection{Polarization propagator beyond the random-phase approximation}\label{sec.beyond_rpa}
 
-\section{Discussion}
+\section{Discussion}\label{sec.discussion}
 
 \subsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
 \subsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
 
-\section{Conclusions}
+\section{Conclusions}\label{sec.conclusion}
 
 In practice other solutions are possible such as $f(\r,\rp;\w) = \sum_i f_{[i,\w]}(\rp) \, \phi_i(\r)$
 if the basis $\phi_i(\r)$ is complete and orthonormal. We considered two classical
@@ -834,7 +830,7 @@ is the expectation value of the kinetic energy of the highest occupied state
 and is independent of the basis set cutoff. Numerical tests confirm that this 
 is indeed a sensible strategy.
 
-\section{Preconditioned complex biconjugate gradient method}
+\section{Preconditioned complex biconjugate gradient method}\label{app.cbcg}
 
 As the {\tt cBiCG} algorithm was introduced in Ref.\ \onlinecite{jacobs} 
 without preconditioning, in this section we describe the preconditioned version 
@@ -907,7 +903,7 @@ with respect to the overall cost of the {\tt cBiCG} method.
 In this work we have used the preconditioned {\tt cBiCG} method 
 by adopting the Teter-Payne-Allan function as the preconditioner $M^{-1}$.\cite{tpa}
 
-\section{Analytic continuation using Pad\'e approximants}
+\section{Analytic continuation using Pad\'e approximants}\label{app.pade}
 
 In order to perform the analytic continuation of the screened Coulomb interaction
 from the imaginary axis to the real axis in the complex frequency plane, we employ diagonal 
@@ -1053,8 +1049,6 @@ iterations (assuming that the cost of matrix inversion is negligible).
 On the other hand, if we need an ultra-fine sampling of the frequency
 dependence, then the shifted method would prove advantageous.
 
-\section{Calculation of the Green's function using Haydock's recursion method}\label{app.haydock}
-
 \begin{thebibliography}{99}
 
 \bibitem{hedin1}
@@ -1106,16 +1100,16 @@ M. van Schilfgaarde, T. Kotani, and S. Faleev,
 Phys.\ Rev.\ Lett.\ {\bf 96}, 226402 (2006).
 
 \bibitem{york}
-higher-order diagrams?
-
-\bibitem{bruneval}
-higher-order diagrams? 
+A. Schindlmayr and R. W. Godby,
+Phys.\ Rev.\ Lett.\ {\bf 80}, 1702 (1998).
 
 \bibitem{spacetime}
 H. N. Rojas, R. W. Godby, and R. J. Needs,
 Phys.\ Rev.\ Lett.\ {\bf 74}, 1827 (1995).
 
 \bibitem{blochl}
+S. Lebegue, B. Arnaud, M. Alouani, and P. E. Bl\"ochl,
+Phys.\ Rev.\ B {\bf 67}, 155208 (2003). 
 
 \bibitem{hl}
 L. Hedin and S. Lundqvist,
@@ -1125,10 +1119,12 @@ in {\it Solid State Physics}, ed. by F. Seitz, D. Turnbull, and
 H. Ehrenreich, (Academic, New York, 1969), vol.\ 23, pag. 1.
 
 \bibitem{gunnarsson}
-
-\bibitem{reining}
+F. Aryasetiawan and O. Gunnarsson,
+Rep.\ Prog.\ Phys.\ {\bf 61}, 237 (1998). 
 
 \bibitem{sohrab} 
+M. L. Tiago, S. Ismail-Beigi, and S. G. Louie,
+Phys.\ Rev.\ B {\bf 69}, 125212 (2004).
 
 \bibitem{bruneval-gonze}
 F. Bruneval and X. Gonze,
@@ -1138,22 +1134,33 @@ Phys.\ Rev.\ B {\bf 78} 085125 (2008).
 L. Reining, G. Onida, and R. W. Godby, 
 Phys.\ Rev.\ B {\bf 56} R4301 (1997).
 
-
 \bibitem{umari1}
+P. Umari, G. Stenuit, and S. Baroni,
+Phys.\ Rev.\ B {\bf 79}, 201104(R) (2009).
 
 \bibitem{umari2}
+P. Umari, G. Stenuit and S. Baroni,
+arXiv:0910.0791.
 
 \bibitem{gygi}
+H. F. Wilson, D. Lu, F. Gygi, and G. Galli,
+Phys.\ Rev.\ B {\bf 79}, 245106 (2009).
 
 \bibitem{baroni.rmp}
 S. Baroni, S. de Gironcoli, A. Dal Corso, and P. Giannozi, 
 Rev.\ Mod.\ Phys.\ {\bf 73}, 515 (2001).
 
 \bibitem{fleszar-resta}
+A. Fleszar and R. Resta,
+Phys.\ Rev.\ B {\bf 31}, 5305 (1985).
 
 \bibitem{kunc-tosatti}
 K. Kunc and E. Tosatti,
 Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
+
+\bibitem{giannozzi}
+S. Baroni, P. Giannozzi, and A. Testa,
+Phys.\ Rev.\ Lett.\ {\bf 58}, 1861 (1987).
 
 \bibitem{frommer}
 A. Frommer,
@@ -1227,10 +1234,6 @@ Phys.\ Rev.\ B {\bf 1}, 910 (1970).
 \bibitem{alavi}
 J. Spencer and A. Alavi.
 Phys.\ Rev.\ B {\bf 77} 193110 (2008).
-
-\bibitem{marzari}
-
-\bibitem{haydock1}
 
 \end{thebibliography}
 
