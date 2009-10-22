@@ -241,88 +241,103 @@ on the occupied manifold.
 Equations (\ref{eq.deltan}),(\ref{eq.linsys.1}) can be regarded as 
 the generalization to finite-frequency perturbations of the corresponding DFPT equations
 used for lattice-dynamical calculations.\cite{baroni.rmp} 
-
-@@@@@@@@@@@@@@@@@@
-The standard DFPT result is recovered for $\w=0$ as the $\sigma=\pm$ variations
+In the particular case of vanishing frequency ($\w=0$)
+the standard DFPT equations are recovered as the $\sigma=\pm$ variations
 of the wavefunctions do coincide in that case.
-The Hartree potential associated with the induced charge $\Delta n_{[\r,\w]}$
-can be calculated as
+The screening Hartree potential associated with the induced charge 
+$\Delta n_{[\r,\w]}$ is calculated as usual through
   \begin{equation}
   \Delta V^{\rm H}_{[\r,\w]}(\rp) = \int d\rpp \Delta n_{[\r,\w]} (\rpp) \, v(\rpp,\rp),
   \end{equation}
-and finally the screened Coulomb interaction in the RPA approximation becomes
+and finally the screened Coulomb interaction in the RPA approximation is obtained as 
   \begin{equation}\label{eq.w.dfpt}
   W(\r,\rp;\w) = \Delta V_{[\r,\w]}(\rp) = v(\r,\rp) + \Delta V^{\rm H}_{[\r,\w]}(\rp).
   \end{equation}
-It is straightforward to verify that Eqs.\ (\ref{eq.deltan})-(\ref{eq.w.dfpt})
-are {\it equivalent} to our original Eqs.\ (\ref{eq.w})-(\ref{eq.p}).
-The only assumptions made in the derivations are that (i) time-reversal symmetry applies,
-(ii) the off-diagonal components of the screened interaction in the spin space
-can be neglected, and (iii) that the system under consideration presents a finite 
-energy gap. The assumption on time-reversal symmetry is not essential and is mainly used to
-obtain a compact expression for the wavefunction perturbations at
-$\pm\w$. The assumption on the finite gap can be removed by following the extension
-of DFPT to metallic systems developed in Ref.\ \onlinecite{degironcoli}. 
-Direct substitution into Eq.\ (\ref{eq.linsys.1}) shows that 
-$\Delta \psi^\s_{v[\r,-\w^\star]} = \Delta \psi_{v[\r,\w]}^{-\s\star}$,
-therefore $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$ as expected
-from the properties of the RPA polarization propagator.
 
-There is an intuitive physical meaning associated with the calculation scheme developed above.
-We consider an external point charge introduced in the system
+It is tedious but otherwise straightforward to verify that 
+Eqs.\ (\ref{eq.deltan})-(\ref{eq.w.dfpt}) are {\it equivalent} to the 
+original Eqs.\ (\ref{eq.w})-(\ref{eq.p}).
+The only assumptions made during our the derivation are that 
+time-reversal symmetry applies,
+%, (ii) the off-diagonal components 
+%of the screened interaction in the spin space
+%can be neglected, 
+and that the system under consideration presents a finite 
+energy gap for electronic excitations. 
+The assumption of time-reversal symmetry is not essential and is mainly used to
+obtain a compact expression for the $\sigma=\pm$ wavefunction perturbations.
+The assumption of finite energy gap can be relaxed by using the extension
+of DFPT to metallic systems developed in Ref.\ \onlinecite{degironcoli}. 
+
+%Direct substitution into Eq.\ (\ref{eq.linsys.1}) shows that 
+%$\Delta \psi^\s_{v[\r,-\w^\star]} = \Delta \psi_{v[\r,\w]}^{-\s\star}$,
+%therefore $\Delta n_{[\r,-\w^\star]}=\Delta n^\star_{[\r,\w]}$ as expected
+%from the properties of the RPA polarization propagator.
+
+There is a simple and intuitive physical meaning associated with 
+the calculation scheme here outlined. To see this
+we consider an external {\it test charge} introduced in the system
 at the point $\r$. This charge generates a bare Coulomb potential $v(\r,\rp)$,
-and the system reacts to the perturbation by generating an induced charge
-at the points $\rp$ given by $\Delta n_{[\r,\w]}(\rp)$ and the associated 
+and the system reacts to the perturbation by generating the induced charge
+given by $\Delta n_{[\r,\w]}(\rp)$ and the associated 
 screening potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$.
 The sum of the external perturbation $v(\r,\rp)$ and the screening
-potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$ gives the (RPA) screened Coulomb
-interaction $W(\r,\rp;\w)$ at the point $\rp$.
+potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$ gives the screened Coulomb
+interaction $W(\r,\rp;\w)$ at the point $\rp$ within the RPA approximation.
 
 The linear systems Eq.\ (\ref{eq.linsys.1}) must be solved self-consistently.
 For this purpose we begin by initializing the screened
 interaction $W$ using the bare interaction $v$. 
-Then we calculate the perturbations to the wavefunctions $\Delta \psi_v$.
-Using the latter we update the induced charge density $\Delta n$
+We then calculate the linear variations of the wavefunctions $\Delta \psi_v^\sigma$.
+Using the calculated linear variations we update the induced charge density $\Delta n$
 and the associated screening potential $\Delta V^{\rm H}$. This allow us to
-generate a better estimate of the screened interaction $W$.
+generate an improved estimate of the screened interaction $W$.
 We repeat this cycle until convergence in the screened Coulomb
 interaction is achieved. This procedure can be regarded as the extension
 of the DFPT for lattice-dynamical calculations to finite-frequency
-point-charge perturbations.
+test-charge perturbations. 
+
+\subsubsection{Vertex correction beyond RPA}
+
+HERE NEED TO BRIEFLY MENTION THE INCLUSION OF THE VXC VARIATION
+AND EQUIVALENCE WITH PROCEDURE OF HL AND REINING.
 
 \subsection{Green's function}\label{sec.green}
 
-In this section we describe our scheme for calculating the noninteracting
-Green's function without having the determine unoccupied electronic states.
-The calculation of the Green's function can be performed very efficiently
-by following a strategy which is similar in spirit to the DFPT approach
+The calculation of the Green's function can efficiently be performed 
+by adopting a strategy which is similar in spirit to the DFPT approach
 described for the screened Coulomb interaction in Sec.\ \ref{sec.coulomb}.
-We define the non-interacting Green's function following Ref.\ \onlinecite{hl}:
+We define the noninteracting Green's function following Ref.\ \onlinecite{hl}:
   \begin{equation}\label{eq.green.1}
   G(\r,\rp;\w) = \sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\eta_n},
   \end{equation}
-the sum extending over all states. The spin degeneracy factor is not included
-since only states with the same spin couple when forming the matrix elements
-of teh self-energy.\cite{hl86}
-The infinitesimal $\eta_n$ is positive ($\eta_n=\eta$) 
-for occupied states and negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl86}
+where the sum extends over occupied as well as unoccupied electronic states.
+The infinitesimal $\eta_n$ is real and positive ($\eta_n=\eta$) 
+for occupied states, negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl86}
+The factor of 2 for the spin degeneracy is not included
+as only the states with the same spin couple when forming the 
+matrix elements of the $GW$ self-energy.\cite{hl86}
 Following the notation introduced in Sec.\ \ref{sec.coulomb} we can split the
-sum in Eq.~(\ref{eq.green.1}) into occupied and unoccupied states:
+sum in Eq.~(\ref{eq.green.1}) into occupied ($v$) and unoccupied ($c$) states:
   \begin{equation}\label{eq.green.2}
   G(\r,\rp;\w) = \sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\eta}
   + \sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\eta}.
   \end{equation}
-By adding and subtracting terms like $\psi_v\psi_v^\star/(\w-\E_v+i\eta)$
-we can rewrite the last equation as follows:
+By adding and subtracting terms of the kind $\psi_v\psi_v^\star/(\w-\E_v+i\eta)$
+the last equation can be rewritten as follows:
   \begin{equation}\label{eq.green.split}
   G(\r,\rp;\w) = G^{\rm A}(\r,\rp;\w) + G^{\rm N}(\r,\rp;\w),
   \end{equation}
-with 
+@@@@@@@@@@@@@@@@@@@
+
+where we have defined
   \begin{eqnarray}\label{eq.green.split.2}
 \!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  \sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w-\E_n^-},  \\ 
-\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
+\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp), \label{eq.green.split.3} 
   \end{eqnarray}
-where we used time-reversal symmetry, the Lorentzian representation of the Dirac's delta function
+and time-reversal symmetry has been used.
+
+The Lorentzian representation of the Dirac's delta function
 $\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we set $\E_n^- = \E_n - i\eta$.
 Whenever $\w$ is in the conduction bands energy range ($\w\ge\E_c^{\rm min}$)
 $G^{\rm N}$ vanishes and can be ignored.
