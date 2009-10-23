@@ -63,8 +63,8 @@ We propose a new approach to quasiparticle GW calculations which
 is based on density-functional perturbation theory and
 does not require the calculation of unoccupied electronic states. The screened Coulomb interaction
 is evaluated by solving self-consistent linear-response Sternheimer equations,
-and the noninteracting Green's function is evaluated by solving non self-consistent
-Sternheimer equations. The frequency-dependence of the screened Coulomb interaction 
+and the noninteracting Green's function is evaluated by solving inhomogeneous 
+linear systems. The frequency-dependence of the screened Coulomb interaction 
 is explicitely taken into account by performing calculations along the imaginary
 frequency axis and then using Pad\'e approximants for the analytical continuation
 to real frequencies. As a proof of concept we implemented the proposed method 
@@ -122,7 +122,7 @@ In practice we adopt the principles of DFPT in order to (i) determine
 the {\it frequency-dependent screened Coulomb interaction} directly
 by solving self-consistent linear response Sternheimer equations,
 and (ii) to determine the non-interacting Green's function by solving
-non self-consistent Sternheimer equations. The main advantage of the proposed method 
+inhomogeneous linear systems. The main advantage of the proposed method 
 is that it does not make use of unoccupied electronic states.
 Additionally we investigate the possibility of fast evaluations of 
 the frequency dependence of the screened Coulomb interaction
@@ -246,7 +246,7 @@ the standard DFPT equations are recovered as the $\sigma=\pm$ variations
 of the wavefunctions do coincide in that case.
 The screening Hartree potential associated with the induced charge 
 $\Delta n_{[\r,\w]}$ is calculated as usual through
-  \begin{equation}
+  \begin{equation}\label{eq.dhartree}
   \Delta V^{\rm H}_{[\r,\w]}(\rp) = \int d\rpp \Delta n_{[\r,\w]} (\rpp) \, v(\rpp,\rp),
   \end{equation}
 and finally the screened Coulomb interaction in the RPA approximation is obtained as 
@@ -297,10 +297,44 @@ interaction is achieved. This procedure can be regarded as the extension
 of the DFPT for lattice-dynamical calculations to finite-frequency
 test-charge perturbations. 
 
-\subsubsection{Vertex correction beyond RPA}
+\subsubsection{Vertex correction}
 
-HERE NEED TO BRIEFLY MENTION THE INCLUSION OF THE VXC VARIATION
-AND EQUIVALENCE WITH PROCEDURE OF HL AND REINING.
+Within the scheme here outlined it is rather straightforward to introduce
+an approximate vertex correction to the $GW$ self-energy along the lines 
+of Refs.\ \onlinecite{hl86,reining94}. This correction results from setting
+the self-energy in the first iteration of Hedin's equations to the DFT
+exchange-correlation (XC) potential, $\Sigma_0(\r,\rp;\w) = \delta(\r,\rp) V_{\rm xc}(\r)$.
+Within the present scheme such correction is simply obtained by including
+the variation of the exchange-correlation
+potential in the self-consistent potential for the Sternheimer equations Eq.\ (\ref{eq.linsys.1}):
+  \begin{equation}\label{eq.linsys.vertex}
+  (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}\!  = \!-(1-\P)\!  \Big[\Delta V_{[\r,\w]} + K_{\rm xc}\Delta n_{[\r,\w]}\Big] \! \psi_v,
+  \end{equation}
+with $K_{\rm xc}=\delta V_{\rm xc}/\delta n$ being the functional derivative of the XC
+potential with respect to the density. The screened Coulomb interaction $W$ is still
+obtained through Eq.\ (\ref{eq.w.dfpt}). This approach has been referred to as
+``$GW+K_{\rm xc}$'' approximation in Ref.\ \onlinecite{reining94} due to the inclusion of the XC contribution
+in the screening of the test charge (alternatively it can be said that the screening
+charge is calculated for an {\it electron test-charge}).
+That the inclusion of the XC term in the self-consistent
+induced potential leads to the $GW+K_{\rm xc}$ approximation can easily be seen as follows.
+We can combine Eqs.\ (\ref{eq.deltan}),(\ref{eq.linsys.vertex}) to yield
+the induced charge density (we use symbolic operator notation for clarity):
+ \begin{equation}
+ \Delta n = v\,[1- P (v+K_{\rm xc})]^{-1}P .
+ \end{equation}
+Then, we can substitute this result in the definition of the screened Coulomb interaction
+Eqs.\ (\ref{eq.dhartree}),(\ref{eq.w.dfpt}) to find
+ \begin{equation}
+ W = v \,\{ 1 + v [1-P(v+K_{\rm xc})]^{-1}P \}.
+ \end{equation}
+The last equation yields precisely the screened Coulomb interaction in the $GW+K_{\rm xc}$ approximation.\cite{hl86,reining94}
+% (see pag. 8026, above Table I).
+It is worth pointing out that in standard implementations of DFPT the
+XC term is already included in the induced self-consistent potential,\cite{baroni.rmp}
+therefore the switching between the standard $GW$ approach and to the modified $GW+K_{\rm xc}$
+approximation can be achieved by literally commenting one single line of code
+if the present approach is implemented on top of existing DFPT software.\cite{espresso}
 
 \subsection{Green's function}\label{sec.green}
 
@@ -317,90 +351,93 @@ for occupied states, negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl
 The factor of 2 for the spin degeneracy is not included
 as only the states with the same spin couple when forming the 
 matrix elements of the $GW$ self-energy.\cite{hl86}
-Following the notation introduced in Sec.\ \ref{sec.coulomb} we can split the
-sum in Eq.~(\ref{eq.green.1}) into occupied ($v$) and unoccupied ($c$) states:
+We now split the sum in Eq.~(\ref{eq.green.1}) into occupied ($v$) and unoccupied ($c$) states:
   \begin{equation}\label{eq.green.2}
   G(\r,\rp;\w) = \sum_v \frac{\psi_v(\r)\psi_v^\star(\rp)}{\w-\E_v-i\eta}
-  + \sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\eta}.
+  + \sum_c \frac{\psi_c(\r)\psi_c^\star(\rp)}{\w-\E_c+i\eta},
   \end{equation}
-By adding and subtracting terms of the kind $\psi_v\psi_v^\star/(\w-\E_v+i\eta)$
-the last equation can be rewritten as follows:
+and we add and subtract $\sum_v \psi_v\psi_v^\star/(\w-\E_v+i\eta)$ to obtain:
   \begin{equation}\label{eq.green.split}
   G(\r,\rp;\w) = G^{\rm A}(\r,\rp;\w) + G^{\rm N}(\r,\rp;\w),
   \end{equation}
-@@@@@@@@@@@@@@@@@@@
-
-where we have defined
+with
   \begin{eqnarray}\label{eq.green.split.2}
 \!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  \sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w-\E_n^-},  \\ 
-\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp), \label{eq.green.split.3} 
+\!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
   \end{eqnarray}
-and time-reversal symmetry has been used.
+Here we assumed once again time-reversal symmetry, we used the Lorentzian representation of the Dirac's delta function 
+$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we defined $\E_n^- = \E_n - i\eta$.
+The $G^{\rm A}$ component of the Green's function is obviously analytic in the
+upper half of the complex energy plane as its poles lie below the real axis.
+Whenever the frequency $\w$ is above the chemical potential 
+the non-analytic component $G^{\rm N}$ vanishes. On the other hand, for frequencies $\w$
+below the chemical potential the non-analytic part introduces the poles associated with the occupied 
+electronic states. 
+This partitioning of the Green's function closely reflects the analytic structure
+of the non-interacting Green's function.
+%relates to the fact that
+%the Green's function is analytic only in the upper
+%half of the complex plane for frequencies above the chemical potential, and only in the lower half
+%of the complex plane for frequencies below the chemical potential.
+A detailed discussion of this aspect can be found in Ref.\ \onlinecite{hl}.
+The two components of the Green's function in Eq.\ (\ref{eq.green.split.2}) can be shown
+to lead to the Coulomb hole (COH) and the screened exchange (SEX) terms of the
+self-energy, respectively:\cite{hl86} 
+$\Sigma^{\rm COH} = G^{\rm A} W$  and $\Sigma^{\rm SEX} = G^{\rm N} W$.
 
-The Lorentzian representation of the Dirac's delta function
-$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we set $\E_n^- = \E_n - i\eta$.
-Whenever $\w$ is in the conduction bands energy range ($\w\ge\E_c^{\rm min}$)
-$G^{\rm N}$ vanishes and can be ignored.
-On the other hand, when $\w$ is in the valence bands energy range ($\w\le\E_v^{\rm max}$),
-$G^{\rm N}$ introduces the poles associated with the occupied states.
-Such poles reflect the fact that the Green's function is analytic in the upper
-half of the complex plane when $\w$ is above the chemical potential, and in the lower half
-of the complex plane when $\w$ is below the chemical potential.
-A detailed discussion of this aspect is provided in Ref.\ \onlinecite{hl}.
-
-The computation of the non-analytic component $G^{\rm N}$ in Eq.\ (\ref{eq.green.split.3})
-is straightforward once we obtained the occupied eigenstates.
-For the analytic component $G^{\rm A}$ it is convenient to
+The computation of the non-analytic component $G^{\rm N}$ of the
+Green's function in Eq.\ (\ref{eq.green.split.3}) is straightforward 
+once we the occupied electronic eigenstates have been determined.
+In order to calculate th analytic component $G^{\rm A}$ it is convenient to
 proceed as in the case of the screened Coulomb interaction,
-and regard it as a parametric
-function of the the first space variable
-and of the frequency: $G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
-Then, if we act of both sides of Eq.\ (\ref{eq.green.split.2})
-with the operator $\H-\w + i\eta$ we find immediately:
+by regarding $G^{\rm A}(\r,\rp;\w)$ as a parametric
+function of the the first space variable and of the frequency:
+$G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
+If we now apply the operator $\H-\w + i\eta$ to both sides of Eq.\ (\ref{eq.green.split.2})
+and we use the completeness relation $\sum_n \psi_n(\r)\psi_n^\star(\rp) = \delta(\r,\rp)$
+we find immediately:
   \begin{equation}\label{eq.green.3}
-  (\H-\w + i\eta) G^{\rm A}_{[\r,\w]}(\rp) = -\, \delta(\r,\rp), 
+  (\H-\w + i\eta) G^{\rm A}_{[\r,\w]}(\rp) = -\, \delta(\r,\rp).
   \end{equation}
-where we made use of the 
-completeness relation $\sum_n \psi_v(\r)\psi_v^\star(\rp) = \delta(\r,\rp)$.
-
-In practice, by using Eqs.\ (\ref{eq.green.split}),(\ref{eq.green.split.3}), and
-(\ref{eq.green.3}) we can determine the propagation
-from a point $\r$ to every other point $\rp$ by solving a inhomogeneous
-linear system. As Eq.\ (\ref{eq.green.3}) does not contain unoccupied
-electronic states, this procedure mimics the DFPT approach for the
-screened Coulomb interaction that we developed in Sec.\ \ref{sec.coulomb}.
-In the present case of the Green's function, we do not need to update
-self-consistently the rhs of Eq.\ (\ref{eq.green.3}), therefore the
-effort for computing the Green's function is considerably smaller
-than for the screened Coulomb interaction.
+Therefore, as expected, we can determine the analytic part of the Green's function
+by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
+does not explicitely require unoccupied electronic states, this procedure mimics 
+the DFPT approach for the screened Coulomb interaction outlined in Sec.\ \ref{sec.coulomb},
+albeit without the self-consistency requirement.
 
 \subsection{Self-energy}\label{sec.sigma}
 
-The self-energy in the GW approximation reads:\cite{hl86}
+The electron self-energy in the $GW$ approximation reads:\cite{hl86}
   \begin{equation} \label{eq.sigma}
   \Sigma(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\infty}^{+\infty} \!\!\!\!d\wp 
     G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp},
   \end{equation}
 where $\delta$ is a positive infinitesimal. 
-At large energy $G$ goes like $\w^{-1}$ and $W$ tends to the costant 
-bare interaction $v$, therefore the integrand goes like $\w^{-1}$
-and the integration requires some care.
-If we explicitely separate the exchange contribution in the self-energy we obtain
-$\Sigma = \Sigma^{\rm ex} + \Sigma^{\rm c}$ where $\Sigma^{\rm ex}=Gv$
-and $\Sigma^{\rm c}=G(W-v)$.\cite{pade3}
-The integrand in the Coulmb term $\Sigma^{\rm c}$ goes like $\w^{-2}$ 
-hence the integral is well behaved and the result is not affected
-(apart from numerical error) if we replace the $\pm \infty$ by finite cutoffs $\pm \wc$.
-In particular, it can be shown that the $\Sigma^{\rm c}(\w)$ must go to zero
+At large frequency the Green's function $G$ decays as $\w^{-1}$ and 
+the screened Coulomb interaction $W$ tends to the frequency-independent
+bare Coulomb interaction $v$. As a consequence, the integrand in Eq.\ (\ref{eq.sigma}) 
+decays as $\w^{-1}$ and the integration requires some care.
+
+For this purpose it is convenient to split the self-energy into an exchange contribution 
+$\Sigma^{\rm ex}=Gv$ and a Coulomb term $\Sigma^{\rm c}=G(W-v)$.\cite{pade3}
+It is easy to check that the integrand in the Coulmb term decays as 
+$\w^{-2}$ at large frequency, therefore the integral is well behaved and the 
+integration can be performed by using a numerical cutoff $|\wp|< \wc$.
+In particular, it can be shown that the $\Sigma^{\rm c}(\w)$ must decay to zero
 as $\w^{-1}$ at large frequency.
-For the exchange term, if we write $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$,
-we realize that the integration of the term $G^{\rm A}v$ gives a
-vanishing quantity because the poles of $G^{\rm A}$ lie in the lower half 
-of the complex plane, while the integration $G^{\rm N}v$ gives a energy-independent contribution.
-Had we truncated the integral along the real axis, the $\Sigma^{\rm xc}$
-would acquire a spurious frequency dependence associated with
+
+MAYBE WE CAN TRY TO SHOW THAT THE ERROR SCALES AS wc/wp.
+
+QUI BISOGNA RISCRIVERE UN PO MEGLIO
+
+In order to integrate the exchange term we observe that $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$
+and that the integration of the term $G^{\rm A}v$ yields a vanishing contribution as
+the poles of $G^{\rm A}$ lie in the lower half of the complex plane.
+On the other hand, the integration of $G^{\rm N}v$ gives a frequency-independent contribution.
+Had we truncated the integral along the real axis, the $\Sigma^{\rm ex}$ term
+would have acquired a spurious frequency dependence associated with
 the semicircle closing the complex integration path.
-Therefore the correct way to perform the integration is to evaluate numerically
+In summary, the correct way to perform the integration is to evaluate numerically
 the Coulomb term using a energy cutoff, and integrate analitycally the exchange term:
   \begin{equation}
   \Sigma(\r,\rp;\w) = \Sigma^{\rm c}(\r,\rp;\w) + \Sigma^{\rm ex}(\r,\rp),
@@ -1242,6 +1279,19 @@ Phys.\ Rev.\ B {\bf 33}, 7017 (1986).
 \bibitem{degironcoli}
 S. de Gironcoli,
 Phys.\ Rev.\ B {\bf 51}, 6773 (1995).
+
+\bibitem{reining94}
+R. Dal Sole, L. Reining, and R. W. Godby,
+Phys.\ Rev.\ B {\bf 49}, 8024 (1994).
+
+\bibitem{espresso}
+P. Giannozzi {\it et al.},
+% S. Baroni, N. Bonini, M. Calandra, R. Car, C. Cavazzoni, D. Ceresoli, G. L. Chiarotti, 
+%M. Cococcioni, I. Dabo, A. Dal Corso, S. Fabris, G. Fratesi, S. de Gironcoli, R. Gebauer, 
+%U. Gerstmann, C. Gougoussis, A. Kokalj, M. Lazzeri, L. Martin-Samos, N. Marzari, F. Mauri, 
+%R. Mazzarello, S. Paolini, A. Pasquarello, L. Paulatto, C. Sbraccia, S. Scandolo, 
+%G. Sclauzero, A. P. Seitsonen, A. Smogunov, P. Umari, R. M. Wentzcovitch, 
+J.\ Phys.: Condens.\ Matter {\bf 21}, 395502 (2009).
 
 \bibitem{hl86-prb}
 M. S. Hybertsen and S. G. Louie,
