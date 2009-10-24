@@ -518,19 +518,17 @@ through
   \begin{equation}
   W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w).
   \end{equation}
-By adopting the same convention as for the screened Coulomb interaction Eq.\ (\ref{eq.w.bloch})
+By adopting the same convention for the inverse dielectric matrix
+as for the screened Coulomb interaction Eq.\ (\ref{eq.w.bloch})
 the above equation can be rewritten as:
   \begin{equation}\label{eq.Wg}
   W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
 
-\vspace{2cm}
-  \begin{equation}\label{eq.dv.bloch}
-  \Delta v_{[\q,\G,\w]}(\rp) = \sum_\Gp {\rm e}^{i\Gp\cdot\rp} W_{\G\Gp}(\q;\w)
-  \end{equation}
-
-METTI DEFINITIONS OF DELTA-CHARGE COME W AND G. DO NOT PROVIDE DERIVATION,
-JUST EXPLAIN PHYSICS AND GIVE FINAL FORMULAS.
+%\vspace{2cm}
+%  \begin{equation}\label{eq.dv.bloch}
+%  \Delta v_{[\q,\G,\w]}(\rp) = \sum_\Gp {\rm e}^{i\Gp\cdot\rp} W_{\G\Gp}(\q;\w)
+%  \end{equation}
 
 %
 % only for coding purposes
@@ -543,63 +541,77 @@ JUST EXPLAIN PHYSICS AND GIVE FINAL FORMULAS.
 
 \subsection{Screened Coulomb interaction}\label{sec.coulomb.g}
 
-We begin by rewriting 
-the linear systems Eq.\ (\ref{eq.linsys.1})
-by relabeling the wavefunctions $\psi_v$ into Bloch states
-$\psi_{v\k}$ 
+In order to rewrite Eqs.\ (\ref{eq.deltan})-(\ref{eq.w.dfpt}) in
+the Bloch representation and in reciprocal space we proceed as follows.
+We first write the linear systems Eq.\ (\ref{eq.linsys.1})
+by relabeling the wavefunctions $\psi_v$ as Bloch states $\psi_{v\k}$:
   \begin{equation}\label{eq.linsys.3}
   (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k}.
   \end{equation}
-From the perturbations to the wavefunctions we can construct the
-induced charge density
+From the linear variations of the wavefunctions we construct the
+induced charge density using Eq.\ (\ref{eq.deltan}):
   \begin{equation}\label{eq.ch}
-  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]},
+  \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
   \end{equation}
-where the factor $N_\k$ takes into account the normalization of
-the Bloch states over the unit cell of volume $\Omega$
-[while the $\psi_v$'s in Eq.\ (\ref{eq.linsys.1}) are normalized to the crystal volume
-$N_\k \Omega$].
+Here the factor $N_\k$ takes into account the normalization of
+the Bloch states in the unit cell (the 
+wavefunctions $\psi_v$ in Eq.\ (\ref{eq.linsys.1}) which are normalized 
+in the whole crystal).
 %Note: all the integrals are performed over the volume of the crystal.
 %The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
-Then we expand the screened Coulomb interaction in terms
-of the Bloch waves ${\rm exp}[-i(\q+\G)\cdot\r]$ and ${\rm exp}[i\q\cdot\rp]$:
+Next we expand the screened Coulomb interaction in terms
+of Bloch waves: 
   \begin{equation}\label{eq.dv.bloch}
-  \Delta V_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\q}  \sum_{\q\G} \Delta v_{[\q,\G,\w]}(\rp) 
+  \Delta V_{[\r,\w]} (\rp) = \frac{1}{N_\q\Omega}  \sum_{\q\G} \Delta v_{[\q,\G,\w]}(\rp) 
    {\rm e}^{-i(\q+\G)\cdot\r} {\rm e}^{i\q\cdot\rp}, 
   \end{equation}
 where $\Delta v_{[\q,\G,\w]}$ is cell-periodic in $\rp$.
-When we replace Eq.\ (\ref{eq.dv.bloch}) into Eq.\ (\ref{eq.linsys.3})
-we discover that only the $\k+\q$ component of the changes in the wavefunctions
-couple to the $\q$ component of the potential:
+If we now replace Eq.\ (\ref{eq.dv.bloch}) into Eq.\ (\ref{eq.linsys.3})
+we discover that for each component $\Delta v_{[\q,\G,\w]}$ of the
+perturbing potential having a Bloch wavevector $\q$,
+the associated variations of the wavefunctions must carry 
+a Bloch wavevector $\k+\q$:
   \begin{equation}
-  \Delta \psi^\sigma_{v\k[\r,\w]} = \frac{1}{\Omega N_\q} \sum_{\q\G} \Delta u^\sigma_{v\k[\q,\G,\w]} 
+  \Delta \psi^\sigma_{v\k[\r,\w]} = \frac{1}{N_\q\Omega} \sum_{\q\G} \Delta u^\sigma_{v\k[\q,\G,\w]} 
   {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
   \end{equation}
 where $\Delta u^\sigma_{v\k[\q,\G,\w]}$ is cell-periodic in $\rp$.
-As a consequence the linear system simplifies to
+As a result the linear system Eq.\ (\ref{eq.linsys.1}) simplifies to
   \begin{equation}\label{eq.linsys.4}
   (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  = -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k},
   \end{equation}
-and the $\q$ component of the induced charge density can be written as
+
+NEED TO SAY WHAT IS Hk AND Pk+q
+
+The induced charge density corresponding to the Bloch wave ${\rm exp}(-i\q\cdot\r)$ 
+reads
   \begin{equation} \label{eq.deltan.bloch}
   \Delta n_{[\q,\G,\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^\s_{v\k[\q,\G,\w]}.
   \end{equation}
-This result is analogous to the case of standard DFPT. The only difference is that
-here the translational invariance of the screened interaction induces a coupling
-between the perturbation ${\rm e}^{-i\q\cdot\r}$ in the variable $\r$ and the response
-${\rm e}^{i\q\cdot\rp}$ in the variable $\rp$.
-If we further expand the periodic function $\Delta n_{[\q,\G,\w]}$ in plane
-waves $\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
-we can write the screened Coulomb interaction Eq.\ (\ref{eq.w.dfpt}) as
+This result is similar to the case of standard DFPT.\cite{baroni.rmp} 
+The main difference is that in the present case the translational invariance 
+of the screened Coulomb interaction induces a coupling between the perturbation 
+with Bloch wave ${\rm exp}(-i\q\cdot\r)$ in the variable $\r$ and its induced
+response with Bloch wave ${\rm exp}(i\q\cdot\rp)$ in the variable $\rp$.
+%
+If the cell-periodic function $\Delta n_{[\q,\G,\w]}$ is expanded in plane waves, 
+%$\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
+the screened Coulomb interaction Eq.\ (\ref{eq.w.dfpt}) acquires the following simple
+form: 
   \begin{equation}
   W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q,\G,\w]}(\Gp) ]v(\q+\Gp).
   \end{equation}
+
+\vspace{2cm}
+
 In practical calculations we proceed as follows: we first initialize the perturbation
-in the linear systems using $\Delta V^{\rm bare}_{[\q,\G,\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$.
+in the linear systems using $\Delta v^{\rm bare}_{[\q,\G,\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$.
 The solution of the linear systems yields the change in the wavefunctions,
 which are then used to constructr the induced charge, the induced Hartree potential,
 and the updated screened interaction. At convergence the perturbation corresponds to
 the screened interaction $v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w)$.
+The calculation must be repeated for every perturbation, i.e.\ for every 
+$\q$, $\G$, and $\w$.
 %
 As we are dealing with a linear problem, we can change the scale of the initial
 perturbation and start from a bare perturbation given by ${\rm e}^{i\G\cdot\rp}$,
@@ -761,8 +773,6 @@ simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
 The latter possibility has already been discussed in Ref.\ \onlinecite{reining-sternheimer}.
 Our additional step is to fully exlpoint density-functional perturbation theory
 in terms of self-consistent solution of the linear system.
-
-\subsection{Polarization propagator beyond the random-phase approximation}\label{sec.beyond_rpa}
 
 \section{Discussion}\label{sec.discussion}
 
