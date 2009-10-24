@@ -419,35 +419,38 @@ bare Coulomb interaction $v$. As a consequence, the integrand in Eq.\ (\ref{eq.s
 decays as $\w^{-1}$ and the integration requires some care.
 
 For this purpose it is convenient to split the self-energy into an exchange contribution 
-$\Sigma^{\rm ex}=Gv$ and a Coulomb term $\Sigma^{\rm c}=G(W-v)$.\cite{pade3}
+$\Sigma^{\rm ex}=Gv$ and a Coulomb term $\Sigma^{\rm c}=G(W-v)$.\cite{blochl}
 It is easy to check that the integrand in the Coulmb term decays as 
 $\w^{-2}$ at large frequency, therefore the integral is well behaved and the 
 integration can be performed by using a numerical cutoff $|\wp|< \wc$.
-In particular, it can be shown that the $\Sigma^{\rm c}(\w)$ must decay to zero
-as $\w^{-1}$ at large frequency.
-
-MAYBE WE CAN TRY TO SHOW THAT THE ERROR SCALES AS wc/wp.
-
-QUI BISOGNA RISCRIVERE UN PO MEGLIO
+A detailed analysis of the analytic properties of the Coulomb term shows 
+that the Coulomb term $\Sigma^{\rm c}(\w)$ must decay to zero as $\w^{-1}$ 
+at large frequency, and that the use of a cutoff in the integration 
+introduces an error of the order of $\w_{\rm p}/\wc$, where $\w_{\rm p}$ denotes
+the characteristic plasmon frequency of the system.
 
 In order to integrate the exchange term we observe that $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$
-and that the integration of the term $G^{\rm A}v$ yields a vanishing contribution as
-the poles of $G^{\rm A}$ lie in the lower half of the complex plane.
-On the other hand, the integration of $G^{\rm N}v$ gives a frequency-independent contribution.
-Had we truncated the integral along the real axis, the $\Sigma^{\rm ex}$ term
-would have acquired a spurious frequency dependence associated with
+and that the poles of $G^{\rm A}$ lie in the lower half of the complex plane, therefore
+the integration of the term $G^{\rm A}v$ yields a vanishing contribution.
+On the other hand, the integration of $G^{\rm N}v$ yields a constant (frequency-independent) term.
+Had we truncated the integral along the real axis as proposed for the Coulomb term, 
+the $\Sigma^{\rm ex}$ term would have acquired a spurious frequency dependence associated with
 the semicircle closing the complex integration path.
-In summary, the correct way to perform the integration is to evaluate numerically
-the Coulomb term using a energy cutoff, and integrate analitycally the exchange term:
+In summary, we perform the frequency integration by evaluating numerically
+the Coulomb term using an energy cutoff, and by integrating analitycally the exchange term:
   \begin{equation}
   \Sigma(\r,\rp;\w) = \Sigma^{\rm c}(\r,\rp;\w) + \Sigma^{\rm ex}(\r,\rp),
   \end{equation}
 with
-  \begin{eqnarray}
-  \!\!\!\! \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc \!\!& \!\!d\wp &
-    \!\!\! G(\r,\rp,\w+\wp) \nonumber \\ 
-  & \times \!\!& \!\!\!\! [W(\r,\rp,\wp)-v(\r,\rp)],
-  \end{eqnarray}
+  \begin{equation}
+ \Sigma^{\rm c}(\r,\rp\!;\w) \! = \!\! \frac{i}{2\pi} \!\!\int_{_{-\wc}}^{^\wc} \!\!\!\!\!\!\!d\wp 
+ G(\r,\rp\!;\w+\wp) \!\Big[W(\r,\rp\!,\wp)-v(\r,\rp)\!\Big]\!,
+  \end{equation}
+%  \begin{eqnarray}
+%  \!\!\!\! \Sigma^{\rm c}(\r,\rp;\w) = \frac{i}{2\pi} \! \int_{-\wc}^\wc \!\!& \!\!d\wp &
+%    \!\!\! G(\r,\rp,\w+\wp) \nonumber \\ 
+%  & \times \!\!& \!\!\!\! [W(\r,\rp,\wp)-v(\r,\rp)],
+%  \end{eqnarray}
 and
   \begin{equation}
   \Sigma^{\rm ex}(\r,\rp) = - \sum_v \psi_v^\star(\r)\psi_v(\rp) v(\r,\rp).
@@ -456,53 +459,94 @@ and
 
 \section{Implementation in a basis of planewaves}\label{sec.theory.g}
 
-\subsection{Screened Coulomb interaction}\label{sec.coulomb.g}
+We here describe our reciprocal-space planewaves implementation of the scheme 
+devloped in Sec.\ \ref{sec.theory}. The choice of a planewaves representation
+was motivated by the need of making contact with existing literature on delectric
+matrices,\cite{cpm,hl86-prb,balde_tosa,baroni-resta} 
+and by the availability of DFPT software for lattice-dynamical
+calculations\cite{espresso} which was used as a reference througout the implementation.
 
-We have implemented the scheme presented in Sec.\ \ref{sec.coulomb}
-within a reciprocal space formalism. This choice allows us to make
-contact with the existing literature on the 
-calculation of dielectric properties and quasiparticle 
-corrections from first-principles.\cite{hl86,balde_tosa,baroni-resta,hl86-prb,reining,cpm}
-
-We adopt the following convention for the transformation from real
-to reciprocal space:
+We adopt the following conventions for the transformation from real to reciprocal space.
+The wavefunctions transform as usual according to:
   \begin{equation}
+  \psi_{n\k}(\rp)=\frac{1}{\sqrt{\Omega}}\sum_\Gp
+  {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp),
+  \end{equation}
+with $\Omega$ the volume of the unit cell and $\k$ the Bloch wavevector.
+The bare Coulomb interaction transforms according to
+  \begin{equation}
+  v(\r,\rp) = \frac{1}{N_\q\Omega}  \sum_{\q\G} v(\q+\G)
+  {\rm e}^{i(\q+\G)\cdot(\rp-\r)},
+  \end{equation}
+where $\q$ is also a Bloch wavevector and $N_\q$ is the number of such wavevectors
+in our discrectized Brillouin zone. In the above equation we have 
+$v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
+The latter expression for $v(\q+\G)$ is arrived at by replacing
+the integration $\int d\r \exp(i\q\cdot\r)/|\r|$ over the crystal volume with
+an integration over the entire space. This choice corresponds to assuming that we
+have a very large crystal or equivalently a very fine sampling of the Brillouin zone.
+Had we performed the integration on a sphere
+with a radius $R_{\rm c}$ defined by the crystal volume 
+($4/3\pi R_{\rm c}^3 = N_\q \Omega$), then we would have obtained
+  \begin{equation}
+  v_{\rm tr} (\q+\G) = \frac{4\pi e^2}{|\q+\G|^2} (1-\cos |\q+\G| R_{\rm c}),
+  \end{equation}
+which corresponds to the truncated Coulomb potential introduced in Ref.\ \onlinecite{alavi}.
+We will come back to this aspect in Sec.\ \ref{sec.coulomb.g}.
+The screened Coulomb interaction and the non interacting Green's function
+transform according to
+  \begin{equation}\label{eq.w.bloch}
   W(\r,\rp;\w) = \!\!\frac{1}{N_\q\Omega} \!\! \sum_{\q\G\Gp} 
   {\rm e}^{-i(\q+\G)\cdot\r}
   W_{\G\Gp}(\q;\w)
   {\rm e}^{i(\q+\Gp)\cdot\rp},
   \end{equation}
+and
   \begin{equation}
-  \psi_{n\k}(\r)=\frac{1}{\sqrt{\Omega}}\sum_\G
-  {\rm e}^{i(\k+\G)\cdot\r} u_{n\k}(\G),
+  G (\r,\rp;\w) = \frac{1}{N_\k\Omega}  \sum_{\k\G\Gp} 
+   {\rm e}^{-i(\k+\G)\cdot\r} 
+   G_{\G\Gp}(\k;\w)
+   {\rm e}^{i(\k+\G)\cdot\rp},
   \end{equation}
+with similar expressoins for $G^A$, $G^N$.
+We note that the sign convention adopted here in the Fourier transforms
+[${\rm exp}(i\q\cdot\rp)$ in the rhs of Eq.\ (\ref{eq.w.bloch})]
+is necessary to obtain the compact expression Eq.\ (\ref{eq.deltan.bloch}) below
+for the induced charge, and is opposite to the convention adopted in Ref.~\onlinecite{hl86}.
+Before proceeding it is convenient to introduce the ``right-sided'' inverse dielectric matrix
+through
   \begin{equation}
-  V_{\rm xc}(\r)=\frac{1}{\Omega}\sum_\G
-  {\rm e}^{i\G\cdot\r} V_{\rm xc}(\G),
+  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w).
   \end{equation}
-  \begin{equation}
-  v(\r,\rp) = \frac{1}{N_\q\Omega}  \sum_{\q\G} v(\q+\G)
-  {\rm e}^{i(\q+\G)\cdot(\rp-\r)},
+By adopting the same convention as for the screened Coulomb interaction Eq.\ (\ref{eq.w.bloch})
+the above equation can be rewritten as:
+  \begin{equation}\label{eq.Wg}
+  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
-with $v(\r,\rp) = e^2/|\r-\rp|$ and $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
-We note that the above expression for $v(\q+\G)$ is arrived at by replacing
-the integration $\int_{\rm crystal} \exp(i\q\cdot\r)/r d\r$ with
-$\int_{\rm space} \exp(i\q\cdot\r)/r d\r$, i.\ e.\ by assuming that we
-have a very large crystal or equivalently a very fine sampling of the Brillouin zone.
-If we performed instead the integration on a crystal volume of spherical
-shape with a radius $R_{\rm c}$ defined by the volume $N_\q \Omega$, then we would obtain
-  \begin{equation}
-  v_{\rm tr} (\q+\G) = 4\pi e^2/|\q+\G|^2 (1-\cos |\q+\G| R_{\rm c}),
-  \end{equation}
-which corresponds to the truncated Coulomb potential discussed below.
-Improved truncation methods can be defined for non-isotropic materials.\cite{sohrab}
 
+\vspace{2cm}
+  \begin{equation}\label{eq.dv.bloch}
+  \Delta v_{[\q,\G,\w]}(\rp) = \sum_\Gp {\rm e}^{i\Gp\cdot\rp} W_{\G\Gp}(\q;\w)
+  \end{equation}
+
+METTI DEFINITIONS OF DELTA-CHARGE COME W AND G. DO NOT PROVIDE DERIVATION,
+JUST EXPLAIN PHYSICS AND GIVE FINAL FORMULAS.
+
+%
+% only for coding purposes
+%
+%  \begin{equation}
+%  V_{\rm xc}(\r)=\frac{1}{\Omega}\sum_\G
+%  {\rm e}^{i\G\cdot\r} V_{\rm xc}(\G),
+%  \end{equation}
+%
+
+\subsection{Screened Coulomb interaction}\label{sec.coulomb.g}
 
 We begin by rewriting 
 the linear systems Eq.\ (\ref{eq.linsys.1})
 by relabeling the wavefunctions $\psi_v$ into Bloch states
-$\psi_{v\k}=u_{v\k} {\rm e}^{i\k\cdot\rp}$, $u_{v\k}$ being
-lattice-periodic in $\rp$:
+$\psi_{v\k}$ 
   \begin{equation}\label{eq.linsys.3}
   (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k}.
   \end{equation}
@@ -543,23 +587,12 @@ and the $\q$ component of the induced charge density can be written as
 This result is analogous to the case of standard DFPT. The only difference is that
 here the translational invariance of the screened interaction induces a coupling
 between the perturbation ${\rm e}^{-i\q\cdot\r}$ in the variable $\r$ and the response
-${\rm e}^{i\q\cdot\rp}$ in the variable $\rp$ ($-\q \rightarrow \q$).
-The sign convention used in Eq.\ (\ref{eq.dv.bloch}) is crucial to obtain
-the compact expression Eq.\ (\ref{eq.deltan.bloch}) for the induced charge,
-and is opposite to the convention used in Ref.\ \onlinecite{hl86}.
+${\rm e}^{i\q\cdot\rp}$ in the variable $\rp$.
 If we further expand the periodic function $\Delta n_{[\q,\G,\w]}$ in plane
 waves $\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
 we can write the screened Coulomb interaction Eq.\ (\ref{eq.w.dfpt}) as
   \begin{equation}
   W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q,\G,\w]}(\Gp) ]v(\q+\Gp).
-  \end{equation}
-If we introduce the ``right-sided'' inverse dielectric matrix using
-  \begin{equation}
-  W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w),
-  \end{equation}
-then we have
-  \begin{equation}\label{eq.Wg}
-  W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
 In practical calculations we proceed as follows: we first initialize the perturbation
 in the linear systems using $\Delta V^{\rm bare}_{[\q,\G,\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$.
@@ -609,10 +642,11 @@ screened Coulomb interaction in reciprocal space reads
 In the long-wavelenght limit $\q\rightarrow 0$ and for $\G=\Gp=0$ the truncated
 screened interaction it goes to
 the finite limit $2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\rightarrow 0;\w)$.
+Improved truncation methods can be defined for non-isotropic materials.\cite{sohrab}
 
 The scheme introduced here allows us to calculate one row (in $\Gp$) of the inverse dielectric
 matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
-perturbation ${\rm e}^{i(\q+\G)\cdot\r}$. This idea has been discussed in Ref.\ \onlinecite{kunc}
+perturbation ${\rm e}^{i(\q+\G)\cdot\r}$. This idea has been discussed in Ref.\ \onlinecite{kunc-tosatti}
 in the framework of nonperturbative methods. We here developed the density-functional
 perturbation theory of the inverse dielectric matrix. The main achievement is the
 possibility of calculating the dielectric response at finite wavevectors without
@@ -651,7 +685,6 @@ of the Bloch waves ${\rm exp}[-i(\k+\G)\cdot\r]$ and ${\rm exp}[i\k\cdot\rp]$:
    {\rm e}^{-i(\k+\G)\cdot\r} {\rm e}^{i\k\cdot\rp}.
   \end{equation}
 By using the same convention for the wavefunctions 
-$\psi_{n\k}(\rp)=\Omega^{-1/2}\sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} u_{n\k}(\Gp)$
 and the lattice-periodic part of the Green's function 
 $g^{\rm A,N}_{[\k,\G,\w]}(\rp)  = \sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} g^{\rm A,N}_{[\k,\G,\w]}(\Gp)$,
 Eqs.~(\ref{eq.green.3}),(\ref{eq.green.split.3}) become
@@ -725,7 +758,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
 Our scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
 Had we stopped at the first iteration (no self-consistency), we would have
 simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
-The latter possibility has already been discussed in Ref.\ \onlinecite{reining}.
+The latter possibility has already been discussed in Ref.\ \onlinecite{reining-sternheimer}.
 Our additional step is to fully exlpoint density-functional perturbation theory
 in terms of self-consistent solution of the linear system.
 
@@ -848,7 +881,7 @@ Alltogether, these considerations suggest that an iterative solution of the
 linear system along the real axis is not convenient from the computational
 viewpoint. For this reason we decided to perform the calculation of $W_{\G,\Gp}(\q,\w)$
 along the imaginary axis and then to analitically continue the functions
-to the real axis using Pad\'e approximants.\cite{pade1,pade2,pade3}
+to the real axis using Pad\'e approximants.\cite{pade1,pade2,blochl}
 The motivation behind our choice becomes clear when we consider the
 plasmon-pole model of the screened Coulomb interaction:\cite{hl86}
   \begin{equation}
@@ -964,7 +997,7 @@ by adopting the Teter-Payne-Allan function as the preconditioner $M^{-1}$.\cite{
 
 In order to perform the analytic continuation of the screened Coulomb interaction
 from the imaginary axis to the real axis in the complex frequency plane, we employ diagonal 
-Pad\'e approximants.\cite{pade1,pade2,pade3}
+Pad\'e approximants.\cite{pade1,pade2,blochl}
 The Pad\'e approximant of order $N$ is the optimal rational approximation
 to a target function $f(\w)$ known in $N$ distinct points 
 $\{\w_n$,~$n=1,\cdots,N\}$. 
@@ -998,13 +1031,13 @@ The advantage of the Pad\'e approximant is that a more refined description
 of the frequency-dependent screened Coulomb interaction can simply be achieved
 by calculating additional points along the imaginary axis. In practice
 we have found that $N=11$ provides a good representation of the frequency
-dependence, in line with the observation of Ref.\ \onlinecite{pade3}
+dependence, in line with the observation of Ref.\ \onlinecite{blochl}
 (where the authors use $N=12$). Figure \ref{fig.pade} illustrates the quality
 of the analytic continuation using Pad\'e approximants for a few test cases.
 
 We also investigated the possibility of analytically continuing
 the screened Coulomb interaction by using a multi-pole expansion
-as suggested in Ref.\ \onlinecite{godby1}. The multi-pole approach
+as suggested in Ref.\ \onlinecite{spacetime}. The multi-pole approach
 seems a more natural choice, as it incorporates the non-analyticity
 of the dielectric function. We tried one-, two-, and three-pole
 expansions by determining the coefficients using the simplex 
@@ -1018,7 +1051,7 @@ Our experience therefore is that the multi-pole expansion is not optimal
 for an automated procedure where the analytic continuation has to be
 performed for every $\G$, $\Gp$, and $\q$ of the screened Coulomb 
 interaction without manual intervention. Our analysis supports the view 
-already expressed in Ref.\ \onlinecite{pade3}.
+already expressed in Ref.\ \onlinecite{blochl}.
 
 \begin  {figure}
 \begin  {center}
@@ -1081,7 +1114,7 @@ Instead, we would need to replace this
 by the non-selfconsistent calculation of the susceptibility, followed 
 by the explicit inversion of the dielectric matrix for each frequency.
 The resulting method constitutes an improved version of the technique
-already proposed in Ref.\ \onlinecite{reining}.
+already proposed in Ref.\ \onlinecite{reining-sternheimer}.
 
 The second important limitation is that the shifted {\tt cBiCG} methods
 does not allow for the use of effective preconditioners. In fact,
@@ -1207,6 +1240,14 @@ Phys.\ Rev.\ B {\bf 79}, 245106 (2009).
 S. Baroni, S. de Gironcoli, A. Dal Corso, and P. Giannozi, 
 Rev.\ Mod.\ Phys.\ {\bf 73}, 515 (2001).
 
+\bibitem{frommer}
+A. Frommer,
+Computing {\bf 70}, 87 (2003).
+
+\bibitem{cohen_berg}
+M. L. Cohen and T. K. Bergstresser,
+Phys.\ Rev.\ {\bf 141}, 789 (1966).
+
 \bibitem{fleszar-resta}
 A. Fleszar and R. Resta,
 Phys.\ Rev.\ B {\bf 31}, 5305 (1985).
@@ -1219,16 +1260,42 @@ Phys.\ Rev.\ B {\bf 29}, 7045 (1984).
 S. Baroni, P. Giannozzi, and A. Testa,
 Phys.\ Rev.\ Lett.\ {\bf 58}, 1861 (1987).
 
-\bibitem{frommer}
-A. Frommer,
-Computing {\bf 70}, 87 (2003).
+\bibitem{degironcoli}
+S. de Gironcoli,
+Phys.\ Rev.\ B {\bf 51}, 6773 (1995).
 
-\bibitem{cohen_berg}
-M. L. Cohen and T. K. Bergstresser,
-Phys.\ Rev.\ {\bf 141}, 789 (1966).
+\bibitem{reining94}
+R. Dal Sole, L. Reining, and R. W. Godby,
+Phys.\ Rev.\ B {\bf 49}, 8024 (1994).
 
+\bibitem{espresso}
+P. Giannozzi {\it et al.},
+% S. Baroni, N. Bonini, M. Calandra, R. Car, C. Cavazzoni, D. Ceresoli, G. L. Chiarotti, 
+%M. Cococcioni, I. Dabo, A. Dal Corso, S. Fabris, G. Fratesi, S. de Gironcoli, R. Gebauer, 
+%U. Gerstmann, C. Gougoussis, A. Kokalj, M. Lazzeri, L. Martin-Samos, N. Marzari, F. Mauri, 
+%R. Mazzarello, S. Paolini, A. Pasquarello, L. Paulatto, C. Sbraccia, S. Scandolo, 
+%G. Sclauzero, A. P. Seitsonen, A. Smogunov, P. Umari, R. M. Wentzcovitch, 
+J.\ Phys.: Condens.\ Matter {\bf 21}, 395502 (2009).
 
+\bibitem{cpm}
+R. M. Pick, M. H. Cohen, and R. M. Martin,
+Phys.\ Rev.\ B {\bf 1}, 910 (1970). 
 
+\bibitem{hl86-prb}
+M. S. Hybertsen and S. G. Louie,
+Phys.\ Rev.\ B {\bf 35}, 5585 (1976).
+
+\bibitem{balde_tosa}
+A. Baldereschi and E. Tosatti,
+Phys.\ Rev.\ B {\bf 17}, 4710 (1978).
+
+\bibitem{baroni-resta}
+S. Baroni and R. Resta,
+Phys.\ Rev.\ B {\bf 33}, 7017 (1986).
+
+\bibitem{alavi}
+J. Spencer and A. Alavi.
+Phys.\ Rev.\ B {\bf 77} 193110 (2008).
 
 \bibitem{painless.cg}
 G.\ H.\ Golub and C.\ F.\ Van Loan, {\it Matrix Computations} (John Hopkins University Press, Baltimore, 1983).
@@ -1249,16 +1316,8 @@ Phys.\ Rev.\ B {\bf 54}, R8285 (1996).
 H. J. Vidberg and J. W. Serene,
 J.\ Low.\ Temp.\ Phys.\ {\bf 29}, 179 (1977).
 
-\bibitem{pade3}
-S. Leb\`egue, B. Arnaud, M. Alouani, and P. E. Bloechl,
-Phys.\ Rev.\ B {\bf 67}, 155208 (2003).
-
-\bibitem{godby1}
-H. N. Rojas, R. W. Godby, and R. J. Needs,
-Phys.\ Rev.\ Lett.\ {\bf 10}, 1827 (1995).
-
 \bibitem{nelder-mead}
-J. A. Nelder and R. Mead, 
+J. A. Nelder and R. Mead,
 Comput. J. {\bf 7}, 308 (1965).
 We used the implementation available from the
 {\tt E04CCF} routine of the {\tt NAG} library
@@ -1267,43 +1326,6 @@ We used the implementation available from the
 \bibitem{simoncini}
 V. Simoncini and D. B. Szyld,
 Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
-
-\bibitem{balde_tosa}
-A. Baldereschi and E. Tosatti,
-Phys.\ Rev.\ B {\bf 17}, 4710 (1978).
-
-\bibitem{baroni-resta}
-S. Baroni and R. Resta,
-Phys.\ Rev.\ B {\bf 33}, 7017 (1986).
-
-\bibitem{degironcoli}
-S. de Gironcoli,
-Phys.\ Rev.\ B {\bf 51}, 6773 (1995).
-
-\bibitem{reining94}
-R. Dal Sole, L. Reining, and R. W. Godby,
-Phys.\ Rev.\ B {\bf 49}, 8024 (1994).
-
-\bibitem{espresso}
-P. Giannozzi {\it et al.},
-% S. Baroni, N. Bonini, M. Calandra, R. Car, C. Cavazzoni, D. Ceresoli, G. L. Chiarotti, 
-%M. Cococcioni, I. Dabo, A. Dal Corso, S. Fabris, G. Fratesi, S. de Gironcoli, R. Gebauer, 
-%U. Gerstmann, C. Gougoussis, A. Kokalj, M. Lazzeri, L. Martin-Samos, N. Marzari, F. Mauri, 
-%R. Mazzarello, S. Paolini, A. Pasquarello, L. Paulatto, C. Sbraccia, S. Scandolo, 
-%G. Sclauzero, A. P. Seitsonen, A. Smogunov, P. Umari, R. M. Wentzcovitch, 
-J.\ Phys.: Condens.\ Matter {\bf 21}, 395502 (2009).
-
-\bibitem{hl86-prb}
-M. S. Hybertsen and S. G. Louie,
-Phys.\ Rev.\ B {\bf 35}, 5585 (1976).
-
-\bibitem{cpm}
-R. M. Pick, M. H. Cohen, and R. M. Martin,
-Phys.\ Rev.\ B {\bf 1}, 910 (1970). 
-
-\bibitem{alavi}
-J. Spencer and A. Alavi.
-Phys.\ Rev.\ B {\bf 77} 193110 (2008).
 
 \end{thebibliography}
 
