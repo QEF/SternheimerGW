@@ -336,6 +336,25 @@ therefore the switching between the standard $GW$ approach and to the modified $
 approximation can be achieved by literally commenting one single line of code
 if the present approach is implemented on top of existing DFPT software.\cite{espresso}
 
+\subsubsection{Non self-consistent calculation of the dielectric matrix}
+
+@@@@@@@@@@@@@@@@@
+NEED TO MENTION THAT MULTISHIFT IS GREAT
+Our scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
+Had we stopped at the first iteration (no self-consistency), we would have
+simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
+The latter possibility has already been discussed in Ref.\ \onlinecite{reining-sternheimer}.
+Our additional step is to fully exlpoint density-functional perturbation theory
+in terms of self-consistent solution of the linear system.
+MULTISHIFT IS THE ADDED THING WRT REINING. IMPORTANT.
+
+Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency, 
+it is possible to perform the simultaneous calculation of all the frequency responses 
+using a {\it multishift} method (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
+advantageous as we can obtain the whole frequency-dependence by performing one
+single iterative solution. 
+@@@@@@@@@@@@@@@@@
+
 \subsection{Green's function}\label{sec.green}
 
 The calculation of the Green's function can efficiently be performed 
@@ -404,6 +423,20 @@ by directly solving a linear system. As Eq.\ (\ref{eq.green.3})
 does not explicitely require unoccupied electronic states, this procedure mimics 
 the DFPT approach for the screened Coulomb interaction outlined in Sec.\ \ref{sec.coulomb},
 albeit without the self-consistency requirement.
+
+@@@@@@@@@@@@@@
+Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency, 
+it is possible to perform the simultaneous calculation of all the frequency responses 
+using a {\it multishift} method (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
+advantageous as we can obtain the whole frequency-dependence by performing one
+single iterative solution. 
+
+The presence of the infinitesimal $i\delta$ in $\w^+=\w+i\delta$ 
+guarantees that the linear operator $\H_\k-\w^+$ in Eq.\ (\ref{eq.green.3.g}) is never singular.
+However the system can become ill-conditioned, therefore the use of appropriate
+preconditioners is required in this case. We discuss this point
+in Appendix~\ref{app.condition}.
+@@@@@@@@@@@@@@@@
 
 \subsection{Self-energy}\label{sec.sigma}
 
@@ -489,7 +522,7 @@ Had we performed the integration on a sphere
 with a radius $R_{\rm c}$ defined by the crystal volume 
 ($4/3\pi R_{\rm c}^3 = N_\q \Omega$), then we would have obtained
   \begin{equation}
-  v_{\rm tr} (\q+\G) = \frac{4\pi e^2}{|\q+\G|^2} (1-\cos |\q+\G| R_{\rm c}),
+  v_{\rm t} (\q+\G) = \frac{4\pi e^2}{|\q+\G|^2} (1-\cos |\q+\G| R_{\rm c}),
   \end{equation}
 which corresponds to the truncated Coulomb potential introduced in Ref.\ \onlinecite{alavi}.
 We will come back to this aspect in Sec.\ \ref{sec.coulomb.g}.
@@ -567,118 +600,124 @@ of Bloch waves:
   \end{equation}
 where $\Delta v_{[\q,\G,\w]}$ is cell-periodic in $\rp$.
 If we now replace Eq.\ (\ref{eq.dv.bloch}) into Eq.\ (\ref{eq.linsys.3})
-we discover that for each component $\Delta v_{[\q,\G,\w]}$ of the
-perturbing potential having a Bloch wavevector $\q$,
-the associated variations of the wavefunctions must carry 
-a Bloch wavevector $\k+\q$:
+we discover that the component $\Delta v_{[\q,\G,\w]}$ of the
+perturbing potential corresponding to the Bloch wave ${\rm exp}(-i\q\cdot\r)$
+couples only to the variations of the wavefunctions corresponding to
+the Bloch wave ${\rm exp}[i(\k+\q)\cdot\rp]$:
   \begin{equation}
   \Delta \psi^\sigma_{v\k[\r,\w]} = \frac{1}{N_\q\Omega} \sum_{\q\G} \Delta u^\sigma_{v\k[\q,\G,\w]} 
   {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
   \end{equation}
 where $\Delta u^\sigma_{v\k[\q,\G,\w]}$ is cell-periodic in $\rp$.
-As a result the linear system Eq.\ (\ref{eq.linsys.1}) simplifies to
+As a result the linear system Eq.\ (\ref{eq.linsys.1}) becomes:
   \begin{equation}\label{eq.linsys.4}
   (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  = -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k},
   \end{equation}
-
-NEED TO SAY WHAT IS Hk AND Pk+q
-
-The induced charge density corresponding to the Bloch wave ${\rm exp}(-i\q\cdot\r)$ 
-reads
+where $\H_\k= {\rm e}^{-i\k\cdot\r} \H {\rm e}^{i\k\cdot\r}$ and
+$\P^\k=\sum_v | u_{v\k} \rangle \langle u_{v\k}|$.
+The induced charge density associated with the Bloch wave ${\rm exp}(-i\q\cdot\r)$ 
+now reads 
   \begin{equation} \label{eq.deltan.bloch}
   \Delta n_{[\q,\G,\w]} = \frac{2}{N_\k}\sum_{v\k\s} u_{v\k}^\star  \Delta u^\s_{v\k[\q,\G,\w]}.
   \end{equation}
-This result is similar to the case of standard DFPT.\cite{baroni.rmp} 
+This result is very similar to the case of standard DFPT.\cite{baroni.rmp} 
 The main difference is that in the present case the translational invariance 
 of the screened Coulomb interaction induces a coupling between the perturbation 
 with Bloch wave ${\rm exp}(-i\q\cdot\r)$ in the variable $\r$ and its induced
-response with Bloch wave ${\rm exp}(i\q\cdot\rp)$ in the variable $\rp$.
+response with Bloch wave ${\rm exp}(\,i\q\cdot\rp)$ in the variable $\rp$.
 %
-If the cell-periodic function $\Delta n_{[\q,\G,\w]}$ is expanded in plane waves, 
+To conclude the derivation, we rewrite the screened Coulomb interaction 
+Eq.\ (\ref{eq.w.dfpt}) after expanding the cell-periodic function 
+$\Delta n_{[\q,\G,\w]}(\rp)$ in planewaves:
 %$\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
-the screened Coulomb interaction Eq.\ (\ref{eq.w.dfpt}) acquires the following simple
-form: 
-  \begin{equation}
+  \begin{equation}\label{eq.w.deltan.g}
   W_{\G\Gp}(\q;\w) = [\delta_{\G\Gp} + \Delta n_{[\q,\G,\w]}(\Gp) ]v(\q+\Gp).
   \end{equation}
 
-\vspace{2cm}
-
 In practical calculations we proceed as follows: we first initialize the perturbation
-in the linear systems using $\Delta v^{\rm bare}_{[\q,\G,\w]}(\rp) = v(\q+\G) {\rm e}^{i\G\cdot\rp}$.
+in the linear systems using 
+$\Delta v^{\rm bare}_{[\q,\G,\w]} = v(\q+\G) \, {\rm exp}(\,i\G\cdot\rp)$.
 The solution of the linear systems yields the change in the wavefunctions,
-which are then used to constructr the induced charge, the induced Hartree potential,
-and the updated screened interaction. At convergence the perturbation corresponds to
-the screened interaction $v(\q+\G) \epsilon^{-1}_{\G\Gp}(\q;\w)$.
-The calculation must be repeated for every perturbation, i.e.\ for every 
-$\q$, $\G$, and $\w$.
+which are then used to construct the induced charge, the induced Hartree potential,
+and the updated screened Coulomb interaction. We repeat this procedure by starting with
+the new screened Coulomb interaction until convergence.
+At convergence the self-consistent perturbing potential yields
+the screened Coulomb interaction $W_{\G\Gp}(\q;\w)$.
+The calculation must be repeated for every perturbation, i.e.\ for
+each set of $[\q,\G,\w]$ parameters.
 %
-As we are dealing with a linear problem, we can change the scale of the initial
-perturbation and start from a bare perturbation given by ${\rm e}^{i\G\cdot\rp}$,
-thereby ending up with $\epsilon^{-1}_{\G\Gp}(\q;\w)$ as the self-consistent potential.
-Note that this result is strictly linked to the choice of working with a right-sided 
-inverse dielectric matrix. 
-%
+At the end of this procedure it is straightforward to obtain the inverse dielectric matrix 
+$\epsilon^{-1}_{\G\Gp}(\q;\w)$ using Eqs.~(\ref{eq.w.deltan.g}) and 
+(\ref{eq.Wg}). Alternatively, it is also possible to scale the initial
+perturbation and use $\Delta v^{\rm bare}_{[\q,\G,\w]} = {\rm exp}(i\G\cdot\rp)$
+to yield the inverse dielectric matrix [as Eq.~(\ref{eq.linsys.4}) is a linear system].
+
+The scheme here developed enables the calculation of one row (in $\Gp$) of the inverse 
+dielectric matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
+perturbation ${\rm exp}[-i(\q+\G)\cdot\r]$. This idea has been discussed already
+in Ref.\ \onlinecite{kunc-tosatti} in the framework of nonperturbative methods.
+
+We mention briefly that, for the purpose of numerical stability,
+in practical calculations it is convenient to modify the linear operator on the left-hand side of 
+Eq.\ (\ref{eq.linsys.4}) by adding a projector on the occupied manifold $\P^\k$:
+ \begin{eqnarray} \label{eq.linsys.5}
+&  (\H_{\k+\q}-\E_{v\k}+\alpha\P^\k \pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  & = \nonumber \\
+&   -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k}, &
+  \end{eqnarray}
+with $\alpha$ set to twice the occupied bandwith. This extra term does not affect
+the solutions $\Delta u^\pm_{v\k[\q,\G,\w]}$ which are linear combinations
+of unoccupied electronic states. At the same time, the extra term
+has the effect of eliminating possible null eigenvalues of the linear operator
+$\H_{\k+\q}-\E_{v\k}\pm\w$ thereby making it non singular.
+This strategy is common practice in DFPT implementations,\cite{baroni.rmp,espresso} and 
+is discussed in greater detail in Appendix \ref{app.condition}.
+
+\subsubsection{Singularities in the inverse dielectric matrix and the screened Coulomb interaction}
+
 In order to avoid the singular behavior of the wings of the inverse dielectric matrix 
-at long wavelenght ($\q\rightarrow 0$) it is convenient to define the symmetrized inverse
-dielectric matrix as follows:\cite{balde_tosa}
+in the long wavelenght limit ($|\q|\!\rightarrow\!0$) it is convenient to work with
+the symmetrized inverse dielectric matrix defined as follows:\cite{balde_tosa}
   \begin{equation}
   \tilde\epsilon^{-1}_{\G\Gp}(\q;\w) = \epsilon^{-1}_{\G\Gp}(\q;\w)  \frac{|\q+\Gp|}{|\q+\G\phantom{^\prime}|}.
   \end{equation}
-It can be verified by direct calculation that, unlike its unsymmetrized counterpart,
-the wings of $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ have finite limits for $\q\rightarrow 0$.
+Unlike its unsymmetrized counterpart $\epsilon^{-1}_{\G\Gp}(\q;\w)$,
+the wings of $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ have finite limits 
+at long wavelengths.
 %Within this notation, the screened Coulomb interaction reads
 %  \begin{equation}
 %  W_{\G\Gp}(\q;\w) =   \frac{4\pi e^2}{|\q+\G||\q+\Gp|} \tilde\epsilon^{-1}_{\G\Gp}(\q;\w)
 %  \end{equation}
 %[I BELIEVE THAT THE LEFT MATRIX IS OBTAINED BY SWAPPING THE RIGHT MATRIX - CHECK THIS.
 %PCM USES LEFT]
-
-The screened Coulomb interaction of Eq.\ (\ref{eq.Wg}) is now rewritten as
+%
+The screened Coulomb interaction of Eq.\ (\ref{eq.Wg}) is now rewritten in symmetrized form
+as
   \begin{equation}\label{eq.Wg_symm}
   W_{\G\Gp}(\q;\w) = \frac{4\pi e^2}{|\q+\G||\q+\Gp|}  \tilde\epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
-While the symmetrized inverse dielectric matrix has finite limits for $\q\rightarrow 0$,
+While the symmetrized inverse dielectric matrix has finite limits at long wavelengths,
 the screened Coulomb interaction still presents a divergence corresponding to the
 long-range tail of the Coulomb potential in real space. This divergence requires special
-care when performing the Brillouin zone integration to obtain the GW self-energy.\cite{hl86}
-We here overcome this difficulty by replacing the bare Coulomb potential 
-by the truncated potential $v_{\rm tr}(\r,\rp)=v(\r,\rp)[1-\theta(|\r-\rp|-R_{\rm c})]$, $\theta(x)$ being the Heaviside step function, following the prescription of 
-Ref.~\onlinecite{alavi}. The truncation radius is obtained as 
-$4\pi R_{\rm c}^3/3=N_\q\Omega$. The final expression for the
-screened Coulomb interaction in reciprocal space reads
+handling when performing the Brillouin zone integration to calculate 
+the GW self-energy.\cite{hl86}
+We here overcome this difficulty following the prescription of
+Ref.~\onlinecite{alavi}. For this purpose we replace
+the bare Coulomb potential $v(\r,\rp)$ by the truncated potential 
+$v_{\rm t}(\r,\rp)=v(\r,\rp)[1-\Theta(|\r-\rp|-R_{\rm c})]$, 
+$\Theta(x)$ being the Heaviside step function.
+The truncation radius is defined by $4\pi R_{\rm c}^3/3=N_\q\Omega$. 
+Using this truncated Coulomb potential, the final expression for the screened 
+Coulomb interaction in reciprocal space becomes:
   \begin{equation}\label{eq.Wg_symm}
-  W^{\rm tr}_{\G\Gp}(\q;\w) = 4\pi e^2 \, \frac{1-\cos{R_{\rm c}|\q+\G|}}{|\q+\G||\q+\Gp|}\,
+  W^{\rm t}_{\G\Gp}(\q;\w) = 4\pi e^2 \, \frac{1-\cos{R_{\rm c}|\q+\G|}}{|\q+\G||\q+\Gp|}\,
      \tilde\epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
-In the long-wavelenght limit $\q\rightarrow 0$ and for $\G=\Gp=0$ the truncated
-screened interaction it goes to
-the finite limit $2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\rightarrow 0;\w)$.
-Improved truncation methods can be defined for non-isotropic materials.\cite{sohrab}
-
-The scheme introduced here allows us to calculate one row (in $\Gp$) of the inverse dielectric
-matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
-perturbation ${\rm e}^{i(\q+\G)\cdot\r}$. This idea has been discussed in Ref.\ \onlinecite{kunc-tosatti}
-in the framework of nonperturbative methods. We here developed the density-functional
-perturbation theory of the inverse dielectric matrix. The main achievement is the
-possibility of calculating the dielectric response at finite wavevectors without
-resorting to supercell calculations.
-
-
-  
-
-We point out that, as routinely done in DFPT calculations, 
-it is convenient to modify the linear operator on the lhs of Eq.\ (\ref{eq.linsys.4}) by adding
-a term $\alpha \P^\k$:
- \begin{eqnarray} \label{eq.linsys.5}
-&  (\H_{\k+\q}-\E_{v\k}+\alpha\P^\k \pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  & = \nonumber \\
-&   -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k}, & 
-  \end{eqnarray}
-with $\alpha$ set to twice the occupied bandwith.
-While it does not affect the solutions $\Delta u^\pm_{v\k[\q,\G,\w]}$ which have
-vanishing projections on the occupied manifold, this additional term removes
-the null eigenvalues of the linear system thereby making it non singular.
-This is discusses in detail in Appendix \ref{app.condition}.
+In the long-wavelenght limit $\q\!\rightarrow\!0$ and for $\G=\Gp=0$ the truncated
+screened Coulomb interaction tends to
+the finite limit 
+$2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\!\rightarrow\!0;\w)$.
+Optimized truncation methods can also be defined for non-isotropic materials
+and systems with reduced dimensionality.\cite{sohrab}
 
 \subsection{Green's function}\label{sec.green.g}
 
@@ -714,22 +753,10 @@ linear system Eq.\ (\ref{eq.green.3.g}) for a set of $[\k,\G,\w]$ parameters
 we obtain an entire row $\Gp$ of the analytic component of the
 Green's function $g^{\rm A}_{[\k,\G,\w]}(\Gp)$.
 
-Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency, 
-it is possible to perform the simultaneous calculation of all the frequency responses 
-using a {\it multishift} method (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
-advantageous as we can obtain the whole frequency-dependence by performing one
-single calculation. In addition, as we show in Sec.\ \ref{sec.green.scaling},
-the scaling of the present scheme with the number of atoms $N$ in the system 
-is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
-of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
-
-The presence of the infinitesimal $i\delta$ in $\w^+$ 
-guarantees that the linear operator $\H_\k-\w^+$ in Eq.\ (\ref{eq.green.3.g}) is never singular.
-However the system can become ill-conditioned, therefore the use of appropriate
-preconditioners is required in this case. We discuss this point
-in Appendix~\ref{app.condition}.
- 
 \subsection{Self-energy}\label{sec.sigma.g}
+
+NOTHING SPECIAL, ONLY MENTION FFT AND SMALL GRID. POSSIBILITY OF SOLVING
+THE QP EQUATION.
 
 \section{Results}\label{sec.results}
 
@@ -765,19 +792,16 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
 \end{tabular}
 \end{table}
 
-\subsection{Calculation of epsilon}
-
-Our scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
-Had we stopped at the first iteration (no self-consistency), we would have
-simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
-The latter possibility has already been discussed in Ref.\ \onlinecite{reining-sternheimer}.
-Our additional step is to fully exlpoint density-functional perturbation theory
-in terms of self-consistent solution of the linear system.
-
 \section{Discussion}\label{sec.discussion}
 
 \subsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
+
 \subsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
+
+The scaling of the present scheme with the number of atoms $N$ in the system 
+is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
+of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
+
 
 \section{Conclusions}\label{sec.conclusion}
 
