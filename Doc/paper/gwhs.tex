@@ -412,11 +412,12 @@ proceed as in the case of the screened Coulomb interaction,
 by regarding $G^{\rm A}(\r,\rp;\w)$ as a parametric
 function of the the first space variable and of the frequency:
 $G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
-If we now apply the operator $\H-\w + i\eta$ to both sides of Eq.\ (\ref{eq.green.split.2})
+If we now apply the operator $\H-\w^+$ to both sides of Eq.\ (\ref{eq.green.split.2}),
+with $\w^+=\w+i\eta$,
 and we use the completeness relation $\sum_n \psi_n(\r)\psi_n^\star(\rp) = \delta(\r,\rp)$
 we find immediately:
   \begin{equation}\label{eq.green.3}
-  (\H-\w + i\eta) G^{\rm A}_{[\r,\w]}(\rp) = -\, \delta(\r,\rp).
+  (\H-\w^+) G^{\rm A}_{[\r,\w]}(\rp) = -\, \delta(\r,\rp).
   \end{equation}
 Therefore, as expected, we can determine the analytic part of the Green's function
 by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
@@ -721,24 +722,26 @@ and systems with reduced dimensionality.\cite{sohrab}
 
 \subsection{Green's function}\label{sec.green.g}
 
-We here derive the formalism for the calculation of the Green's function
-in reciprocal space, using the procedure outlined in Sec.\ \ref{sec.green}.
-We first rewrite Eq.\ (\ref{eq.green.1}) by relabeling the states
-$\psi_n$ into Bloch states $\psi_{n\k}$ and taking into account the
+We here specialize Eqs.\ (\ref{eq.green.1})-(\ref{eq.green.3}) to the case
+of a planewaves basis and the Bloch representation.
+We start by rewriting Eq.\ (\ref{eq.green.1}) after relabeling the electronic states
+$\psi_n$ as Bloch states $\psi_{n\k}$ and taking into account the
 normalization:
-  \begin{equation}\label{eq.green.1.g}
-  G(\r,\rp;\w) = \frac{1}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\eta_{n\k}},
-  \end{equation}
-Then we expand the Green's function in terms
-of the Bloch waves ${\rm exp}[-i(\k+\G)\cdot\r]$ and ${\rm exp}[i\k\cdot\rp]$:
+%  \begin{equation}\label{eq.green.1.g}
+%  G(\r,\rp;\w) = \frac{1}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\eta_{n\k}},
+%  \end{equation}
+Next we expand the Green's function in terms
+of the Bloch waves ${\rm exp}[-i(\k+\G)\cdot\r]$ and ${\rm exp}(i\k\cdot\rp)$:
   \begin{equation}\label{eq.green.bloch}
-  G^{\rm A,N}_{[\r,\w]} (\rp) = \frac{1}{\Omega N_\k}  \sum_{\k\G} g^{\rm A,N}_{[\k,\G,\w]}(\rp)
-   {\rm e}^{-i(\k+\G)\cdot\r} {\rm e}^{i\k\cdot\rp}.
+  G^{\rm A}_{[\r,\w]} (\rp) = \frac{1}{N_\k\Omega}  \sum_{\k\G} g^{\rm A}_{[\k,\G,\w]}(\rp)
+   {\rm e}^{-i(\k+\G)\cdot\r} {\rm e}^{i\k\cdot\rp},
   \end{equation}
-By using the same convention for the wavefunctions 
-and the lattice-periodic part of the Green's function 
-$g^{\rm A,N}_{[\k,\G,\w]}(\rp)  = \sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} g^{\rm A,N}_{[\k,\G,\w]}(\Gp)$,
-Eqs.~(\ref{eq.green.3}),(\ref{eq.green.split.3}) become
+with $g^{\rm A}_{[\k,\G,\w]}(\rp)$ cell-periodic in $\rp$. An analogous expansion
+holds for the non-analytic component $G^{\rm N}$.
+%By using the same convention for the wavefunctions 
+%and the lattice-periodic part of the Green's function 
+%$g^{\rm A,N}_{[\k,\G,\w]}(\rp)  = \sum_\Gp {\rm e}^{i(\k+\Gp)\cdot\rp} g^{\rm A,N}_{[\k,\G,\w]}(\Gp)$,
+Equations (\ref{eq.green.split.2}),(\ref{eq.green.split.3}) are now rewritten as:
   \begin{equation}\label{eq.green.3.g}
    (\H_\k-\w^+)  g^{\rm A}_{[\k,\G,\w]}(\Gp)  =  -\,\delta_{\G\Gp},
   \end{equation}
@@ -746,7 +749,8 @@ Eqs.~(\ref{eq.green.3}),(\ref{eq.green.split.3}) become
   g^{\rm N}_{[\k,\G,\w]}(\Gp)  =  
   2\pi i \sum_v \delta(\w-\E_{v\k}) u^\star_{v\k}(\G)u_{v\k} (\Gp).
   \end{equation}
-In deriving Eqs.\ (\ref{eq.green.3.g}),(\ref{eq.green.4b.g}) we made use of time-reversal symmetry, yielding
+In deriving Eqs.\ (\ref{eq.green.3.g}),(\ref{eq.green.4b.g}) we made use once again
+of time-reversal symmetry, yielding
 $u^\star_{v\k}(\G) = u_{v,-\k}(-\G)$.
 Similarly to the case of the screened Coulomb interaction, by solving the
 linear system Eq.\ (\ref{eq.green.3.g}) for a set of $[\k,\G,\w]$ parameters
@@ -755,10 +759,30 @@ Green's function $g^{\rm A}_{[\k,\G,\w]}(\Gp)$.
 
 \subsection{Self-energy}\label{sec.sigma.g}
 
-NOTHING SPECIAL, ONLY MENTION FFT AND SMALL GRID. POSSIBILITY OF SOLVING
-THE QP EQUATION.
+The $GW$ self-energy in Eq.\ (\ref{eq.sigma}) is calculated in real space
+after performing the Fourier transforms of $W_{\G\Gp}(\q;\w)$ and $G_{\G\Gp}(\k;\w)$.
+The result is then transformed back in reciprocal space to obtain
+$\Sigma_{\G\Gp}(\k;\w)$. The evaluation of the matrix elements of the
+self-energy in the basis of Kohn-Sham eigenstates is performed in reciprocal space.
+Since the planewave cutoff required to describe the inverse dielectric
+matrix and the self-energy is typically much smaller than the curoff used
+in density-functional calculations,\cite{hl86} the procedure here described
+does not require an excessive computational effort and accounts for only
+a fraction of the total computation time.
 
-\section{Results}\label{sec.results}
+\section{Scaling properties}\label{sec.scaling}
+
+\subsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
+
+\subsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
+
+The scaling of the present scheme with the number of atoms $N$ in the system 
+is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
+of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
+
+
+\section{Conclusions}\label{sec.conclusion}
+\section{Numerical results}\label{sec.results}
 
 % table: 1col, table* 2col
 \begin{table}[b!]
@@ -794,16 +818,6 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
 
 \section{Discussion}\label{sec.discussion}
 
-\subsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
-
-\subsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
-
-The scaling of the present scheme with the number of atoms $N$ in the system 
-is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
-of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
-
-
-\section{Conclusions}\label{sec.conclusion}
 
 In practice other solutions are possible such as $f(\r,\rp;\w) = \sum_i f_{[i,\w]}(\rp) \, \phi_i(\r)$
 if the basis $\phi_i(\r)$ is complete and orthonormal. We considered two classical
