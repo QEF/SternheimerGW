@@ -806,16 +806,17 @@ a fraction of the total computation time.
 
 \section{Scaling properties}\label{sec.scaling}
 
-\subsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
+\subsubsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
 
-\subsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
+\subsubsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
 
-The scaling of the present scheme with the number of atoms $N$ in the system 
-is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
-of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
+\subsubsection{Scaling of the self-energy calculation}\label{sec.sigma.scaling}
+
+%The scaling of the present scheme with the number of atoms $N$ in the system 
+%is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
+%of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
 
 
-\section{Conclusions}\label{sec.conclusion}
 \section{Numerical results}\label{sec.results}
 
 % table: 1col, table* 2col
@@ -852,11 +853,13 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
 
 \section{Discussion}\label{sec.discussion}
 
+\section{Conclusions}\label{sec.conclusions}
 
-In practice other solutions are possible such as $f(\r,\rp;\w) = \sum_i f_{[i,\w]}(\rp) \, \phi_i(\r)$
-if the basis $\phi_i(\r)$ is complete and orthonormal. We considered two classical
-examples: delta functions and plane waves. There is certainly scope to consider
-all the many possinilities in between.
+
+%In practice other solutions are possible such as $f(\r,\rp;\w) = \sum_i f_{[i,\w]}(\rp) \, \phi_i(\r)$
+%if the basis $\phi_i(\r)$ is complete and orthonormal. We considered two classical
+%examples: delta functions and plane waves. There is certainly scope to consider
+%all the many possinilities in between.
 
 \begin{acknowledgments}
 F.G. is grateful to Manish Jain for drawing Ref.\ \onlinecite{alavi} to his attention.
@@ -870,83 +873,84 @@ and Engineering Division, U.\ S.\ Department of Energy under Contract No. DE-AC0
 
 \section{Condition number of the linear system}\label{app.condition}
 
-\subsection{Screened Coulomb interaction}
+\subsubsection{Screened Coulomb interaction}
 
-The iterative calculation of the screened Coulomb interaction at finite real
+The iterative calculation of the screened Coulomb interaction through 
+Eq.\ (\ref{eq.linsys.1}) at finite real
 frequencies $\w$ can be considerably more time-consuming than in the static
-($\w=0$) case. Simple tests indicate that the computational effort, as given
-by the number of iterations required to reach convergence, increases with 
-increasing frequency $\w$. This behavior suggests that the linear system 
-on the lhs of Eq.\ (\ref{eq.linsys.1}) becomes progressively more ill-conditioned 
+($\w\!=\!0$) case. Simple tests indicate that 
+the number of iterations required to reach convergence increases with 
+increasing frequency $\w$. This behavior suggests that the linear operator in
+Eq.\ (\ref{eq.linsys.1}) becomes progressively more ill-conditioned 
 as the frequency $\w$ increases.
 
-In order to rationalize this observation, in the following we examine
-the condition number of the linear system in Eq.\ (\ref{eq.linsys.1}).
+In order to rationalize this observation, we here examine
+the condition number of the linear operator $\H-\E_v\pm\w$ in Eq.\ (\ref{eq.linsys.1}).
 The minimum number of iterations $N_{\rm min}$ required for the solution of
 a linear system using the conjugate gradients algorithm is given by
   \begin{equation}\label{eq.cg}
   N_{\rm min} = \frac{1}{2}\sqrt{\kappa} \log(2/\epsilon),
   \end{equation}
 $\kappa$ being the condition number of the linear operator and $\epsilon$ the
-desired relative accuracy.\cite{painless.cg} In our calculations we used the 
-complex biorthogonal conjugate gradient method ({\tt cBiCG}) of Ref.\ \onlinecite{jacobs},
-which is an extension of the standard conjugate gradients method to the 
-case of general complex matrices. While the estimate Eq.\ (\ref{eq.cg}) strictly 
-holds only for the original algorithm, we found empirically that it also 
-provides an accurate description of the convergence rate for the {\tt cBiCG} 
-method.
-
-The condition number of a linear operator $A$ can be obtained by taking the ratio 
-of its largest $A_{\rm max}$ and smallest $A_{\rm min}$ eigenvalues: 
+desired relative accuracy.\cite{painless.cg} In our calculations we adopt the 
+complex biorthogonal variant (cBiCG) of the conjugate gradient method (CG)
+following Ref.\ \onlinecite{jacobs}. This method is an extension of the standard 
+conjugate gradients algorithm to the 
+case of general complex matrices. While the estimate Eq.\ (\ref{eq.cg}) has
+been derived for the original CG algorithm, we found empirically that it also 
+provides a reasonable description of the convergence rate of the complex cBiCG version.
+%
+The condition number of a linear operator $\hat{A}$ can be calculated as the ratio 
+of its largest $A_{\rm max}$ to smallest $A_{\rm min}$ eigenvalues: 
 $\kappa=|A_{\rm max}/A_{\rm min}|$.
-Now, if we formally expand the one-particle Hamiltonian $\H$ in terms of its valence 
-$|v\>$ and conduction $|c\>$ eigenstates with eigenvalues $\E_v$ and $\E_c$, we obtain
-$\H = \sum_v \E_v |v\>\<v| + \sum_c \E_c |c\>\<c|$. For a given valence state 
-$|v^\prime\>$ the linear operator $\hat{A}_\vp (\w) = \H - \E_\vp + \alpha \hat{P}_v - w$ 
-on the lhs of Eq.\ (\ref{eq.linsys.1}) reads
-  \begin{equation}
-  \hat{A}_\vp (\w)  = 
-  \sum_v ( \E_v - \E_\vp + \alpha - w ) |v\>\<v| 
-  + \sum_c ( \E_c - \E_\vp - w ) |c\>\<c|,
-  \end{equation}
-and its eigenvalues are given by $A_v = \E_v - \E_\vp + \alpha - w$ and
-$A_c = \E_c - \E_\vp - w$. 
+%If we formally expand the one-particle Hamiltonian $\H$ in terms of its valence 
+%$|v\>$ and conduction $|c\>$ eigenstates, with eigenvalues $\E_v$ and $\E_c$, we obtain
+%$\H = \sum_v \E_v |v\>\<v| + \sum_c \E_c |c\>\<c|$. 
+For a given valence state 
+$|v^\prime\>$ the linear operator $\hat{A}_\vp (\w) = \H - \E_\vp + \alpha \P - \w$ 
+in Eq.\ (\ref{eq.linsys.1b}) has eigenvalues
+%  \begin{equation}
+%  \hat{A}_\vp (\w)  = 
+%  \sum_v ( \E_v - \E_\vp + \alpha - w ) |v\>\<v| 
+%  + \sum_c ( \E_c - \E_\vp - \w ) |c\>\<c|,
+%  \end{equation}
+$A_v = \E_v - \E_\vp + \alpha - \w$ and $A_c = \E_c - \E_\vp - \w$. 
 
 Let consider first the simplest case where $\w=0$ and $\alpha>0$. In this case 
 we find by inspection that the smallest eigenvalue is $|A_{\rm min}|= \min(E_{\rm g}, |\alpha-W_{\rm occ}|)$, 
-$E_{\rm g}$ being the fundamental gap and $W_{\rm occ}$ the valence bandwidth.
+$E_{\rm g}$ being the fundamental energy gap and $W_{\rm occ}$ the valence bandwidth.
 It is common practice to set $\alpha=2W_{\rm occ}$ in order to avoid null eigenvalues.
 \cite{baroni.rmp} With this choice the smallest eigenvalue becomes $|A_{\rm min}|=E_{\rm g}$.
 On the other hand, the largest eigenvalue can be approximated by the
-cutoff energy of the wavefunction basis set $|A_{\rm max}|=E_{\rm cut}$
-(i.e. the kinetic energy cutoff in a plane-waves basis).
+cutoff energy of the wavefunction basis set $|A_{\rm max}|=E_{\rm cut}$.
 In this case the condition number reads $\kappa = E_{\rm cut}/E_{\rm g}$.
 As an example, if we are using a plane-waves basis with a kinetic enegry
-cutoff of 50 Ry, we have an electron energy gap of eV, 
+cutoff of 30 Ry, we have an electron energy gap of 1 eV, 
 and the our desired accuracy is $\epsilon=10^{-10}$, then according to
 Eq.\ (\ref{eq.cg}) the minimum number of iterations required to solve 
-the linear system would be $N_{\rm min} = 310$. Empirical tests show that 
-this estimate is quite accurate for the systems considered in the present work.
-In order to improve the convergence rate it is common practice to resort to preconditioning
+the linear system would be $N_{\rm min} = 240$. Empirical tests show that 
+this estimate is quite accurate for the system considered in the present work.
+In order to improve the convergence rate it is useful to employ preconditioning
 techniques. We here adopt the Teter-Payne-Allan preconditioner\cite{tpa}
-in order to ``compress'' the eigenvalue spectrum and reduce the
-condition number. Indeally the preconditioning could make the linear
-system perfectly well conditioned ($\kappa=1$). In this case
-the optimal  number of iterations (for $\epsilon=10^{-10}$) would be as small
-as $N_{\rm min,pc} = 12$. We have found that the Teter-Payne-Allan preconditioner
-gets very close to such optimal conditioning, as the number of iterations
-required to achieve convergence was in all cases in the range $N_{\rm TPA}=$15-25. 
+in order to ``compress'' the eigenvalue spectrum and thereby reduce the
+condition number. An ideal preconditioner would make the linear operator
+almost perfectly well conditioned ($\kappa=1$). In this case
+the optimal  number of iterations (for a relative accuracy $\epsilon=10^{-10}$) 
+would be as small as $N_{\rm min,pc} = 12$. We have found empirically
+that by using the Teter-Payne-Allan 
+preconditioner the number of iterations
+required to achieve convergence was in all cases in the range $N_{\rm TPA}=$15--40. 
 
 We now consider the case of $\w<0$. Simple algebra shows that in this case
-(ignoring preconditioning for simplicity) $\kappa = E_{\rm cut}/(E_{\rm g} + w)$
+$\kappa = E_{\rm cut}/(E_{\rm g} + w)$
 when $\alpha = 2W_{\rm occ}$. Hence in this case the larger the frequency $\w$,
-the better conditioned the linear system. We confirmed this point
-by performing explicit calculations.
+the better conditioned the linear system. We checked this result
+by explicit calculations.
 
 The worst case in terms of condition number is found when $\w>0$. 
 In fact, as soon as the frequency exceeds the optical excitation
 threshold $\w>E_{\rm g}$, the linear operator acquires null eigenvalues 
-corresponding to the resonance condition $w = \E_c - \E_\vp$. 
+corresponding to the resonance condition $\w = \E_c - \E_\vp$. 
 In this latter case the condition
 number $\kappa(\w)$ exhibits significant structure, reflecting
 the joint density of states of the system. Even after preconditioning the system, 
@@ -955,44 +959,47 @@ $N_{\rm min} = 500$, thus rendering this avenue unpractical.
 The calculation of the screened Coulomb interaction for frequencies slightly
 off the real axis $\w+i\eta$, with $\w>0$ and small $\eta$, leads only to a negligible
 improvement of the convergence rate.
+
 The difficulty of solving iteratively the linear system Eq.\ (\ref{eq.linsys.1})
 for large positive frequencies is accompanied by the additional difficulty 
-of adequately sampling the Brillouin zone to describe the pole at $w = \E_c - \E_\vp$.
+of adequately sampling the Brillouin zone to describe the singularities at $\w = \E_c - \E_\vp$.
 
 Alltogether, these considerations suggest that an iterative solution of the
 linear system along the real axis is not convenient from the computational
-viewpoint. For this reason we decided to perform the calculation of $W_{\G,\Gp}(\q,\w)$
-along the imaginary axis and then to analitically continue the functions
-to the real axis using Pad\'e approximants.\cite{pade1,pade2,blochl}
-The motivation behind our choice becomes clear when we consider the
-plasmon-pole model of the screened Coulomb interaction:\cite{hl86}
+viewpoint. For this reason we decided to evaluate $W_{\G,\Gp}(\q,\w)$
+along the {\it imaginary axis} and then to analitically continue the functions
+to the real axis using {\it Pad\'e approximants}.\cite{pade1,pade2,blochl}
+The motivation behind our choice becomes obvious after considering a simple
+plasmon-pole model of the screened Coulomb interaction (without loss of
+generality):\cite{hl86}
   \begin{equation}
-  W(\w) = v + (W_0 -v) \Big( \frac{w_{\rm p}/2}{w+w_{\rm p}} - \frac{w_{\rm p}/2}{w-w_{\rm p}} \Big),
+  W(\w) = v + \frac{W_0 -v}{2} \Big[ \frac{\w_{\rm p}}{\w+\w_{\rm p}} - \frac{\w_{\rm p}}{\w-\w_{\rm p}} \Big],
   \end{equation}
 where $\w_{\rm p}$ is the pole frequency and $W_0$ the static screened Coulomb interation.
 Analytical continuation of this function to the imaginary axis yields
   \begin{equation} \label{eq.pp.im}
-  W(\w=i\beta) = v + (W_0 -v) \frac{1}{1+(\beta/w_{\rm p})^2}.
+  W(\w=i\beta) = v + \frac{W_0 -v}{1+(\beta/\w_{\rm p})^2}.
   \end{equation}
-Hence, the screened Coulomb interaction along the imaginary axis contains the same
-amount of information as the one on the real axis ($w_{\rm p}$ and $W_0$), while
-not having singularities. In this case the condition number reads
+Equation (\ref{eq.pp.im}) indicates that the screened Coulomb interaction along the imaginary axis contains the same
+amount of information as the one on the real axis ($\w_{\rm p}$ and $W_0$), and at the same time
+does not show any singularities. In this case the condition number reads
 (assuming no preconditioning and $\alpha=0$ for simplicity) 
 $\kappa=[(E_{\rm g}^2+\beta^2)/(E_{\rm cut}^2+\beta^2)]^\frac{1}{2}$,
 and tends to unity for large imaginary frequencies.
+As a result, the worst case scenario for the solution 
+of the linear system corresponds to the static case $W_{\G,\Gp}(\q,\w=0)$.
 
 In summary, by solving iteratively the linear system along the imaginary
 axis we circumvent the difficulties associated with the ill-conditioning
 of the linear system Eq.\ (\ref{eq.linsys.1}) occurring at real frequencies
 and the necessity of dense Brillouin zone sampling.
-Within the present approach, the worst case scenario for the solution 
-of the linear system corresponds to the static case $W_{\G,\Gp}(\q,\w=0)$.
+The details of the analytic continuation are discussed in Appendix \ref{app.pade}.
 
-\subsection{Green's function}
+\subsubsection{Green's function}
 
 A similar analysis can be carried out for the calculation of the Green's
-function using the method introduce in Secs.\ \ref{sec.green} and \ref{sec.green.g}.
-It is straightforward to realize that in this case the condition number
+function using the method introduced in Sec.\ \ref{sec.green}.
+It is straightforward to establish that in this case the condition number
 of the system is given by $\kappa = E_{\rm cut}/\delta$.
 As the infinitesimal $\delta$ is typically taken to be 0.1 eV, we are effectively
 dealing with a situation analogous to a small-bandgap semiconductor.
