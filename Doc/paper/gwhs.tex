@@ -297,6 +297,23 @@ interaction is achieved. This procedure can be regarded as the extension
 of the DFPT for lattice-dynamical calculations to finite-frequency
 test-charge perturbations. 
 
+In practical calculations we solve Eq.\ (\ref{eq.linsys.1}) along the imaginary
+frequency axis in order to avoid the null eigenvalues of the operator
+$\H-\E_v\pm\w$, and then we perform the analytic continuation of 
+the screened Coulomb interaction to the real frequency axis (cf.\ Appendix \ref{app.condition}).
+In the special case of $\w=0$ it is convenient to modify the linear operator on the left-hand side of
+Eq.\ (\ref{eq.linsys.1}) by adding a projector on the occupied manifold $\P$:
+ \begin{equation} \label{eq.linsys.1b}
+ (\H-\E_v+\alpha\P) \Delta \psi_{v[\r,0]}  = -(1-\P)  \Delta V_{[\r,0]} \psi_v,
+  \end{equation}
+with $\alpha$ set to twice the occupied bandwith. This extra term does not affect
+the solutions $\Delta \psi_{v[\r,0]}$ which are linear combinations
+of unoccupied electronic states. At the same time, the extra term
+has the effect of shifting away from zero the null occupied eigenvalues 
+of the linear operator $\H-\E_v$ thereby making it non singular.
+This strategy is common practice in DFPT implementations,\cite{baroni.rmp,espresso} and
+is discussed in greater detail in Appendix \ref{app.condition}.
+
 \subsubsection{Vertex correction}
 
 Within the scheme here outlined it is rather straightforward to introduce
@@ -338,22 +355,39 @@ if the present approach is implemented on top of existing DFPT software.\cite{es
 
 \subsubsection{Non self-consistent calculation of the dielectric matrix}
 
-@@@@@@@@@@@@@@@@@
-NEED TO MENTION THAT MULTISHIFT IS GREAT
-Our scheme is equivalent to the direct calculation of $\epsilon^{-1}$.
-Had we stopped at the first iteration (no self-consistency), we would have
-simpy to solve the Sternheimer equations and we would obtan $\epsilon$.
-The latter possibility has already been discussed in Ref.\ \onlinecite{reining-sternheimer}.
-Our additional step is to fully exlpoint density-functional perturbation theory
-in terms of self-consistent solution of the linear system.
-MULTISHIFT IS THE ADDED THING WRT REINING. IMPORTANT.
+An alternative approach to the calculation of the screened Coulomb interaction
+using DFPT consists in solving Eq.\ (\ref{eq.linsys.1}) non self-consistently.
+In practice we replace the self-consistent perturbation $\Delta V_{[\r,\w]}(\rp)$
+in the right-hand side of Eq.\ (\ref{eq.linsys.1}) by the bare Coulomb potential
+$v_{[\r]}(\rp)=v(\r,\rp)$ as follows:
+  \begin{equation}\label{eq.linsys.1.nscf}
+  (\H-\E_v\pm\w) \Delta \psi^{{\rm NS},\pm}_{v[\r,\w]}  = -(1-\P)  v_{[\r]} \psi_v, 
+  \end{equation}
+and we solve this Sternheimer equation with the known-term on the right-hand side
+kept fixed. By constructing the induced charge density $\Delta n^{\rm NS}_{[\r,\w]}$ as in Eq.\ (\ref{eq.deltan})
+we obtain the dielectric matrix $\epsilon(\r,\rp;\w)$:
+  \begin{equation}\label{eq.diel}
+  \epsilon(\r,\rp;\w) = \delta(\r,\rp) - \Delta n^{\rm NS}_{[\r,\w]}(\rp).
+  \end{equation}
+It is straightforward to check that this procedure correctly leads to the RPA
+dielectric matrix.\cite{hl86-prb}
+The difference between this approach and the self-consistent calculation described in
+Sec.\ \ref{sec.coulomb} is that here we also need to invert the dielectric matrix obtained
+through Eq.\ (\ref{eq.diel}) in order to calculate the screened Coulomb interaction.
+This non self-consistent procedure has been proposed first in Ref.\ \onlinecite{reining-sternheimer}.
 
-Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency, 
-it is possible to perform the simultaneous calculation of all the frequency responses 
-using a {\it multishift} method (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
-advantageous as we can obtain the whole frequency-dependence by performing one
-single iterative solution. 
-@@@@@@@@@@@@@@@@@
+One extra step that we make in the present work is to notice that Eq.\ (\ref{eq.linsys.1.nscf})
+constitutes a {\it shifted} linear system, i.e.\ a system where the linear operator
+$\H-\E_v\pm\w$ differs from a {\it seed} operator $\H-\E_v$ only by a constant shift $\pm\w I$ 
+($I$ being the identity operator). 
+In this case we can take
+advantage of the {\it multishift} method of Ref.\ \onlinecite{frommer}
+to determine $\Delta \psi^{{\rm NS},\pm}_{v[\r,\w]}$ for every frequency $\w$
+at the price of one single calculation for the {\it seed} system $(\H-\E_v) \Delta \psi^{{\rm NS}}_{v[\r,0]}  = -(1-\P)  v_{[\r]} \psi_v$.
+This procedure is extremely advantageous as we can obtain the whole frequency-dependence 
+by performing one single iterative solution. 
+The practical implementation of this procedure is described in detail in Appendix \ref{app.multishift}.
+
 
 \subsection{Green's function}\label{sec.green}
 
@@ -414,10 +448,10 @@ function of the the first space variable and of the frequency:
 $G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
 If we now apply the operator $\H-\w^+$ to both sides of Eq.\ (\ref{eq.green.split.2}),
 with $\w^+=\w+i\eta$,
-and we use the completeness relation $\sum_n \psi_n(\r)\psi_n^\star(\rp) = \delta(\r,\rp)$
+and we use the completeness relation $\delta_{[\r]}(\rp) = \delta(\r,\rp) = \sum_n \psi_n(\r)\psi_n^\star(\rp)$
 we find immediately:
   \begin{equation}\label{eq.green.3}
-  (\H-\w^+) G^{\rm A}_{[\r,\w]}(\rp) = -\, \delta(\r,\rp).
+  (\H-\w^+) G^{\rm A}_{[\r,\w]} = -\, \delta_{[\r]}.
   \end{equation}
 Therefore, as expected, we can determine the analytic part of the Green's function
 by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
@@ -425,19 +459,19 @@ does not explicitely require unoccupied electronic states, this procedure mimics
 the DFPT approach for the screened Coulomb interaction outlined in Sec.\ \ref{sec.coulomb},
 albeit without the self-consistency requirement.
 
-@@@@@@@@@@@@@@
-Since the rhs of Eq.\ (\ref{eq.green.3.g}) does not depend on the frequency, 
-it is possible to perform the simultaneous calculation of all the frequency responses 
-using a {\it multishift} method (cf.\ Appendix \ref{app.multishift}). This procedure is extremely
-advantageous as we can obtain the whole frequency-dependence by performing one
-single iterative solution. 
+The procedure described here is especially advantageous because Eq.\ (\ref{eq.green.3})
+constitutes a {\it shifted} linear system as Eq.\ (\ref{eq.linsys.1.nscf}).
+Also in this case we can take
+advantage of the {\it multishift} method of Ref.\ \onlinecite{frommer}
+to determine $G^{\rm A}_{[\r,\w]}$ for every frequency $\w$
+at the price of one single calculation for the {\it seed} system $\H G^{\rm A}_{[\r,0]} = -\, \delta_{[\r]}$
+(cf.\ Appendix \ref{app.multishift}).
 
-The presence of the infinitesimal $i\delta$ in $\w^+=\w+i\delta$ 
-guarantees that the linear operator $\H_\k-\w^+$ in Eq.\ (\ref{eq.green.3.g}) is never singular.
+The presence of the infinitesimal $i\eta$ in $\w^+=\w+i\eta$ 
+guarantees that the linear operator $\H-\w^+$ in Eq.\ (\ref{eq.green.3.g}) is never singular.
 However the system can become ill-conditioned, therefore the use of appropriate
-preconditioners is required in this case. We discuss this point
+preconditioners may become necessary. We discuss this point
 in Appendix~\ref{app.condition}.
-@@@@@@@@@@@@@@@@
 
 \subsection{Self-energy}\label{sec.sigma}
 
@@ -658,20 +692,20 @@ dielectric matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear respo
 perturbation ${\rm exp}[-i(\q+\G)\cdot\r]$. This idea has been discussed already
 in Ref.\ \onlinecite{kunc-tosatti} in the framework of nonperturbative methods.
 
-We mention briefly that, for the purpose of numerical stability,
-in practical calculations it is convenient to modify the linear operator on the left-hand side of 
-Eq.\ (\ref{eq.linsys.4}) by adding a projector on the occupied manifold $\P^\k$:
- \begin{eqnarray} \label{eq.linsys.5}
-&  (\H_{\k+\q}-\E_{v\k}+\alpha\P^\k \pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  & = \nonumber \\
-&   -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k}, &
-  \end{eqnarray}
-with $\alpha$ set to twice the occupied bandwith. This extra term does not affect
-the solutions $\Delta u^\pm_{v\k[\q,\G,\w]}$ which are linear combinations
-of unoccupied electronic states. At the same time, the extra term
-has the effect of eliminating possible null eigenvalues of the linear operator
-$\H_{\k+\q}-\E_{v\k}\pm\w$ thereby making it non singular.
-This strategy is common practice in DFPT implementations,\cite{baroni.rmp,espresso} and 
-is discussed in greater detail in Appendix \ref{app.condition}.
+%We mention briefly that, for the purpose of numerical stability,
+%in practical calculations it is convenient to modify the linear operator on the left-hand side of 
+%Eq.\ (\ref{eq.linsys.4}) by adding a projector on the occupied manifold $\P^\k$:
+% \begin{eqnarray} \label{eq.linsys.5}
+%&  (\H_{\k+\q}-\E_{v\k}+\alpha\P^\k \pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  & = \nonumber \\
+%&   -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k}, &
+%  \end{eqnarray}
+%with $\alpha$ set to twice the occupied bandwith. This extra term does not affect
+%the solutions $\Delta u^\pm_{v\k[\q,\G,\w]}$ which are linear combinations
+%of unoccupied electronic states. At the same time, the extra term
+%has the effect of eliminating possible null eigenvalues of the linear operator
+%$\H_{\k+\q}-\E_{v\k}\pm\w$ thereby making it non singular.
+%This strategy is common practice in DFPT implementations,\cite{baroni.rmp,espresso} and 
+%is discussed in greater detail in Appendix \ref{app.condition}.
 
 \subsubsection{Singularities in the inverse dielectric matrix and the screened Coulomb interaction}
 
