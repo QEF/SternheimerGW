@@ -353,7 +353,7 @@ therefore the switching between the standard $GW$ approach and to the modified $
 approximation can be achieved by literally commenting one single line of code
 if the present approach is implemented on top of existing DFPT software.\cite{espresso}
 
-\subsubsection{Non self-consistent calculation of the dielectric matrix}
+\subsubsection{Non self-consistent calculation of the dielectric matrix}\label{sec.diel.nscf}
 
 An alternative approach to the calculation of the screened Coulomb interaction
 using DFPT consists in solving Eq.\ (\ref{eq.linsys.1}) non self-consistently.
@@ -806,16 +806,135 @@ a fraction of the total computation time.
 
 \section{Scaling properties}\label{sec.scaling}
 
-\subsubsection{Scaling of the screened Coulomb calculation}\label{sec.coulomb.scaling}
+INTRODUCE THE WHOLE NOTATION HERE.
 
-\subsubsection{Scaling of the Green's function calculation}\label{sec.green.scaling}
+\subsubsection{Screened Coulomb interaction}\label{sec.coulomb.scaling}
+
+In this section we refer to the planewaves implementation outlined in Sec.\ \ref{sec.coulomb.g},
+and for the sake of clarity we consider a $\Gamma$ point sampling of the Brillouin zone
+(without loosing generality), and a plasmon-pole approximation for the frequency-dependence.
+Equation (\ref{eq.linsys.4}) needs to be solved for every planewave perturbation
+$\G$ ($\q=0$ and $\w=0$ in this simplified discussion). A smooth cutoff $E_{\rm cut}^{\rm s}$ 
+(typically smaller than the wavefunction cutoff) corresponds to $N_\G^{\rm s}$ perturbations.
+Each solution of Eq.\ (\ref{eq.linsys.4}) requires two cBiCG minimizations
+(one for $-\w$ and the other for $+\w$), and each cBiCG minimization consists of two CG sequences.
+The most expensive step in each CG step is the application of the Hamiltonian operator
+to the previous search direction. In a planewaves basis the most time-consuming step in the
+latter operation is the Fourier transform of the wavefunctions to real-space (in order
+to calculate the product with the local potential) and back. Using fast-Fourier-transform
+algorithms this can be achieved in $4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}$ operations,\cite{frigo}
+$N_\r^{\rm den}$ being the number of real-space grid points necessary to represent the 
+electron density (given by 4 times the wavefunction cutoff).
+If in average the CG minimization requires $N_{\rm CG}$ steps,
+the self-consistent procedures requires $N_{\rm SCF}$ iterations, and we need to perform
+the calculation for $N_v$ occupied electronic states, then the total cost
+of the entire calculation is approximately given by 
+   \begin{equation}\label{eq.scaling.1}
+   N^{\rm DFPT}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s} [ N_v ( 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}) ]
+   \end{equation}
+floating point operations.
+As $N_\G^{\rm s}$, $N_v$, and $N_\r$ are all proportional 
+to the size of the systems as measured by the number of atoms $N_{\rm at}$,
+the overall scaling of this procedure is $N_{\rm at}^3 {\rm log} N_{\rm at}$.
+
+For comparison it is useful to estimate the scaling of tstandard $GW$ calculations
+based on the expansion over unoccupied states.\cite{hl86} 
+The calculation of the irreducible polarization requires the optical matrix elements
+of each of the $N_v$ occupied states with each of the $N_c$ unoccupied states.
+These matrix elements are actually computed by using Fourier transforms of $\psi_c^\star(\r)\psi_v(\r)$,
+therefore this requires $N_v + N_c$ FFTs to real-space, mutliplication, and $N_v N_c$ FFTs back
+to reciprocal space. Each FFT must be performed on the $N_\r^{\rm den}$ grid, therefore
+the total cost is 
+   \begin{equation}
+   N^{\rm HL86}_{\rm flops} = N_c  [N_v (4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}) ]
+   \end{equation}
+ floating point operations.
+The calculation of the empty states requires CG minimizations and most importantly the orthogonalization
+of the wavefunctions, which scales as $N_c^2 N_\G^{\rm wf}$. This is small as compared to 
+the calculation of the matrix elements.
+Even in this case therefore the overall scaling is $N_{\rm at}^3 {\rm log} N_{\rm at}$.
+
+For the purpose of a fair comparison we set now $N_{\rm SCF}=1$ in Eq.\ (\ref{eq.scaling.1}),
+meaning that we calculate the dielectric matrix as described in Sec.\ \ref{sec.diel.nscf} (instead of the
+inverse dielectric matrix).
+This also brings in the advantage that, by using the multishift method, 
+only one calculation is required for $\w=0$ instead of two and that in this case the two CG sequences do coincide.
+As a result a factor 4 drops out of the prefactor and 
+the ratio between the costs of the DFPT approach in a planewaves
+implementation and the standard method is (assuming a perfectly well-conditioned system with $\kappa=1$):
+%   \begin{equation}
+%   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{2 N_{\rm CG} N_\G^{\rm s}}{N_c}.
+%   \end{equation}
+   \begin{equation}\label{eq.ratio.flops}
+   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{N_\G^{\rm s} {\rm log} (2/\varepsilon)}{N_c}.
+   \end{equation}
+As an example, for a relative accuracy of $\varepsilon=10^{-5}$ 
+we find this ratio to be $\simeq 12 N_\G^{\rm s}/N_c$.
+In the case of silicon, with $E_{\rm cut}^{\rm s}=10$ Ry we have $N_\G^{\rm s}=137$, therefore
+the DFPT approach becomes convenient when more than 1650 unoccupied states are used.
+This is rarely the case as most calculations reported to date use only a few hundredths of 
+unoccupied electronic states.
+Of course the accuracy of the standard sum-over-states expression is more difficult to
+assess, and a convergence on 5 significant digits is probably not achieved with only a few
+hundreths of electronic states. It remains however that an implementation based on planewaves
+is at least as expensive as the standard approach.
+
+It should be noticed however, that our DFPT scheme (for the screened Coulomb interaction
+and the Green's function taken together) has the advantage of providing
+the whole self-energy $\Sigma_{\G\Gp}(\k;\w)$, while the standard approach would 
+only provide the matrix elements of the self-energy on a subset of states which is
+typically of the order of $N_v$. Therefore if we performed a comparison based on the
+same amount of output information, we should use $N_c N_\G^{\rm s}$ in Eq.\ (\ref{eq.ratio.flops})
+instead of $N_c N_v$. In this case the ration above would change into
+  \begin{equation}
+  \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{N_v {\rm log} (2/\varepsilon)}{N_c},
+  \end{equation}
+and for $\varepsilon=10^{-5}$ in silicon we would have $\simeq 64/N_c$.
+This clearly shows that, {\it if the entire self-energy is needed} (as opposed to a few matrix elements),
+{\it then our proposed DFPT approach is more convenient that the standard sum-over-states
+procedure}.
+
+What we learn from the above analysis is that the main bottlenecks of the calculation are
+the FFT for the application of the Hamiltonian and the large basis sets adopted.
+Therefore one possibility to improve over the present method is to keep the general
+theory developed in Sec.\ \ref{sec.coulomb} and move to either a (i) real-space 
+method where the application of the Hamiltonian scales linearly with system size,
+or to (ii) a local basis set.
+In both cases it seems that a calculation scaling with $N_{\rm at}^3$ should be feasible,
+and with a more favourable prefactor in the case of a local basis set.
+
+\subsubsection{Green's function}\label{sec.green.scaling}
+
+The analysis of the scaling of the Green's function can be carried out along the same
+lines of Sec.\ \ref{sec.coulomb.scaling}. The main difference is that the linear system
+Eq.\ (\ref{eq.green.3}) does not depend on the occupied states, hence a factor $N_v$
+drops from Eq.\ (\ref{eq.scaling.1}). In addition, we do not have self-consistency,
+therefore also the factor $N_{\rm SCF}$ drops out. Finally, we need to perform the
+calculation for one frequency only (not two), and we can use the multishift method
+to generate the entire frequency-dependence without incurring in significant additional computation.
+The total cost is therefore:
+   \begin{equation}\label{eq.scaling.3}
+   N^{\rm G}_{\rm flops} = 4 N_{\rm CG} N_\G^{\rm s} ( 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}),
+   \end{equation}
+which is cleary smaller than the cost of computing the screened Coulomb interaction,
+and scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$.
+In the present case we need to point out that the system is rather ill-conditioned
+and the number of CG iterations can be as high as 100-200.
+We note that this procedure for calculating the Green's function is advantageous
+with respect to an expansion over empty states, which scales as $N_{\rm at}^3$ due
+to the necessity or orthogonalizing the wavefunctions.
 
 \subsubsection{Scaling of the self-energy calculation}\label{sec.sigma.scaling}
 
-%The scaling of the present scheme with the number of atoms $N$ in the system 
-%is ${\mathcal O}(N^2\log N)$. This is advantageous w.r.t to the explicit calculation 
-%of the unoccupied states and their orthogonalization, which scales as ${\mathcal O}(N^3)$.
-
+The self-energy is computed in real-space by first transforming $G$ and $W$ to
+real-space, and then is tranformed back in reciprocal space.
+The 6D FFT transformation of $G$ or $W$ requires $(N_\G^{\rm s}+N_\r^{\rm s})(4 N_\r^{\rm s} {\rm log} N_\r^{\rm s})$
+operations for each of the $N_\w$ frequencies of the screened Coulomb interaction
+(assuming we only need $\Sigma$ and its derivative at $\w=0$).
+Again the computational cost scales with $N_{\rm at}^2 {\rm log} N_{\rm at}$.
+This would be in principle negligible with respect to the calculation of $W$
+but the necessity of storing $G$ and $W$ at each frequency on file can
+make the I/O the real bottleneck of the part of the procedure.
 
 \section{Numerical results}\label{sec.results}
 
@@ -1011,30 +1130,30 @@ is indeed a sensible strategy.
 
 \section{Preconditioned complex biconjugate gradient method}\label{app.cbcg}
 
-As the {\tt cBiCG} algorithm was introduced in Ref.\ \onlinecite{jacobs} 
-without preconditioning, in this section we describe the preconditioned version 
-wihch we derived following Ref.~\onlinecite{painless.cg}.
+The cBiCG algorithm introduced in Ref.\ \onlinecite{jacobs} 
+did not include preconditioning. In this appendix we describe 
+the preconditioned version of the cBiCG algorithm which we derived 
+following Ref.~\onlinecite{painless.cg}.
 %
 We are interested in solving the linear system
   \begin{equation}\label{eq.axeqb}
   Ax=b,
   \end{equation}
 with A a complex linear operator (not necessarily Hermitian), $b$ a complex 
-vector, and $x$ the solution vector.
-The {\tt cBiCG} algorithm is an extension of the standard conjugate
-gradients method, and generates two sequences of residuals $r_n$ and
-$\rt_n$ in such a way that successive residuals 
-are biorthogonal [$\<r_{n+1}|\rt_n\>=0$ and $\<\rt_{n+1}|r_n\>=0$], 
-and two sequences of search directions 
-$p_n$ and $\pt_n$ in such a way that successive directions
-are biconjugate [$\< A p_{n+1}|\pt_n \> =0$ and 
-$\< A^\dagger \pt_{n+1}|p_n \> =0$].\cite{jacobs}
+vector, and $x$ the unknown solution vector.
+In the cBiCG algorithm of Ref.\ \onlinecite{jacobs} two sequences of residuals $r_n$ and
+$\rt_n$ are generated in such a way that successive residuals 
+are biorthogonal [i.e.\ $\<r_{n+1}|\rt_n\>=0$ and $\<\rt_{n+1}|r_n\>=0$].
+At the same time two sequences of search directions 
+$p_n$ and $\pt_n$ are generated in such a way that successive directions
+are biconjugate [i.e.\ $\< A p_{n+1}|\pt_n \> =0$ and 
+$\< A^\dagger \pt_{n+1}|p_n \> =0$].
 The algorithm starts by setting the initial residuals to
 $r_0 = b-Ax_0$ ($x_0$ being the initial guess for the solution vector $x$) 
 and $\rt_0=r_0^\star$, and the initial search directions to $p_0=r_0$ 
-and $\pt_0=p_0^\star$.
-Subsequently for each iteration the solution
-vector, the search directions, and the residuals are updated as follows:
+and $\pt_0=p_0^\star$. Next the solution
+vector, the search directions, and the residuals are updated at each
+iteration as follows:
   \begin{eqnarray}
   \alpha_n & = & \<\rt_n|r_n\>/\<\pt_n|Ap_n\> \label{eq.cg1}  \\ 
   x_{n+1} & = & x_n + \alpha_n p_n \label{eq.cg2} \\ 
@@ -1058,14 +1177,14 @@ written as $M=E^{\rm T}E$, then we can rewrite the system as follows:
   \end{equation}
 By defining $A^\prime=E^{-1}AE^{-{\rm T}}$, $x^\prime=E^{\rm T}x$, and $b^\prime=E^{-1}b$
 we obtain the transformed system $A^\prime x^\prime=b^\prime$, for which the
-standard {\tt cBiCG} method applies.
+standard cBiCG method applies.
 While this procedure is formally correct, it is not convenient to explicitely
-transform the linear operator (which in our case is only implicitely
-known). Instead it is convenient to perform a few formal manipulations 
-to rewrite the procedure in terms of
-$A$, $b$, and $x$. For this purpose we make the substitutions
+transform the linear operator.
+It is convenient instead to rewrite the procedure in terms of
+$A$, $b$, and $x$ by performing a few formal manipulations.
+For this purpose we make the substitutions
 $r^\prime = E^{-1}r$ and $p^\prime=E^{\rm T} p$. Some algebra leads straightforwardly
-to the preconditioned version of the {\tt cBiCG} algorithm:
+to the preconditioned version of the cBiCG algorithm:
   \begin{eqnarray}
   \alpha_n & = & \<\rt_n|M^{-1}r_n\>/\<\pt_n|Ap_n\>  \\
   x_{n+1} & = & x_n + \alpha_n p_n \\ 
@@ -1073,14 +1192,12 @@ to the preconditioned version of the {\tt cBiCG} algorithm:
   \rt_{n+1} & = & \rt_n - \alpha_n^\star A^\dagger \pt_n \\ 
   \beta_n & = & - \<A^\dagger\pt_n|M^{-1}r_{n+1}\>/\<\pt_n|Ap_n\> \\ 
   p_{n+1} & = & M^{-1}r_{n+1} + \beta_n p_n \\ 
-  \pt_{n+1} & = & M^{-1}\rt_{n+1} + \beta_n^\star \pt_n, 
+  \pt_{n+1} & = & M^{-1}\rt_{n+1} + \beta_n^\star \pt_n.
   \end{eqnarray}
-with the initializations: $r_0=b-Ax_0$, $p_0=M^{-1}r_0$, $\rt_0=r_0^\star$,
-$\pt_0=p_0^\star$.
-The additional cost associated with the use of the preconditioner is negligible
-with respect to the overall cost of the {\tt cBiCG} method.
-In this work we have used the preconditioned {\tt cBiCG} method 
-by adopting the Teter-Payne-Allan function as the preconditioner $M^{-1}$.\cite{tpa}
+The preconditioned  cBiCG algorithm needs to be intialized with
+$r_0=b-Ax_0$, $p_0=M^{-1}r_0$, $\rt_0=r_0^\star$, and $\pt_0=p_0^\star$.
+In this work we have used the Teter-Payne-Allan function as the preconditioner 
+$M^{-1}$.\cite{tpa}
 
 \section{Analytic continuation using Pad\'e approximants}\label{app.pade}
 
@@ -1415,6 +1532,10 @@ We used the implementation available from the
 \bibitem{simoncini}
 V. Simoncini and D. B. Szyld,
 Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
+
+\bibitem{frigo}
+S. G. Johnson and M. Frigo,
+IEEE Trans.\ Sig.\ Proc.\ {\bf 55}, 111 (2007).
 
 \end{thebibliography}
 
