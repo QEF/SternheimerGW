@@ -806,102 +806,116 @@ a fraction of the total computation time.
 
 \section{Scaling properties}\label{sec.scaling}
 
-INTRODUCE THE WHOLE NOTATION HERE.
+In this section we analyze the computational complexity of the algorithms
+proposed in Sec.\ \ref{sec.theory.g}, by focusing on our planewave
+implementation. Without loss of generality we consider a $\Gamma$ point sampling 
+of the Brillouin zone and we leave aside the frequency-dependence of
+the screened Coulomb interaction and of the non-interacting Green's function.
+The Kohn-Sham electronic wavefunctions are expanded in a basis of plane waves
+with a kinetic energy cutoff $E_{\rm cut}^{\rm wf}$, corresponding to
+$N_\G^{\rm wf}$ plane waves and $N_\r^{\rm wf}$ grid points in real-space.
+In the simplest case of norm-conserving pseudopotential approaches 
+the electronic charge density will be described using a basis set with a cutoff
+$E_{\rm cut}^{\rm den}=4E_{\rm cut}^{\rm wf}$, and the corresponding number of basis
+functions will $N_\G^{\rm den}$, while the number of real-space grid points will be 
+$N_\r^{\rm den}$. The screened Coulomb interaction, the Green's function,
+and the self-energy will be described by a smaller cutoff $E_{\rm cut}^{\rm s}$,
+with corresponding $N_\G^{\rm s}$ and $N_\r^{\rm s}$.
 
 \subsubsection{Screened Coulomb interaction}\label{sec.coulomb.scaling}
 
-In this section we refer to the planewaves implementation outlined in Sec.\ \ref{sec.coulomb.g},
-and for the sake of clarity we consider a $\Gamma$ point sampling of the Brillouin zone
-(without loosing generality), and a plasmon-pole approximation for the frequency-dependence.
-Equation (\ref{eq.linsys.4}) needs to be solved for every planewave perturbation
-$\G$ ($\q=0$ and $\w=0$ in this simplified discussion). A smooth cutoff $E_{\rm cut}^{\rm s}$ 
-(typically smaller than the wavefunction cutoff) corresponds to $N_\G^{\rm s}$ perturbations.
+Equation (\ref{eq.linsys.4}) needs to be solved for each one of the $N_\G^{\rm s}$ planewave perturbations,
+and for each one of the $N_v$ occupied electronic states.
 Each solution of Eq.\ (\ref{eq.linsys.4}) requires two cBiCG minimizations
-(one for $-\w$ and the other for $+\w$), and each cBiCG minimization consists of two CG sequences.
-The most expensive step in each CG step is the application of the Hamiltonian operator
-to the previous search direction. In a planewaves basis the most time-consuming step in the
-latter operation is the Fourier transform of the wavefunctions to real-space (in order
-to calculate the product with the local potential) and back. Using fast-Fourier-transform
-algorithms this can be achieved in $4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}$ operations,\cite{frigo}
-$N_\r^{\rm den}$ being the number of real-space grid points necessary to represent the 
-electron density (given by 4 times the wavefunction cutoff).
-If in average the CG minimization requires $N_{\rm CG}$ steps,
-the self-consistent procedures requires $N_{\rm SCF}$ iterations, and we need to perform
-the calculation for $N_v$ occupied electronic states, then the total cost
-of the entire calculation is approximately given by 
+(for $\pm\w$), and each cBiCG minimization consists of two CG sequences.
+The most time-consuming operation in each CG step is the application of the Hamiltonian 
+to the previous search direction, and in particular
+the Fourier transform of the wavefunctions to real-space and back for evaluating
+the product with the local potential. Fast-Fourier-transform
+algorithms allow us to perform these calculation in $N^{\rm den}_{\rm FFT} = 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}$ operations.\cite{frigo}
+If in average the CG minimization requires $N_{\rm CG}$ steps
+and the self-consistency loop requires $N_{\rm SCF}$ iterations,
+then the total cost of the entire calculation corresponds to
    \begin{equation}\label{eq.scaling.1}
-   N^{\rm DFPT}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s} [ N_v ( 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}) ]
+   N^{\rm DFPT}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s}  N_v N^{\rm den}_{\rm FFT}
    \end{equation}
 floating point operations.
-As $N_\G^{\rm s}$, $N_v$, and $N_\r$ are all proportional 
-to the size of the systems as measured by the number of atoms $N_{\rm at}$,
+As $N_\G^{\rm s}$, $N_v$, and $N_\r$ scale linearly with the size of the system
+as measured by the number of atoms $N_{\rm at}$,
 the overall scaling of this procedure is $N_{\rm at}^3 {\rm log} N_{\rm at}$.
 
-For comparison it is useful to estimate the scaling of tstandard $GW$ calculations
+For comparison it is useful to consider the scaling of standard $GW$ calculations
 based on the expansion over unoccupied states.\cite{hl86} 
-The calculation of the irreducible polarization requires the optical matrix elements
-of each of the $N_v$ occupied states with each of the $N_c$ unoccupied states.
-These matrix elements are actually computed by using Fourier transforms of $\psi_c^\star(\r)\psi_v(\r)$,
-therefore this requires $N_v + N_c$ FFTs to real-space, mutliplication, and $N_v N_c$ FFTs back
-to reciprocal space. Each FFT must be performed on the $N_\r^{\rm den}$ grid, therefore
-the total cost is 
-   \begin{equation}
-   N^{\rm HL86}_{\rm flops} = N_c  [N_v (4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}) ]
+The calculation of the irreducible RPA polarization requires the evaluation of the 
+optical matrix elements between each of the $N_v$ occupied states and each of the $N_c$ unoccupied states.
+These matrix elements are typically computed by using Fourier transforms of $\psi_c^\star(\r)\psi_v(\r)$,
+therefore this procedure requires essentially $N_v N_c$ Fourier transforms from real- to reciprocal-space.
+Each Fourier transform is performed on the real-space grid for the density with $N_\r^{\rm den}$ grid points, 
+therefore the total cost of the standard method is
+   \begin{equation}\label{eq.scaling.2}
+   N^{\rm HL86}_{\rm flops} = N_c  N_v N^{\rm den}_{\rm FFT}
    \end{equation}
- floating point operations.
-The calculation of the empty states requires CG minimizations and most importantly the orthogonalization
-of the wavefunctions, which scales as $N_c^2 N_\G^{\rm wf}$. This is small as compared to 
-the calculation of the matrix elements.
+floating point operations.
+%The calculation of the empty states requires CG minimizations and most importantly the orthogonalization
+%of the wavefunctions, which scales as $N_c^2 N_\G^{\rm wf}$. This is small as compared to 
+%the calculation of the matrix elements.
 Even in this case therefore the overall scaling is $N_{\rm at}^3 {\rm log} N_{\rm at}$.
 
-For the purpose of a fair comparison we set now $N_{\rm SCF}=1$ in Eq.\ (\ref{eq.scaling.1}),
-meaning that we calculate the dielectric matrix as described in Sec.\ \ref{sec.diel.nscf} (instead of the
-inverse dielectric matrix).
-This also brings in the advantage that, by using the multishift method, 
-only one calculation is required for $\w=0$ instead of two and that in this case the two CG sequences do coincide.
-As a result a factor 4 drops out of the prefactor and 
-the ratio between the costs of the DFPT approach in a planewaves
-implementation and the standard method is (assuming a perfectly well-conditioned system with $\kappa=1$):
+In order to compare the prefactors in Eqs.\ (\ref{eq.scaling.1}) and (\ref{eq.scaling.2})
+we now refer to the calculation of the dielectric matrix as described in Sec.\ \ref{sec.diel.nscf}
+(as the standard method calculates the dielectric matrix and then performs a matrix inversion),
+and set $N_{\rm SCF}=1$ in Eq.\ (\ref{eq.scaling.1}). In addition, we restrict ourselves to
+the calculation of the static dielectric matrix as it is done in the standard approach.
+In this case only one calculation of Eq.\ (\ref{eq.linsys.1}) is required instead of two for $\pm\w$, 
+and also the two CG sequences of the cBiCG algorithm do coincide.
+As a result a factor 4 drops out of the prefactor in Eq.\ (\ref{eq.scaling.1}).
+If we assume for definitness a a perfectly well-conditioned linear system (with condition number $\kappa=1$),
+and expressing the number of CG iterations through Eq.\ (\ref{eq.cg}),
+the ratio between the complexity of the DFPT approach in a planewaves
+implementation and the standard approach becomes
 %   \begin{equation}
 %   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{2 N_{\rm CG} N_\G^{\rm s}}{N_c}.
 %   \end{equation}
    \begin{equation}\label{eq.ratio.flops}
-   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{N_\G^{\rm s} {\rm log} (2/\varepsilon)}{N_c}.
+   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{N_\G^{\rm s}}{N_c} {\rm log}\frac{2}{\varepsilon},
    \end{equation}
+where $\varepsilon$ is the relative accuracy of the result.
 As an example, for a relative accuracy of $\varepsilon=10^{-5}$ 
 we find this ratio to be $\simeq 12 N_\G^{\rm s}/N_c$.
-In the case of silicon, with $E_{\rm cut}^{\rm s}=10$ Ry we have $N_\G^{\rm s}=137$, therefore
-the DFPT approach becomes convenient when more than 1650 unoccupied states are used.
-This is rarely the case as most calculations reported to date use only a few hundredths of 
+In the case of silicon, using a typical cutoff $E_{\rm cut}^{\rm s}=10$ Ry we obtain $N_\G^{\rm s}=137$, therefore
+the DFPT approach becomes convenient when more than $\sim$1650 unoccupied states are used
+in the standard approach.
+This is rarely the case as most calculations reported to date use only a few hundreds of 
 unoccupied electronic states.
 Of course the accuracy of the standard sum-over-states expression is more difficult to
-assess, and a convergence on 5 significant digits is probably not achieved with only a few
-hundreths of electronic states. It remains however that an implementation based on planewaves
-is at least as expensive as the standard approach.
+quantify in terms of the number of unoccupied states usded in the expansion, and probably
+a convergence on 5 significant digits is not warrented by a few
+hundreds electronic states. We can certainly state however that an implementation of DFPT-$GW$ 
+based on planewaves is at least as expensive as the standard approach.
 
 It should be noticed however, that our DFPT scheme (for the screened Coulomb interaction
 and the Green's function taken together) has the advantage of providing
-the whole self-energy $\Sigma_{\G\Gp}(\k;\w)$, while the standard approach would 
+the whole self-energy $\Sigma(\r,\rp;\w)$, while the standard approach would 
 only provide the matrix elements of the self-energy on a subset of states which is
-typically of the order of $N_v$. Therefore if we performed a comparison based on the
-same amount of output information, we should use $N_c N_\G^{\rm s}$ in Eq.\ (\ref{eq.ratio.flops})
-instead of $N_c N_v$. In this case the ration above would change into
+typically of the order of $N_v$. Therefore, if we were to perform a comparison based on the
+same amount of output information, we should use $N_c N_\G^{\rm s}$ in Eq.\ (\ref{eq.scaling.2})
+instead of $N_c N_v$. In this case Eq.\ (\ref{eq.ratio.flops}) would change into
   \begin{equation}
-  \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{N_v {\rm log} (2/\varepsilon)}{N_c},
+  \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{N_v }{N_c}{\rm log} \frac{2}{\varepsilon},
   \end{equation}
-and for $\varepsilon=10^{-5}$ in silicon we would have $\simeq 64/N_c$.
-This clearly shows that, {\it if the entire self-energy is needed} (as opposed to a few matrix elements),
-{\it then our proposed DFPT approach is more convenient that the standard sum-over-states
-procedure}.
+and for $\varepsilon=10^{-5}$ we would have $N^{\rm DFPT}_{\rm flops}/N^{\rm HL86}_{\rm flops}\simeq 12 N_v/N_c$.
+This clearly shows that, if the entire self-energy was needed (as opposed to a few matrix elements),
+then our proposed DFPT approach woud be more convenient that the standard sum-over-states
+approach.
 
-What we learn from the above analysis is that the main bottlenecks of the calculation are
-the FFT for the application of the Hamiltonian and the large basis sets adopted.
-Therefore one possibility to improve over the present method is to keep the general
-theory developed in Sec.\ \ref{sec.coulomb} and move to either a (i) real-space 
-method where the application of the Hamiltonian scales linearly with system size,
-or to (ii) a local basis set.
-In both cases it seems that a calculation scaling with $N_{\rm at}^3$ should be feasible,
-and with a more favourable prefactor in the case of a local basis set.
+The above analysis shows that the main bottlenecks of the DFPT-$GW$ method 
+are (i) the Fourier transform for the application of the Hamiltonian and (ii) the large basis sets adopted.
+In order to make the approach proposed here more efficient we could either
+move to real-space methods where the application of the Hamiltonian scales linearly with system size,\cite{chelikowsky}
+or reduce the size of the basis set by using local orbitals,\cite{siesta} or even a combination of both.
+Fast evaluations of the operation $\hat{H}\psi$ in order-$N$ operations should 
+make it feasible $GW$ calculations scaling with $N_{\rm at}^3$ and with a very favourable
+prefactor.
 
 \subsubsection{Green's function}\label{sec.green.scaling}
 
@@ -1008,9 +1022,9 @@ the condition number of the linear operator $\H-\E_v\pm\w$ in Eq.\ (\ref{eq.lins
 The minimum number of iterations $N_{\rm min}$ required for the solution of
 a linear system using the conjugate gradients algorithm is given by
   \begin{equation}\label{eq.cg}
-  N_{\rm min} = \frac{1}{2}\sqrt{\kappa} \log(2/\epsilon),
+  N_{\rm min} = \frac{1}{2}\sqrt{\kappa} \log(2/\varepsilon),
   \end{equation}
-$\kappa$ being the condition number of the linear operator and $\epsilon$ the
+$\kappa$ being the condition number of the linear operator and $\varepsilon$ the
 desired relative accuracy.\cite{painless.cg} In our calculations we adopt the 
 complex biorthogonal variant (cBiCG) of the conjugate gradient method (CG)
 following Ref.\ \onlinecite{jacobs}. This method is an extension of the standard 
@@ -1045,7 +1059,7 @@ cutoff energy of the wavefunction basis set $|A_{\rm max}|=E_{\rm cut}$.
 In this case the condition number reads $\kappa = E_{\rm cut}/E_{\rm g}$.
 As an example, if we are using a plane-waves basis with a kinetic enegry
 cutoff of 30 Ry, we have an electron energy gap of 1 eV, 
-and the our desired accuracy is $\epsilon=10^{-10}$, then according to
+and the our desired accuracy is $\varepsilon=10^{-10}$, then according to
 Eq.\ (\ref{eq.cg}) the minimum number of iterations required to solve 
 the linear system would be $N_{\rm min} = 240$. Empirical tests show that 
 this estimate is quite accurate for the system considered in the present work.
@@ -1054,7 +1068,7 @@ techniques. We here adopt the Teter-Payne-Allan preconditioner\cite{tpa}
 in order to ``compress'' the eigenvalue spectrum and thereby reduce the
 condition number. An ideal preconditioner would make the linear operator
 almost perfectly well conditioned ($\kappa=1$). In this case
-the optimal  number of iterations (for a relative accuracy $\epsilon=10^{-10}$) 
+the optimal  number of iterations (for a relative accuracy $\varepsilon=10^{-10}$) 
 would be as small as $N_{\rm min,pc} = 12$. We have found empirically
 that by using the Teter-Payne-Allan 
 preconditioner the number of iterations
@@ -1536,6 +1550,14 @@ Numer.\ Linear Algebr.\ {\bf 14}, 1 (2006).
 \bibitem{frigo}
 S. G. Johnson and M. Frigo,
 IEEE Trans.\ Sig.\ Proc.\ {\bf 55}, 111 (2007).
+
+\bibitem{chelikowsky}
+A. Natan, A. Benjamini, D. Naveh, L. Kronik, M. L. Tiago, S. P. Beckman, and J. R. Chelikowsky,
+Phys.\ Rev.\ B {\bf 78}, 075109 (2008).
+
+\bibitem{siesta}
+J. M. Soler, E. Artacho, J. D. Gale, A. Garc\`ia, J. Junquera, P. Ordej\'on, and D. S\'anchez-Portal,
+J.\ Phys.: Condens.\ Matter {\bf 14}, 2745 (2002).
 
 \end{thebibliography}
 
