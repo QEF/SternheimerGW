@@ -952,7 +952,42 @@ The computational cost of this calculation scales as $N_{\rm at}^2 {\rm log} N_{
 and is negligible with respect to the calculation of the screened
 Coulomb interaction.
 
-\section{Numerical results}\label{sec.results}
+\section{Results}\label{sec.results}
+
+comparison of inverse dielectric function - w=0,q=0, table
+
+comparison of frequency dependence wrt plots in steve's paper
+(direct calculation)
+
+plots of convergence: CG and SCF, w and w/o preconditioning
+
+green's function: comparison wrt sum over states
+
+green's function: plot of convergence
+
+a fancy 2D self-energy plot to show that we do S(G,G') ?
+(maybe at w=0 and w=Eg)
+
+plot of Sigma(w) for a few electronic states like in blochl
+(split coulomb and exchange)
+
+plot of quality of pade compared to direct calculation
+
+why don't we try the spectral function A(G,Gp,w) ?
+
+NOTA: in principle GW has not been designed for DFT. Any starting
+point which is reasonable is ok. The point is to replace the XC
+of the starting hamiltonian by GW. In our case this can be done
+NOT by using Vxc from LDA, but by taking V and subtracting the
+hartree and the pseudopotential terms. We remain with Vps unknown...
+OR we can calculate the density, subtract VxcLDA[n], VH[n] and
+we remain with the pseudopotential Vps. This should all be selfconsistent.
+And the resulting pseudo would be a Vps_LDA by construction
+(Vps_LDA is not ab initio but it could serve the purposes of the paper).
+
+
+
+
 
 % table: 1col, table* 2col
 \begin{table}[b!]
