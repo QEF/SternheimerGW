@@ -831,7 +831,7 @@ Each solution of Eq.\ (\ref{eq.linsys.4}) requires two cBiCG minimizations
 The most time-consuming operation in each CG step is the application of the Hamiltonian 
 to the previous search direction, and in particular
 the Fourier transform of the wavefunctions to real-space and back for evaluating
-the product with the local potential. Fast-Fourier-transform
+the product with the local potential. Fast-Fourier-transform (FFT)
 algorithms allow us to perform these calculation in $N^{\rm den}_{\rm FFT} = 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}$ operations.\cite{frigo}
 If in average the CG minimization requires $N_{\rm CG}$ steps
 and the self-consistency loop requires $N_{\rm SCF}$ iterations,
@@ -919,36 +919,38 @@ prefactor.
 
 \subsubsection{Green's function}\label{sec.green.scaling}
 
-The analysis of the scaling of the Green's function can be carried out along the same
-lines of Sec.\ \ref{sec.coulomb.scaling}. The main difference is that the linear system
-Eq.\ (\ref{eq.green.3}) does not depend on the occupied states, hence a factor $N_v$
-drops from Eq.\ (\ref{eq.scaling.1}). In addition, we do not have self-consistency,
-therefore also the factor $N_{\rm SCF}$ drops out. Finally, we need to perform the
-calculation for one frequency only (not two), and we can use the multishift method
-to generate the entire frequency-dependence without incurring in significant additional computation.
-The total cost is therefore:
+The complexity of the procedure for calculating the Green's function proposed
+in Sec.\ \ref{sec.green} can be analyzed along the same
+lines of Sec.\ \ref{sec.coulomb.scaling}. The main differences in this case are that (i) the linear system
+Eq.\ (\ref{eq.green.3}) does not depend on the occupied states,
+(ii) the calculation is non self-consistent, and (iii) the calculation is performed
+for one single frequency $\w^+$ and the frequency-dependence is generated
+through the multishift method. As a result, a factor $2 N_{\rm SCF} N_v$ drops out
+of Eq.\ (\ref{eq.scaling.1}) and the computational cost of the Green's function
+calculation is given by:
    \begin{equation}\label{eq.scaling.3}
-   N^{\rm G}_{\rm flops} = 4 N_{\rm CG} N_\G^{\rm s} ( 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}),
+   N^{\rm Gr}_{\rm flops} = 4 N_{\rm CG} N_\G^{\rm s} N^{\rm den}_{\rm FFT}.
    \end{equation}
-which is cleary smaller than the cost of computing the screened Coulomb interaction,
-and scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$.
-In the present case we need to point out that the system is rather ill-conditioned
-and the number of CG iterations can be as high as 100-200.
-We note that this procedure for calculating the Green's function is advantageous
-with respect to an expansion over empty states, which scales as $N_{\rm at}^3$ due
-to the necessity or orthogonalizing the wavefunctions.
+The complexity of this procedure is significantly smaller than the complexity
+of the DFPT algorithm for the screened Coulomb interaction. In particular, the
+calculation of the Green's function scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$.
+It should be pointed out that the linear system Eq.\ (\ref{eq.green.3}) can become
+ill-conditioned (when $\w^+$ is close to a Kohn-Sham eigenvalue) and in these cases
+the number of CG iterations can be as high as 100-200.
+This procedure for calculating the Green's function is advantageous
+with respect to an expansion over empty states, as the orthogonalization
+of the unoccupied states would require $\sim N_{\rm at}^3$ operations.
 
 \subsubsection{Scaling of the self-energy calculation}\label{sec.sigma.scaling}
 
-The self-energy is computed in real-space by first transforming $G$ and $W$ to
-real-space, and then is tranformed back in reciprocal space.
-The 6D FFT transformation of $G$ or $W$ requires $(N_\G^{\rm s}+N_\r^{\rm s})(4 N_\r^{\rm s} {\rm log} N_\r^{\rm s})$
-operations for each of the $N_\w$ frequencies of the screened Coulomb interaction
-(assuming we only need $\Sigma$ and its derivative at $\w=0$).
-Again the computational cost scales with $N_{\rm at}^2 {\rm log} N_{\rm at}$.
-This would be in principle negligible with respect to the calculation of $W$
-but the necessity of storing $G$ and $W$ at each frequency on file can
-make the I/O the real bottleneck of the part of the procedure.
+The self-energy is computed in real-space after obtaining $G(\r,\rp;\w)$ and $W(\r,\rp;\w)$ 
+from $G(\G,\Gp;\w)$ and $W(\G,\Gp;\w)$, respectively, and then is tranformed back in reciprocal space.
+The 6-dimensional FFT transforms require $(N_\G^{\rm s}+N_\r^{\rm s})N^{\rm s}_{\rm FFT}$
+operations for each of the $N_\w$ frequencies of the screened Coulomb interaction,
+having defined $N^{\rm s}_{\rm FFT}=4 N_\r^{\rm s} {\rm log} N_\r^{\rm s}$.
+The computational cost of this calculation scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$,
+and is negligible with respect to the calculation of the screened
+Coulomb interaction.
 
 \section{Numerical results}\label{sec.results}
 
@@ -985,6 +987,9 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
 \end{table}
 
 \section{Discussion}\label{sec.discussion}
+
+need to mention Gonze's technique and say briefly if we can transform our problem
+in a variational one.
 
 \section{Conclusions}\label{sec.conclusions}
 
@@ -1226,34 +1231,29 @@ When $N$ is an odd integer the diagonal Pad\'e approximant reads
   P_N(\w) = \frac{p_0+p_1\w+\cdots+p_{(N-1)/2}\w^{(N-1)/2}}
   {1+q_1\w+\cdots+q_{(N-1)/2}\w^{(N-1)/2}},
   \end{equation}
-and its $N$ coefficients $p_0, p_1, \cdots, p_{(N-1)/2}$ and 
-$q_1, \cdots, q_{(N-1)/2}$ are fixed by matching the approximant
-to the target function $P_N(\w_n)=f(\w_n)$,~$n=1,\cdots,N$.
+and its coefficients $p_0, p_1, \cdots, p_{(N-1)/2}$, $q_1, \cdots, q_{(N-1)/2}$ are determined by matching the approximant
+to the target function in $N$ points $P_N(\w_n)=f(\w_n)$,~$n=1,\cdots,N$.
 Both the coefficients and the Pad\'e approximant can be calculated
-very efficiently with a simple recursive algorithm.\cite{pade2}
+very efficiently using a simple recursive algorithm.\cite{pade2}
 Some experimentation indicates that approximants of order $N\ge5$ are necessary
-in order to reproduce the main plasmon-pole structure of the screened 
-Coulomb interaction.
-This observation can be rationalized by inspecting the plasmon-pole
-model given by Eq.\ (\ref{eq.pp.im}). In fact, the shape of the plasmon-pole
-screening along the imaginary axis can be reproduced by setting precisely
-five parameters: the values of the function and its derivatives at $w=0$ and $w=+i\infty$
-(boundary conditions), as well as the half-width at half maximum (frequency scale).
-As the boundary conditions at $w=+i\infty$ do not require explicit calculations
-of the screened Coulomb interaction, we conclude that in order to reproduce
-the plasmon-pole frequency, strenght, and width, the Pad\'e approximant
-method requires three evaluations of $W_{\G,\Gp}(\q,\w)$. In comparison, the original
-plasmon-pole model of Ref.\ \onlinecite{hl86} requires two informations
-[$\epsilon_{\G,\Gp}(\q,\w=0)$ and a sum-rule] in order to reproduce the plasmon-pole 
-frequency and strenght. Therefore the two approaches appear consistent
-in terms of amount of information required.
+in order to reproduce a plasmon-pole spectral shape including a finite linewidth.
+This observation can be rationalized by considering that a plasmon-pole
+spectral function is completely defined by the values of the function at $\w=0$,
+the location, strenght, and width of the pole, and the asymptotic value at $\w=+i\infty$.
+Some of this information is redundant and can be obtained by using sum rules.\cite{hl86}
+The parity of the screened Coulomb interaction can also be exploited to minimize
+the number of input frequencies. 
+
 The advantage of the Pad\'e approximant is that a more refined description
 of the frequency-dependent screened Coulomb interaction can simply be achieved
 by calculating additional points along the imaginary axis. In practice
-we have found that $N=11$ provides a good representation of the frequency
-dependence, in line with the observation of Ref.\ \onlinecite{blochl}
-(where the authors use $N=12$). Figure \ref{fig.pade} illustrates the quality
-of the analytic continuation using Pad\'e approximants for a few test cases.
+we have found that, if we do not set any constraints for the spectral
+shape of the Pad\'e approximant, $N=11$ provides a good representation of the frequency
+dependence of the screened Coulomb interaction. This is in line with the finding 
+of Ref.\ \onlinecite{blochl} (where the authors use $N=12$) relative to the
+case of the $GW$ self-energy. 
+%Figure \ref{fig.pade} illustrates the quality
+%of the analytic continuation using Pad\'e approximants for a few test cases.
 
 We also investigated the possibility of analytically continuing
 the screened Coulomb interaction by using a multi-pole expansion
@@ -1267,43 +1267,45 @@ of the real-axis continuation is poorer than what we obtained
 by using Pad\'e approximants. Multi-pole approximations were found
 to be unreliable due to their high sensitivity to the initial guesses 
 for the coefficients.
-Our experience therefore is that the multi-pole expansion is not optimal 
-for an automated procedure where the analytic continuation has to be
+Our experience therefore is that the multi-pole expansion is not an optimal 
+choice for an automated procedure where the analytic continuation has to be
 performed for every $\G$, $\Gp$, and $\q$ of the screened Coulomb 
-interaction without manual intervention. Our analysis supports the view 
+interaction without manual intervention. Our present analysis supports the view 
 already expressed in Ref.\ \onlinecite{blochl}.
 
-\begin  {figure}
-\begin  {center}
-%\includegraphics[width=7.5cm]{fig1.eps}
-\end    {center}
-\caption{\label{fig.pade}
-        Comparison of the dielectric function calculated for silicon 
-        on the real axis and the analytically continued function starting
-        from imaginary frequencies. The three panels correspond to the
-        cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
-        }
-\end    {figure}
+%\begin  {figure}
+%\begin  {center}
+%%\includegraphics[width=7.5cm]{fig1.eps}
+%\end    {center}
+%\caption{\label{fig.pade}
+%        Comparison of the dielectric function calculated for silicon 
+%        on the real axis and the analytically continued function starting
+%        from imaginary frequencies. The three panels correspond to the
+%        cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
+%        }
+%\end    {figure}
 
 \section{Simultaneous calculation of the susceptibility at multiple frequencies}\label{app.multishift}
 
-The linear system given by Eq.\ (\ref{eq.linsys.1}) 
-can also be solved efficiently by using a ``multishift'' 
-{\tt cBiCG} method.\cite{frommer} 
+The linear systems Eqs.\ (\ref{eq.linsys.1.nscf}) and (\ref{eq.green.3})
+can be solved efficiently by using the ``multishift'' 
+cBiCG method of Ref.~\onlinecite{frommer}.
 Multishift methods exploit the knowledge gained during the iterative
-solution of the ``seed'' system $Ax=b$ in order to determine the solutions 
-of the ``shifted'' system $Ax+\w x=b$, without adding to the the computational 
-cost. The logic behind such method is that the seed system and the
+solution of the {\it seed system} $Ax=b$ in order to determine the solutions 
+of the {\it shifted system} $Ax+\w x=b$ with only a small computational overhead.
+The rationale behind such method is that the seed system and the
 shifted system share the same Krilov subspaces $\{b,Ab,A^2b,\cdots\}$,
 therefore the residuals of the seed and of the shifted
 systems can be taken to be collinear.\cite{frommer}
 
-In practice we can determine the
-full frequency-dependent susceptibility 
-by performing one single static calculation for each $\q$, $\G$, and $\Gp$.
+This multishift technique allows us to determine the
+entire frequency-dependence of the dielectric matrix
+by performing one single static calculation for each set of parameters $[\q$,$\G]$ in
+Eq.\ (\ref{eq.linsys.4}).
 For the seed system the algorithm is still given by Eqs.\ (\ref{eq.cg1})-(\ref{eq.cg7}).
 For the shifted system we replace the calculation of the residuals
-$r_{n,\w}$ and of the coefficients $\alpha_{n,\w}$, $\beta_{n,\w}$ by the following relations:
+$r_{n,\w}$ and of the coefficients $\alpha_{n,\w}$, $\beta_{n,\w}$ corresponding
+to the frequency $\w$ by the following relations:
   \begin{equation} \label{eq.shift.1}
   r_{n,\w}  =\frac{r_n}{\pi_{n,\w}};
   \hspace{0.2cm}
@@ -1315,49 +1317,34 @@ where the scaling factor $\pi_{n+1,\w}$ is calculated through the recurrence rel
   \begin{equation}\label{eq.shift.2}
   \pi_{n+1,\w} = (1+\w\alpha_n) \pi_{n,\w} + \frac{\alpha_n\beta_{n-1}}{\alpha_{n-1}}(\pi_{n,\w}-\pi_{n-1,\w}).
   \end{equation}
-In order to guarantee the collinearity of the residuals, the method
-is initialized with $x_0=0$.
+In order to obtain collinear residuals $r_n$ and $r_{n,\w}$ we need to
+initialize the algorithm using $x_0=0$.
+
 The use of Eqs.~(\ref{eq.shift.1}) and (\ref{eq.shift.2}) allows us to
 skip the time-consuming operations involving the Hamiltonian in
 Eqs.\ (\ref{eq.cg1}) and~(\ref{eq.cg5}).
 This method is extremely convienient for determining the frequency-dependent
-susceptibility for many frequencies at the cost of one single frequency calculation.
-Nevertheless the method presents some practical limitations.
+susceptibility for many frequencies at the cost of one single calculation.
 
-The first major limitation is that the rhs $b$ of the linear system $Ax+\w x=b$
-must be the same for all the frequencies considered. In our case
-the rhs corresponds to the self-consistent screened perturbation, 
-and does depend on the frequency. Therefore if we want to use the
-shifted {\tt cBiCG} method we also need to abandon the idea of 
-calculating self-consistently the screened Coulomb interaction. 
-Instead, we would need to replace this 
-by the non-selfconsistent calculation of the susceptibility, followed 
-by the explicit inversion of the dielectric matrix for each frequency.
-The resulting method constitutes an improved version of the technique
-already proposed in Ref.\ \onlinecite{reining-sternheimer}.
+We point out that this method still carries some drawbacks.
+One limitation is that this method cannot be applied to the self-consistent
+system of Eq.\ (\ref{eq.linsys.1}), because the know-term on the
+right-hand side depends on the frequency $\w$ itself.
+Therefore the use of the shifted cBiCG method is only possible
+for {\it non self-consistent calculations of the dielectric matrix}
+and requires explicit matrix inversions to determine the screened
+Coulomb interaction.
+This approach can be regarded as an improved version 
+of the technique proposed in Ref.\ \onlinecite{reining-sternheimer}.
 
-The second important limitation is that the shifted {\tt cBiCG} methods
-does not allow for the use of effective preconditioners. In fact,
-after preconditioning the seed system $M^{-1}Ax=M^{-1}b$ and the shifted
-system $M^{-1}Ax+\w M^{-1}x=M^{-1}b$ no longer share the same Krilov subspaces, 
-hence the residuals are no longer collinear.\cite{simoncini} 
+Another limitation is that the shifted cBiCG method
+does not allow for the use of preconditioners. In fact
+the preconditioned seed system $M^{-1}Ax=M^{-1}b$ and the preconditioned shifted system
+$M^{-1}Ax+\w M^{-1}x=M^{-1}b$ do not share the same Krilov subspaces, 
+hence the residuals cannot be taken to be collinear.\cite{simoncini} 
 The practical consequence is that for systems with
 large basis set energy cutoffs and small band gaps, the number of iterations
-required to achieve convergence can be extremely large.
-In addition, the convergence rate of the shifted method is dictated
-by the worst-conditioned system, therefore also in this case
-we need to perform calculations along the imaginary axis and then anaytically
-continue the function to real frequencies.
-
-If we consider that we need approximately 10 frequency points for the
-Pad\'e approximants, and each preconditioned calculation requires
-in average approximately 10 iterations and 5 self-consistency cycles, 
-we conclude that the direct calculation of the screened Coulomb interaction
-will be convenient as long as the (non-preconditioned)
-shifted {\tt cBiCG} method requires more than $10\times10\times5=500$ 
-iterations (assuming that the cost of matrix inversion is negligible).
-On the other hand, if we need an ultra-fine sampling of the frequency
-dependence, then the shifted method would prove advantageous.
+required to achieve convergence could impractical.
 
 \begin{thebibliography}{99}
 
@@ -1539,9 +1526,9 @@ J.\ Low.\ Temp.\ Phys.\ {\bf 29}, 179 (1977).
 \bibitem{nelder-mead}
 J. A. Nelder and R. Mead,
 Comput. J. {\bf 7}, 308 (1965).
-We used the implementation available from the
-{\tt E04CCF} routine of the {\tt NAG} library
-({\tt www.nag.co.uk}).
+%We used the implementation available from the
+%{\tt E04CCF} routine of the {\tt NAG} library
+%({\tt www.nag.co.uk}).
 
 \bibitem{simoncini}
 V. Simoncini and D. B. Szyld,
