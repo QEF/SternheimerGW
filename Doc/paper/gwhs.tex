@@ -954,43 +954,37 @@ Coulomb interaction.
 
 \section{Results}\label{sec.results}
 
-comparison of inverse dielectric function - w=0,q=0, table
+In order to demonstrate our approach we have realized a prototype implementation
+within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg}
+and validated our implementation for the case of silicon. The next step towards
+a comprehensive planewave implementation would be the inclusion of subroutines 
+to deal with nonlocal pseudopotentials of norm-conserving\cite{ncpp} or ultrasoft\cite{uspp} 
+form. The effective exchange and correlation potential $V^{\rm xc}[n]$ has been determined within
+the local-density approximation to DFT following Ref.\ \onlinecite{LDA}.
+The EPM single-particle Hamiltonian can therefore be rewritten as
+  \begin{equation}
+  \H_{\rm EPM} = -\frac{\nabla^2}{2} + V^{\rm ps}_{\rm EPM} + V^{\rm Ha}[n] + V^{\rm xc}[n],
+  \end{equation}
+with an effective unscreened empirical pseudopotential $V^{\rm ps}_{\rm EPM}$ given by:
+  \begin{equation}
+  V^{\rm ps}_{\rm EPM} = V_{\rm EPM} - V^{\rm Ha}[n] - V^{\rm xc}[n],
+  \end{equation}
+$V_{\rm EPM}$ being the pseudopotential originally proposed in Ref.\ \onlinecite{cohen_berg}.
 
-comparison of frequency dependence wrt plots in steve's paper
-(direct calculation)
+  
 
-plots of convergence: CG and SCF, w and w/o preconditioning
-
-green's function: comparison wrt sum over states
-
-green's function: plot of convergence
-
-a fancy 2D self-energy plot to show that we do S(G,G') ?
-(maybe at w=0 and w=Eg)
-
-plot of Sigma(w) for a few electronic states like in blochl
-(split coulomb and exchange)
-
-plot of quality of pade compared to direct calculation
-
-why don't we try the spectral function A(G,Gp,w) ?
-
-NOTA: in principle GW has not been designed for DFT. Any starting
-point which is reasonable is ok. The point is to replace the XC
-of the starting hamiltonian by GW. In our case this can be done
-NOT by using Vxc from LDA, but by taking V and subtracting the
-hartree and the pseudopotential terms. We remain with Vps unknown...
-OR we can calculate the density, subtract VxcLDA[n], VH[n] and
-we remain with the pseudopotential Vps. This should all be selfconsistent.
-And the resulting pseudo would be a Vps_LDA by construction
-(Vps_LDA is not ab initio but it could serve the purposes of the paper).
-
-
-
-
+Table \ref{tab.1} reports the inverse dielectric matrix calculated using
+the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
+For the purpose of comparison with Ref.\ \onlinecite{balde_tosa} 
+we considered the static and long-wavelenght limit of the inverse dielectric matrix
+for the first few reciprocal lattice vectors $\G$. 
+The authors of Ref.\ \onlinecite{balde_tosa} used the standard approach based on the expansion over the
+unoccupied electronic states and the explicit inversion of the dielectric matrix.
+The excellent agreement between our calculation and Ref.~\onlinecite{balde_tosa}
+supports the validity of our proposed approach.
 
 % table: 1col, table* 2col
-\begin{table}[b!]
+\begin{table}[!]
 \caption{\label{tab.1} Long-wavelenght limit of the static (symmetrized)
 inverse dielectric matrix of silicon: $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ for
 $\q=(0.01,0,0)$ and $\w=0$. We compare our calculations performed within
@@ -1003,7 +997,7 @@ we employed the empirical pseudopotential parameters from Ref.\ \onlinecite{cohe
 \begin{tabular}{c c c}
 \hline
 \hline
-$\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
+$\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 % & (Ref.\ \onlinecite{balde_tosa})    &    \\
 \hline
     (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0797  \\
@@ -1020,6 +1014,63 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Sum over states\cite{balde_tosa}  &  DFPT  \\
 \hline
 \end{tabular}
 \end{table}
+ 
+Next we consider the wavevector dependence of the head of the 
+inverse dielectric matrix $\epsilon_{00}(\q,\w=0)$. We performed the
+calculation by using the non self-consistent method described in
+Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{cohen.diel1}.
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=7.5cm]{fig1.eps}
+\end    {center}
+\caption{\label{fig1}
+        caption here
+        }
+\end    {figure}
+
+
+\begin{itemize}
+
+\item
+(direct calculation)
+comparison of frequency dependence wrt plots in steve's paper
+(direct calculation)
+
+\item
+green's function: comparison wrt sum over states
+
+\item
+plots of convergence: CG and SCF, w and w/o preconditioning
+
+\item
+green's function: plot of convergence
+
+\item
+a fancy 2D self-energy plot to show that we do S(G,G') ?
+(maybe at w=0 and w=Eg)
+
+\item
+plot of Sigma(w) for a few electronic states like in blochl
+(split coulomb and exchange)
+
+\item
+plot of quality of pade compared to direct calculation
+
+\item
+why don't we try the spectral function A(G,Gp,w) ?
+
+NOTA: in principle GW has not been designed for DFT. Any starting
+point which is reasonable is ok. The point is to replace the XC
+of the starting hamiltonian by GW. In our case this can be done
+NOT by using Vxc from LDA, but by taking V and subtracting the
+hartree and the pseudopotential terms. We remain with Vps unknown...
+OR we can calculate the density, subtract VxcLDA[n], VH[n] and
+we remain with the pseudopotential Vps. This should all be selfconsistent.
+And the resulting pseudo would be a VpsLDA by construction
+(VpsLDA is not ab initio but it could serve the purposes of the paper).
+
+\end{itemize}
 
 \section{Discussion}\label{sec.discussion}
 
@@ -1580,6 +1631,15 @@ Phys.\ Rev.\ B {\bf 78}, 075109 (2008).
 \bibitem{siesta}
 J. M. Soler, E. Artacho, J. D. Gale, A. Garc\`ia, J. Junquera, P. Ordej\'on, and D. S\'anchez-Portal,
 J.\ Phys.: Condens.\ Matter {\bf 14}, 2745 (2002).
+
+\bibitem{cohen.diel1}
+J. P. Walter and M. L. Cohen,
+Phys.\ Rev.\ B {\bf 2}, 1821 (1970).
+
+\bibitem{cohen.diel2}
+J. P. Walter and M. L. Cohen,
+Phys.\ Rev.\ B {\bf 5}, 3101 (1972).
+
 
 \end{thebibliography}
 
