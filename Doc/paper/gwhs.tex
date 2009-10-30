@@ -957,21 +957,20 @@ Coulomb interaction.
 In order to demonstrate our approach we have realized a prototype implementation
 within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg}
 and validated our implementation for the case of silicon. The next step towards
-a comprehensive planewave implementation would be the inclusion of subroutines 
-to deal with nonlocal pseudopotentials of norm-conserving\cite{ncpp} or ultrasoft\cite{uspp} 
-form. The effective exchange and correlation potential $V^{\rm xc}[n]$ has been determined within
-the local-density approximation to DFT following Ref.\ \onlinecite{LDA}.
-The EPM single-particle Hamiltonian can therefore be rewritten as
-  \begin{equation}
-  \H_{\rm EPM} = -\frac{\nabla^2}{2} + V^{\rm ps}_{\rm EPM} + V^{\rm Ha}[n] + V^{\rm xc}[n],
-  \end{equation}
-with an effective unscreened empirical pseudopotential $V^{\rm ps}_{\rm EPM}$ given by:
-  \begin{equation}
-  V^{\rm ps}_{\rm EPM} = V_{\rm EPM} - V^{\rm Ha}[n] - V^{\rm xc}[n],
-  \end{equation}
-$V_{\rm EPM}$ being the pseudopotential originally proposed in Ref.\ \onlinecite{cohen_berg}.
-
-  
+a comprehensive planewave implementation would be the inclusion of 
+nonlocal pseudopotentials of norm-conserving\cite{ncpp} or ultrasoft\cite{uspp} 
+form. In the EPM scheme the electronic charge density is not connected to
+the total local potential through a self-consistent procedure.\cite{appelbaum} However
+the charge density obtained within the EPM method can be regarded as 
+a reasonable approximation to the charge density in silicon,\cite{EPM-density} therefore 
+it appears sensible to estimate the XC expectation value of each electronic state
+by using the XC potential determined from the EPM charge density.
+This procedure is equivalent to assume that our starting point is
+an empirical ionic pseudopotential $V^{\rm ion}$ given by
+$V^{\rm EPM} - V^{\rm Ha} - V^{\rm xc}$, where
+$V^{\rm EPM}$ is the total empirical pseudopotential of Ref.\ \onlinecite{cohen_berg}
+and the Hartree and XC potentials are calculated as usual
+in terms of the electronic charge density.
 
 Table \ref{tab.1} reports the inverse dielectric matrix calculated using
 the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
@@ -983,6 +982,10 @@ unoccupied electronic states and the explicit inversion of the dielectric matrix
 The excellent agreement between our calculation and Ref.~\onlinecite{balde_tosa}
 supports the validity of our proposed approach.
 
+%
+% head: 777 000, body and wings: 666 000 (body and wings do not depend much on sampling)
+% could not make the chadi-cohen 10-p mesh work, baroni-resta say that 8x8x8 is equiv to 10 chadi-cohen
+%
 % table: 1col, table* 2col
 \begin{table}[!]
 \caption{\label{tab.1} Long-wavelenght limit of the static (symmetrized)
@@ -990,8 +993,9 @@ inverse dielectric matrix of silicon: $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ for
 $\q=(0.01,0,0)$ and $\w=0$. We compare our calculations performed within
 DFPT and the results obtained in Ref.\ \onlinecite{balde_tosa}
 using the expansion over empty states and the inversion of the dielectric matrix.
-For the calculations we sampled the Brillouin zone with $6\times6\times6$ grid
-points and a plane wave cutoff of 5 Ry. Following Ref.\ \onlinecite{balde_tosa}
+For the calculations we sampled the Brillouin zone with 29 irreducible $\k$-points,
+corresponding to a $8\times8\times8$ grid,\cite{balde_tosa,baroni-resta}
+and a plane wave cutoff of 5 Ry.\cite{balde_tosa} Following Ref.\ \onlinecite{balde_tosa}
 we employed the empirical pseudopotential parameters from Ref.\ \onlinecite{cohen_berg}.
 \vspace{0.5cm}}
 \begin{tabular}{c c c}
@@ -1000,7 +1004,7 @@ we employed the empirical pseudopotential parameters from Ref.\ \onlinecite{cohe
 $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 % & (Ref.\ \onlinecite{balde_tosa})    &    \\
 \hline
-    (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0797  \\
+    (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0866  \\
  (1,1,1)  (1,1,1)     &   \phantom{-}0.605  & \phantom{-}0.6055 \\
 (\mo,1,1) (1,1,1)     &   \phantom{-}0.008  & \phantom{-}0.0076 \\
  (1,\mo,1) (\mo,1,1)  & \phantom{-}0.010    & \phantom{-}0.0102 \\
@@ -1019,6 +1023,7 @@ Next we consider the wavevector dependence of the head of the
 inverse dielectric matrix $\epsilon_{00}(\q,\w=0)$. We performed the
 calculation by using the non self-consistent method described in
 Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{cohen.diel1}.
+% 12-12-12 000 5Ry. 
 
 \begin  {figure}
 \begin  {center}
@@ -1026,6 +1031,21 @@ Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{coh
 \end    {center}
 \caption{\label{fig1}
         caption here
+        }
+\end    {figure}
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6cm]{fig.sigma.eps}
+\end    {center}
+\caption{\label{fig.sigma}
+        (Color online)
+        Real part ${\rm Re} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first 
+        $n=1,\cdots 8$ silicon eigenstates at $\k=0$. The solid (blue) lines are our results using DFPT-$GW$ and the empirical
+        pseudopotential method. The dashed (red) lines are from the first-principles calculation of Ref.\ \onlinecite{blochl} 
+        using the LDA and the projector-augmented wave method. Panels (a)-(d) correspond to Band 8, Bands 5-7, Bands 2-4, and Band 1,
+        respectively. The energy axis is aligned with the top of the valence band ($\w=0$) indicated by the vertical lines.
+        The horizontal dotted lines indicate the calculated exchange contribution to the self-energy ${\rm Re} \langle n\k| \Sigma^{\rm ex}(\r,\rp;\w)|n\k\rangle$.
         }
 \end    {figure}
 
@@ -1049,10 +1069,6 @@ green's function: plot of convergence
 \item
 a fancy 2D self-energy plot to show that we do S(G,G') ?
 (maybe at w=0 and w=Eg)
-
-\item
-plot of Sigma(w) for a few electronic states like in blochl
-(split coulomb and exchange)
 
 \item
 plot of quality of pade compared to direct calculation
@@ -1640,6 +1656,21 @@ Phys.\ Rev.\ B {\bf 2}, 1821 (1970).
 J. P. Walter and M. L. Cohen,
 Phys.\ Rev.\ B {\bf 5}, 3101 (1972).
 
+\bibitem{ncpp}
+D. R. Hamann, M. Schl\"uter, and C. Chiang,
+Phys.\ Rev.\ Lett.\ {\bf 43}, 1494 (1979).
+
+\bibitem{uspp}
+D. Vanderbilt, 
+Phys.\ Rev.\ B {\bf 32}, 8412 (1985).
+
+\bibitem{appelbaum}
+J. A. Appelbaum and D. R. Hamman, 
+Phys.\ Rev.\ B {\bf 8}, 1777 (1973).
+
+\bibitem{EPM-density}
+J. R. Chelikowsky and M. L. Cohen,
+Phys.\ Rev.\ B {\bf 10}, 5095 (1974).
 
 \end{thebibliography}
 
