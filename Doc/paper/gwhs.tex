@@ -1024,13 +1024,21 @@ inverse dielectric matrix $\epsilon_{00}(\q,\w=0)$. We performed the
 calculation by using the non self-consistent method described in
 Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{cohen.diel1}.
 % 12-12-12 000 5Ry. 
+Figure \ref{fig1} shows that our calculations are in good agreement with the results
+of Ref.\ \onlinecite{cohen.diel1}. The difference between the dielectric functions
+at large wavevectors can be ascribed to the use of a limited number of empty states in the perturbative
+expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
 
 \begin  {figure}
 \begin  {center}
 \includegraphics[width=7.5cm]{fig1.eps}
 \end    {center}
 \caption{\label{fig1}
-        caption here
+        Dielectric function of silicon calculated using the empirical pseudopotential method and the
+        non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}:
+        calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
+        and results from Ref.\ \onlinecite{cohen.diel1} (red dashed line). We used a planewave kinetic energy cutoff of 5 Ry
+        and sampled the Brillouin zone thorough a uniform $8\times 8\times 8$ grid.
         }
 \end    {figure}
 
@@ -1041,10 +1049,11 @@ Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{coh
 \caption{\label{fig.sigma}
         (Color online)
         Real part ${\rm Re} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first 
-        $n=1,\cdots 8$ silicon eigenstates at $\k=0$. The solid (blue) lines are our results using DFPT-$GW$ and the empirical
+        8 silicon eigenstates at $\k=0$. The solid (blue) lines are our results using DFPT-$GW$ and the empirical
         pseudopotential method. The dashed (red) lines are from the first-principles calculation of Ref.\ \onlinecite{blochl} 
-        using the LDA and the projector-augmented wave method. Panels (a)-(d) correspond to Band 8, Bands 5-7, Bands 2-4, and Band 1,
-        respectively. The energy axis is aligned with the top of the valence band ($\w=0$) indicated by the vertical lines.
+        using the LDA and the projector-augmented wave method. Panels (a)-(d) correspond to the states
+        $\Gamma^\prime_{2c}$ (Band 1), $\Gamma_{15c}$ (Bands 2-4), $\Gamma^\prime_{25v}$ (Bands 5-7), 
+        and $\Gamma_{1v}$ (Band 8), respectively. The energy axis is aligned with the top of the valence band ($\w=0$) indicated by the vertical lines.
         The horizontal dotted lines indicate the calculated exchange contribution to the self-energy ${\rm Re} \langle n\k| \Sigma^{\rm ex}(\r,\rp;\w)|n\k\rangle$.
         }
 \end    {figure}
@@ -1055,8 +1064,8 @@ Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{coh
 \end    {center}
 \caption{\label{fig.sigma}
         (Color online)
-        Imaginary part ${\rm Im} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first
-        $n=1,\cdots 8$ silicon eigenstates at $\k=0$. The solid (blue) lines are our results using DFPT-$GW$ and the empirical
+        Imaginary part ${\rm Im} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$ of the expectation value of the $GW$ self-energy for the first
+        8 silicon eigenstates at $\k=0$. The solid (blue) lines are our results using DFPT-$GW$ and the empirical
         pseudopotential method. The dashed (red) lines are from the first-principles calculation of Ref.\ \onlinecite{blochl}
         }
 \end    {figure}
@@ -1100,6 +1109,9 @@ And the resulting pseudo would be a VpsLDA by construction
 (VpsLDA is not ab initio but it could serve the purposes of the paper).
 
 \end{itemize}
+
+Need to specify size of dielectric matrix - note we use 4 times the cutoff
+specified in input.
 
 \section{Discussion}\label{sec.discussion}
 
