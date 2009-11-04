@@ -965,12 +965,14 @@ the charge density obtained within the EPM method can be regarded as
 a reasonable approximation to the charge density in silicon,\cite{EPM-density} therefore 
 it appears sensible to estimate the XC expectation value of each electronic state
 by using the XC potential determined from the EPM charge density.
-This procedure is equivalent to assume that our starting point is
-an empirical ionic pseudopotential $V^{\rm ion}$ given by
+This procedure is formally equivalent to assuming that the unscreened ionic pseudopotential
+$V^{\rm ion}$ is given by
 $V^{\rm EPM} - V^{\rm Ha} - V^{\rm xc}$, where
 $V^{\rm EPM}$ is the total empirical pseudopotential of Ref.\ \onlinecite{cohen_berg}
-and the Hartree and XC potentials are calculated as usual
-in terms of the electronic charge density.
+and the Hartree and XC potentials are calculated using the EPM charge density.
+%NOTA: in principle GW has not been designed for DFT. Any starting
+%point which is reasonable is ok. The point is to replace the XC
+%of the starting hamiltonian by GW. 
 
 Table \ref{tab.1} reports the inverse dielectric matrix calculated using
 the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
@@ -1044,6 +1046,25 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
 
 \begin  {figure}
 \begin  {center}
+\includegraphics[width=6.5cm]{fig.diel.eps}
+\end    {center}
+\caption{\label{fig.diel}
+        Frequency-dependent dielectric matrix of silicon at long wavelenght ($\q=0.01 \, 2\pi/a$).
+        The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg} 
+        and the non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}.
+        We used a planewave kinetic energy cutoff of 5 Ry and sampled the Brillouin zone thorough a uniform 
+        $24\times 24\times 24$ grid. Such a dense Brillouin zone sampling is necessary to correctly describe
+        the plasmon-pole singularities. In order to avoid null eigenvalues in the linear system Eq.\ (\ref{eq.linsys.1.nscf})
+        we performed the calculations by including a small imaginary component (0.1~eV) in the frequency $\w$.
+        The panels (a)-(c) correspond to the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}
+        and show $\epsilon_{\G\Gp}(\q\rightarrow 0,\w)$ for (a) $\G=\Gp=0$, (b) $\G=\Gp=(1,1,1) 2\pi/a$,
+        and (c) $\G=(1,1,1) 2\pi/a$, $\Gp=(2,0,0) 2\pi/a$.
+        The (blue) solid lines are our calculations, the (red) dashed lines are from Ref.\ \onlinecite{hl86}.
+        }
+\end    {figure}
+
+\begin  {figure}
+\begin  {center}
 \includegraphics[width=6cm]{fig.sigma.eps}
 \end    {center}
 \caption{\label{fig.sigma}
@@ -1070,38 +1091,19 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
         }
 \end    {figure}
 
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=7.5cm]{fig.diel.eps}
-\end    {center}
-\caption{\label{fig.diel}
-        The three panels correspond to the
-        cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
-        In this case we used a uniform $24\times 24\times 24$ BZ grid
-        and a 0.1 eV imaginary frequency in order to represent the singularities
-        (the behavior at w=0 is considerably smoother).
-        }
-\end    {figure}
-
-
-We now move on to the frequency-dependence of the dielectric matrix.
-
-
+We now move on to the frequency-dependence of the dielectric matrix:
+comparison of frequency dependence wrt plots in steve's paper.
 
 \begin{itemize}
 
 \item
-(direct calculation)
-comparison of frequency dependence wrt plots in steve's paper
-(direct calculation)
+plot of quality of pade compared to direct calculation
 
 \item
 green's function: comparison wrt sum over states
 
 \item
-plots of convergence: CG and SCF, w and w/o preconditioning
-
-\item
+plots of convergence: CG and SCF, w and w/o preconditioning;
 green's function: plot of convergence
 
 \item
@@ -1109,20 +1111,8 @@ a fancy 2D self-energy plot to show that we do S(G,G') ?
 (maybe at w=0 and w=Eg)
 
 \item
-plot of quality of pade compared to direct calculation
-
-\item
 why don't we try the spectral function A(G,Gp,w) ?
 
-NOTA: in principle GW has not been designed for DFT. Any starting
-point which is reasonable is ok. The point is to replace the XC
-of the starting hamiltonian by GW. In our case this can be done
-NOT by using Vxc from LDA, but by taking V and subtracting the
-hartree and the pseudopotential terms. We remain with Vps unknown...
-OR we can calculate the density, subtract VxcLDA[n], VH[n] and
-we remain with the pseudopotential Vps. This should all be selfconsistent.
-And the resulting pseudo would be a VpsLDA by construction
-(VpsLDA is not ab initio but it could serve the purposes of the paper).
 
 \end{itemize}
 
