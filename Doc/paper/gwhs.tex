@@ -1049,7 +1049,7 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
 \includegraphics[width=6.5cm]{fig.diel.eps}
 \end    {center}
 \caption{\label{fig.diel}
-        Frequency-dependent dielectric matrix of silicon at long wavelenght ($\q=0.01 \, 2\pi/a$).
+        Frequency-dependent dielectric matrix of silicon at long wavelenght ($\q=(0.01,0,0) \, 2\pi/a$).
         The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg} 
         and the non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}.
         We used a planewave kinetic energy cutoff of 5 Ry and sampled the Brillouin zone thorough a uniform 
@@ -1124,6 +1124,23 @@ specified in input.
 
 need to mention Gonze's technique and say briefly if we can transform our problem
 in a variational one.\cite{gonze-variational}
+
+The idea of using finite differences is a good one in principle,
+because one could achieve linear scaling in Hpsi, and hence cubic scaling in GW.
+However in practice it is not very helpful because the prefactor:
+the cost of the G-space calculation is 2 * 34/9 * nr * log2 ( nr )   
+(there are two ffts when doing v*psi) while the cost of the real-space 
+calculation with a laplacian correct to order $h^{2N}$ is NPC * nr * 6 * ( 2 * N + 1 ).
+Here NPC takes into account that in ral space the preconditioning
+cannot be done with a diagonal matrix - by excluding it the number
+of iterations becomes about 5 times larger than for G-space calcs -
+therefore we can assume NPC ~ 5.
+For nr=1000 the number of G-space ops is 52192 and for order-6 R-space methods
+this is 210000. For nr=100000 the two numbers are 8698650 and 21000000
+therefore in practice with NPC ~ 5 the G-space technique is always more convenient.
+This is because log ( x ) is actually very small: log(1000) = 6.9 and log(100000) = 11.5.
+This means that we need to improve the minimization technique (less iterations)
+as opposed to change the structure of the code.
 
 \section{Conclusions}\label{sec.conclusions}
 
