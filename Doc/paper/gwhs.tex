@@ -1102,13 +1102,11 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
         }
 \end    {figure}
 
-We now move on to the frequency-dependence of the dielectric matrix:
+(1) We now move on to the frequency-dependence of the dielectric matrix:
 comparison of frequency dependence wrt plots in steve's paper.
+(2) At this point we discuss the quality of the Pad\'e approximant.
 
 \begin{itemize}
-
-\item
-plot of quality of pade compared to direct calculation
 
 \item
 green's function: comparison wrt sum over states
@@ -1118,12 +1116,8 @@ plots of convergence: CG and SCF, w and w/o preconditioning;
 green's function: plot of convergence
 
 \item
-a fancy 2D self-energy plot to show that we do S(G,G') ?
+a fancy 2D self-energy plot to show that we do S(G,G') 
 (maybe at w=0 and w=Eg)
-
-\item
-why don't we try the spectral function A(G,Gp,w) ?
-
 
 \end{itemize}
 
@@ -1151,6 +1145,8 @@ therefore in practice with NPC ~ 5 the G-space technique is always more convenie
 This is because log ( x ) is actually very small: log(1000) = 6.9 and log(100000) = 11.5.
 This means that we need to improve the minimization technique (less iterations)
 as opposed to change the structure of the code.
+
+Need to mention about local basis linear scaling codes such as siesta or onetep.
 
 \section{Conclusions}\label{sec.conclusions}
 
