@@ -1106,23 +1106,34 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
 comparison of frequency dependence wrt plots in steve's paper.
 (2) At this point we discuss the quality of the Pad\'e approximant.
 
-\begin{itemize}
-
-\item
-green's function: comparison wrt sum over states
-
-\item
-plots of convergence: CG and SCF, w and w/o preconditioning;
-green's function: plot of convergence
-
-\item
-a fancy 2D self-energy plot to show that we do S(G,G') 
-(maybe at w=0 and w=Eg)
-
-\end{itemize}
+(3) Typical number of iterations for CF convergence, SCF convergence (mention which mixing),
+w and w/o preconditioning, as a function of accuracy, and condition number estimated with simple equation.
+green's function: typical convergence parameters.
 
 Need to specify size of dielectric matrix - note we use 4 times the cutoff
 specified in input.
+
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6cm]{fig.green}
+\end    {center}
+\caption{\label{fig.green}
+        green's function: comparison wrt sum over states
+        }
+\end    {figure}
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6cm]{fig.sigma.r}
+\end    {center}
+\caption{\label{fig.sigma.r}
+        a fancy 2D self-energy plot to show that we do S(G,G') 
+        (maybe at w=0 and w=Eg)
+        }
+\end    {figure}
+
+
 
 \section{Discussion}\label{sec.discussion}
 
