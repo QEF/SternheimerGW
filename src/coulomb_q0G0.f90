@@ -17,6 +17,7 @@
   use constants
   use gspace
   use kspace
+  use imaxis
 #ifdef __PARA
   USE para
   USE mp_global,  ONLY : nproc, mpime, nproc_pool, my_pool_id, me_pool
@@ -32,12 +33,9 @@
   integer :: maxscf, maxbcgsolve
   integer :: shift(nks)
   integer, parameter :: ng0vec = 27
-  complex(dbl) :: scrcoul(nrs, nrs, nw)
+  complex(dbl) :: scrcoul(ngms, ngms, nw)
   integer :: ig, iw, igp, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
   real(dbl) :: g2kin(ngm), et(nbnd_occ, nks), w(nw), w_ryd(nw)
-  integer :: nwim
-  ! number of frequencies on the imaginary axis
-  real(dbl), allocatable :: wim(:), wim_ryd(:)
   ! frequencies on the imaginary axis
   complex(dbl), allocatable :: z(:), u(:), a(:)
   ! these are for the Pade continuation to the real axis
@@ -80,30 +78,12 @@
   alpha_mix = 0.5
 !@
 
-  !
-  ! read from file the frequencies on the imaginary axis (eV)
-  ! (every node reads in parallel - it's a tiny file) 
-  !
-  open ( 45, file = "./imfreq.dat", form = 'formatted', status = 'unknown')
-  read (45, *) 
-  read (45, *) nwim
-  if (.not.allocated(wim)) allocate ( wim(nwim) )
-  if (.not.allocated(wim_ryd)) allocate ( wim_ryd(nwim) )
-  if (.not.allocated(z)) allocate ( z(nwim) )
-  if (.not.allocated(u)) allocate ( u(nwim) )
-  if (.not.allocated(a)) allocate ( a(nwim) )
-  do iw = 1, nwim
-    read (45,*) wim(iw) 
-    if (wim(iw).lt.0.d0) call error ('coulomb','imaginary frequencies must be positive',1)
-  enddo
-  if (nwim.gt.20) call error ('coulomb','too many imaginary frequencies',nwim)
-  close(45)
-  !
- 
   ! initialize
   scrcoul = 0.d0
   w_ryd = w/ryd2ev
-  wim_ryd = wim/ryd2ev
+
+
+  allocate ( z(nw), u(nw), a(nw) )
 
   !
   !  generate uniform {k} and {k+q} grids 
@@ -174,11 +154,11 @@
   !
 ! write(6,'(4x,"ig = ",i5)') ig
   !
-  do iw = 1, nwim
+  do iw = 1, nw
     !
 !   write(6,'(4x,3x,"iw = ",i5)') iw
     write(6,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
-      xq0,g(:,ig), wim(iw)
+      xq0,g(:,ig), w(iw)
     !
     dvbare = czero
     dvscf  = czero
@@ -210,7 +190,7 @@
     ! solve self-consistently the linear system for this perturbation 
     ! _dyn is for the dynamical case (w/=0)
     !
-    call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, wim_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
+    call solve_linter_dyn ( dvbare, dvscf, xq0, et, vr, w_ryd(iw), maxscf, maxbcgsolve, alpha_mix, .true., convt )
     !
     ! transform dvscf to G space 
     !
@@ -286,20 +266,26 @@
     !
     ! Pade input points on the imaginary axis
     !
-    do iw = 1, nwim
-      z(iw) = dcmplx( 0.d0, wim_ryd(iw))
+    do iw = 1, nw
+      z(iw) = dcmplx( 0.d0, w_ryd(iw))
       u(iw) = scrcoul (ig,igp,iw)
     enddo
     !
     ! Pade coefficients
     !
-    call pade_coeff ( nwim, z, u, a)
+    call pade_coeff ( nw, z, u, a)
     !
-    ! Pade output points on the real axis (at a distance eta)
+    ! overwrite scrcoul with Pade coefficients 
     !
     do iw = 1, nw
-      call pade_eval ( nwim, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
+      scrcoul (ig,igp,iw) = a(iw)
     enddo
+!   !
+!   ! Pade output points on the real axis (at a distance eta)
+!   !
+!   do iw = 1, nw
+!     call pade_eval ( nwim, z, a, dcmplx( w_ryd(iw), eta), scrcoul (ig,igp,iw))
+!   enddo
     !
   enddo
   !

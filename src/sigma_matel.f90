@@ -2,7 +2,30 @@
   !----------------------------------------------------------------
   subroutine sigma_matel (  ik0, vr, xk0, nw, w )
   !----------------------------------------------------------------
-  ! 
+  !
+  ! Known bug: below (grep @) the code works fine with the convention
+  ! <i|Sigma|j> = sum_G,G' [u_i,k(G)]* <G|Sigma|G'> u_j,k(G')
+  ! which is NOT the convention set in the paper. The convention of
+  ! the paper should be:
+  ! <i|Sigma|j> = sum_G,G' u_i,-k(G) <G|Sigma|G'> [u_j,-k(G')]*
+  ! but if I use -xk0 below the code gives wrong results. Indeed the
+  ! shape of Sigma^c is slightly wrong, but most importantly the
+  ! Sigma^ex is totally wrong. A quick sanity check is to calculate
+  ! the sandwiches of Sigma^ex with v set to the delta function - 
+  ! this should give the normalization of the wfs. With -xk0 this
+  ! normalization is screwed up, while everything works fine with
+  ! +xk0. Also the QP energies are ok when using +xk0.
+  ! In particolar, with -xk0 the Gamma point at 1 1 1 does not give   
+  ! the same Sigma^ex as 0 0 0, while this is the case for +xk0.
+  ! The most obvious conclusion is that I messed up somewhere in the
+  ! analytical calculation of the matrix elements - need to check this
+  ! out once more.
+  !
+  ! Note that in any case Sigma(-k,-G,-G') = Sigma(k,G,G') for silicon
+  ! if we exploit inversion symmetry.
+  !
+  !---------------------------------------------------------------- 
+  !
   use parameters
   use constants
   use gspace
@@ -38,7 +61,8 @@
   !
   do ig = 1, ngm
     ! note the -xk0 for the reason above!
-    kplusg = -xk0 + g(:,ig)
+!@    kplusg = -xk0 + g(:,ig)
+  kplusg = xk0 + g(:,ig)
     g2kin ( ig ) = tpiba2 * dot_product ( kplusg, kplusg )
   enddo
   !
@@ -96,7 +120,8 @@
       sigma_band (ibnd, jbnd, iw) = czero
       !
       do ig = 1, ngms
-        aux = sigma (ig, 1:ngms, iw) 
+!@        aux = sigma (ig, 1:ngms, iw) 
+      aux = sigma (1:ngms, ig, iw) 
         sigma_band (ibnd, jbnd, iw) = sigma_band (ibnd, jbnd, iw) + &
             evc (ig, ibnd) * ZDOTC (ngms, evc (1:ngms, jbnd), 1, aux, 1)
       enddo 
@@ -118,7 +143,7 @@
       dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) - real( vxc(ibnd,ibnd) )
       imsig_diag (iw,ibnd) = aimag ( sigma_band (ibnd, ibnd, iw) )
       a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
-         ( abs ( w_ryd(iw) - et(ibnd) - resig_diag (iw,ibnd) )**2.d0 &
+         ( abs ( w_ryd(iw) - et(ibnd) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
           + abs ( imsig_diag (iw,ibnd) )**2.d0 ) 
     enddo
     !

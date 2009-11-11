@@ -68,4 +68,18 @@
   !
   end module kspace
   !
+  !----------------------------------------------------------------
+  module imaxis
+  !----------------------------------------------------------------
+  !
+  use parameters, only : DP
+  !
+  integer :: nwim
+  ! number of frequencies on the imaginary axis
+  real(DP), allocatable :: wim(:)
+  ! frequencies on the imag axis (eV)
+  !
+  end module imaxis
+  !
+
 

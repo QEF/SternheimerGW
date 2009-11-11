@@ -1,23 +1,23 @@
   !
   !----------------------------------------------------------------
-  subroutine green_linsys ( vr, g2kin, xxk, nw, w, green, igstart, igstop)
+  subroutine green_linsys ( vr, g2kin, xxk, nw, w, igstart, igstop, ik0, iq)
   !----------------------------------------------------------------
   ! 
   use parameters
   use constants
   use gspace
   use kspace
-!#ifdef __PARA
-!  USE para
-!  USE mp_global,  ONLY : nproc, mpime, nproc_pool, my_pool_id, me_pool
-!  USE mp, ONLY:  mp_barrier
-!#endif
+#ifdef __PARA
+  USE para
+  USE mp_global,  ONLY : nproc, mpime, nproc_pool, my_pool_id, me_pool
+  USE mp, ONLY:  mp_barrier
+#endif
   implicit none
   !
   real(dbl) :: xxk(3)
   integer :: ig, igp, nw
   integer :: igstart, igstop
-  integer :: lter, n1
+  integer :: lter, n1, rec0, ik0, iq
   real(DP) :: h_diag(ngm), anorm, rdummy
   logical :: conv_root, tprec
   integer :: ig1, ig2, idummy, iw, ierr, ibnd, ios, recl, unf_recl, ikf, fold(nq)
@@ -25,7 +25,7 @@
   real(dbl) :: eval_all(nbnd), w(nw), w_ryd(nw)
   complex(dbl) :: vr(nr), psi(ngm, nbnd_occ), rhs(ngm), gr(ngm), cw, gr_A(ngm), gr_N(ngm)
   complex(dbl) :: psi_all(ngm,nbnd), gr_exp(nw)
-  complex(dbl) :: green(nrs,nrs,nw), cdummy(ngm, nbnd_occ)
+  complex(dbl) :: green(ngms,ngms), cdummy(ngm, nbnd_occ)
   logical :: convt, found
   complex(kind=DP) ::  auxg(ngm)
   complex(kind=DP) :: ZDOTC
@@ -98,12 +98,14 @@
     !
 !   write(6,'(4x,3x,"iw = ",i5," of ",i5)') iw,nw
     !
+    green = czero
+    !
     do ig = igstart, igstop 
       !
 !     write(6,'(4x,"ig = ",i5)') ig
       !
-!     write(6,'(4x,"Green linsys: k =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
-!        xxk,g(:,ig), w(iw)
+      write(6,'(4x,"Green linsys: k =",3f7.3,"  G =",3f7.3,"  w(eV) =",3f7.3)') &
+         xxk,g(:,ig), w(iw)
       !
       cw = dcmplx(w_ryd(iw),eta)
       !
@@ -139,15 +141,36 @@
       ! keep only the G-vectors 1:ngms for the Green's function
       !
       do igp = 1, ngms
-        green (ig,igp,iw) = gr (igp) 
+        green (ig,igp) = gr (igp) 
       enddo
       !
       ! green (-,igp,-) is in SIZE order of G-vectors
       !
     enddo
     !
+    ! now greenf contains the Green's function
+    ! for this k0mq point, one given frequency, and in G-space
+    !
+#ifdef __PARA
+    !
+    ! use poolreduce to bring together the results from each pool
+    !
+    call poolreduce ( 2 * ngms * ngms, green)
+    !
+    if (me.eq.1.and.mypool.eq.1) then
+#endif
+      !
+      rec0 = (iw-1) * nk0 * nq + (ik0-1) * nq + (iq-1) + 1
+      write ( iungreen, rec = rec0, iostat = ios) green
+      !
+#ifdef __PARA
+    endif
+#endif
+    !
   enddo
   !
+
+
 !  ! direct calculation - debug only
 !  ! The Sternheimer method and the direct calculation match perfectly
 !  !

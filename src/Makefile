@@ -1,8 +1,7 @@
 
 # x61
 
-#F90 = ifort -- sigsev with the intel compiler 10.1.015
-F90 = f95 -O3
+F90 = f95 -O3 -fbounds-check
 LDFLAGS = -lfftw -llapack
 CPP = cpp 
 CPPFLAGS = -C -ansi
@@ -94,6 +93,7 @@ eigenstates.o \
 eigenstates2.o \
 eigenstates_all.o \
 error.o \
+fft6_g2r.o \
 refold.o \
 rs.o \
 gwhs.o \

@@ -25,6 +25,7 @@
   use parameters
   use constants
   use kspace
+  use imaxis
 #ifdef __PARA
   USE para
   USE mp, ONLY: mp_bcast, mp_barrier, mp_end
@@ -36,13 +37,13 @@
   ! variables
   !
   integer :: root = 0 ! root node for broadcast
-  integer :: ig, ik, ig1, ig2, iq, nk, ik0, i, j, k, ios
-  integer :: iw, iwp, iw0, iw0pw, iw0mw, count, ipol, ir
+  integer :: ig, ik, ig1, ig2, iq, nk, ik0, i, j, k, ios, ioall
+  integer :: iw, iwp, iw0, iw0pw, iw0mw, count, ipol, ir, iwim
   integer :: recl, unf_recl, irp, igp, rec0, igstart, igstop
   integer :: ngpool, ngr, igs, ibnd
   integer :: nwcoul, nwgreen, nwalloc, nwsigma
   integer, allocatable :: ind_w0mw (:,:), ind_w0pw (:,:)
-  real(dbl) :: ui, uj, uk, wgreenmin, wgreenmax, w0mw, w0pw
+  real(dbl) :: ui, uj, uk, wgreenmin, wgreenmax, w0mw, w0pw, v1
   real(dbl) :: gcutm, gcutms, arg, wp
   real(dbl) :: k0mq(3), kplusg(3), xk0(3,nk0), xxq(3), xq0(3)
   real(dbl), allocatable :: ss(:), vs(:)
@@ -54,9 +55,11 @@
   complex(DP) :: cexpp, cexpm, cprefac
   complex(DP), allocatable :: psi(:,:), psi_all(:,:)
   complex(dbl), allocatable :: vr(:), aux(:)
-  complex(dbl), allocatable :: scrcoul (:,:,:), greenf (:,:,:), sigma(:,:,:)
+  complex(dbl), allocatable :: scrcoul (:,:), greenfp (:,:), greenfm (:,:), sigma(:,:,:)
   complex(dbl), allocatable :: barcoul (:,:), greenf_na (:,:), sigma_ex(:,:)
-  complex(dbl), allocatable :: scrcoul_g (:,:,:), greenf_g (:,:,:), sigma_g(:,:,:)
+  complex(dbl), allocatable :: scrcoul_g (:,:,:), greenf_g (:,:), sigma_g(:,:,:)
+  complex(dbl), allocatable :: scrcoul_pade_g (:,:)
+  complex(dbl), allocatable :: z(:), a(:)
   logical :: allowed, foundp, foundm
   CHARACTER (LEN=9)   :: code = 'GWHS'
   CHARACTER(len=3)  :: nd_nmbr = '000' ! node number (used only in parallel case)
@@ -278,6 +281,26 @@
     enddo
   enddo
   !
+
+  !
+  ! read from file the frequencies on the imaginary axis (eV)
+  ! (every node reads in parallel - it's a tiny file)
+  !
+  open ( 45, file = "./imfreq.dat", form = 'formatted', status = 'unknown')
+  read (45, *)
+  read (45, *) nwim
+  allocate ( wim(nwim), z(nwim), a(nwim) )
+  do iw = 1, nwim
+    read (45,*) wim(iw)
+    if (wim(iw).lt.0.d0) call error ('coulomb','imaginary frequencies must be positive',1)
+  enddo
+  if (nwim.gt.20) call error ('coulomb','too many imaginary frequencies',nwim)
+  close(45)
+  !
+  
+
+
+  !
   write (stdout,'(/4x,"nwcoul = ",i5,", nwgreen = ",i5,", nwsigma = ",i5/)') &
      nwcoul, nwgreen, nwsigma
   write (stdout,'(/4x,"wgreenmin = ",f6.1," eV, wgreenmax = ",f6.1," eV, wgreen_safe = ",f6.1/)') &
@@ -305,42 +328,77 @@
   call mp_bcast ( xk0, root)
 #endif
   !
-  ! construct the empirical pseudopotential
-  !
-  allocate ( ss(ngm), vs(ngm) )
-  do ig = 1, ngm
-    arg = twopi * ( g(1,ig) * tau( 1, 1) + g(2,ig) * tau( 2, 1) + g(3,ig) * tau( 3, 1) )
-    ss (ig) = cos ( arg )
-  enddo
-  vs = zero
-  ! integer comparison - careful with other structures
-  do ig = 1, ngm
-    if     ( int ( gl(igtongl(ig)) ) .eq.  3 ) then
-      vs (ig) =  v3
-    elseif ( int ( gl(igtongl(ig)) ) .eq.  8 ) then
-      vs (ig) =  v8
-    elseif ( int ( gl(igtongl(ig)) ) .eq. 11 ) then
-      vs (ig) =  v11
+  if (tepm) then 
+    !
+    ! construct the empirical pseudopotential
+    !
+    write(stdout,'(/4x,"Using empirical pseudopotential"/)') 
+    !
+    allocate ( ss(ngm), vs(ngm) )
+    do ig = 1, ngm
+      arg = twopi * ( g(1,ig) * tau( 1, 1) + g(2,ig) * tau( 2, 1) + g(3,ig) * tau( 3, 1) )
+      ss (ig) = cos ( arg )
+    enddo
+    vs = zero
+    ! integer comparison - careful with other structures
+    do ig = 1, ngm
+      if     ( int ( gl(igtongl(ig)) ) .eq.  3 ) then
+        vs (ig) =  v3
+      elseif ( int ( gl(igtongl(ig)) ) .eq.  8 ) then
+        vs (ig) =  v8
+      elseif ( int ( gl(igtongl(ig)) ) .eq. 11 ) then
+        vs (ig) =  v11
+      endif
+    enddo
+    !
+    ! the empirical pseudopotential in real space 
+    ! for further use in h_psi
+    !
+    allocate ( vr(nr) )
+    vr = czero
+    do ig = 1, ngm
+      vr ( nl ( ig ) ) = dcmplx ( ss (ig) * vs (ig), zero )
+    enddo
+    call cfft3 ( vr, nr1, nr2, nr3,  1)
+    !
+    deallocate ( ss, vs)
+    !
+  else
+    !
+    ! Read V+Vxc from local pseudopotential SCF calculation
+    !
+    write(stdout,'(/4x,"Using vloc from SCF calculation"/)') 
+    !
+    ! it is important to read vr(ir) as the ordering of the G vectors
+    ! may be slightly different
+    !
+    allocate ( vr(nr) )
+    vr = czero
+#ifdef __PARA
+    if (me.eq.1.and.mypool.eq.1) then
+#endif
+    open(unit=100,file='vloc.dat')
+    rewind(100)
+    !
+    read (100,*) ! nrxx_, nr1_, nr2_, nr3_, nrx1_, nrx2_, nrx3_, ngm_
+    ! include a test here to make sure that the sizes are the same
+    !
+    do ir = 1, nr
+      read(100,*) v1
+      vr(ir) = dcmplx (v1,0.d0)
+    enddo
+    close(100)
+#ifdef __PARA
     endif
-  enddo
-  !
-  ! the empirical pseudopotential in real space 
-  ! for further use in h_psi
-  !
-  allocate ( vr(nr) )
-  vr = czero
-  do ig = 1, ngm
-    vr ( nl ( ig ) ) = dcmplx ( ss (ig) * vs (ig), zero )
-  enddo
-  call cfft3 ( vr, nr1, nr2, nr3,  1)
-  !
-  deallocate ( ss, vs)
+    ! use poolreduce to broadcast vr to each pool
+    call poolreduce ( 2 * nr, vr)
+#endif
+    !
+  endif
   !
   ! set to zero top of valence band by shifting the
   ! local potential
   vr = vr - eshift
-  !
-
   !
   allocate ( g2kin (ngm) )
   allocate ( aux (nrs) )
@@ -426,19 +484,19 @@
   !
   call refold ( )
   !
-  allocate ( scrcoul (nrs, nrs, nwcoul) )
-  allocate ( greenf (nrs, nrs, nwgreen) )
-  allocate ( sigma (nrs, nrs, nwsigma) )
+  allocate ( scrcoul (nrs, nrs) )
+  allocate ( greenfp (nrs, nrs), greenfm (nrs, nrs) )
+  allocate ( greenf_g (ngms, ngms) )
+  allocate ( scrcoul_g (ngms, ngms, nwim) )
+  allocate ( scrcoul_pade_g (ngms, ngms) )
   allocate ( barcoul(nrs, nrs), greenf_na(nrs,nrs), sigma_ex (nrs, nrs) )
-  allocate ( scrcoul_g (ngms, ngms, nwcoul) )
-  allocate ( greenf_g (ngms, ngms, nwgreen) )
-  allocate ( sigma_g (ngms, ngms, nwsigma) )
   !
   ! prepare the unit to write the Coulomb potential
   ! each q-point is associated with one record
   !
 ! recl = 2 * nrs * nrs * nwcoul
-  recl = 2 * ngms * ngms * nwcoul
+! recl = 2 * ngms * ngms * nwcoul
+  recl = 2 * ngms * ngms * nwim
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iuncoul, file = "./silicon.coul", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
@@ -447,7 +505,8 @@
   ! each (k0-q)-point is associated with one record
   !
 ! recl = 2 * nrs * nrs * nwgreen
-  recl = 2 * ngms * ngms * nwgreen
+! recl = 2 * ngms * ngms * nwgreen
+  recl = 2 * ngms * ngms 
   unf_recl = DIRECT_IO_FACTOR * recl
   open ( iungreen, file = "./silicon.green", iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)
@@ -467,7 +526,7 @@
   do iq = 1, nq
     !
 !   write(stdout,'(4x,3x,"iq = ",i3)') iq
-    scrcoul = czero
+    scrcoul_g = czero
     !
     if (igstart.eq.1) then
       !
@@ -477,24 +536,23 @@
       !
       xq0 = (/ 0.01 , 0.00, 0.00 /) ! this should be set from input
       if ( ( xq(1,iq)*xq(1,iq) + xq(2,iq)*xq(2,iq) + xq(3,iq)*xq(3,iq) ) .lt. 1.d-10 ) &
-      call coulomb_q0G0 ( vr, xq0, nwcoul, wcoul, scrcoul )
+      call coulomb_q0G0 ( vr, xq0, nwim, wim, scrcoul_g )
     endif
     !
     ! the grids {k} and {k+q} for the dVscf will be obtained
     ! by shuffling the {q} grid
     !
-    call coulomb ( vr, xq(:,iq), nwcoul, wcoul, scrcoul, igstart, igstop )
+    call coulomb ( vr, xq(:,iq), nwim, wim, scrcoul_g, igstart, igstop )
     !
 #ifdef __PARA
     !
     ! use poolreduce to bring together the results from each pool
     !
-    call poolreduce ( 2 * nrs * nrs * nwcoul, scrcoul)
+    call poolreduce ( 2 * ngms * ngms * nwim, scrcoul_g)
     !
     if (me.eq.1.and.mypool.eq.1) then
 #endif
       !
-      scrcoul_g = scrcoul(1:ngms,1:ngms,:)
       write ( iuncoul, rec = iq, iostat = ios) scrcoul_g
       !
 #ifdef __PARA
@@ -516,7 +574,6 @@
     do iq = 1, nq
       !
 !     write(stdout,'(4x,3x,"iq = ",i3)') iq
-      greenf = czero
       !
       !  k0mq = k0 - q
       !
@@ -531,27 +588,7 @@
       enddo
       !
       ! need to use multishift in green
-      call green_linsys ( vr, g2kin, k0mq, nwgreen, wgreen, greenf, igstart, igstop )
-      !
-      ! now greenf contains the Green's function
-      ! for this k0mq point, all frequencies, and in G-space
-      !
-#ifdef __PARA
-      !
-      ! use poolreduce to bring together the results from each pool
-      !
-      call poolreduce ( 2 * nrs * nrs * nwgreen, greenf)
-      !
-      if (me.eq.1.and.mypool.eq.1) then
-#endif
-        !
-        rec0 = (ik0-1) * nq + (iq-1) + 1 
-        greenf_g = greenf(1:ngms,1:ngms,:)
-        write ( iungreen, rec = rec0, iostat = ios) greenf_g 
-        !
-#ifdef __PARA
-      endif
-#endif
+      call green_linsys ( vr, g2kin, k0mq, nwgreen, wgreen, igstart, igstop, ik0, iq )
       !
       ! end loop on {k0-q} and {q}
     enddo 
@@ -562,6 +599,11 @@
   ! G TIMES W PRODUCT
   !
   call start_clock ('GW product')
+
+  allocate ( sigma (nrs, nrs, nwsigma), stat = ioall )
+! write(6,*) size(sigma), ioall
+  allocate ( sigma_g (ngms, ngms, nwsigma) )
+
   !
   w_ryd = wcoul / ryd2ev
   do ik0 = 1, nk0 
@@ -577,101 +619,45 @@
       !
       write(stdout,'(4x,"Summing iq = ",i4)') iq
       !
-      ! go to R-space to perform the direct product with W
-      ! both indices are in SIZE order of G-vectors
-      !
-      greenf = czero
-      !
-      ! read Green's function and broadcast
+      ! read Pade coefficients of screened coulomb interaction (W-v) and broadcast
       ! 
 #ifdef __PARA
-      if (me.eq.1.and.mypool.eq.1) then
-#endif
-        rec0 = (ik0-1) * nq + (iq-1) + 1 
-        read ( iungreen, rec = rec0, iostat = ios) greenf_g 
-        greenf(1:ngms,1:ngms,:) = greenf_g
-#ifdef __PARA
-      endif
-      ! use poolreduce to broadcast the results to every pool
-      call poolreduce ( 2 * nrs * nrs * nwgreen, greenf)
-#endif
-      !
-      do iw = 1, nwgreen
-        !
-        do ig = 1, ngms
-          aux = czero
-          do igp = 1, ngms
-            aux(nls(igp)) = greenf(ig,igp,iw)
-          enddo
-          call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          greenf(ig,1:nrs,iw) = aux / omega
-        enddo
-        !
-        ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
-        ! following teh convention set in the paper
-        ! [because the standard transform is sum_G f(G) exp(iGr) ]
-        !
-        do irp = 1, nrs
-          aux = czero
-          do ig = 1, ngms
-            aux(nls(ig)) = conjg ( greenf(ig,irp,iw) )
-          enddo
-          call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          greenf(1:nrs,irp,iw) = conjg ( aux )
-        enddo
-        !
-      enddo
-!     write(stdout,'(4x,"FFTW of Green''s function passed"/)') 
-      !
-      ! read screened coulomb interaction (W-v) and broadcast
-      ! 
-      scrcoul = czero
-      !
-#ifdef __PARA
+      scrcoul_g = czero
       if (me.eq.1.and.mypool.eq.1) then
 #endif
         read ( iuncoul, rec = iq, iostat = ios) scrcoul_g
-        scrcoul(1:ngms,1:ngms,:) = scrcoul_g
 #ifdef __PARA
       endif
       ! use poolreduce to broadcast the results to every pool
-      call poolreduce ( 2 * nrs * nrs * nwcoul, scrcoul)
+      call poolreduce ( 2 * ngms * ngms * nwim, scrcoul_g)
 #endif
-      !
-      ! now scrcoul(nrs,nrs,nwcoul) contains the screened Coulomb
-      ! interaction for this q point, all frequencies, and in G-space:
-      ! go to r-space 
-      ! both indices are in SIZE order of G-vectors
-      !
-      do iw = 1, nwcoul
-        !
-        do ig = 1, ngms
-          aux = czero
-          do igp = 1, ngms
-            aux(nls(igp)) = scrcoul(ig,igp,iw) 
-          enddo
-          call cfft3s ( aux, nr1s, nr2s, nr3s,  1) 
-          scrcoul(ig,1:nrs,iw) = aux / omega
-        enddo 
-        !
-        ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
-        ! following teh convention set in the paper
-        ! [because the standard transform is sum_G f(G) exp(iGr) ]
-        !
-        do irp = 1, nrs
-          aux = czero
-          do ig = 1, ngms
-            aux(nls(ig)) = conjg ( scrcoul(ig,irp,iw) )
-          enddo
-          call cfft3s ( aux, nr1s, nr2s, nr3s,  1)
-          scrcoul(1:nrs,irp,iw) = conjg ( aux ) 
-        enddo 
-      enddo
-!     write(stdout,'(4x,"FFTW of Coulomb passed"/)') 
       !
       ! combine Green's function and screened Coulomb ( sum_q wq = 1 )
       !
       do iw = 1, nwcoul
+        !
+        ! generate coulomb interaction W-v in real space for iw (scrcoul)
+        !
+        ! 1. Pade continuation
+        !
+        do ig = 1, ngms
+          do igp = 1, ngms
+            !
+            do iwim = 1, nwim
+               z(iwim) = dcmplx( 0.d0, wim(iwim)/ryd2ev)
+               a(iwim) = scrcoul_g (ig,igp,iwim)
+            enddo 
+            !
+            call pade_eval ( nwim, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+            !
+          enddo 
+        enddo 
+        !
+        ! 2. fft to real space
+        !
+        call fft6_g2r ( scrcoul_pade_g, scrcoul)
+        !
+     
         !
 !        cexpm = exp ( -ci * eta * w_ryd(iw) )
 !        cexpp = exp (  ci * eta * w_ryd(iw) )
@@ -699,8 +685,41 @@
           iw0mw = ind_w0mw (iw0,iw)
           iw0pw = ind_w0pw (iw0,iw)
           !
-          sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * &
-            ( greenf(:,:,iw0mw) + greenf(:,:,iw0pw) ) * scrcoul (:,:,iw)
+          ! generate green's function in real space for iw0mw (greenfm)
+          !
+#ifdef __PARA
+          greenf_g = czero
+          if (me.eq.1.and.mypool.eq.1) then
+#endif
+          rec0 = (iw0mw-1) * nk0 * nq + (ik0-1) * nq + (iq-1) + 1
+          read ( iungreen, rec = rec0, iostat = ios) greenf_g
+#ifdef __PARA
+          endif
+          ! use poolreduce to broadcast the results to every pool
+          call poolreduce ( 2 * ngms * ngms, greenf_g )
+#endif
+          ! greenf_g is ngms*ngms, greenf is nrs*nrs
+          !
+          call fft6_g2r ( greenf_g, greenfm )
+          !
+          ! generate green's function in real space for iw0pw (greenfp)
+          !
+#ifdef __PARA
+          greenf_g = czero
+          if (me.eq.1.and.mypool.eq.1) then
+#endif
+          rec0 = (iw0pw-1) * nk0 * nq + (ik0-1) * nq + (iq-1) + 1
+          read ( iungreen, rec = rec0, iostat = ios) greenf_g
+#ifdef __PARA
+          endif
+          ! use poolreduce to broadcast the results to every pool
+          call poolreduce ( 2 * ngms * ngms, greenf_g )
+#endif
+          ! greenf_g is ngms*ngms, greenf is nrs*nrs
+          !
+          call fft6_g2r ( greenf_g, greenfp )
+          !
+          sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * ( greenfp + greenfm ) * scrcoul 
           !
         enddo
         !

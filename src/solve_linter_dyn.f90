@@ -29,7 +29,7 @@
   complex(kind=DP) :: dvbare(nr)
   ! the perturbation in real space
   complex(kind=DP) :: dvscf(nr), vr(nr)
-  real(DP) :: et(nbnd_occ, nks), w, alpha_mix
+  real(DP) :: et(nbnd_occ, nks), w, alpha_mix, tr_cgsolve_now
   !
   complex(kind=DP) :: vr_dyn (nr)
   ! local potential plus the dynamical part w + i * eta
@@ -48,7 +48,7 @@
   complex(kind=DP) :: ZDOTC, cw
   real(DP) :: eprec(nbnd_occ), h_diag(ngm, nbnd_occ), anorm, meandvb
   logical :: conv_root, convt
-  integer :: lter
+  integer :: lter, lter_all
   external ch_psi_all_eta
 
   !
@@ -56,11 +56,21 @@
   !
   iter = 0
   convt = .false.
+  dr2 = 1.d0
+  lter_all = 0
   do while (iter.lt.nmax_iter .and. .not.convt)
      !
      iter = iter + 1
      lter = 0
      drhoscf = czero
+     !
+     ! fixed CG threshold
+     tr_cgsolve_now = tr_cgsolve
+     !
+     ! adaptive CG threshold
+!    tr_cgsolve_now = tr_cgsolve * 2.d3 * log ( dr2 / tr2_ph )
+!    if (iter .gt. 6) tr_cgsolve_now = tr_cgsolve
+!    if ( tr_cgsolve_now .lt. tr_cgsolve ) tr_cgsolve_now = tr_cgsolve
      !
      do ik = 1, nksq
         !
@@ -180,13 +190,13 @@
         ! complex frequency +w
         !
         call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsip, h_diag, &
-             ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
+             ngm, ngm, tr_cgsolve_now, ik, lter, conv_root, anorm, nbnd_occ, &
              g2kin, vr, evq,  cw )
         !
         ! complex frequency -w
         !
         call bcgsolve_all   (ch_psi_all_eta, et(:,ikk), dvpsi, dpsim, h_diag, &
-             ngm, ngm, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ, &
+             ngm, ngm, tr_cgsolve_now, ik, lter, conv_root, anorm, nbnd_occ, &
              g2kin, vr, evq, -cw )
         !
 !       if (.not.conv_root) &
@@ -309,8 +319,10 @@
      ! the factor 2 below is because we actually run +iw and -iw
      ! so the average number for each one of +iw and -iw is lter/nksq/2 
      !
-!    write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
-!      iter, dr2, float(lter)/float(nksq)/float(2)
+     lter_all = lter_all + lter
+     !
+     write(6,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
+       iter, dr2, float(lter)/float(nksq)/float(2)
 #ifdef __PARA
 !    write(1000+mypool,'(4x, "scf iteration ",i3,": dr2 = ",e8.2,3x,"average CG iter ",f5.1)') &
 !      iter, dr2, float(lter)/float(nksq)/float(2)
@@ -322,6 +334,10 @@
   ! the screened coulomb interaction corresponds to dv_bare + dv_hartree (RPA)
   !
   dvscf = dvscfin + dvbare
+  !
+  ! the factor 2 below is because we actually run +iw and -iw
+  ! so the average number for each one of +iw and -iw is lter/nksq/2 
+  write(6,'(4x,"average CG x SCF iter ",f5.1)') float(lter_all)/float(nksq)/float(2)
   !
   return
   end subroutine solve_linter_dyn

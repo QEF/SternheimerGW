@@ -11,7 +11,10 @@
   !
   ! STRUCTURE AND POTENTIAL FOR SILICON
   !
-  integer, parameter :: nat = 2, nbnd_occ = 4, nbnd = 60, nbnd_sig = 8
+!  logical :: tepm = .false.
+  logical :: tepm = .true.
+  ! switch between empirical potential and local pseudopotential calc
+  integer, parameter :: nat = 2, nbnd_occ = 4, nbnd = 8, nbnd_sig = 8
   real(dbl), parameter :: alat = 10.26
   ! lattice parameter of silicon (5.43 A)
   ! without the factor 4 we have the volume of 8 atoms...
@@ -23,13 +26,16 @@
   !
   ! PLANE WAVES CUTOFF
   !
+!  real(dbl), parameter :: ecutwfc = 20.0  ! balde/tosatti: 2 Ry
   real(dbl), parameter :: ecutwfc = 5.0  ! balde/tosatti: 2 Ry
   ! energy cutoff for wave functions in k-space ( in Rydbergs )
   ! 5 Ry and 40 Ry give essentially the same eps^-1(0,0,q)
   ! If I use 2 Ry it bombs out since we shift the G-sphere
   ! for the refolding and most points are lost =O
+!  real(dbl), parameter :: ecut0 = 2.0 ! NOTE: ecut0 must be SMALLER than ecut 
   real(dbl), parameter :: ecut0 = 1.1 ! NOTE: ecut0 must be SMALLER than ecut 
   ! energy cutoff for trial diagonalization of Hamiltonian (input to CG - Rydbergs )
+!  real(dbl), parameter :: ecuts = 2.5
   real(dbl), parameter :: ecuts = 1.1
   ! energy cutoff for G, W, and Sigma, Ry
   !
@@ -43,8 +49,8 @@
   !
   ! ENERGY SAMPLING
   !
-! real(DP), parameter :: wsigmamin = -20.d0, wsigmamax = 20.d0, deltaw = 0.4, wcoulmax = 50.d0
-  real(DP), parameter :: wsigmamin = -100.d0, wsigmamax = 100.d0, deltaw = 0.25, wcoulmax = 50.d0
+!  real(DP), parameter :: wsigmamin = -100.d0, wsigmamax = 100.d0, deltaw = 0.5, wcoulmax = 100.d0
+  real(DP), parameter :: wsigmamin = -100.d0, wsigmamax = 100.d0, deltaw = 0.5, wcoulmax = 100.d0
   ! frequency range for the self-energy (wsigmamin<0, sigmamax>0) - eV
   ! and for the Coulomb  (wcoulmax>0)
   real(DP), parameter :: wgreen_safe = 50.d0
@@ -59,19 +65,22 @@
   ! max number of iterations in cong grad diagonalization
   integer, parameter :: nmax_iter = 30
   ! max n. of iterations in solve_linter
-  integer, parameter :: nmix_ph = 4
+  integer, parameter :: nmix_ph = 6
   ! number of previous iterations used in modified Broyden mixing
   real(DP), parameter :: tr2_ph = 1.d-10
   ! convergence threshold for dvscf
-  real(DP), parameter :: tr_cgsolve = 1.0d-8 
+! real(DP), parameter :: tr_cgsolve = 1.0d-8 
+  real(DP), parameter :: tr_cgsolve = 1.0d-10
   ! threshold for the iterative solution of the linear system
   ! with thresh>1d-5 the potential does not converge
 ! real(DP), parameter :: eta = 0.03
   real(DP), parameter :: eta = 0.04
   ! smearing for Green's function, and GW exp^ideltaw sum - Ry
-  real(DP), parameter :: alpha_pv = 25.234/13.606 ! (this is 2(emax-emin)
+ real(DP), parameter :: alpha_pv = 25.234/13.606 ! this is 2(emax-emin), epm
+!  real(DP), parameter :: alpha_pv = 24.804/13.606 ! this is 2(emax-emin), 20 Ry local pp
   ! parameter for the projection over the valence manifold
-  real(DP), parameter :: eshift = 10.462/13.6058
+ real(DP), parameter :: eshift = 10.462/13.6058 ! epm
+!  real(DP), parameter :: eshift = 6.12048/13.6058 ! 20 Ry local pp
   ! Energy shift to align the top of the valence band to zero
   !
   ! I/O PARAMETERS

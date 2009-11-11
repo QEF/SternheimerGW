@@ -39,31 +39,37 @@
   ! the product of the Hamiltonian and h
   complex(kind=DP) :: vr(nr)
   real(kind=DP) :: g2kin(ngm)
-  complex(kind=DP) :: evq (ngm, nbnd_occ)
+  complex(kind=DP) :: evq (ngm, nbnd_occ), za
   !
   allocate ( hpsi( ngm , nb) )    
-  hpsi = czero
-  !
-  !   compute the product of the hamiltonian with the h vector
+!  hpsi = czero
+!  !
+!  !   compute the product of the hamiltonian with the h vector
+!  !
+!  do ibnd = 1, nb
+!    call h_psi_c ( h(:,ibnd), hpsi(:,ibnd), g2kin, vr)
+!  enddo
+!  !
+!  !   then we compute the operator H-epsilon S
+!  !
+!  do ibnd = 1, nb
+!     do ig = 1, ngm
+!       ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * h (ig, ibnd) 
+!     enddo
+!  enddo
+!  !
+!  !  complex frequency
+!  !
+!  do ibnd = 1, nb
+!     do ig = 1, ngm
+!        ah (ig, ibnd) = ah (ig, ibnd) - cw * h (ig, ibnd)
+!     enddo
+!  enddo
   !
   do ibnd = 1, nb
-    call h_psi_c ( h(:,ibnd), hpsi(:,ibnd), g2kin, vr)
-  enddo
-  !
-  !   then we compute the operator H-epsilon S
-  !
-  do ibnd = 1, nb
-     do ig = 1, ngm
-        ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * h (ig, ibnd) 
-     enddo
-  enddo
-  !
-  !  complex frequency
-  !
-  do ibnd = 1, nb
-     do ig = 1, ngm
-        ah (ig, ibnd) = ah (ig, ibnd) - cw * h (ig, ibnd)
-     enddo
+    call h_psi_c ( h(1,ibnd), ah(1,ibnd), g2kin, vr)
+    za = - cw - dcmplx ( e (ibnd), zero )
+    call ZAXPY (ngm, za, h (1,ibnd), 1, ah (1,ibnd), 1)
   enddo
   !
   !   Here we compute the projector in the valence band
@@ -76,9 +82,10 @@
        ngm, ps, nbnd_occ, czero, hpsi, ngm)   
   !
   do ibnd = 1, nb 
-     do ig = 1, ngm
-        ah (ig, ibnd) = ah (ig, ibnd) + hpsi (ig, ibnd)
-     enddo
+!     do ig = 1, ngm
+!        ah (ig, ibnd) = ah (ig, ibnd) + hpsi (ig, ibnd)
+!     enddo
+      call ZAXPY (ngm, cone, hpsi (1,ibnd), 1, ah (1,ibnd), 1)
   enddo
   !
   deallocate (hpsi)
