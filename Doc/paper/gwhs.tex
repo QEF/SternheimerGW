@@ -7,6 +7,8 @@
 % which is internally defined as \r{A}
 %
 
+\def\s1{\hspace{0.5cm}}
+\def\s2{\hspace{1cm}}
 \def\w{\omega}
 \def\wp{\omega^\prime}
 \def\wc{{\omega_{\rm C}}}
@@ -1093,21 +1095,40 @@ excitation energies somewhat arbitrary, therefore the results presented in the f
 should be regarded as qualitative and are presented only with the purpose of demonstrating 
 our DFPT-$GW$ methodology.
 
-It is interesting to observe 
-Interestingly
+It is interesting to observe that, despite the above limitations, the expectation values of the
+XC potential and of the echange term of the $GW$ self-energy calculated here are suprisingly
+close to those reported in Ref.\ \onlinecite{hl86}. Indeed, for the valence band top 
+$\Gamma_{25v}^\prime$ state and the conduction band bottom close to the $X_{1c}$ state
+our calculated XC expectation values are -11.27 eV and -8.97 eV, respectively,
+while Ref.\ \onlinecite{hl86} gives -11.80 eV and -9.61 eV for the corresponding states
+at the DFT/LDA level. The agreemed is even better when comparing the expectation values
+of the bare exchange part of the self-energy. In this case we find -12.43 eV and -5.07 eV
+for the $\Gamma_{25v}^\prime$ state and the $X_{1c}$ state, respectively, to be compared
+to the corresponding values of -12.54 eV and -5.28 eV from Ref.\ \onlinecite{hl86}.
+These results provide an {\it a posteriori} justification to our choice of calculating
+the XC potential using the EPM charge density and the LDA functional.
 
-spectral function in diagonal approximation
+%QP renormalizations: VBT 0.78, CBB 0.68
+Our calculated quasi-particle excitation energies for electronic states at the $\Gamma$ 
+point and for the conduction band edge are reported in Table \ref{tab.2}
+and compared to the results of Refs.\ \onlinecite{hl86,blochl}.
+We find a good overall agreement between these different set of calculations,
+which is rather suprising considered that we are comparing our DFPT-$GW$ scheme
+within the EPM implementation with more sophisticated {\it ab-initio} calculations.
+
+Figure \ref{fig6} shows the calculated quasi-particle spectral function 
   \begin{equation}\label{eq.specfun}
   \langle n\k| A|n\k\rangle = \frac{|{\rm Im} \Delta\Sigma_{n\k}|}
   {| \w-\E_{n\k} - {\rm Re}  \Delta\Sigma_{n\k} |^2 + | {\rm Im}  \Delta\Sigma_{n\k} |^2},
   \end{equation}
 with $\Delta \Sigma_{n\k} = \langle n\k| \Sigma - V_{\rm xc} |n\k\rangle$.
-
-Results of table [QP renormalizations: VBT 0.78, CBB 0.68.]
-
-
-
-%---------------------------------
+We note that the previous expression assumes implicitely that the off-diagonal
+matrix elements of the self-energy in the basis of the unperturbed
+wavefunctions are negligible. While this approximation is not always justified,
+we adopt Eq.\ (\ref{eq.specfun}) in order to be consistent with Ref.\ \onlinecite{blochl}.
+In Fig.\ \ref{fig6} we observe a good overall agreement between our calculations and the
+LDA/PAW results of Ref.\ \onlinecite{blochl}. This comparison demonstrates
+once again the validity of our methodology.
 
 
 % head: 777 000, body and wings: 666 000 (body and wings do not depend much on sampling)
@@ -1251,23 +1272,30 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 % table: 1col, table* 2col
 \begin{table*}
 \caption{\label{tab.2}
-XC potential expectation values, in eV.
+$GW$ quasi-particle excitation energies for the $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, $\Gamma_{1v}$
+states of silicon, as well as for the conduction band bottom of silicon close to the $X_{1c}$ state.
+We obtained the quasi-particle energies $E_{n\k}$ by solving the self-consistent equations
+$E_{n\k} = \E_{n\k} + {\rm Re}  \Delta\Sigma_{n\k}(E_{n\k})$, with $\Delta \Sigma_{n\k} = \langle n\k| \Sigma - V_{\rm xc} |n\k\rangle$.
+For completeness we also show the unperturbed eigenvalues calculated here within the EPM scheme,
+and those of Ref.\ \onlinecite{blochl} within the DFT/LDA scheme for comparison.
+It is interesting to observe that the value of the minimum band gap is not increased from
+the EPM value of $0.82$ eV when applying the $GW$ correction. In absolute terms the $X_{1c}$ state shifts upwards by 0.41 eV upon 
+the $GW$ correction, but this shift is compensated by the concurrent upward shift of the $\Gamma^\prime_{25v}$
+state by 0.44 eV.
 \vspace{0.5cm}}
-\begin{tabular}{l r@{.}l  r@{.}l r@{.}l r@{.}l r@{.}l r@{.}l  r@{.}l r@{.}l r@{.}l c}
+\begin{tabular}{l r@{.}l  r@{.}l  r@{.}l r@{.}l r@{.}l c}
 \hline
 \hline
-state   & \multicolumn{4}{c}{Eigenvalues}  &  \multicolumn{4}{c}{LDA XC}  &
-\multicolumn{4}{c}{Bare exchange} &
+   & \multicolumn{4}{c}{\hspace{-0.6cm} EPM/LDA eigenvalues}  &
 \multicolumn{7}{c}{Quasiparticle energies} \\
-state   & \multicolumn{2}{c}{This work}  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & \multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}}  &
-\multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} &
-\multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & Expt. \\
+   & \multicolumn{2}{c}{Present}  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & 
+\multicolumn{2}{c}{\hspace{1cm}Present} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{blochl}} &\hspace{1cm} Expt. \\
 \hline
-$\Gamma^\prime_{2c}$  &   3&89 & 3&23   &  -10&30 &    &   &  -5&54 &    &   &  4&21 &   4&08 &   4&05 & 4.23$^{\rm a}$,4.1$^{\rm b}$\\
-$\Gamma_{15c}$        &   3&42 & 2&54   &   -9&80 &    &   &  -5&29 &    &   &  3&53 &   3&35 &   3&09 & 3.40$^{\rm a}$,3.05$^{\rm b}$\\
-$\Gamma^\prime_{25v}$ &   0&00 & 0&00   &  -11&27 & -11&80 & -12&43 & -12&54 &  0&00 &   0&00 &   0&00 & 0\\
-$\Gamma_{1v}$         & -12&62 & -11&97 &  -10&42 &    &   & -17&34 &    &   &-13&23 & -12&04 & -11&85 & -12.5$\pm$0.6$^{\rm a}$\\
-$X_{1c}$              &   0&82 & 0&55   &   -8&97 &  -9&61 &  -5&07 &  -5&28 &  0&79 &   1&29 &   0&92 & 1.17$^{\rm a}$\\
+$\Gamma^\prime_{2c}$  &   3&89 & 3&23   & \hspace{1cm}  4&21 & \hspace{0.3cm}  4&08 &\hspace{0.3cm}   4&05 & \hspace{1cm}4.23$^{\rm a}$,4.1$^{\rm b}$\\
+$\Gamma_{15c}$        &   3&42 & 2&54   & \hspace{1cm}  3&53 & \hspace{0.3cm}  3&35 &\hspace{0.3cm}   3&09 & \hspace{1cm}3.40$^{\rm a}$,3.05$^{\rm b}$\\
+$\Gamma^\prime_{25v}$ &   0&00 & 0&00   & \hspace{1cm}  0&00 & \hspace{0.3cm}  0&00 &\hspace{0.3cm}   0&00 & \hspace{1cm}0\\
+$\Gamma_{1v}$         & -12&62 & -11&97 & \hspace{1cm}-13&23 & \hspace{0.3cm}-12&04 &\hspace{0.3cm} -11&85 & \hspace{1cm}-12.5$\pm$0.6$^{\rm a}$\\
+$X_{1c}$              &   0&82 & 0&55   & \hspace{1cm}  0&79 & \hspace{0.3cm}  1&29 &\hspace{0.3cm}   0&92 & \hspace{1cm} 1.17$^{\rm a}$\\
 \hline
 \hline
 $^{\rm a}$ Ref.\ \onlinecite{r35}.
