@@ -955,41 +955,120 @@ Coulomb interaction.
 \section{Results}\label{sec.results}
 
 In order to demonstrate our approach we have realized a prototype implementation
-within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg}
-and validated our implementation for the case of silicon. The next step towards
-a comprehensive planewave implementation would be the inclusion of 
-nonlocal pseudopotentials of norm-conserving\cite{ncpp} or ultrasoft\cite{uspp} 
-form. In the EPM scheme the electronic charge density is not connected to
-the total local potential through a self-consistent procedure.\cite{appelbaum} However
-the charge density obtained within the EPM method can be regarded as 
-a reasonable approximation to the charge density in silicon,\cite{EPM-density} therefore 
-it appears sensible to estimate the XC expectation value of each electronic state
-by using the XC potential determined from the EPM charge density.
-This procedure is formally equivalent to assuming that the unscreened ionic pseudopotential
-$V^{\rm ion}$ is given by
-$V^{\rm EPM} - V^{\rm Ha} - V^{\rm xc}$, where
-$V^{\rm EPM}$ is the total empirical pseudopotential of Ref.\ \onlinecite{cohen_berg}
-and the Hartree and XC potentials are calculated using the EPM charge density.
-%NOTA: in principle GW has not been designed for DFT. Any starting
-%point which is reasonable is ok. The point is to replace the XC
-%of the starting hamiltonian by GW. 
+within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg},
+and we have validated our implementation for the case of silicon.
+The next main step towards a comprehensive planewave implementation would be 
+the inclusion of {\it ab-initio} pseudopotentials of norm-conserving\cite{ncpp} 
+or ultrasoft\cite{uspp} form. 
+
+\subsection{Dielectric matrices}
 
 Table \ref{tab.1} reports the inverse dielectric matrix calculated using
 the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
+In all our calculations we used inverse dielectric matrices of size 59$\times$59, 
+corresponding to a kinetic energy cutoff of 5 Ry for the screened Coulomb interaction.
 For the purpose of comparison with Ref.\ \onlinecite{balde_tosa} 
-we considered the static and long-wavelenght limit of the inverse dielectric matrix
+we calculated the static ($\w=0$) and long-wavelenght limit ($\q \rightarrow 0$) of the inverse dielectric matrix
 for the first few reciprocal lattice vectors $\G$. 
-The authors of Ref.\ \onlinecite{balde_tosa} used the standard approach based on the expansion over the
-unoccupied electronic states and the explicit inversion of the dielectric matrix.
+The authors of Ref.\ \onlinecite{balde_tosa} adopted the standard approach based 
+on the expansion over the unoccupied electronic states of the dielectric matrix, 
+and obtained the inverse dielectric matrix by performing matrix inversions.
+In our calculations the matrix inversion is not needed as the self-consistent method 
+in Sec.~\ref{sec.theory.g} is designed to yield the inverse dielectric matrix.
 The excellent agreement between our calculation and Ref.~\onlinecite{balde_tosa}
 supports the validity of our proposed approach.
 
+Next we consider the wavevector dependence of the head of the
+inverse dielectric matrix $\epsilon_{00}(\q,\w=0)$. We performed the
+calculation by using the non self-consistent method described in
+Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{cohen.diel1}.
+% 12-12-12 000 5Ry.
+Figure \ref{fig1} shows that our calculations are in very good agreement with the results
+of Ref.\ \onlinecite{cohen.diel1}. The slight differences between our results and those
+of Ref.\ \onlinecite{cohen.diel1} at large wavevectors should be ascribed to the use of a limited 
+number of empty states in the perturbative expansion over unoccupied states in the latter work.
+
+Figure \ref{fig2} compares our results for the frequency dependence of the dielectric matrix
+at long wavelenght with the data reported in Ref.\ \onlinecite{hl86}. 
+We focused in particular on the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86},
+and calculated $\epsilon_{\G\Gp}(\q\rightarrow 0,\w)$ for $\G=\Gp=0$, $\G=\Gp=(1,1,1)$,
+and $\G=(1,1,1)$, $\Gp=(2,0,0)$ in reciprocal lattice units.
+Apart from some minor differences arising from the use of the expansion over unoccupied
+states in Ref.\ \onlinecite{hl86}, even in this case the agreement between our DFPT calculation 
+and those of Ref.\ \onlinecite{hl86} is very good throughout the entire frequency range
+and for the head of the dielectric matrix as well as both diagonal and off-diagonal matrix elements.
+
+\subsection{Pad\'e approximants and convergence}
+
+Figure \ref{fig3} shows the quality of the analytic continuation from the imaginary to
+the real frequency using Pad\'e approximants. We found that this procedure based on 
+Pad\'e approximants is generally very stable and requires minimal manual intervention.
+Approximants of order 6 to 11 are able to reproduce both the location and the width of
+the main plasmon-pole structures of the dielectric matrix. Head, wings, and body of the
+dielectric matrix are described consistently (cf.\ Fig.\ \ref{fig3}). The singularity
+corresponding to the absortpion onset in Fig.\ \ref{fig3}(a) is smoothed out by 
+Pad\'e approximants of low order, but this does not pose a problem as this effect
+is washed out when calculating the frequency convolution of the Green's function and 
+the screened Coulomb interaction for the $GW$ self-energy.
+% ARE U SURE ABOUT THIS?
+The advantages of performing calculationg along the imaginary axis are that (i) the 
+linear system Eq.\ (\ref{eq.linsys.1}) becomes progressively better conditioned
+towards large imaginary frequencies, and (ii) a moderate Brillouin-zone sampling is
+required to perform calculations along the imaginary axis (unlike the case of real-axis
+calculations). As a result, the worst case scenario for the solution
+of the linear system Eq.\ (\ref{eq.linsys.1}) corresponds to the static case $\w=0$.
+These aspects are described in detail in Appendix \ref{app.condition}.
+
+The typical number of non self-consistent iterations required to solve Eq.\ (\ref{eq.linsys.1})
+for a fixed $\Delta V_{[\r,\w]}$ with a relative accuracy of $\varepsilon_{\rm NSCF}=10^{-10}$
+using the cBiCG algorithm described in Appendix \ref{app.cbcg} is $N_{\rm SCF}\simeq 21$
+(using the preconditioner of Ref.\ \onlinecite{tpa}). This estimate has been obtained by averaging
+over all the $\G,\Gp$ reciprocal lattice vectors, $\q$-vectors, and imaginary frequencies.
+The typical number of self-consistent cycles required to obtain the screened Coulomb
+interaction through Eq.\ (\ref{eq.linsys.1}) with a relative accuracy of $\varepsilon_{\rm SCF}=10^{-5}$ 
+is $N_{\rm SCF}\simeq 5$.
 %
+% in practice the average condition number is 3 (quite good)
+%
+Charge-sloshing effects were atenuated by using the potential mixing method proposed in
+ Ref.\ \onlinecite{johnson}, approriately modified to deal with complex potentials. 
+For completeness it is convenient to report here the corresponding figures for
+the calculation of the Green's function using Eq.\ (\ref{eq.green.3}). The average number
+of non self-consistent iterations required to obtain the analytic part of the Green's
+function is $N_{\rm G}\simeq 25$ when preconditioning is adopted (we used a slight modification
+of the method of Ref.\ \onlinecite{tpa}). However, multishift minimizations as
+described in Appendix \ref{app.multishift} do not allow for the use of preconditioning, and in the
+latter case the number of iterations required to achieve convergence (within a relative
+accuracy $\varepsilon_{\rm NSCF}=10^{-10}$) can be as high as $N_{\rm G}\simeq 100$. 
+
+\subsection{GW self-energy}
+
+(1) real and imag parts, integration bins, smearing, ranges for G W S
+
+(2) Now explain Sigma-Vxc, problem with EPM, qualitative results.
+spectral function in diagonal approximation (use correct formuela, not Blochl).
+Results of table [Using QP equation (upward shift of VBT by 0.44 eV); QP renormalizations: VBT 0.78, CBB 0.68.]
+
+%In the EPM scheme the electronic charge density is not connected to
+%the total local potential through a self-consistent procedure.\cite{appelbaum}
+%Nonetheless, the charge density obtained within the EPM method can be regarded as
+%an approximation to the charge density in silicon,\cite{EPM-density} therefore
+%it appears sensible to estimate the effective XC potential
+%by using the local density approximation\cite{LDA} and the charge density obtained within
+%a EPM calculation.
+%This procedure is formally equivalent to assuming that the unscreened ionic pseudopotential
+%$V^{\rm ion}$ is given by
+%$V^{\rm EPM} - V^{\rm Ha} - V^{\rm xc}$, where
+%$V^{\rm EPM}$ is the total empirical pseudopotential of Ref.\ \onlinecite{cohen_berg}
+%and the Hartree and XC potentials are calculated using the EPM charge density.
+%%NOTA: in principle GW has not been designed for DFT. Any starting
+%%point which is reasonable is ok. The point is to replace the XC
+%%of the starting hamiltonian by GW.
+
 % head: 777 000, body and wings: 666 000 (body and wings do not depend much on sampling)
 % could not make the chadi-cohen 10-p mesh work, baroni-resta say that 8x8x8 is equiv to 10 chadi-cohen
-%
 % table: 1col, table* 2col
-\begin{table}[!]
+\begin{table}
 \caption{\label{tab.1} Long-wavelenght limit of the static (symmetrized)
 inverse dielectric matrix of silicon: $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$ for
 $\q=(0.01,0,0)$ and $\w=0$. We compare our calculations performed within
@@ -1021,21 +1100,12 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 \end{tabular}
 \end{table}
  
-Next we consider the wavevector dependence of the head of the 
-inverse dielectric matrix $\epsilon_{00}(\q,\w=0)$. We performed the
-calculation by using the non self-consistent method described in
-Sec.\ \ref{sec.diel.nscf} and we compared our results with Ref.\ \onlinecite{cohen.diel1}.
-% 12-12-12 000 5Ry. 
-Figure \ref{fig1} shows that our calculations are in good agreement with the results
-of Ref.\ \onlinecite{cohen.diel1}. The difference between the dielectric functions
-at large wavevectors can be ascribed to the use of a limited number of empty states in the perturbative
-expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
-
 \begin  {figure}
 \begin  {center}
 \includegraphics[width=7.5cm]{fig1.eps}
 \end    {center}
 \caption{\label{fig1}
+        (Color online)
         Dielectric function of silicon calculated using the empirical pseudopotential method and the
         non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}:
         calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
@@ -1048,7 +1118,8 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
 \begin  {center}
 \includegraphics[width=6.5cm]{fig2.eps}
 \end    {center}
-\caption{\label{fig.diel}
+\caption{\label{fig2}
+        (Color online)
         Frequency-dependent dielectric matrix of silicon at long wavelenght ($\q=(0.01,0,0) \, 2\pi/a$).
         The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg} 
         and the non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}.
@@ -1061,6 +1132,7 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
         and (c) $\G=(1,1,1) 2\pi/a$, $\Gp=(2,0,0) 2\pi/a$.
         The (blue) solid lines are our calculations, the (red) dashed lines are from Ref.\ \onlinecite{hl86}.
         The real and imaginary parts of the dielectric matrix are indicated in each panel.
+        We note that the scales on the vertical axes correspond to three different orders of magnitude.
         }
 \end    {figure}
 
@@ -1068,8 +1140,17 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
 \begin  {center}
 \includegraphics[width=7.5cm]{fig3.eps}
 \end    {center}
-\caption{\label{fig.pade}
-        fig pade caption
+\caption{\label{fig3}
+        (Color online)
+        Real part of the long-wavelenght dielectric matrix of silicon as a function of frequency. 
+        Panels (a) and (b) correspond to panels (a) and (b) of Fig.\ \ref{fig2}, respectively. The 
+        technical details of the calculations are the same as those described in the caption of Fig.\ \ref{fig2}.
+        Solid (blue) lines: dielectric matrices calculated directly along the real frequency axis,
+        from  Fig.\ \ref{fig2}. Dotted, dashed, and dash-dotted (red) lines: dielectric matrices
+        obtained from the analytic continuation on the real axis using Pad\'e approximants of order
+        6, 11, and 26, respectively. The Pad\'e approximants were determined for dielectric
+        matrices calculated along the imaginary frequency axis on a uniform frequency grid 
+        in the range 0-50 eV (for instance, the 6-points approximant corresponds to the frequencies $0,10,\cdots,50$ eV).
         }
 \end    {figure}
 
@@ -1111,40 +1192,19 @@ expansion over unoccupied states in Ref.\ \onlinecite{cohen.diel1}.
         }
 \end    {figure}
 
-
-(1) We now move on to the frequency-dependence of the dielectric matrix:
-comparison of frequency dependence wrt plots in steve's paper.
-(2) At this point we discuss the quality of the Pad\'e approximant.
-
-(3) Typical number of iterations for CF convergence, SCF convergence (mention which mixing),
-w and w/o preconditioning, as a function of accuracy, and condition number estimated with simple equation.
-green's function: typical convergence parameters.
-
-Need to specify size of dielectric matrix - note we use 4 times the cutoff
-specified in input.
-We used a cutoff of 5 Ry for the screened Coulomb interaction (actually 4.4) - this requires dielectric matrices 
-of size 51x51. The resulting self-energy is 17.6 Ry, this is exagerated but still we want to demonstrate
-large diel matrices. 
-We need also to specify the number of bins in the frequency integration, the smearing, and the ranges for G, W, Sigma.
-
-
-Using QP equation (upward shift of VBT by 0.44 eV)
-
-QP renormalizations: VBT 0.78, CBB 0.68.
-
 % table: 1col, table* 2col
-\begin{table*}[!]
-\caption{\label{tab.2} 
+\begin{table*}
+\caption{\label{tab.2}
 XC potential expectation values, in eV.
 \vspace{0.5cm}}
 \begin{tabular}{l r@{.}l  r@{.}l r@{.}l r@{.}l r@{.}l r@{.}l  r@{.}l r@{.}l r@{.}l c}
 \hline
 \hline
 state   & \multicolumn{4}{c}{Eigenvalues}  &  \multicolumn{4}{c}{LDA XC}  &
-\multicolumn{4}{c}{Bare exchange} & 
+\multicolumn{4}{c}{Bare exchange} &
 \multicolumn{7}{c}{Quasiparticle energies} \\
 state   & \multicolumn{2}{c}{This work}  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & \multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}}  &
-\multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} & 
+\multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} &
 \multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & Expt. \\
 \hline
 $\Gamma^\prime_{2c}$  &   3&89 & 3&23   &  -10&30 &    &   &  -5&54 &    &   &  4&21 &   4&08 &   4&05 & 4.23$^{\rm a}$,4.1$^{\rm b}$\\
@@ -1158,7 +1218,6 @@ $^{\rm a}$ Ref.\ \onlinecite{r35}.
 $^{\rm b}$ Ref.\ \onlinecite{r39}.
 \end{tabular}
 \end{table*}
-
 
 \section{Discussion}\label{sec.discussion}
 
@@ -1763,6 +1822,10 @@ New Series, Group III, Vol. 17, pt. A and Vol. 22, pt. A (Springer, Berlin, 1982
 \bibitem{r39}
 J. E. Ortega and F. J. Himpsel, 
 Phys.\ Rev.\ B {\bf 47}, 2130 (1993).
+
+\bibitem{johnson}
+D. D. Johnson, 
+Phys.\ Rev.\ B {\bf 38}, 12807 (1988).
 
 \end{thebibliography}
 
