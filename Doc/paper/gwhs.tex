@@ -1128,16 +1128,36 @@ large diel matrices.
 We need also to specify the number of bins in the frequency integration, the smearing, and the ranges for G, W, Sigma.
 
 
-Using QP equation:
-Upward shift of VBT by 0.44 eV.
+Using QP equation (upward shift of VBT by 0.44 eV)
 
-   4.21
-   3.53
-           0.79
-   0.00
- -13.23  
+QP renormalizations: VBT 0.78, CBB 0.68.
 
-Figure with spectral function, table with QP renormalizations.
+% table: 1col, table* 2col
+\begin{table*}[!]
+\caption{\label{tab.2} 
+XC potential expectation values, in eV.
+\vspace{0.5cm}}
+\begin{tabular}{l r@{.}l  r@{.}l r@{.}l r@{.}l r@{.}l r@{.}l  r@{.}l r@{.}l r@{.}l c}
+\hline
+\hline
+state   & \multicolumn{4}{c}{Eigenvalues}  &  \multicolumn{4}{c}{LDA XC}  &
+\multicolumn{4}{c}{Bare exchange} & 
+\multicolumn{7}{c}{Quasiparticle energies} \\
+state   & \multicolumn{2}{c}{This work}  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & \multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}}  &
+\multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} & 
+\multicolumn{2}{c}{This work} & \multicolumn{2}{c}{Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & Expt. \\
+\hline
+$\Gamma^\prime_{2c}$  &   3&89 & 3&23   &  -10&30 &    &   &  -5&54 &    &   &  4&21 &   4&08 &   4&05 & 4.23$^{\rm a}$,4.1$^{\rm b}$\\
+$\Gamma_{15c}$        &   3&42 & 2&54   &   -9&80 &    &   &  -5&29 &    &   &  3&53 &   3&35 &   3&09 & 3.40$^{\rm a}$,3.05$^{\rm b}$\\
+$\Gamma^\prime_{25v}$ &   0&00 & 0&00   &  -11&27 & -11&80 & -12&43 & -12&54 &  0&00 &   0&00 &   0&00 & 0\\
+$\Gamma_{1v}$         & -12&62 & -11&97 &  -10&42 &    &   & -17&34 &    &   &-13&23 & -12&04 & -11&85 & -12.5$\pm$0.6$^{\rm a}$\\
+$X_{1c}$              &   0&82 & 0&55   &   -8&97 &  -9&61 &  -5&07 &  -5&28 &  0&79 &   1&29 &   0&92 & 1.17$^{\rm a}$\\
+\hline
+\hline
+$^{\rm a}$ Ref.\ \onlinecite{r35}.
+$^{\rm b}$ Ref.\ \onlinecite{r39}.
+\end{tabular}
+\end{table*}
 
 
 \section{Discussion}\label{sec.discussion}
@@ -1734,6 +1754,15 @@ Phys.\ Rev.\ B {\bf 10}, 5095 (1974).
 \bibitem{gonze-variational}
 X. Gonze,
 Phys.\ Rev. B {\bf 55}, 10337 (1997).
+
+\bibitem{r35}
+{\it Numerical Data and Functional Relationships in Science and Technology}, 
+edited by K. H. Hellwege and O. Madelung, Landolt-B\"ornstein, 
+New Series, Group III, Vol. 17, pt. A and Vol. 22, pt. A (Springer, Berlin, 1982).
+
+\bibitem{r39}
+J. E. Ortega and F. J. Himpsel, 
+Phys.\ Rev.\ B {\bf 47}, 2130 (1993).
 
 \end{thebibliography}
 
