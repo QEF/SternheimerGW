@@ -63,14 +63,17 @@ Berkeley, California 94720, USA}
 \begin{abstract}
 We propose a new approach to quasiparticle GW calculations which 
 is based on density-functional perturbation theory and
-does not require the calculation of unoccupied electronic states. The screened Coulomb interaction
+does not require the computation of unoccupied electronic states. In our approach 
+the screened Coulomb interaction
 is evaluated by solving self-consistent linear-response Sternheimer equations,
 and the noninteracting Green's function is evaluated by solving inhomogeneous 
 linear systems. The frequency-dependence of the screened Coulomb interaction 
 is explicitely taken into account by performing calculations along the imaginary
-frequency axis and then using Pad\'e approximants for the analytical continuation
-to real frequencies. As a proof of concept we implemented the proposed method 
-within the empirical pseudopotential formalism and we studied silicon as a test case. 
+frequency axis and then by performing the analytic continuation to real frequencies
+using Pad\'e approximants. As a proof of concept we implemented the proposed methodology
+within the empirical pseudopotential formalism and we validated our implementation
+for the prototypical test case of silicon. We crytically examin the advantages and
+limitations of our method and describe promising future developments.
 \end{abstract}
 
 \pacs{71.15.-m, % Methods of electronic structure calculations
@@ -82,9 +85,9 @@ within the empirical pseudopotential formalism and we studied silicon as a test 
 
 During the past two and a half decades the $GW$ method\cite{hedin1,hl86}
 for the study of electron quasiparticle excitations
-accomulated a number of successes and witnessed a significant growth of interest
+scored a number of successes and witnessed a significant growth of interest
 within the computational electronic structure community.
-The $GW$ method is currently being used for predicting electron quasiparticle
+The $GW$ method is currently being used for predicting electron quasi-particle
 excitation spectra as well as optical spectra in a variety of materials
 ranging from bulk solids to nanostructures and organic systems. The
 $GW$ method is also of widespread use as a starting point for Bethe-Salpeter calculations
@@ -99,19 +102,20 @@ quasiparticle excitations based on the $GW$ method include the refinement
 of the initial guess for the non-interacting Green's function and for the
 polarization operator,\cite{rinke,schilfegarde}
 the inclusion of approximate vertex corrections or higher-order self-energy
-diagrams\cite{york} and the description of the frequency-dependent
+diagrams,\cite{york} and the description of the frequency-dependent
 dielectric response beyond the original plasmon-pole approximation.\cite{spacetime,blochl}
 Detailed reviews of past and current developments in $GW$ techniques can be
 found in Refs.\ \onlinecite{hl,gunnarsson,reining-review,rinke}.
 
 The majority of current implementations obtain the screened Coulomb interaction
-$W$ and the non-interacting Green's function $G$ by using a perturbative
-expansion over the Kohn-Sham wavefunctions (cf. Sec.\ \ref{sec.coulomb}). This expansion
-requires the calculation of both occupied and unoccupied electronic states,
+$W$ and the non-interacting Green's function $G$ using a perturbative
+expansion over the Kohn-Sham eigenstates (cf. Sec.\ \ref{sec.coulomb} below). 
+Such expansion requires the calculation of both occupied and unoccupied electronic states,
 as well as their associated optical matrix elements.\cite{hl86} A common bottleneck 
-of this approach is that the convergence of the results with the number $N_{\rm c}$ 
-of unoccupied states is rather slow.\cite{sohrab} This is especially true for
-the absolute values of the quasiparticle excitation energies.\cite{bruneval-gonze}
+of this approach is that the convergence of the quasi-particle excitation energies
+with the number 
+of unoccupied states is rather slow.\cite{sohrab} This difficulty is particularly relevant
+for the absolute values of the quasiparticle excitation energies.\cite{bruneval-gonze}
 %
 Several avenues have been explored so far in order to circumvent such bottleneck 
 and to perform $GW$ calculations by employing occupied electronic states only,\cite{reining-sternheimer,umari1,umari2,gygi}
@@ -120,23 +124,24 @@ or only a limited number of unoccupied states.\cite{bruneval-gonze}
 
 The main aim of the present work is to demonstrate the feasibility of $GW$ calculations
 entirely based on density functional perturbation theory (DFPT).\cite{baroni.rmp}
-In practice we adopt the principles of DFPT in order to (i) determine 
-the {\it frequency-dependent screened Coulomb interaction} directly
-by solving self-consistent linear response Sternheimer equations,
-and (ii) to determine the non-interacting Green's function by solving
+In practice we adopt the principles of DFPT in order to determine (i)
+the {\it frequency-dependent screened Coulomb interaction} 
+by directly solving self-consistent linear response Sternheimer equations,
+and (ii) the non-interacting Green's function by solving
 inhomogeneous linear systems. The main advantage of the proposed method 
-is that it does not make use of unoccupied electronic states.
-Additionally we investigate the possibility of fast evaluations of 
+is that it does not requir the computation of unoccupied electronic states.
+In addition, we demonstrate the possibility of fast evaluations of 
 the frequency dependence of the screened Coulomb interaction
 based on {\it multishift} linear-system solvers.\cite{frommer}
 %
 As a proof of concept we have implemented the method within
 a planewaves empirical pseudopotential approach,\cite{cohen_berg} 
-and tested it for the case of silicon.
+and validated it against previous work for the prototypical case of silicon.
 
-The uses of the Sternheimer equation for calculating the polarizability
+The use of the Sternheimer equation for calculating the polarizability
 in the random-phase approximation (RPA) or the inverse dielectric matrix 
-have already been discussed in Refs.\ \onlinecite{fleszar-resta,kunc-tosatti} 
+have already been discussed in Refs.\ \onlinecite{fleszar-resta} and \onlinecite{kunc-tosatti},
+respectively, 
 within the context of supercell calculations. After the introduction 
 of DFPT in the context of lattice-dynamical calculations,\cite{giannozzi} 
 the authors of Ref.\ \onlinecite{reining-sternheimer} proposed the
@@ -149,26 +154,30 @@ of the polarization propagator, based on the Lanczos method.\cite{umari1,umari2}
 The paper is organized as follows. In Sec.\ \ref{sec.theory} we describe
 how the DFPT formalism can be adapted in order to perform $GW$ calculations.
 In particular we outline the procedure to obtain the screened Coulomb
-interaction $W$ in Sec.\ \ref{sec.coulomb}, the non-interacting Green's function
-$G$ in Sec.\ \ref{sec.green}, and their product $GW$ in Sec.\ \ref{sec.sigma}.
+interaction in Sec.\ \ref{sec.coulomb}, the non-interacting Green's function
+in Sec.\ \ref{sec.green}, and the $GW$ self-energy in Sec.\ \ref{sec.sigma}.
 In Sec.\ \ref{sec.theory.g} we specialize to a planewave basis set representation
 and we derive the key equations for the case of Bloch electrons.
 Sections \ref{sec.coulomb.g}, \ref{sec.green.g}, \ref{sec.sigma.g}
 parallel the corresponding sections in the general theory part, respectively.
+In Sec.\ \ref{sec.scaling} we critically analyze the advantages 
+and limitations of the present approach, with an emphasis on the
+scaling of the calculations with system size. 
 In Sec.\ \ref{sec.results} we report the results of our test calculations
-for silicon and compare with the existing literature.
-In Sec.\ \ref{sec.discussion} we critically analyze the advantages 
-and disadvantages of the present approach, with an emphasis on the
-scaling of the calculations with system size. We also discuss
-present and future developments of our method.
-Section \ref{sec.conclusion} summarizes our findings and put them
-in context with respect to alternative existing approaches.
+for silicon and compare with the existing literature. In particular
+we presents results for the direct and inverse dielectric matrix (Sec.\ \ref{sec.5a}),
+for the accuracy of the analytic continuation using Pad\'e approximants
+(Sec.\ \ref{sec.conv}), for the self-energy (Sec.\ \ref{sec.5c}), 
+and for the spectral function (Sec.\ \ref{sec.5d}).
+In Sec.\ \ref{sec.conclusions} we discuss possible
+future developments of our method and we draw our conclusions.
 The Appendices provide technical details on some numerical algorithms adopted
-in this work, in particular
+in this work, in particular the conditioning of the Sternheimer equations
+(Appendix \ref{app.condition}),
 the preconditioned complex biconjugate gradient method (Appendix \ref{app.cbcg}),
 the analytic continuation using Pad\'e approximants (Appendix \ref{app.pade}),
 and the use of multishift methods for the simultaneous calculation of 
-the susceptibility at multiple frequencies (Appendix \ref{app.multishift}).
+the polarization at multiple frequencies (Appendix \ref{app.multishift}).
 
 \section{General theory}\label{sec.theory}
 
@@ -188,40 +197,40 @@ interaction reads:\cite{hl}
 where $v(\r,\rp)=e^2/|\r-\rp|$ denotes the bare Coulomb interaction and 
 $P(\r,\rp;\w)$ the irreducible polarization propagator. 
 Since Eq.\ (\ref{eq.w}) is a self-consistent Dyson equation for the
-screened interaction, it is in principle possible to solve it
-recursively, in the spirit of density-functional perturbation theory.
+screened Coulomb interaction, it should be possible to solve it
+recursively in the spirit of density-functional perturbation theory.
 For simplicity, we here specialize to the case of the random-phase approximation (RPA)
 for the polarization propagator. 
 The generalization of this procedure to include exchange and correlation
-effects can be performed without difficulties (cf.\ Sec.\ \ref{sec.beyond_rpa}).
+effects can be performed without difficulties (cf.\ Sec.\ \ref{sec.vertex}).
 Within the random-phase approximation the polarization propagator can be written as:\cite{hl}
 % [Eq.\ (14.8) of Ref.~\onlinecite{hl}]:
   \begin{equation}\label{eq.p}
   P(\r,\rp;\w) = 2\sum_{n m} \frac{f_n-f_m}{\E_n-\E_m-\w} 
   \psi_n(\r)\psi_m^\star(\r)  \psi_n^\star(\rp)\psi_m(\rp),
   \end{equation}
-where $\psi_n(\r)$ indicates an electronic wavefunctions for the
-effective single-particle Hamiltonian 
+where $\psi_n(\r)$ indicates an electronic eigenstate of the
+single-particle Hamiltonian 
 with energy eigenvalue $\E_n$ and occupation number $f_n$. 
 In the following we assume that the $\psi_n(\r)$ are Kohn-Sham
 eigenstates for definitness.
 In Eq.\ (\ref{eq.p}) the summation indices $m$ and $n$ run over
-both occupied and unoccupied states, and the factor of 2 accounts for the
+both occupied and unoccupied electronic states, and the factor of 2 accounts for the
 spin degeneracy.\cite{hl}
 Although the expression for the RPA polarization Eq.~(\ref{eq.p})
 has been derived for real frequencies in Ref.\ \onlinecite{hl}, it
-is possible to continue the polarization $P$ throughout the complex 
+is possible to continue the polarization throughout the complex 
 plane by using Eq.~(\ref{eq.p}) as a definition outside of the real axis.
-In the absence of external magnetic fields we can exploit time-reversal 
-symmetry in Eq.\ (\ref{eq.p}) to obtain $P(\r,\rp;-\w)=P(\r,\rp;\w)$.
-As a consequence we have also $W(\r,\rp;-\w)=W(\r,\rp;\w)$ from Eq.\ (\ref{eq.w}).
+%In the absence of external magnetic fields we can exploit time-reversal 
+%symmetry in Eq.\ (\ref{eq.p}) to obtain $P(\r,\rp;-\w)=P(\r,\rp;\w)$.
+%As a consequence we have also $W(\r,\rp;-\w)=W(\r,\rp;\w)$ from Eq.\ (\ref{eq.w}).
 
-Our goal is now to rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p})
-in such a way to avoid explicit summations over the unoccupied states.
+Our goal is to rewrite Eqs.\ (\ref{eq.w}) and (\ref{eq.p})
+in such a way to avoid explicit summations over the unoccupied electronic states.
 For this purpose it is convenient to regard the screened interaction
 $W(\r,\rp;\w)$ as a function of the 
-second space variable $\rp$, with the first space variable 
-$\r$ and the frequency $\w$ taken as parameters: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
+second space variable $\rp$, whilst the first space variable 
+$\r$ and the frequency $\w$ are kept as parameters: $\Delta V_{[\r,\w]}(\rp) = W(\r,\rp;\w)$.
 If the system under consideration is subject to the perturbation
 $\Delta V_{[\r,\w]}(\rp)$, then within the RPA the first-order variation 
 of the single-particle density matrix $\Delta n_{[\r,\w]}$ reads
@@ -229,23 +238,23 @@ of the single-particle density matrix $\Delta n_{[\r,\w]}$ reads
   \Delta n_{[\r,\w]} = 2\sum_{v\s} \psi_v^\star  \Delta \psi^\s_{v[\r,\w]}.
   \end{equation}
 In Eq.\ (\ref{eq.deltan}) the index $v$ stands for ``valence'' and runs
-over the occupied states only, the factor of 2 is for the spin degeneracy, 
+over the occupied electronic states only, the factor of 2 is for the spin degeneracy, 
 and the superscript $\sigma=\pm$ refer to the positive and negative
 frequency components of the induced charge.
 The first-order variations of the occupied wavefunctions $\Delta \psi^\s_{v[\r,\w]}$
-can be determined by solving the following two inhomogeneous linear systems (Sternheimer equations):
+can be determined by solving the following two Sternheimer equations:
   \begin{equation}\label{eq.linsys.1}
   (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_v, 
   \end{equation}
-where $\H$ is the effective (Kohn-Sham) single-particle Hamiltonian and 
+where $\H$ is the effective single-particle Hamiltonian and 
 $\P=\sum_v |\psi_v\rangle\langle\psi_v|$ is the projector
-on the occupied manifold. 
-Equations (\ref{eq.deltan}),(\ref{eq.linsys.1}) can be regarded as 
-the generalization to finite-frequency perturbations of the corresponding DFPT equations
-used for lattice-dynamical calculations.\cite{baroni.rmp} 
+on the occupied states manifold. 
+%Equations (\ref{eq.deltan}),(\ref{eq.linsys.1}) can be regarded as 
+%the generalization to finite-frequency perturbations of the corresponding DFPT equations
+%used for lattice-dynamical calculations.\cite{baroni.rmp} 
 In the particular case of vanishing frequency ($\w=0$)
-the standard DFPT equations are recovered as the $\sigma=\pm$ variations
-of the wavefunctions do coincide in that case.
+the $\sigma=\pm$ variations of the wavefunctions do coincide,
+and the standard DFPT equations are recovered.
 The screening Hartree potential associated with the induced charge 
 $\Delta n_{[\r,\w]}$ is calculated as usual through
   \begin{equation}\label{eq.dhartree}
@@ -259,7 +268,7 @@ and finally the screened Coulomb interaction in the RPA approximation is obtaine
 It is tedious but otherwise straightforward to verify that 
 Eqs.\ (\ref{eq.deltan})-(\ref{eq.w.dfpt}) are {\it equivalent} to the 
 original Eqs.\ (\ref{eq.w})-(\ref{eq.p}).
-The only assumptions made during our the derivation are that 
+The only assumptions made during our derivation are that 
 time-reversal symmetry applies,
 %, (ii) the off-diagonal components 
 %of the screened interaction in the spin space
@@ -268,7 +277,7 @@ and that the system under consideration presents a finite
 energy gap for electronic excitations. 
 The assumption of time-reversal symmetry is not essential and is mainly used to
 obtain a compact expression for the $\sigma=\pm$ wavefunction perturbations.
-The assumption of finite energy gap can be relaxed by using the extension
+The assumption of finite energy gap can be relaxed using the extension
 of DFPT to metallic systems developed in Ref.\ \onlinecite{degironcoli}. 
 
 %Direct substitution into Eq.\ (\ref{eq.linsys.1}) shows that 
@@ -277,11 +286,11 @@ of DFPT to metallic systems developed in Ref.\ \onlinecite{degironcoli}.
 %from the properties of the RPA polarization propagator.
 
 There is a simple and intuitive physical meaning associated with 
-the calculation scheme here outlined. To see this
+the calculation scheme outlined above. To see this
 we consider an external {\it test charge} introduced in the system
 at the point $\r$. This charge generates a bare Coulomb potential $v(\r,\rp)$,
-and the system reacts to the perturbation by generating the induced charge
-given by $\Delta n_{[\r,\w]}(\rp)$ and the associated 
+and the system responds to such perturbation by generating the induced charge
+$\Delta n_{[\r,\w]}(\rp)$ and the associated 
 screening potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$.
 The sum of the external perturbation $v(\r,\rp)$ and the screening
 potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$ gives the screened Coulomb
@@ -294,47 +303,49 @@ We then calculate the linear variations of the wavefunctions $\Delta \psi_v^\sig
 Using the calculated linear variations we update the induced charge density $\Delta n$
 and the associated screening potential $\Delta V^{\rm H}$. This allow us to
 generate an improved estimate of the screened interaction $W$.
-We repeat this cycle until convergence in the screened Coulomb
-interaction is achieved. This procedure can be regarded as the extension
-of the DFPT for lattice-dynamical calculations to finite-frequency
-test-charge perturbations. 
+We repeat these steps until convergence of the screened Coulomb
+interaction is achieved.
+Equations (\ref{eq.deltan}),(\ref{eq.linsys.1}) can be regarded as
+the generalization of the DFPT equations used for lattice-dynamical 
+calculations\cite{baroni.rmp} to finite-frequency test-charge perturbations.
+
+
 
 In practical calculations we solve Eq.\ (\ref{eq.linsys.1}) along the imaginary
 frequency axis in order to avoid the null eigenvalues of the operator
 $\H-\E_v\pm\w$, and then we perform the analytic continuation of 
-the screened Coulomb interaction to the real frequency axis (cf.\ Appendix \ref{app.condition}).
+the screened Coulomb interaction to real frequencies (cf.\ Appendix \ref{app.condition}).
 In the special case of $\w=0$ it is convenient to modify the linear operator on the left-hand side of
-Eq.\ (\ref{eq.linsys.1}) by adding a projector on the occupied manifold $\P$:
+Eq.\ (\ref{eq.linsys.1}) by adding the projector on the occupied manifold $\P$:
  \begin{equation} \label{eq.linsys.1b}
  (\H-\E_v+\alpha\P) \Delta \psi_{v[\r,0]}  = -(1-\P)  \Delta V_{[\r,0]} \psi_v,
   \end{equation}
 with $\alpha$ set to twice the occupied bandwith. This extra term does not affect
 the solutions $\Delta \psi_{v[\r,0]}$ which are linear combinations
 of unoccupied electronic states. At the same time, the extra term
-has the effect of shifting away from zero the null occupied eigenvalues 
+has the effect of shifting away from zero the null eigenvalues 
 of the linear operator $\H-\E_v$ thereby making it non singular.
 This strategy is common practice in DFPT implementations,\cite{baroni.rmp,espresso} and
 is discussed in greater detail in Appendix \ref{app.condition}.
 
-\subsubsection{Vertex correction}
+\subsubsection{Vertex correction}\label{sec.vertex}
 
-Within the scheme here outlined it is rather straightforward to introduce
+Within the scheme outlined here it is rather straightforward to introduce
 an approximate vertex correction to the $GW$ self-energy along the lines 
 of Refs.\ \onlinecite{hl86,reining94}. This correction results from setting
 the self-energy in the first iteration of Hedin's equations to the DFT
 exchange-correlation (XC) potential, $\Sigma_0(\r,\rp;\w) = \delta(\r,\rp) V_{\rm xc}(\r)$.
 Within the present scheme such correction is simply obtained by including
 the variation of the exchange-correlation
-potential in the self-consistent potential for the Sternheimer equations Eq.\ (\ref{eq.linsys.1}):
+potential in the self-consistent potential for the Sternheimer equations of Eq.\ (\ref{eq.linsys.1}):
   \begin{equation}\label{eq.linsys.vertex}
   (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}\!  = \!-(1-\P)\!  \Big[\Delta V_{[\r,\w]} + K_{\rm xc}\Delta n_{[\r,\w]}\Big] \! \psi_v,
   \end{equation}
-with $K_{\rm xc}=\delta V_{\rm xc}/\delta n$ being the functional derivative of the XC
+$K_{\rm xc}=\delta V_{\rm xc}/\delta n$ being the functional derivative of the XC
 potential with respect to the density. The screened Coulomb interaction $W$ is still
-obtained through Eq.\ (\ref{eq.w.dfpt}). This approach has been referred to as
+to be calculated through Eq.\ (\ref{eq.w.dfpt}). This approach has been referred to as
 ``$GW+K_{\rm xc}$'' approximation in Ref.\ \onlinecite{reining94} due to the inclusion of the XC contribution
-in the screening of the test charge (alternatively it can be said that the screening
-charge is calculated for an {\it electron test-charge}).
+in the screening of the test charge. 
 That the inclusion of the XC term in the self-consistent
 induced potential leads to the $GW+K_{\rm xc}$ approximation can easily be seen as follows.
 We can combine Eqs.\ (\ref{eq.deltan}),(\ref{eq.linsys.vertex}) to yield
@@ -349,25 +360,29 @@ Eqs.\ (\ref{eq.dhartree}),(\ref{eq.w.dfpt}) to find
  \end{equation}
 The last equation yields precisely the screened Coulomb interaction in the $GW+K_{\rm xc}$ approximation.\cite{hl86,reining94}
 % (see pag. 8026, above Table I).
+The difference between this approach and the
+standard $GW$ approximation is that in this case the screening
+charge is calculated for a {\it test-electron}, while in the $GW$ approximation
+the screening is calculated for a {\it test-charge}.
 It is worth pointing out that in standard implementations of DFPT the
 XC term is already included in the induced self-consistent potential,\cite{baroni.rmp}
-therefore the switching between the standard $GW$ approach and to the modified $GW+K_{\rm xc}$
-approximation can be achieved by literally commenting one single line of code
-if the present approach is implemented on top of existing DFPT software.\cite{espresso}
+therefore the use of the $GW+K_{\rm xc}$ approximation would not require any additional
+computational developments if the 
+present approach was implemented on top of existing DFPT software.\cite{espresso}
 
 \subsubsection{Non self-consistent calculation of the dielectric matrix}\label{sec.diel.nscf}
 
 An alternative approach to the calculation of the screened Coulomb interaction
 using DFPT consists in solving Eq.\ (\ref{eq.linsys.1}) non self-consistently.
-In practice we replace the self-consistent perturbation $\Delta V_{[\r,\w]}(\rp)$
+For this purpose we can replace the self-consistent perturbation $\Delta V_{[\r,\w]}(\rp)$
 in the right-hand side of Eq.\ (\ref{eq.linsys.1}) by the bare Coulomb potential
 $v_{[\r]}(\rp)=v(\r,\rp)$ as follows:
   \begin{equation}\label{eq.linsys.1.nscf}
   (\H-\E_v\pm\w) \Delta \psi^{{\rm NS},\pm}_{v[\r,\w]}  = -(1-\P)  v_{[\r]} \psi_v, 
   \end{equation}
-and we solve this Sternheimer equation with the known-term on the right-hand side
+and we can solve this Sternheimer equation with the known-term on the right-hand side
 kept fixed. By constructing the induced charge density $\Delta n^{\rm NS}_{[\r,\w]}$ as in Eq.\ (\ref{eq.deltan})
-we obtain the dielectric matrix $\epsilon(\r,\rp;\w)$:
+we then obtain the dielectric matrix $\epsilon(\r,\rp;\w)$:
   \begin{equation}\label{eq.diel}
   \epsilon(\r,\rp;\w) = \delta(\r,\rp) - \Delta n^{\rm NS}_{[\r,\w]}(\rp).
   \end{equation}
@@ -376,33 +391,33 @@ dielectric matrix.\cite{hl86-prb}
 The difference between this approach and the self-consistent calculation described in
 Sec.\ \ref{sec.coulomb} is that here we also need to invert the dielectric matrix obtained
 through Eq.\ (\ref{eq.diel}) in order to calculate the screened Coulomb interaction.
-This non self-consistent procedure has been proposed first in Ref.\ \onlinecite{reining-sternheimer}.
 
+This non self-consistent procedure was first proposed in Ref.\ \onlinecite{reining-sternheimer}.
 One extra step that we make in the present work is to notice that Eq.\ (\ref{eq.linsys.1.nscf})
 constitutes a {\it shifted} linear system, i.e.\ a system where the linear operator
-$\H-\E_v\pm\w$ differs from a {\it seed} operator $\H-\E_v$ only by a constant shift $\pm\w I$ 
+$\H-\E_v\pm\w$ differs from the ``seed'' operator $\H-\E_v$ only by a constant shift $\pm\w I$ 
 ($I$ being the identity operator). 
 In this case we can take
 advantage of the {\it multishift} method of Ref.\ \onlinecite{frommer}
 to determine $\Delta \psi^{{\rm NS},\pm}_{v[\r,\w]}$ for every frequency $\w$
 at the price of one single calculation for the {\it seed} system $(\H-\E_v) \Delta \psi^{{\rm NS}}_{v[\r,0]}  = -(1-\P)  v_{[\r]} \psi_v$.
-This procedure is extremely advantageous as we can obtain the whole frequency-dependence 
-by performing one single iterative solution. 
-The practical implementation of this procedure is described in detail in Appendix \ref{app.multishift}.
+This procedure is extremely advantageous as it makes it possible to calculate the whole frequency-dependence 
+by performing one single iterative minimization. 
+The technical implementation of this procedure is described in Appendix \ref{app.multishift}.
 
 
 \subsection{Green's function}\label{sec.green}
 
 The calculation of the Green's function can efficiently be performed 
-by adopting a strategy which is similar in spirit to the DFPT approach
-described for the screened Coulomb interaction in Sec.\ \ref{sec.coulomb}.
-We define the noninteracting Green's function following Ref.\ \onlinecite{hl}:
+by adopting a strategy similar to the DFPT approach
+described in Sec.\ \ref{sec.coulomb}.
+We introduce the noninteracting Green's function following Ref.\ \onlinecite{hl}:
   \begin{equation}\label{eq.green.1}
   G(\r,\rp;\w) = \sum_n \frac{\psi_n(\r)\psi_n^\star(\rp)}{\w-\E_n-i\eta_n},
   \end{equation}
 where the sum extends over occupied as well as unoccupied electronic states.
-The infinitesimal $\eta_n$ is real and positive ($\eta_n=\eta$) 
-for occupied states, negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl86}
+The real infinitesimal $\eta_n$ is positive ($\eta_n=\eta$) 
+for occupied states and negative ($\eta_n=-\eta$) for unoccupied states.\cite{hl,hl86}
 The factor of 2 for the spin degeneracy is not included
 as only the states with the same spin couple when forming the 
 matrix elements of the $GW$ self-energy.\cite{hl86}
@@ -424,11 +439,13 @@ Here we assumed once again time-reversal symmetry, we used the Lorentzian repres
 $\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we defined $\E_n^- = \E_n - i\eta$.
 The $G^{\rm A}$ component of the Green's function is obviously analytic in the
 upper half of the complex energy plane as its poles lie below the real axis.
-Whenever the frequency $\w$ is above the chemical potential 
-the non-analytic component $G^{\rm N}$ vanishes. On the other hand, for frequencies $\w$
-below the chemical potential the non-analytic part introduces the poles associated with the occupied 
+The non-analytic component $G^{\rm N}$ vanishes
+whenever the frequency $\w$ is above the chemical potential 
+On the other hand, for frequencies $\w$
+below the chemical potential, the non-analytic part introduces the poles associated with the occupied 
 electronic states. 
-This partitioning of the Green's function closely reflects the analytic structure
+%%%%%%%% RIPARTI DA QUI @@@@@@@@@@@
+The partitioning of the Green's function closely reflects the analytic structure
 of the non-interacting Green's function.
 %relates to the fact that
 %the Green's function is analytic only in the upper
@@ -960,7 +977,7 @@ In order to demonstrate our approach we have realized a prototype implementation
 within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg},
 and we have validated our implementation for the case of silicon.
 
-\subsection{Dielectric matrices}
+\subsection{Dielectric matrices}\label{sec.5a}
 
 Table \ref{tab.1} reports the inverse dielectric matrix calculated using
 the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
@@ -1040,7 +1057,7 @@ described in Appendix \ref{app.multishift} do not allow for the use of precondit
 latter case the number of iterations required to achieve convergence (within a relative
 accuracy $\varepsilon_{\rm NSCF}=10^{-10}$) can be as high as $N_{\rm G}\simeq 100$. 
 
-\subsection{Self-energy}
+\subsection{Self-energy}\label{sec.5c}
 
 Figures \ref{fig4} and \ref{fig5} show the real part ${\rm Re} \langle n\k| \Sigma|n\k\rangle$ 
 and the imaginary part ${\rm Im} \langle n\k| \Sigma|n\k\rangle$ of the
@@ -1064,7 +1081,7 @@ Such agreement probably reflects the ability of the EPM method to provide not on
 a good description of the band structure of silicon, but also a reasonable
 description of the electronic wavefunctions.
 
-\subsection{Quasi-particle excitations and spectral function}
+\subsection{Quasi-particle excitations and spectral function}\label{sec.5d}
 
 Within the $GW$ method the values of quasi-particle excitation energies are typically 
 calculated using first-order perturbation theory on the DFT eigenvalues.\cite{hl86}
