@@ -959,9 +959,6 @@ Coulomb interaction.
 In order to demonstrate our approach we have realized a prototype implementation
 within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg},
 and we have validated our implementation for the case of silicon.
-The next main step towards a comprehensive planewave implementation would be 
-the inclusion of {\it ab-initio} pseudopotentials of norm-conserving\cite{ncpp} 
-or ultrasoft\cite{uspp} form. 
 
 \subsection{Dielectric matrices}
 
@@ -1000,7 +997,7 @@ states in Ref.\ \onlinecite{hl86}, even in this case the agreement between our D
 and those of Ref.\ \onlinecite{hl86} is very good throughout the entire frequency range
 and for the head of the dielectric matrix as well as both diagonal and off-diagonal matrix elements.
 
-\subsection{Pad\'e approximants and convergence}
+\subsection{Pad\'e approximants and convergence}\label{sec.conv}
 
 Figure \ref{fig3} shows the quality of the analytic continuation from the imaginary to
 the real frequency using Pad\'e approximants. We found that this procedure based on 
@@ -1023,7 +1020,7 @@ These aspects are described in detail in Appendix \ref{app.condition}.
 
 The typical number of non self-consistent iterations required to solve Eq.\ (\ref{eq.linsys.1})
 for a fixed $\Delta V_{[\r,\w]}$ with a relative accuracy of $\varepsilon_{\rm NSCF}=10^{-10}$
-using the cBiCG algorithm described in Appendix \ref{app.cbcg} is $N_{\rm SCF}\simeq 21$
+using the cBiCG algorithm described in Appendix \ref{app.cbcg} is $N_{\rm CG}\simeq 21$
 (using the preconditioner of Ref.\ \onlinecite{tpa}). This estimate has been obtained by averaging
 over all the $\G,\Gp$ reciprocal lattice vectors, $\q$-vectors, and imaginary frequencies.
 The typical number of self-consistent cycles required to obtain the screened Coulomb
@@ -1303,37 +1300,102 @@ $^{\rm b}$ Ref.\ \onlinecite{r39}.
 \end{tabular}
 \end{table*}
 
-\section{Discussion}\label{sec.discussion}
+\section{Conclusions and outlook}\label{sec.conclusions}
 
-need to mention Gonze's technique and say briefly if we can transform our problem
-in a variational one.\cite{gonze-variational}
+The results presented in Sec.\ \ref{sec.results} demonstrated the feasibility
+of the DFPT approach to $GW$ calculations in the simple case of a prototype implementation
+based on the empirical pseudopotential method. The extension of the present
+methodology to {\it ab-initio} approaches based on norm-conserving\cite{ncpp}
+or ultrasoft\cite{uspp} pseudopotentials should not pose and difficulties
+as all the crucial issues in the calculation have already been addressed and 
+solved in this work. 
+%
+The main advantage of the present methodology consists in the definitive
+elimination of the unoccupied electronic states from the calculations of
+{\it both} the screened Coulomb interaction and the non-interacting Green's
+function. Another appealing aspect is that our methodology constitutes a
+generalization to frequency-dependent perturbations of 
+density-functional perturbation theory,\cite{baroni.rmp} a well
+established technique with a long history of successes.
 
-The idea of using finite differences is a good one in principle,
-because one could achieve linear scaling in Hpsi, and hence cubic scaling in GW.
-However in practice it is not very helpful because the prefactor:
-the cost of the G-space calculation is 2 * 34/9 * nr * log2 ( nr )   
-(there are two ffts when doing v*psi) while the cost of the real-space 
-calculation with a laplacian correct to order $h^{2N}$ is NPC * nr * 6 * ( 2 * N + 1 ).
-Here NPC takes into account that in ral space the preconditioning
-cannot be done with a diagonal matrix - by excluding it the number
-of iterations becomes about 5 times larger than for G-space calcs -
-therefore we can assume NPC ~ 5.
-For nr=1000 the number of G-space ops is 52192 and for order-6 R-space methods
-this is 210000. For nr=100000 the two numbers are 8698650 and 21000000
-therefore in practice with NPC ~ 5 the G-space technique is always more convenient.
-This is because log ( x ) is actually very small: log(1000) = 6.9 and log(100000) = 11.5.
-This means that we need to improve the minimization technique (less iterations)
-as opposed to change the structure of the code.
+As discussed in Sec.\ \ref{sec.scaling} the present approach is comparable
+in performance to standard\cite{hl86} $GW$ techniques.
+The question remains on whether it is possible to make significant
+improvements over the methodology proposed here {\it without sacrifying
+the numerical accuracy}. Some simple tests show that the most time-consuming
+step of the entire procedure is the application of the single-particle
+Hamltonian $\H$ to a search direction $\psi$ in the Hilbert space spanned
+by the wavefunction basis set during the self-consistent iterative solution 
+of the linear systems Eq.\ (\ref{eq.linsys.1}). In order to accelerate
+this operation there are probably three ways ahead: (i) the improvement of the
+minimization algorithms adopted, (ii) the use of sparse representations of
+the Hamiltonian, and (iii) the use of smaller basis sets. 
 
-Need to mention about local basis linear scaling codes such as siesta or onetep.
+(i) The iterative solution of Eq.\ (\ref{eq.linsys.1}) is here performed
+by first solving for $\Delta\psi_v^\pm$ at fixed $\Delta V$, and then 
+by updating $\Delta V$ in the self-consistency cycle.
+It should be possible, at least in principle, to combine these two
+operations in a single minimization step. This could be achieved
+for instance by using the variational formulation of density-functional
+perturbation theory developed in Ref.\ \onlinecite{gonze-variational},
+or by using simulated annealing techniques such as the Car-Parrinello 
+method.\cite{carparrinello} Both of these approaches were developed
+for Hermitian systems, hence appropriate generalizations
+to non-Hermitian systems would be required to address Eq.\ (\ref{eq.linsys.1}).
+As mentioned in Sec.\ \ref{sec.conv} the total number of cBiCG iterations
+required to solve Eq.\ (\ref{eq.linsys.1}) is typically 
+$N_{\rm CG} N_{\rm SCF}\sim 100$, therefore the variational formulation
+of DFPT or the Car-Parrinello minimization would be convenient
+if they resulted in a significant reduction of the number of iterations
+over this figure.
 
-\section{Conclusions}\label{sec.conclusions}
+(ii) Another possibility for improving the algorithm presented in this work
+is to resort to a real-space representation of the kinetic energy operator
+in the single-particle Hamiltonian. This can be achieved by
+calculating the kinetic energy on a real-space mesh using finite-differences
+formulas.\cite{chelikowsky} The main advantage of this approach would be
+to have $GW$ calculations scaling with the cube of the system size
+$N_{\rm at}^3$ instead of $N_{\rm at}^3 {\rm log} N_{\rm at}$.
+However, in actual calculations the numerical prefactor associated with the scaling
+could be unfavourable. Indeed, the fast Fourier transforms used in a planewaves
+representation to calculate the product of the potential and the wavefunctions
+require $2\cdot 34/9 N_\r^{\rm den} {\rm log} N_\r^{\rm den}$ floating point operations,
+while the cost of the real-space calculation of the Laplacian operator
+to sixth order is $37 N_\r^{\rm den}$
+(for a supercell with orthogonal axes).\cite{chelikowsky} 
+While these estimates seem to speak in favour of the real-space method,
+we should consider that the TPA preconditioner\cite{tpa} used here for the 
+cBiCG minimization cannot be simply adapted to real-space calculations,
+hence in absence of appropriate preconditioners the planewave method
+remains advantageous for essentially any relevant system size.
 
+(iii) Another interesting option for improving our methodology is to
+to drastically reduce the size of the basis set adopted. This could be achieved
+for instance by adapting our implementation to electronic structure packages
+exploiting local orbitals basis sets.\cite{siesta}
+Interestingly the three possibilities here outlined are not mutually exclusive,
+and probably an approrpiate combination of all of these would eventually open
+the way to the study ofelectronic excitations within the $GW$ method in
+very large systems.
 
-%In practice other solutions are possible such as $f(\r,\rp;\w) = \sum_i f_{[i,\w]}(\rp) \, \phi_i(\r)$
-%if the basis $\phi_i(\r)$ is complete and orthonormal. We considered two classical
-%examples: delta functions and plane waves. There is certainly scope to consider
-%all the many possinilities in between.
+In smmary, we proposed a new methodology for performing $GW$ calculations
+using density-functional perturbation theory (DFPT-$GW$). We showed how
+it is possible to calculate the screened Coulomb interaction and the non-interacting
+Green's function without resorting to unoccupied electronic states.
+We successfully demonstrated our method within a planewaves empirical
+pseudopotential implementation and compared with previous literature for the
+prototypical case of silicon. In our method the standard plasmon-pole
+approximation for the frequency dependence of teh screened Coulomb interaction
+has been replaced by a direct calculation along the imaginary frequency axis,
+followed by an analytic continuation to the real axis through Pad\'e approximants.
+In addition, we introduced the use of multishift linear system solvers for the simultaneous
+calculation of multiple frequency responses at the cost of one single
+iterative minimization.
+
+It is our plan to adapt the present approach to deal with first-principles
+pseudopotentials, and to explore the preformance of our procedure in a local
+orbital implementation. We hope that this work will stimulate further efforts
+towards improved methodologies for excited states calculations in large systems.
 
 \begin{acknowledgments}
 F.G. is grateful to Manish Jain for drawing Ref.\ \onlinecite{alavi} to his attention.
@@ -1918,6 +1980,10 @@ Phys.\ Rev.\ Lett.\ {\bf 45}, 566 (1980).
 \bibitem{lda2}
 J. P. Perdew and A. Zunger,
 Phys.\ Rev.\ B {\bf 23}, 5048 (1981).
+
+\bibitem{carparrinello}
+R. Car and M. Parrinello,
+Phys.\ Rev.\ Lett.\ {\bf 55}, 2471 (1985). 
 
 \end{thebibliography}
 
