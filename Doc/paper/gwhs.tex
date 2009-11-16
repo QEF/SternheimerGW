@@ -638,15 +638,22 @@ by relabeling the wavefunctions $\psi_v$ as Bloch states $\psi_{v\k}$:
   \begin{equation}\label{eq.linsys.3}
   (\H-\E_{v\k}\pm\w) \Delta \psi^\pm_{v\k[\r,\w]}  = -(1-\P)  \Delta V_{[\r,\w]} \psi_{v\k}.
   \end{equation}
+The linear variations of the wavefunctions can be expanded in terms
+of Bloch waves as follows:
+  \begin{equation}\label{eq123}
+  \Delta \psi^\sigma_{v\k[\r,\w]} = \frac{1}{N_\q\Omega} \sum_{\q\G} \Delta u^\sigma_{v\k[\q,\G,\w]}
+  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
+  \end{equation}
+where $\Delta u^\sigma_{v\k[\q,\G,\w]}$ is cell-periodic in $\rp$.
 From the linear variations of the wavefunctions we construct the
 induced charge density using Eq.\ (\ref{eq.deltan}):
   \begin{equation}\label{eq.ch}
   \Delta n_{[\r,\w]} = \frac{2}{N_\k}\sum_{v\k\s} \psi_{v\k}^\star  \Delta \psi^\s_{v\k[\r,\w]}.
   \end{equation}
 Here the factor $N_\k$ takes into account the normalization of
-the Bloch states in the unit cell (the 
+the Bloch states in the unit cell [the 
 wavefunctions $\psi_v$ in Eq.\ (\ref{eq.linsys.1}) which are normalized 
-in the whole crystal).
+in the whole crystal].
 %Note: all the integrals are performed over the volume of the crystal.
 %The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
 Next we expand the screened Coulomb interaction in terms
@@ -656,16 +663,11 @@ of Bloch waves:
    {\rm e}^{-i(\q+\G)\cdot\r} {\rm e}^{i\q\cdot\rp}, 
   \end{equation}
 where $\Delta v_{[\q,\G,\w]}$ is cell-periodic in $\rp$.
-If we now replace Eq.\ (\ref{eq.dv.bloch}) into Eq.\ (\ref{eq.linsys.3})
+If we now replace Eqs.\ (\ref{eq.dv.bloch}) and (\ref{eq123}) into Eq.\ (\ref{eq.linsys.3})
 we discover that the component $\Delta v_{[\q,\G,\w]}$ of the
 perturbing potential corresponding to the Bloch wave ${\rm exp}(-i\q\cdot\r)$
 couples only to the variations of the wavefunctions corresponding to
-the Bloch wave ${\rm exp}[i(\k+\q)\cdot\rp]$:
-  \begin{equation}
-  \Delta \psi^\sigma_{v\k[\r,\w]} = \frac{1}{N_\q\Omega} \sum_{\q\G} \Delta u^\sigma_{v\k[\q,\G,\w]} 
-  {\rm e}^{i(\k+\q)\cdot\rp} {\rm e}^{-i(\q+\G)\cdot\r},
-  \end{equation}
-where $\Delta u^\sigma_{v\k[\q,\G,\w]}$ is cell-periodic in $\rp$.
+the Bloch wave ${\rm exp}[i(\k+\q)\cdot\rp]$.
 As a result the linear system Eq.\ (\ref{eq.linsys.1}) becomes:
   \begin{equation}\label{eq.linsys.4}
   (\H_{\k+\q}-\E_{v\k}\pm\w) \Delta u^\pm_{v\k[\q,\G,\w]}  = -(1-\P^{\k+\q}) \Delta v_{[\q,\G,\w]} u_{v\k},
@@ -693,23 +695,23 @@ $\Delta n_{[\q,\G,\w]}(\rp)$ in planewaves:
 
 In practical calculations we proceed as follows: we first initialize the perturbation
 in the linear systems using 
-$\Delta v^{\rm bare}_{[\q,\G,\w]} = v(\q+\G) \, {\rm exp}(\,i\G\cdot\rp)$.
+$\Delta v^{\rm bare}_{[\q,\G,\w]}(\rp) = v(\q+\G) \, {\rm exp}(\,i\G\cdot\rp)$.
 The solution of the linear systems yields the change in the wavefunctions,
 which are then used to construct the induced charge, the induced Hartree potential,
 and the updated screened Coulomb interaction. We repeat this procedure by starting with
-the new screened Coulomb interaction until convergence.
+the updated screened Coulomb interaction until convergence is achieved.
 At convergence the self-consistent perturbing potential yields
 the screened Coulomb interaction $W_{\G\Gp}(\q;\w)$.
 The calculation must be repeated for every perturbation, i.e.\ for
-each set of $[\q,\G,\w]$ parameters.
+each set of parameters $[\q,\G,\w]$.
 %
 At the end of this procedure it is straightforward to obtain the inverse dielectric matrix 
 $\epsilon^{-1}_{\G\Gp}(\q;\w)$ using Eqs.~(\ref{eq.w.deltan.g}) and 
 (\ref{eq.Wg}). Alternatively, it is also possible to scale the initial
 perturbation and use $\Delta v^{\rm bare}_{[\q,\G,\w]} = {\rm exp}(i\G\cdot\rp)$
-to yield the inverse dielectric matrix [as Eq.~(\ref{eq.linsys.4}) is a linear system].
+to obtain the inverse dielectric matrix [in fact Eq.~(\ref{eq.linsys.4}) is a linear system].
 
-The scheme here developed enables the calculation of one row (in $\Gp$) of the inverse 
+The scheme here developed allows us to calculate one row (in $\Gp$) of the inverse 
 dielectric matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
 perturbation ${\rm exp}[-i(\q+\G)\cdot\r]$. This idea has been discussed already
 in Ref.\ \onlinecite{kunc-tosatti} in the framework of nonperturbative methods.
@@ -756,24 +758,25 @@ While the symmetrized inverse dielectric matrix has finite limits at long wavele
 the screened Coulomb interaction still presents a divergence corresponding to the
 long-range tail of the Coulomb potential in real space. This divergence requires special
 handling when performing the Brillouin zone integration to calculate 
-the GW self-energy.\cite{hl86}
+the $GW$ self-energy.\cite{hl86}
 We here overcome this difficulty following the prescription of
 Ref.~\onlinecite{alavi}. For this purpose we replace
 the bare Coulomb potential $v(\r,\rp)$ by the truncated potential 
 $v_{\rm t}(\r,\rp)=v(\r,\rp)[1-\Theta(|\r-\rp|-R_{\rm c})]$, 
 $\Theta(x)$ being the Heaviside step function.
-The truncation radius is defined by $4\pi R_{\rm c}^3/3=N_\q\Omega$. 
+The truncation radius is defined as in Sec.\ \ref{sec.coulomb.g}. 
 Using this truncated Coulomb potential, the final expression for the screened 
 Coulomb interaction in reciprocal space becomes:
   \begin{equation}\label{eq.Wg_symm}
   W^{\rm t}_{\G\Gp}(\q;\w) = 4\pi e^2 \, \frac{1-\cos{R_{\rm c}|\q+\G|}}{|\q+\G||\q+\Gp|}\,
      \tilde\epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
-In the long-wavelenght limit $\q\!\rightarrow\!0$ and for $\G=\Gp=0$ the truncated
+In the long-wavelenght limit $\q\!\rightarrow\!0$ the head ($\G=\Gp=0$) of the truncated
 screened Coulomb interaction tends to
 the finite limit 
-$2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\!\rightarrow\!0;\w)$.
-Optimized truncation methods can also be defined for non-isotropic materials
+$2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\!\rightarrow\!0;\w)$
+and the singular behavior is removed.
+Optimized truncation strategies have been developed for non-isotropic materials
 and systems with reduced dimensionality.\cite{sohrab}
 
 \subsection{Green's function}\label{sec.green.g}
@@ -782,7 +785,7 @@ We here specialize Eqs.\ (\ref{eq.green.1})-(\ref{eq.green.3}) to the case
 of a planewaves basis and the Bloch representation.
 We start by rewriting Eq.\ (\ref{eq.green.1}) after relabeling the electronic states
 $\psi_n$ as Bloch states $\psi_{n\k}$ and taking into account the
-normalization:
+normalization as in Sec.\ \ref{sec.coulomb.g}.
 %  \begin{equation}\label{eq.green.1.g}
 %  G(\r,\rp;\w) = \frac{1}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\eta_{n\k}},
 %  \end{equation}
@@ -809,7 +812,7 @@ In deriving Eqs.\ (\ref{eq.green.3.g}),(\ref{eq.green.4b.g}) we made use once ag
 of time-reversal symmetry, yielding
 $u^\star_{v\k}(\G) = u_{v,-\k}(-\G)$.
 Similarly to the case of the screened Coulomb interaction, by solving the
-linear system Eq.\ (\ref{eq.green.3.g}) for a set of $[\k,\G,\w]$ parameters
+linear system in Eq.\ (\ref{eq.green.3.g}) for a set of parameters $[\k,\G,\w]$ 
 we obtain an entire row $\Gp$ of the analytic component of the
 Green's function $g^{\rm A}_{[\k,\G,\w]}(\Gp)$.
 
@@ -821,7 +824,7 @@ The result is then transformed back in reciprocal space to obtain
 $\Sigma_{\G\Gp}(\k;\w)$. The evaluation of the matrix elements of the
 self-energy in the basis of Kohn-Sham eigenstates is performed in reciprocal space.
 Since the planewave cutoff required to describe the inverse dielectric
-matrix and the self-energy is typically much smaller than the curoff used
+matrix and the self-energy is typically much smaller than the cutoff used
 in density-functional calculations,\cite{hl86} the procedure here described
 does not require an excessive computational effort and accounts for only
 a fraction of the total computation time.
