@@ -444,35 +444,34 @@ whenever the frequency $\w$ is above the chemical potential
 On the other hand, for frequencies $\w$
 below the chemical potential, the non-analytic part introduces the poles associated with the occupied 
 electronic states. 
-%%%%%%%% RIPARTI DA QUI @@@@@@@@@@@
-The partitioning of the Green's function closely reflects the analytic structure
+The partitioning of Eqs.\ (\ref{eq.green.split.2}),
+(\ref{eq.green.split.3}) closely reflects the analytic structure
 of the non-interacting Green's function.
 %relates to the fact that
 %the Green's function is analytic only in the upper
 %half of the complex plane for frequencies above the chemical potential, and only in the lower half
 %of the complex plane for frequencies below the chemical potential.
 A detailed discussion of this aspect can be found in Ref.\ \onlinecite{hl}.
-The two components of the Green's function in Eq.\ (\ref{eq.green.split.2}) can be shown
-to lead to the Coulomb hole (COH) and the screened exchange (SEX) terms of the
+The two components of the Green's function in Eq.\ (\ref{eq.green.split.2}) 
+are associated with the Coulomb hole (COH) and the screened exchange (SEX) terms of the
 self-energy, respectively:\cite{hl86} 
 $\Sigma^{\rm COH} = G^{\rm A} W$  and $\Sigma^{\rm SEX} = G^{\rm N} W$.
 
 The computation of the non-analytic component $G^{\rm N}$ of the
 Green's function in Eq.\ (\ref{eq.green.split.3}) is straightforward 
-once we the occupied electronic eigenstates have been determined.
+once the occupied electronic eigenstates have been determined.
 In order to calculate th analytic component $G^{\rm A}$ it is convenient to
 proceed as in the case of the screened Coulomb interaction,
 by regarding $G^{\rm A}(\r,\rp;\w)$ as a parametric
 function of the the first space variable and of the frequency:
 $G^{\rm A}_{[\r,\w]}(\rp) = G^{\rm A}(\r,\rp;\w)$.
-If we now apply the operator $\H-\w^+$ to both sides of Eq.\ (\ref{eq.green.split.2}),
+If we apply the operator $\H-\w^+$ to both sides of Eq.\ (\ref{eq.green.split.2}),
 with $\w^+=\w+i\eta$,
-and we use the completeness relation $\delta_{[\r]}(\rp) = \delta(\r,\rp) = \sum_n \psi_n(\r)\psi_n^\star(\rp)$
-we find immediately:
+and we use the completeness relation $\delta_{[\r]}(\rp) = \delta(\r,\rp) = \sum_n \psi_n(\r)\psi_n^\star(\rp)$, then we find immediately:
   \begin{equation}\label{eq.green.3}
   (\H-\w^+) G^{\rm A}_{[\r,\w]} = -\, \delta_{[\r]}.
   \end{equation}
-Therefore, as expected, we can determine the analytic part of the Green's function
+As expected, we can determine the analytic part of the Green's function
 by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
 does not explicitely require unoccupied electronic states, this procedure mimics 
 the DFPT approach for the screened Coulomb interaction outlined in Sec.\ \ref{sec.coulomb},
@@ -480,16 +479,16 @@ albeit without the self-consistency requirement.
 
 The procedure described here is especially advantageous because Eq.\ (\ref{eq.green.3})
 constitutes a {\it shifted} linear system as Eq.\ (\ref{eq.linsys.1.nscf}).
-Also in this case we can take
-advantage of the {\it multishift} method of Ref.\ \onlinecite{frommer}
+Also in this case we exploit the {\it multishift} method of Ref.\ \onlinecite{frommer}
 to determine $G^{\rm A}_{[\r,\w]}$ for every frequency $\w$
-at the price of one single calculation for the {\it seed} system $\H G^{\rm A}_{[\r,0]} = -\, \delta_{[\r]}$
+at the computational cost of one single calculation for the {\it seed} system $\H G^{\rm A}_{[\r,0]} = -\, \delta_{[\r]}$
 (cf.\ Appendix \ref{app.multishift}).
 
 The presence of the infinitesimal $i\eta$ in $\w^+=\w+i\eta$ 
-guarantees that the linear operator $\H-\w^+$ in Eq.\ (\ref{eq.green.3.g}) is never singular.
-However the system can become ill-conditioned, therefore the use of appropriate
-preconditioners may become necessary. We discuss this point
+guarantees that the linear operator $\H-\w^+$ in Eq.\ (\ref{eq.green.3.g}) be 
+never singular.
+This operator can however become ill-conditioned, hence the use of appropriate
+preconditioners may become necessary. We discuss this aspect 
 in Appendix~\ref{app.condition}.
 
 \subsection{Self-energy}\label{sec.sigma}
@@ -500,30 +499,33 @@ The electron self-energy in the $GW$ approximation reads:\cite{hl86}
     G(\r,\rp,\w+\wp) W(\r,\rp,\wp) e^{-i\delta\wp},
   \end{equation}
 where $\delta$ is a positive infinitesimal. 
-At large frequency the Green's function $G$ decays as $\w^{-1}$ and 
-the screened Coulomb interaction $W$ tends to the frequency-independent
+At large frequencies the Green's function decays as $\w^{-1}$ and 
+the screened Coulomb interaction tends to the frequency-independent
 bare Coulomb interaction $v$. As a consequence, the integrand in Eq.\ (\ref{eq.sigma}) 
 decays as $\w^{-1}$ and the integration requires some care.
 
-For this purpose it is convenient to split the self-energy into an exchange contribution 
+It is convenient to split the self-energy into an exchange contribution 
 $\Sigma^{\rm ex}=Gv$ and a Coulomb term $\Sigma^{\rm c}=G(W-v)$.\cite{blochl}
 It is easy to check that the integrand in the Coulmb term decays as 
-$\w^{-2}$ at large frequency, therefore the integral is well behaved and the 
-integration can be performed by using a numerical cutoff $|\wp|< \wc$.
-A detailed analysis of the analytic properties of the Coulomb term shows 
-that the Coulomb term $\Sigma^{\rm c}(\w)$ must decay to zero as $\w^{-1}$ 
-at large frequency, and that the use of a cutoff in the integration 
+$\w^{-2}$ at large frequencies, therefore the integral is well behaved and the 
+integration can be performed by using a numerical cutoff $|\wp|< \wc$ 
+in Eq.\ (\ref{eq.sigma}).
+A detailed analysis of the analytic properties of the Coulomb term
+$\Sigma^{\rm c}(\w)$ shows that it must decay as $\w^{-1}$ 
+at large frequencis, and that the use of the cutoff $\wc$ in the integration 
 introduces an error of the order of $\w_{\rm p}/\wc$, where $\w_{\rm p}$ denotes
 the characteristic plasmon frequency of the system.
 
-In order to integrate the exchange term we observe that $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$
-and that the poles of $G^{\rm A}$ lie in the lower half of the complex plane, therefore
-the integration of the term $G^{\rm A}v$ yields a vanishing contribution.
+In order to integrate the exchange term we observe that 
+$\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$
+and that the poles of $G^{\rm A}$ lie in the lower half of the complex plane,
+hence the integration of the term $G^{\rm A}v$ yields a vanishing contribution.
 On the other hand, the integration of $G^{\rm N}v$ yields a constant (frequency-independent) term.
 Had we truncated the integral along the real axis as proposed for the Coulomb term, 
 the $\Sigma^{\rm ex}$ term would have acquired a spurious frequency dependence associated with
 the semicircle closing the complex integration path.
-In summary, we perform the frequency integration by evaluating numerically
+In summary, we perform the frequency integration in Eq.\ (\ref{eq.sigma}) 
+by evaluating numerically
 the Coulomb term using an energy cutoff, and by integrating analitycally the exchange term:
   \begin{equation}
   \Sigma(\r,\rp;\w) = \Sigma^{\rm c}(\r,\rp;\w) + \Sigma^{\rm ex}(\r,\rp),
@@ -546,8 +548,8 @@ and
 
 \section{Implementation in a basis of planewaves}\label{sec.theory.g}
 
-We here describe our reciprocal-space planewaves implementation of the scheme 
-devloped in Sec.\ \ref{sec.theory}. The choice of a planewaves representation
+We here describe our planewaves implementation of the scheme 
+developed in Sec.\ \ref{sec.theory}. The choice of a planewaves representation
 was motivated by the need of making contact with existing literature on delectric
 matrices,\cite{cpm,hl86-prb,balde_tosa,baroni-resta} 
 and by the availability of DFPT software for lattice-dynamical
@@ -569,7 +571,7 @@ where $\q$ is also a Bloch wavevector and $N_\q$ is the number of such wavevecto
 in our discrectized Brillouin zone. In the above equation we have 
 $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
 The latter expression for $v(\q+\G)$ is arrived at by replacing
-the integration $\int d\r \exp(i\q\cdot\r)/|\r|$ over the crystal volume with
+the integration $\int d\r \exp(i\q\cdot\r)/|\r|$ over the crystal volume by 
 an integration over the entire space. This choice corresponds to assuming that we
 have a very large crystal or equivalently a very fine sampling of the Brillouin zone.
 Had we performed the integration on a sphere
@@ -593,14 +595,14 @@ and
   G (\r,\rp;\w) = \frac{1}{N_\k\Omega}  \sum_{\k\G\Gp} 
    {\rm e}^{-i(\k+\G)\cdot\r} 
    G_{\G\Gp}(\k;\w)
-   {\rm e}^{i(\k+\G)\cdot\rp},
+   {\rm e}^{i(\k+\Gp)\cdot\rp},
   \end{equation}
-with similar expressoins for $G^A$, $G^N$.
+with similar expressions for $G^A$, $G^N$.
 We note that the sign convention adopted here in the Fourier transforms
-[${\rm exp}(i\q\cdot\rp)$ in the rhs of Eq.\ (\ref{eq.w.bloch})]
+[e.g.\ ${\rm exp}(+i\q\cdot\rp)$ in the rhs of Eq.\ (\ref{eq.w.bloch})]
 is necessary to obtain the compact expression Eq.\ (\ref{eq.deltan.bloch}) below
 for the induced charge, and is opposite to the convention adopted in Ref.~\onlinecite{hl86}.
-Before proceeding it is convenient to introduce the ``right-sided'' inverse dielectric matrix
+Before proceeding it is also convenient to introduce the ``right-sided'' inverse dielectric matrix
 through
   \begin{equation}
   W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w).
@@ -628,6 +630,7 @@ the above equation can be rewritten as:
 
 \subsection{Screened Coulomb interaction}\label{sec.coulomb.g}
 
+%%%%%%%% RIPARTI DA QUI @@@@@@@@@@@
 In order to rewrite Eqs.\ (\ref{eq.deltan})-(\ref{eq.w.dfpt}) in
 the Bloch representation and in reciprocal space we proceed as follows.
 We first write the linear systems Eq.\ (\ref{eq.linsys.1})
