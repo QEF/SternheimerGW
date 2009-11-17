@@ -68,7 +68,7 @@ the screened Coulomb interaction
 is evaluated by solving self-consistent linear-response Sternheimer equations,
 and the noninteracting Green's function is evaluated by solving inhomogeneous 
 linear systems. The frequency-dependence of the screened Coulomb interaction 
-is explicitely taken into account by performing calculations along the imaginary
+is explicitly taken into account by performing calculations along the imaginary
 frequency axis and then by performing the analytic continuation to real frequencies
 using Pad\'e approximants. As a proof of concept we implemented the proposed methodology
 within the empirical pseudopotential formalism and we validated our implementation
@@ -129,7 +129,7 @@ the frequency-dependent screened Coulomb interaction
 by directly solving self-consistent linear response Sternheimer equations,
 and (ii) the non-interacting Green's function by solving
 inhomogeneous linear systems. The main advantage of the proposed method 
-is that it does not requir the computation of unoccupied electronic states.
+is that it does not require the computation of unoccupied electronic states.
 In addition, we demonstrate the possibility of fast evaluations of 
 the frequency dependence of the screened Coulomb interaction
 based on {\it multishift} linear-system solvers.\cite{frommer}
@@ -212,7 +212,7 @@ where $\psi_n(\r)$ indicates an electronic eigenstate of the
 single-particle Hamiltonian 
 with energy eigenvalue $\E_n$ and occupation number $f_n$. 
 In the following we assume that the $\psi_n(\r)$ are Kohn-Sham
-eigenstates for definitness.
+eigenstates for definiteness.
 In Eq.\ (\ref{eq.p}) the summation indices $m$ and $n$ run over
 both occupied and unoccupied electronic states, and the factor of 2 accounts for the
 spin degeneracy.\cite{hl}
@@ -434,7 +434,7 @@ with
 \!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  \sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w-\E_n^-},  \\ 
 \!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
   \end{eqnarray}
-In the above derivatopn we assumed again time-reversal symmetry, we used the Lorentzian representation of the Dirac's delta function 
+In the above derivation we assumed again time-reversal symmetry, we used the Lorentzian representation of the Dirac's delta function 
 for small $\eta$ [$\pi\delta(x)=\eta/(x^2+\eta^2)$], and we defined $\E_n^- = \E_n - i\eta$.
 The component $G^{\rm A}$ of the Green's function is obviously analytic in the
 upper half of the complex energy plane as its poles lie below the real axis.
@@ -472,7 +472,7 @@ and we use the completeness relation $\delta_{[\r]}(\rp) = \delta(\r,\rp) = \sum
   \end{equation}
 As expected, we can determine the analytic part of the Green's function
 by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
-does not explicitely require unoccupied electronic states, this procedure mimics 
+does not explicitly require unoccupied electronic states, this procedure mimics 
 the DFPT approach for the screened Coulomb interaction outlined in Sec.~\ref{sec.coulomb},
 albeit without the self-consistency requirement.
 
@@ -546,7 +546,7 @@ and
 
 We here describe our planewaves implementation of the scheme 
 developed in Sec.\ \ref{sec.theory}. The choice of a planewaves representation
-was motivated by the need of making contact with existing literature on delectric
+was motivated by the need of making contact with existing literature on dielectric
 matrices,\cite{cpm,hl86-prb,balde_tosa,baroni-resta} 
 and by the availability of DFPT software for lattice-dynamical
 calculations\cite{espresso} which was used as a reference for our implementation.
@@ -732,7 +732,7 @@ based on supercell calculations.
 \subsubsection{Singularities in the inverse dielectric matrix and the screened Coulomb interaction}
 
 In order to avoid the singular behavior of the wings of the inverse dielectric matrix 
-in the long wavelenght limit ($|\q|\!\rightarrow\!0$) it is convenient to work with
+in the long wavelength limit ($|\q|\!\rightarrow\!0$) it is convenient to work with
 the symmetrized inverse dielectric matrix defined as follows:\cite{balde_tosa}
   \begin{equation}
   \tilde\epsilon^{-1}_{\G\Gp}(\q;\w) = \epsilon^{-1}_{\G\Gp}(\q;\w)  \frac{|\q+\Gp|}{|\q+\G\phantom{^\prime}|}.
@@ -769,7 +769,7 @@ Coulomb interaction in reciprocal space becomes:
   W^{\rm t}_{\G\Gp}(\q;\w) = 4\pi e^2 \, \frac{1-\cos{R_{\rm c}|\q+\G|}}{|\q+\G||\q+\Gp|}\,
      \tilde\epsilon^{-1}_{\G\Gp}(\q;\w).
   \end{equation}
-In the long-wavelenght limit $\q\!\rightarrow\!0$ the head ($\G=\Gp=0$) of the truncated
+In the long-wavelength limit $\q\!\rightarrow\!0$ the head ($\G=\Gp=0$) of the truncated
 screened Coulomb interaction tends to
 the finite limit 
 $2\pi e^2 \, R_{\rm c}^2 \, \tilde\epsilon^{-1}_{00}(\q\!\rightarrow\!0;\w)$
@@ -821,7 +821,7 @@ after performing the Fourier transforms of $W_{\G\Gp}(\q;\w)$ and $G_{\G\Gp}(\k;
 The result is then transformed back in reciprocal space to obtain
 $\Sigma_{\G\Gp}(\k;\w)$. The evaluation of the matrix elements of the
 self-energy in the basis of Kohn-Sham eigenstates is performed in reciprocal space.
-Since the planewave cutoff required to describe the inverse dielectric
+Since the planewaves cutoff required to describe the inverse dielectric
 matrix and the self-energy is typically much smaller than the cutoff used
 in density-functional calculations,\cite{hl86} the procedure described here 
 does not require an excessive computational effort and accounts for only
@@ -830,7 +830,7 @@ a fraction of the total computation time.
 \section{Scaling properties}\label{sec.scaling}
 
 In this section we analyze the computational complexity of the algorithms
-proposed in Sec.\ \ref{sec.theory.g}, by focusing on our planewave
+proposed in Sec.\ \ref{sec.theory.g}, by focusing on our planewaves
 implementation. Without loss of generality we consider a $\Gamma$ point sampling 
 of the Brillouin zone and we leave aside the frequency-dependence.
 We assume that the Kohn-Sham electronic wavefunctions are expanded in a basis of planewaves
@@ -842,7 +842,7 @@ $E_{\rm cut}^{\rm den}=4E_{\rm cut}^{\rm wf}$, and the corresponding numbers
 of basis functions and real-space grid points are $N_\G^{\rm den}$ and
 $N_\r^{\rm den}$, respectively. The screened Coulomb interaction and the Green's function
 are described by a smaller cutoff $E_{\rm cut}^{\rm s}$ and $N_\G^{\rm s}$
-planewaves. The self-energy is expanded in a planewave basis with cuttoff
+planewaves. The self-energy is expanded in a planewaves basis with cuttoff
 $E_{\rm cut}^{\rm SE}=4E_{\rm cut}^{\rm s}$, and we denote by $N_\r^{\rm SE}$
 the number of real-space grid points associated with this basis.
 
@@ -896,7 +896,7 @@ the calculation of the static dielectric matrix.
 In this case only one calculation of Eq.\ (\ref{eq.linsys.1}) is required instead of two for $\pm\w$, 
 and the two CG sequences of the cBiCG algorithm do coincide.
 As a result, a factor 4 drops out of the prefactor in Eq.\ (\ref{eq.scaling.1}).
-If we assume for definitness a perfectly well-conditioned linear system (with condition number $\kappa=1$),
+If we assume for definiteness a perfectly well-conditioned linear system (with condition number $\kappa=1$),
 and express the number of CG iterations required to achieve convergence through Eq.\ (\ref{eq.cg}),
 then the ratio between the complexity of the DFPT approach in a planewaves
 implementation and the standard approach becomes
@@ -915,7 +915,7 @@ in the standard approach.
 This is rarely the case as most calculations reported to date use only a few hundreds of 
 unoccupied electronic states.
 Of course the accuracy of the standard sum-over-states expression is difficult to
-quantify, and probably a convergence on 5 significant digits is not warrented by a few
+quantify, and probably a convergence on 5 significant digits is not warranted by a few
 hundreds of electronic states. 
 
 Our estimate suggests that our implementation of DFPT-$GW$ 
@@ -931,7 +931,7 @@ instead of $N_c N_v$. In this case Eq.\ (\ref{eq.ratio.flops}) would change into
   \end{equation}
 and for $\varepsilon=10^{-5}$ we would have $N^{\rm DFPT}_{\rm flops}/N^{\rm HL86}_{\rm flops}\simeq 12 N_v/N_c$.
 This clearly shows that, if the entire self-energy was needed (as opposed to a few matrix elements),
-then our proposed DFPT approach woud be more convenient that the standard sum-over-states
+then our proposed DFPT approach would be more convenient that the standard sum-over-states
 approach.
 
 The above analysis shows that the main bottlenecks of the DFPT-$GW$ method 
@@ -940,7 +940,7 @@ In order to make the approach proposed here more efficient we could either
 move to real-space methods where the application of the Hamiltonian scales linearly with system size,\cite{chelikowsky}
 or reduce the size of the basis set by using local orbitals.\cite{siesta} 
 Fast evaluations of the operation $\hat{H}\psi$ in order-$N$ operations should 
-make it feasible $GW$ calculations scaling with $N_{\rm at}^3$ and with a very favourable
+make it feasible $GW$ calculations scaling with $N_{\rm at}^3$ and with a very favorable
 prefactor. We will come back to this aspect in Sec.\ \ref{sec.conclusions}.
 
 \subsubsection{Green's function}\label{sec.green.scaling}
@@ -989,7 +989,7 @@ the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
 In all our calculations we used inverse dielectric matrices of size 59$\times$59, 
 corresponding to a kinetic energy cutoff of 5 Ry for the screened Coulomb interaction.
 For the purpose of comparison with Ref.\ \onlinecite{balde_tosa} 
-we calculated the static and long wavelenght limit ($\w=0$ and $\q \rightarrow 0$) of the inverse dielectric matrix
+we calculated the static and long wavelength limit ($\w=0$ and $\q \rightarrow 0$) of the inverse dielectric matrix
 for the first few reciprocal lattice vectors. 
 The authors of Ref.\ \onlinecite{balde_tosa} adopted the standard approach based 
 on the expansion over the unoccupied electronic states of the dielectric matrix, 
@@ -1010,7 +1010,7 @@ of Ref.\ \onlinecite{cohen.diel1} at large wavevectors should be ascribed to the
 number of empty states in the perturbative expansion over unoccupied states in the latter work.
 
 Figure \ref{fig2} compares our results on the frequency dependence of the dielectric matrix
-at long wavelenght with the data reported in Ref.\ \onlinecite{hl86}. 
+at long wavelength with the data reported in Ref.\ \onlinecite{hl86}. 
 We focused in particular on the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
 Apart from some small differences possibly arising from the use of the expansion over unoccupied
 states in Ref.\ \onlinecite{hl86}, even in this case the agreement between our DFPT calculation 
@@ -1023,7 +1023,7 @@ diagonal and off-diagonal matrix elements.
 Figure \ref{fig3} shows the quality of the analytic continuation from the imaginary to
 the real frequency axis using Pad\'e approximants (cf.\ Appendix \ref{app.pade}).\cite{pade1,pade2} We found that this procedure based on 
 Pad\'e approximants is generally very stable and requires minimal manual intervention.
-Approximants of order 6 to 11 are able to reproduce the location, the strenght, and the width of
+Approximants of order 6 to 11 are able to reproduce the location, the strength, and the width of
 the main plasmon-pole structure of the dielectric matrix. Head, wings, and body of the
 dielectric matrix are all described consistently (cf.\ Fig.\ \ref{fig3}). Although the singularity
 corresponding to the absorption onset in Fig.\ \ref{fig3}(a) is smoothed out by 
@@ -1031,7 +1031,7 @@ Pad\'e approximants of low order, this effect
 is washed out when calculating the frequency convolution of the Green's function with
 the screened Coulomb interaction for the $GW$ self-energy.
 % ARE U SURE ABOUT THIS?
-The advantages of performing calculationg along the imaginary axis are that (i) the 
+The advantages of performing calculations along the imaginary axis are that (i) the 
 linear system Eq.\ (\ref{eq.linsys.1}) becomes progressively better conditioned
 towards large imaginary frequencies, and (ii) a moderate Brillouin-zone sampling is
 required to perform calculations along the imaginary axis unlike the case of real-axis
@@ -1116,13 +1116,13 @@ should be regarded as qualitative and are presented only for the purpose of demo
 a complete $GW$  calculation within our DFPT-$GW$ methodology.
 
 Despite the above limitations, the expectation values of the
-XC potential and of the echange term of the $GW$ self-energy calculated here are suprisingly
+XC potential and of the exchange term of the $GW$ self-energy calculated here are surprisingly
 close to those obtained in Ref.\ \onlinecite{hl86} using {\it ab-initio} pseudopotentials
 at the DFT/LDA level. Indeed, for the valence band top 
 $\Gamma_{25v}^\prime$ state and the conduction band bottom close to the $X_{1c}$ state
 our calculated XC expectation values are -11.27 eV and -8.97 eV, respectively,
 while Ref.\ \onlinecite{hl86} gives -11.80 eV and -9.61 eV for the corresponding states
-at the DFT/LDA level. The agreemed is even better when comparing the expectation values
+at the DFT/LDA level. The agreement is even better when comparing the expectation values
 of the bare exchange part of the self-energy. In this case we find -12.43 eV and -5.07 eV
 for the $\Gamma_{25v}^\prime$ state and the $X_{1c}$ state, respectively, to be compared
 to the corresponding values of -12.54 eV and -5.28 eV of Ref.~\onlinecite{hl86}.
@@ -1136,7 +1136,7 @@ point and for the conduction band edge of silicon with the results of Refs.\ \on
 We find a good overall agreement between these different set of calculations.
 Taking into account that we are comparing our DFPT-$GW$ scheme
 within the EPM implementation with more sophisticated {\it ab-initio} calculations,
-such agreement is rather suprising.
+such agreement is rather surprising.
 
 Figure \ref{fig6} shows the calculated quasi-particle spectral function 
   \begin{equation}\label{eq.specfun}
@@ -1157,7 +1157,7 @@ once again the validity of our methodology.
 % could not make the chadi-cohen 10-p mesh work, baroni-resta say that 8x8x8 is equiv to 10 chadi-cohen
 % table: 1col, table* 2col
 \begin{table}
-\caption{\label{tab.1} Long-wavelenght limit of the static symmetrized
+\caption{\label{tab.1} Long-wavelength limit of the static symmetrized
 inverse dielectric matrix of silicon $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$
 [$\q=(0.01,0,0)2\pi/a$ and $\w=0$]. We compare our calculations performed within
 DFPT with the results obtained in Ref.\ \onlinecite{balde_tosa}
@@ -1212,7 +1212,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 \end    {center}
 \caption{\label{fig2}
         (Color online)
-        Frequency-dependent dielectric matrix of silicon at long wavelenght [$\q=(0.01,0,0) \, 2\pi/a$].
+        Frequency-dependent dielectric matrix of silicon at long wavelength [$\q=(0.01,0,0) \, 2\pi/a$].
         The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg} 
         and the non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}.
         We used a planewave kinetic energy cutoff of 5 Ry and sampled the Brillouin zone thorough a uniform 
@@ -1234,7 +1234,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 \end    {center}
 \caption{\label{fig3}
         (Color online)
-        Real part of the long-wavelenght dielectric matrix of silicon as a function of frequency. 
+        Real part of the long-wavelength dielectric matrix of silicon as a function of frequency. 
         Panels (a) and (b) of this figure correspond to panels (a) and (b) of Fig.~\ref{fig2}, respectively. The 
         technical details of the calculations are the same as those described in the caption of Fig.\ \ref{fig2}.
         Solid blue lines: dielectric matrices calculated directly along the real frequency axis,
@@ -1335,7 +1335,7 @@ The results presented in Sec.\ \ref{sec.results} demonstrated the feasibility
 of the DFPT approach to $GW$ calculations in the simple case of a prototype implementation
 based on the empirical pseudopotential method. The extension of the present
 methodology to {\it ab-initio} approaches based on norm-conserving\cite{ncpp}
-or ultrasoft\cite{uspp} pseudopotentials should not pesent and difficulties
+or ultrasoft\cite{uspp} pseudopotentials should not present and difficulties
 as the crucial issues in the calculation have already been addressed and 
 solved in this work. 
 %
@@ -1350,10 +1350,10 @@ established technique with a long history of successes.
 As discussed in Sec.\ \ref{sec.scaling} the present approach is comparable
 in performance to standard\cite{hl86} $GW$ techniques.
 The question remains on whether it is possible to make significant
-improvements over the methodology proposed here {\it without sacrifying
+improvements over the methodology proposed here {\it without compromising on
 the numerical accuracy}. The most time-consuming
 step of the entire procedure is the application of the single-particle
-Hamltonian $\H$ to a search direction $\psi$ in the Hilbert space spanned
+Hamiltonian $\H$ to a search direction $\psi$ in the Hilbert space spanned
 by the wavefunction basis set during the iterative solution 
 of the linear systems in Eq.\ (\ref{eq.linsys.1}). In order to accelerate
 this operation there are possibly three ways ahead: (i) the improvement of the
@@ -1386,13 +1386,13 @@ formulas.\cite{chelikowsky} The main advantage of this approach would be
 to have $GW$ calculations scaling with the cube of the system size
 $N_{\rm at}^3$ instead of $N_{\rm at}^3 {\rm log} N_{\rm at}$.
 However, in actual calculations the numerical prefactor associated with this scaling
-could be unfavourable. Indeed, the fast Fourier transforms used in a planewaves
+could be unfavorable. Indeed, the fast Fourier transforms used in a planewaves
 representation to calculate the product of the potential and the wavefunctions
 require $2\cdot 4 N_\r^{\rm den} {\rm log} N_\r^{\rm den}$ floating point operations,
 while the cost of the real-space calculation of the Laplacian operator
 to sixth order is $37 N_\r^{\rm den}$
 (for a supercell with orthogonal axes).\cite{chelikowsky} 
-While these estimates seem to speak in favour of the real-space method,
+While these estimates seem to speak in favor of the real-space method,
 we ought to consider that the preconditioner used here\cite{tpa} for the 
 cBiCG minimization cannot be simply adapted to real-space calculations.
 In absence of effective preconditioners the planewave method
@@ -1407,7 +1407,7 @@ and probably an appropriate combination of all of these would eventually open
 the way to the study of electronic excitations in
 very large systems using the $GW$ method.
 
-In smmary, we proposed a new methodology for performing $GW$ calculations
+In summary, we proposed a new methodology for performing $GW$ calculations
 using density-functional perturbation theory (DFPT-$GW$). We showed how
 to calculate the screened Coulomb interaction and the non-interacting
 Green's function without resorting to unoccupied electronic states.
@@ -1422,7 +1422,7 @@ calculation of multiple frequency responses at the cost of one single
 iterative minimization.
 
 It is our plan to adapt the present approach to deal with first-principles
-pseudopotentials, and to explore the preformance of our procedure in a local
+pseudopotentials, and to explore the performance of our procedure in a local
 orbital real-space implementation. We hope that this work will stimulate further efforts
 towards improved methodologies for excited states calculations in large systems.
 
@@ -1495,7 +1495,7 @@ written as $M=E^{\rm T}E$, then we can rewrite the system as follows:
 By defining $A^\prime=E^{-1}AE^{-{\rm T}}$, $x^\prime=E^{\rm T}x$, and $b^\prime=E^{-1}b$
 we obtain the transformed system $A^\prime x^\prime=b^\prime$, for which the
 standard cBiCG method applies.
-While this procedure is formally correct, it is not convenient to explicitely
+While this procedure is formally correct, it is not convenient to explicitly
 transform the linear operator.
 It is convenient instead to rewrite the procedure in terms of
 $A$, $b$, and $x$ by performing a few formal manipulations.
@@ -1604,10 +1604,10 @@ The difficulty of solving iteratively the linear system Eq.\ (\ref{eq.linsys.1})
 for large positive frequencies is accompanied by the additional difficulty 
 of adequately sampling the Brillouin zone to describe the singularities at $\w = \E_c - \E_\vp$.
 
-Alltogether these considerations suggest that an iterative solution of the
+Altogether these considerations suggest that an iterative solution of the
 linear system along the real axis is not convenient from the computational
 viewpoint. For this reason we decided to evaluate the screened Coulomb interaction 
-along the imaginary axis and then to analitically continue the functions
+along the imaginary axis and then to analytically continue the functions
 to the real axis using {\it Pad\'e approximants}.\cite{pade1,pade2,blochl}
 The motivation behind our choice becomes obvious after considering a simple
 plasmon-pole model of the screened Coulomb interaction:\cite{hl86}
@@ -1669,7 +1669,7 @@ Some experimentation indicates that approximants of order $N\ge5$ are necessary
 in order to reproduce a plasmon-pole spectral shape including a finite linewidth.
 This observation can be rationalized by considering that a plasmon-pole
 spectral function is completely defined by the values of the function at $\w=0$,
-the location, strenght, and width of the pole, and the asymptotic value at $\w=+i\infty$.
+the location, strength, and width of the pole, and the asymptotic value at $\w=+i\infty$.
 Some of this information is redundant and can be obtained by using sum rules.\cite{hl86}
 The parity of the screened Coulomb interaction can also be exploited to minimize
 the number of input frequencies. 
@@ -1733,7 +1733,7 @@ initialize the algorithm using $x_0=0$.
 The use of Eqs.~(\ref{eq.shift.1}) and (\ref{eq.shift.2}) allows us to
 skip the time-consuming operations involving the Hamiltonian in
 Eqs.\ (\ref{eq.cg1}) and~(\ref{eq.cg5}).
-This method is extremely convienient for determining the frequency-dependent
+This method is extremely convenient for determining the frequency-dependent
 susceptibility for many frequencies at the cost of one single calculation.
 
 We point out that this method still carries some drawbacks.
