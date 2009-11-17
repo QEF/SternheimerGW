@@ -61,7 +61,7 @@ Berkeley, California 94720, USA}
 \date{\today}
 
 \begin{abstract}
-We propose a new approach to quasiparticle GW calculations which 
+We propose a novel approach to quasiparticle GW calculations which 
 is based on density-functional perturbation theory and
 does not require the computation of unoccupied electronic states. In our approach 
 the screened Coulomb interaction
@@ -125,7 +125,7 @@ or only a limited number of unoccupied states.\cite{bruneval-gonze}
 The main aim of the present work is to demonstrate the feasibility of $GW$ calculations
 entirely based on density functional perturbation theory (DFPT).\cite{baroni.rmp}
 In practice we adopt the principles of DFPT in order to determine (i)
-the {\it frequency-dependent screened Coulomb interaction} 
+the frequency-dependent screened Coulomb interaction
 by directly solving self-consistent linear response Sternheimer equations,
 and (ii) the non-interacting Green's function by solving
 inhomogeneous linear systems. The main advantage of the proposed method 
@@ -134,24 +134,24 @@ In addition, we demonstrate the possibility of fast evaluations of
 the frequency dependence of the screened Coulomb interaction
 based on {\it multishift} linear-system solvers.\cite{frommer}
 %
-As a proof of concept we have implemented the method within
-a planewaves empirical pseudopotential approach,\cite{cohen_berg} 
-and validated it against previous work for the prototypical case of silicon.
+As a proof of concept we have implemented our method within
+a planewaves empirical pseudopotential scheme,\cite{cohen_berg} 
+and validated it against previous work for the prototypical test case of silicon.
 
 The use of the Sternheimer equation for calculating the polarizability
 in the random-phase approximation (RPA) or the inverse dielectric matrix 
-have already been discussed in Refs.\ \onlinecite{fleszar-resta} and \onlinecite{kunc-tosatti},
+has already been discussed in Refs.\ \onlinecite{fleszar-resta} and \onlinecite{kunc-tosatti},
 respectively, 
-within the context of supercell calculations. After the introduction 
+within the framework of supercell calculations. After the introduction 
 of DFPT in the context of lattice-dynamical calculations,\cite{giannozzi} 
 the authors of Ref.\ \onlinecite{reining-sternheimer} proposed the
 use of the non self-consistent Sternheimer method for the calculation
 of the dielectric matrix. The elimination of unoccupied electronic states
 in the evaluation of the screened Coulomb interaction has also been 
 proposed recently within the framework of a Wannier-like representation
-of the polarization propagator, based on the Lanczos method.\cite{umari1,umari2}
+of the polarization propagator and the Lanczos recursion method.\cite{umari1,umari2}
 
-The paper is organized as follows. In Sec.\ \ref{sec.theory} we describe
+The manuscript is organized as follows. In Sec.\ \ref{sec.theory} we describe
 how the DFPT formalism can be adapted in order to perform $GW$ calculations.
 In particular we outline the procedure to obtain the screened Coulomb
 interaction in Sec.\ \ref{sec.coulomb}, the non-interacting Green's function
@@ -166,10 +166,10 @@ scaling of the calculations with system size.
 In Sec.\ \ref{sec.results} we report the results of our test calculations
 for silicon and compare with the existing literature. In particular
 we presents results for the direct and inverse dielectric matrix (Sec.\ \ref{sec.5a}),
-for the accuracy of the analytic continuation using Pad\'e approximants
+for the analytic continuation of the dielectric matrix using Pad\'e approximants
 (Sec.\ \ref{sec.conv}), for the self-energy (Sec.\ \ref{sec.5c}), 
 and for the spectral function (Sec.\ \ref{sec.5d}).
-In Sec.\ \ref{sec.conclusions} we discuss possible
+In Sec.~\ref{sec.conclusions} we discuss possible
 future developments of our method and we draw our conclusions.
 The Appendices provide technical details on some numerical algorithms adopted
 in this work, in particular the preconditioned complex biconjugate gradient method (Appendix \ref{app.cbcg}),
@@ -259,7 +259,7 @@ $\Delta n_{[\r,\w]}$ is calculated as usual through
   \begin{equation}\label{eq.dhartree}
   \Delta V^{\rm H}_{[\r,\w]}(\rp) = \int d\rpp \Delta n_{[\r,\w]} (\rpp) \, v(\rpp,\rp),
   \end{equation}
-and finally the screened Coulomb interaction in the RPA approximation is obtained as 
+and finally the screened Coulomb interaction in the RPA is obtained as 
   \begin{equation}\label{eq.w.dfpt}
   W(\r,\rp;\w) = \Delta V_{[\r,\w]}(\rp) = v(\r,\rp) + \Delta V^{\rm H}_{[\r,\w]}(\rp).
   \end{equation}
@@ -276,7 +276,7 @@ and that the system under consideration presents a finite
 energy gap for electronic excitations. 
 The assumption of time-reversal symmetry is not essential and is mainly used to
 obtain a compact expression for the $\sigma=\pm$ wavefunction perturbations.
-The assumption of finite energy gap can be relaxed using the extension
+The assumption of finite energy gap can be relaxed by using the extension
 of DFPT to metallic systems developed in Ref.\ \onlinecite{degironcoli}. 
 
 %Direct substitution into Eq.\ (\ref{eq.linsys.1}) shows that 
@@ -292,10 +292,10 @@ and the system responds to such perturbation by generating the induced charge
 $\Delta n_{[\r,\w]}(\rp)$ and the associated 
 screening potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$.
 The sum of the external perturbation $v(\r,\rp)$ and the screening
-potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$ gives the screened Coulomb
-interaction $W(\r,\rp;\w)$ at the point $\rp$ within the RPA approximation.
+potential $\Delta V^{\rm H}_{[\r,\w]}(\rp)$ yields the screened Coulomb
+interaction $W(\r,\rp;\w)$ at the point $\rp$ within the RPA.
 
-The linear systems Eq.\ (\ref{eq.linsys.1}) must be solved self-consistently.
+The linear systems in Eq.\ (\ref{eq.linsys.1}) must be solved self-consistently.
 For this purpose we begin by initializing the screened
 interaction $W$ using the bare interaction $v$. 
 We then calculate the linear variations of the wavefunctions $\Delta \psi_v^\sigma$.
@@ -315,7 +315,7 @@ frequency axis in order to avoid the null eigenvalues of the operator
 $\H-\E_v\pm\w$, and then we perform the analytic continuation of 
 the screened Coulomb interaction to real frequencies (cf.\ Appendix \ref{app.condition}).
 In the special case of $\w=0$ it is convenient to modify the linear operator on the left-hand side of
-Eq.\ (\ref{eq.linsys.1}) by adding the projector on the occupied manifold $\P$:
+Eq.\ (\ref{eq.linsys.1}) by adding the projector on the occupied states manifold $\P$:
  \begin{equation} \label{eq.linsys.1b}
  (\H-\E_v+\alpha\P) \Delta \psi_{v[\r,0]}  = -(1-\P)  \Delta V_{[\r,0]} \psi_v,
   \end{equation}
@@ -336,23 +336,23 @@ the self-energy in the first iteration of Hedin's equations to the DFT
 exchange-correlation (XC) potential, $\Sigma_0(\r,\rp;\w) = \delta(\r,\rp) V_{\rm xc}(\r)$.
 Within the present scheme such correction is simply obtained by including
 the variation of the exchange-correlation
-potential in the self-consistent potential for the Sternheimer equations of Eq.\ (\ref{eq.linsys.1}):
+potential in the self-consistent potential used in Eq.\ (\ref{eq.linsys.1}):
   \begin{equation}\label{eq.linsys.vertex}
   (\H-\E_v\pm\w) \Delta \psi^\pm_{v[\r,\w]}\!  = \!-(1-\P)\!  \Big[\Delta V_{[\r,\w]} + K_{\rm xc}\Delta n_{[\r,\w]}\Big] \! \psi_v,
   \end{equation}
 $K_{\rm xc}=\delta V_{\rm xc}/\delta n$ being the functional derivative of the XC
-potential with respect to the density. The screened Coulomb interaction $W$ is still
-to be calculated through Eq.\ (\ref{eq.w.dfpt}). This approach has been referred to as
+potential with respect to the density. The screened Coulomb interaction is still
+to be calculated through Eq.\ (\ref{eq.w.dfpt}). This approach has been called 
 ``$GW+K_{\rm xc}$'' approximation in Ref.\ \onlinecite{reining94} due to the inclusion of the XC contribution
 in the screening of the test charge. 
 That the inclusion of the XC term in the self-consistent
 induced potential leads to the $GW+K_{\rm xc}$ approximation can easily be seen as follows.
-We can combine Eqs.\ (\ref{eq.deltan}),(\ref{eq.linsys.vertex}) to yield
+We combine Eqs.\ (\ref{eq.deltan}),(\ref{eq.linsys.vertex}) to yield
 the induced charge density (we use symbolic operator notation for clarity):
  \begin{equation}
  \Delta n = v\,[1- P (v+K_{\rm xc})]^{-1}P .
  \end{equation}
-Then, we can substitute this result in the definition of the screened Coulomb interaction
+Then, we substitute this result in the definition of the screened Coulomb interaction
 Eqs.\ (\ref{eq.dhartree}),(\ref{eq.w.dfpt}) to find
  \begin{equation}
  W = v \,\{ 1 + v [1-P(v+K_{\rm xc})]^{-1}P \}.
@@ -361,8 +361,8 @@ The last equation yields precisely the screened Coulomb interaction in the $GW+K
 % (see pag. 8026, above Table I).
 The difference between this approach and the
 standard $GW$ approximation is that in this case the screening
-charge is calculated for a {\it test-electron}, while in the $GW$ approximation
-the screening is calculated for a {\it test-charge}.
+charge is calculated for a {\it test electron}, while in the $GW$-RPA approximation
+the screening is calculated for a {\it test charge}.
 It is worth pointing out that in standard implementations of DFPT the
 XC term is already included in the induced self-consistent potential,\cite{baroni.rmp}
 therefore the use of the $GW+K_{\rm xc}$ approximation would not require any additional
@@ -380,7 +380,7 @@ $v_{[\r]}(\rp)=v(\r,\rp)$ as follows:
   (\H-\E_v\pm\w) \Delta \psi^{{\rm NS},\pm}_{v[\r,\w]}  = -(1-\P)  v_{[\r]} \psi_v, 
   \end{equation}
 and we can solve this Sternheimer equation with the known-term on the right-hand side
-kept fixed. By constructing the induced charge density $\Delta n^{\rm NS}_{[\r,\w]}$ as in Eq.\ (\ref{eq.deltan})
+kept fixed. By constructing the non self-consistent induced charge density $\Delta n^{\rm NS}_{[\r,\w]}$ as in Eq.\ (\ref{eq.deltan})
 we then obtain the dielectric matrix $\epsilon(\r,\rp;\w)$:
   \begin{equation}\label{eq.diel}
   \epsilon(\r,\rp;\w) = \delta(\r,\rp) - \Delta n^{\rm NS}_{[\r,\w]}(\rp).
@@ -397,10 +397,10 @@ constitutes a {\it shifted} linear system, i.e.\ a system where the linear opera
 $\H-\E_v\pm\w$ differs from the ``seed'' operator $\H-\E_v$ only by a constant shift $\pm\w I$ 
 ($I$ being the identity operator). 
 In this case we can take
-advantage of the {\it multishift} method of Ref.\ \onlinecite{frommer}
+advantage of the {\it multishift} linear system solver of Ref.\ \onlinecite{frommer}
 to determine $\Delta \psi^{{\rm NS},\pm}_{v[\r,\w]}$ for every frequency $\w$
-at the price of one single calculation for the {\it seed} system $(\H-\E_v) \Delta \psi^{{\rm NS}}_{v[\r,0]}  = -(1-\P)  v_{[\r]} \psi_v$.
-This procedure is extremely advantageous as it makes it possible to calculate the whole frequency-dependence 
+at the computational cost of one single calculation for the {\it seed} system $(\H-\E_v) \Delta \psi^{{\rm NS}}_{v[\r,0]}  = -(1-\P)  v_{[\r]} \psi_v$.
+This procedure is extremely advantageous as it makes it possible to calculate the entire frequency-dependence 
 by performing one single iterative minimization. 
 The technical implementation of this procedure is described in Appendix \ref{app.multishift}.
 
@@ -434,14 +434,14 @@ with
 \!\!\!\!\!\!  G^{\rm A}(\r,\rp;\w) & =&  \sum_n \frac{\psi_n^\star(\r)\psi_n(\rp)}{\w-\E_n^-},  \\ 
 \!\!\!\!\!\!  G^{\rm N}(\r,\rp;\w)  & = &  2\pi i \sum_v \delta(\w-\E_v) \psi_v^\star(\r)\psi_v(\rp). \label{eq.green.split.3} 
   \end{eqnarray}
-Here we assumed once again time-reversal symmetry, we used the Lorentzian representation of the Dirac's delta function 
-$\pi\delta(x)=\eta/(x^2+\eta^2)$ for small $\eta$, and we defined $\E_n^- = \E_n - i\eta$.
-The $G^{\rm A}$ component of the Green's function is obviously analytic in the
+In the above derivatopn we assumed again time-reversal symmetry, we used the Lorentzian representation of the Dirac's delta function 
+for small $\eta$ [$\pi\delta(x)=\eta/(x^2+\eta^2)$], and we defined $\E_n^- = \E_n - i\eta$.
+The component $G^{\rm A}$ of the Green's function is obviously analytic in the
 upper half of the complex energy plane as its poles lie below the real axis.
 The non-analytic component $G^{\rm N}$ vanishes
 whenever the frequency $\w$ is above the chemical potential 
-On the other hand, for frequencies $\w$
-below the chemical potential, the non-analytic part introduces the poles associated with the occupied 
+For frequencies $\w$
+below the chemical potential, the non-analytic component introduces the poles associated with the occupied 
 electronic states. 
 The partitioning of Eqs.\ (\ref{eq.green.split.2}),
 (\ref{eq.green.split.3}) closely reflects the analytic structure
@@ -473,7 +473,7 @@ and we use the completeness relation $\delta_{[\r]}(\rp) = \delta(\r,\rp) = \sum
 As expected, we can determine the analytic part of the Green's function
 by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
 does not explicitely require unoccupied electronic states, this procedure mimics 
-the DFPT approach for the screened Coulomb interaction outlined in Sec.\ \ref{sec.coulomb},
+the DFPT approach for the screened Coulomb interaction outlined in Sec.~\ref{sec.coulomb},
 albeit without the self-consistency requirement.
 
 The procedure described here is especially advantageous because Eq.\ (\ref{eq.green.3})
@@ -484,7 +484,7 @@ at the computational cost of one single calculation for the {\it seed} system $\
 (cf.\ Appendix \ref{app.multishift}).
 
 The presence of the infinitesimal $i\eta$ in $\w^+=\w+i\eta$ 
-guarantees that the linear operator $\H-\w^+$ in Eq.\ (\ref{eq.green.3.g}) be 
+guarantees that the linear operator $\H-\w^+$ in Eq.\ (\ref{eq.green.3.g}) is
 never singular.
 This operator can however become ill-conditioned, hence the use of appropriate
 preconditioners may become necessary. We discuss this aspect 
@@ -519,10 +519,7 @@ In order to integrate the exchange term we observe that
 $\Sigma^{\rm ex}=G^{\rm A}v + G^{\rm N}v$
 and that the poles of $G^{\rm A}$ lie in the lower half of the complex plane,
 hence the integration of the term $G^{\rm A}v$ yields a vanishing contribution.
-On the other hand, the integration of $G^{\rm N}v$ yields a constant (frequency-independent) term.
-Had we truncated the integral along the real axis as proposed for the Coulomb term, 
-the $\Sigma^{\rm ex}$ term would have acquired a spurious frequency dependence associated with
-the semicircle closing the complex integration path.
+On the other hand, the integration of $G^{\rm N}v$ yields a constant (frequency-independent) term.\cite{note.integral}
 In summary, we perform the frequency integration in Eq.\ (\ref{eq.sigma}) 
 by evaluating numerically
 the Coulomb term using an energy cutoff, and by integrating analitycally the exchange term:
@@ -552,7 +549,7 @@ developed in Sec.\ \ref{sec.theory}. The choice of a planewaves representation
 was motivated by the need of making contact with existing literature on delectric
 matrices,\cite{cpm,hl86-prb,balde_tosa,baroni-resta} 
 and by the availability of DFPT software for lattice-dynamical
-calculations\cite{espresso} which was used as a reference througout the implementation.
+calculations\cite{espresso} which was used as a reference for our implementation.
 
 We adopt the following conventions for the transformation from real to reciprocal space.
 The wavefunctions transform as usual according to:
@@ -562,17 +559,17 @@ The wavefunctions transform as usual according to:
   \end{equation}
 with $\Omega$ the volume of the unit cell and $\k$ the Bloch wavevector.
 The bare Coulomb interaction transforms according to
-  \begin{equation}
+  \begin{equation}\label{eq.v}
   v(\r,\rp) = \frac{1}{N_\q\Omega}  \sum_{\q\G} v(\q+\G)
   {\rm e}^{i(\q+\G)\cdot(\rp-\r)},
   \end{equation}
 where $\q$ is also a Bloch wavevector and $N_\q$ is the number of such wavevectors
-in our discrectized Brillouin zone. In the above equation we have 
+in our discretized Brillouin zone. In Eq.\ (\ref{eq.v}) we have 
 $v(\q+\G) = 4\pi e^2/|\q+\G|^2$.
 The latter expression for $v(\q+\G)$ is arrived at by replacing
 the integration $\int d\r \exp(i\q\cdot\r)/|\r|$ over the crystal volume by 
-an integration over the entire space. This choice corresponds to assuming that we
-have a very large crystal or equivalently a very fine sampling of the Brillouin zone.
+an integration over the entire space. This choice corresponds to assuming that 
+we can rely on a very fine sampling of the Brillouin zone.
 Had we performed the integration on a sphere
 with a radius $R_{\rm c}$ defined by the crystal volume 
 ($4/3\pi R_{\rm c}^3 = N_\q \Omega$), then we would have obtained
@@ -607,7 +604,7 @@ through
   W(\r,\rp;\w) = \int d\rpp v(\r,\rpp) \, \epsilon^{-1}(\rpp,\rp;\w).
   \end{equation}
 By adopting the same convention for the inverse dielectric matrix
-as for the screened Coulomb interaction Eq.\ (\ref{eq.w.bloch})
+as for the screened Coulomb interaction 
 the above equation can be rewritten as:
   \begin{equation}\label{eq.Wg}
   W_{\G\Gp}(\q;\w) = v(\q+\G)  \epsilon^{-1}_{\G\Gp}(\q;\w).
@@ -651,7 +648,7 @@ induced charge density using Eq.\ (\ref{eq.deltan}):
   \end{equation}
 Here the factor $N_\k$ takes into account the normalization of
 the Bloch states in the unit cell [the 
-wavefunctions $\psi_v$ in Eq.\ (\ref{eq.linsys.1}) which are normalized 
+wavefunctions $\psi_v$ in Eq.\ (\ref{eq.linsys.1}) are normalized 
 in the whole crystal].
 %Note: all the integrals are performed over the volume of the crystal.
 %The transformation of the variations are $\Delta \psi^\s_{v\k[\r,-\w^\star]}=\Delta \psi^{-\s\star}_{v,-\k[\r,\w]}$.
@@ -682,9 +679,9 @@ This result is very similar to the case of standard DFPT.\cite{baroni.rmp}
 The main difference is that in the present case the translational invariance 
 of the screened Coulomb interaction induces a coupling between the perturbation 
 with Bloch wave ${\rm exp}(-i\q\cdot\r)$ in the variable $\r$ and its induced
-response with Bloch wave ${\rm exp}(\,i\q\cdot\rp)$ in the variable $\rp$.
+response with Bloch wave ${\rm exp}(\,+i\q\cdot\rp)$ in the variable $\rp$.
 %
-To conclude the derivation, we rewrite the screened Coulomb interaction 
+To conclude our derivation, we rewrite the screened Coulomb interaction 
 Eq.\ (\ref{eq.w.dfpt}) after expanding the cell-periodic function 
 $\Delta n_{[\q,\G,\w]}(\rp)$ in planewaves:
 %$\Delta n_{[\q,\G,\w]}(\rp)=\sum_\Gp {\rm e}^{i\Gp\cdot\rp} \Delta n_{[\q,\G,\w]}(\Gp)$
@@ -708,12 +705,14 @@ At the end of this procedure it is straightforward to obtain the inverse dielect
 $\epsilon^{-1}_{\G\Gp}(\q;\w)$ using Eqs.~(\ref{eq.w.deltan.g}) and 
 (\ref{eq.Wg}). Alternatively, it is also possible to scale the initial
 perturbation and use $\Delta v^{\rm bare}_{[\q,\G,\w]} = {\rm exp}(i\G\cdot\rp)$
-to obtain the inverse dielectric matrix [in fact Eq.~(\ref{eq.linsys.4}) is a linear system].
+to obtain the inverse dielectric matrix at the end of the self-consistent procedure
+[indeed Eq.~(\ref{eq.linsys.4}) is a linear system].
 
-The scheme here developed allows us to calculate one row (in $\Gp$) of the inverse 
+The scheme developed here allows us to calculate one row (in $\Gp$) of the inverse 
 dielectric matrix $\epsilon^{-1}_{\G\Gp}(\q;\w)$ by determining the linear response to the
 perturbation ${\rm exp}[-i(\q+\G)\cdot\r]$. This idea has been discussed already
-in Ref.\ \onlinecite{kunc-tosatti} in the framework of nonperturbative methods.
+in Ref.\ \onlinecite{kunc-tosatti} in the framework of nonperturbative methods
+based on supercell calculations.
 
 %We mention briefly that, for the purpose of numerical stability,
 %in practical calculations it is convenient to modify the linear operator on the left-hand side of 
@@ -780,11 +779,11 @@ and systems with reduced dimensionality.\cite{sohrab}
 
 \subsection{Green's function}\label{sec.green.g}
 
-We here specialize Eqs.\ (\ref{eq.green.1})-(\ref{eq.green.3}) to the case
+We now specialize Eqs.\ (\ref{eq.green.1})-(\ref{eq.green.3}) to the case
 of a planewaves basis and the Bloch representation.
 We start by rewriting Eq.\ (\ref{eq.green.1}) after relabeling the electronic states
 $\psi_n$ as Bloch states $\psi_{n\k}$ and taking into account the
-normalization as in Sec.\ \ref{sec.coulomb.g}.
+normalization, as in Sec.\ \ref{sec.coulomb.g}.
 %  \begin{equation}\label{eq.green.1.g}
 %  G(\r,\rp;\w) = \frac{1}{N_\k}\sum_{n\k} \frac{\psi_{n\k}(\r)\psi_{n\k}^\star(\rp)}{\w-\E_{n\k}-i\eta_{n\k}},
 %  \end{equation}
@@ -824,7 +823,7 @@ $\Sigma_{\G\Gp}(\k;\w)$. The evaluation of the matrix elements of the
 self-energy in the basis of Kohn-Sham eigenstates is performed in reciprocal space.
 Since the planewave cutoff required to describe the inverse dielectric
 matrix and the self-energy is typically much smaller than the cutoff used
-in density-functional calculations,\cite{hl86} the procedure here described
+in density-functional calculations,\cite{hl86} the procedure described here 
 does not require an excessive computational effort and accounts for only
 a fraction of the total computation time.
 
@@ -891,20 +890,21 @@ Even in this case therefore the overall scaling is $N_{\rm at}^3 {\rm log} N_{\r
 In order to compare the prefactors in Eqs.\ (\ref{eq.scaling.1}) and (\ref{eq.scaling.2})
 we consider the non self-consistent calculation of the dielectric matrix as described in Sec.\ \ref{sec.diel.nscf},
 because the method of Ref.\ \onlinecite{hl86} calculates the dielectric matrix and then performs a matrix inversion.
-This corresponds to setting $N_{\rm SCF}=1$ in Eq.\ (\ref{eq.scaling.1}). In addition, we restrict ourselves to
-the calculation of the static dielectric matrix for consistency with Ref.\ \onlinecite{hl86}.
+This choice corresponds to setting $N_{\rm SCF}=1$ in Eq.\ (\ref{eq.scaling.1}). 
+For consistency with Ref.\ \onlinecite{hl86} we restrict ourselves to 
+the calculation of the static dielectric matrix.
 In this case only one calculation of Eq.\ (\ref{eq.linsys.1}) is required instead of two for $\pm\w$, 
-and also the two CG sequences of the cBiCG algorithm do coincide.
-As a result a factor 4 drops out of the prefactor in Eq.\ (\ref{eq.scaling.1}).
-If we assume for definitness a a perfectly well-conditioned linear system (with condition number $\kappa=1$),
-and express through Eq.\ (\ref{eq.cg}) the number of CG iterations required to achieve convergence,
+and the two CG sequences of the cBiCG algorithm do coincide.
+As a result, a factor 4 drops out of the prefactor in Eq.\ (\ref{eq.scaling.1}).
+If we assume for definitness a perfectly well-conditioned linear system (with condition number $\kappa=1$),
+and express the number of CG iterations required to achieve convergence through Eq.\ (\ref{eq.cg}),
 then the ratio between the complexity of the DFPT approach in a planewaves
 implementation and the standard approach becomes
 %   \begin{equation}
 %   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{2 N_{\rm CG} N_\G^{\rm s}}{N_c}.
 %   \end{equation}
    \begin{equation}\label{eq.ratio.flops}
-   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL}_{\rm flops}} = \frac{N_\G^{\rm s}}{N_c} {\rm log}(2/\varepsilon),
+   N^{\rm DFPT}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_\G^{\rm s}/N_c {\rm log}(2/\varepsilon),
    \end{equation}
 where $\varepsilon$ is the relative accuracy of the result.
 As an example, for a relative accuracy of $\varepsilon=10^{-5}$ 
@@ -919,15 +919,15 @@ quantify, and probably a convergence on 5 significant digits is not warrented by
 hundreds of electronic states. 
 
 Our estimate suggests that our implementation of DFPT-$GW$ 
-based on planewaves is at least as expensive as the standard approach.
+based on planewaves can be as expensive as the standard approach.
 It should be noted, however, that our DFPT scheme has the advantage of providing
-the whole self-energy $\Sigma(\r,\rp;\w)$, while the standard approach would 
-only provide the matrix elements of the self-energy on a small subset of states, which is
-typically of the order of $N_v$. Therefore if we were to perform a comparison based on the
+the whole self-energy $\Sigma(\r,\rp;\w)$, while the standard approach 
+typically provides the matrix elements of the self-energy on a small subset of states of the order of $N_v$. 
+Therefore if we were to perform a comparison based on the
 same amount of output information, we should use $N_c N_\G^{\rm s}$ in Eq.\ (\ref{eq.scaling.2})
 instead of $N_c N_v$. In this case Eq.\ (\ref{eq.ratio.flops}) would change into
   \begin{equation}
-  \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL}_{\rm flops}} = \frac{N_v }{N_c}{\rm log}(2/\varepsilon),
+  N^{\rm DFPT}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_v /N_c{\rm log}(2/\varepsilon),
   \end{equation}
 and for $\varepsilon=10^{-5}$ we would have $N^{\rm DFPT}_{\rm flops}/N^{\rm HL86}_{\rm flops}\simeq 12 N_v/N_c$.
 This clearly shows that, if the entire self-energy was needed (as opposed to a few matrix elements),
@@ -938,7 +938,7 @@ The above analysis shows that the main bottlenecks of the DFPT-$GW$ method
 are (i) the Fourier transform for the application of the Hamiltonian and (ii) the large basis sets adopted.
 In order to make the approach proposed here more efficient we could either
 move to real-space methods where the application of the Hamiltonian scales linearly with system size,\cite{chelikowsky}
-or reduce the size of the basis set by using local orbitals,\cite{siesta} or even a combination of both.
+or reduce the size of the basis set by using local orbitals.\cite{siesta} 
 Fast evaluations of the operation $\hat{H}\psi$ in order-$N$ operations should 
 make it feasible $GW$ calculations scaling with $N_{\rm at}^3$ and with a very favourable
 prefactor. We will come back to this aspect in Sec.\ \ref{sec.conclusions}.
@@ -950,14 +950,14 @@ in Sec.\ \ref{sec.green} can be analyzed along the same
 lines of Sec.\ \ref{sec.coulomb.scaling}. The main differences in this case are that (i) the linear system
 Eq.\ (\ref{eq.green.3}) does not depend on the occupied states,
 (ii) the calculation is non self-consistent, and (iii) the calculation is performed
-for one single frequency $\w^+$ and the entire frequency-dependence is then generated
+for one single frequency $\w^+$, while the entire frequency-dependence is generated
 through the multishift method. As a result, a factor $2 N_{\rm SCF} N_v$ drops out
 of Eq.\ (\ref{eq.scaling.1}) and the computational cost of the Green's function
 calculation reads:
    \begin{equation}\label{eq.scaling.3}
-   N^{\rm Gr}_{\rm flops} = 4 N_{\rm CG} N_\G^{\rm s} N^{\rm den}_{\rm FFT}.
+   N^{\rm GF}_{\rm flops} = 4 N_{\rm CG} N_\G^{\rm s} N^{\rm den}_{\rm FFT}.
    \end{equation}
-The complexity of this procedure is significantly smaller than the complexity
+The complexity of this calculation is significantly smaller than the complexity
 of the DFPT algorithm for the screened Coulomb interaction. In particular, the
 calculation of the Green's function scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$.
 This procedure for calculating the Green's function is advantageous
@@ -973,12 +973,12 @@ The 6-dimensional FFT transforms require $(N_\G^{\rm s}+N_\r^{\rm SE})N^{\rm SE}
 operations for each of the $N_\w$ frequencies of the screened Coulomb interaction,
 having defined $N^{\rm SE}_{\rm FFT}=4 N_\r^{\rm SE} {\rm log} N_\r^{\rm SE}$.
 The computational cost of this procedure scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$,
-and is small with respect to the calculation of the screened
+and is small with respect to the cost of the screened
 Coulomb interaction.
 
 \section{Results}\label{sec.results}
 
-In order to demonstrate the approach proposed in Secs.\ \ref{sec.theory},\ref{sec.theory.g}  we have realized a prototype implementation
+In order to demonstrate the approach proposed in Secs.~\ref{sec.theory},\ref{sec.theory.g}  we have realized a prototype implementation
 within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg},
 and we have validated our implementation for the prototypical test case of silicon.
 
@@ -1010,11 +1010,9 @@ of Ref.\ \onlinecite{cohen.diel1} at large wavevectors should be ascribed to the
 number of empty states in the perturbative expansion over unoccupied states in the latter work.
 
 Figure \ref{fig2} compares our results on the frequency dependence of the dielectric matrix
-at long wavelenght with the data calculated in Ref.\ \onlinecite{hl86}. 
-We focused in particular on the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86},
-and calculated $\epsilon_{\G\Gp}(\q\rightarrow 0,\w)$ for $\G=\Gp=0$, $\G=\Gp=(1,1,1)$,
-and $\G=(1,1,1)$, $\Gp=(2,0,0)$ in reciprocal lattice units.
-Apart from some minor differences arising from the use of the expansion over unoccupied
+at long wavelenght with the data reported in Ref.\ \onlinecite{hl86}. 
+We focused in particular on the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
+Apart from some small differences possibly arising from the use of the expansion over unoccupied
 states in Ref.\ \onlinecite{hl86}, even in this case the agreement between our DFPT calculation 
 and those of Ref.\ \onlinecite{hl86} is very good throughout the entire frequency range.
 The agreement is consistently good for the head of the dielectric matrix and for
@@ -1023,7 +1021,7 @@ diagonal and off-diagonal matrix elements.
 \subsection{Pad\'e approximants and convergence}\label{sec.conv}
 
 Figure \ref{fig3} shows the quality of the analytic continuation from the imaginary to
-the real frequency axis using Pad\'e approximants (cf.\ Appendix \ref{app.pade}). We found that this procedure based on 
+the real frequency axis using Pad\'e approximants (cf.\ Appendix \ref{app.pade}).\cite{pade1,pade2} We found that this procedure based on 
 Pad\'e approximants is generally very stable and requires minimal manual intervention.
 Approximants of order 6 to 11 are able to reproduce the location, the strenght, and the width of
 the main plasmon-pole structure of the dielectric matrix. Head, wings, and body of the
@@ -1053,17 +1051,17 @@ is $N_{\rm SCF}\simeq 5$.
 % in practice the average condition number is 3 (quite good)
 %
 Charge-sloshing effects are atenuated by using the potential mixing method proposed in
- Ref.\ \onlinecite{johnson}, approriately modified to deal with complex potentials. 
+ Ref.\ \onlinecite{johnson}, appropriately modified to deal with complex potentials. 
 
 For completeness we report here the corresponding figures for
-the calculation of the Green's function using Eq.\ (\ref{eq.green.3}). The average number
+the calculation of the Green's function using Eq.~(\ref{eq.green.3}). The average number
 of non self-consistent iterations required to obtain the analytic part of the Green's
-function is $N_{\rm G}\simeq 25$ when preconditioning is adopted (for this purpose 
+function is $N_{\rm GF}\simeq 25$ when preconditioning is adopted (for this purpose 
 we used a straightforward adaptation 
 of the method of Ref.\ \onlinecite{tpa}). However, multishift minimizations as
 described in Appendix \ref{app.multishift} do not allow for the use of preconditioning, and in the
 latter case the number of iterations required to achieve convergence (within a relative
-accuracy $\varepsilon_{\rm NSCF}=10^{-10}$) can be as high as $N_{\rm G}\simeq 100$. 
+accuracy $\varepsilon_{\rm NSCF}=10^{-10}$) can be as high as $N_{\rm GF}\simeq 100$. 
 
 \subsection{Self-energy}\label{sec.5c}
 
@@ -1071,15 +1069,15 @@ Figures \ref{fig4} and \ref{fig5} show the real part ${\rm Re} \langle n\k| \Sig
 and the imaginary part ${\rm Im} \langle n\k| \Sigma|n\k\rangle$ of the
 $GW$ self-energy calculated for the first 8 silicon eigenstates at $\Gamma$
 using our DFPT-$GW$ method within the EPM scheme. Our results are compared
-with the calculations of of Ref.\ \onlinecite{blochl} performed within the local density
-approximation (LDA) to density-functional theory (DFT) and the projector-augmented wave method (PAW).
+with the calculations of of Ref.\ \onlinecite{blochl} performed within DFT/LDA 
+and the projector-augmented wave method (PAW).
 We calculated the screened Coulomb interaction by using a uniform $6\times 6 \times 6$ grid 
 to sample the Brillouin zone, and Pad\'e approximants of order 7 along the imaginary
 frequency axis. The frequency integration of the Coulomb term $\Sigma^{\rm c}$ of the $GW$ 
 self-energy in Eq.~(\ref{eq.convolution}) was performed by using a Coulomb cutoff 
 $\wc = 100$ eV and a grid spacing of 0.5 eV. The Green's function was calculated
 using an imaginary component $\eta = 0.3$ eV in Eq.\ (\ref{eq.green.3}).
-Apart from some differences in the strenghts of the plasmaron damping,
+Apart from some differences in the damping of the plasmaron peaks,
 the agreement between our calculated self-energy and the results of Ref.~\onlinecite{blochl}
 is rather good throughout the entire frequency range $\pm$100 eV.
 This finding is quite surprising as we are comparing our empirical pseudopotential
@@ -1091,7 +1089,7 @@ description of the electronic wavefunctions.
 
 \subsection{Quasi-particle excitations and spectral function}\label{sec.5d}
 
-Within the $GW$ method the values of quasi-particle excitation energies are typically 
+Within the $GW$ method the values of the quasi-particle excitation energies are typically 
 calculated by using first-order perturbation theory on the DFT eigenvalues.\cite{hl86}
 The perturbation operator $\Delta \Sigma(\r,\rp;\w)$ corresponds to the difference between 
 the $GW$ self-energy $\Sigma(\r,\rp;\w)$ and the DFT exchange and correlation potential $V^{\rm xc}(\r)$.
@@ -1106,7 +1104,7 @@ This limitation makes it difficult to identify an XC contribution inside the emp
 pseudopotential. However, as the charge density obtained within the EPM method can be regarded 
 as an approximation to the actual charge density,\cite{EPM-density}
 it appears sensible to obtain the effective XC potential
-as a functional of the EPM charge density,
+as a functional of the EPM charge density
 using the local density approximation.\cite{lda1,lda2}
 This procedure is formally equivalent to assuming that the unscreened ionic pseudopotential
 $V^{\rm ion}$ is given by $V^{\rm EPM} - V^{\rm Ha} - V^{\rm xc}$, where
@@ -1134,7 +1132,7 @@ the XC potential using the EPM charge density and the LDA functional.
 %QP renormalizations: VBT 0.78, CBB 0.68
 Table \ref{tab.2} compares our
 calculated quasi-particle excitation energies for electronic states at the $\Gamma$ 
-point and for the conduction band edge to the results of Refs.\ \onlinecite{hl86,blochl}.
+point and for the conduction band edge of silicon with the results of Refs.\ \onlinecite{hl86,blochl}.
 We find a good overall agreement between these different set of calculations.
 Taking into account that we are comparing our DFPT-$GW$ scheme
 within the EPM implementation with more sophisticated {\it ab-initio} calculations,
@@ -1146,9 +1144,9 @@ Figure \ref{fig6} shows the calculated quasi-particle spectral function
   {| \w-\E_{n\k} - {\rm Re}  \Delta\Sigma_{n\k} |^2 + | {\rm Im}  \Delta\Sigma_{n\k} |^2},
   \end{equation}
 with $A(\r,\rp;\w)$ denoting the $GW$ spectral function and $\Delta \Sigma_{n\k} = \langle n\k| \Sigma - V_{\rm xc} |n\k\rangle$.
-We note that the previous expression is obtained by assuming that the off-diagonal
+We note that Eq.\ (\ref{eq.specfun}) is obtained by assuming that the off-diagonal
 matrix elements of the self-energy in the basis of the unperturbed
-wavefunctions are negligible. While this approximation is not always justified,
+wavefunctions are negligible. This approximation is not always justified, however
 we decided to adopt Eq.\ (\ref{eq.specfun}) in order to be consistent with Ref.\ \onlinecite{blochl}.
 Figure \ref{fig6} shows a good overall agreement between our calculations and the
 LDA/PAW results of Ref.\ \onlinecite{blochl}. This comparison demonstrates
@@ -1204,6 +1202,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
         calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
         and results from Ref.\ \onlinecite{cohen.diel1} (red dashed line). We used a planewave kinetic energy cutoff of 5 Ry
         and sampled the Brillouin zone thorough a uniform $8\times 8\times 8$ grid.
+        The wavevectors are in units of $2\pi/a$, $a$ being the lattice parameter.
         }
 \end    {figure}
 
@@ -1236,13 +1235,13 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  DFPT  \\
 \caption{\label{fig3}
         (Color online)
         Real part of the long-wavelenght dielectric matrix of silicon as a function of frequency. 
-        Panels (a) and (b) of this figure correspond to panels (a) and (b) of Fig.\ \ref{fig2}, respectively. The 
+        Panels (a) and (b) of this figure correspond to panels (a) and (b) of Fig.~\ref{fig2}, respectively. The 
         technical details of the calculations are the same as those described in the caption of Fig.\ \ref{fig2}.
         Solid blue lines: dielectric matrices calculated directly along the real frequency axis,
         from  Fig.\ \ref{fig2}. Dotted, dashed, and dash-dotted red lines: dielectric matrices
         obtained from the analytic continuation on the real axis using Pad\'e approximants of order
-        6, 11, and 26, respectively. The Pad\'e approximants were determined for dielectric
-        matrices calculated along the imaginary frequency axis on a uniform frequency grid 
+        6, 11, and 26, respectively. The Pad\'e approximants were generated using dielectric
+        matrices calculated along the imaginary frequency axis on uniform frequency grids
         in the range 0-50 eV. For instance, the 6-points approximant corresponds to calculations
         at the imaginary frequencies of $0,10,\cdots,50$ eV.
         }
@@ -1336,8 +1335,8 @@ The results presented in Sec.\ \ref{sec.results} demonstrated the feasibility
 of the DFPT approach to $GW$ calculations in the simple case of a prototype implementation
 based on the empirical pseudopotential method. The extension of the present
 methodology to {\it ab-initio} approaches based on norm-conserving\cite{ncpp}
-or ultrasoft\cite{uspp} pseudopotentials should not pose and difficulties
-as all the crucial issues in the calculation have already been addressed and 
+or ultrasoft\cite{uspp} pseudopotentials should not pesent and difficulties
+as the crucial issues in the calculation have already been addressed and 
 solved in this work. 
 %
 The main advantage of the present methodology consists of the definitive
@@ -1356,8 +1355,8 @@ the numerical accuracy}. The most time-consuming
 step of the entire procedure is the application of the single-particle
 Hamltonian $\H$ to a search direction $\psi$ in the Hilbert space spanned
 by the wavefunction basis set during the iterative solution 
-of the linear systems Eq.\ (\ref{eq.linsys.1}). In order to accelerate
-this operation there are probably three ways ahead: (i) the improvement of the
+of the linear systems in Eq.\ (\ref{eq.linsys.1}). In order to accelerate
+this operation there are possibly three ways ahead: (i) the improvement of the
 minimization algorithms adopted, (ii) the use of sparse representations of
 the Hamiltonian, and (iii) the use of smaller basis sets. 
 
@@ -1394,9 +1393,9 @@ while the cost of the real-space calculation of the Laplacian operator
 to sixth order is $37 N_\r^{\rm den}$
 (for a supercell with orthogonal axes).\cite{chelikowsky} 
 While these estimates seem to speak in favour of the real-space method,
-we should consider that the preconditioner used here\cite{tpa} for the 
-cBiCG minimization cannot be simply adapted to real-space calculations,
-hence in absence of appropriate preconditioners the planewave method
+we ought to consider that the preconditioner used here\cite{tpa} for the 
+cBiCG minimization cannot be simply adapted to real-space calculations.
+In absence of effective preconditioners the planewave method
 remains advantageous for essentially any relevant system size.
 
 (iii) Another interesting option for improving our methodology is to
@@ -1424,7 +1423,7 @@ iterative minimization.
 
 It is our plan to adapt the present approach to deal with first-principles
 pseudopotentials, and to explore the preformance of our procedure in a local
-orbital implementation. We hope that this work will stimulate further efforts
+orbital real-space implementation. We hope that this work will stimulate further efforts
 towards improved methodologies for excited states calculations in large systems.
 
 \begin{acknowledgments}
@@ -1443,7 +1442,7 @@ grant agreement no. 239578.
 
 \section{Preconditioned complex biconjugate gradient method}\label{app.cbcg}
 
-In this work we solve the linear systems of Eq.\ (\ref{eq.linsys.1}) 
+In this work we solve the linear systems in Eq.\ (\ref{eq.linsys.1}) 
 using the complex biorthogonal variant (cBiCG) of the conjugate gradient method (CG)
 following Ref.\ \onlinecite{jacobs}. This method is an extension of the standard
 conjugate gradients algorithm to the
@@ -1525,7 +1524,7 @@ The iterative calculation of the screened Coulomb interaction through
 Eq.\ (\ref{eq.linsys.1}) at finite real
 frequencies $\w$ can be considerably more time-consuming than in the static
 ($\w\!=\!0$) case. Simple tests indicate that 
-the number of iterations required to reach convergence increases with 
+the number of iterations required to achieve convergence increases with 
 increasing frequency $\w$. This behavior suggests that the linear operator in
 Eq.\ (\ref{eq.linsys.1}) becomes progressively more ill-conditioned 
 as the frequency $\w$ increases.
@@ -1539,7 +1538,7 @@ a linear system using the conjugate gradients algorithm is given by
   \end{equation}
 $\kappa$ being the condition number of the linear operator and $\varepsilon$ the
 desired relative accuracy.\cite{painless.cg} 
-While the estimate Eq.\ (\ref{eq.cg}) has
+While the estimate Eq.~(\ref{eq.cg}) has
 been derived for the original CG algorithm, we found empirically that it also 
 provides a reasonable description of the convergence rate of the complex cBiCG version.
 %
@@ -1601,15 +1600,14 @@ $N_{\rm min} = 500$, thus rendering this avenue unpractical.
 The calculation of the screened Coulomb interaction for frequencies slightly
 off the real axis $\w+i\eta$, with $\w>0$ and small $\eta$, leads to only a small
 improvement of the convergence rate.
-
 The difficulty of solving iteratively the linear system Eq.\ (\ref{eq.linsys.1})
 for large positive frequencies is accompanied by the additional difficulty 
 of adequately sampling the Brillouin zone to describe the singularities at $\w = \E_c - \E_\vp$.
 
-Alltogether, these considerations suggest that an iterative solution of the
+Alltogether these considerations suggest that an iterative solution of the
 linear system along the real axis is not convenient from the computational
 viewpoint. For this reason we decided to evaluate the screened Coulomb interaction 
-along the {\it imaginary axis} and then to analitically continue the functions
+along the imaginary axis and then to analitically continue the functions
 to the real axis using {\it Pad\'e approximants}.\cite{pade1,pade2,blochl}
 The motivation behind our choice becomes obvious after considering a simple
 plasmon-pole model of the screened Coulomb interaction:\cite{hl86}
@@ -1632,7 +1630,7 @@ of the linear system corresponds to the static case $\w=0$.
 
 In summary, by solving iteratively the linear system along the imaginary
 axis we circumvent the difficulties associated with the ill-conditioning
-of the linear system Eq.\ (\ref{eq.linsys.1}) occurring at real frequencies
+of the linear system in Eq.\ (\ref{eq.linsys.1}) occurring at real frequencies
 and the necessity of dense Brillouin zone sampling.
 The details of the analytic continuation are discussed in Appendix \ref{app.pade}.
 
@@ -1675,23 +1673,14 @@ the location, strenght, and width of the pole, and the asymptotic value at $\w=+
 Some of this information is redundant and can be obtained by using sum rules.\cite{hl86}
 The parity of the screened Coulomb interaction can also be exploited to minimize
 the number of input frequencies. 
-
 The advantage of the Pad\'e approximant is that a more refined description
 of the frequency-dependent screened Coulomb interaction can simply be achieved
-by calculating additional points along the imaginary axis. In practice
-we have found that, if we do not set any constraints for the spectral
-shape of the Pad\'e approximant, $N=11$ provides a good representation of the frequency
-dependence of the screened Coulomb interaction. This is in line with the finding 
-of Ref.\ \onlinecite{blochl} relative to the case of the $GW$ self-energy
-(in Ref.\ \onlinecite{blochl} the authors used $N=12$). 
-%Figure \ref{fig.pade} illustrates the quality
-%of the analytic continuation using Pad\'e approximants for a few test cases.
+by calculating additional points along the imaginary axis. 
 
 We also investigated the possibility of analytically continuing
 the screened Coulomb interaction by using a multi-pole expansion
-as suggested in Ref.\ \onlinecite{spacetime}. The multi-pole approach
-seems a more natural choice, as it incorporates the non-analyticity
-of the dielectric function. We tried one-, two-, and three-pole
+as suggested in Ref.\ \onlinecite{spacetime}. 
+We tried one-, two-, and three-pole
 expansions by determining the coefficients using the simplex 
 method of Nelder and Mead.\cite{nelder-mead}
 The single-pole approximation appears robust but the quality
@@ -1712,8 +1701,8 @@ The linear systems Eqs.\ (\ref{eq.linsys.1.nscf}) and (\ref{eq.green.3})
 can be solved efficiently by using the ``multishift'' 
 cBiCG method of Ref.~\onlinecite{frommer}.
 Multishift methods exploit the knowledge gained during the iterative
-solution of the {\it seed system} $Ax=b$ in order to determine the solutions 
-of the {\it shifted system} $Ax+\w x=b$ with only a small computational overhead.
+solution of the {\it seed} system $Ax=b$ in order to determine the solutions 
+of the {\it shifted} system $Ax+\w x=b$ with only a small computational overhead.
 The rationale behind such method is that the seed system and the
 shifted system share the same Krilov subspaces $\{b,Ab,A^2b,\cdots\}$,
 therefore the residuals of the seed and of the shifted
@@ -1909,6 +1898,11 @@ Phys.\ Rev.\ B {\bf 49}, 8024 (1994).
 M. S. Hybertsen and S. G. Louie,
 Phys.\ Rev.\ B {\bf 35}, 5585 (1976).
 
+\bibitem{note.integral}
+Had we truncated the integral along the real axis as proposed for the Coulomb term, 
+the $\Sigma^{\rm ex}$ term would have acquired a spurious frequency dependence associated with
+the semicircle closing the complex integration path.
+
 \bibitem{cpm}
 R. M. Pick, M. H. Cohen, and R. M. Martin,
 Phys.\ Rev.\ B {\bf 1}, 910 (1970). 
@@ -1944,6 +1938,14 @@ J.\ Phys.: Condens.\ Matter {\bf 14}, 2745 (2002).
 \bibitem{cohen.diel1}
 J. P. Walter and M. L. Cohen,
 Phys.\ Rev.\ B {\bf 2}, 1821 (1970).
+
+\bibitem{pade1}
+K.-H. Lee and K. J. Chang,
+Phys.\ Rev.\ B {\bf 54}, R8285 (1996).
+
+\bibitem{pade2}
+H. J. Vidberg and J. W. Serene,
+J.\ Low.\ Temp.\ Phys.\ {\bf 29}, 179 (1977).
 
 \bibitem{tpa}
 M. P. Teter, M. C. Payne, and D. C. Allan,
@@ -1996,14 +1998,6 @@ Phys.\ Rev.\ Lett.\ {\bf 55}, 2471 (1985).
 
 \bibitem{painless.cg}
 G.\ H.\ Golub and C.\ F.\ Van Loan, {\it Matrix Computations} (John Hopkins University Press, Baltimore, 1983).
-
-\bibitem{pade1}
-K.-H. Lee and K. J. Chang,
-Phys.\ Rev.\ B {\bf 54}, R8285 (1996).
-
-\bibitem{pade2}
-H. J. Vidberg and J. W. Serene,
-J.\ Low.\ Temp.\ Phys.\ {\bf 29}, 179 (1977).
 
 \bibitem{nelder-mead}
 J. A. Nelder and R. Mead,
