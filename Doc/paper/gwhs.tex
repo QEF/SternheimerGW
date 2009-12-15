@@ -69,7 +69,7 @@ and the noninteracting Green's function is evaluated by solving inhomogeneous
 linear systems. The frequency-dependence of the screened Coulomb interaction 
 is explicitly taken into account. In order to avoid the singularities of the 
 screened Coulomb interaction the calculations are performed
-along the imaginary frequency axis, and the results are analytically continued 
+along the imaginary axis, and the results are analytically continued 
 to the real axis through Pad\'e approximants. As a proof of concept we implemented 
 the proposed methodology within the empirical pseudopotential formalism and 
 we validated our implementation using silicon as a test case. We examine 
@@ -347,7 +347,7 @@ potential in the self-consistent potential used in Eq.\ (\ref{eq.linsys.1}):
   \end{equation}
 $K_{\rm xc}=\delta V_{\rm xc}/\delta n$ being the functional derivative of the XC
 potential with respect to the density. The screened Coulomb interaction is still
-to be calculated through Eq.\ (\ref{eq.w.dfpt}). This approach has been called 
+to be calculated through Eq.~(\ref{eq.w.dfpt}). This approach has been called 
 ``$GW+K_{\rm xc}$'' approximation in Ref.\ \onlinecite{reining94} due to the inclusion of the XC contribution
 in the screening of the test charge. 
 That the inclusion of the XC term in the self-consistent
@@ -369,7 +369,7 @@ standard $GW$ approximation is that in this case the screening
 charge is calculated for an {\it electron}, while in the $GW$-RPA approximation
 the screening is calculated for a {\it test charge}.
 It is worth pointing out that in standard implementations of DFPT the
-XC term is already included in the induced self-consistent potential,\cite{baroni.rmp}
+XC term is already included in the variation of the self-consistent potential,\cite{baroni.rmp}
 therefore the use of the $GW+K_{\rm xc}$ approximation would not require any additional
 computational developments if the 
 present approach was to be implemented on top of existing DFT software.
@@ -869,14 +869,15 @@ If in average the CG minimization requires $N_{\rm CG}$ steps
 and the self-consistency loop requires $N_{\rm SCF}$ iterations,
 then the total cost of the entire calculation corresponds to a number of floating point operations
    \begin{equation}\label{eq.scaling.1}
-   N^{{\rm S}GW}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s}  N_v N^{\rm den}_{\rm FFT}.
+   N^{{\rm S}GW}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s}  N_v N^{\rm den}_{\rm FFT},
    \end{equation}
+where S$GW$ stands for ``Sternheimer GW''.
 As $N_\G^{\rm s}$, $N_v$, and $N_\r^{\rm den}$ scale linearly with the size of the system
 as measured by the number of atoms $N_{\rm at}$,
 the overall scaling of this procedure is $N_{\rm at}^3 {\rm log} N_{\rm at}$.
 
 For comparison it is useful to consider the scaling of standard $GW$ calculations
-based on the expansion over unoccupied states.\cite{hl86} 
+based on the expansion over unoccupied states (hereafter referred to as the ``HL'' method).\cite{hl86} 
 The calculation of the irreducible RPA polarization requires the evaluation of the 
 optical matrix elements between each of the $N_v$ occupied states and each of the $N_c$ unoccupied states.
 These matrix elements are typically computed by using Fourier transforms of $\psi_c^\star(\r)\psi_v(\r)$,
@@ -884,7 +885,7 @@ therefore this procedure requires essentially $N_v N_c$ Fourier transforms from 
 Each Fourier transform is performed on the real-space grid for the density with $N_\r^{\rm den}$ grid points, 
 therefore the total cost of the standard method corresponds to a number of floating point operations
    \begin{equation}\label{eq.scaling.2}
-   N^{\rm HL86}_{\rm flops} = N_c  N_v N^{\rm den}_{\rm FFT}.
+   N^{\rm HL}_{\rm flops} = N_c  N_v N^{\rm den}_{\rm FFT}.
    \end{equation}
 %The calculation of the empty states requires CG minimizations and most importantly the orthogonalization
 %of the wavefunctions, which scales as $N_c^2 N_\G^{\rm wf}$. This is small as compared to 
@@ -919,9 +920,9 @@ Of course the accuracy of the standard sum-over-states expression is difficult t
 quantify, and probably a convergence on 5 significant digits is not warranted by a few
 hundreds of electronic states. 
 
-Our estimate suggests that our implementation of S$GW$ 
-based on planewaves can be as expensive as the standard approach.
-It should be noted, however, that our S$GW$ scheme has the advantage of providing
+Our estimate suggests that the planewaves implementation of our method
+can be as expensive as the standard approach.
+It should be noted, however, that our scheme has the advantage of providing
 the whole self-energy $\Sigma(\r,\rp;\w)$, while the standard approach 
 typically provides the matrix elements of the self-energy on a small subset of states of the order of $N_v$. 
 Therefore if we were to perform a comparison based on the
@@ -930,18 +931,18 @@ instead of $N_c N_v$. In this case Eq.\ (\ref{eq.ratio.flops}) would change into
   \begin{equation}
   N^{{\rm S}GW}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_v /N_c{\rm log}(2/\varepsilon),
   \end{equation}
-and for $\varepsilon=10^{-5}$ we would have $N^{{\rm S}GW}_{\rm flops}/N^{\rm HL86}_{\rm flops}\simeq 12 N_v/N_c$.
+and for $\varepsilon=10^{-5}$ we would have $N^{{\rm S}GW}_{\rm flops}/N^{\rm HL}_{\rm flops}\simeq 12 N_v/N_c$.
 This clearly shows that, if the entire self-energy was needed (as opposed to a few matrix elements),
 then our proposed S$GW$ approach would be more convenient that the standard sum-over-states
 approach.
 
-The above analysis shows that the main bottlenecks of our S$GW$ method 
+The above analysis shows that the main bottlenecks of our method 
 are (i) the Fourier transform for the application of the Hamiltonian and (ii) the large basis sets adopted.
 In order to make the approach proposed here more efficient we could either
 move to real-space methods where the application of the Hamiltonian scales linearly with system size,\cite{chelikowsky}
 or reduce the size of the basis set by using local orbitals.\cite{siesta} 
 Fast evaluations of the operation $\hat{H}\psi$ in order-$N$ operations should 
-make it feasible $GW$ calculations scaling with $N_{\rm at}^3$ and with a very favorable
+make it feasible $GW$ calculations with $N_{\rm at}^3$ scaling and with a very favorable
 prefactor. We will come back to this aspect in Sec.\ \ref{sec.conclusions}.
 
 \subsubsection{Green's function}\label{sec.green.scaling}
@@ -964,7 +965,7 @@ calculation of the Green's function scales as $N_{\rm at}^2 {\rm log} N_{\rm at}
 This procedure for calculating the Green's function is advantageous
 with respect to an expansion over empty states, as the orthogonalization
 of the unoccupied states would require a number of floating point operations 
-of the order of $\sim N_{\rm at}^3$.
+scaling as $\sim N_{\rm at}^3$.
 
 \subsubsection{Scaling of the self-energy calculation}\label{sec.sigma.scaling}
 
@@ -974,14 +975,14 @@ The 6-dimensional FFT transforms require $(N_\G^{\rm s}+N_\r^{\rm SE})N^{\rm SE}
 operations for each frequency of the screened Coulomb interaction,
 having defined $N^{\rm SE}_{\rm FFT}=4 N_\r^{\rm SE} {\rm log} N_\r^{\rm SE}$.
 The computational cost of this procedure scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$,
-and is small with respect to the cost of the screened
+and is small with respect to the cost of calculating the screened
 Coulomb interaction.
 
 \section{Results}\label{sec.results}
 
 In order to demonstrate the approach proposed in Secs.~\ref{sec.theory},\ref{sec.theory.g}  we have realized a prototype implementation
 within the empirical pseudopotential method (EPM) of Ref.\ \onlinecite{cohen_berg},
-and we have validated our implementation for the prototypical test case of silicon.
+and we have validated our implementation for the test case of silicon.
 
 \subsection{Dielectric matrix}\label{sec.5a}
 
@@ -1051,7 +1052,7 @@ is $N_{\rm SCF}\simeq 5$.
 %
 % in practice the average condition number is 3 (quite good)
 %
-Charge-sloshing effects are atenuated by using the potential mixing method proposed in
+Charge-sloshing effects are attenuated by using the potential mixing method proposed in
  Ref.\ \onlinecite{johnson}, appropriately modified to deal with complex potentials. 
 
 For completeness we report here the corresponding figures for
@@ -1102,7 +1103,7 @@ Within the EPM scheme the total potential $V^{\rm EPM}$ acting on the electrons 
 but the electronic charge density is not connected to this potential
 through a self-consistent procedure.\cite{appelbaum}
 This limitation makes it difficult to identify an XC contribution within the empirical
-pseudopotential. However, as the charge density obtained within the EPM method can be regarded 
+pseudopotential. However, since the charge density obtained within the EPM method can be regarded 
 as an approximation to the actual charge density,\cite{EPM-density}
 it appears sensible to obtain the effective XC potential
 as a functional of the EPM charge density
@@ -1136,7 +1137,7 @@ the XC potential using the EPM charge density and the LDA functional.
 Table \ref{tab.2} compares our
 calculated quasi-particle excitation energies for electronic states at the $\Gamma$ 
 point and for the conduction band edge of silicon with the results of Refs.\ \onlinecite{hl86,blochl}.
-We find a good overall agreement between these different set of calculations.
+We find a good overall agreement between these different sets of calculations.
 Taking into account that we are comparing our S$GW$ scheme
 within the EPM implementation with more sophisticated {\it ab-initio} calculations,
 such agreement is rather encouraging.
@@ -1163,7 +1164,8 @@ once again the validity of our methodology.
 \caption{\label{tab.1} Long-wavelength limit of the static symmetrized
 inverse dielectric matrix of silicon $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$
 [$\q=(0.01,0,0)2\pi/a$ and $\w=0$]. We compare our calculations performed within
-DFPT with the results obtained in Ref.\ \onlinecite{balde_tosa}
+the self-consistent Sternheimer approach
+with the results obtained in Ref.\ \onlinecite{balde_tosa}
 using the expansion over empty states and the inversion of the dielectric matrix.
 For the calculations we sampled the Brillouin zone with 29 irreducible $\k$-points,
 corresponding to a $8\times8\times8$ grid,\cite{balde_tosa,baroni-resta}
@@ -1204,7 +1206,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
         non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}:
         calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
         and results from Ref.\ \onlinecite{cohen.diel1} (red dashed line). We used a planewave kinetic energy cutoff of 5 Ry
-        and sampled the Brillouin zone thorough a uniform $8\times 8\times 8$ grid.
+        and sampled the Brillouin zone through a uniform $8\times 8\times 8$ grid.
         The wavevectors are in units of $2\pi/a$, $a$ being the lattice parameter.
         }
 \end    {figure}
@@ -1258,7 +1260,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \caption{\label{fig4}
         (Color online)
         Real part ${\rm Re} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first 
-        8 silicon eigenstates at $\k=0$. The solid blue lines are our results using S$GW$ and the empirical
+        8 silicon eigenstates at $\k=0$. The solid blue lines are our S$GW$ results using the empirical
         pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl} 
         using the LDA and the PAW method. Panels (a)-(d) correspond to the states
         $\Gamma^\prime_{2c}$ (Band 1), $\Gamma_{15c}$ (Bands 2-4), $\Gamma^\prime_{25v}$ (Bands 5-7), 
@@ -1274,13 +1276,12 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \caption{\label{fig5}
         (Color online)
         Imaginary part ${\rm Im} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$ of the expectation value of the $GW$ self-energy for the first
-        8 silicon eigenstates at $\k=0$. The solid blue lines are our results using S$GW$ and the empirical
+        8 silicon eigenstates at $\k=0$. The solid blue lines are our S$GW$ results using the empirical
         pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl}.
         Panels (a)-(d) correspond to the states $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, and $\Gamma_{1v}$, respectively.
         The energy axis is aligned with the top of the valence band.
-        For comparison, the vertical grey lines indicate the locations of the logarithmic singularities at $\E_{n\k}-\w_{\rm p}$ (occupied states,
-        $\w_{\rm p}$ being the plasmon energy) and $\E_{n\k}+\w_{\rm p}$ (empty states) that would arise using a model
-        plasmon-pole dielectric function.\cite{hl}
+        For comparison, the vertical grey lines indicate the locations of the logarithmic singularities at $\E_{n\k}\pm\w_{\rm p}$ 
+        ($\w_{\rm p}$ being the plasmon energy) that would arise using a model plasmon-pole dielectric function.\cite{hl}
         }
 \end    {figure}
 
@@ -1290,8 +1291,9 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \end    {center}
 \caption{\label{fig6}
         (Color online)
-        Expectation values of the quasiparticle spectral function $\langle n\k| A(\r,\rp;\w)|n\k\rangle$.
-        The solid blue lines are our results using S$GW$ and the EPM, the dashed red lines are from the first-principles 
+        Expectation values of the quasiparticle spectral function $\langle n\k| A(\r,\rp;\w)|n\k\rangle$
+        for the first 8 silicon eigenstates at $\k=0$.
+        The solid blue lines are our S$GW$ results using the EPM, the dashed red lines are from the first-principles 
         calculation of Ref.\ \onlinecite{blochl} using the LDA and the PAW method.
         The expectation values have been calculated within the diagonal approximation of Eq.\ (\ref{eq.specfun}).
         In each panel the sharp peak near the band extrema corresponds to a well-defined quasi-particle, while the two broad peaks
@@ -1338,7 +1340,7 @@ $^{\rm b}$ Ref.\ \onlinecite{r39}.
 
 \section{Conclusions and outlook}\label{sec.conclusions}
 
-The results presented in Sec.\ \ref{sec.results} demonstrated the feasibility
+The results presented in Sec.\ \ref{sec.results} demonstrate the feasibility
 of the self-consistent Sternheimer approach to $GW$ calculations in the simple case of a prototype implementation
 based on the empirical pseudopotential method. The extension of the present
 methodology to {\it ab-initio} approaches based on norm-conserving\cite{ncpp}
@@ -1435,14 +1437,14 @@ to develop improved methodologies for excited states calculations in large syste
 
 \begin{acknowledgments}
 F.G. is grateful to Manish Jain for drawing Ref.\ \onlinecite{alavi} to his attention.
-Computational resources were provided by the Oxford Supercomputing Centre.
-We acknowledge support from the National Science Foundation Grant No. DMR04-39768, and from
-the Director, Office of Science, Office of Basic Energy Sciences, Materials Sciences
-and Engineering Division, U.\ S.\ Department of Energy under Contract No. DE-AC02-05CH11231.
+This work was supported by National Science Foundation Grant No. DMR07-05941 and by the Director, 
+Office of Science, Office of Basic Energy Sciences, 
+Materials Sciences and Engineering Division, 
+U.S. Department of Energy under Contract No. DE-AC02-05CH11231. 
 The research leading to these results has received funding from the European Research
 Council under the European Community's Seventh Framework Programme (FP7/2007-2013) / ERC 
 grant agreement no. 239578.
-
+Computational resources were provided by the Oxford Supercomputing Centre.
 \end{acknowledgments}
 
 \appendix
@@ -1662,7 +1664,7 @@ from the imaginary axis to the real axis, we employ diagonal
 Pad\'e approximants.\cite{pade1,pade2,blochl}
 The Pad\'e approximant of order $N$ is the optimal rational approximation
 to a target function $f(\w)$ known in $N$ distinct points 
-$\{\w_n$,~$n=1,\cdots,N\}$. 
+$\w_n$,~$n=1,\cdots,N$. 
 When $N$ is an odd integer the diagonal Pad\'e approximant reads
   \begin{equation}
   P_N(\w) = \frac{p_0+p_1\w+\cdots+p_{(N-1)/2}\w^{(N-1)/2}}
