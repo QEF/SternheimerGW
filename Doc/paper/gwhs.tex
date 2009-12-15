@@ -67,12 +67,13 @@ In our approach the screened Coulomb interaction
 is evaluated by solving self-consistent linear-response Sternheimer equations,
 and the noninteracting Green's function is evaluated by solving inhomogeneous 
 linear systems. The frequency-dependence of the screened Coulomb interaction 
-is explicitly taken into account by performing calculations along the imaginary
-frequency axis, followed by the analytic continuation to real frequencies
-using Pad\'e approximants. As a proof of concept we implemented the proposed methodology
-within the empirical pseudopotential formalism and we validated our implementation
-using silicon as a test case. We examine the advantages and
-limitations of our method and describe promising future directions.
+is explicitly taken into account. In order to avoid the singularities of the 
+screened Coulomb interaction the calculations are performed
+along the imaginary frequency axis, and the results are analytically continued 
+to the real axis through Pad\'e approximants. As a proof of concept we implemented 
+the proposed methodology within the empirical pseudopotential formalism and 
+we validated our implementation using silicon as a test case. We examine 
+the advantages and limitations of our method and describe promising future directions.
 \end{abstract}
 
 \pacs{71.15.-m, % Methods of electronic structure calculations
@@ -151,7 +152,7 @@ proposed recently within the framework of a Wannier-like representation
 of the polarization propagator and the Lanczos recursion method.\cite{umari1,umari2}
 
 This manuscript is organized as follows. In Sec.\ \ref{sec.theory} we describe
-how the DFPT formalism can be adapted to perform $GW$ calculations.
+how the self-consistent Sternheimer formalism can be adapted to perform $GW$ calculations.
 In particular, we outline the procedure to obtain the screened Coulomb
 interaction in Sec.\ \ref{sec.coulomb}, the non-interacting Green's function
 in Sec.\ \ref{sec.green}, and the $GW$ self-energy in Sec.\ \ref{sec.sigma}.
@@ -309,7 +310,7 @@ generate an improved estimate of the screened Coulomb interaction $W$.
 We cycle through these steps until convergence of the screened Coulomb
 interaction is achieved.
 Equations (\ref{eq.deltan}),(\ref{eq.linsys.1}) can be regarded as
-the generalization of the DFPT equations used for lattice-dynamical 
+the generalization of the self-consistent Sternheimer equations used for lattice-dynamical 
 calculations\cite{baroni.rmp} to finite-frequency test-charge perturbations.
 
 
@@ -376,7 +377,7 @@ present approach was to be implemented on top of existing DFT software.
 \subsubsection{Non self-consistent calculation of the dielectric matrix}\label{sec.diel.nscf}
 
 An alternative approach to the calculation of the screened Coulomb interaction
-using DFPT consists in solving Eq.\ (\ref{eq.linsys.1}) non self-consistently.
+using the self-consistent Sternheimer equation consists in solving Eq.\ (\ref{eq.linsys.1}) non self-consistently.
 For this purpose we can replace the self-consistent perturbation $\Delta V_{[\r,\w]}(\rp)$
 in the right-hand side of Eq.\ (\ref{eq.linsys.1}) by the bare Coulomb potential
 $v_{[\r]}(\rp)=v(\r,\rp)$ as follows:
@@ -412,7 +413,7 @@ The technical implementation of this procedure is described in Appendix \ref{app
 \subsection{Green's function}\label{sec.green}
 
 The calculation of the Green's function can efficiently be performed 
-by adopting a strategy similar to the DFPT approach
+by adopting a strategy similar to the Sternheimer approach
 described in Sec.\ \ref{sec.coulomb}.
 We introduce the noninteracting Green's function following Ref.\ \onlinecite{hl}:
   \begin{equation}\label{eq.green.1}
@@ -474,7 +475,7 @@ and we use the completeness relation $\delta_{[\r]}(\rp) = \delta(\r,\rp) = \sum
 As expected, we can determine the analytic part of the Green's function
 by directly solving a linear system. As Eq.\ (\ref{eq.green.3}) 
 does not explicitly require unoccupied electronic states, this procedure mimics 
-the DFPT approach for the screened Coulomb interaction outlined in Sec.~\ref{sec.coulomb},
+the Sternheimer approach for the screened Coulomb interaction outlined in Sec.~\ref{sec.coulomb},
 albeit without the self-consistency requirement.
 
 The procedure described here is especially advantageous because Eq.\ (\ref{eq.green.3})
@@ -868,7 +869,7 @@ If in average the CG minimization requires $N_{\rm CG}$ steps
 and the self-consistency loop requires $N_{\rm SCF}$ iterations,
 then the total cost of the entire calculation corresponds to a number of floating point operations
    \begin{equation}\label{eq.scaling.1}
-   N^{\rm DFPT}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s}  N_v N^{\rm den}_{\rm FFT}.
+   N^{{\rm S}GW}_{\rm flops} = 8 N_{\rm CG} N_{\rm SCF} N_\G^{\rm s}  N_v N^{\rm den}_{\rm FFT}.
    \end{equation}
 As $N_\G^{\rm s}$, $N_v$, and $N_\r^{\rm den}$ scale linearly with the size of the system
 as measured by the number of atoms $N_{\rm at}$,
@@ -901,19 +902,16 @@ and the two CG sequences of the cBiCG algorithm do coincide.
 As a result, a factor 4 drops out of the prefactor in Eq.\ (\ref{eq.scaling.1}).
 If we assume for definiteness a perfectly well-conditioned linear system (condition number $\kappa=1$),
 and express the number of CG iterations required to achieve convergence through Eq.\ (\ref{eq.cg}),
-then the ratio between the complexity of the DFPT approach in a planewaves
+then the ratio between the complexity of the S$GW$ approach in a planewaves
 implementation and the standard approach becomes
-%   \begin{equation}
-%   \frac{N^{\rm DFPT}_{\rm flops}}{N^{\rm HL86}_{\rm flops}} = \frac{2 N_{\rm CG} N_\G^{\rm s}}{N_c}.
-%   \end{equation}
    \begin{equation}\label{eq.ratio.flops}
-   N^{\rm DFPT}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_\G^{\rm s}/N_c {\rm log}(2/\varepsilon),
+   N^{{\rm S}GW}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_\G^{\rm s}/N_c {\rm log}(2/\varepsilon),
    \end{equation}
 where $\varepsilon$ is the relative accuracy of the results.
 As an example, for a relative accuracy of $\varepsilon=10^{-5}$ 
 we find this ratio to be $\simeq 12 N_\G^{\rm s}/N_c$.
 In the case of silicon, using a typical cutoff $E_{\rm cut}^{\rm s}=10$ Ry we obtain $N_\G^{\rm s}=137$, therefore
-the DFPT approach becomes convenient when more than $\sim$1650 unoccupied states are used
+the S$GW$ approach becomes convenient when more than $\sim$1650 unoccupied states are used
 in the standard approach.
 This is rarely the case as most calculations reported to date use only a few hundreds of 
 unoccupied electronic states.
@@ -921,23 +919,23 @@ Of course the accuracy of the standard sum-over-states expression is difficult t
 quantify, and probably a convergence on 5 significant digits is not warranted by a few
 hundreds of electronic states. 
 
-Our estimate suggests that our implementation of DFPT-$GW$ 
+Our estimate suggests that our implementation of S$GW$ 
 based on planewaves can be as expensive as the standard approach.
-It should be noted, however, that our DFPT scheme has the advantage of providing
+It should be noted, however, that our S$GW$ scheme has the advantage of providing
 the whole self-energy $\Sigma(\r,\rp;\w)$, while the standard approach 
 typically provides the matrix elements of the self-energy on a small subset of states of the order of $N_v$. 
 Therefore if we were to perform a comparison based on the
 same amount of output information, we should use $N_c N_\G^{\rm s}$ in Eq.\ (\ref{eq.scaling.2})
 instead of $N_c N_v$. In this case Eq.\ (\ref{eq.ratio.flops}) would change into
   \begin{equation}
-  N^{\rm DFPT}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_v /N_c{\rm log}(2/\varepsilon),
+  N^{{\rm S}GW}_{\rm flops}/N^{\rm HL}_{\rm flops} = N_v /N_c{\rm log}(2/\varepsilon),
   \end{equation}
-and for $\varepsilon=10^{-5}$ we would have $N^{\rm DFPT}_{\rm flops}/N^{\rm HL86}_{\rm flops}\simeq 12 N_v/N_c$.
+and for $\varepsilon=10^{-5}$ we would have $N^{{\rm S}GW}_{\rm flops}/N^{\rm HL86}_{\rm flops}\simeq 12 N_v/N_c$.
 This clearly shows that, if the entire self-energy was needed (as opposed to a few matrix elements),
-then our proposed DFPT approach would be more convenient that the standard sum-over-states
+then our proposed S$GW$ approach would be more convenient that the standard sum-over-states
 approach.
 
-The above analysis shows that the main bottlenecks of our DFPT-$GW$ method 
+The above analysis shows that the main bottlenecks of our S$GW$ method 
 are (i) the Fourier transform for the application of the Hamiltonian and (ii) the large basis sets adopted.
 In order to make the approach proposed here more efficient we could either
 move to real-space methods where the application of the Hamiltonian scales linearly with system size,\cite{chelikowsky}
@@ -961,7 +959,7 @@ calculation reads:
    N^{\rm GF}_{\rm flops} = 4 N_{\rm CG} N_\G^{\rm s} N^{\rm den}_{\rm FFT}.
    \end{equation}
 The complexity of this calculation is significantly smaller than the complexity
-of the DFPT algorithm for the screened Coulomb interaction. In particular, the
+of the algorithm for the screened Coulomb interaction. In particular, the
 calculation of the Green's function scales as $N_{\rm at}^2 {\rm log} N_{\rm at}$.
 This procedure for calculating the Green's function is advantageous
 with respect to an expansion over empty states, as the orthogonalization
@@ -988,7 +986,7 @@ and we have validated our implementation for the prototypical test case of silic
 \subsection{Dielectric matrix}\label{sec.5a}
 
 Table \ref{tab.1} contains some of the components of the inverse dielectric matrix calculated using
-the self-consistent DFPT method described in Sec.~\ref{sec.theory.g}.
+the self-consistent Sternheimer method described in Sec.~\ref{sec.theory.g}.
 In all our calculations we used inverse dielectric matrices of size 59$\times$59, 
 corresponding to a kinetic energy cutoff of 5 Ry for the screened Coulomb interaction.
 For the purpose of comparison with Ref.\ \onlinecite{balde_tosa} 
@@ -1016,7 +1014,7 @@ Figure \ref{fig2} compares our results for the frequency dependence of the diele
 at long wavelength with the results reported in Ref.\ \onlinecite{hl86}. 
 We focused in particular on the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}.
 Apart from some small differences possibly arising from the use of the expansion over unoccupied
-states in Ref.\ \onlinecite{hl86}, even in this case the agreement between our DFPT calculation 
+states in Ref.\ \onlinecite{hl86}, even in this case the agreement between our calculations 
 and those of Ref.\ \onlinecite{hl86} is very good throughout the entire frequency range.
 The agreement is consistently good for the head of the dielectric matrix and for
 diagonal and off-diagonal matrix elements.
@@ -1071,7 +1069,7 @@ accuracy $\varepsilon_{\rm NSCF}=10^{-10}$) can be as high as $N_{\rm GF}\simeq 
 Figures \ref{fig4} and \ref{fig5} show the real part ${\rm Re} \langle n\k| \Sigma|n\k\rangle$ 
 and the imaginary part ${\rm Im} \langle n\k| \Sigma|n\k\rangle$ of the
 $GW$ self-energy calculated for the first few silicon eigenstates at $\Gamma$
-using our DFPT-$GW$ method within the EPM scheme. Our results are compared
+using our S$GW$ method within the EPM scheme. Our results are compared
 with the calculations of of Ref.\ \onlinecite{blochl} performed within DFT/LDA 
 and the projector-augmented wave method (PAW).
 We calculated the screened Coulomb interaction by using a uniform $6\times 6 \times 6$ grid 
@@ -1117,7 +1115,7 @@ the Hartree potential $V^{\rm Ha}$ and the XC potential $V^{\rm xc}$ are calcula
 This uncertainty on the XC potential renders the calculation of the quasi-particle
 excitation energies somewhat arbitrary, therefore the results presented in the following
 should be regarded as qualitative and are presented only for the purpose of demonstrating 
-a complete $GW$  calculation within our DFPT-$GW$ methodology.
+a complete $GW$  calculation within our S$GW$ methodology.
 }
 
 Despite the above limitations, the expectation values of the
@@ -1139,7 +1137,7 @@ Table \ref{tab.2} compares our
 calculated quasi-particle excitation energies for electronic states at the $\Gamma$ 
 point and for the conduction band edge of silicon with the results of Refs.\ \onlinecite{hl86,blochl}.
 We find a good overall agreement between these different set of calculations.
-Taking into account that we are comparing our DFPT-$GW$ scheme
+Taking into account that we are comparing our S$GW$ scheme
 within the EPM implementation with more sophisticated {\it ab-initio} calculations,
 such agreement is rather encouraging.
 
@@ -1203,7 +1201,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \caption{\label{fig1}
         (Color online)
         Dielectric function of silicon calculated using the empirical pseudopotential method and the
-        non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}:
+        non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}:
         calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
         and results from Ref.\ \onlinecite{cohen.diel1} (red dashed line). We used a planewave kinetic energy cutoff of 5 Ry
         and sampled the Brillouin zone thorough a uniform $8\times 8\times 8$ grid.
@@ -1219,7 +1217,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
         (Color online)
         Frequency-dependent dielectric matrix of silicon at long wavelength [$\q=(0.01,0,0) \, 2\pi/a$].
         The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg} 
-        and the non self-consistent DFPT method of Sec.\ \ref{sec.diel.nscf}.
+        and the non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}.
         We used a planewave kinetic energy cutoff of 5 Ry and sampled the Brillouin zone thorough a uniform 
         $24\times 24\times 24$ grid. Such a dense Brillouin zone sampling was necessary to correctly describe
         the absorption onset. In order to avoid null eigenvalues in the linear system Eq.\ (\ref{eq.linsys.1.nscf})
@@ -1260,7 +1258,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \caption{\label{fig4}
         (Color online)
         Real part ${\rm Re} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first 
-        8 silicon eigenstates at $\k=0$. The solid blue lines are our results using DFPT-$GW$ and the empirical
+        8 silicon eigenstates at $\k=0$. The solid blue lines are our results using S$GW$ and the empirical
         pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl} 
         using the LDA and the PAW method. Panels (a)-(d) correspond to the states
         $\Gamma^\prime_{2c}$ (Band 1), $\Gamma_{15c}$ (Bands 2-4), $\Gamma^\prime_{25v}$ (Bands 5-7), 
@@ -1276,10 +1274,13 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \caption{\label{fig5}
         (Color online)
         Imaginary part ${\rm Im} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$ of the expectation value of the $GW$ self-energy for the first
-        8 silicon eigenstates at $\k=0$. The solid blue lines are our results using DFPT-$GW$ and the empirical
+        8 silicon eigenstates at $\k=0$. The solid blue lines are our results using S$GW$ and the empirical
         pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl}.
         Panels (a)-(d) correspond to the states $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, and $\Gamma_{1v}$, respectively.
         The energy axis is aligned with the top of the valence band.
+        For comparison, the vertical grey lines indicate the locations of the logarithmic singularities at $\E_{n\k}-\w_{\rm p}$ (occupied states,
+        $\w_{\rm p}$ being the plasmon energy) and $\E_{n\k}+\w_{\rm p}$ (empty states) that would arise using a model
+        plasmon-pole dielectric function.\cite{hl}
         }
 \end    {figure}
 
@@ -1290,7 +1291,7 @@ $\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present wor
 \caption{\label{fig6}
         (Color online)
         Expectation values of the quasiparticle spectral function $\langle n\k| A(\r,\rp;\w)|n\k\rangle$.
-        The solid blue lines are our results using DFPT-$GW$ and the EPM, the dashed red lines are from the first-principles 
+        The solid blue lines are our results using S$GW$ and the EPM, the dashed red lines are from the first-principles 
         calculation of Ref.\ \onlinecite{blochl} using the LDA and the PAW method.
         The expectation values have been calculated within the diagonal approximation of Eq.\ (\ref{eq.specfun}).
         In each panel the sharp peak near the band extrema corresponds to a well-defined quasi-particle, while the two broad peaks
@@ -1313,13 +1314,14 @@ It is interesting to observe that the value of the minimum band gap is not incre
 the EPM value of $0.82$ eV when applying the $GW$ correction. In absolute terms the $X_{1c}$ state shifts upwards by 0.41 eV upon 
 the $GW$ correction, but this shift is compensated by the concurrent upward shift of the $\Gamma^\prime_{25v}$
 state by 0.44 eV.
+This problem relates to the uncertainty on the XC potential within the EPM formalism, as discussed in Sec.\ \ref{sec.5d}.
 \vspace{0.5cm}}
 \begin{tabular}{l r@{.}l  r@{.}l  r@{.}l r@{.}l r@{.}l c}
 \hline
 \hline
    & \multicolumn{4}{c}{\hspace{-0.6cm} EPM/LDA eigenvalues}  &
 \multicolumn{7}{c}{Quasiparticle energies} \\
-   & \multicolumn{2}{c}{Present}  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & 
+   & \multicolumn{2}{c}{Present }  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & 
 \multicolumn{2}{c}{\hspace{1cm}Present} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{blochl}} &\hspace{1cm} Expt. \\
 \hline
 $\Gamma^\prime_{2c}$  &   3&89 & 3&23   & \hspace{1cm}  4&21 & \hspace{0.3cm}  4&08 &\hspace{0.3cm}   4&05 & \hspace{1cm}4.23$^{\rm a}$,4.1$^{\rm b}$\\
@@ -1337,7 +1339,7 @@ $^{\rm b}$ Ref.\ \onlinecite{r39}.
 \section{Conclusions and outlook}\label{sec.conclusions}
 
 The results presented in Sec.\ \ref{sec.results} demonstrated the feasibility
-of the DFPT approach to $GW$ calculations in the simple case of a prototype implementation
+of the self-consistent Sternheimer approach to $GW$ calculations in the simple case of a prototype implementation
 based on the empirical pseudopotential method. The extension of the present
 methodology to {\it ab-initio} approaches based on norm-conserving\cite{ncpp}
 or ultrasoft\cite{uspp} pseudopotentials should not present any difficulties
@@ -1413,7 +1415,7 @@ the way to the study of electronic excitations in
 very large systems using the $GW$ method.
 
 In summary, we propose a new methodology for performing $GW$ calculations
-using the self-consistent Sternheimer equation ($GW$-S). We show how
+using the self-consistent Sternheimer equation (S$GW$). We show how
 to calculate the screened Coulomb interaction and the non-interacting
 Green's function without resorting to unoccupied electronic states.
 We successfully demonstrate our method within a planewaves empirical
@@ -1819,12 +1821,6 @@ Phys.\ Rev.\ Lett.\ {\bf 99} 266402 (2007).
 P. Rinke, A. Qteish, J. Neugebauer, C. Freysoldt, and M. Scheffler, 
 New J.\ Phys.\ {\bf 7}, 126 (2005). 
 
-\bibitem{wilkins}
-W. G. Aulbur, L. J\"onsson, and J. W. Wilkins,
-Quasiparticle calculations in solids,
-in {\it Solid State Physics}, ed. by H. Ehrenreich and F. Spaepen (
-Academic, San Diego, 2000), vol.\ 54, pag. 1.
-
 \bibitem{schilfegarde}
 M. van Schilfgaarde, T. Kotani, and S. Faleev,
 Phys.\ Rev.\ Lett.\ {\bf 96}, 226402 (2006).
@@ -1840,6 +1836,12 @@ Phys.\ Rev.\ Lett.\ {\bf 74}, 1827 (1995).
 \bibitem{blochl}
 S. Lebegue, B. Arnaud, M. Alouani, and P. E. Bl\"ochl,
 Phys.\ Rev.\ B {\bf 67}, 155208 (2003). 
+
+\bibitem{wilkins}
+W. G. Aulbur, L. J\"onsson, and J. W. Wilkins,
+Quasiparticle calculations in solids,
+in {\it Solid State Physics}, ed. by H. Ehrenreich and F. Spaepen (
+Academic, San Diego, 2000), vol.\ 54, pag. 1.
 
 \bibitem{hl}
 L. Hedin and S. Lundqvist,
