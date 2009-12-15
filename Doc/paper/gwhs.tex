@@ -1001,6 +1001,45 @@ and no matrix inversion was necessary.
 The excellent agreement which can be seen in Table \ref{tab.1} between 
 our calculations and Ref.~\onlinecite{balde_tosa} supports the validity of our approach.
 
+% head: 777 000, body and wings: 666 000 (body and wings do not depend much on sampling)
+% could not make the chadi-cohen 10-p mesh work, baroni-resta say that 8x8x8 is equiv to 10 chadi-cohen
+% table: 1col, table* 2col
+\begin{table}
+\caption{\label{tab.1} Long-wavelength limit of the static symmetrized
+inverse dielectric matrix of silicon $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$
+[$\q=(0.01,0,0)2\pi/a$ and $\w=0$]. We compare our calculations performed within
+the self-consistent Sternheimer approach
+with the results obtained in Ref.\ \onlinecite{balde_tosa}
+using the expansion over empty states and the inversion of the dielectric matrix.
+For the calculations we sampled the Brillouin zone with 29 irreducible $\k$-points,
+corresponding to a $8\times8\times8$ grid,\cite{balde_tosa,baroni-resta}
+and a plane wave cutoff of 5 Ry.\cite{balde_tosa} Following Ref.\ \onlinecite{balde_tosa}
+we employed the empirical pseudopotential parameters from Ref.\ \onlinecite{cohen_berg}.
+The reciprocal lattice vectors are in units of $2\pi/a$, $a$ being the
+lattice parameter.
+\vspace{0.5cm}}
+\begin{tabular}{c c c}
+\hline
+\hline
+   & \multicolumn{2}{c}{$\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$}  \\
+   \multicolumn{3}{c}{\vspace{-0.4cm}}  \\
+$\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present work \\
+\hline
+    (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0866  \\
+ (1,1,1)  (1,1,1)     &   \phantom{-}0.605  & \phantom{-}0.6055 \\
+(\mo,1,1) (1,1,1)     &   \phantom{-}0.008  & \phantom{-}0.0076 \\
+ (1,\mo,1) (\mo,1,1)  & \phantom{-}0.010    & \phantom{-}0.0102 \\
+ (1,\mo,\mo) (\mo,1,1)& \phantom{-}0.045    & \phantom{-}0.0463 \\
+ (2,0,0) (1,1,1)      &    -0.038           & -0.0382 \\
+ (2,0,0) (\mo,1,1)    &    -0.005           & -0.0049 \\
+ (2,0,0) (2,0,0)      &  \phantom{-}0.667   & \phantom{-}0.6671 \\
+ (\mt,0,0) (2,0,0)    & \phantom{-}0.006    & \phantom{-}0.0063 \\
+ (0,2,0) (2,0,0)      &  \phantom{-}0.016   & \phantom{-}0.0166 \\
+\hline
+\hline
+\end{tabular}
+\end{table}
+
 Next we consider the wavevector dependence of the head of the
 dielectric matrix $\epsilon_{00}(\q,\w=0)$. We performed the
 calculation by using the non self-consistent method described in
@@ -1020,7 +1059,63 @@ and those of Ref.\ \onlinecite{hl86} is very good throughout the entire frequenc
 The agreement is consistently good for the head of the dielectric matrix and for
 diagonal and off-diagonal matrix elements.
 
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=7.5cm]{fig1.eps}[t]
+\end    {center}
+\caption{\label{fig1}
+        (Color online)
+        Dielectric function of silicon calculated using the empirical pseudopotential method and the
+        non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}:
+        calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
+        and results from Ref.\ \onlinecite{cohen.diel1} (red dashed line). We used a planewave kinetic energy cutoff of 5 Ry
+        and sampled the Brillouin zone through a uniform $8\times 8\times 8$ grid.
+        The wavevectors are in units of $2\pi/a$, $a$ being the lattice parameter.
+        }
+\end    {figure}
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6.5cm]{fig2.eps}[b]
+\end    {center}
+\caption{\label{fig2}
+        (Color online)
+        Frequency-dependent dielectric matrix of silicon at long wavelength [$\q=(0.01,0,0) \, 2\pi/a$].
+        The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg}
+        and the non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}.
+        We used a planewave kinetic energy cutoff of 5 Ry and sampled the Brillouin zone thorough a uniform
+        $24\times 24\times 24$ grid. Such a dense Brillouin zone sampling was necessary to correctly describe
+        the absorption onset. In order to avoid null eigenvalues in the linear system Eq.\ (\ref{eq.linsys.1.nscf})
+        we performed the calculations by including a small imaginary component of 0.1~eV in the frequency $\w$.
+        The panels (a)-(c) correspond to the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}
+        and show $\epsilon_{\G\Gp}(\q\rightarrow 0,\w)$ for (a) $\G=\Gp=0$, (b) $\G=\Gp=(1,1,1) 2\pi/a$,
+        and (c) $\G=(1,1,1) 2\pi/a$, $\Gp=(2,0,0) 2\pi/a$.
+        The blue solid lines are our calculations, the red dashed lines are from Ref.\ \onlinecite{hl86}.
+        The real and imaginary parts of the dielectric matrix are indicated in each panel.
+        We note that the scales on the vertical axes correspond to three different orders of magnitude.
+        }
+\end    {figure}
+
 \subsection{Pad\'e approximants and convergence}\label{sec.conv}
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=7.5cm]{fig3.eps}[t]
+\end    {center}
+\caption{\label{fig3}
+        (Color online)
+        Real part of the long-wavelength dielectric matrix of silicon as a function of frequency.
+        Panels (a) and (b) of this figure correspond to panels (a) and (b) of Fig.~\ref{fig2}, respectively. The
+        technical details of the calculations are the same as those described in the caption of Fig.\ \ref{fig2}.
+        Solid blue lines: dielectric matrices calculated directly along the real frequency axis,
+        from  Fig.\ \ref{fig2}. Dotted, dashed, and dash-dotted red lines: dielectric matrices
+        obtained from the analytic continuation on the real axis using Pad\'e approximants of order
+        6, 11, and 26, respectively. The Pad\'e approximants were generated using dielectric
+        matrices calculated along the imaginary frequency axis on uniform frequency grids
+        in the range 0-50 eV. For instance, the 6-points approximant corresponds to calculations
+        at the imaginary frequencies of $0,10,\cdots,50$ eV.
+        }
+\end    {figure}
 
 Figure \ref{fig3} shows the quality of the analytic continuation from the imaginary to
 the real frequency axis using Pad\'e approximants (cf.\ Appendix \ref{app.pade}).\cite{pade1,pade2} We found that this procedure based on 
@@ -1089,7 +1184,92 @@ Such agreement probably reflects the ability of the EPM method to provide not on
 a good description of the band structure of silicon, but also a reasonable
 description of the electronic wavefunctions.
 
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6cm]{fig4.eps}[t]
+\end    {center}
+\caption{\label{fig4}
+        (Color online)
+        Real part ${\rm Re} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first
+        8 silicon eigenstates at $\k=0$. The solid blue lines are our S$GW$ results using the empirical
+        pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl}
+        using the LDA and the PAW method. Panels (a)-(d) correspond to the states
+        $\Gamma^\prime_{2c}$ (Band 1), $\Gamma_{15c}$ (Bands 2-4), $\Gamma^\prime_{25v}$ (Bands 5-7),
+        and $\Gamma_{1v}$ (Band 8), respectively. The energy axis is aligned with the top of the valence band.
+        The horizontal dotted lines indicate the calculated bare exchange contribution to the self-energy ${\rm Re} \langle n\k| \Sigma^{\rm ex}(\r,\rp;\w)|n\k\rangle$.
+        }
+\end    {figure}
+
 \subsection{Quasi-particle excitations and spectral function}\label{sec.5d}
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6cm]{fig5.eps}[t]
+\end    {center}
+\caption{\label{fig5}
+        (Color online)
+        Imaginary part ${\rm Im} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$ of the expectation value of the $GW$ self-energy for the first
+        8 silicon eigenstates at $\k=0$. The solid blue lines are our S$GW$ results using the empirical
+        pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl}.
+        Panels (a)-(d) correspond to the states $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, and $\Gamma_{1v}$, respectively.
+        The energy axis is aligned with the top of the valence band.
+        For comparison, the vertical grey lines indicate the locations of the logarithmic singularities at $\E_{n\k}\pm\w_{\rm p}$
+        ($\w_{\rm p}$ being the plasmon energy) that would arise using a model plasmon-pole dielectric function.\cite{hl}
+        }
+\end    {figure}
+
+\begin  {figure}
+\begin  {center}
+\includegraphics[width=6cm]{fig6.eps}
+\end    {center}
+\caption{\label{fig6}
+        (Color online)
+        Expectation values of the quasiparticle spectral function $\langle n\k| A(\r,\rp;\w)|n\k\rangle$
+        for the first 8 silicon eigenstates at $\k=0$.
+        The solid blue lines are our S$GW$ results using the EPM, the dashed red lines are from the first-principles
+        calculation of Ref.\ \onlinecite{blochl} using the LDA and the PAW method.
+        The expectation values have been calculated within the diagonal approximation of Eq.\ (\ref{eq.specfun}).
+        In each panel the sharp peak near the band extrema corresponds to a well-defined quasi-particle, while the two broad peaks
+        corresponds to plasmarons, i.e.\ electrons or holes coupled to a cloud of real plasmons.\cite{hl}
+        The suppression of one of the plasmaron peaks reflects the large imaginary parts of the self-energy in the
+        corresponding panels of Fig.\ \ref{fig5}. We point out the different vertical scale in panel (d).
+        }
+\end    {figure}
+
+% table: 1col, table* 2col
+\begin{table*}[th!]
+\caption{\label{tab.2}
+$GW$ quasi-particle excitation energies for the $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, $\Gamma_{1v}$
+states of silicon, as well as for the conduction band bottom of silicon close to the $X_{1c}$ state.
+We obtained the quasi-particle energies $E_{n\k}$ by solving the nonlinear equations
+$E_{n\k} = \E_{n\k} + {\rm Re} [ \Delta\Sigma_{n\k}(E_{n\k})]$, with $\Delta \Sigma_{n\k} = \langle n\k| \Sigma - V_{\rm xc} |n\k\rangle$.
+For completeness we also show the unperturbed eigenvalues calculated here within the EPM scheme,
+and those of Ref.\ \onlinecite{blochl} within the DFT/LDA scheme for comparison.
+It is interesting to observe that the value of the minimum band gap is not increased from
+the EPM value of $0.82$ eV when applying the $GW$ correction. In absolute terms the $X_{1c}$ state shifts upwards by 0.41 eV upon
+the $GW$ correction, but this shift is compensated by the concurrent upward shift of the $\Gamma^\prime_{25v}$
+state by 0.44 eV.
+This problem relates to the uncertainty on the XC potential within the EPM formalism, as discussed in Sec.\ \ref{sec.5d}.
+\vspace{0.5cm}}
+\begin{tabular}{l r@{.}l  r@{.}l  r@{.}l r@{.}l r@{.}l c}
+\hline
+\hline
+   & \multicolumn{4}{c}{\hspace{-0.6cm} EPM/LDA eigenvalues}  &
+\multicolumn{7}{c}{Quasiparticle energies} \\
+   & \multicolumn{2}{c}{Present }  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} &
+\multicolumn{2}{c}{\hspace{1cm}Present} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{blochl}} &\hspace{1cm} Expt. \\
+\hline
+$\Gamma^\prime_{2c}$  &   3&89 & 3&23   & \hspace{1cm}  4&21 & \hspace{0.3cm}  4&08 &\hspace{0.3cm}   4&05 & \hspace{1cm}4.23$^{\rm a}$,4.1$^{\rm b}$\\
+$\Gamma_{15c}$        &   3&42 & 2&54   & \hspace{1cm}  3&53 & \hspace{0.3cm}  3&35 &\hspace{0.3cm}   3&09 & \hspace{1cm}3.40$^{\rm a}$,3.05$^{\rm b}$\\
+$\Gamma^\prime_{25v}$ &   0&00 & 0&00   & \hspace{1cm}  0&00 & \hspace{0.3cm}  0&00 &\hspace{0.3cm}   0&00 & \hspace{1cm}0\\
+$\Gamma_{1v}$         & -12&62 & -11&97 & \hspace{1cm}-13&23 & \hspace{0.3cm}-12&04 &\hspace{0.3cm} -11&85 & \hspace{1cm}-12.5$\pm$0.6$^{\rm a}$\\
+$X_{1c}$              &   0&82 & 0&55   & \hspace{1cm}  0&79 & \hspace{0.3cm}  1&29 &\hspace{0.3cm}   0&92 & \hspace{1cm} 1.17$^{\rm a}$\\
+\hline
+\hline
+$^{\rm a}$ Ref.\ \onlinecite{r35}.
+$^{\rm b}$ Ref.\ \onlinecite{r39}.
+\end{tabular}
+\end{table*}
 
 Within the $GW$ method the values of the quasi-particle excitation energies are typically 
 calculated by using first-order perturbation theory on the DFT eigenvalues.\cite{hl86}
@@ -1155,188 +1335,6 @@ we decided to adopt Eq.\ (\ref{eq.specfun}) to be consistent with Ref.\ \onlinec
 Figure \ref{fig6} shows good overall agreement between our calculations and the
 LDA/PAW results of Ref.\ \onlinecite{blochl}. This comparison demonstrates
 once again the validity of our methodology.
-
-
-% head: 777 000, body and wings: 666 000 (body and wings do not depend much on sampling)
-% could not make the chadi-cohen 10-p mesh work, baroni-resta say that 8x8x8 is equiv to 10 chadi-cohen
-% table: 1col, table* 2col
-\begin{table}
-\caption{\label{tab.1} Long-wavelength limit of the static symmetrized
-inverse dielectric matrix of silicon $\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$
-[$\q=(0.01,0,0)2\pi/a$ and $\w=0$]. We compare our calculations performed within
-the self-consistent Sternheimer approach
-with the results obtained in Ref.\ \onlinecite{balde_tosa}
-using the expansion over empty states and the inversion of the dielectric matrix.
-For the calculations we sampled the Brillouin zone with 29 irreducible $\k$-points,
-corresponding to a $8\times8\times8$ grid,\cite{balde_tosa,baroni-resta}
-and a plane wave cutoff of 5 Ry.\cite{balde_tosa} Following Ref.\ \onlinecite{balde_tosa}
-we employed the empirical pseudopotential parameters from Ref.\ \onlinecite{cohen_berg}.
-The reciprocal lattice vectors are in units of $2\pi/a$, $a$ being the
-lattice parameter.
-\vspace{0.5cm}}
-\begin{tabular}{c c c}
-\hline
-\hline
-   & \multicolumn{2}{c}{$\tilde\epsilon^{-1}_{\G\Gp}(\q;\w)$}  \\
-   \multicolumn{3}{c}{\vspace{-0.4cm}}  \\
-$\,\,\G$\phantom{ciao} $\,\Gp$   & Ref.\ \onlinecite{balde_tosa}  &  Present work \\
-\hline
-    (0,0,0) (0,0,0)   & \phantom{-}0.083    &  \phantom{-}0.0866  \\
- (1,1,1)  (1,1,1)     &   \phantom{-}0.605  & \phantom{-}0.6055 \\
-(\mo,1,1) (1,1,1)     &   \phantom{-}0.008  & \phantom{-}0.0076 \\
- (1,\mo,1) (\mo,1,1)  & \phantom{-}0.010    & \phantom{-}0.0102 \\
- (1,\mo,\mo) (\mo,1,1)& \phantom{-}0.045    & \phantom{-}0.0463 \\
- (2,0,0) (1,1,1)      &    -0.038           & -0.0382 \\
- (2,0,0) (\mo,1,1)    &    -0.005           & -0.0049 \\
- (2,0,0) (2,0,0)      &  \phantom{-}0.667   & \phantom{-}0.6671 \\
- (\mt,0,0) (2,0,0)    & \phantom{-}0.006    & \phantom{-}0.0063 \\
- (0,2,0) (2,0,0)      &  \phantom{-}0.016   & \phantom{-}0.0166 \\
-\hline
-\hline
-\end{tabular}
-\end{table}
- 
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=7.5cm]{fig1.eps}
-\end    {center}
-\caption{\label{fig1}
-        (Color online)
-        Dielectric function of silicon calculated using the empirical pseudopotential method and the
-        non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}:
-        calculated head of the static dielectric function as a function of wavevector $\epsilon_{00}(\q,\w=0)$ (blue solid line),
-        and results from Ref.\ \onlinecite{cohen.diel1} (red dashed line). We used a planewave kinetic energy cutoff of 5 Ry
-        and sampled the Brillouin zone through a uniform $8\times 8\times 8$ grid.
-        The wavevectors are in units of $2\pi/a$, $a$ being the lattice parameter.
-        }
-\end    {figure}
-
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=6.5cm]{fig2.eps}
-\end    {center}
-\caption{\label{fig2}
-        (Color online)
-        Frequency-dependent dielectric matrix of silicon at long wavelength [$\q=(0.01,0,0) \, 2\pi/a$].
-        The calculations were performed using the empirical pseudopotential method of Ref.\ \onlinecite{cohen_berg} 
-        and the non self-consistent Sternheimer method of Sec.\ \ref{sec.diel.nscf}.
-        We used a planewave kinetic energy cutoff of 5 Ry and sampled the Brillouin zone thorough a uniform 
-        $24\times 24\times 24$ grid. Such a dense Brillouin zone sampling was necessary to correctly describe
-        the absorption onset. In order to avoid null eigenvalues in the linear system Eq.\ (\ref{eq.linsys.1.nscf})
-        we performed the calculations by including a small imaginary component of 0.1~eV in the frequency $\w$.
-        The panels (a)-(c) correspond to the cases illustrated in Fig.\ 3 of Ref.\ \onlinecite{hl86}
-        and show $\epsilon_{\G\Gp}(\q\rightarrow 0,\w)$ for (a) $\G=\Gp=0$, (b) $\G=\Gp=(1,1,1) 2\pi/a$,
-        and (c) $\G=(1,1,1) 2\pi/a$, $\Gp=(2,0,0) 2\pi/a$.
-        The blue solid lines are our calculations, the red dashed lines are from Ref.\ \onlinecite{hl86}.
-        The real and imaginary parts of the dielectric matrix are indicated in each panel.
-        We note that the scales on the vertical axes correspond to three different orders of magnitude.
-        }
-\end    {figure}
-
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=7.5cm]{fig3.eps}
-\end    {center}
-\caption{\label{fig3}
-        (Color online)
-        Real part of the long-wavelength dielectric matrix of silicon as a function of frequency. 
-        Panels (a) and (b) of this figure correspond to panels (a) and (b) of Fig.~\ref{fig2}, respectively. The 
-        technical details of the calculations are the same as those described in the caption of Fig.\ \ref{fig2}.
-        Solid blue lines: dielectric matrices calculated directly along the real frequency axis,
-        from  Fig.\ \ref{fig2}. Dotted, dashed, and dash-dotted red lines: dielectric matrices
-        obtained from the analytic continuation on the real axis using Pad\'e approximants of order
-        6, 11, and 26, respectively. The Pad\'e approximants were generated using dielectric
-        matrices calculated along the imaginary frequency axis on uniform frequency grids
-        in the range 0-50 eV. For instance, the 6-points approximant corresponds to calculations
-        at the imaginary frequencies of $0,10,\cdots,50$ eV.
-        }
-\end    {figure}
-
-
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=6cm]{fig4.eps}
-\end    {center}
-\caption{\label{fig4}
-        (Color online)
-        Real part ${\rm Re} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$   of the expectation value of the $GW$ self-energy for the first 
-        8 silicon eigenstates at $\k=0$. The solid blue lines are our S$GW$ results using the empirical
-        pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl} 
-        using the LDA and the PAW method. Panels (a)-(d) correspond to the states
-        $\Gamma^\prime_{2c}$ (Band 1), $\Gamma_{15c}$ (Bands 2-4), $\Gamma^\prime_{25v}$ (Bands 5-7), 
-        and $\Gamma_{1v}$ (Band 8), respectively. The energy axis is aligned with the top of the valence band.
-        The horizontal dotted lines indicate the calculated bare exchange contribution to the self-energy ${\rm Re} \langle n\k| \Sigma^{\rm ex}(\r,\rp;\w)|n\k\rangle$.
-        }
-\end    {figure}
-
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=6cm]{fig5.eps}
-\end    {center}
-\caption{\label{fig5}
-        (Color online)
-        Imaginary part ${\rm Im} \langle n\k| \Sigma(\r,\rp;\w)|n\k\rangle$ of the expectation value of the $GW$ self-energy for the first
-        8 silicon eigenstates at $\k=0$. The solid blue lines are our S$GW$ results using the empirical
-        pseudopotential method. The dashed red lines are from the first-principles calculation of Ref.\ \onlinecite{blochl}.
-        Panels (a)-(d) correspond to the states $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, and $\Gamma_{1v}$, respectively.
-        The energy axis is aligned with the top of the valence band.
-        For comparison, the vertical grey lines indicate the locations of the logarithmic singularities at $\E_{n\k}\pm\w_{\rm p}$ 
-        ($\w_{\rm p}$ being the plasmon energy) that would arise using a model plasmon-pole dielectric function.\cite{hl}
-        }
-\end    {figure}
-
-\begin  {figure}
-\begin  {center}
-\includegraphics[width=6cm]{fig6.eps}
-\end    {center}
-\caption{\label{fig6}
-        (Color online)
-        Expectation values of the quasiparticle spectral function $\langle n\k| A(\r,\rp;\w)|n\k\rangle$
-        for the first 8 silicon eigenstates at $\k=0$.
-        The solid blue lines are our S$GW$ results using the EPM, the dashed red lines are from the first-principles 
-        calculation of Ref.\ \onlinecite{blochl} using the LDA and the PAW method.
-        The expectation values have been calculated within the diagonal approximation of Eq.\ (\ref{eq.specfun}).
-        In each panel the sharp peak near the band extrema corresponds to a well-defined quasi-particle, while the two broad peaks
-        corresponds to plasmarons, i.e.\ electrons or holes coupled to a cloud of real plasmons.\cite{hl}
-        The suppression of one of the plasmaron peaks reflects the large imaginary parts of the self-energy in the
-        corresponding panels of Fig.\ \ref{fig5}. We point out the different vertical scale in panel (d).
-        }
-\end    {figure}
-
-% table: 1col, table* 2col
-\begin{table*}
-\caption{\label{tab.2}
-$GW$ quasi-particle excitation energies for the $\Gamma^\prime_{2c}$, $\Gamma_{15c}$, $\Gamma^\prime_{25v}$, $\Gamma_{1v}$
-states of silicon, as well as for the conduction band bottom of silicon close to the $X_{1c}$ state.
-We obtained the quasi-particle energies $E_{n\k}$ by solving the nonlinear equations
-$E_{n\k} = \E_{n\k} + {\rm Re} [ \Delta\Sigma_{n\k}(E_{n\k})]$, with $\Delta \Sigma_{n\k} = \langle n\k| \Sigma - V_{\rm xc} |n\k\rangle$.
-For completeness we also show the unperturbed eigenvalues calculated here within the EPM scheme,
-and those of Ref.\ \onlinecite{blochl} within the DFT/LDA scheme for comparison.
-It is interesting to observe that the value of the minimum band gap is not increased from
-the EPM value of $0.82$ eV when applying the $GW$ correction. In absolute terms the $X_{1c}$ state shifts upwards by 0.41 eV upon 
-the $GW$ correction, but this shift is compensated by the concurrent upward shift of the $\Gamma^\prime_{25v}$
-state by 0.44 eV.
-This problem relates to the uncertainty on the XC potential within the EPM formalism, as discussed in Sec.\ \ref{sec.5d}.
-\vspace{0.5cm}}
-\begin{tabular}{l r@{.}l  r@{.}l  r@{.}l r@{.}l r@{.}l c}
-\hline
-\hline
-   & \multicolumn{4}{c}{\hspace{-0.6cm} EPM/LDA eigenvalues}  &
-\multicolumn{7}{c}{Quasiparticle energies} \\
-   & \multicolumn{2}{c}{Present }  & \multicolumn{2}{c}{Ref.\ \onlinecite{blochl}} & 
-\multicolumn{2}{c}{\hspace{1cm}Present} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{hl86}} & \multicolumn{2}{c}{\hspace{0.3cm} Ref.\ \onlinecite{blochl}} &\hspace{1cm} Expt. \\
-\hline
-$\Gamma^\prime_{2c}$  &   3&89 & 3&23   & \hspace{1cm}  4&21 & \hspace{0.3cm}  4&08 &\hspace{0.3cm}   4&05 & \hspace{1cm}4.23$^{\rm a}$,4.1$^{\rm b}$\\
-$\Gamma_{15c}$        &   3&42 & 2&54   & \hspace{1cm}  3&53 & \hspace{0.3cm}  3&35 &\hspace{0.3cm}   3&09 & \hspace{1cm}3.40$^{\rm a}$,3.05$^{\rm b}$\\
-$\Gamma^\prime_{25v}$ &   0&00 & 0&00   & \hspace{1cm}  0&00 & \hspace{0.3cm}  0&00 &\hspace{0.3cm}   0&00 & \hspace{1cm}0\\
-$\Gamma_{1v}$         & -12&62 & -11&97 & \hspace{1cm}-13&23 & \hspace{0.3cm}-12&04 &\hspace{0.3cm} -11&85 & \hspace{1cm}-12.5$\pm$0.6$^{\rm a}$\\
-$X_{1c}$              &   0&82 & 0&55   & \hspace{1cm}  0&79 & \hspace{0.3cm}  1&29 &\hspace{0.3cm}   0&92 & \hspace{1cm} 1.17$^{\rm a}$\\
-\hline
-\hline
-$^{\rm a}$ Ref.\ \onlinecite{r35}.
-$^{\rm b}$ Ref.\ \onlinecite{r39}.
-\end{tabular}
-\end{table*}
 
 \section{Conclusions and outlook}\label{sec.conclusions}
 
