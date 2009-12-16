@@ -1,0 +1,531 @@
+%!PS-Adobe-2.0 EPSF-1.2
+%%Title: 
+%%Creator: Ghostscript ps2epsi from 
+%%CreationDate: 2009-10-29 19:20 fig5b.eps
+%%For:giustinogiustino giustino
+%%Pages: 1
+%%DocumentFonts: Helvetica-Extended Symbol Helvetica
+%%BoundingBox: 15 168 332 326
+%%EndComments
+%%BeginProlog
+save countdictstack mark newpath /showpage {} def /setpagedevice /pop load def
+%%EndProlog
+%%Page 1 1
+gsave
+  %/localdict  100 dict def
+  %localdict begin gsave currentpoint translate
+  %---------- initialize parameters -----------
+  
+  % global scaling factor
+  0.6 0.6 scale
+  
+  /cm {28.4528 mul} def
+
+  %90 rotate
+  %0 cm -21 cm  translate
+  /x0  {3 cm} def   % origine du dessin
+  /y0  {12 cm} def
+  /xdim {16 cm} def    % dimension du dessin
+  /ydim {7 cm} def
+  /title {()} def
+  /ycaption {()} def
+  /nxdiv   4 def
+  /nydiv    6 def
+  /nxsubdiv   1 def
+  /nysubdiv   1 def
+ /xmin  0    def
+ /xmax  2 def 
+ /ymin  0    def
+ /ymax  13 def
+ /xtick1 0  def
+ /xtick2  2  def
+ /ytick1 0 def
+ /ytick2 12 def
+  
+  /xtitle {x0 1 cm  add} def
+  /ytitle {ydim 2 cm add} def
+  /framelinewidth 1 def
+  /tickheight {0.2 cm} def
+  /ticklinewidth 0.5 def
+  /inside 0 def
+  /nxdigit 1  def
+  /nydigit 0  def
+  
+  /numfontsize      20              def 
+  /titlefontsize    32              def  
+  /captionsfontsize 30              def 
+  
+  /numfont      {/Helvetica    findfont numfontsize      scalefont} def
+  /titlefont    {/Helvetica    findfont titlefontsize    scalefont} def
+  /captionsfont {/Helvetica    findfont captionsfontsize scalefont} def
+  /symbolfont   {/Symbol       findfont captionsfontsize scalefont} def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-------------------------------------------------------------
+%     definition of the extended character set
+%-------------------------------------------------------------
+
+/reencsmalldict 12 dict def
+/ReEncodeSmall
+ {reencsmalldict begin
+   /newcodesandnames exch def
+   /newfontname exch def
+   /basefontname exch def
+   /basefontdict basefontname findfont def
+   /newfont basefontdict maxlength dict def
+
+  basefontdict
+   {exch dup /FID ne
+    {dup /Encoding eq
+     {exch dup length array copy
+       newfont 3 1 roll put}
+     {exch newfont 3 1 roll put}
+     ifelse
+    }
+    {pop pop}
+    ifelse
+   } forall
+
+  newfont /FontName newfontname put
+  newcodesandnames aload pop
+
+  newcodesandnames length 2 idiv
+   {newfont /Encoding get 3 1 roll put}
+   repeat
+
+  newfontname newfont definefont pop
+  end
+ } def
+
+/extendedvec [
+8#200  /Aacute     
+8#201  /Acircumflex    
+8#202  /Adieresis   
+8#203  /Agrave    
+8#204  /Aring         
+8#205  /Atilde         
+8#206  /Ccedilla  
+8#207  /Eacute     
+8#210  /Ecircumflex    
+8#211  /Edieresis      
+8#212  /Egrave    
+8#213  /Iacute        
+8#214  /Icircumflex  
+8#215  /Idieresis  
+8#216  /Igrave      
+8#217  /Ntilde     
+8#220  /Oacute         
+8#221  /Ocircumflex 
+8#222  /Odieresis    
+8#223  /Ograve         
+8#224  /Otilde        
+8#225  /Scaron
+8#226  /Uacute         
+8#227  /Ucircumflex    
+8#230  /Udieresis   
+8#231  /Ugrave     
+8#232  /Ydieresis
+8#233  /Zcaron
+8#234  /copyright
+8#235  /registered
+8#236  /trademark
+8#237  /logicalnot
+8#240  /minus
+8#321  /aacute     
+8#322  /acircumflex    
+8#323  /adieresis   
+8#324  /agrave    
+8#325  /aring         
+8#326  /atilde         
+8#327  /ccedilla  
+8#330  /eacute     
+8#331  /ecircumflex    
+8#332  /edieresis      
+8#333  /egrave    
+8#334  /iacute        
+8#335  /icircumflex  
+8#336  /idieresis  
+8#337  /igrave      
+8#340  /ntilde     
+8#344  /oacute         
+8#345  /ocircumflex 
+8#346  /odieresis    
+8#347  /ograve         
+8#354  /otilde        
+8#355  /scaron
+8#356  /uacute
+8#357  /ucircumflex    
+8#360  /udieresis   
+8#362  /ugrave     
+8#363  /ydieresis
+8#364  /zcaron
+ ] def
+% /Times-Roman /Times-Roman-Extended extendedvec
+/Helvetica /Helvetica-Extended extendedvec
+  ReEncodeSmall
+%--------------------------------------------------------------------------
+%/Times-Roman-Extended    findfont   20              scalefont setfont 
+%   (\204) show 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+ 
+ % --------- END of parameter initializations-------
+  
+  /str 30 string def
+  /xsheet { xmin sub xmax xmin sub div xdim mul x0 add } def
+  /ysheet { ymin sub ymax ymin sub div ydim mul y0 add } def
+  /yfact { ymax ymin sub div ydim  mul } def
+ /xtick1s xtick1 xsheet def
+ /xtick2s xtick2 xsheet def
+ /ytick1s ytick1 ysheet def
+ /ytick2s ytick2 ysheet def
+  /xinc xtick2s xtick1s sub nxsubdiv nxdiv mul div def
+  /yinc ytick2s ytick1s sub nysubdiv nydiv mul div def
+  /dx {xtick2 xtick1 sub nxdiv div} def
+  /dy {ytick2 ytick1 sub nydiv div} def
+    tickheight 2 div  /subtickheight exch def
+  
+ /cstring
+  %  centers a string at current position
+  % called by : string cshow
+  { stringwidth pop 2 div neg 0 rmoveto } def
+  
+ /cshow
+  % PRINTs a centered string at current position
+  % called by : string cshow
+  { gsave dup cstring show grestore} def
+  
+ /frame
+  % draws a frame of size (xdim,ydim) with origin
+  % (x0,y0) with linewidth framelinewidth
+  { newpath x0 y0 moveto
+   0 ydim     rlineto xdim     0 rlineto
+   0 ydim neg rlineto xdim neg 0 rlineto
+   closepath framelinewidth setlinewidth stroke }def
+  
+ /frameclip
+  % clips a frame of size (xdim,ydim)                   with origin (x0,y0)
+  { newpath
+   x0 inside add y0 inside add moveto
+   0     ydim 2 inside mul sub rlineto
+   xdim 2 inside mul sub    0  rlineto
+   0    ydim 2 inside mul sub neg  rlineto
+   xdim 2 inside mul sub neg   0  rlineto
+   closepath clip } def
+  
+ /ticks
+  % draws ticks of height tickheight and linewidth      ticklinewidth
+  % to divide the axes in nxdiv and nydiv divisions,
+  % and subticks of height tickheight/2                 to divide each interval
+  % in nxsubdiv and nysubdiv subintervals
+  { ticklinewidth setlinewidth newpath
+  xtick1s xinc nxsubdiv mul  sub y0 moveto
+    0 tickheight rlineto
+    0 ydim tickheight 2 mul sub rmoveto
+    0 tickheight rlineto
+    0 ydim neg rmoveto
+  1 1 nxdiv 1 add {
+    1 1 nxsubdiv 1 sub {
+     xinc 0 rmoveto 0 subtickheight rlineto
+     0 ydim tickheight sub rmoveto 
+     0 subtickheight rlineto
+     0 ydim neg rmoveto } for
+    xinc 0 rmoveto 0 tickheight rlineto
+    0 ydim tickheight 2 mul sub rmoveto
+    0 tickheight 
+%  rmoveto
+rlineto
+    0 ydim neg rmoveto } for
+  x0 ytick1s yinc nysubdiv mul  sub  moveto
+    tickheight 0 rlineto
+    xdim tickheight 2 mul sub 0 rmoveto
+    tickheight 0 rlineto  xdim neg 0 rmoveto
+  1 1 nydiv 1 add {
+    1 1 nysubdiv 1 sub {
+     0 yinc rmoveto  subtickheight 0 rlineto
+     xdim tickheight sub 0 rmoveto
+     subtickheight 0 rlineto
+     xdim neg 0 rmoveto } for
+    0 yinc rmoveto
+    tickheight 0 
+   rlineto
+   %rmoveto
+    xdim tickheight 2 mul sub 0 rmoveto
+    tickheight 0 
+   rlineto
+   %rmoveto
+    xdim neg 0 rmoveto } for
+  stroke } def
+  
+ /tr {
+  % round a number to ndigit decimal digits
+  % called by : number ndigits tr
+  /ndigit exch def  ndigit {10 mul} repeat
+  round cvi  ndigit {10 div} repeat } def
+  
+ /scales
+  % draws scales on x and y axes using numfont at size numfontsize
+  {xtick1s y0 numfontsize 1.2 mul sub moveto
+   /x xtick1 def
+  1 1 nxdiv 1 add {
+    gsave numfont setfont
+    x nxdigit tr str
+    cvs dup stringwidth pop 2 div neg 0
+    rmoveto 
+  show 
+grestore
+    xinc nxsubdiv mul 0 rmoveto
+    x dx add  /x exch def } for
+  x0 numfontsize 0.5 mul sub
+  ytick1s numfontsize 0.3 mul sub  moveto
+  /y ytick1 def
+  1 1 nydiv 1 add {
+    gsave
+    numfont setfont
+    y nydigit tr
+    str cvs dup stringwidth pop neg 0 rmoveto 
+ show
+    grestore
+    0 yinc nysubdiv mul rmoveto
+    y dy add  /y exch def } for
+  }def
+  
+/captions
+  % WRITE captions on x and y axes and title
+  {gsave
+   captionsfont setfont
+   x0 xdim 2 div add
+   y0 numfontsize 3 mul sub moveto
+  /xcaption {()} def
+   xcaption cstring
+/Helvetica-Extended findfont   22              scalefont setfont
+   -1.8 cm .1 cm rmoveto
+  (q  ( 2   /a )) show
+
+/Symbol findfont   22              scalefont setfont
+  -1.68  cm 0.03 cm rmoveto
+  (p) show
+
+/Symbol findfont  22              scalefont setfont
+   0 xsheet 0 ysheet moveto
+   -1.5 cm 1.3 cm rmoveto
+   90 rotate
+  (e    (   ,w = 0)) show
+/Helvetica-Extended findfont   22              scalefont setfont
+-2.73  cm 0.01 cm rmoveto
+  (q) show
+/Helvetica-Extended findfont   16              scalefont setfont
+-1.4  cm -0.1 cm rmoveto
+  (00) show
+
+
+/Symbol findfont  22              scalefont setfont
+  %(S(w)) show
+/Helvetica findfont   22              scalefont setfont
+%  (   (meV)) show
+   -90 rotate
+   x0 y0 moveto
+   xtitle ytitle rmoveto
+  title cstring
+/Helvetica    findfont   32              scalefont setfont
+   ( ) show
+   grestore } def
+  
+ /circle
+  % draws a circle of radius rad at position (x,y) in real units
+  {1.2 setlinewidth
+    /rad {0.10 cm} def
+   newpath rad 0 360 arc stroke } def
+  
+ /filledcircle
+  % draws a circle of radius rad at position (x,y)        in real units
+  {.5 setlinewidth
+    /rad {0.05 cm} def
+   newpath rad 0 360 arc closepath fill } def
+ 
+ /filledcircle2
+  % draws a circle of radius rad at position (x,y)        in real units
+  {.5 setlinewidth
+    /rad {0.03 cm} def
+   newpath rad 0 360 arc closepath fill } def
+ 
+ /square
+  % draws a square at position (x,y) in real units
+  {.5 setlinewidth
+    /side {0.2 cm} def
+   newpath moveto side 2 div neg dup rmoveto
+   side     0 rlineto  0 side     rlineto
+   side neg 0 rlineto  0 side neg rlineto
+   closepath stroke } def
+  
+ /filledsquare
+  % draws a filled square at position (x,y) in real units
+  {.5 setlinewidth
+    /side {0.1  cm} def
+   newpath moveto side 2 div neg dup rmoveto
+   side     0 rlineto  0 side     rlineto
+   side neg 0 rlineto  0 side neg rlineto
+   closepath fill } def
+  
+ /haxis
+  { /yr exch def
+   1.0 setlinewidth
+   newpath x0 yr ysheet moveto
+   xdim  0 rlineto  currentpoint
+   stroke 0.5 setlinewidth } def
+  
+ /lharrow
+  % draws an arrow at position (x,y) in real units
+  { .5 setlinewidth
+  /side 0.4 cm def
+   newpath moveto side 0 rmoveto  currentpoint
+    1.3 side mul  0.3 side mul rlineto
+   -0.3 side mul -0.3 side mul rlineto
+    0.3 side mul -0.3 side mul rlineto
+   lineto closepath   fill } def
+ 
+ /rharrow
+  % draws an arrow at position (x,y) in real units
+  { .5 setlinewidth
+  /side 0.4 cm def
+   newpath moveto side 0 rmoveto  currentpoint
+   -1.3 side mul  0.3 side mul rlineto
+    0.3 side mul -0.3 side mul rlineto
+   -0.3 side mul -0.3 side mul rlineto
+   lineto closepath   fill } def
+ 
+ /errorbar
+  % draws the error bars
+  { /err exch def
+  0.5 setlinewidth newpath
+  exch xsheet exch ysheet moveto
+  0.1 cm err yfact rmoveto -0.2 cm 0 rlineto
+  0 err 2 mul yfact neg rmoveto
+  0.2 cm 0 rlineto -0.1 cm 0 rmoveto
+  0 err yfact 2 mul rlineto
+  stroke } def
+  
+ /draw_curve
+  % draws a piece of curve
+  { /count exch def
+  newpath exch xsheet exch ysheet moveto
+  count {exch xsheet exch ysheet lineto} repeat
+  stroke } def
+
+
+0 setgray
+
+  frame 
+  scales
+  captions
+  frameclip
+  ticks
+
+frame
+
+
+/Helvetica-Extended    findfont 22             scalefont setfont
+0 0 0 setrgbcolor
+1.3 xsheet 6 ysheet moveto
+(Ref. 51) show
+1.3 xsheet 7.5 ysheet moveto
+(Present) show
+
+1 0 0 setrgbcolor
+[8 3] 0 setdash
+1.0 6.4
+1.25 6.4
+1 draw_curve
+0 0 1 setrgbcolor
+[] 0 setdash
+1.0 7.8
+1.25 7.8
+1 draw_curve
+
+
+
+[] 0 setdash
+
+/Helvetica-Extended    findfont  20              scalefont setfont
+0 0 1 setrgbcolor
+0.13 -160
+1 {exch xsheet exch ysheet 0 0 1 setrgbcolor filledcircle} repeat
+0.19 xsheet -163 ysheet moveto
+(expt) show
+
+0 0 1 setrgbcolor
+0.13 -180
+1 {exch xsheet exch ysheet 0 0 1 setrgbcolor circle} repeat
+0.19 xsheet -183 ysheet moveto
+(theory) show
+
+  0.001 11.51232 
+  0.010 11.48643
+  0.030 11.46322
+  0.050 11.37503
+  0.100 10.97777
+  0.150 10.46029
+  0.200 9.84936
+  0.300 8.45022
+  0.4 7.12145
+  0.500 5.98446
+  0.6 5.06776
+  0.7 4.34344
+  0.750 4.04118
+  0.8 3.77277
+  0.9 3.32250
+  1.000 2.96330
+  1.1 2.67445
+  1.2 2.44008
+  1.3 2.24796
+  1.4 2.08966
+  1.500 1.95788
+  1.6 1.84735
+  1.7 1.75379
+  1.8 1.67341
+  1.9 1.60352
+  2.000 1.54168
+25 draw_curve
+
+
+[8 3 ] 0 setdash
+1 0 0 setrgbcolor
+    0.000000   11.327542
+    0.011505   11.327485
+    0.046021   11.289474
+    0.080537   11.080409
+    0.126558   10.719298
+    0.182167   10.054094
+    0.239693    9.217836
+    0.281879    8.590643
+    0.331735    7.887427
+    0.379674    7.241228
+    0.433365    6.614035
+    0.487057    6.024854
+    0.559923    5.302632
+    0.598274    4.979532
+    0.657718    4.485380
+    0.747843    3.896199
+    0.880153    3.250000
+    0.981783    2.812865
+    1.112176    2.375731
+    1.221477    2.071637
+    1.321189    1.862573
+    1.440077    1.691520
+    1.562800    1.577485
+    1.677852    1.482456
+    1.794823    1.406433
+    1.896453    1.349415
+    1.971237    1.311404
+    2.000000    1.311404
+27 draw_curve
+
+grestore
+
+showpage
+%%Trailer
+cleartomark countdictstack exch sub { end } repeat restore
+%%EOF
