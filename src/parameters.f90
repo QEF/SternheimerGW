@@ -27,7 +27,9 @@
   ! PLANE WAVES CUTOFF
   !
 !  real(dbl), parameter :: ecutwfc = 20.0  ! balde/tosatti: 2 Ry
-  real(dbl), parameter :: ecutwfc = 5.0  ! balde/tosatti: 2 Ry
+!  real(dbl), parameter :: ecutwfc = 5.0  ! balde/tosatti: 2 Ry
+  real(dbl), parameter :: ecutwfc = 3.0  ! switched 26/10/2010 HL
+!  real(dbl), parameter :: ecutwfc = 5.0  ! switched 27/10/2010 HL Didn't converge in screened coul yesterday.
   ! energy cutoff for wave functions in k-space ( in Rydbergs )
   ! 5 Ry and 40 Ry give essentially the same eps^-1(0,0,q)
   ! If I use 2 Ry it bombs out since we shift the G-sphere
@@ -43,6 +45,7 @@
   !
   integer, parameter :: nk0 = 1
   integer, parameter :: nq1 = 6, nq2 = 6, nq3 = 6
+  !integer, parameter :: nq1 = 3, nq2 = 3, nq3 = 3 !HL 20/10/2010
   integer, parameter :: q1 = 1, q2 = 1, q3 = 1    
   integer, parameter :: nq = nq1 * nq2 * nq3
   integer, parameter :: nksq = nq, nks = 2 * nksq  
@@ -69,7 +72,7 @@
   ! number of previous iterations used in modified Broyden mixing
   real(DP), parameter :: tr2_ph = 1.d-10
   ! convergence threshold for dvscf
-! real(DP), parameter :: tr_cgsolve = 1.0d-8 
+! real(DP), parameter :: tr_cgsolve = 1.0d-8 !HL 20/10/2010
   real(DP), parameter :: tr_cgsolve = 1.0d-10
   ! threshold for the iterative solution of the linear system
   ! with thresh>1d-5 the potential does not converge
