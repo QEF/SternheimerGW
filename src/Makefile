@@ -1,11 +1,18 @@
 # x61
-F90 = ifort -O3 
+#F90 = ifort -O3 
 #F90FLAGS = -g -traceback -fp-stack-check -check all -fpe0 -warn all
-F90FLAGS = -g -traceback -fp-stack-check -check all -fpe0
-LDFLAGS = -L/users2/lambert/espresso-4.2.1/install -lmkl_em64t_nothread -L/users2/lambert/libs/fftw-2.1.5/fftw/.libs -lfftw #problem in coulomb not converging... possibly mkl related?
+#F90FLAGS = -g -traceback -fp-stack-check -check all -fpe0
+#LDFLAGS = -L/users2/lambert/espresso-4.2.1/install -lmkl_em64t_nothread -L/users2/lambert/libs/fftw-2.1.5/fftw/.libs -lfftw #problem in coulomb not converging... possibly mkl related?
 #LDFLAGS = -L/users2/lambert/libs -lblas -llapack -lfftw #switching to personal libraries for older QE
-CPP = cpp 
-CPPFLAGS = -P -traditional
+#CPP = cpp 
+#CPPFLAGS = -P -traditional
+
+# Kittel
+F90 = mpif90
+LDFLAGS = -L/home/lambert/espresso-4.2.1/install -L/opt/intel/Compiler/11.0/083/mkl/lib/em64t -lmkl_em64t_nothread -L/home/lambert/libs/fftw-2.1.5/fftw/.libs -lfftw
+CPP = cpp
+CPPFLAGS = -P -traditional -D__PARA -D__MPI -D__LAM -D__LINUX64
+
 
 # hbar
 
