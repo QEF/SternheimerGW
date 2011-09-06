@@ -12,7 +12,7 @@ SUBROUTINE q_points ( )
   USE kinds, only : dp
   USE io_global,  ONLY :  stdout, ionode
   USE disp,  ONLY : nqmax, nq1, nq2, nq3, x_q, nqs
-  USE disp,  ONLY : iq1, iq2, iq3
+  USE disp,  ONLY : iq1, iq2, iq3, wq
   USE output, ONLY : fildyn
   USE symm_base, ONLY : nsym, s, time_reversal, t_rev
   USE cell_base, ONLY : bg
@@ -22,7 +22,7 @@ SUBROUTINE q_points ( )
   integer :: i, iq, ierr, iudyn = 26
   logical :: exist_gamma, single_q
   logical, external :: is_equivalent
-  real(DP), allocatable, dimension(:) :: wq  
+  !real(DP), allocatable, dimension(:) :: wq  
 
   !
   !  calculate the Monkhorst-Pack grid
@@ -31,13 +31,13 @@ SUBROUTINE q_points ( )
   if( nq1 <= 0 .or. nq2 <= 0 .or. nq3 <= 0 ) &
        call errore('q_points','nq1 or nq2 or nq3 <= 0',1)
 
-  allocate (wq(nqmax))
+  allocate (wq(nq1*nq2*nq3))
   allocate (x_q(3,nqmax))
-
 
   call kpoint_grid( nsym, time_reversal, s, t_rev, bg, nqmax, &
                          0,0,0, nq1,nq2,nq3, nqs, x_q, wq )
-  deallocate (wq)
+  !HL added wq to gwcom so that I can use it in the final routine gw_product.
+  !deallocate (wq)
   !
   !  if a single q-point of the grid requested
   !

@@ -72,17 +72,12 @@ SUBROUTINE setup_nscf (xq)
   !
 
   INTEGER, EXTERNAL :: n_atom_wfc
-
   !
-
   IF ( .NOT. ALLOCATED( force ) ) ALLOCATE( force( 3, nat ) )
-
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
   !
-
   ethr= 1.0D-9 / nelec
-
   !
   ! ... variables for iterative diagonalization (Davidson is assumed)
   !
@@ -91,6 +86,7 @@ SUBROUTINE setup_nscf (xq)
   david = 4
   nbndx = david*nbnd
   natomwfc = n_atom_wfc( nat, ityp )
+
   !
 #ifdef __PARA
   IF ( use_para_diag )  CALL check_para_diag( nelec )
@@ -157,6 +153,9 @@ SUBROUTINE setup_nscf (xq)
 
   nkstot = nks_start
   xk(:,1:nkstot) = xk_start(:,1:nkstot)
+
+  !write(6,'(3f11.7)') xk(:,:)
+
   wk(1:nkstot)   = wk_start(1:nkstot)
 
   !

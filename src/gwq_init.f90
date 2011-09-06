@@ -10,23 +10,37 @@
 SUBROUTINE gwq_init()
 !----------------------------------------------------------------------------
   !
-  !     This subroutine computes the quantities necessary to describe the
-  !     local and nonlocal pseudopotential in the GW-q program.
+  !   THIS ROUTINE INITIALIZES K.E. = (k+G)**2 and VKB (kleinman-bylander projectors).
+  !     "This subroutine computes the quantities necessary to describe the
+  !     local and nonlocal pseudopotential in the GW program."
+  !
   !     In detail it computes:
-  !     0) initializes the structure factors
-  !     a0) compute rhocore for each atomic-type if needed for nlcc
   !     a) The local potential at G-G'. Needed for the part of the dynamic
   !        matrix independent of deltapsi.
+
   !     b) The local potential at q+G-G'. Needed for the second
   !        second part of the dynamical matrix.
+
   !     c) The D coefficients for the US pseudopotential or the E_l parame
   !        of the KB pseudo. In the US case it prepares also the integrals
   !        qrad and qradq which are needed for computing Q_nm(G) and
   !        Q_nm(q+G)
+
   !     d) The functions vkb(k+G) needed for the part of the dynamical matrix
   !        independent of deltapsi.
+
   !     e) The becp functions for the k points
+
   !     e') The derivative of the becp term with respect to a displacement
+
+  !     HL the only part of this routine that is still relevant for GW calculations
+  !     is the following:
+
+  !     0) initializes the structure factors
+
+  !     a0) compute rhocore for each atomic-type if needed for nlcc
+   
+  !     In particular we need to make sure that this vkb (k+q+G) is appropriate
   !     f) The functions vkb(k+q+G), needed for the linear system and the
   !        second part of the dynamical matrix.
   !
@@ -86,14 +100,12 @@ SUBROUTINE gwq_init()
   ALLOCATE( aux1( npwx*npol, nbnd ) )    
 
 !HL structure factors
-  DO na = 1, nat
 
+  DO na = 1, nat
      arg = ( xq(1) * tau(1,na) + &
              xq(2) * tau(2,na) + &
              xq(3) * tau(3,na) ) * tpi
-
      eigqts(na) = CMPLX( COS( arg ), - SIN( arg ) ,kind=DP)
-
   END DO
 
   !                 
@@ -143,11 +155,17 @@ SUBROUTINE gwq_init()
      !
      ! ... if there is only one k-point evc, evq, npw, igk stay in memory
      !
+
      IF ( nksq > 1 ) WRITE( iunigk ) npw, igk
+
      !
+
      IF ( lgamma ) THEN
+
      !
+
         npwq = npw
+
      !
      ELSE   
      !
@@ -175,55 +193,67 @@ SUBROUTINE gwq_init()
      !
      ! ... read the wavefunctions at k
      !
+
      CALL davcio( evc, lrwfc, iuwfc, ikk, -1 )
+
      !
      ! ... e) we compute the becp terms which are used in the rest of
      ! ...    the code
      !
+
      CALL calbec (npw, vkb, evc, becp1(ik) )
+
      !
      ! ... e') we compute the derivative of the becp term with respect to an
      !         atomic displacement i.e. equation B9
      !
-     DO ipol = 1, 3
-        aux1=(0.d0,0.d0)
-        DO ibnd = 1, nbnd
-           DO ig = 1, npw
-              aux1(ig,ibnd) = evc(ig,ibnd) * tpiba * ( 0.D0, 1.D0 ) * & 
-                              ( xk(ipol,ikk) + g(ipol,igk(ig)) )
-           END DO
-           IF (noncolin) THEN
-              DO ig = 1, npw
-                 aux1(ig+npwx,ibnd)=evc(ig+npwx,ibnd)*tpiba*(0.D0,1.D0)*& 
-                           ( xk(ipol,ikk) + g(ipol,igk(ig)) )
-              END DO
-           END IF
-        END DO
-        CALL calbec (npw, vkb, aux1, alphap(ipol,ik) )
-     END DO
+      DO ipol = 1, 3
+         aux1=(0.d0,0.d0)
+         DO ibnd = 1, nbnd
+            DO ig = 1, npw
+               aux1(ig,ibnd) = evc(ig,ibnd) * tpiba * ( 0.D0, 1.D0 ) * & 
+                               ( xk(ipol,ikk) + g(ipol,igk(ig)) )
+            END DO
+            IF (noncolin) THEN
+               DO ig = 1, npw
+                  aux1(ig+npwx,ibnd)=evc(ig+npwx,ibnd)*tpiba*(0.D0,1.D0)*& 
+                            ( xk(ipol,ikk) + g(ipol,igk(ig)) )
+               END DO
+            END IF
+         END DO
+         CALL calbec (npw, vkb, aux1, alphap(ipol,ik) )
+      END DO
+
      !
 
      IF ( .NOT. lgamma ) &
         CALL davcio( evq, lrwfc, iuwfc, ikq, -1 )
+
      !
      ! diagonal elements of the unperturbed Hamiltonian, 
      ! needed for preconditioning
      !
+
      do ig = 1, npwq
         g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
                        (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                        (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
      enddo
+
      aux1=(0.d0,0.d0)
+
      DO ig = 1, npwq
         aux1 (ig,1:nbnd_occ(ikk)) = g2kin (ig) * evq (ig, 1:nbnd_occ(ikk))
      END DO
+
+
      IF (noncolin) THEN
         DO ig = 1, npwq
            aux1 (ig+npwx,1:nbnd_occ(ikk)) = g2kin (ig)* &
                                   evq (ig+npwx, 1:nbnd_occ(ikk))
         END DO
      END IF
+
      DO ibnd=1,nbnd_occ(ikk)
         eprec (ibnd,ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
      END DO

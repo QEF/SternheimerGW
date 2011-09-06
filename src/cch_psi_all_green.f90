@@ -75,9 +75,13 @@ subroutine cch_psi_all_green (n, h, ah, e, cw, ik, m)
   !write(6,*) cw
   do ibnd = 1, m
      do ig = 1, n
-         ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd)) 
-        !ah (ig, ibnd)= hpsi(ig, ibnd) - cw*(h(ig,ibnd)) 
-        !ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd)
+        ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd))
+
+!         ah (ig, ibnd)= hpsi(ig, ibnd) - (e(ibnd)- cw)*spsi(ig, ibnd)
+!         ah (ig, ibnd)= hpsi(ig, ibnd) - cw*spsi(ig, ibnd)
+!         ah (ig, ibnd)= hpsi(ig, ibnd) - cw*(h(ig,ibnd)) 
+!         ah (ig, ibnd)= hpsi(ig, ibnd) - e(ibnd)*spsi(ig, ibnd)
+
      enddo
   enddo
 
@@ -100,7 +104,7 @@ subroutine cch_psi_all_green (n, h, ah, e, cw, ik, m)
 
   use_projector = .false.
   IF (use_projector) then
-      write(6,'("Using projectors")')
+      !write(6,'("Using projectors")')
 
       ikq = ikqs(ik)
       ps (:,:) = (0.d0, 0.d0)
@@ -121,9 +125,11 @@ subroutine cch_psi_all_green (n, h, ah, e, cw, ik, m)
       call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
            npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
       spsi(:,:) = hpsi(:,:)
-
+      !Although there is no projector I think we still need the calbec to apply
+      !the non-local components of the pseudopotential... 
       !
-      !    And apply S again
+      !And apply S again
+      !HL anyway we shall see tomorrow!
       !
 
       call calbec (n, vkb, hpsi, becp, m)
@@ -140,7 +146,7 @@ subroutine cch_psi_all_green (n, h, ah, e, cw, ik, m)
             enddo
          enddo
       ENDIF
-  ENDIF
+  ENDIF !END use projector.
 
   deallocate (spsi)
   deallocate (hpsi)

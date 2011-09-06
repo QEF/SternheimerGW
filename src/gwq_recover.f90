@@ -38,7 +38,7 @@ subroutine gwq_recover
   !   30         dynmatrix    all previous, dyn and zstarue are available.
 
   !
-  ! The logic of the gwonon code recover is the following:
+  ! The logic of the phonon code recover is the following:
   ! The recover variable is read from input and never changed. If it is
   ! false it disables completely the recover.
   ! The control of the code is given by the arrays:
@@ -83,7 +83,7 @@ subroutine gwq_recover
   !    be available in the directory gwsave, so this routine reads the
   !    appropriate files and reset comp_irr and done_irr if appropriate.
   !
-  !    NB: The restart of the electron-gwonon part is not available yet.
+  !    NB: The restart of the electron-phonon part is not available yet.
   !
   USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout

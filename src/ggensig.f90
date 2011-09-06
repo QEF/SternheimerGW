@@ -68,7 +68,6 @@
   CALL clean_pw( .FALSE. )
 
   !From now on, work only on the _gw virtual directory
-  !Somehow this statement got deleted.
 
   tmp_dir=tmp_dir_gw
 
@@ -126,12 +125,15 @@
   !
   ! total number of real-space grid points
   !
+
   nrsig = nr1sig * nr2sig * nr3sig
+
   write(6,'(4x,"")')
   write(6,'(4x,"ngmsig = ",i10)') ngmsig
   write(6,'(4x,"nr1sig = ",i10)') nr1sig
   write(6,'(4x,"nr2sig = ",i10)') nr2sig
   write(6,'(4x,"nr3sig = ",i10)') nr3sig
   write(6,'(4x,"nrsig  = ",i10)') nrsig
+  
   !
   END SUBROUTINE ggensig

@@ -92,7 +92,7 @@ subroutine h_psiq (lda, n, m, psi, hpsi, spsi)
      END IF
      call stop_clock ('firstfft')
      !
-     !   and then the product with the potential vrs = (vltot+vr) on the smoo
+     !   and then the product with the potential vrs = (vltot+vr) on the smooth grid
      !
      if (noncolin) then
         if (domag) then

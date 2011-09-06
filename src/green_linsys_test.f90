@@ -1,15 +1,15 @@
 SUBROUTINE green_linsys_test(ik0, iq)
 
-! SGW: call green_linsys ( vr, g2kin, k0mq, nwgreen, wgreen, igstart, igstop, ik0, iq )
-! "In order to calculate the analytic component G^{A} we consider G^{A}(r,r',w) as a
-! parametric function of the first space variable and of the frequency: G^{A}_[r,w](r') 
-! G^{A} = \sum_{n}\psi_n(r)\psi_n(r')/(w - ev + idelta)    (16)
-! (H - w^{+})G^{A}_[r,w] = -\delta_[r](r')                 (18)
-! let n -> nk so we are dealing with bloch states and expand the functions in terms of
-! the plane waves: 
-! G_[r,w]^{A}(r') = \frac{1}{(N_{k}\Omega)}\sum_{kg}g^{A}_[k,\omega,G](\r')e^{-i(k + G)\r} e^{ik\r'}
-! The equation of motion then becomes:
-! (H_{k} - \omega^{+})g_{[k,G,\omega]}(G') = -\delta_{GG'}
+!SGW: call green_linsys ( vr, g2kin, k0mq, nwgreen, wgreen, igstart, igstop, ik0, iq )
+!"In order to calculate the analytic component G^{A} we consider G^{A}(r,r',w) as a
+!parametric function of the first space variable and of the frequency: G^{A}_[r,w](r')
+!G^{A} = \sum_{n}\psi_n(r)\psi_n(r')/(w - ev + idelta)    (16)
+!(H - w^{+})G^{A}_[r,w] = -\delta_[r](r')                 (18)
+!let n -> nk so we are dealing with bloch states and expand the functions in terms of
+!the plane waves: 
+!G_[r,w]^{A}(r') = \frac{1}{(N_{k}\Omega)}\sum_{kg}g^{A}_[k,\omega,G](\r')e^{-i(k + G)\r} e^{ik\r'}
+!The equation of motion then becomes:
+!(H_{k} - \omega^{+})g_{[k,G,\omega]}(G') = -\delta_{GG'}
 
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
@@ -106,7 +106,7 @@ SUBROUTINE green_linsys_test(ik0, iq)
         ci = (0.0d0, 1.0d0)
         eta = 0.04d0
 
-!convert freq array generated in freqbins into rydbergs.
+!Convert Freq array generated in freqbins into rydbergs.
         w_ryd(:) = wgreen(:)/RYTOEV
 
 !       write(6,*) nwgreen
@@ -139,10 +139,9 @@ CALL start_clock('greenlinsys')
 ! i.e. if we want to look at a specific k-point we need to know where it sits in that array.
 ! for now I am only interested in k = Gamma, and therefore k-q will always be in the second spot in all these arrays.
 ! ikks(ik) = 2*ik. ikqs(ik) = 2*ik. ik=1=Gamma.
+
        ikq = 2
-
        call davcio (evq, lrwfc, iuwfc, ikq, - 1)
-
 
        do ig = 1, npwq
            g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
@@ -240,34 +239,45 @@ ENDDO !enddo on iw
 !Again need to zero eigenvalues here. 
 
   et(:,ikq) = et(:,ikq) - (6.58D0/13.605)
-  
-  ig1 = 1
-  ig2 = 1
-  gr_exp = (0.0d0, 0.0d0)
+
+  !ig1 = 1
+  !ig2 = 1
+  !gr_exp = (0.0d0, 0.0d0)
   !WRITE(6, '("Summing over nbands", i4)')nbnd
-  do ibnd = 5, nbnd
-    if (ibnd.le.4) then
-      delta =  1.d0
-    else
-      delta = -1.d0
-    endif
-    do iw = 1, nwgreen
-     gr_exp(iw) = gr_exp(iw) + evq(ig1,ibnd)*conjg(evq(ig2,ibnd)) &
-                / ( w_ryd(iw) - et(ibnd,ikq) - ci * delta * eta)
-    enddo
-
-!  if (ibnd.lt.4) write(6,'(3f15.10)') evq(ig1, ibnd), conjg( evq(ig2,ibnd) )
-   write(6,'(3f15.10)') evq(ig1, ibnd), conjg( evq(ig2,ibnd) )
-!  write(6,'(3f15.10)') evq(ig1,ibnd), conjg(evq(ig2,ibnd))
-  enddo
-!  gr_exp = 2.d0 * gr_exp ! spin
-   gr_exp = gr_exp ! spin variable already include in QuesPress
-
+  green(:,:) = (0.0d0, 0.0d0)
+  gr_exp(:) = (0.0d0, 0.0d0)
+  
+ !write(6,*) evq(30,:)
   do iw = 1, nwgreen
-    write(6,'(3f15.10)') wgreen(iw), gr_exp(iw)
+    do ig = 7, 7
+      do igp = 2, 2
+        do ibnd = 1, nbnd
+           if (ibnd.le.4) then
+             !delta = 1.d0
+             delta = -1.d0 ! Only want to look at the Analytic part in the upper half plane.
+           else
+            delta = -1.d0
+           endif
+
+          gr_exp(iw) = gr_exp(iw) + evq(ig,ibnd)*conjg(evq(igp,ibnd)) &
+                         / ( w_ryd(iw) - et(ibnd,ikq) - ci * delta * eta)
+
+          ! green(ig,igp) = green(ig,igp) + evq(ig,ibnd)*conjg(evq(igp,ibnd)) &
+          !    / ( w_ryd(iw) - et(ibnd,ikq) - ci * delta * eta)
+
+        enddo
+        !green_linsys does not include this factor of two.
+        !green(ig,igp) = 2.0d0 * gr_exp(iw) 
+        green(ig,igp) = gr_exp(iw) 
+
+      enddo
+    enddo
+     write(6,'(3f15.10)') wgreen(iw), 2.0d0*gr_exp(iw)
+    !write(6,'(3f15.10)') wgreen(iw), green(1,1)
+    rec0 = (iw-1) * 1 * nqs + (ik0-1) * nqs + (iq-1) + 1
+    write ( iungreen, rec = rec0, iostat = ios) green
   enddo
-STOP
-CALL stop_clock('greenlinsys')
+  CALL stop_clock('greenlinsys')
+  STOP
 RETURN
 END SUBROUTINE green_linsys_test
-

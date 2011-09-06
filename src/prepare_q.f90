@@ -73,9 +73,7 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
      !Check if it is lgamma
 
      !HL need to find a smooth way of setting xq(1) = 0.01 for q->0 calculations 
-
      if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = 0.01
-
      lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
 
      !

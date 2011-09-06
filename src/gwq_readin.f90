@@ -35,7 +35,7 @@ SUBROUTINE gwq_readin()
                             trans, reduce_io, tr2_gw, niter_gw,       &
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
-                            ext_recover, ext_restart, u_from_file, modielec
+                            ext_recover, ext_restart, u_from_file, modielec, eta
                            !elph 
 
   USE save_gw,       ONLY : tmp_dir_save
@@ -88,7 +88,7 @@ SUBROUTINE gwq_readin()
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, fpol, asr, lrpa, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, ecutsig, nbnd_sig
+                       start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -152,7 +152,7 @@ SUBROUTINE gwq_readin()
   !
   ! ... set default values for variables in namelist
   !
-  tr2_gw       = 1.D-12
+  tr2_gw       = 1.D-10
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
   alpha_mix(1) = 0.7D0
@@ -164,7 +164,6 @@ SUBROUTINE gwq_readin()
   iverbosity   = 0
   trans        = .TRUE.
   lrpa         = .FALSE.
-  modielec     = .FALSE.
   lnoloc       = .FALSE.
   epsil        = .FALSE.
   zeu          = .TRUE.
@@ -192,14 +191,17 @@ SUBROUTINE gwq_readin()
   last_irr     = -1000
   start_q      = 1
   last_q       =-1000
-  ecutsig      = 1.1
+  ecutsig      = 1.1 
+ !ecutsig      = 2.2
   nbnd_sig     = 8
+  modielec     = .FALSE.
+  eta          = 0.04
   !
   ! ...  reading the namelist inputgw
   !
   IF (ionode) READ( 5, INPUTGW, IOSTAT = ios )
 
-  CALL mp_bcast(ios, ionode_id)
+   CALL mp_bcast(ios, ionode_id)
   !
    CALL errore( 'gwq_readin', 'reading inputgw namelist', ABS( ios ) )
   !

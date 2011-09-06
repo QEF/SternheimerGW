@@ -67,14 +67,16 @@ IF ( ldisp ) THEN
 !HL obsolete name for output file.
 !   fildyn = TRIM( auxdyn ) // TRIM( int_to_char( iq ) )
 
-     IF ( x_q(1,iq) == 0.D0 .AND. x_q(2,iq) == 0.D0 .AND. x_q(3,iq) == 0.D0 ) x_q(1,iq) = 0.01d0
+!   HL Don't need to reset gamma!  
+     IF ( x_q(1,iq) == 0.D0 .AND. x_q(2,iq) == 0.D0 .AND. x_q(3,iq) == 0.D0 ) x_q(1,iq) = 0.00d0
+
      xq(:)  = xk (:, ik) - x_q(:,iq)
 
      lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
- 
-     epsil = .FALSE.
-     zue   = .FALSE.
-     zeu   = .FALSE.
+
+     !epsil = .FALSE.
+     !zue   = .FALSE.
+     !zeu   = .FALSE.
 
 ENDIF
 
@@ -96,16 +98,18 @@ ENDIF
   !
   ! ... In the case of q != 0, we make first a non selfconsistent run
   !
-  !HL this setup_pw is obsolete...
-  setup_pw = (.NOT.lgamma.OR.modenum /= 0).AND..NOT. done_bands
+  !HL this setup_pw and do bands are obsolete, they were for checking
+  !that certain phonon modes had been computed etc.  
+  !setup_pw = (.NOT.lgamma.OR.modenum /= 0).AND..NOT. done_bands
 
   do_band=.FALSE.
-  DO irr=start_irr, MIN(ABS(last_irr),rep_iq(iq))
-     IF (done_rep_iq(irr,iq) /= 1) THEN
-        do_band=.TRUE.
-        EXIT
-     ENDIF
-  ENDDO
+
+  !DO irr=start_irr, MIN(ABS(last_irr),rep_iq(iq))
+  !   IF (done_rep_iq(irr,iq) /= 1) THEN
+  !      do_band=.TRUE.
+  !      EXIT
+  !   ENDIF
+  !ENDDO
 
 !There are two special cases. When start_irr=0 and last_irr=0 we generate only
 !the displacement patterns, and do not calculate the bands. If this q
@@ -120,7 +124,7 @@ ENDIF
   setup_pw = .TRUE.
   do_band = .TRUE.
 
-  WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
+  WRITE( stdout, '(/,5X,"Calculation of k-q = ",3F12.7)') xq
   WRITE(6,*) setup_pw, do_band, lgamma
 
   RETURN

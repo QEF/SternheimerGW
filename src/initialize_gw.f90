@@ -31,7 +31,7 @@ SUBROUTINE initialize_gw()
         ikks(ik) = 2 * ik - 1
         ikqs(ik) = 2 * ik
      ENDDO
-     !
+  !
   !
   !  Save again the status of the run because now the bands have been
   !  calculated
@@ -55,15 +55,15 @@ SUBROUTINE initialize_gw()
   !HL want to cutdown on ouput for now  
   !CALL gwq_summary()
   
-  !  Open Relevant GW files
-  !  Moving this to beginning of program
+  ! Open Relevant GW files
+  ! Moving the coulomb etc to beginning of programme.
 
   CALL openfilq()
   
   !  Initialize all quantities which do not depend on the 
   !  linear response to the perturbation
   !  All necessary quantities to describe the local and nonlocal 
-  !  pseudopotential in the GW-q program.
+  !  pseudopotential in the GW program.
   !
   CALL gwq_init()
   !

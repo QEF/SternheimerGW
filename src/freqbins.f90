@@ -24,31 +24,28 @@ SUBROUTINE freqbins()
   LOGICAL  :: foundp, foundm
   REAL(DP) :: zero, w0mw, w0pw
   INTEGER  :: iw, iw0, iwp, iw0mw, iw0pw
- 
 
-  !wsigmamin = -100.d0 
-  !wsigmamax = 100.d0 
-  wsigmamin = -80.d0 
-  wsigmamax = 80.d0 
- ! deltaw = .25 
-  deltaw = 1 
-  wcoulmax = 90.d0
-  
-  zero = 0.0d0
+   wsigmamin = -100.d0 
+   wsigmamax = 100.d0 
+  !wsigmamin = -40.d0 
+  !wsigmamax = 40.d0 
+  !deltaw = .25 
+   deltaw = 0.5d0
+   wcoulmax = 100.d0
+   zero = 0.0d0
 
-  wgreenmin = wsigmamin-wcoulmax
-  wgreenmax = wsigmamax+wcoulmax
+   wgreenmin = wsigmamin-wcoulmax
+   wgreenmax = wsigmamax+wcoulmax
 
-  nwalloc = 1 + ceiling( (wgreenmax-wgreenmin) / deltaw )
+   nwalloc = 1 + ceiling( (wgreenmax-wgreenmin) / deltaw )
 
-  allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc) )
+   allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc) )
 
 !Again fortran weirdly permissive what the hell does it think zero is? Always use IMPLICIT NONE. 
 !  wcoul = zero
 !  wgreen = zero
 !  wsigma = zero
 
- 
    wcoul = zero
    wgreen = zero
    wsigma = zero

@@ -52,7 +52,7 @@ subroutine allocate_gwq
   implicit none
   INTEGER :: ik, ipol
   !
-  !  allocate space for the quantities needed in the phonon program
+  !   FOR LGAMMA
   if (lgamma) then
      !
      !  q=0  : evq and igkq are pointers to evc and igk
@@ -60,9 +60,9 @@ subroutine allocate_gwq
      evq  => evc
      igkq => igk
   else
-  !
-  !  q!=0 : evq, igkq are allocated and calculated at point k+q
-  !
+ !
+ !q!=0 : evq, igkq are allocated and calculated at point k+q
+ !
   allocate (evq ( npwx*npol , nbnd))    
   allocate (igkq ( npwx))    
 

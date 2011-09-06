@@ -16,10 +16,10 @@ USE mp_global, ONLY: intra_pool_comm
 USE mp,        ONLY: mp_sum
 
 implicit none
+
 ! first I/O variables
 
 logical :: tprec
-
 
 integer :: ndmx, & ! input: the maximum dimension of the vectors
              ndim, & ! input: the actual dimension of the vectors
@@ -27,6 +27,7 @@ integer :: ndmx, & ! input: the maximum dimension of the vectors
              nbnd, & ! input: the number of bands
              npol, & ! input: number of components of the wavefunctions
              ik      ! input: the k point
+
 real(DP) :: &
              anorm,   & ! output: the norm of the error in the solution
              h_diag(ndmx*npol,nbnd), & ! input: an estimate of ( H - \epsilon )
@@ -35,13 +36,19 @@ real(DP) :: &
   complex(DP) :: &
              dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
              d0psi (ndmx*npol, nbnd)   ! input: the known term
+
   logical :: conv_root ! output: if true the root is converged
+
   external h_psi       ! input: the routine computing h_psi
+
   external cg_psi      ! input: the routine computing cg_psi
+
   !
   !  here the local variables
   !
+
 !HL upping iterations to get convergence with green_linsys?
+
    integer, parameter :: maxter = 200
   !integer, parameter :: maxter = 600
   ! the maximum number of iterations
@@ -61,6 +68,7 @@ real(DP) :: &
 
 !HL need to introduce gt tt ht htold for BICON
 ! also gp grp for preconditioned systems
+
   complex(DP), allocatable :: gt (:,:), tt (:,:), ht (:,:), htold (:,:)
   complex(DP), allocatable :: gp (:,:), gtp (:,:)
   complex(DP) ::  dcgamma, dclambda, alpha, beta
@@ -292,7 +300,6 @@ real(DP) :: &
 
           call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
           if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd) )
-
           a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
           c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
           alpha = a(ibnd) / c(ibnd)

@@ -20,7 +20,7 @@ subroutine bcast_gw_input ( )
   USE control_gw, ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
                          niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
-                         lgamma
+                         lgamma, eta
  
    !HL elph out of control_ph
 
@@ -36,6 +36,7 @@ subroutine bcast_gw_input ( )
   USE ions_base,     ONLY : amass
   USE io_global, ONLY : ionode_id
   USE printout_base, ONLY : title
+  USE gwsigma,       ONLY : nbnd_sig, ecutsig
 
   implicit none
   !
@@ -100,6 +101,15 @@ subroutine bcast_gw_input ( )
   call mp_bcast (fildrho, ionode_id )
   call mp_bcast (tmp_dir, ionode_id )
   call mp_bcast (prefix, ionode_id )
+
+ !SGW specific
+  call mp_bcast (ecutsig, ionode_id)
+  call mp_bcast (nbnd_sig, ionode_id)
+  call mp_bcast (modielec, ionode_id)
+  call mp_bcast (eta, ionode_id)
+
+
+
 #endif
   return
 end subroutine bcast_gw_input

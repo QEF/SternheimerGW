@@ -26,6 +26,7 @@ SUBROUTINE sigma_matel (ik0)
   !----------------------------------------------------------------
 
   USE io_global,    ONLY : stdout
+  USE io_files,             ONLY : prefix, iunigk
   USE kinds,         ONLY : DP
   USE gvect,         ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
   USE gsmooth,       ONLY : nrxxs, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, nls, ngms
@@ -53,13 +54,13 @@ COMPLEX(DP)  ::   czero
 COMPLEX(DP)  ::   aux(ngmsig), sigma(ngmsig,ngmsig,nwsigma), psic(nrxx), vpsi(ngm)
 COMPLEX(DP)  ::   ZDOTC, sigma_band(nbnd_sig,nbnd_sig,nwsigma), vxc(nbnd_sig,nbnd_sig)
 LOGICAL      :: do_band, do_iq, setup_pw, exst
-INTEGER      :: iman, nman, ndeg(nbnd_sig), ideg
+INTEGER      :: iman, nman, ndeg(nbnd_sig), ideg, iq 
 
 
 one   = 1.0d0 
 czero = (0.0d0, 0.0d0)
-
 w_ryd = wsigma/RYTOEV
+
 write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 1, 3)
 
   !@FG
@@ -67,24 +68,36 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
   ! in order to have c_k(-G) = [c_-k(G)]*
   ! Because of my convention on the FFTs on G,G' in the paper,
   ! below we mix G and -G in the sandwitches. The easiest way
-  ! to perform the calculation is to use teh eigenvectors for -xk0
+  ! to perform the calculation is to use the eigenvectors for -xk0
   ! and take their cc to obtain c(-G) for xk0
-
   !  note the -xk0 for the reason above!
   !@ kplusg = -xk0 + g(:,ig)
 
   !nbnd for silicon looking at 4 occupied valence states and four un-occupied.
 
-      nbnd = nbnd_sig 
-      CALL prepare_q(do_band, do_iq, setup_pw, ik0)
+     nbnd = nbnd_sig 
+
+   !do_band = .true.
+
+      iq = 1 
+      CALL prepare_kmq(do_band, do_iq, setup_pw, iq, ik0)
       CALL run_pwscf(do_band)
       CALL initialize_gw()
   
   !READ wave function at \psi_{ik0}
+
+     if (nksq.gt.1) rewind (unit = iunigk)
+
+        if (nksq.gt.1) then
+           read (iunigk, err = 100, iostat = ios) npw, igk
+ 100        call errore ('green_linsys', 'reading igk', abs (ios) )
+        endif
+
       CALL davcio (evc, lrwfc, iuwfc, 1, -1)
 
-  !Set zero of energy to top of the valence band.
-    et(:,:) = et(:,:) - (6.58D0/13.605)
+! Set zero of energy to top of the valence band.
+! SHIFT
+! et(:,:) = et(:,:) - (6.2/13.605)
 
 
 ! #ifdef __PARA
@@ -93,33 +106,34 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
 ! if (me.eq.1.and.mypool.eq.1) then
 ! #endif
 
-!
 ! MATRIX ELEMENTS OF THE XC POTENTIAL
-!
 ! vxc is a just a long list of the potential at different points on the grid
-! I think what I will do is generate it in a one shot calc from pw.x and just leave it at that. 
+! I think what I will do is generate it in a one shot calc 
+! from pw.x and just leave it at that. 
+
 ! Should the potential from bigger more complicated systems be required 
 ! we will treat them on a case by case basis.
-
-!Need to figure out where the above @ bug comes from?
+! Need to figure out where the above @ bug comes from?
 
      open(unit=110,file='vxc.dat')
      rewind(110)
      do ir = 1, nrxx
-     !  HL just for test purposes I'm going to set v_xc to zero for now...
        read(110,*) v_xc(ir)
      enddo
     close(110)
 
 !Following the same convention for fourier transforming wave functions as appears in incdrhoscf.f90
-  WRITE(6,*) nbnd_sig
 
-  do jbnd = 1, nbnd_sig
+  WRITE(6,'("NBND")')
+  WRITE(6,*) nbnd_sig
 !
+  do jbnd = 1, nbnd_sig
+
     psic = czero
+
     do ig = 1, npw
 !SGW psic ( nl (ig) ) = evc(ig, jbnd)
-      psic ( nls (igk(ig)) ) = conjg(evc(ig, jbnd))
+!     psic ( nls (igk(ig)) ) = conjg(evc(ig, jbnd))
       psic ( nls (igk(ig)) ) = evc(ig, jbnd)
     enddo
 
@@ -130,15 +144,14 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
 
     do ir = 1, nrxx
       psic (ir) = psic(ir) * v_xc (ir)
+  !   evxc = (omega/1728) * psic(ir) * v_xc(ir) * conjg(psic(ir)
     enddo
-
 !   call cfft3 ( psic, nr1, nr2, nr3, -1)
-
     call cft3s (psic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, -2)
 
     do ig = 1, npw
       !vpsi(ig) = psic( nl(ig) )
-       vpsi(ig) = psic( nls(igk(ig)) )
+       vpsi(ig) = psic(nls(igk(ig)))
     enddo
     !
     do ibnd = 1, nbnd_sig
@@ -150,26 +163,33 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
 !
 !  MATRIX ELEMENTS OF THE SELF-ENERGY
 !
-   CALL davcio (sigma, lrsigma, iunsigma, ik0, -1)
+  CALL davcio (sigma, lrsigma, iunsigma, ik0, -1)
 
 !Need nbnd_sig = 8 i.e. for Si we want to look at the 4 valence states and 4 conduction states.
-    do ibnd = 1, nbnd_sig
-     do jbnd = 1, nbnd_sig
-      do iw = 1, nwsigma
+  do ibnd = 1, nbnd_sig
+   do jbnd = 1, nbnd_sig
+    do iw = 1, nwsigma
       !   
         sigma_band (ibnd, jbnd, iw) = czero
       !   
         do ig = 1, ngmsig
-         !   aux = sigma (ig, 1:ngms, iw) ! paper convention
-             aux = sigma (1:ngmsig, ig, iw)
+
+        !do ig = 1, npw
+        !aux = sigma (ig, 1:ngms, iw) ! paper convention
+
+            aux = sigma (1:ngmsig, ig, iw)
 
 !why not conjg evc(ig,ibnd) ?
+
 !            sigma_band (ibnd, jbnd, iw) = sigma_band (ibnd, jbnd, iw) + &
 !                evc (ig, ibnd) * ZDOTC (ngmsig, evc (1:ngmsig, jbnd), 1, aux, 1)
- 
+
             sigma_band (ibnd, jbnd, iw) = sigma_band (ibnd, jbnd, iw) + &
                  evc (ig, ibnd) * ZDOTC (ngmsig, evc (1:ngmsig, jbnd), 1, aux, 1)
-                ! evc (ig, ibnd) * ZDOTC (ngmsig, evc (1, jbnd), 1, aux, 1)
+
+!                evc (ig, ibnd) * ZDOTC (ngmsig, evc (1:npw, jbnd), 1, aux, 1)
+!                evc (ig, ibnd) * ZDOTC (ngmsig, evc (1, jbnd), 1, aux, 1)
+
         enddo
       enddo
      enddo
@@ -177,23 +197,20 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
 
   ! Now calculate the expectation value of the self-energy
   ! using the diagonal matrix elements
-  ! NOTE: we cannot calculate the QP correction until we
-  ! have the expt value of the Vxc. I could get Vxc from the
-  ! density and the LDA expression.
   !
-    do ibnd = 1, nbnd_sig
-      !
-      do iw = 1, nwsigma
-        resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) )
-        dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) - real( vxc(ibnd,ibnd) )
-        imsig_diag (iw,ibnd) = aimag ( sigma_band (ibnd, ibnd, iw) )
-        a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
-           ( abs ( w_ryd(iw) - et(ibnd, ik0) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
-            + abs ( imsig_diag (iw,ibnd) )**2.d0 )
-      enddo
-      !
-      call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ik0), et_qp (ibnd), z(ibnd) )
-      !
+   do ibnd = 1, nbnd_sig
+     !
+     do iw = 1, nwsigma
+       resig_diag (iw,ibnd) = real( sigma_band (ibnd, ibnd, iw) )
+       dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) - real( vxc(ibnd,ibnd) )
+       imsig_diag (iw,ibnd) = aimag ( sigma_band (ibnd, ibnd, iw) )
+       a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
+          ( abs ( w_ryd(iw) - et(ibnd, ik0) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
+           + abs ( imsig_diag (iw,ibnd) )**2.d0 )
+     enddo
+     !
+     call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ik0), et_qp (ibnd), z(ibnd) )
+     !
     enddo
   !
   ! Now take the trace (get rid of phase arbitrariness of the wfs)
@@ -211,7 +228,9 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
        nman = nman + 1
      endif
    enddo
-  ! write (stdout, *) nman, (ndeg (iman) ,iman=1,nman)
+
+   write(6,'(" Manifolds")')
+   write (stdout, *) nman, (ndeg (iman) ,iman=1,nman)
   !
   ! ...and take the trace over the manifold
   !

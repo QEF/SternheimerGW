@@ -325,6 +325,8 @@ MODULE control_gw
   ! current q point
   ! initial q in the list, last_q in the list
   real(DP) :: tr2_gw
+  !
+  real(DP) :: eta
   ! threshold for gw calculation
   REAL (DP) :: alpha_mix(maxter), time_now, alpha_pv
   ! the mixing parameter
@@ -473,11 +475,12 @@ MODULE disp
     ! for each q, comp_irr. Used for image parallelization 
   INTEGER, ALLOCATABLE :: npert_iq(:,:)
     ! for each q, the number of perturbation of each irr
+  REAL(DP) , ALLOCATABLE :: wq(:)
 
    !HL Variables required for shuffling the k/q grid. 
-    INTEGER, ALLOCATABLE :: gmap(:,:)
-    REAL(DP) :: g0vec(3,27)
-    REAL(DP), ALLOCATABLE :: eval_occ(:,:) ! array of eigenvalues after folding.
+  INTEGER, ALLOCATABLE :: gmap(:,:)
+  REAL(DP) :: g0vec(3,27)
+  REAL(DP), ALLOCATABLE :: eval_occ(:,:) ! array of eigenvalues after folding.
   
 
 END MODULE disp

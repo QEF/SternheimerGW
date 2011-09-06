@@ -143,10 +143,13 @@
   !
   ! 1) Computes the total local potential (external+scf) on the smooth grid
   !
+
   call set_vrs (vrs, vltot, v%of_r, kedtau, v%kin_r, nrxx, nspin, doublegrid)
+
   !
-  ! 2) Set non linear core correction stuff
+  ! 2) Set non linear core correction variables.
   !
+
   nlcc_any = ANY ( upf(1:ntyp)%nlcc )
   if (nlcc_any) allocate (drc( ngm, ntyp))    
   !
