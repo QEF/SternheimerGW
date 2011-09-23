@@ -93,6 +93,7 @@ PROGRAM gw
     CALL diropn(iunsigma, 'sigma', lrsigma, exst)
 
 !CALCULATE W(r,r';iw)
+GOTO 123
    DO iq = 1, nqs
         !comparing vkbs and g2kins
         !ik = 1
@@ -106,11 +107,10 @@ PROGRAM gw
         CALL coulomb(iq)
         CALL clean_pw_gw(iq)
    END DO
+
    WRITE(stdout, '("Finished Calculating Screened Coulomb")') 
 
 !CALCULATE G(r,r'; w) 
-!GOTO 123
-
     WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
     DO ik = 1, 1
       DO iq = 1, nqs
@@ -133,6 +133,8 @@ PROGRAM gw
 
     WRITE(stdout, '("Finished Calculating Greens Function")') 
 !123 CONTINUE
+
+123 CONTINUE
 
     DO ik = 1, 1
        CALL gw_product(ik)

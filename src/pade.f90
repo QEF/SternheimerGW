@@ -132,6 +132,8 @@ USE kinds,                     ONLY : DP
   complex(DP) :: a(N), z(N), acap(0:N), bcap(0:N)
   complex(DP) :: w, padapp
   integer :: i
+  real(DP) :: ar, ai
+
   !
   acap(0) = 0.d0
   acap(1) = a(1)
@@ -142,7 +144,18 @@ USE kinds,                     ONLY : DP
     acap(i) = acap(i-1) + (w-z(i-1)) * a(i) * acap(i-2)
     bcap(i) = bcap(i-1) + (w-z(i-1)) * a(i) * bcap(i-2)
   enddo
+
+!HL
+
   padapp = acap(N)/bcap(N)
+
+  ar = real(padapp)
+  ai = aimag(padapp)
+
+  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+    padapp = (0.0d0,0.0d0)
+  endif
+ 
   !
   end subroutine pade_eval
   !-----------------------------------------------------------

@@ -90,8 +90,6 @@ irr=1
 !LOOP OVER G
 DO ig = 1, ngmsig
 !DO ig = 1, 20
-!nl(igkq(ig))
-
     qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
     if (qg2.gt.eps8) then
       do iw = 1, nfs

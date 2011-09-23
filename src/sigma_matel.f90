@@ -95,11 +95,6 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
 
       CALL davcio (evc, lrwfc, iuwfc, 1, -1)
 
-! Set zero of energy to top of the valence band.
-! SHIFT
-! et(:,:) = et(:,:) - (6.2/13.605)
-
-
 ! #ifdef __PARA
 ! only proc 0 reads from file and does the product
 ! (need some sort of parallelization here)
@@ -110,7 +105,6 @@ write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ik0, (xk (ipol,ik0) , ipol = 
 ! vxc is a just a long list of the potential at different points on the grid
 ! I think what I will do is generate it in a one shot calc 
 ! from pw.x and just leave it at that. 
-
 ! Should the potential from bigger more complicated systems be required 
 ! we will treat them on a case by case basis.
 ! Need to figure out where the above @ bug comes from?

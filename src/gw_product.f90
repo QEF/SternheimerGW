@@ -1,4 +1,5 @@
 SUBROUTINE gw_product(ik0) 
+
 ! G TIMES W PRODUCT
   USE kinds,         ONLY : DP
   USE gvect,         ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
@@ -9,8 +10,8 @@ SUBROUTINE gw_product(ik0)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq
   USE control_gw,    ONLY : lgamma, eta
   USE klist,         ONLY : wk, xk
-  USE io_files,             ONLY : prefix, iunigk
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE io_files,      ONLY : prefix, iunigk
+  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE cell_base,     ONLY : omega, tpiba2
   USE eqv,           ONLY : evq, eprec
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax,&
@@ -19,7 +20,9 @@ SUBROUTINE gw_product(ik0)
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE gwsigma,       ONLY : ngmsig, sigma, sigma_g, nrsig
-  USE qpoint,           ONLY : xq, npwq, igkq, nksq, ikks, ikqs
+  USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
+
+
 
   IMPLICIT NONE
 
@@ -56,6 +59,10 @@ SUBROUTINE gw_product(ik0)
   INTEGER :: iq, ipol, ibnd
   INTEGER :: ikmq, ik0, ik
   INTEGER :: rec0, ios
+
+  !CHECK FOR NAN's
+  REAL(DP) :: ar, ai
+
 
 ! HL Need to think about how all of this is going to be parallelized. 
 ! #ifdef __PARA
@@ -146,18 +153,30 @@ DO iq = 1, nqs
 !#endif
 
 !Start integration over iw +/- wcoul. 
-
 !All G-vectors from coulomb should have gamma ordering
 
      DO iw = 1, nwcoul
         do ig = 1, ngmsig
           do igp = 1, ngmsig
+
             do iwim = 1, nfs
                z(iwim) = dcmplx( 0.d0, fiu(iwim))
                a(iwim) = scrcoul_g (ig,igp,iwim,1)
-               !write(6,*)a(iwim)
+               ! write(6,*)a(iwim)
             enddo
 
+            do iwim = 1, nfs
+               ar = real(a(iwim))
+               ai = aimag(a(iwim))
+
+               if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+                     !write(6,*) (z(i),i=1,N)
+                     !write(6,*) (u(i),i=1,N)
+                     !write(6,*) (a(i),i=1,N)
+                      a(:) = (0.0d0, 0.0d0)
+                      write (6,'("pade-coeffs nan ", 3i4)')ig, igp, iq 
+               endif
+            enddo
    !Use Vidberg Serene to generate value of screened coulomb at all iw -wcoul to +wcoul.
              call pade_eval ( nfs, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
 
@@ -284,6 +303,7 @@ DO iq = 1, nqs
 
 WRITE(6,'("NBND", i4)')nbnd
      do ig = 1, ngmsig
+
 !      do ig = 1, npwq
 !       do igp = 1, ngmsig
 !HL     Same deal here. igkq has max dim npwx, but can contain G-vectors up to ecutwfc.
