@@ -144,7 +144,7 @@ SUBROUTINE green_linsys(ik0, iq)
 !      CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
 !                      ngm , igkq, g2kin )
 
-      write(6,*) igkq
+!      write(6,*) igkq
 
       if (lgamma) npwq = npw 
 
@@ -175,17 +175,25 @@ SUBROUTINE green_linsys(ik0, iq)
 
        IF (lgamma) then
             do ig = 1, npw
+!               g2kin (ig) = ((xk (1,ik0) + g (1, igk(ig) )) **2 + &
+!                             (xk (2,ik0) + g (2, igk(ig) )) **2 + &
+!                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2
+
                g2kin (ig) = ((xk (1,ik0) + g (1, igk(ig) )) **2 + &
                              (xk (2,ik0) + g (2, igk(ig) )) **2 + &
-                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2
+                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2 - 6.5d0
 
                !WRITE (stdout, '("g2kin  ",  3f7.4)') g2kin(ig)
             enddo
        ELSE
             do ig = 1, npwq
+!               g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+!                             (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+!                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+
                g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
                              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2 - 6.5d0
 
                !WRITE (stdout, '("g2kin  ",  3f7.4)') g2kin(ig)
             enddo

@@ -254,8 +254,9 @@ DO iq = 1, nqs
 ENDDO ! end loop on {k0-q} and {q} 
 
 !EXCHANGE PART OF THE SELF-ENERGY 
-!Here I need to figure out the easy way of regenerating necessary wave functions.
-!There are also loads of double fourier transforms so the code corresponds with the convention in the paper.
+! Here I need to figure out the easy way of regenerating necessary wave functions.
+! There are also loads of double fourier transforms so the 
+! code corresponds with the convention in the paper.
 
 sigma_ex(:,:) = (0.0d0, 0.0d0)
 
@@ -331,7 +332,6 @@ WRITE(6,'("NBND", i4)')nbnd
         enddo
       enddo
 
-
 !#ifdef __PARA
 !   use poolreduce to bring together the results from each pool
 !   call poolreduce ( 2 * nrs * nrs, greenf_na)
@@ -387,8 +387,8 @@ ENDDO ! on q
 !
    do iw = 1, nwsigma
         sigma(:,:,iw,1) = sigma(:,:,iw,1) + sigma_ex(:,:)
-
        !sigma(:,:,iw,1) = sigma(:,:,iw,1) 
+
    enddo
 
    WRITE(6,'(4x,"Fourier Transform of Sigma")')

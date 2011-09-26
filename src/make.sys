@@ -71,7 +71,8 @@ CPPFLAGS       = -P -traditional $(DFLAGS) $(IFLAGS)
 
 CFLAGS         = -O0 $(DFLAGS) $(IFLAGS)
 F90FLAGS       = $(FFLAGS) -nomodule -fpp $(FDFLAGS) $(IFLAGS) $(MODFLAGS)
-FFLAGS         = -O0 -assume byterecl -g -traceback -fpe:0 -check bounds
+FFLAGS         = -O0 -assume byterecl -g -traceback 
+#FFLAGS         = -O0 -assume byterecl -g -traceback -fpe:0 -check bounds
 
 # compiler flags without optimization for fortran-77
 # the latter is NEEDED to properly compile dlamch.f, used by lapack

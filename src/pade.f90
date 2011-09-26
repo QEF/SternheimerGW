@@ -68,8 +68,6 @@ USE kinds,                     ONLY : DP
 !       write(6,*) u(:)
 !       stop
 !end if
-!
-
 !VERY HACK HL:
 !        if (abs (g(p-1,i)) .lt. 1d-10 ) g(p-1,i) = 0.001
 
@@ -77,9 +75,9 @@ USE kinds,                     ONLY : DP
          tmp2 = g(p-1,i)/g(p-1,i)
          g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
 
-         !
-         !Helps stability.
-
+        !
+        !Helps stability.
+        !
 
          if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
       enddo

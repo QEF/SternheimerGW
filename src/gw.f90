@@ -93,7 +93,7 @@ PROGRAM gw
     CALL diropn(iunsigma, 'sigma', lrsigma, exst)
 
 !CALCULATE W(r,r';iw)
-GOTO 123
+!GOTO 123
    DO iq = 1, nqs
         !comparing vkbs and g2kins
         !ik = 1
@@ -118,14 +118,11 @@ GOTO 123
 !For debug we calculate alot more states.
 !       nbnd = 40
 !       nbnd_occ = 4 
-
         CALL prepare_kmq(do_band, do_iq, setup_pw, iq, ik)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
-
 !       CALL green_linsys_test(ik, iq)
         CALL green_linsys(ik, iq)
-
 !       WRITE(stdout, '(/5x, "Done Green_linsys")') 
         CALL clean_pw_gw(iq)
       ENDDO
@@ -133,9 +130,6 @@ GOTO 123
 
     WRITE(stdout, '("Finished Calculating Greens Function")') 
 !123 CONTINUE
-
-123 CONTINUE
-
     DO ik = 1, 1
        CALL gw_product(ik)
     ENDDO

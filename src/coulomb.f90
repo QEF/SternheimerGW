@@ -114,7 +114,9 @@ DO ig = 1, ngmsig
 
         !diagonal term ig = igp (all the others remain 0)
 
-         drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
+        !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
+        !(W-v) = (inveps(w) - delta) v
+         drhoscfs (nl(ig), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
 
          !WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) 
        ELSE
