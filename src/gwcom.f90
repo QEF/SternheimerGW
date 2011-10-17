@@ -51,7 +51,9 @@ MODULE gwsigma
   USE kinds, ONLY : DP
   COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
   COMPLEX (DP), ALLOCATABLE :: green(:,:)
-  COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:,:)
+
+ !HL very large array...
+  COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
 
   INTEGER, ALLOCATABLE :: nlsig(:)

@@ -53,7 +53,7 @@ subroutine cft_wave (evc_g, evc_r, isw)
      IF (noncolin) THEN
         CALL cft3s(evc_r(1,2),nr1s,nr2s,nr3s,nrx1s,nrx2s,nrx3s,-2)
         DO ig = 1, npwq
-           evc_g(ig+npwx)=evc_g(ig+npwx)+evc_r(nls(igkq(ig)),2)
+           evc_g(ig+npwx)=evc_g(ig+npwx) + evc_r(nls(igkq(ig)),2)
         ENDDO
      ENDIF
   else

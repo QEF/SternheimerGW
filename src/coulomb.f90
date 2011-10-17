@@ -89,7 +89,6 @@ irr=1
 
 !LOOP OVER G
 DO ig = 1, ngmsig
-!DO ig = 1, 20
     qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
     if (qg2.gt.eps8) then
       do iw = 1, nfs
@@ -113,19 +112,20 @@ DO ig = 1, ngmsig
          wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
 
         !diagonal term ig = igp (all the others remain 0)
-
         !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
         !(W-v) = (inveps(w) - delta) v
          drhoscfs (nl(ig), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
+        !WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) 
 
-         !WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) 
        ELSE
+
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, + 1)
          CALL solve_linter (dvbare, iw, drhoscfs)
          IF (convt .ne. .true.) WRITE( stdout, '(/,5x,"No convergence ")')
          call cft3 (drhoscfs, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, - 1)
-        !WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig)) 
+        !WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
+
        ENDIF
 
 ! Generate an entire row of the Screened Coulomb Matrix with 4pi*e2*|q+G|^{-2}eps_{GG'}. 
@@ -143,6 +143,7 @@ DO ig = 1, ngmsig
         do igp = 1, ngmsig
           scrcoul (ig,igp,iw,nspin_mag) = scrcoul (ig,igp,iw,nspin_mag) * dcmplx ( spal, 0.0d0)
         enddo
+
       enddo !iw
 
 ! Analytical Continuation to the real axis.

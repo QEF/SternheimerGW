@@ -14,15 +14,14 @@
   ! determine G-vectors within the cutoff from the
   ! array already created in ggen
   !
-  !HL basically the same as in SGWI except i've had to change all the ngm(s) etc. into (sig) 
-  ! is already reserved for  the smooth grid in Quantum espresso. I think the igtongl grid should be visible
-  ! at this point after PW setup, so should gl etc. Actually it's a little bit uncertain when GWTC knows what.
+  ! HL basically the same as in SGWI except i've had to change all the ngm(s) etc. into (sig) 
+  ! TESTED THIS DOES PRODUCE SAME ORDERING A ggen.f90 4.2.1 if the same cutoff is used. 
+  ! nls is already reserved for  the smooth grid in Quantum espresso. 
   ! Also added variable ecutsig which can be defined by the user at input.
-  !
 
   USE kinds,            ONLY : DP
   USE constants,        ONLY : tpi
-  USE gvect,            ONLY : gcutm, ecutwfc, dual, nr1, nr2, nr3, ngm, g, igtongl, gl
+  USE gvect,            ONLY : gcutm, ecutwfc, dual, nr1, nr2, nr3, ngm, g, igtongl, gl, nl
   USE gwsigma,          ONLY : gcutmsig, nlsig, ngmsig, nr1sig, nr2sig, nr3sig, nrsig, ecutsig
   USE cell_base,        ONLY : at, tpiba2
   USE fft_scalar,       ONLY : allowed
@@ -127,6 +126,9 @@
   !
 
   nrsig = nr1sig * nr2sig * nr3sig
+
+  !write(6,*) nl(:)
+  !write(6,*) nlsig(:)
 
   write(6,'(4x,"")')
   write(6,'(4x,"ngmsig = ",i10)') ngmsig

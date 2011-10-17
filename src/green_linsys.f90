@@ -143,7 +143,6 @@ SUBROUTINE green_linsys(ik0, iq)
 !      CALL gk_sort( xk(1,ik0), ngm, g, ( ecutwfc / tpiba2 ), ngm - 1, igk, g2kin )
 !      CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
 !                      ngm , igkq, g2kin )
-
 !      write(6,*) igkq
 
       if (lgamma) npwq = npw 
@@ -167,35 +166,33 @@ SUBROUTINE green_linsys(ik0, iq)
           call davcio (evq, lrwfc, iuwfc, ikq, - 1)
        ENDIF
 
-      ! do ibnd = 1, 4
-      ! write(6, '("Band")')
-      ! write(6,*) evq(:,ibnd)*conjg(evq(:,ibnd))
-      ! enddo
-
+! do ibnd = 1, 4
+! write(6, '("Band")')
+! write(6,*) evq(:,ibnd)*conjg(evq(:,ibnd))
+! enddo
 
        IF (lgamma) then
             do ig = 1, npw
-!               g2kin (ig) = ((xk (1,ik0) + g (1, igk(ig) )) **2 + &
-!                             (xk (2,ik0) + g (2, igk(ig) )) **2 + &
-!                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2
-
                g2kin (ig) = ((xk (1,ik0) + g (1, igk(ig) )) **2 + &
                              (xk (2,ik0) + g (2, igk(ig) )) **2 + &
-                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2 - 6.5d0
+                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2
+
+!               g2kin (ig) = ((xk (1,ik0) + g (1, igk(ig) )) **2 + &
+!                             (xk (2,ik0) + g (2, igk(ig) )) **2 + &
+!                             (xk (3,ik0) + g (3, igk(ig) )) **2 ) * tpiba2 - (6.5d0/13.605)
 
                !WRITE (stdout, '("g2kin  ",  3f7.4)') g2kin(ig)
             enddo
        ELSE
             do ig = 1, npwq
-!               g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-!                             (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-!                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
-
                g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
                              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2 - 6.5d0
+                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
 
-               !WRITE (stdout, '("g2kin  ",  3f7.4)') g2kin(ig)
+!               g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+!                             (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+!                             (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2 - (6.5d0/13.605)
+!               WRITE (stdout, '("g2kin  ",  3f7.4)') g2kin(ig)
             enddo
        ENDIF
 
@@ -242,7 +239,9 @@ SUBROUTINE green_linsys(ik0, iq)
    ! et(:,:) = et(:,:) - (6.2/13.605)
    ! w_ryd(:) = w_ryd(:) + (6.2/13.605)
 
-  !  WRITE(6,*) ngm
+
+   !Setting Eigenvalues to zero. 
+   !et(:,:) =  et(:,:) - (6.5/13.605)
 
     IF (lgamma) THEN 
         WRITE( 6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xq, et(:,ik0)*RYTOEV
@@ -256,11 +255,7 @@ SUBROUTINE green_linsys(ik0, iq)
 !description.
 
 DO iw = 1, nwgreen
-
-!DO iw = 230, 580
-
      green =(0.0d0, 0.0d0)
-
 !Analytic
      do ig = 1, ngmsig !zero after this point
        rhs(:,:)  = (0.0d0, 0.0d0)
@@ -302,31 +297,27 @@ DO iw = 1, nwgreen
 !          WRITE( stdout, '(/,5x," iter # ",i3," anorm :",f8.3, &
 !         "gr_A(1): ",f8.3)') lter, anorm, real(gr_A(ig))
 !     ENDIF
-     ! gr = gr_A + gr_N
+
+
       gr = gr_A 
 
 ! do igp = 1, ngmsig
-       do igp = 1, npwq
+
+      do igp = 1, npwq
          if(((igkq(igp).lt.ngmsig).and.(igkq(ig)).lt.ngmsig).and.((igkq(igp).gt.0).and.(igkq(ig)).gt.0)) then
-            green (igkq(ig), igkq(igp) ) = green (igkq(ig), igkq(igp)) + gr(igp,1)
+         green (igkq(ig), igkq(igp) ) = green (igkq(ig), igkq(igp)) + gr(igp,1)
          endif
-       enddo
-     enddo !ig
+      enddo
+  enddo !ig
 
 !NON-ANALYTIC
-   do ig = 1, ngmsig
+  do ig = 1, ngmsig
        gr_N(:,1) = (0.0d0, 0.0d0)
-       do ibnd = 1, 4
+      do ibnd = 1, 4
           IF (lgamma) then
-!        Don't double count shift.
-!            x = w_ryd(iw) -(6.2/13.605) - et(ibnd, ik0)
              x = w_ryd(iw) - et(ibnd, ik0)
-
           ELSE
-!        Don't double count shift.
-!            x = w_ryd(iw) - (6.2/13.605) - et(ibnd, ikq)
              x = w_ryd(iw) - et(ibnd, ikq)
-
           ENDIF
 
           dirac = eta / pi / (x**2.d0 + eta**2.d0)
@@ -334,33 +325,28 @@ DO iw = 1, nwgreen
 !    no spin factor (see above) 
 !    HL HERE WE NEED TO CONSIDER the psi^*(r) psi(r') since the convention in the paper for 
 !    the green's function is determined that way. 
-!    gr_N = gr_N + 2.d0 * twopi * ci * conjg ( psi(ig,ibnd) ) * psi(1:ngm,ibnd) * dirac
-!    gr_N = gr_N + tpi * ci * conjg( evq(ig,ibnd) ) * evq(1:ngm,ibnd) * dirac
-!    NOT THE APPROPRIATE EXPANSION OF THE LOOP.
-!    The wave functions are in two different space variables!
-!    gr_N(ig, 1) = gr_N(ig,1) + tpi * ci * conjg(evq(ig,ibnd)) *  evq(igp,ibnd) * dirac
-!    gr_N(:, 1) = gr_N(:,1) + tpi * ci * conjg(evq(ig,ibnd)) *  evq(1:npwx,ibnd) * dirac
-     gr_N(1:npwq, 1) = gr_N(1:npwq,1) + tpi * ci * conjg(evq(ig,ibnd)) *  evq(1:npwq,ibnd) * dirac
-     enddo
 
- do igp = 1, npwq
- if(((igkq(igp).lt.ngmsig).and.(igkq(ig)).lt.ngmsig).and.((igkq(igp).gt.0).and.(igkq(ig)).gt.0)) then
+       gr_N(1:npwq, 1) = gr_N(1:npwq,1) + tpi * ci * conjg(evq(ig,ibnd)) *  evq(1:npwq,ibnd) * dirac
 
- ! green (igkq(ig), igkq(igp) ) = green (igkq(ig), igkq(igp) ) + gr_N(igp, 1)
- ! Need to use igkq map on both indices. 
- ! Also need to accumulate the full green's function here green_A + green_N.
+      enddo !ibnd
+
+    do igp = 1, npwq
+     if(((igkq(igp).lt.ngmsig).and.(igkq(ig)).lt.ngmsig).and.((igkq(igp).gt.0) &
+        .and.(igkq(ig)).gt.0)) then
+
+     !Acccumulate the full green's function here green_A + green_N.
+     !HL: note there are symmetric G-vectors here as well... for instance: q=11 7/11 2/12 are identical. 
 
             green(igkq(ig), igkq(igp)) =  green(igkq(ig),igkq(igp)) + gr_N(igp, 1)
 
- ! HL: note there are symmetric G-vectors here as well... for instance: q=11 7/11 2/12 are identical. 
-          endif
-        enddo
-   enddo
+     endif
+    enddo !igp
+  enddo !ig
 
 !if (igkq(ig).eq.7.and.igkq(igp).eq.11)write(502,'(3f15.10)') wgreen(iw),green (igkq(ig), igkq(igp) )
 !if (igkq(ig).eq.7.and.igkq(igp).eq.7)write(505,'(3f15.10)') wgreen(iw), green (igkq(ig),igkq(igp))
 !if (igkq(ig).eq.13.and.igkq(igp).eq.13)write(508,'(3f15.10)') wgreen(iw), green (igkq(ig),igkq(igp))
-!!if (ig.eq.16.and.igp.eq.16)write(507,'(3f15.10)') wgreen(iw), gr_N (igp,1)
+!if (ig.eq.16.and.igp.eq.16)write(507,'(3f15.10)') wgreen(iw), gr_N (igp,1)
 !if (ig.eq.11.and.igp.eq.13) write(509,'(3f15.10)') wgreen(iw), green (igkq(ig),igkq(igp))
 !if (igkq(ig).eq.1.and.igkq(igp).eq.1)write(500,'(3f15.10)') wgreen(iw),green (igkq(ig), igkq(igp) )
 !if (igkq(ig).eq.1.and.igkq(igp).eq.7)write(501,'(3f15.10)') wgreen(iw),green (igkq(ig), igkq(igp) )
@@ -370,9 +356,9 @@ DO iw = 1, nwgreen
 !if (igkq(ig).eq.13.and.igkq(igp).eq.7)write(507,'(3f15.10)') wgreen(iw),green (igkq(ig), igkq(igp) )
 !Collect G vectors across processors and then write the full green's function to file. 
 ! #ifdef __PARA
-!   use poolreduce to bring together the results from each pool
-!   call poolreduce ( 2 * ngms * ngms, green)
-!   if (me.eq.1.and.mypool.eq.1) then
+!  use poolreduce to bring together the results from each pool
+!  call poolreduce ( 2 * ngms * ngms, green)
+!  if (me.eq.1.and.mypool.eq.1) then
 ! #endif
 !  rec0 = (iw-1) * nk0 * nq + (ik0-1) * nq + (iq-1) + 1
 

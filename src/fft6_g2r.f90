@@ -45,12 +45,12 @@ SUBROUTINE fft6_g2r (f_g, f_r)
 
     call cft3 (aux, nr1sig, nr2sig, nr3sig, nr1sig, nr2sig, nr3sig, +1)
 
-  ! f_r(ig,1:nrsig) = aux / omega
+     f_r(ig,1:nrsig) = aux / omega
 
-    do irp = 1, nrsig
-       f_r(ig, irp) = aux(irp) / omega
-      !write(6,*)f_r(ig,irp) 
-    enddo
+  !  do irp = 1, nrsig
+  !     f_r(ig, irp) = aux(irp) / omega
+  !     write(6,*)f_r(ig,irp) 
+  !  enddo
   enddo
 
   ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)

@@ -72,8 +72,8 @@ PROGRAM gw
 
     CALL freqbins()
 
-   !CALL refold()
-   !Generate cutoff for Sigma and gvector correspondence.
+!   CALL refold()
+!   Generate cutoff for Sigma and gvector correspondence.
     CALL ggensig()
 
 !   Coulomb file
@@ -92,8 +92,8 @@ PROGRAM gw
     lrsigma = 2 * ngmsig * ngmsig * nwsigma
     CALL diropn(iunsigma, 'sigma', lrsigma, exst)
 
+GOTO 123
 !CALCULATE W(r,r';iw)
-!GOTO 123
    DO iq = 1, nqs
         !comparing vkbs and g2kins
         !ik = 1
@@ -129,13 +129,14 @@ PROGRAM gw
     ENDDO
 
     WRITE(stdout, '("Finished Calculating Greens Function")') 
-!123 CONTINUE
+
+123 CONTINUE
+
     DO ik = 1, 1
        CALL gw_product(ik)
     ENDDO
 
     WRITE(6, '("Finished CALCULATING SIGMA")') 
-
     DO ik = 1, 1
        CALL sigma_matel(ik) 
     ENDDO

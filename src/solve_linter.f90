@@ -8,20 +8,20 @@
 !-------------------------------------------------------------------------------
 !SUBROUTINE solve_linter(igpert, iw, drhoscf)
 SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
-  !-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
   !  HL
   !  Driver routine for the solution of the linear system which
   !  defines the change of the wavefunction due to a perturbing potential
-  !  parameterized in r and w. i.e. v_{r,w} (r')
+  !  parameterized in r and iw. i.e. v_{r, iw} (r')
   !  It performs the following tasks:
   !   a) computes the bare potential term Delta V | psi > 
   !   b) adds to it the screening term Delta V_{SCF} | psi >
   !   c) applies P_c^+ (orthogonalization to valence states)
-  !   d) calls cgsolve_all to solve the linear system
-  !   e) computes Delta rho, Delta V_{SCF} and symmetrizes them... 
+  !   d) calls c_bi_cgsolve_all to solve the linear system
+  !   e) computes Delta rho, Delta V_{SCF}.
   !   Currently symmetrized in terms of mode etc. Might need to strip this out
   !   and check PW for how it stores/symmetrizes charge densities.
-  !----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
 !------------------------------------------------------------------------------
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
@@ -305,12 +305,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
         call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
 
-       ! HL also writing vkb at gamma to compare to green_linsys.
-
-       ! write(6,*)vkb  
-       !
-       ! reads unperturbed wavefuctions psi(k) and psi(k+q)
-       !
+       ! Reads unperturbed wavefuctions psi(k) and psi(k+q)
 
         if (nksq.gt.1) then
            if (lgamma) then
@@ -321,8 +316,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            endif
         endif
 
-        write(6,*)evq
-
+!write(6,*)evq
 !DEBUG the eigenvectors at k and k+q should be exactly the same as in the PH sample code here
 !        WRITE(6,*)npwq, igkq 
 !        do ibnd=1,4
@@ -335,13 +329,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! Compute the kinetic energy
 ! HL- I checked this. It is reading in the eigenfunctions at this point just right. 
 ! through all iterations.
+
         do ig = 1, npwq
            g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
                           (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
-!          WRITE (stdout, '("g2kin  ",  3f7.4)') g2kin(ig)
         enddo
-!       STOP
+
 !HL gvectors/kvectors are also being read properly...
 
         h_diag = 0.d0
@@ -359,6 +353,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         ! diagonal elements of the unperturbed hamiltonian
 
 !HL changing indices freezing perturbations.
+
         ! do ipert = 1, npe
         !   mode = imode0 + ipert
         !   nrec = (ipert - 1) * nksq + ik
@@ -371,17 +366,19 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
            if (where_rec =='solve_lint'.or.iter>1) then
 
-              ! After the first iteration dvbare_q*psi_kpoint is read from file
+             ! After the first iteration dvbare_q*psi_kpoint is read from file
 
               call davcio (dvpsi, lrbar, iubar, nrec, - 1)
 
-              ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
-              ! dvscf_q from previous iteration (mix_potential)
+             ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
+             ! dvscf_q from previous iteration (mix_potential)
 
               call start_clock ('vpsifft')
               do ibnd = 1, nbnd_occ (ikk)
+                !FFT translated according to igk
                  call cft_wave (evc (1, ibnd), aux1, +1) 
                  call apply_dpot(aux1, dvscfins(1,1), current_spin)
+                !FFT translated according to igkq: DeltaV(q)psi(k).
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
 
@@ -477,13 +474,16 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
 
-! HL Swapping thresh for tr_cgsolve might make good sense... With threshold at 1.0d0-10 cgsolve and cbcgsolve
+! HL Swapping thresh for tr_cgsolve might make good sense... 
+! With threshold at 1.0d0-10 cgsolve and cbcgsolve
 ! give identical results, with no imaginary part as expected for w = 0. 
+
 !       call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
 !                npwx, npwq, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
 !       call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
 !                npwx, npwq, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
 !           endif
+
 ! HL - DEBUG same as in SGW. Going to check that (H-e_{vk}+alphaPv*)dpsi + Pcdvpsi = 0
 ! For some reason in SGW they only check (H-et+alpha*Pv)*dpsi-dvpsi = 0 
 ! Reason = dvpsi already projected onto valence states.
@@ -497,7 +497,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !             enddo
 !          enddo
 !          endif
-!-HL
+! HL
 
            ltaver = ltaver + lter
            lintercall = lintercall + 1

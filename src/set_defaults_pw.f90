@@ -14,17 +14,15 @@ SUBROUTINE setup_nscf (xq)
   ! ... This routine initializes variables for the non-scf calculations at k 
   ! ... and k+q required by the linear response calculation at finite q.
 
-  ! THIS REQUIRES SOME THINKING.
   ! I think I can just use the monkhorst pack generated q-mesh to do a run.
   ! This approach means doing an nscf step for each of the unique q-points to generate
   ! the full k, k+q grid with all the weights and nice symmetry reduction properties built in.
-  ! ... In particular: finds the symmetry group of the crystal that leaves
+  ! ... Here we find the symmetry group of the crystal that leaves
   ! ... the GW q-vector (xq) unchanged; determines the k- and k+q points in the irreducible BZ
   ! ... Needed on input (read from data file):
   ! ... "nsym" crystal symmetries s, ftau, t_rev, "nrot" lattice symetries "s"
   ! ... "nkstot" k-points in the irreducible BZ wrt lattice symmetry
   ! ... Produced on output:
-
   ! ... symmetries ordered with the "nsymq" GW symmetries first
   ! ... "nkstot" k- and k+q-points in the IBZ calculated for the GW symmetries.)
   ! ... Misc. data needed for running the non-scf calculation
@@ -165,6 +163,7 @@ SUBROUTINE setup_nscf (xq)
 
   CALL irreducible_BZ (nrot, s, nsymq, minus_q, at, bg, npk, nkstot, xk, wk, &
                        t_rev)
+
   !
   ! ... add k+q to the list of k
   !
@@ -172,6 +171,9 @@ SUBROUTINE setup_nscf (xq)
   CALL set_kplusq( xk, wk, xq, nkstot, npk )
 
   !
+  !
+  !
+
   IF ( lsda ) THEN
      !
      ! ... LSDA case: two different spin polarizations,

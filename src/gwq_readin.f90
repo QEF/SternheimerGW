@@ -191,7 +191,7 @@ SUBROUTINE gwq_readin()
   last_irr     = -1000
   start_q      = 1
   last_q       =-1000
-  ecutsig      = 1.1 
+  ecutsig      = 1.3
  !ecutsig      = 2.2
   nbnd_sig     = 8
   modielec     = .FALSE.

@@ -218,6 +218,7 @@ real(DP) :: &
         if (anorm.lt.ethr) conv (ibnd) = 1
         conv_root = conv_root.and.(conv (ibnd).eq.1)
      enddo
+
      if (conv_root) goto 100
 
 !  " compute the step direction h. Conjugate it to previous step"

@@ -80,10 +80,13 @@ ktokpmq.o\
 grid_shuffle.o\
 prepare_kmq.o\
 fft6_g2r.o\
+fft6_g2r_green.o\
+fft6_g2r_coulomb.o\
 gw_product.o\
 sigma_r2g.o\
 ggensig.o\
 sigma_matel.o\
+fft6_r2g_coulomb.o\
 
 HOME =/users2/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a
