@@ -11,9 +11,10 @@ SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 
-USE kinds, ONLY : DP
-USE mp_global, ONLY: intra_pool_comm
-USE mp,        ONLY: mp_sum
+USE kinds,       ONLY: DP
+USE mp_global,   ONLY: intra_pool_comm
+USE mp,          ONLY: mp_sum
+USE control_gw,  ONLY: maxter_green
 
 implicit none
 
@@ -51,9 +52,9 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
 !HL upping iterations to get convergence with green_linsys?
 
-  ! integer, parameter :: maxter = 200
-    integer, parameter :: maxter = 600
-  ! the maximum number of iterations
+  !integer, parameter :: maxter = 200
+  !integer, parameter :: maxter = 600
+  !the maximum number of iterations
   integer :: iter, ibnd, lbnd
   ! counters on iteration, bands
   integer , allocatable :: conv (:)
@@ -128,23 +129,18 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
 !HL PH.x does explicit do loop: 
 !I'd prefer to mimic SGW approach here, but Quesspro Guys like there goto etc
-!and I want to stick with there convergence parameters/mindset etc. 
+!and I want to stick with their convergence parameters/mindset etc. 
 
-  do iter = 1, maxter
-
-     !   kter = kter + 1
-
-        ! g  = (-PcDv\Psi) - (H \Delta\Psi)
-        ! gt = conjg( g)
-        ! r  = b - Ax 
-        ! rt = conjg ( r )
-
-! write(6, '("cBiCG")')
-
+  do iter = 1, maxter_green
+    ! kter = kter + 1
+    ! g    = (-PcDv\Psi) - (H \Delta\Psi)
+    ! gt   = conjg( g)
+    ! r    = b - Ax 
+    ! rt   = conjg ( r )
+    ! write(6, '("cBiCG")')
      if (iter .eq. 1) then
         !r = b - A* x
         !rt = conjg (r) 
-
         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
        !call h_psi (ndim, dpsi, g, e, ik, nbnd)
         do ibnd = 1, nbnd
@@ -248,13 +244,8 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 !     write(6,'("Search Directions")')
 !     write(6,*) t(:,:)
 !     stop
-
-     
-!    call h_psi (ndim, h, t, e(1), ik, nbnd)
-!    call h_psi (ndim, ht, tt, e(1), ik, nbnd)
-
-
-!
+!     call h_psi (ndim, h, t, e(1), ik, nbnd)
+!     call h_psi (ndim, ht, tt, e(1), ik, nbnd)
 !     compute the coefficients a and c for the line minimization
 !     compute step length lambda
 !     lbnd=0
@@ -262,16 +253,13 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 !        if (conv (ibnd) .eq.0) then
 !           lbnd=lbnd+1
 !           lbnd = ibnd
-
 !           old regular CG stuff
 !           HL a(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, g(1,ibnd), 1)
 !           HL c(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, t(1,lbnd), 1)
-
 !           call zcopy(ndmx*npol, g(1,ibnd), 1, gp(1,ibnd), 1)
 !           call cg_psi(ndmx, ndim,1, gp(1,ibnd), h_diag(1,ibnd)) 
 !        end if
 !     end do
-!
 
 #ifdef __PARA
 !HL   call mp_sum(  a(1:lbnd), intra_pool_comm )

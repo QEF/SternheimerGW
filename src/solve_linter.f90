@@ -251,19 +251,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !  endif
 !HL
 
-  ! In this case it has recovered after computing the contribution
-  ! to the dynamical matrix. This is a new iteration that has to 
-  ! start from the beginning.
+! In this case it has recovered after computing the contribution
+! to the dynamical matrix. This is a new iteration that has to 
+! start from the beginning.
 
   IF (iter0==-1000) iter0=0
 
-!
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
-
-!@HL Again manually shifting the eigenvalues so the top of the valence band is at zero. This is done in SGW
-!by just shift the local potential down. 
-!  et(:,:) = et(:,:) - (6.58D0/13.605)
 
   do kter = 1, niter_gw
      iter = kter + iter0
@@ -612,11 +607,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !            call ef_shift_paw (drhoscf, dbecsum, ldos, ldoss, becsum1, &
 !                                        dos_ef, irr, npe, .true.)
      ELSE
-
-         call mix_potential (2*nrxx*nspin_mag, dvscfout, dvscfin, &
-                         alpha_mix(kter), dr2, tr2_gw, iter, &
-                         nmix_gw, flmixdpot, convt)
-
+         call mix_potential(2*nrxx*nspin_mag, dvscfout, dvscfin, &
+                            alpha_mix(kter), dr2, tr2_gw, iter, &
+                            nmix_gw, flmixdpot, convt)
      ENDIF
 
      if (doublegrid) then

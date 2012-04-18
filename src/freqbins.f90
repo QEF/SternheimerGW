@@ -27,7 +27,10 @@ SUBROUTINE freqbins()
 !  wsigmamin = -14.d0 
 !  wsigmamax =  28.d0 
 !  deltaw    = 0.25d0
-   wcoulmax  = 80.d0
+!  wcoulmax  = 80.d0
+
+   write(6,*) wcoulmax
+
    zero      = 0.0d0
 
    wgreenmin = wsigmamin-wcoulmax

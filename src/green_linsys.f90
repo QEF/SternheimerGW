@@ -220,6 +220,9 @@ WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)
 DO iw = 1, nwgreen
       green =(0.0d0, 0.0d0)
       h_diag = (0.d0,0.0d0)
+
+!HL
+!Should be NBND_OCC!!!!!
       do ibnd = 1, 4
          do ig = 1, npwq
 !     x = (g2kin(ig)- cw) /(eprec(ikq,4))
@@ -243,12 +246,12 @@ DO iw = 1, nwgreen
          call  cbcg_solve_fix(cch_psi_all_green, ccg_psi, etc(1,ikq), rhs, gr_A, h_diag, &
                               npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, cw, .true.)
 
-         if(.not.conv_root) write(600+mpime,'("root not converged. ")') 
-         if(.not.conv_root) write(600+mpime,'(f15.10, i4)')anorm, lter 
-         if(.not.conv_root) write(600+mpime,'(f15.10)') wgreen(iw)
+!        if(.not.conv_root) write(600+mpime,'("root not converged. ")') 
+!        if(.not.conv_root) write(600+mpime,'(f15.10, i4)')anorm, lter 
+!        if(.not.conv_root) write(600+mpime,'(f15.10)') wgreen(iw)
+         if(.not.conv_root) gr_A(:,:) = (0.0d0, 0.0d0)
 
          gr = gr_A 
-
          do igp = 1, counter
            green (igkq_tmp(ig), igkq_tmp(igp)) = green (igkq_tmp(ig), igkq_tmp(igp)) + gr(igkq_ig(igp),1)
          enddo

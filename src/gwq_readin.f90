@@ -37,7 +37,7 @@ SUBROUTINE gwq_readin()
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                            do_q0_only
+                            do_q0_only, maxter_green
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
@@ -94,7 +94,7 @@ SUBROUTINE gwq_readin()
                        start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, wsigmamax, deltaw, wcoulmax,&
-                       use_symm
+                       use_symm, maxter_green, w_of_q_start
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -198,6 +198,7 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        = .FALSE.
   lrpa         = .FALSE.
+  maxter_green = 200
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
@@ -208,6 +209,7 @@ SUBROUTINE gwq_readin()
 
 !imaginary component added to linear system should be in Rydberg
 !eta            = 0.6/RYTOEV
+!THIS IS half a volt you idiot!
   eta            = 0.04
   kpoints        = .FALSE.
   do_coulomb     = .FALSE.

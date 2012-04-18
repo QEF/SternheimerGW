@@ -1,29 +1,4 @@
 SUBROUTINE sigma_matel (ik0)
-  !
-  !----------------------------------------------------------------
-  !
-  ! Known bug: below (grep @) the code works fine with the convention
-  ! <i|Sigma|j> = sum_G,G' [u_i,k(G)]* <G|Sigma|G'> u_j,k(G')
-  ! which is NOT the convention set in the paper. The convention of
-  ! the paper should be:
-  ! <i|Sigma|j> = sum_G,G' u_i,-k(G) <G|Sigma|G'> [u_j,-k(G')]*
-  ! but if I use -xk0 below the code gives wrong results. Indeed the
-  ! shape of Sigma^c is slightly wrong, but most importantly the
-  ! Sigma^ex is totally wrong. A quick sanity check is to calculate
-  ! the sandwiches of Sigma^ex with v set to the delta function -
-  ! this should give the normalization of the wfs. With -xk0 this
-  ! normalization is screwed up, while everything works fine with
-  ! +xk0. Also the QP energies are ok when using +xk0.
-  ! In particolar, with -xk0 the Gamma point at 1 1 1 does not give
-  ! the same Sigma^ex as 0 0 0, while this is the case for +xk0.
-  ! The most obvious conclusion is that I messed up somewhere in the
-  ! analytical calculation of the matrix elements - need to check this
-  ! out once more.
-  ! Note that in any case Sigma(-k,-G,-G') = Sigma(k,G,G') for silicon
-  ! if we exploit inversion symmetry.
-  !
-  !----------------------------------------------------------------
-
   USE io_global,            ONLY : stdout, ionode_id, ionode
   USE io_files,             ONLY : prefix, iunigk
   USE kinds,                ONLY : DP
@@ -224,6 +199,13 @@ IF (ionode) THEN
         igkq_ig  (counter) = ig
     endif
  enddo
+
+!do while ((iw.lt.nw).and.(w(iw).lt.et))
+!    iw = iw + 1
+!    iw1 = iw-1
+!    iw2 = iw
+!enddo
+
 
  WRITE(6,'("Number of G vectors for Sigma_corr", i4)') counter
  WRITE(6,*) 

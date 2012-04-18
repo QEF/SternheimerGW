@@ -139,7 +139,7 @@ IF(do_coulomb) THEN
 !Just calculating head with shifted grid.
      DO iq = w_of_q_start, nqs
         scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
-        CALL prepare_q(do_band, do_iq, setup_pw, 1)
+        CALL prepare_q(do_band, do_iq, setup_pw, iq)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
 
@@ -223,11 +223,9 @@ ENDIF
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green) CALL green_linsys(ik)
-
 ! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
 ! Parallel routine for Sigma_c
        if(do_sigma_c) CALL sigma_c(ik)
-
 ! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 
             if(do_sigma_exx) CALL sigma_exch(ik)

@@ -94,16 +94,16 @@ SUBROUTINE setup_nscf (xq)
 
   sym(1:nsym)=.true.
 
-  write(6,'("MODE NUMBER!")')
-  write(6,*) modenum
-  !HL turns of minus_q = .true.
-  modenum = 3
-  write(6,'("MODE NUMBER!")')
-  write(6,*) modenum
+!  write(6,'("MODE NUMBER!")')
+!  write(6,*) modenum
+!  HL turns off minus_q = .true.
+!   modenum = 0
+!   write(6,'("MODE NUMBER!")')
+!  write(6,*) modenum
 
 
-  ! ... smallg_q flags to false the  symmetry operations of the crystal
-  ! ... that are not symmetry operations of the small group of q.
+! ... smallg_q flags to false the  symmetry operations of the crystal
+! ... that are not symmetry operations of the small group of q.
 
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
 
@@ -147,24 +147,18 @@ SUBROUTINE setup_nscf (xq)
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
   ! ... lattice, with the full point symmetry of the lattice.
   !
-
   nkstot = nks_start
   xk(:,1:nkstot) = xk_start(:,1:nkstot)
   wk(1:nkstot)   = wk_start(1:nkstot)
-
   ! ... If some symmetries of the lattice no longer apply for this particular perturbation
   ! ... "irreducible_BZ" computes generates the missing k-points with the reduced number of.
   ! ... symmetry operations. 
-
   CALL irreducible_BZ (nrot, s, nsymq, minus_q, at, bg, npk, nkstot, xk, wk, &
                        t_rev)
-
   !
   ! ... add k+q to the list of k
   !
-
   CALL set_kplusq( xk, wk, xq, nkstot, npk )
-  
   !
   !
   !

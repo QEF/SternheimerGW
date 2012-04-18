@@ -22,7 +22,7 @@ subroutine bcast_gw_input ( )
                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
                          do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
-                         do_q0_only
+                         do_q0_only, maxter_green
  
    !HL elph out of control_ph
 
@@ -77,16 +77,14 @@ subroutine bcast_gw_input ( )
   CALL mp_bcast( iq1, ionode_id )
   CALL mp_bcast( iq2, ionode_id )
   CALL mp_bcast( iq3, ionode_id )
-  !
-  ! real*8
-  !
+!
+! real*8
+!
   call mp_bcast (tr2_gw, ionode_id )
   call mp_bcast (tr2_green, ionode_id )
   call mp_bcast (amass, ionode_id )
   call mp_bcast (alpha_mix, ionode_id )
   call mp_bcast (max_seconds, ionode_id )
-
-
 ! characters
   call mp_bcast (title, ionode_id )
   call mp_bcast (fildyn, ionode_id )
@@ -124,6 +122,7 @@ subroutine bcast_gw_input ( )
 
   call mp_bcast (use_symm, ionode_id)
   call mp_bcast (w_of_q_start, ionode_id)
+  call mp_bcast (maxter_green, ionode_id)
 #endif
   return
 end subroutine bcast_gw_input

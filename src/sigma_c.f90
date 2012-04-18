@@ -150,7 +150,6 @@ if(.not.ionode) then
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 endif
 #endif
-
 #ifdef __PARA
       npool = nproc / nproc_pool
       write(stdout,'("npool", i4, i5)') npool, nksq
@@ -167,7 +166,7 @@ endif
       ! the index of the first and the last g vec in this pool
         iqstart = iqs
         iqstop  = iqs - 1 + nkpool
-        write (stdout,'(/4x,"Max n. of G vecs in Green_linsys per pool = ",i5)') iqstop-iqstart+1
+        write (stdout,'(/4x,"Max n. of Kpoint in Sigma_C per pool = ",i5)') iqstop-iqstart+1
       else
 #endif
        iqstart = 1
@@ -175,7 +174,6 @@ endif
 #ifdef __PARA
       endif
 #endif
-
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
    WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
@@ -189,11 +187,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
 !-q = k0 - (k0 + q)
       xq_ibk(:) = xk_kpoints(:,ik0) - xk(:,ikq)
-
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
      call find_q_ibz(xq_ibk, s, iqrec, isym)
-
      write(6, *)  
      write(6, '("xq_IBK point")')
      write(6, '(3f11.7)') xq_ibk
@@ -239,9 +235,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
            do igp = 1, ngmsco
              do iwim = 1, nfs
                  z(iwim) = dcmplx( 0.d0, fiu(iwim))
-               ! normal ordering.
-               ! a(iwim) = scrcoul_g (ig,igp,iwim)
-               ! For rotated g-vects.
+             !normal ordering.
+             !a(iwim) = scrcoul_g (ig,igp,iwim)
+             !For rotated g-vects.
                  a(iwim) = scrcoul_g_R (ig,igp,iwim)
              enddo
              pade_catch=.false.
@@ -249,9 +245,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
                  ar = real(a(iwim))
                  ai = aimag(a(iwim))
                  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-                    ! write(6,*) (z(i),i=1,N)
-                    ! write(6,*) (u(i),i=1,N)
-                    ! write(6,*) (a(i),i=1,N)
+             !write(6,*) (z(i),i=1,N)
+             !write(6,*) (u(i),i=1,N)
+             !write(6,*) (a(i),i=1,N)
                       a(:) = (0.0d0, 0.0d0)
                       pade_catch = .true.
                  endif
@@ -260,16 +256,12 @@ IF(iqstop-iqstart+1.ne.0) THEN
              call pade_eval ( nfs, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
            enddo
         enddo
-
-!HL 
 !weird bugs in fft6 this subroutine 
 !has been a nightmare since the beginning....
 !call fft6_g2r (ngmsco, nrsco, nlsco, scrcoul_pade_g, scrcoul, 1)
 !W(G,G';w)
-
          czero = (0.0d0, 0.0d0)
          scrcoul(:,:) = czero
-
 !Way to test FFT: 1) Try different cutoffs for the fft, fourier transform forward 
 !and then backwards for each  and see if it works... 
 !In this way determine absolutely the maximum cutoff before things go haywire 
@@ -359,16 +351,16 @@ IF(iqstop-iqstart+1.ne.0) THEN
     ENDDO ! end loop iqstart, iqstop 
 ENDIF
 
-#ifdef __PARA
-    CALL mp_barrier(inter_pool_comm)
-#endif
-
     DEALLOCATE ( gmapsym          )
     DEALLOCATE ( greenfm, greenfp )
     DEALLOCATE ( greenf_g         )
     DEALLOCATE ( scrcoul          )
     DEALLOCATE ( scrcoul_pade_g   )
     DEALLOCATE ( scrcoul_g        )
+
+#ifdef __PARA
+    CALL mp_barrier(inter_pool_comm)
+#endif
 
 #ifdef __PARA
     CALL mp_sum(sigma, inter_pool_comm)
