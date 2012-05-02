@@ -144,11 +144,12 @@ USE kinds,                     ONLY : DP
   enddo
   padapp = acap(N)/bcap(N)
 
-  !ar = real(padapp)
-  !ai = aimag(padapp)
-  !if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-  !  padapp = (0.0d0,0.0d0)
-  !endif
+!Turning on pade catch.
+  ar = real(padapp)
+  ai = aimag(padapp)
+  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+    padapp = (0.0d0,0.0d0)
+  endif
  
   !
   end subroutine pade_eval
