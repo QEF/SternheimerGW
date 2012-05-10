@@ -225,10 +225,14 @@ DO iw = 1, nwgreen
 !Should be NBND_OCC!!!!!
       do ibnd = 1, 4
          do ig = 1, npwq
+
 !     x = (g2kin(ig)- cw) /(eprec(ikq,4))
 !     Keeping this as the top of valence band because it seems like the right thing to do.
 !     Only preconditioning the real part of the operator...
+!     try it with a small imaginary part???
+!           x = (g2kin(ig)- DCMPLEX(w_ryd(iw), eta)) /(eprec(4,1))
             x = (g2kin(ig)- w_ryd(iw)) /(eprec(4,1))
+
             h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
                               /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
          enddo

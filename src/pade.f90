@@ -63,23 +63,18 @@ USE kinds,                     ONLY : DP
          ! when u(:) is very small
          !
 !if(abs(g(p-1,i)) .eq. 0) then
-!       write(6,*) z(:)
-!       write(6,'(4x, "fitting parameter too small. g(p-1,i)= ",2f9.5)')g(p-1,i)
-!       write(6,*) u(:)
-!       stop
+!  write(6,*) z(:)
+!  write(6,'(4x, "fitting parameter too small. g(p-1,i)= ",2f9.5)')g(p-1,i)
+!  write(6,*) u(:)
+!  stop
 !end if
-!VERY HACK HL:
-!        if (abs (g(p-1,i)) .lt. 1d-10 ) g(p-1,i) = 0.001
-
          tmp1 = g(p-1,p-1)/g(p-1,i)
          tmp2 = g(p-1,i)/g(p-1,i)
          g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
-
         !
         !Helps stability.
         !
-
-         if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
+        !if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
       enddo
     endif
     a(p) = g (p,p)
