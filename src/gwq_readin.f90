@@ -164,7 +164,7 @@ SUBROUTINE gwq_readin()
   alpha_mix(:) = 0.D0
   alpha_mix(1) = 0.7D0
   niter_gw     = maxter
-  nmix_gw      = 4
+  nmix_gw      = 3
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -223,7 +223,7 @@ SUBROUTINE gwq_readin()
   wsigmamin      = -10.0d0
   wsigmamax      =  10.0d0
   deltaw         =   0.25d0 
-  wcoulmax       =  80.0d0   
+  wcoulmax       = 110.0d0   
 
  !Symmetry Default:yes!, which q, point to start on.
  !can be used in conjunction with do_q0_only.

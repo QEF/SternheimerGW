@@ -238,6 +238,7 @@ ENDIF
 
    DO ik = 1, 1
          if(do_sigma_matel) CALL sigma_matel(ik) 
+         CALL clean_pw_gw(ik)
    ENDDO
 
    call mp_barrier(inter_pool_comm)

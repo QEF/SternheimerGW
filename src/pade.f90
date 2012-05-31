@@ -1,4 +1,3 @@
- !
   ! General note:
   ! Lebegue, Arnaud, Alouani, and Blochel [PRB 67, 155208 (2003)]
   ! state that when they use Pade of order N = 12 (resulting in

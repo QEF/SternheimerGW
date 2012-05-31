@@ -232,7 +232,6 @@ DO iw = 1, nwgreen
 !     try it with a small imaginary part???
 !           x = (g2kin(ig)- DCMPLEX(w_ryd(iw), eta)) /(eprec(4,1))
             x = (g2kin(ig)- w_ryd(iw)) /(eprec(4,1))
-
             h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
                               /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
          enddo

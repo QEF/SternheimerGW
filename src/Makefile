@@ -86,6 +86,7 @@ find_q_ibz.o\
 gmap_sym.o\
 stern_symm.o\
 unfold_w.o\
+mix_pot_c.o\
 
 HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a

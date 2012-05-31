@@ -286,11 +286,12 @@
      if (alpha_mix (it) .eq.0.d0) alpha_mix (it) = alpha_mix (it - 1)
   enddo
 
-  if (reduce_io) then
+!HL always reduce_io...
+  !if (reduce_io) then
      flmixdpot = ' '
-  else
-     flmixdpot = 'mixd'
-  endif
+  !else
+  !   flmixdpot = 'mixd'
+  !endif
 
   where_rec='gwq_setup.'
   rec_code=-40
