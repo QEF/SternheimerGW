@@ -22,9 +22,10 @@ subroutine bcast_gw_input ( )
                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
                          do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
-                         do_q0_only, maxter_green
+                         do_q0_only, maxter_green, godbyneeds, cohsex, padecont
+!HLM                     multishift
  
-   !HL elph out of control_ph
+ !HL elph out of control_ph
 
   USE gamma_gamma, ONLY : asr
   USE disp, ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
@@ -99,6 +100,11 @@ subroutine bcast_gw_input ( )
   call mp_bcast (ecutsig, ionode_id)
   call mp_bcast (nbnd_sig, ionode_id)
   call mp_bcast (modielec, ionode_id)
+  call mp_bcast (godbyneeds, ionode_id)
+  call mp_bcast (padecont, ionode_id)
+  !HLM
+  !call mp_bcast (multishift, ionode_id)
+  call mp_bcast (cohsex, ionode_id)
   call mp_bcast (eta, ionode_id)
   call mp_bcast (kpoints, ionode_id)
   call mp_bcast (do_coulomb, ionode_id)

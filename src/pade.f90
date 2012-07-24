@@ -70,9 +70,7 @@ USE kinds,                     ONLY : DP
          tmp1 = g(p-1,p-1)/g(p-1,i)
          tmp2 = g(p-1,i)/g(p-1,i)
          g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
-        !
         !Helps stability.
-        !
         !if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
       enddo
     endif

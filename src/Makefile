@@ -47,8 +47,6 @@ cft_wave.o \
 orthogonalize.o \
 adddvscf.o \
 ch_psi_all.o \
-cg_psi.o \
-ccg_psi.o \
 cgsolve_all.o \
 incdrhoscf.o \
 incdrhoscf_nc.o \
@@ -66,6 +64,7 @@ set_drhoc.o\
 cBiCG_solve_fix.o\
 cch_psi_all_fix.o\
 cch_psi_all_green.o\
+cg_psi.o\
 ccg_psi.o\
 green_linsys.o\
 pade.o\
@@ -87,6 +86,7 @@ gmap_sym.o\
 stern_symm.o\
 unfold_w.o\
 mix_pot_c.o\
+godby_needs.o\
 
 HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a

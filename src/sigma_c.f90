@@ -5,7 +5,7 @@ SUBROUTINE sigma_c(ik0)
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex
   USE klist,         ONLY : wk, xk
   USE io_files,      ONLY : prefix, iunigk, prefix, tmp_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -76,7 +76,6 @@ SUBROUTINE sigma_c(ik0)
   integer*8 :: unf_recl
 
 #define DIRECT_IO_FACTOR 8 
-
 ! #ifdef __PARA
 !       scrcoul_g = czero
 !       if (me.eq.1.and.mypool.eq.1) then
@@ -97,7 +96,6 @@ SUBROUTINE sigma_c(ik0)
    ALLOCATE ( greenfm        (nrsco, nrsco)            )
    ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
    ALLOCATE ( gmapsym        (ngm, 48)                 )
-
 !  Pade Approximants.
    ALLOCATE  (z(nfs), a(nfs))
 
@@ -176,7 +174,7 @@ endif
 #endif
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
-   WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
+!   WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
    DO iq = iqstart, iqstop
       if (lgamma) then
           ikq = iq
@@ -194,16 +192,13 @@ IF(iqstop-iqstart+1.ne.0) THEN
      write(6, '("xq_IBK point")')
      write(6, '(3f11.7)') xq_ibk
      write(6, '("equivalent xq_IBZ point, symop, iqrec")')
-     write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec, iuncoul
-     write(1000 + mpime, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
+     write(6, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
+!    write(1000 + mpime, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
      write(6,*)
-
 !lrcoul = 2 * ngmsig * ngmsig * nfs.
 !CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1 )
 !Read the equivalent q_point in the IBZ of crystal:
-
-      CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
-
+     CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
 !Rotate G_vectors for FFT.
 !In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
 !I have checked that here as well and it works.
@@ -216,21 +211,21 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !1) Could pad scrcoul_g_R so that all the vectors still fall in side of it up to ngmsco
 !   then trim them off later.
 !2) Modify gmapsym so that it only keeps vectors up to ngmsco... 
-
-    do ig = 1, ngmsco
-       do igp = 1, ngmsco
-          if((gmapsym(ig,isym).lt.ngmsco).and.(gmapsym(igp,isym).lt.ngmsco)) then
-              do iwim = 1, nfs
-                 scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
-              enddo
-          endif
-       enddo
-    enddo
+     do ig = 1, ngmsco
+        do igp = 1, ngmsco
+           if((gmapsym(ig,isym).lt.ngmsco).and.(gmapsym(igp,isym).lt.ngmsco)) then
+               do iwim = 1, nfs
+                  scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
+               enddo
+           endif
+        enddo
+     enddo
 
 !Start integration over iw +/- wcoul. 
     WRITE(6,'("Starting Frequency Integration")')
 !   WRITE(1000+mpime,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
+        scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
         do ig = 1, ngmsco
            do igp = 1, ngmsco
              do iwim = 1, nfs
@@ -252,20 +247,26 @@ IF(iqstop-iqstart+1.ne.0) THEN
                       pade_catch = .true.
                  endif
              enddo
-             !if(pade_catch) write (6,'("pade-coeffs nan ", 3i4)')ig, igp, iq 
-             call pade_eval ( nfs, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+             if(padecont) then
+                call pade_eval ( nfs, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+             else if (cohsex) then
+                  scrcoul_pade_g(ig,igp) = a(1)
+             else if(godbyneeds) then
+       !call godby_needs_eval()
+       !this has the wrong parity i think...:
+         scrcoul_pade_g(ig,igp)=(a(2)/(dcmplx(w_ryd(iw),0.0d0)-a(1)+ci*eta ))-((a(2))/(dcmplx(w_ryd(iw), 0.0d0) + a(1) - ci*eta))
+       !this gives correct parity in matlab...
+       !scrcoul_pade_g(ig,igp)=(a(2)/( dcmplx(w_ryd(iw),0.0d0) - a(1) + ci*eta ))-((a(2))/(dcmplx(w_ryd(iw),0.0d0) + a(1) + ci*eta))
+             else 
+                  WRITE(6,'("No screening model chosen!")')
+                  STOP
+                  call mp_global_end()
+             endif
            enddo
         enddo
-!weird bugs in fft6 this subroutine 
-!has been a nightmare since the beginning....
-!call fft6_g2r (ngmsco, nrsco, nlsco, scrcoul_pade_g, scrcoul, 1)
 !W(G,G';w)
          czero = (0.0d0, 0.0d0)
          scrcoul(:,:) = czero
-!Way to test FFT: 1) Try different cutoffs for the fft, fourier transform forward 
-!and then backwards for each  and see if it works... 
-!In this way determine absolutely the maximum cutoff before things go haywire 
-!and then see how to deal with it. 
          do ig = 1, ngmsco
             aux(:) = czero
             do igp = 1, ngmsco
@@ -276,8 +277,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
                scrcoul(ig, irp) = aux(irp) / omega
             enddo
          enddo
-!Now have W(G,r';omega)
-!FFT second index:
          do irp = 1, nrsco
             aux = czero
             do ig = 1, ngmsco
@@ -286,15 +285,16 @@ IF(iqstop-iqstart+1.ne.0) THEN
             call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
             scrcoul(1:nrsco,irp) = conjg ( aux )
          enddo
-!Now have W(r,r';omega)
+!Now have W(r,r';omega')
          cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
          DO iw0 = 1, nwsigma
             iw0mw = ind_w0mw (iw0,iw)
             iw0pw = ind_w0pw (iw0,iw)
+
 !rec0 = (iw0mw-1) * 1 * nqs + (ik0-1) * nqs + (iq-1) + 1
+
             rec0 = (iw0mw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio( greenf_g, lrgrn, iungreen, rec0, -1 )
-!Inlining FFT:
             greenfm(:,:) = czero
             do ig = 1, ngmsco
                aux(:) = czero
@@ -306,8 +306,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
                   greenfm(ig, irp) = aux(irp)/omega
                enddo
             enddo
-!Now have G(\G,\r';\omega-\omega')
-!FFT second index:
             do irp = 1, nrsco
                aux = czero
                do ig = 1, ngmsco
@@ -316,7 +314,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
                greenfm(1:nrsco,irp) = conjg ( aux )
             enddo
-!Now have G(r,r';omega-w')
+!Now have G(r,r';omega-omega')
 !rec0 = (iw0pw-1) * 1 * nqs + (ik0-1) * nqs + (iq-1) + 1
             rec0 = (iw0pw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio(greenf_g, lrgrn, iungreen, rec0, -1)
@@ -332,9 +330,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
                   greenfp(ig, irp) = aux(irp) / omega
                enddo
             enddo
-
-!Now have G(\G,\r';\omega+\omega')
-!FFT second index:
             do irp = 1, nrsco
                aux = czero
                do ig = 1, ngmsco
@@ -343,11 +338,19 @@ IF(iqstop-iqstart+1.ne.0) THEN
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
                greenfp(1:nrsco,irp) = conjg ( aux )
             enddo
-
+!Now have G(\r,\r';\omega+\omega')
                sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * (greenfp(:,:) + greenfm(:,:)) * scrcoul(:,:)
 
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
+
+!now could add extra ananlytic piece: -\inf to wsigmamin-wcoul
+!and from wsigmamin+wcoul to +\inf
+!G(r,r';w'-w0) =  FFT[\delta(\G,G')/(w-w0-w1)]
+!W(r,r';w')
+!\Sigma(r, r'; w0) = \Sigma(r,r'; w0) + \int_{\-inf}^{wcoul) G(r,r'; w0 - w')W(r,\r';w')dw'
+!                                      + \int_{wcoul}^{\inf) G(r,r'; w0 - w')W(r,\r';w')dw'
+
     ENDDO ! end loop iqstart, iqstop 
 ENDIF
 
@@ -406,7 +409,6 @@ IF (ionode) then
           enddo 
        enddo
     enddo
-
 !sigma_g = sigma(1:ngmsco,1:ngmsco,:)
     do ig = 1, ngmsco
      do igp = 1, ngmsco
@@ -415,14 +417,12 @@ IF (ionode) then
         enddo 
      enddo
     enddo
-
 !Now write Sigma in G space to file. 
     WRITE(6,'(4x,"Writing Sigma to File")')
 
 !HL Original:
 !Just storing in first record no matter what k-point.
 !CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
-
     CALL davcio (sigma_g, lrsigma, iunsigma, 1, 1)
     CALL stop_clock('sigmac') 
     DEALLOCATE ( sigma_g  )

@@ -37,7 +37,7 @@ PROGRAM gw
   USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel,&
-                               do_q0_only
+                               do_q0_only !multishift!HLM
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -47,6 +47,7 @@ PROGRAM gw
   USE environment,      ONLY: environment_start
   USE freq_gw,          ONLY : nfs, nwsigma
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
+!                              iunresid, lrresid, iunalphabeta, lralphabeta !HLM
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
@@ -113,7 +114,15 @@ PROGRAM gw
     iungreen = 31
     lrgrn  = 2 * ngmsig * ngmsig
 
+!if(multishift) then
+!HLM
+!    iunresid = 34
+!    lrresid  = 2*npwx
+!    iunalphabeta = 35
+!    lralphabeta  = 4
+!endif
 !   Only writing correlation energy to disk so ngmsigma = ngmsco.   
+
 IF (ionode) THEN
        iuncoul = 28
        lrcoul = 2 * ngmsig * ngmsig * nfs
@@ -145,6 +154,9 @@ IF(do_coulomb) THEN
 
 !HLSYM
         if(use_symm) then
+           WRITE(6,'("")')
+           WRITE(6,'("SYMMETRIZING COULOMB Perturbations")')
+           WRITE(6,'("")')
            CALL stern_symm()
         else
            ngmunique = ngmsig
@@ -176,27 +188,21 @@ IF(do_coulomb) THEN
 #ifdef __PARA
       endif
 #endif
-
-
 !CALCULATE W(G,G';iw):
        if((igstop-igstart+1).ne.0) then
            CALL coulomb(iq, igstart, igstop, scrcoul_g)
        endif
-
-!COLLECT G-VECTORS
+!COLLECT G-VECTORS:
         CALL mp_barrier(inter_pool_comm)
         CALL mp_sum ( scrcoul_g, inter_pool_comm )
         CALL mp_barrier(inter_pool_comm)
-
-!   Write W_{q}(G,G';iw) to file.
+!Write W_{q}(G,G';iw) to file:
         IF (ionode) THEN
             CALL unfold_w(scrcoul_g)
             CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
         ENDIF
-
         CALL clean_pw_gw(iq)
         CALL mp_barrier(inter_pool_comm)
-
         if(do_q0_only) GOTO 124
    END DO
    WRITE(stdout, '("Finished Calculating Screened Coulomb")') 
@@ -208,6 +214,11 @@ ENDIF
    DEALLOCATE( ig_unique )
 
 ! Generates small group of k and then forms IBZ_{k}.
+! Open directory for residuals/needed for multishift:
+! HLM
+! if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
+! if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
+
    DO ik = 1, 1
        xq(:) = xk_kpoints(:, ik)
        !Write(6,*) xq
@@ -223,6 +234,11 @@ ENDIF
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green) CALL green_linsys(ik)
+
+!HLM
+!       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
+!       if(do_green.and.multishift)) CALL green_linsys_shift(ik)
+
 ! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
 ! Parallel routine for Sigma_c
        if(do_sigma_c) CALL sigma_c(ik)
@@ -230,7 +246,6 @@ ENDIF
        if(ionode) then 
             if(do_sigma_exx) CALL sigma_exch(ik)
        endif
-
        if(ionode) WRITE(6, '("Finished CALCULATING SIGMA")') 
        CALL mp_barrier(inter_pool_comm)
        CALL clean_pw_gw(ik)

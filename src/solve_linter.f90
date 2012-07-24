@@ -91,10 +91,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 ! HL prec
 ! HL careful now... complexifying preconditioner:
-! real(DP) , allocatable :: h_diag (:,:)
-  COMPLEX(DP) , allocatable :: h_diag (:,:)
-
-  ! h_diag: diagonal part of the Hamiltonian
+  real(DP) , allocatable :: h_diag (:,:)
+! h_diag: diagonal part of the Hamiltonian
   real(DP) :: thresh, anorm, averlt, dr2
 
   ! thresh: convergence threshold
@@ -164,8 +162,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
  
-  !HL Q:what is the difference between tr_cgsolve and thresh? 
-  external ch_psi_all, cg_psi, ccg_psi, cch_psi_all_fix
+  !external ch_psi_all, cg_psi, ccg_psi, cch_psi_all_fix
+   external ch_psi_all, cg_psi, cch_psi_all_fix
   
   IF (rec_code_read > 20 ) RETURN
 
@@ -289,7 +287,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         h_diag = 0.d0
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              h_diag(ig,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+              h_diag(ig,ibnd)= 1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
            enddo
            IF (noncolin) THEN
               do ig = 1, npwq
@@ -306,9 +304,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
            if (where_rec =='solve_lint'.or.iter>1) then
 
+             !HL is this necessary?
              ! After the first iteration dvbare_q*psi_kpoint is read from file
-
-              call davcio (dvpsi, lrbar, iubar, nrec, - 1)
+               call davcio (dvpsi, lrbar, iubar, nrec, - 1)
 
              ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
              ! dvscf_q from previous iteration (mix_potential)
@@ -320,6 +318,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                  call apply_dpot(aux1, dvscfins(1,1), current_spin)
                 !FFT translated according to igkq: DeltaV(q)psi(k).
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
+
               enddo
               call stop_clock ('vpsifft')
            else
@@ -340,11 +339,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                nrec1 = ik
               !HL Don't need to read/write the full wave fxn at each iteration...
               !call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
-              call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
-              call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
-               dpsi(:,:) = (0.d0, 0.d0) 
-              ! dpsim(:,:) = (0.d0, 0.d0) 
-              ! dpsip(:,:) = (0.d0, 0.d0) 
+               call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
+               call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
+               dpsi(:,:)  = (0.d0, 0.d0) 
+              !dpsim(:,:) = (0.d0, 0.d0) 
+              !dpsip(:,:) = (0.d0, 0.d0) 
               !threshold for iterative solution of the linear system
               !write(6,*)1.d-1*sqrt(dr2), 1.d-4
                thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
@@ -374,10 +373,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
          cw       =  CMPLX(0.0d0,  fiu(iw), kind=DP) 
  
-           call cbcg_solve_fix(cch_psi_all_fix, ccg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+           call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
 
-           call cbcg_solve_fix(cch_psi_all_fix, ccg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+           call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
 
            ltaver = ltaver + lter
@@ -390,8 +389,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            nrec1 =  ik
 
            dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
-
-          ! call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
+         ! call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
            call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
            call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
           ! calculates dvscf, sum over k => dvscf_q_ipert
@@ -454,7 +452,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
              dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
              call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
-           endif
+          endif
 !       call dv_of_drho (imode0+ipert, dvscfout(1,1), .true.)
 !       Here we calculate Delta V from Delta rho.
 
@@ -479,18 +477,17 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !            call ef_shift_paw (drhoscf, dbecsum, ldos, ldoss, becsum1, &
 !                                        dos_ef, irr, npe, .true.)
      ELSE
-
          !write(6,*) alpha_mix(kter), nmix_gw, tr2_gw 
-         !TO
-         call mix_potential(2*nrxx*nspin_mag, dvscfout, dvscfin, &
-                            alpha_mix(kter), dr2, tr2_gw, iter, &
-                            nmix_gw, flmixdpot, convt)
+         !call mix_potential(2*nrxx*nspin_mag, dvscfout, dvscfin, &
+         !                   alpha_mix(kter), dr2, tr2_gw, iter, &
+         !                   nmix_gw, flmixdpot, convt)
          !Generalized to Complex potentials
          !call mix_potential_c(2*nrxx*nspin_mag, dvscfout, dvscfin, &
-         !                     alpha_mix(kter), dr2, tr2_gw, iter, &
-         !                     nmix_gw, convt)
+         !doesn't seem to like the factor of two in the complex case...
+          call mix_potential_c(nrxx, dvscfout, dvscfin, &
+                               alpha_mix(kter), dr2, tr2_gw, iter, &
+                               nmix_gw, convt)
      ENDIF
-
      if (doublegrid) then
         do ipert = 1, npe
            do is = 1, nspin_mag
@@ -498,12 +495,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            enddo
         enddo
      endif
-
-!   calculate here the change of the D1-~D1 coefficients due to the PH
-!   perturbation
-
-     IF (okpaw) CALL PAW_dpotential(dbecsum,rho%bec,int3_paw,npe)
-
      ! with the new change of the potential we compute the integrals
      ! of the change of potential and Q 
      ! HL-Q denotes the augmentation charge. Look at Vanderbilt PRB 41 7892
@@ -525,10 +516,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 #else
      averlt = DBLE (ltaver) / lintercall
 #endif
-
      tcpu = get_clock ('GW')
      dr2 = dr2 / DBLE(npe)
-
 
 !   WRITE( 1000 + mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !   " secs   av.it.: ",f5.1)') iter, tcpu, averlt
@@ -558,22 +547,18 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 155 iter0=0
 
 !   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!   " secs   av.it.: ",f5.1)') iter, tcpu, averlt
-
-!    WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!          " secs   av.it.: ",f5.1)') iter, tcpu, averlt
-
+!         "secs av.it.:",f5.1)') iter, tcpu, averlt
+!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 !   HL setting drhoscf to dvscfin here this is a temporary hack. 
 !   need to understand why drhoscf is zeroed in PH code...
 !   possibly because they write to disc davcio_drho ?
 !   drhoscf(igpert, 1) = dvscfin + dvbare
-!   at this point drhoscf is dv_hartree(RPA)
+!   after this point drhoscf is dv_hartree(RPA)
     drhoscf(:,1) = dvscfin(:,1)
     if (convt) then
-
     if (fildvscf.ne.' ') then
     write(6, '("fildvscf")') 
-
   !HL 
   ! do ipert = 1, npe
   ! call davcio_drho ( dvscfin(1,1),  lrdrho, iudvscf, 

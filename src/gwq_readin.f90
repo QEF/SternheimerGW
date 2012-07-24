@@ -37,7 +37,7 @@ SUBROUTINE gwq_readin()
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green
+                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex !HLM multishift
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
@@ -94,7 +94,7 @@ SUBROUTINE gwq_readin()
                        start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, wsigmamax, deltaw, wcoulmax,&
-                       use_symm, maxter_green, w_of_q_start
+                       use_symm, maxter_green, w_of_q_start, godbyneeds, padecont, cohsex
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -164,7 +164,7 @@ SUBROUTINE gwq_readin()
   alpha_mix(:) = 0.D0
   alpha_mix(1) = 0.7D0
   niter_gw     = maxter
-  nmix_gw      = 3
+  nmix_gw      = 5
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -205,11 +205,18 @@ SUBROUTINE gwq_readin()
   ecutsco      = 2.5 
   ecutsex      = 5.0
   nbnd_sig     = 8
+
+!Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
+  godbyneeds   = .FALSE.
+  cohsex       = .FALSE.
+  padecont     = .FALSE.
+!HLM
+!  multishift     = .FALSE.
+
 
 !imaginary component added to linear system should be in Rydberg
 !eta            = 0.6/RYTOEV
-!THIS IS half a volt you idiot!
   eta            = 0.04
   kpoints        = .FALSE.
   do_coulomb     = .FALSE.
@@ -220,10 +227,10 @@ SUBROUTINE gwq_readin()
   do_q0_only     = .FALSE.
 
 !Frequency variables
-  wsigmamin      = -10.0d0
-  wsigmamax      =  10.0d0
-  deltaw         =   0.25d0 
-  wcoulmax       = 110.0d0   
+  wsigmamin      =-10.0d0
+  wsigmamax      = 10.0d0
+  deltaw         =  0.1d0 
+  wcoulmax       = 80.0d0   
 
  !Symmetry Default:yes!, which q, point to start on.
  !can be used in conjunction with do_q0_only.

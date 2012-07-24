@@ -16,6 +16,7 @@ SUBROUTINE freqbins()
                          wgreenmax, fiu, nfs
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
+  USE control_gw, ONLY : eta
            
 
   IMPLICIT NONE 
@@ -106,6 +107,8 @@ SUBROUTINE freqbins()
   enddo
    
  !Print out Frequencies on Imaginary Axis for reference...
+  WRITE(6,'("eta")')
+  WRITE(6,'(1f10.4 )') eta
   WRITE(6,'("wsigmamin, wsigmamax, deltaw:")')
   WRITE(6,'(3f10.4 )') wsigmamin, wsigmamax, deltaw 
   WRITE(6,'(//5x, "Imag. Frequencies: ")')

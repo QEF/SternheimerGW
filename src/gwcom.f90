@@ -360,9 +360,12 @@ MODULE control_gw
              do_sigma_exx, &
              do_green, &
              do_sigma_matel,&
-             do_q0_only
-              
-  !
+             do_q0_only,&
+             godbyneeds,&
+             padecont,&
+             cohsex
+            ! multishift !HLM
+
 END MODULE control_gw
 !
 !
@@ -400,7 +403,10 @@ MODULE units_gw
        iuwfc, lrwfc, iuvkb, iubar, lrbar, iuebar, lrebar, iudwf, iupsir, &
        lrdwf, iudrhous, lrdrhous, iudyn, iupdyn, iunrec, iudvscf, iudrho, &
        lrdrho, iucom, lrcom, iudvkb3, lrdvkb3, iuncoul, iungreen, iunsigma, &
-       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex,lrsex
+       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex, lrsex
+  !HLM lrresid, lralphabeta, iunresid, iunalphabeta
+
+
   ! iunit with the wavefunctions
   ! the length of wavefunction record
   ! unit with vkb

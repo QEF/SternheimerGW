@@ -48,8 +48,14 @@
   INTEGER, ALLOCATABLE :: nltmp(:)
   !INTEGER, POINTER :: nltmp(:)
 
-! gcuttmp = 4.D0 * ecuttmp / tpiba2
   gcuttmp = 4.D0 * ecuttmp / tpiba2
+
+!HLS 
+! gcuttmp = ecuttmp
+! gcutsigtmp = 4.D0 * ecuttmp / tpiba2
+! nr1tmp = 1 + int (2 * sqrt (gcutsigtmp) * sqrt( at(1,1)**2 + at(2,1)**2 + at(3,1)**2 ) )
+! nr2tmp = 1 + int (2 * sqrt (gcutsigtmp) * sqrt( at(1,2)**2 + at(2,2)**2 + at(3,2)**2 ) )
+! nr3tmp = 1 + int (2 * sqrt (gcutsigtmp) * sqrt( at(1,3)**2 + at(2,3)**2 + at(3,3)**2 ) )
 
   nr1tmp = 1 + int (2 * sqrt (gcuttmp) * sqrt( at(1,1)**2 + at(2,1)**2 + at(3,1)**2 ) )
   nr2tmp = 1 + int (2 * sqrt (gcuttmp) * sqrt( at(1,2)**2 + at(2,2)**2 + at(3,2)**2 ) )
@@ -74,13 +80,21 @@
 
   do ng = 1, ngm
     if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmtmp = ng
+    !this determines cut off of G, W:
+    !if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmwcutoff = ng
   enddo
+
+  !do ng = 1, ngm
+  !   this determines cut off of \Sigma and hence the FFT grid:
+  !   if ( gl( igtongl (ng) ) .le. gcutsigtmp ) ngmwcutoff = ng
+  !enddo
 
 !Choose whether is is Ex or Corr grid we are generating.
   ALLOCATE (nltmp(ngmtmp))
 
   if(corx.eq.1) then
      ALLOCATE (nlsco(ngmtmp))
+    !ngmsco should be 4*ngmtmp
      ngmsco = ngmtmp
      ngmsig = ngmtmp
     else

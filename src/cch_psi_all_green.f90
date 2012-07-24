@@ -75,7 +75,8 @@ subroutine cch_psi_all_green (n, h, ah, e, cw, ik, m)
   !write(6,*) cw
   do ibnd = 1, m
      do ig = 1, n
-        ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd))
+        !ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd))
+        ah (ig, ibnd)= hpsi(ig, ibnd) - cw*(h(ig,ibnd))
      enddo
   enddo
 

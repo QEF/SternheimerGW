@@ -23,6 +23,7 @@ SUBROUTINE sigma_r2g_ex(sigma, sigma_g)
 
 ! HL
       sigma_g = (0.0d0,0.0d0)
+      czero   = (0.0d0, 0.0d0)
       do ir = 1, nrsex
         aux = (0.0d0, 0.0d0)
         do irp = 1, nrsex

@@ -12,7 +12,7 @@ SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   real scalar, x and b are complex vectors
 
 USE kinds,       ONLY: DP
-USE mp_global,   ONLY: intra_pool_comm
+USE mp_global,   ONLY: intra_pool_comm, mpime
 USE mp,          ONLY: mp_sum
 USE control_gw,  ONLY: maxter_green
 
@@ -31,10 +31,10 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
 
 real(DP) :: &
              anorm,   & ! output: the norm of the error in the solution
-             ethr       ! input: the required precision
-            !h_diag(ndmx*npol,nbnd), & ! input: an estimate of ( H - \epsilon )
+             ethr,    & ! input: the required precision
+             h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
 
-COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
+!COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
   complex(DP) :: &
              dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
@@ -203,8 +203,8 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
      conv_root = .true.
      do ibnd = 1, nbnd
-        anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)  ) )
-        !write(6,*) anorm, ibnd, ethr
+        anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)))
+!        write(mpime+600,*) iter, anorm
         if (anorm.lt.ethr) conv (ibnd) = 1
         conv_root = conv_root.and.(conv (ibnd).eq.1)
      enddo
@@ -286,6 +286,7 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
          a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
          c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
          alpha = a(ibnd) / c(ibnd)
+        ! write(mpime+600,*) a(ibnd), c(ibnd), alpha
 
         !
         !  x  = x  + alpha        * p
@@ -311,7 +312,7 @@ COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
          a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
          beta = - a(ibnd) / c(ibnd)
-
+        ! write(mpime+600,*) a(ibnd), beta
         !
         ! pold  = p
         ! ptold = pt

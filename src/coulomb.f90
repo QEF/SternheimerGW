@@ -23,7 +23,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE lsda_mod,   ONLY : nspin
   USE io_global,  ONLY : stdout, ionode
   USE uspp,       ONLY: okvan
-  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta
+  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds
   USE partial,    ONLY : done_irr, comp_irr
   USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
@@ -68,7 +68,10 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
  !modeps and spenceralavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
-!  REAL(DP) :: w_ryd(nwcoul)
+! REAL(DP) :: w_ryd(nwcoul)
+
+!for Godby needs plasmon pole.
+  LOGICAL :: diag
 
 ! used to test the recover file
   EXTERNAL get_clock
@@ -128,6 +131,7 @@ DO ig = igstart, igstop
         ! WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
          if(iq.eq.1) then
          WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
+         WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
          endif
        ENDIF
 
@@ -171,6 +175,30 @@ DO ig = igstart, igstop
             scrcoul (ig_unique(ig),ig_unique(igp),iw,nspin_mag) = a(iw)
          enddo
        enddo !enddo on igp
+    ELSE IF (godbyneeds) then
+       do igp = 1, ngmunique 
+          !for godby-needs pp the algebra is done assuming real frequency*i...
+          !that is the calculation is done at i*wp but we pass a real number as the freq. 
+          !just trust me...
+           do iw = 1, nfs
+             z(iw) = dcmplx( fiu(iw), 0.0d0)
+             u(iw) = scrcoul (ig_unique(ig), ig_unique(igp),iw,nspin_mag)
+           enddo
+
+           if (igp.ne.ig) then 
+              diag=.false.
+           else
+              diag=.true.
+           endif
+
+           CALL godby_needs_coeffs(nfs, diag, z, u, a)
+
+           !write(1000+mpime,*)a
+
+           do iw = 1, nfs 
+              scrcoul (ig_unique(ig),ig_unique(igp),iw,nspin_mag) = a(iw)
+           enddo
+       enddo
     ELSE
        do igp = 1, ngmunique
 !   Pade input points on the imaginary axis

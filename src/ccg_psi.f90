@@ -9,12 +9,10 @@
 !-----------------------------------------------------------------
 subroutine ccg_psi (lda, n, m, psi, h_diag)
   !-----------------------------------------------------------------
-  !
-  !    This routine gives a preconditioning to the linear system solver.
-  !    The preconditioning is diagonal in reciprocal space
-  !    HL Generalized to work for complex preconditioner...
-  !    the TPAGL conditioner.
-  !
+  !  This routine gives a preconditioning to the linear system solver.
+  !  The preconditioning is diagonal in reciprocal space
+  !  HL Generalized to work for complex preconditioner...
+  !  the TPAGL conditioner.
   USE kinds, only : DP
   USE noncollin_module, only : noncolin, npol
   implicit none
