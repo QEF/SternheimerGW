@@ -33,7 +33,7 @@ REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a
 REAL(DP)                  ::   one
 COMPLEX(DP)               ::   czero
 COMPLEX(DP)               ::   aux(ngmsex), psic(nrxx), vpsi(ngm),auxsco(ngmsco)
-COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig,nbnd_sig,nwsigma),&
+COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
 LOGICAL                   ::   do_band, do_iq, setup_pw, exst
 INTEGER                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
@@ -48,10 +48,6 @@ REAL(DP) :: vtxc, etxc, ehart, eth, charge
 ALLOCATE (igkq_tmp(npwx))
 ALLOCATE (igkq_ig(npwx))
 
-! setting these arrays to dim ngmsex lets us calculate all matrix elements with sigma as 
-! a vector^{T}*matrix*vector product.
-ALLOCATE (evc_tmp_i(ngmsex))
-ALLOCATE (evc_tmp_j(ngmsex))
 
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)
@@ -157,7 +153,12 @@ IF (ionode) THEN
 !WRITE(6,'("Number of G vectors for Sigma_ex", i4)') counter
 !@10TION: only looping up to counter so need to watch that...
 
- ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex) ) 
+! setting these arrays to dim ngmsex lets us calculate all matrix elements with sigma as 
+! a vector^{T}*matrix*vector product.
+ ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex))
+ ALLOCATE (evc_tmp_i(ngmsex))
+ ALLOCATE (evc_tmp_j(ngmsex))
+
  sigma_g_ex(:,:) = (0.0d0, 0.0d0)
  CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
  sigma_band_ex (:, :) = czero
@@ -178,7 +179,10 @@ IF (ionode) THEN
       enddo
   enddo
  enddo
+
  DEALLOCATE(sigma_g_ex)
+ DEALLOCATE(evc_tmp_i)
+ DEALLOCATE(evc_tmp_j)
 
  WRITE(6,*) 
  write(stdout,'(4x,"Sigma_ex (eV)")')
@@ -188,7 +192,9 @@ IF (ionode) THEN
  WRITE(6,*) 
  WRITE(6,'("Sigma_C Matrix Element")') 
  ALLOCATE (sigma(ngmsco,ngmsco,nwsigma)) 
- CALL davcio (sigma, lrsigma, iunsigma, 1, -1)
+ ALLOCATE (evc_tmp_i(ngmsco))
+ ALLOCATE (evc_tmp_j(ngmsco))
+
  counter     = 0
  igkq_tmp(:) = 0
  igkq_ig(:)  = 0
@@ -200,14 +206,11 @@ IF (ionode) THEN
     endif
  enddo
 
-!do while ((iw.lt.nw).and.(w(iw).lt.et))
-!    iw = iw + 1
-!    iw1 = iw-1
-!    iw2 = iw
-!enddo
+!do iw = 1, nwsigma
+!CALL davcio (sigma, lrsigma, iunsigma, iw, -1)
+ CALL davcio (sigma, lrsigma, iunsigma, 1, -1)
 
-
- WRITE(6,'("Number of G vectors for Sigma_corr", i4)') counter
+ WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i4)') counter, npwq
  WRITE(6,*) 
 
  sigma_band_c (:,:,:) = czero
@@ -231,7 +234,11 @@ IF (ionode) THEN
   enddo
  enddo
 
+!enddo !iw nwsigma
+
  DEALLOCATE (sigma) 
+ DEALLOCATE(evc_tmp_i)
+ DEALLOCATE(evc_tmp_j)
 
  do ibnd = 1, nbnd_sig
     do iw = 1, nwsigma
@@ -355,6 +362,7 @@ END SUBROUTINE sigma_matel
     iw1 = iw-1
     iw2 = iw
   enddo
+
   w1 = w(iw1)
   w2 = w(iw2)
   sig1 = sig(iw1)

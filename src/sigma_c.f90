@@ -32,35 +32,28 @@ SUBROUTINE sigma_c(ik0)
   COMPLEX(DP)         :: aux (nrsco)
 !For running PWSCF need some variables 
   LOGICAL             :: pade_catch
-
 !Pade arrays
   COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
-
 !W arrays 
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g (:,:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g_R (:,:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_pade_g (:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul(:,:)
-
 !G arrays:
   COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfp(:,:), greenfm(:,:)
-
 !Integration Variable 
   COMPLEX(DP) :: cprefac
-
 !FREQUENCY GRIDS/COUNTERS
   INTEGER  :: iwim, iw, ikq 
   INTEGER  :: iw0, iw0mw, iw0pw
   REAL(DP) :: w_ryd(nwcoul)
-
 !COUNTERS
   INTEGER :: ig, igp, irr, icounter, ir, irp
   INTEGER :: iqstart, iqstop, iqs, nkr
   INTEGER :: iq, ipol, iqrec
   INTEGER :: ikmq, ik0, ik, nkpool
   INTEGER :: rec0, ios
-  INTEGER :: counter
-
+  INTEGER :: counter, ierr
 !SYMMETRY
   REAL(DP)              :: xq_ibk(3), xq_ibz(3)
   INTEGER               :: isym
@@ -87,20 +80,35 @@ SUBROUTINE sigma_c(ik0)
 ! #endif
 ! iG(W-v)
 
-   ALLOCATE ( scrcoul_g      (ngmsco, ngmsco, nfs)     )
-   ALLOCATE ( scrcoul_g_R    (ngmsco, ngmsco, nfs)     )
-   ALLOCATE ( scrcoul_pade_g (ngmsco, ngmsco)          )
+!I think these should all (necessarily) stay as ngmsig
+   ALLOCATE ( scrcoul_g      (ngmsig, ngmsig, nfs)     )
+   ALLOCATE ( scrcoul_g_R    (ngmsig, ngmsig, nfs)     )
+   ALLOCATE ( scrcoul_pade_g (ngmsig, ngmsig)          )
+   ALLOCATE ( greenf_g       (ngmsig, ngmsig)          )
+!  ALLOCATE ( greenf_g       (ngmgrn, ngmgrn)          )
+
+!These go on the big grid...
    ALLOCATE ( scrcoul        (nrsco, nrsco)            )
-   ALLOCATE ( greenf_g       (ngmsco, ngmsco)          )
    ALLOCATE ( greenfp        (nrsco, nrsco)            )
    ALLOCATE ( greenfm        (nrsco, nrsco)            )
    ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
+  !
+  !ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
    ALLOCATE ( gmapsym        (ngm, 48)                 )
 !  Pade Approximants.
    ALLOCATE  (z(nfs), a(nfs))
 
 ! Array for coulomb frequencies.
    w_ryd(:) = wcoul(:)/RYTOEV
+
+   if(allocated(sigma)) then
+     WRITE(6,'(4x,"Sigma allocated")')
+   else
+     WRITE(6,'(4x,"Sigma too large!")')
+     CALL mp_global_end()
+     STOP
+   endif
+
 
    WRITE(6," ")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk(ipol, ik0), ipol=1,3)
@@ -174,7 +182,7 @@ endif
 #endif
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
-!   WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
+!  WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
    DO iq = iqstart, iqstop
       if (lgamma) then
           ikq = iq
@@ -185,6 +193,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
 !-q = k0 - (k0 + q)
       xq_ibk(:) = xk_kpoints(:,ik0) - xk(:,ikq)
+
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
      call find_q_ibz(xq_ibk, s, iqrec, isym)
@@ -193,12 +202,16 @@ IF(iqstop-iqstart+1.ne.0) THEN
      write(6, '(3f11.7)') xq_ibk
      write(6, '("equivalent xq_IBZ point, symop, iqrec")')
      write(6, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
-!    write(1000 + mpime, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
      write(6,*)
+
 !lrcoul = 2 * ngmsig * ngmsig * nfs.
 !CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1 )
 !Read the equivalent q_point in the IBZ of crystal:
+
+!If we get really facsistic about memory could:
+!ALLOCATE(scrcoul_g)
      CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
+
 !Rotate G_vectors for FFT.
 !In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
 !I have checked that here as well and it works.
@@ -210,24 +223,31 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !Two strategies or alternatives:
 !1) Could pad scrcoul_g_R so that all the vectors still fall in side of it up to ngmsco
 !   then trim them off later.
-!2) Modify gmapsym so that it only keeps vectors up to ngmsco... 
-     do ig = 1, ngmsco
-        do igp = 1, ngmsco
-           if((gmapsym(ig,isym).lt.ngmsco).and.(gmapsym(igp,isym).lt.ngmsco)) then
+!2) Modify gmapsym so that it only keeps vectors up to ngmsco...
+
+     do ig = 1, ngmsig
+        do igp = 1, ngmsig
+           if((gmapsym(ig,isym).lt.ngmsig).and.(gmapsym(igp,isym).lt.ngmsig)) then
                do iwim = 1, nfs
+                  !Is the symmetry stuff killing me now?
                   scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
                enddo
+!Wrot test
+!            else
+!               write(1000 + mpime, '("Throwing away rotated G vector.")')
+!               write(1000 + mpime, '(2i5)') gmapsym(ig,isym), igp 
            endif
         enddo
      enddo
 
+
+!deallocate(scrcoul_g)
 !Start integration over iw +/- wcoul. 
     WRITE(6,'("Starting Frequency Integration")')
-!   WRITE(1000+mpime,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
         scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
-        do ig = 1, ngmsco
-           do igp = 1, ngmsco
+        do ig = 1, ngmsig
+           do igp = 1, ngmsig
              do iwim = 1, nfs
                  z(iwim) = dcmplx( 0.d0, fiu(iwim))
              !normal ordering.
@@ -240,9 +260,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
                  ar = real(a(iwim))
                  ai = aimag(a(iwim))
                  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-             !write(6,*) (z(i),i=1,N)
-             !write(6,*) (u(i),i=1,N)
-             !write(6,*) (a(i),i=1,N)
                       a(:) = (0.0d0, 0.0d0)
                       pade_catch = .true.
                  endif
@@ -252,11 +269,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
              else if (cohsex) then
                   scrcoul_pade_g(ig,igp) = a(1)
              else if(godbyneeds) then
-       !call godby_needs_eval()
-       !this has the wrong parity i think...:
-         scrcoul_pade_g(ig,igp)=(a(2)/(dcmplx(w_ryd(iw),0.0d0)-a(1)+ci*eta ))-((a(2))/(dcmplx(w_ryd(iw), 0.0d0) + a(1) - ci*eta))
-       !this gives correct parity in matlab...
-       !scrcoul_pade_g(ig,igp)=(a(2)/( dcmplx(w_ryd(iw),0.0d0) - a(1) + ci*eta ))-((a(2))/(dcmplx(w_ryd(iw),0.0d0) + a(1) + ci*eta))
+                     scrcoul_pade_g(ig,igp)=(a(2)/(dcmplx(w_ryd(iw),0.0d0)-a(1)+ci*eta ))-((a(2))/(dcmplx(w_ryd(iw), 0.0d0) + a(1) - ci*eta))
              else 
                   WRITE(6,'("No screening model chosen!")')
                   STOP
@@ -267,9 +280,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !W(G,G';w)
          czero = (0.0d0, 0.0d0)
          scrcoul(:,:) = czero
-         do ig = 1, ngmsco
+         do ig = 1, ngmsig
             aux(:) = czero
-            do igp = 1, ngmsco
+            do igp = 1, ngmsig
                aux(nlsco(igp)) = scrcoul_pade_g(ig,igp)
             enddo
             call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -279,7 +292,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
          enddo
          do irp = 1, nrsco
             aux = czero
-            do ig = 1, ngmsco
+            do ig = 1, ngmsig
                aux(nlsco(ig)) = conjg(scrcoul(ig,irp))
             enddo
             call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -290,15 +303,13 @@ IF(iqstop-iqstart+1.ne.0) THEN
          DO iw0 = 1, nwsigma
             iw0mw = ind_w0mw (iw0,iw)
             iw0pw = ind_w0pw (iw0,iw)
-
 !rec0 = (iw0mw-1) * 1 * nqs + (ik0-1) * nqs + (iq-1) + 1
-
             rec0 = (iw0mw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio( greenf_g, lrgrn, iungreen, rec0, -1 )
             greenfm(:,:) = czero
-            do ig = 1, ngmsco
+            do ig = 1, ngmsig
                aux(:) = czero
-               do igp = 1, ngmsco
+               do igp = 1, ngmsig
                   aux(nlsco(igp)) = greenf_g(ig,igp)
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -308,7 +319,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
             enddo
             do irp = 1, nrsco
                aux = czero
-               do ig = 1, ngmsco
+               do ig = 1, ngmsig
                   aux(nlsco(ig)) = conjg(greenfm(ig,irp))
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -320,9 +331,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
             CALL davcio(greenf_g, lrgrn, iungreen, rec0, -1)
 !Inlining FFT:
             greenfp(:,:) = czero
-            do ig = 1, ngmsco
+            do ig = 1, ngmsig
                aux(:) = czero
-               do igp = 1, ngmsco
+               do igp = 1, ngmsig
                   aux(nlsco(igp)) = greenf_g(ig,igp)
                enddo
               call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -332,7 +343,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
             enddo
             do irp = 1, nrsco
                aux = czero
-               do ig = 1, ngmsco
+               do ig = 1, ngmsig
                   aux(nlsco(ig)) = conjg(greenfp(ig,irp))
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -340,7 +351,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
             enddo
 !Now have G(\r,\r';\omega+\omega')
                sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * (greenfp(:,:) + greenfm(:,:)) * scrcoul(:,:)
-
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
 
@@ -349,8 +359,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !G(r,r';w'-w0) =  FFT[\delta(\G,G')/(w-w0-w1)]
 !W(r,r';w')
 !\Sigma(r, r'; w0) = \Sigma(r,r'; w0) + \int_{\-inf}^{wcoul) G(r,r'; w0 - w')W(r,\r';w')dw'
-!                                      + \int_{wcoul}^{\inf) G(r,r'; w0 - w')W(r,\r';w')dw'
-
+!                                     + \int_{wcoul}^{\inf) G(r,r'; w0 - w')W(r,\r';w')dw'
     ENDDO ! end loop iqstart, iqstop 
 ENDIF
 
@@ -360,24 +369,37 @@ ENDIF
     DEALLOCATE ( scrcoul          )
     DEALLOCATE ( scrcoul_pade_g   )
     DEALLOCATE ( scrcoul_g        )
+    DEALLOCATE ( z,a )
 
 #ifdef __PARA
     CALL mp_barrier(inter_pool_comm)
 #endif
 
 #ifdef __PARA
+!sum up sigma across processors.
     CALL mp_sum(sigma, inter_pool_comm)
 #endif __PARA
 
+CALL mp_barrier(inter_pool_comm)
+
 IF (ionode) then
-   ALLOCATE ( sigma_g (ngmsco, ngmsco, nwsigma) )
-   WRITE(6,'(4x,"Sigma in G-Space")')
+ !I use to say there was no chance of doing this
+ !on the big grid, but now we do it on a bigger grid
+ !and later using windowing we will do it on the full density grid.
+  ALLOCATE ( sigma_g (ngmsco, ngmsco, nwsigma))
+  if(allocated(sigma_g)) then
+     WRITE(6,'(4x,"Sigma_g allocated")')
+  else
+     WRITE(6,'(4x,"Sigma_g too large!")')
+     CALL mp_global_end()
+     STOP
+  endif
 
-!CALL sigma_r2g_sco(sigma, sigma_g) 
-!Also inlining this since it can cause problems.
-!No problem with size etc when I skip the
-!convolution step...
-
+  WRITE(6,'(4x,"Sigma in G-Space")')
+ !CALL sigma_r2g_sco(sigma, sigma_g) 
+ !Also inlining this since it can cause problems.
+ !No problem with size etc when I skip the
+ !convolution step...
     sigma_g = (0.0d0,0.0d0)
     do iw = 1, nwsigma
       do ir = 1, nrsco
@@ -400,6 +422,7 @@ IF (ionode) then
            sigma (ig,igp,iw) = conjg ( aux( nlsco( ig )) ) * omega
         enddo
       enddo
+!CALL davcio (sigma_g, lrsigma, iunsigma, iw, 1)
     enddo
 
     do ig = ngmsco + 1, nrsco
@@ -409,6 +432,7 @@ IF (ionode) then
           enddo 
        enddo
     enddo
+
 !sigma_g = sigma(1:ngmsco,1:ngmsco,:)
     do ig = 1, ngmsco
      do igp = 1, ngmsco
@@ -419,17 +443,16 @@ IF (ionode) then
     enddo
 !Now write Sigma in G space to file. 
     WRITE(6,'(4x,"Writing Sigma to File")')
-
 !HL Original:
 !Just storing in first record no matter what k-point.
-!CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
     CALL davcio (sigma_g, lrsigma, iunsigma, 1, 1)
+
+!or could store sigma same way green's fxn is stored...
     CALL stop_clock('sigmac') 
     DEALLOCATE ( sigma_g  )
 ENDIF !ionode
 
     call mp_barrier(inter_pool_comm)
-    DEALLOCATE (z,a)
     DEALLOCATE ( sigma    )
     RETURN
 END SUBROUTINE sigma_c

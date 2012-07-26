@@ -202,7 +202,7 @@ SUBROUTINE gwq_readin()
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
-  ecutsco      = 2.5 
+  ecutsco      = ecutsig
   ecutsex      = 5.0
   nbnd_sig     = 8
 

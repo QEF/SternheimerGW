@@ -14,9 +14,6 @@
   ! space grid for Sigma_Correlation, and Sigma_exchange. The exchange cutoff of the self-energy
   ! needs to be high enough that the wave function*barecoulomb product doesn't get brutalized. 
 
-  ! corx determines whether it is the correlation grid being generated or the 
-  ! exchange within this routine. 
-
   ! this switch is necessary for the time being. Alternatively I could define this routine as 
   ! being contained in the gw_sigma module, and then I could directly pass the arrays from main
   ! to the sub routine to be allocated and populated. 
@@ -35,33 +32,37 @@
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
   USE control_flags,    ONLY : restart
-  USE gwsigma,          ONLY : nlsex, nlsco, ngmsex, ngmsco, ngmsig
+  USE gwsigma,          ONLY : nlsex, nlsco, ngmsex, ngmsco, ngmsig, ecutsco
   
   IMPLICIT NONE
 
   integer  :: n1, n2, n3, i, j, k, ipol, ig, igl, ng
+  ! corx determines whether it is the correlation grid being generated or the 
+  ! exchange within this routine. 
   integer  :: corx
+
   REAL(DP) :: ecuttmp
-  REAL(DP) :: gcuttmp
+  REAL(DP) :: gcuttmp, gcuttmpgw
   INTEGER  :: nr1tmp, nr2tmp, nr3tmp, nrtmp
-  INTEGER  :: ngmtmp
+  INTEGER  :: ngmtmp, ngmtmpgw
   INTEGER, ALLOCATABLE :: nltmp(:)
-  !INTEGER, POINTER :: nltmp(:)
 
-  gcuttmp = 4.D0 * ecuttmp / tpiba2
+!cutoff for G(G,G') and W(G,G'): 
+  gcuttmpgw = ecuttmp/tpiba2
 
-!HLS 
-! gcuttmp = ecuttmp
-! gcutsigtmp = 4.D0 * ecuttmp / tpiba2
-! nr1tmp = 1 + int (2 * sqrt (gcutsigtmp) * sqrt( at(1,1)**2 + at(2,1)**2 + at(3,1)**2 ) )
-! nr2tmp = 1 + int (2 * sqrt (gcutsigtmp) * sqrt( at(1,2)**2 + at(2,2)**2 + at(3,2)**2 ) )
-! nr3tmp = 1 + int (2 * sqrt (gcutsigtmp) * sqrt( at(1,3)**2 + at(2,3)**2 + at(3,3)**2 ) )
+  if(corx.eq.1) then
+!  cutoff for sigma operator. This is defined by the user: 
+!  should be 4*guttmpgw to avoid aliasing when doing G(\r,\r')W(\r,\r'):
+!  however this places excess demand on the memory requirements (until
+!  the glorious day when I have my wavelet compression algorithm working. 
+     gcuttmp   = ecutsco/tpiba2
+     else
+     gcuttmp   = ecuttmp/tpiba2
+  endif
 
   nr1tmp = 1 + int (2 * sqrt (gcuttmp) * sqrt( at(1,1)**2 + at(2,1)**2 + at(3,1)**2 ) )
   nr2tmp = 1 + int (2 * sqrt (gcuttmp) * sqrt( at(1,2)**2 + at(2,2)**2 + at(3,2)**2 ) )
   nr3tmp = 1 + int (2 * sqrt (gcuttmp) * sqrt( at(1,3)**2 + at(2,3)**2 + at(3,3)**2 ) )
-
-
 
   do while (.not.allowed(nr1tmp))
     nr1tmp = nr1tmp + 1
@@ -79,24 +80,24 @@
   !igtongl should only be defined when init_run is called in pwscf.
 
   do ng = 1, ngm
-    if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmtmp = ng
     !this determines cut off of G, W:
-    !if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmwcutoff = ng
+    if ( gl( igtongl (ng) ) .le. gcuttmpgw ) ngmtmpgw = ng
   enddo
 
-  !do ng = 1, ngm
-  !   this determines cut off of \Sigma and hence the FFT grid:
-  !   if ( gl( igtongl (ng) ) .le. gcutsigtmp ) ngmwcutoff = ng
-  !enddo
+ !HLS
+ do ng = 1, ngm
+ !   this determines cut off of \Sigma and hence the FFT grid:
+    if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmtmp = ng
+ enddo
 
-!Choose whether is is Ex or Corr grid we are generating.
+ !Choose whether it is Exch or Corr grid we are generating.
   ALLOCATE (nltmp(ngmtmp))
-
   if(corx.eq.1) then
+    !G and W cutoff:
+     ngmsig = ngmtmpgw
+    !Sigma cutoff:
      ALLOCATE (nlsco(ngmtmp))
-    !ngmsco should be 4*ngmtmp
      ngmsco = ngmtmp
-     ngmsig = ngmtmp
     else
      ALLOCATE (nlsex(ngmtmp))
      ngmsex = ngmtmp
@@ -132,14 +133,15 @@
   if (corx.eq.1) then
      nlsco = nltmp
      write(6,'(4x,"Correlation cutoffs: ")')
-     write(6,'(5x,"ecutsco = ",f10.6)') ecuttmp
+     write(6,'(5x,"ecutsco = ",f10.6)') gcuttmp*tpiba2
      write(6,'(5x,"ngmsco = ",i10)') ngmtmp
      write(6,'(5x,"nr1sco = ",i10)') nr1tmp
      write(6,'(5x,"nr2sco = ",i10)') nr2tmp
      write(6,'(5x,"nr3sco = ",i10)') nr3tmp
      write(6,'(5x,"nrsco  = ",i10)') nrtmp
+     write(6,'(5x,"Energy cutoff for G and W = ",f10.6)') ecuttmp
+     write(6,'(5x,"ngvects for G and W = ",i10)') ngmtmpgw
      write(6,'(5x,"")') 
-  
   else
      nlsex = nltmp
      write(6,'(4x,"Exchange cutoffs: ")')

@@ -10,7 +10,7 @@ SUBROUTINE sigma_r2g_ex(sigma, sigma_g)
   USE freq_gw,           ONLY : nwsigma
   USE qpoint,            ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE gwsigma,           ONLY : ngmsex, nrsex, nr1sex, nr2sex, nr3sex, nlsex
-  USE fft_scalar,    ONLY : cfft3d
+  USE fft_scalar,        ONLY : cfft3d
 
   IMPLICIT NONE
 

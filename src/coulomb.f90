@@ -88,6 +88,7 @@ irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 
 !LOOP OVER ig, unique g vectors only... these then get written into the full matrix.
+!g is sorted in magnitude order...
 DO ig = igstart, igstop
     qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
 !   if (qg2.gt.eps8) then

@@ -495,6 +495,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            enddo
         enddo
      endif
+
      ! with the new change of the potential we compute the integrals
      ! of the change of potential and Q 
      ! HL-Q denotes the augmentation charge. Look at Vanderbilt PRB 41 7892
@@ -502,8 +503,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      ! USPP valence charge density is described 
      ! n_v(r) =  \sum_{n,k} \phi^{*}_{nk} (r) \phi_{nk}(r) + \sum_{i,j} p_{i,j}Q_{j,i}
      ! p_{i,j} = \sum_{n,k} <beta_{i}|\phi_{nk}><phi_{nk}|beta_{j}> 
-     ! HL not updating Q in SCF: no need for newdq.  
-     ! call newdq (dvscfin)
 
 #ifdef __PARA
      aux_avg (1) = DBLE (ltaver)

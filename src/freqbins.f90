@@ -30,7 +30,6 @@ SUBROUTINE freqbins()
 !  deltaw    = 0.25d0
 !  wcoulmax  = 80.d0
 
-   write(6,*) wcoulmax
 
    zero      = 0.0d0
 
@@ -107,13 +106,15 @@ SUBROUTINE freqbins()
   enddo
    
  !Print out Frequencies on Imaginary Axis for reference...
+  WRITE(6,'("wcoulmax:")')
+  write(6,*) wcoulmax
   WRITE(6,'("eta")')
   WRITE(6,'(1f10.4 )') eta
   WRITE(6,'("wsigmamin, wsigmamax, deltaw:")')
   WRITE(6,'(3f10.4 )') wsigmamin, wsigmamax, deltaw 
   WRITE(6,'(//5x, "Imag. Frequencies: ")')
   DO i = 1, nfs
-       WRITE(6,'(i4, 4x, 3f7.4)')i, fiu(i)*RYTOEV
+       WRITE(6,'(i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
   ENDDO
 
 END SUBROUTINE freqbins

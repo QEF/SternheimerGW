@@ -51,11 +51,11 @@ PROGRAM gw
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
-                               ngmsig, ngmsex
+                               ngmsig, ngmsex, ecutsig, ngmsco
   USE gvect,            ONLY : nl
   USE kinds,            ONLY : DP
 ! HLSYM
- USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm
+  USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm
 
   
   IMPLICIT NONE
@@ -101,7 +101,7 @@ PROGRAM gw
     CALL ggen()
 
 !   Generating Exchange and Correlation grid.
-    CALL sig_fft_g(nr1sco, nr2sco, nr3sco, nrsco, ecutsco, 1)
+    CALL sig_fft_g(nr1sco, nr2sco, nr3sco, nrsco, ecutsig, 1)
     CALL sig_fft_g(nr1sex, nr2sex, nr3sex, nrsex, ecutsex, 2)
     CALL clean_pw( .FALSE. )
 
@@ -121,7 +121,6 @@ PROGRAM gw
 !    iunalphabeta = 35
 !    lralphabeta  = 4
 !endif
-!   Only writing correlation energy to disk so ngmsigma = ngmsco.   
 
 IF (ionode) THEN
        iuncoul = 28
@@ -135,7 +134,9 @@ IF (ionode) THEN
 
 !   Sigma file
        iunsigma = 32
-       lrsigma = 2 * ngmsig * ngmsig * nwsigma
+!       lrsigma = 2 * ngmsig * ngmsig * nwsigma
+!HL woops...
+       lrsigma = 2 * ngmsco * ngmsco * nwsigma
        CALL diropn(iunsigma, 'sigma', lrsigma, exst)
 
 !   Should sigma_ex need to be written to file:
@@ -213,15 +214,15 @@ ENDIF
    DEALLOCATE( scrcoul_g )
    DEALLOCATE( ig_unique )
 
+
 ! Generates small group of k and then forms IBZ_{k}.
-! Open directory for residuals/needed for multishift:
 ! HLM
+! Open directory for residuals/needed for multishift:
 ! if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
 ! if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
 
    DO ik = 1, 1
        xq(:) = xk_kpoints(:, ik)
-       !Write(6,*) xq
        do_iq=.TRUE.
        lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
        setup_pw = .TRUE.
@@ -234,7 +235,6 @@ ENDIF
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green) CALL green_linsys(ik)
-
 !HLM
 !       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
 !       if(do_green.and.multishift)) CALL green_linsys_shift(ik)
@@ -253,7 +253,6 @@ ENDIF
 
    DO ik = 1, 1
          if(do_sigma_matel) CALL sigma_matel(ik) 
-         CALL clean_pw_gw(ik)
    ENDDO
 
    call mp_barrier(inter_pool_comm)

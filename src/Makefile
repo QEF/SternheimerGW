@@ -45,13 +45,10 @@ davcio_drho.o \
 apply_dpot.o \
 cft_wave.o \
 orthogonalize.o \
-adddvscf.o \
 ch_psi_all.o \
 cgsolve_all.o \
 incdrhoscf.o \
 incdrhoscf_nc.o \
-psymdvscf.o \
-psym_dmag.o \
 dv_of_drho.o\
 h_psiq.o \
 dgradcorr.o \
@@ -65,7 +62,6 @@ cBiCG_solve_fix.o\
 cch_psi_all_fix.o\
 cch_psi_all_green.o\
 cg_psi.o\
-ccg_psi.o\
 green_linsys.o\
 pade.o\
 freqbins.o\

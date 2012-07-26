@@ -124,7 +124,6 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   !  and the current q, the fact that we are before the bands
   !
   CALL gw_writefile('init',0)
-
   !
   ! ... In the case of q != 0, we make first a non selfconsistent run
   !

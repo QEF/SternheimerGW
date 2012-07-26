@@ -19,28 +19,23 @@ SUBROUTINE green_linsys (ik0)
   USE paw_variables,        ONLY : okpaw
   USE paw_onecenter,        ONLY : paw_dpotential, paw_dusymmetrize, &
                                    paw_dumqsymmetrize
-
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
                                    ext_recover, eta, tr2_green
-
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE recover_mod,          ONLY : read_rec, write_rec
-
   USE mp,                   ONLY : mp_sum
-
-  USE disp,        ONLY : nqs
-  USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
-  USE gwsigma,     ONLY : ngmsig, ecutsco, ngmsco
- !PARALLEL
-  USE mp_global,  ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                         nproc_pool, nproc, me_pool, my_pool_id, npool
-  USE mp,         ONLY: mp_barrier, mp_bcast, mp_sum
+  USE disp,                 ONLY : nqs
+  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
+  USE gwsigma,              ONLY : ngmsig
+  USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
+                                   nproc_pool, nproc, me_pool, my_pool_id, npool
+  USE mp,                   ONLY: mp_barrier, mp_bcast, mp_sum
 
   IMPLICIT NONE 
 
@@ -48,25 +43,18 @@ SUBROUTINE green_linsys (ik0)
   logical :: conv_root
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx, 1)
   COMPLEX(DP) :: aux1(npwx)
- !HLS should be green(ngmsigw, ngmsigw)
- !i.e. the lower cut off.  
- !COMPLEX(DP) :: ci, cw, green(ngmsig,ngmsig)
   COMPLEX(DP) :: ci, cw, green(ngmsig,ngmsig)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
   REAL(DP)    :: eprecloc 
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
   INTEGER :: rec0, n1
-  !REAL(DP) :: dirac, x, delta
   REAL(DP) :: dirac, delta
-  !COMPLEX(DP) :: x
   REAL(DP) :: x
   real(DP) :: k0mq(3) 
   real(DP) :: w_ryd(nwgreen)
- !external ccg_psi, cch_psi_all_fix, cch_psi_all_green
-  external cg_psi, ccg_psi, cch_psi_all_fix, cch_psi_all_green
+  external cg_psi, cch_psi_all_fix, cch_psi_all_green
   real(DP) , allocatable :: h_diag (:,:)
- !COMPLEX(DP) , allocatable :: h_diag (:,:)
 
   integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
@@ -86,32 +74,34 @@ SUBROUTINE green_linsys (ik0)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
+
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-    REAL(DP) :: tr_cgsolve = 1.0d-4
+  REAL(DP) :: tr_cgsolve = 1.0d-4
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
-    INTEGER     :: igkq_ig(npwx) 
-    INTEGER     :: igkq_tmp(npwx) 
-    INTEGER     :: counter
+  INTEGER     :: igkq_ig(npwx) 
+  INTEGER     :: igkq_tmp(npwx) 
+  INTEGER     :: counter
 !PARALLEL
-    INTEGER :: igstart, igstop, ngpool, ngr, igs
+  INTEGER :: igstart, igstop, ngpool, ngr, igs
 !LINALG
-    COMPLEX(DP), EXTERNAL :: zdotc
+  COMPLEX(DP), EXTERNAL :: zdotc
+
 !HL NOTA BENE:
 !Green's function has dimensions npwx, 1 in current notation...
 !Since we store in G space there is no truncation error at this stage...
-!When we start going to real space might want to transform on to the full density grid to 
-!do our GW products.
+!When we start going to real space we want to transform on to the full correlation density grid to 
+!do our GW products and avoid aliasing.
 
-    allocate (h_diag (npwx, 1))
-    allocate (etc(nbnd, nkstot))
+   ALLOCATE (h_diag (npwx, 1))
+   ALLOCATE (etc(nbnd, nkstot))
 
-    ci = (0.0d0, 1.0d0)
+   ci = (0.0d0, 1.0d0)
 !Convert freq array generated in freqbins into rydbergs.
-    w_ryd(:) = wgreen(:)/RYTOEV
+   w_ryd(:) = wgreen(:)/RYTOEV
 
-    CALL start_clock('greenlinsys')
-    where_rec='no_recover'
+   CALL start_clock('greenlinsys')
+   where_rec='no_recover'
 
 
    if (nksq.gt.1) rewind (unit = iunigk)
@@ -128,19 +118,26 @@ SUBROUTINE green_linsys (ik0)
  100      call errore ('green_linsys', 'reading igk', abs (ios) )
       endif
       if(lgamma) npwq=npw 
+
+
       if (.not.lgamma.and.nksq.gt.1) then
            read (iunigk, err = 200, iostat = ios) npwq, igkq
  200       call errore ('green_linsys', 'reading igkq', abs (ios) )
       endif
+
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
 !need to loop over...
+!This is a hack version of gk_sort... is there something wrong with the logic here...
+!ngmsig is just the number of G vectors, really I should be packing an array sorted up to
+!ecutsig ... I have literally been stuck on this for years... 
       counter = 0
       igkq_tmp(:) = 0
       igkq_ig(:)  = 0 
       do ig = 1, npwx
-         if((igkq(ig).le.ngmsco).and.((igkq(ig)).gt.0)) then
+         if((igkq(ig).le.ngmsig).and.((igkq(ig)).gt.0)) then
+       !if((igkq(ig).le.ngmsig).and.((igkq(ig)).gt.0)) then
              counter = counter + 1
             !index in total G grid.
              igkq_tmp (counter) = igkq(ig)
@@ -148,6 +145,7 @@ SUBROUTINE green_linsys (ik0)
              igkq_ig  (counter) = ig
          endif
       enddo
+
 !Difference in parallelization routine. Instead of parallelizing over the usual list of G-vectors as in the straight
 !forward pilot implementation I need to first generate the list of igkq's within my correlation cutoff
 !this gives the number of vectors that requires parallelizing over. Then I split the work (up to counter) between the
@@ -186,29 +184,9 @@ SUBROUTINE green_linsys (ik0)
                         (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
                         (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
        enddo
-!The 1/|k+G|**2 preconditioner
-!       h_diag = 0.d0
-!       do ibnd = 1, nbnd_occ (ikq)
-!          do ig = 1, npwq
-!             h_diag(ig,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ikq))
-!          enddo
-!          IF (noncolin) THEN
-!             do ig = 1, npwq
-!                h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ikq))
-!             enddo
-!          END IF
-!       enddo
-!TPA preconditioner:
-!      do ibnd = 1, nbnd_occ
-!         do ig = 1, npwq
-!            x = g2kin(ig)/(eprec(ikq,ibnd))
-!            h_diag(ig,ibnd) = (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-!                            / (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
-!         enddo
-!      enddo
-WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
 
+   WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
+!WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
 !Set eprecloc to kinetic energy matrix element at top of valence band for the k point.
 !NOTA BENE nbnd_occ hardwired to four this should be variable!!
    aux1=(0.d0,0.d0)
@@ -218,7 +196,7 @@ WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)
    eprecloc = 1.35d0*zdotc(npwx*npol, evq(1,4), 1, aux1(1),1)
    WRITE(6,'("<|(k+G)^2|>", 1f12.7)') eprecloc*RYTOEV
 
-DO iw = 1, nwgreen
+   DO iw = 1, nwgreen
       green =(0.0d0, 0.0d0)
       h_diag(:,:) = 0.d0
       do ibnd = 1, 1
@@ -253,7 +231,7 @@ DO iw = 1, nwgreen
 !      endif
 
 !PARA case:
- do ig = igstart, igstop
+     do ig = igstart, igstop
          rhs(:,:)  = (0.0d0, 0.0d0)
          rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
          gr_A(:,:) = (0.0d0, 0.0d0) 
@@ -263,15 +241,13 @@ DO iw = 1, nwgreen
 ! Doing Linear System with Wavefunction cutoff (full density). 
          call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag, &
                               npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, cw, .true.)
-       !if(.not.conv_root) write(600+mpime,'("root not converged. ")') 
-       !if(.not.conv_root) write(600+mpime,'(f15.10, i4)')anorm, lter 
-       !if(.not.conv_root) write(600+mpime,'(f15.10)')    wgreen(iw)
        !Brutal conditions.
        !if(anorm.gt.0.50d0) write(600+mpime,'(f15.10, i4)')anorm, lter 
        !if(anorm.gt.0.50d0) write(600+mpime,'(f15.10)')    wgreen(iw)
-       !if(anorm.gt.1.0d0)  write(600+mpime,'("root not converged. ")') 
+       !if(.not.conv_root)  write(600 + mpime,'("root not converged")')
+       !if(anorm.gt.1.0d0)  write(600 + mpime,'("anorm greater than one ")') 
+       if(anorm.gt.1.0d0)  gr_A = (0.0d0, 0.0d0) 
        !instead of zeroing green's function why not try  G(G,G';\omega) = - Delta(G,G')/((k+g)**2 - \omega)
-       if(anorm.gt.1.0d0) gr_A = (0.0d0, 0.0d0) 
        !if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (-1.0d0, 0.0d0)/(DCMPLX(g2kin(igkq_ig(ig)), 0.d0)-DCMPLX(w_ryd(iw),eta))
        !alternatively:
        if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (1.0d0, 0.0d0)/(DCMPLX(w_ryd(iw),eta))
@@ -280,6 +256,7 @@ DO iw = 1, nwgreen
           green (igkq_tmp(ig), igkq_tmp(igp)) = green (igkq_tmp(ig), igkq_tmp(igp)) + gr_A(igkq_ig(igp),1)
           !wonder if this is the problem with LiCl and SiC
           !green (igkq_tmp(ig), igkq_tmp(igp)) = green (igkq_tmp(ig), igkq_tmp(igp)) + conjg(gr_A(igkq_ig(igp),1))
+          !green (:,:) = conjg(green (:,:))
        enddo
  enddo !ig
 !Green's Fxn Non-analytic Component:
@@ -332,10 +309,18 @@ DO iw = 1, nwgreen
 #endif
   ENDDO  ! iw 
 ENDDO    ! iq
+
+call mp_barrier()
+call mp_global_end()
+STOP
+
 !Now we have Green's fxn for freq. -wsigma to wsigma, all points in irreducible BZ (depends on sigma)
 !and all G vecs up to cutoff ecutsco i.e. a real space description of \Delta r ~ 1/|Gmax|.
 !This should contain lots of information...
 !is stop_clock causing crashes?
+DEALLOCATE(h_diag)
+DEALLOCATE(etc)
+
 CALL stop_clock('greenlinsys')
 RETURN
 END SUBROUTINE green_linsys

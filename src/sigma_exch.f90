@@ -191,8 +191,6 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
                                                              + (g(3, ig) + xq0s(3))**2.d0)
 
         spal = 1.0d0 - cos (rcut * sqrt(tpiba2) * qg)
-
-!Is there something about this truncation which hurts the lowest lying state the most?
         barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
     enddo
 
@@ -209,7 +207,6 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
           barcoulr(ig, irp) = aux(irp) / omega
        enddo
     enddo
-
 ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
 ! following the convention set in the paper
 ! [because the standard transform is sum_G f(G) exp(iGr) ]
