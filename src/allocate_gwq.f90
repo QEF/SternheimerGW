@@ -29,7 +29,7 @@ subroutine allocate_gwq
   USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax
 
  
-  USE gwsigma, ONLY: scrcoul, green, ngmsig, sigma
+  USE gwsigma, ONLY: scrcoul, green, sigma
   
 
   USE ions_base, ONLY : nat, ntyp => nsp
@@ -82,36 +82,7 @@ subroutine allocate_gwq
   allocate (dmuxc ( nrxx , nspin_mag , nspin_mag))    
   allocate (eprec ( nbnd, nksq) )
   allocate (eigqts ( nat))
-  ! HL
-  ! allocate (rtau ( 3, 48, nat))
-  ! allocate (u ( 3 * nat, 3 * nat))
-  ! allocate (ubar ( 3 * nat))
-  ! allocate (dyn ( 3 * nat, 3 * nat))
-  ! allocate (dyn_rec ( 3 * nat, 3 * nat))
-  ! allocate (dyn00 ( 3 * nat, 3 * nat))
-  ! allocate (w2 ( 3 * nat))
-  ! allocate (name_rap_mode( 3 * nat))
-  ! allocate (npert ( 3 * nat))
-  ! allocate (zstareu (3, 3,  nat))
-  ! allocate (zstareu0 (3, 3 * nat))
-  ! allocate (zstarue (3 , nat, 3))
-  ! allocate (zstarue0 (3 * nat, 3))
-  ! allocate (zstarue0_rec (3 * nat, 3))
-  !
-  ! GW-HL 
-  !allocate (scrcoul(ngmsig, ngmsig, nfs, nspin_mag))
-  !allocate (green(ngmsig, ngmsig))
   allocate (dvbare(nrxxs))    
-
-  !!
-  !HL mode number variables have been surpressed
-  !name_rap_mode=' '
-  ! HL 
-  ! zstarue=0.0_DP
-  ! zstareu0=(0.0_DP,0.0_DP)
-  ! zstarue0=(0.0_DP,0.0_DP)
-  ! zstarue0_rec=(0.0_DP,0.0_DP)
-
    if (okvan) then
   !int1, int2, etc are all defined in PRB 64 235118
      allocate (int1 ( nhm, nhm, 3, nat, nspin_mag))

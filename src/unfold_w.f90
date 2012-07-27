@@ -4,14 +4,14 @@ USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsymm,        ONLY : ig_unique, ngmunique, use_symm
 USE gvect,         ONLY : g, ngm, ecutwfc, nl
 USE modes,         ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
-USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig
+USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmpol
 USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
 USE control_gw,    ONLY : zue, convt, rec_code, modielec, eta
 USE qpoint,        ONLY : xq
 
 IMPLICIT NONE
 
-COMPLEX(DP)  :: scrcoul_g_in(ngmsig, ngmsig, nfs, 1)
+COMPLEX(DP)  :: scrcoul_g_in(ngmpol, ngmpol, nfs, 1)
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
 !counter
 INTEGER      :: isym, iwim

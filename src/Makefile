@@ -70,7 +70,6 @@ ktokpmq.o\
 prepare_kmq.o\
 sigma_r2g_sco.o\
 sigma_r2g_ex.o\
-ggensig.o\
 sig_fft_g.o\
 sigma_exch.o\
 sigma_c.o\

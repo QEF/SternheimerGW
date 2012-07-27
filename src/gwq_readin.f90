@@ -60,7 +60,7 @@ SUBROUTINE gwq_readin()
 
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax
   USE gw_restart,    ONLY : gw_readfile
-  USE gwsigma,       ONLY : ecutsig, nbnd_sig, ecutsex, ecutsco
+  USE gwsigma,       ONLY : ecutsig, nbnd_sig, ecutsex, ecutsco, ecutpol, ecutgrn
   USE gwsymm,        ONLY : use_symm
   !
   !
@@ -94,7 +94,7 @@ SUBROUTINE gwq_readin()
                        start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, wsigmamax, deltaw, wcoulmax,&
-                       use_symm, maxter_green, w_of_q_start, godbyneeds, padecont, cohsex
+                       use_symm, maxter_green, w_of_q_start, godbyneeds, padecont, cohsex, ecutpol, ecutgrn
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -202,7 +202,11 @@ SUBROUTINE gwq_readin()
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
-  ecutsco      = ecutsig
+!this is in case we want to define different cutoffs for 
+!W and G. G cannot exceed sigma.
+  ecutgrn      = ecutsig
+  ecutpol      = ecutsig
+  ecutsco      = ecutgrn
   ecutsex      = 5.0
   nbnd_sig     = 8
 

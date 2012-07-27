@@ -32,7 +32,7 @@ SUBROUTINE green_linsys (ik0)
   USE mp,                   ONLY : mp_sum
   USE disp,                 ONLY : nqs
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
-  USE gwsigma,              ONLY : ngmsig
+  USE gwsigma,              ONLY : ngmgrn
   USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
                                    nproc_pool, nproc, me_pool, my_pool_id, npool
   USE mp,                   ONLY: mp_barrier, mp_bcast, mp_sum
@@ -43,7 +43,7 @@ SUBROUTINE green_linsys (ik0)
   logical :: conv_root
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx, 1)
   COMPLEX(DP) :: aux1(npwx)
-  COMPLEX(DP) :: ci, cw, green(ngmsig,ngmsig)
+  COMPLEX(DP) :: ci, cw, green(ngmgrn,ngmgrn)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
   REAL(DP)    :: eprecloc 
   INTEGER :: iw, igp, iwi
@@ -136,8 +136,7 @@ SUBROUTINE green_linsys (ik0)
       igkq_tmp(:) = 0
       igkq_ig(:)  = 0 
       do ig = 1, npwx
-         if((igkq(ig).le.ngmsig).and.((igkq(ig)).gt.0)) then
-       !if((igkq(ig).le.ngmsig).and.((igkq(ig)).gt.0)) then
+         if((igkq(ig).le.ngmgrn).and.((igkq(ig)).gt.0)) then
              counter = counter + 1
             !index in total G grid.
              igkq_tmp (counter) = igkq(ig)
@@ -212,6 +211,8 @@ SUBROUTINE green_linsys (ik0)
          !Really choosy preconditioner.
             do ig = 1, npwq
                if(g2kin(ig).gt.w_ryd(iw)) then
+               !if((g2kin(ig).gt.w_ryd(iw)).and.(.gt.eps8)) then
+               !if((g2kin(ig) - w_ryd(iw)).gt.0.037d0) then
                   x = (g2kin(ig) - w_ryd(iw))/eprecloc
                   h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
                                     /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
@@ -221,7 +222,6 @@ SUBROUTINE green_linsys (ik0)
             enddo
          endif
       enddo
-
 !for printing out preconditioner.
 !      if(mpime.eq.0) then
 !         write(800,*)wgreen(iw)
@@ -229,7 +229,6 @@ SUBROUTINE green_linsys (ik0)
 !            write(800,'(i4,1f12.7)')ig, h_diag(ig,1)
 !         enddo
 !      endif
-
 !PARA case:
      do ig = igstart, igstop
          rhs(:,:)  = (0.0d0, 0.0d0)
@@ -309,10 +308,6 @@ SUBROUTINE green_linsys (ik0)
 #endif
   ENDDO  ! iw 
 ENDDO    ! iq
-
-call mp_barrier()
-call mp_global_end()
-STOP
 
 !Now we have Green's fxn for freq. -wsigma to wsigma, all points in irreducible BZ (depends on sigma)
 !and all G vecs up to cutoff ecutsco i.e. a real space description of \Delta r ~ 1/|Gmax|.

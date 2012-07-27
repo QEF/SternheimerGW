@@ -32,7 +32,8 @@
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
   USE control_flags,    ONLY : restart
-  USE gwsigma,          ONLY : nlsex, nlsco, ngmsex, ngmsco, ngmsig, ecutsco
+  USE gwsigma,          ONLY : nlsex, nlsco, ngmsex, ngmsco, ngmsig, ecutsco, ecutpol, ecutgrn, ngmgrn, ngmpol
+  USE mp_global,        ONLY : mp_global_end 
   
   IMPLICIT NONE
 
@@ -44,11 +45,9 @@
   REAL(DP) :: ecuttmp
   REAL(DP) :: gcuttmp, gcuttmpgw
   INTEGER  :: nr1tmp, nr2tmp, nr3tmp, nrtmp
-  INTEGER  :: ngmtmp, ngmtmpgw
+  INTEGER  :: ngmtmp, ngmtmpw, ngmtmpg
   INTEGER, ALLOCATABLE :: nltmp(:)
 
-!cutoff for G(G,G') and W(G,G'): 
-  gcuttmpgw = ecuttmp/tpiba2
 
   if(corx.eq.1) then
 !  cutoff for sigma operator. This is defined by the user: 
@@ -78,26 +77,42 @@
 
   !Loop over all g vectors in (order of size) and test that |G|.le.ngmtmp.
   !igtongl should only be defined when init_run is called in pwscf.
+  !this determines cut off of G, W:
 
+ !cutoff for W(G,G'): 
+  gcuttmpgw = ecutpol/tpiba2
   do ng = 1, ngm
-    !this determines cut off of G, W:
-    if ( gl( igtongl (ng) ) .le. gcuttmpgw ) ngmtmpgw = ng
+    if ( gl( igtongl (ng) ) .le. gcuttmpgw ) ngmtmpw = ng
   enddo
 
- !HLS
- do ng = 1, ngm
- !   this determines cut off of \Sigma and hence the FFT grid:
+ !cutoff for G(G,G'): 
+  gcuttmpgw = ecutgrn/tpiba2
+  do ng = 1, ngm
+    if ( gl( igtongl (ng) ) .le. gcuttmpgw ) ngmtmpg = ng
+  enddo
+
+ !this determines cut off of \Sigma and hence the FFT grid:
+  do ng = 1, ngm
     if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmtmp = ng
- enddo
+  enddo
+
+  if(ngmtmpg.gt.ngmtmp) then
+     WRITE(6,'("green fxn cutoff cannot exceed sigma cutoff.")')
+     call mp_global_end()
+     STOP
+  endif
 
  !Choose whether it is Exch or Corr grid we are generating.
   ALLOCATE (nltmp(ngmtmp))
   if(corx.eq.1) then
+    !warning ngmsig obsolete
+     ngmsig = ngmtmpw
     !G and W cutoff:
-     ngmsig = ngmtmpgw
+     ngmgrn = ngmtmpg
+     ngmpol = ngmtmpw
     !Sigma cutoff:
-     ALLOCATE (nlsco(ngmtmp))
      ngmsco = ngmtmp
+     ALLOCATE (nlsco(ngmtmp))
     else
      ALLOCATE (nlsex(ngmtmp))
      ngmsex = ngmtmp
@@ -139,8 +154,10 @@
      write(6,'(5x,"nr2sco = ",i10)') nr2tmp
      write(6,'(5x,"nr3sco = ",i10)') nr3tmp
      write(6,'(5x,"nrsco  = ",i10)') nrtmp
-     write(6,'(5x,"Energy cutoff for G and W = ",f10.6)') ecuttmp
-     write(6,'(5x,"ngvects for G and W = ",i10)') ngmtmpgw
+     write(6,'(5x,"Energy cutoff for G = ",f10.6)') ecutgrn
+     write(6,'(5x,"ngvects for G = ",i10)') ngmtmpg
+     write(6,'(5x,"Energy cutoff for W = ",f10.6)') ecutpol
+     write(6,'(5x,"ngvects for W = ",i10)') ngmtmpw
      write(6,'(5x,"")') 
   else
      nlsex = nltmp

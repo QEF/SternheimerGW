@@ -40,7 +40,7 @@ subroutine bcast_gw_input ( )
   USE ions_base,     ONLY : amass
   USE io_global, ONLY : ionode_id
   USE printout_base, ONLY : title
-  USE gwsigma,       ONLY : nbnd_sig, ecutsig, ecutsex, ecutsco
+  USE gwsigma,       ONLY : nbnd_sig, ecutsig, ecutsex, ecutsco, ecutgrn, ecutpol
   USE gwsymm,        ONLY : use_symm
  
 
@@ -98,6 +98,8 @@ subroutine bcast_gw_input ( )
   call mp_bcast (ecutsex, ionode_id)
   call mp_bcast (ecutsco, ionode_id)
   call mp_bcast (ecutsig, ionode_id)
+  call mp_bcast (ecutpol, ionode_id)
+  call mp_bcast (ecutgrn, ionode_id)
   call mp_bcast (nbnd_sig, ionode_id)
   call mp_bcast (modielec, ionode_id)
   call mp_bcast (godbyneeds, ionode_id)

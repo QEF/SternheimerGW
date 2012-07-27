@@ -51,7 +51,7 @@ PROGRAM gw
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
-                               ngmsig, ngmsex, ecutsig, ngmsco
+                               ngmsig, ngmsex, ecutsig, ngmsco, ngmgrn, ngmpol
   USE gvect,            ONLY : nl
   USE kinds,            ONLY : DP
 ! HLSYM
@@ -105,40 +105,36 @@ PROGRAM gw
     CALL sig_fft_g(nr1sex, nr2sex, nr3sex, nrsex, ecutsex, 2)
     CALL clean_pw( .FALSE. )
 
-    ALLOCATE ( scrcoul_g( ngmsig, ngmsig, nfs, 1) )
-    ALLOCATE ( ig_unique( ngmsig) )
+    ALLOCATE ( scrcoul_g( ngmpol, ngmpol, nfs, 1) )
+    ALLOCATE ( ig_unique( ngmpol) )
 
     iuncoul = 28
-    lrcoul = 2 * ngmsig * ngmsig * nfs
+    lrcoul = 2 * ngmpol * ngmpol * nfs
 
     iungreen = 31
-    lrgrn  = 2 * ngmsig * ngmsig
+    lrgrn  = 2 * ngmgrn * ngmgrn
 
 !if(multishift) then
 !HLM
 !    iunresid = 34
 !    lrresid  = 2*npwx
+! Could probably keep the alphabeta coefficients in memory.
 !    iunalphabeta = 35
 !    lralphabeta  = 4
 !endif
 
 IF (ionode) THEN
        iuncoul = 28
-       lrcoul = 2 * ngmsig * ngmsig * nfs
+       lrcoul = 2 * ngmpol * ngmpol * nfs
        CALL diropn (iuncoul, 'coul', lrcoul, exst)
-
 !   Green's function file
        iungreen = 31
-       lrgrn  = 2 * ngmsig * ngmsig
+       lrgrn  = 2 * ngmgrn * ngmgrn
        CALL diropn (iungreen, 'green', lrgrn, exst)
-
 !   Sigma file
        iunsigma = 32
-!       lrsigma = 2 * ngmsig * ngmsig * nwsigma
-!HL woops...
        lrsigma = 2 * ngmsco * ngmsco * nwsigma
        CALL diropn(iunsigma, 'sigma', lrsigma, exst)
-
 !   Should sigma_ex need to be written to file:
        iunsex = 33
        lrsex = 2 * ngmsex * ngmsex
@@ -152,7 +148,6 @@ IF(do_coulomb) THEN
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
-
 !HLSYM
         if(use_symm) then
            WRITE(6,'("")')
@@ -160,8 +155,8 @@ IF(do_coulomb) THEN
            WRITE(6,'("")')
            CALL stern_symm()
         else
-           ngmunique = ngmsig
-           do ig = 1, ngmsig
+           ngmunique = ngmpol
+           do ig = 1, ngmpol
               ig_unique(ig) = ig
            enddo
         endif
@@ -169,7 +164,6 @@ IF(do_coulomb) THEN
 !Distribute unique G-vectors between processors:
 #ifdef __PARA
       npool = nproc / nproc_pool
-      !write(stdout,'("npool", i4, i5)') npool, ngmsig
       if (npool.gt.1) then
       ! number of g-vec per pool and reminder
         ngpool = ngmunique / npool
@@ -235,12 +229,19 @@ ENDIF
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green) CALL green_linsys(ik)
-!HLM
-!       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
-!       if(do_green.and.multishift)) CALL green_linsys_shift(ik)
 
-! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
-! Parallel routine for Sigma_c
+!       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
+
+!HLM
+!       if(do_green.and.multishift)) CALL green_linsys_shift(ik)
+!       if(do_green.and.multishift)) then 
+!          CLOSE(UNIT = iunresid, STATUS = 'DELETE')
+!          CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
+!       endif
+
+
+!  CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
+!  Parallel routine for Sigma_c
        if(do_sigma_c) CALL sigma_c(ik)
 ! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 

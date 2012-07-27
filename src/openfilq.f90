@@ -120,15 +120,6 @@ SUBROUTINE openfilq()
   CALL diropn (iudwfp, 'dwfp', lrdwf, exst)
   CALL diropn (iudwfm, 'dwfm', lrdwf, exst)
 
-  !ngmsig = 20
-  !iuncoul = 28
-  !lrcoul = 2 * ngmsig * ngmsig * nfs 
-  !CALL diropn (iuncoul, 'coul', lrcoul, exst)
-  !Green's function file
-  !iungreen = 31
-  !lrgrn  = 2 * ngmsig * ngmsig 
-  !CALL diropn (iungreen, 'green', lrgrn, exst)
-
 400 IF (fildvscf.NE.' ') THEN
      iudvscf = 27
      IF ( me_pool == 0 ) THEN

@@ -521,12 +521,14 @@ MODULE gwsigma
   
 ! Cutoff for the sigma + exchange/correlation.
   REAL(DP) :: ecutsig
+  REAL(DP) :: ecutpol
+  REAL(DP) :: ecutgrn
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
 
   REAL(DP) :: gcutmsig
   INTEGER  :: nbnd_sig
-  INTEGER  :: ngmsig, ngmsco, ngmsex
+  INTEGER  :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
 
 ! Real space mesh for description of self-energy.
   INTEGER :: nr1sig, nr2sig, nr3sig, nrsig

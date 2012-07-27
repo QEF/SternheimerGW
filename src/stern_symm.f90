@@ -1,15 +1,15 @@
 SUBROUTINE stern_symm()
 !Finds a list of unique G vectors to run Sternheimer linear system on.
-!I still can't find an easy way to prove that from the irreducible set 
+!I still can't find an easy way to prove that from the irreducible set
 !of G vectors obtained here we uniquely reconstruct the full set of G vectors
 !even though I'm pretty sure that's the case...
 
 USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
-USE gwsigma,       ONLY : sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig
+USE gwsigma,       ONLY : sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmpol
 USE gwsymm,        ONLY : ngmunique, ig_unique
 USE gvect,         ONLY : g, ngm, ecutwfc, nl
-USE modes,              ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
+USE modes,         ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
 
 IMPLICIT NONE
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
@@ -28,7 +28,7 @@ ngmunique = 0
 
 !Find number of unique vectors:
 write(6,'("Number of symmops in q vectors", i4)'), nsymq
-DO ig = 1, ngmsig
+DO ig = 1, ngmpol
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
    DO isym = 1, nsymq
@@ -45,6 +45,6 @@ DO ig = 1, ngmsig
    ENDIF
 ENDDO
 
-write(6,'("ngmsig and ngmunique", i4, i4)'), ngmsig, ngmunique
+write(6,'("ngmpol and ngmunique", i4, i4)'), ngmpol, ngmunique
 
 END SUBROUTINE stern_symm

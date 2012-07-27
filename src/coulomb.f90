@@ -31,7 +31,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE paw_variables,    ONLY : okpaw
   USE noncollin_module, ONLY : noncolin, nspin_mag
   USE recover_mod, ONLY : write_rec
-  USE gwsigma,     ONLY : ngmsig
+  USE gwsigma,     ONLY : ngmpol
   USE qpoint,      ONLY : xq
   USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
   USE units_gw,    ONLY : iuncoul, lrcoul
@@ -62,17 +62,12 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   INTEGER :: iq 
   LOGICAL :: exst
  !again should decide if this should be allocated globally. 
-  COMPLEX(DP) :: scrcoul(ngmsig, ngmsig, nfs, 1)
-
- !COMPLEX(DP) :: scrcoul(ngmsig, ngmsig, nwcoul,1)
+  COMPLEX(DP) :: scrcoul(ngmpol, ngmpol, nfs, 1)
  !modeps and spenceralavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
-! REAL(DP) :: w_ryd(nwcoul)
-
 !for Godby needs plasmon pole.
   LOGICAL :: diag
-
 ! used to test the recover file
   EXTERNAL get_clock
   CALL start_clock ('coulomb')
@@ -151,7 +146,6 @@ DO ig = igstart, igstop
         qg = sqrt( (g(1,ig_unique(ig) )+xq(1))**2.d0 + (g(2,ig_unique(ig) )+xq(2))**2.d0 + (g(3,ig_unique(ig) )+ xq(3))**2.d0 )
         spal = 1.0d0 - cos ( rcut * sqrt(tpiba2) * qg )
 
-        !do igp = 1, ngmsig
         do igp = 1, ngmunique
            scrcoul (ig_unique(ig), ig_unique(igp), iw, nspin_mag) = scrcoul (ig_unique(ig), ig_unique(igp),iw,nspin_mag) * dcmplx ( spal, 0.0d0)
         enddo

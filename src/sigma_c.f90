@@ -17,7 +17,7 @@ SUBROUTINE sigma_c(ik0)
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
-                            nr1sco, nr2sco, nr3sco
+                            nr1sco, nr2sco, nr3sco, ngmgrn, ngmpol
   USE gvect,         ONLY : g, ngm, ecutwfc, nl
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
@@ -81,11 +81,10 @@ SUBROUTINE sigma_c(ik0)
 ! iG(W-v)
 
 !I think these should all (necessarily) stay as ngmsig
-   ALLOCATE ( scrcoul_g      (ngmsig, ngmsig, nfs)     )
-   ALLOCATE ( scrcoul_g_R    (ngmsig, ngmsig, nfs)     )
-   ALLOCATE ( scrcoul_pade_g (ngmsig, ngmsig)          )
-   ALLOCATE ( greenf_g       (ngmsig, ngmsig)          )
-!  ALLOCATE ( greenf_g       (ngmgrn, ngmgrn)          )
+   ALLOCATE ( scrcoul_g      (ngmpol, ngmpol, nfs)     )
+   ALLOCATE ( scrcoul_g_R    (ngmpol, ngmpol, nfs)     )
+   ALLOCATE ( scrcoul_pade_g (ngmpol, ngmpol)          )
+   ALLOCATE ( greenf_g       (ngmgrn, ngmgrn)          )
 
 !These go on the big grid...
    ALLOCATE ( scrcoul        (nrsco, nrsco)            )
@@ -225,9 +224,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !   then trim them off later.
 !2) Modify gmapsym so that it only keeps vectors up to ngmsco...
 
-     do ig = 1, ngmsig
-        do igp = 1, ngmsig
-           if((gmapsym(ig,isym).lt.ngmsig).and.(gmapsym(igp,isym).lt.ngmsig)) then
+     do ig = 1, ngmpol
+        do igp = 1, ngmpol
+           if((gmapsym(ig,isym).lt.ngmpol).and.(gmapsym(igp,isym).lt.ngmpol)) then
                do iwim = 1, nfs
                   !Is the symmetry stuff killing me now?
                   scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
@@ -246,8 +245,8 @@ IF(iqstop-iqstart+1.ne.0) THEN
     WRITE(6,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
         scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
-        do ig = 1, ngmsig
-           do igp = 1, ngmsig
+        do ig = 1, ngmpol
+           do igp = 1, ngmpol
              do iwim = 1, nfs
                  z(iwim) = dcmplx( 0.d0, fiu(iwim))
              !normal ordering.
@@ -280,9 +279,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !W(G,G';w)
          czero = (0.0d0, 0.0d0)
          scrcoul(:,:) = czero
-         do ig = 1, ngmsig
+         do ig = 1, ngmpol
             aux(:) = czero
-            do igp = 1, ngmsig
+            do igp = 1, ngmpol
                aux(nlsco(igp)) = scrcoul_pade_g(ig,igp)
             enddo
             call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -292,7 +291,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
          enddo
          do irp = 1, nrsco
             aux = czero
-            do ig = 1, ngmsig
+            do ig = 1, ngmpol
                aux(nlsco(ig)) = conjg(scrcoul(ig,irp))
             enddo
             call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -307,9 +306,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
             rec0 = (iw0mw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio( greenf_g, lrgrn, iungreen, rec0, -1 )
             greenfm(:,:) = czero
-            do ig = 1, ngmsig
+            do ig = 1, ngmgrn
                aux(:) = czero
-               do igp = 1, ngmsig
+               do igp = 1, ngmgrn
                   aux(nlsco(igp)) = greenf_g(ig,igp)
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -319,7 +318,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
             enddo
             do irp = 1, nrsco
                aux = czero
-               do ig = 1, ngmsig
+               do ig = 1, ngmgrn
                   aux(nlsco(ig)) = conjg(greenfm(ig,irp))
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -331,9 +330,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
             CALL davcio(greenf_g, lrgrn, iungreen, rec0, -1)
 !Inlining FFT:
             greenfp(:,:) = czero
-            do ig = 1, ngmsig
+            do ig = 1, ngmgrn
                aux(:) = czero
-               do igp = 1, ngmsig
+               do igp = 1, ngmgrn
                   aux(nlsco(igp)) = greenf_g(ig,igp)
                enddo
               call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -343,7 +342,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
             enddo
             do irp = 1, nrsco
                aux = czero
-               do ig = 1, ngmsig
+               do ig = 1, ngmgrn
                   aux(nlsco(ig)) = conjg(greenfp(ig,irp))
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
@@ -396,10 +395,6 @@ IF (ionode) then
   endif
 
   WRITE(6,'(4x,"Sigma in G-Space")')
- !CALL sigma_r2g_sco(sigma, sigma_g) 
- !Also inlining this since it can cause problems.
- !No problem with size etc when I skip the
- !convolution step...
     sigma_g = (0.0d0,0.0d0)
     do iw = 1, nwsigma
       do ir = 1, nrsco
