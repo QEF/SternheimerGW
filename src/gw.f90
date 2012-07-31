@@ -19,7 +19,7 @@ PROGRAM gw
   ! [5] [4]+Spin-orbit/magnetic
 
   USE io_global,        ONLY : stdout, ionode_id, ionode
-  USE wvfct,            ONLY : nbnd
+  USE wvfct,            ONLY : nbnd,npwx
   USE disp,             ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start
   USE output,           ONLY : fildrho
   USE check_stop,       ONLY : check_stop_init
@@ -37,7 +37,7 @@ PROGRAM gw
   USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel,&
-                               do_q0_only !multishift!HLM
+                               do_q0_only, multishift
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -46,15 +46,15 @@ PROGRAM gw
   USE save_gw,          ONLY : tmp_dir_save
   USE environment,      ONLY: environment_start
   USE freq_gw,          ONLY : nfs, nwsigma
-  USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
-!                              iunresid, lrresid, iunalphabeta, lralphabeta !HLM
+  USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex,&
+                               iunresid, lrresid, iunalphabeta, lralphabeta
+                              !HLS iunsigext, lrsigext
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
                                ngmsig, ngmsex, ecutsig, ngmsco, ngmgrn, ngmpol
   USE gvect,            ONLY : nl
   USE kinds,            ONLY : DP
-! HLSYM
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm
 
   
@@ -114,14 +114,13 @@ PROGRAM gw
     iungreen = 31
     lrgrn  = 2 * ngmgrn * ngmgrn
 
-!if(multishift) then
-!HLM
-!    iunresid = 34
-!    lrresid  = 2*npwx
+if(multishift) then
+    iunresid = 34
+    lrresid  = 2*npwx
 ! Could probably keep the alphabeta coefficients in memory.
-!    iunalphabeta = 35
-!    lralphabeta  = 4
-!endif
+    iunalphabeta = 35
+    lralphabeta  = 4
+endif
 
 IF (ionode) THEN
        iuncoul = 28
@@ -139,6 +138,11 @@ IF (ionode) THEN
        iunsex = 33
        lrsex = 2 * ngmsex * ngmsex
        CALL diropn(iunsex, 'sigma_ex', lrsex, exst)
+!HLS
+!   Should sigma_extra need to be written to file:
+!       iunsigext = 36
+!       lrsigext = 2 * ngmsco * ngmsco
+!       CALL diropn(iunsigext, 'sig_ext', lrsigext, exst)
 ENDIF
 
 IF(do_coulomb) THEN
@@ -148,7 +152,6 @@ IF(do_coulomb) THEN
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
-!HLSYM
         if(use_symm) then
            WRITE(6,'("")')
            WRITE(6,'("SYMMETRIZING COULOMB Perturbations")')
@@ -208,12 +211,8 @@ ENDIF
    DEALLOCATE( scrcoul_g )
    DEALLOCATE( ig_unique )
 
-
-! Generates small group of k and then forms IBZ_{k}.
-! HLM
-! Open directory for residuals/needed for multishift:
-! if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
-! if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
+   if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
+   if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
 
    DO ik = 1, 1
        xq(:) = xk_kpoints(:, ik)
@@ -221,23 +220,21 @@ ENDIF
        lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
        setup_pw = .TRUE.
        do_band  = .TRUE.
-
+! Generates small group of k and then forms IBZ_{k}.
        CALL run_pwscf_green(do_band)     
        CALL initialize_gw()
-
 ! CALCULATE G(r,r'; w) 
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
-       if(do_green) CALL green_linsys(ik)
+       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
+       if(do_green.and.multishift) CALL green_linsys_shift(ik)
 
-!       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
+       call mp_barrier()
 
-!HLM
-!       if(do_green.and.multishift)) CALL green_linsys_shift(ik)
-!       if(do_green.and.multishift)) then 
-!          CLOSE(UNIT = iunresid, STATUS = 'DELETE')
-!          CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
-!       endif
+       if(do_green.and.multishift) then 
+          CLOSE(UNIT = iunresid, STATUS = 'DELETE')
+          CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
+       endif
 
 
 !  CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
@@ -245,8 +242,11 @@ ENDIF
        if(do_sigma_c) CALL sigma_c(ik)
 ! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 
+           !HLS
+           !if(do_sigma_extra) CALL sigma_extra(ik)
             if(do_sigma_exx) CALL sigma_exch(ik)
        endif
+
        if(ionode) WRITE(6, '("Finished CALCULATING SIGMA")') 
        CALL mp_barrier(inter_pool_comm)
        CALL clean_pw_gw(ik)

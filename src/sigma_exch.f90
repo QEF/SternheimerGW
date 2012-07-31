@@ -168,11 +168,9 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
     enddo
 
     rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-
     ! -q
     xq0s = (/ -0.01 , 0.00, 0.00 /) ! this should be set from input
     barcoul(:,:) = (0.0d0,0.0d0)
-
     ! -q = k0 - (k0 + q)
     xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
 

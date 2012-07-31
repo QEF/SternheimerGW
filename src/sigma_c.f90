@@ -91,8 +91,6 @@ SUBROUTINE sigma_c(ik0)
    ALLOCATE ( greenfp        (nrsco, nrsco)            )
    ALLOCATE ( greenfm        (nrsco, nrsco)            )
    ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
-  !
-  !ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
    ALLOCATE ( gmapsym        (ngm, 48)                 )
 !  Pade Approximants.
    ALLOCATE  (z(nfs), a(nfs))
@@ -231,10 +229,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
                   !Is the symmetry stuff killing me now?
                   scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
                enddo
-!Wrot test
-!            else
-!               write(1000 + mpime, '("Throwing away rotated G vector.")')
-!               write(1000 + mpime, '(2i5)') gmapsym(ig,isym), igp 
            endif
         enddo
      enddo

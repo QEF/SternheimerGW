@@ -363,8 +363,9 @@ MODULE control_gw
              do_q0_only,&
              godbyneeds,&
              padecont,&
-             cohsex
-            ! multishift !HLM
+             cohsex,&
+             multishift 
+           !HLS do_sigma_extra
 
 END MODULE control_gw
 !
@@ -389,6 +390,7 @@ MODULE freq_gw
   REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax
   REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:) 
   INTEGER, ALLOCATABLE :: ind_w0mw (:,:), ind_w0pw (:,:)
+  REAL(DP) :: plasmon
 
 END MODULE freq_gw
 !
@@ -403,8 +405,8 @@ MODULE units_gw
        iuwfc, lrwfc, iuvkb, iubar, lrbar, iuebar, lrebar, iudwf, iupsir, &
        lrdwf, iudrhous, lrdrhous, iudyn, iupdyn, iunrec, iudvscf, iudrho, &
        lrdrho, iucom, lrcom, iudvkb3, lrdvkb3, iuncoul, iungreen, iunsigma, &
-       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex, lrsex
-  !HLM lrresid, lralphabeta, iunresid, iunalphabeta
+       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex, lrsex, &
+       lrresid, lralphabeta, iunresid, iunalphabeta!HLS, iunsigext, lrsigext
 
 
   ! iunit with the wavefunctions

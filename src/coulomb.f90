@@ -112,7 +112,7 @@ DO ig = igstart, igstop
         !(W-v) = (inveps(w) - delta) v
          drhoscfs (nl(ig_unique(ig)), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
 
-!         WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
+!        WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
 
        ELSE
 
@@ -141,7 +141,6 @@ DO ig = igstart, igstop
 
 ! Spencer/Alavi truncation of the bare coulomb interaction
 ! [PRB 77,193110 (2008]
-
         rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
         qg = sqrt( (g(1,ig_unique(ig) )+xq(1))**2.d0 + (g(2,ig_unique(ig) )+xq(2))**2.d0 + (g(3,ig_unique(ig) )+ xq(3))**2.d0 )
         spal = 1.0d0 - cos ( rcut * sqrt(tpiba2) * qg )
@@ -158,7 +157,6 @@ DO ig = igstart, igstop
 !   Pade input points on the imaginary axis
          do iw = 1, nfs
            z(iw) = dcmplx( 0.d0, fiu(iw))
-!          u(iw) = scrcoul (ig,igp,iw,nspin_mag)
            u(iw) = scrcoul (ig_unique(ig), ig_unique(igp),iw,nspin_mag)
          enddo
 !        Pade coefficients

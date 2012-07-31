@@ -37,7 +37,8 @@ SUBROUTINE gwq_readin()
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex !HLM multishift
+                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift
+                          !HLS do_sigma_extra
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
@@ -58,7 +59,7 @@ SUBROUTINE gwq_readin()
   USE paw_variables, ONLY : okpaw
 ! HL USE ramanm,        ONLY : eth_rps, eth_ns, lraman, elop, dek
 
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax
+  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon
   USE gw_restart,    ONLY : gw_readfile
   USE gwsigma,       ONLY : ecutsig, nbnd_sig, ecutsex, ecutsco, ecutpol, ecutgrn
   USE gwsymm,        ONLY : use_symm
@@ -93,8 +94,11 @@ SUBROUTINE gwq_readin()
                        recover, fpol, asr, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, wsigmamax, deltaw, wcoulmax,&
-                       use_symm, maxter_green, w_of_q_start, godbyneeds, padecont, cohsex, ecutpol, ecutgrn
+                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin,&
+                       wsigmamax, deltaw, wcoulmax,&
+                       use_symm, maxter_green, w_of_q_start, godbyneeds,& 
+                       padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon
+                      !do_sigma_extra
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -202,6 +206,7 @@ SUBROUTINE gwq_readin()
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
+  plasmon        = 18.0d0
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
   ecutgrn      = ecutsig
@@ -215,12 +220,10 @@ SUBROUTINE gwq_readin()
   godbyneeds   = .FALSE.
   cohsex       = .FALSE.
   padecont     = .FALSE.
-!HLM
-!  multishift     = .FALSE.
+  multishift     = .FALSE.
 
 
 !imaginary component added to linear system should be in Rydberg
-!eta            = 0.6/RYTOEV
   eta            = 0.04
   kpoints        = .FALSE.
   do_coulomb     = .FALSE.
@@ -228,6 +231,7 @@ SUBROUTINE gwq_readin()
   do_sigma_exx   = .FALSE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
+!HLS  do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
 
 !Frequency variables
@@ -576,23 +580,8 @@ SUBROUTINE gwq_readin()
      CALL mp_bcast(list, ionode_id )
   ENDIF
   
-  !HL Commmenting various epsil/lgaus stuff.
-  ! IF (epsil.AND.lgauss) &
-  !      CALL errore ('phq_readin', 'no elec. field with metals', 1)
-  !IF (modenum > 0) THEN
-  !   IF ( ldisp ) &
-  !        CALL errore('phq_readin','Dispersion calculation and &
-  !        & single mode calculation not possibile !',1)
-  !   nrapp = 1
-  !   nat_todo = 0
-  !   list (1) = modenum
-  ! ENDIF
-  !IF (modenum > 0 .OR. lraman ) lgamma_gamma=.FALSE.
   IF (.NOT.lgamma_gamma) asr=.FALSE.
-  !
    IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
        CALL errore('phq_readin','nq1, nq2, and nq3 must be greater than 0',1)
-  !
   RETURN
-  !
 END SUBROUTINE gwq_readin

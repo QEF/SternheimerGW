@@ -22,11 +22,10 @@ subroutine bcast_gw_input ( )
                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
                          do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
-                         do_q0_only, maxter_green, godbyneeds, cohsex, padecont
-!HLM                     multishift
+                         do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
+                         multishift
+                         !do_sigma_extra
  
- !HL elph out of control_ph
-
   USE gamma_gamma, ONLY : asr
   USE disp, ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial, ONLY : nat_todo, nrapp
@@ -43,14 +42,11 @@ subroutine bcast_gw_input ( )
   USE gwsigma,       ONLY : nbnd_sig, ecutsig, ecutsex, ecutsco, ecutgrn, ecutpol
   USE gwsymm,        ONLY : use_symm
  
-
   implicit none
-  !
-  ! logicals
-  !
-  !HL lgamma, epsi
-  !  call mp_bcast (lgamma, ionode_id )
-  !  call mp_bcast (epsil, ionode_id )
+ !logicals
+ !HL lgamma, epsi
+ !call mp_bcast (lgamma, ionode_id )
+ !call mp_bcast (epsil, ionode_id )
   call mp_bcast (trans, ionode_id )
   call mp_bcast (reduce_io, ionode_id )
   call mp_bcast (fpol, ionode_id )
@@ -104,8 +100,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (modielec, ionode_id)
   call mp_bcast (godbyneeds, ionode_id)
   call mp_bcast (padecont, ionode_id)
-  !HLM
-  !call mp_bcast (multishift, ionode_id)
+  call mp_bcast (multishift, ionode_id)
   call mp_bcast (cohsex, ionode_id)
   call mp_bcast (eta, ionode_id)
   call mp_bcast (kpoints, ionode_id)
@@ -115,6 +110,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (do_green, ionode_id)
   call mp_bcast (do_sigma_matel, ionode_id)
   call mp_bcast (do_q0_only, ionode_id)
+!HLS  call mp_bcast (do_sigma_extra, ionode_id)
 
 !Frequency grid
   call mp_bcast (wsigmamin, ionode_id)

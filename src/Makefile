@@ -59,10 +59,13 @@ addusddens.o\
 addusdbec.o\
 set_drhoc.o\
 cBiCG_solve_fix.o\
+cBiCG_solve_green.o\
 cch_psi_all_fix.o\
 cch_psi_all_green.o\
 cg_psi.o\
 green_linsys.o\
+green_linsys_shift.o\
+green_multishift.o\
 pade.o\
 freqbins.o\
 refold.o\
