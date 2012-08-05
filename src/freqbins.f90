@@ -13,7 +13,7 @@ SUBROUTINE freqbins()
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
-                         wgreenmax, fiu, nfs
+                         wgreenmax, fiu, nfs, greenzero
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
   USE control_gw, ONLY : eta
@@ -31,7 +31,7 @@ SUBROUTINE freqbins()
 !  wcoulmax  = 80.d0
 
 
-   zero      = 0.0d0
+   greenzero      = 0.0d0
 
    wgreenmin = wsigmamin-wcoulmax
    wgreenmax = wsigmamax+wcoulmax
@@ -40,19 +40,19 @@ SUBROUTINE freqbins()
 
    allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc) )
 
-   wcoul = zero
-   wgreen = zero
-   wsigma = zero
+   wcoul = greenzero
+   wgreen = greenzero
+   wsigma = greenzero
 
   do iw = 1, nwalloc
     wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
   enddo
 
-  ! align the bins with the zero of energy
+ !align the bins with the zero of energy
 
   wtmp = wtmp - minval ( abs ( wgreen) )
 
-  !
+ !
   nwgreen = 0
   nwcoul = 0
   nwsigma = 0
@@ -64,7 +64,7 @@ SUBROUTINE freqbins()
      wgreen(nwgreen) = wtmp(iw)
    endif
 
-   if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
+   if ( ( wtmp(iw) .ge. greenzero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
      nwcoul = nwcoul + 1
      wcoul(nwcoul) = wtmp(iw)
    endif

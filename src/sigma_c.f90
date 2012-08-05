@@ -79,8 +79,6 @@ SUBROUTINE sigma_c(ik0)
 !       call poolreduce ( 2 * ngms * ngms * nwim, scrcoul_g)
 ! #endif
 ! iG(W-v)
-
-!I think these should all (necessarily) stay as ngmsig
    ALLOCATE ( scrcoul_g      (ngmpol, ngmpol, nfs)     )
    ALLOCATE ( scrcoul_g_R    (ngmpol, ngmpol, nfs)     )
    ALLOCATE ( scrcoul_pade_g (ngmpol, ngmpol)          )
@@ -224,9 +222,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
 
      do ig = 1, ngmpol
         do igp = 1, ngmpol
-           if((gmapsym(ig,isym).lt.ngmpol).and.(gmapsym(igp,isym).lt.ngmpol)) then
+           if((gmapsym(ig,isym).lt.ngmpol).and.(gmapsym(igp,isym).lt.ngmpol)&
+               .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
                do iwim = 1, nfs
-                  !Is the symmetry stuff killing me now?
                   scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
                enddo
            endif

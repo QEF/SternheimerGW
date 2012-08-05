@@ -245,11 +245,12 @@ SUBROUTINE green_linsys (ik0)
        !if(anorm.gt.0.50d0) write(600+mpime,'(f15.10)')    wgreen(iw)
        !if(.not.conv_root)  write(600 + mpime,'("root not converged")')
        !if(anorm.gt.1.0d0)  write(600 + mpime,'("anorm greater than one ")') 
-       if(anorm.gt.1.0d0)  gr_A = (0.0d0, 0.0d0) 
+       !if(.gt.1.0d0)  gr_A = (0.0d0, 0.0d0) 
+        if(.not.conv_root) gr_A = (0.0d0, 0.0d0)
        !instead of zeroing green's function why not try  G(G,G';\omega) = - Delta(G,G')/((k+g)**2 - \omega)
        !if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (-1.0d0, 0.0d0)/(DCMPLX(g2kin(igkq_ig(ig)), 0.d0)-DCMPLX(w_ryd(iw),eta))
        !alternatively:
-       if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (1.0d0, 0.0d0)/(DCMPLX(w_ryd(iw),eta))
+       !if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (1.0d0, 0.0d0)/(DCMPLX(w_ryd(iw),eta))
 
        do igp = 1, counter
           green (igkq_tmp(ig), igkq_tmp(igp)) = green (igkq_tmp(ig), igkq_tmp(igp)) + gr_A(igkq_ig(igp),1)

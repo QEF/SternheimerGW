@@ -9,7 +9,7 @@ SUBROUTINE sigma_matel (ik0)
   USE klist,                ONLY : xk, wk, nkstot
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex!HLS, iunsigext, lrsigext
+  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
   USE control_gw,           ONLY : nbnd_occ, lgamma
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : ngmsig, nbnd_sig, sigma_g_ex, ngmsco, ngmsex
@@ -27,7 +27,10 @@ REAL(DP)                  ::   w_ryd(nwsigma)
 REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
                                et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
 REAL(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
-                             sigma_ex_tr, sigma_ex_diag(nbnd_sig)!HLS,sigma_band_extra(nbnd_sig,nbnd_sig)
+                             sigma_ex_tr, sigma_ex_diag(nbnd_sig)
+
+COMPLEX(DP)               :: sigma_band_extra(nbnd_sig,nbnd_sig)
+
 REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                et_qp_tr, z_tr, z(nbnd_sig)
 REAL(DP)                  ::   one
@@ -152,9 +155,8 @@ IF (ionode) THEN
 
 !WRITE(6,'("Number of G vectors for Sigma_ex", i4)') counter
 !@10TION: only looping up to counter so need to watch that...
-
-! setting these arrays to dim ngmsex lets us calculate all matrix elements with sigma as 
-! a vector^{T}*matrix*vector product.
+!setting these arrays to dim ngmsex lets us calculate all matrix elements with sigma as 
+!a vector^{T}*matrix*vector product.
  ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex))
  ALLOCATE (evc_tmp_i(ngmsex))
  ALLOCATE (evc_tmp_j(ngmsex))
@@ -232,34 +234,39 @@ IF (ionode) THEN
   enddo
  enddo
  DEALLOCATE (sigma) 
-
 !HLS
-!ALLOCATE ( sigma_g_ex  (ngmsco, ngmsco))
-!CALL davcio (sigma_g_ex, lrsigext, iunsigext, 1, -1)
-!sigma_band_extra (:,:,:) = czero
+ALLOCATE ( sigma_g_ex  (ngmsco, ngmsco))
+sigma_g_ex(:,:) = (0.0d0, 0.0d0)
+CALL davcio (sigma_g_ex, lrsigext, iunsigext, 1, -1)
+sigma_band_extra (:,:) = czero
 !Code for taking matrix elements...
-!    sigma_band_extra (:,:) = czero
-!    do ibnd = 1, nbnd_sig
-!        evc_tmp_i(:) = czero
-!     do jbnd = 1, nbnd_sig
-!        evc_tmp_j(:) = czero
-!        do ig = 1, counter
-!              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-!        enddo
-!        do ig = 1, counter
-!              do igp = 1, counter
-!                 auxsco(igp) = sigma_g_ex (igp, ig)
-!                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-!              enddo
-!              sigma_band_extra (ibnd, jbnd) = sigma_band_extra (ibnd, jbnd) + &
-!              evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
-!        enddo
-!     enddo
-!    enddo
-! DEALLOCATE(sigma_g_ex)
-! WRITE(6,*) 
-! write(stdout,'(4x,"Sigma_extra (eV)")')
-! write(stdout,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
+    sigma_band_extra (:,:) = czero
+    do ibnd = 1, nbnd_sig
+        evc_tmp_i(:) = czero
+     do jbnd = 1, nbnd_sig
+        evc_tmp_j(:) = czero
+        do ig = 1, counter
+              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
+        enddo
+        do ig = 1, counter
+              do igp = 1, counter
+                 auxsco(igp) = sigma_g_ex (igp, ig)
+                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
+              enddo
+              sigma_band_extra (ibnd, jbnd) = sigma_band_extra (ibnd, jbnd) + &
+              evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
+        enddo
+     enddo
+    enddo
+
+ DEALLOCATE(sigma_g_ex)
+
+ WRITE(6,*) 
+ write(stdout,'(4x,"Sigma_extra (eV)")')
+ write(stdout,'(8(1x,f12.7))') real(sigma_band_extra(:,:))*RYTOEV
+
+ WRITE(6,*) 
+ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_extra(:,:))*RYTOEV
 
  DEALLOCATE(evc_tmp_i)
  DEALLOCATE(evc_tmp_j)

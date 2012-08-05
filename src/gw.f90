@@ -37,7 +37,7 @@ PROGRAM gw
   USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel,&
-                               do_q0_only, multishift
+                               do_q0_only, multishift, do_sigma_extra
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -47,8 +47,7 @@ PROGRAM gw
   USE environment,      ONLY: environment_start
   USE freq_gw,          ONLY : nfs, nwsigma
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex,&
-                               iunresid, lrresid, iunalphabeta, lralphabeta
-                              !HLS iunsigext, lrsigext
+                               iunresid, lrresid, iunalphabeta, lralphabeta, iunsigext, lrsigext
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
@@ -138,11 +137,10 @@ IF (ionode) THEN
        iunsex = 33
        lrsex = 2 * ngmsex * ngmsex
        CALL diropn(iunsex, 'sigma_ex', lrsex, exst)
-!HLS
 !   Should sigma_extra need to be written to file:
-!       iunsigext = 36
-!       lrsigext = 2 * ngmsco * ngmsco
-!       CALL diropn(iunsigext, 'sig_ext', lrsigext, exst)
+       iunsigext = 36
+       lrsigext = 2 * ngmsco * ngmsco
+       CALL diropn(iunsigext, 'sig_ext', lrsigext, exst)
 ENDIF
 
 IF(do_coulomb) THEN
@@ -242,8 +240,7 @@ ENDIF
        if(do_sigma_c) CALL sigma_c(ik)
 ! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 
-           !HLS
-           !if(do_sigma_extra) CALL sigma_extra(ik)
+            if(do_sigma_extra) CALL sigma_extra(ik)
             if(do_sigma_exx) CALL sigma_exch(ik)
        endif
 

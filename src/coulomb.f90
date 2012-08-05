@@ -92,9 +92,6 @@ DO ig = igstart, igstop
          dvbare(:)     = (0.0d0, 0.0d0)
          dvbare (nl (ig_unique(ig)) ) = (1.d0, 0.d0)
 
-!    WRITE(1000+mpime,'(4x,"Frequency= ",3f7.3)') fiu(iw)*RYTOEV
-!    WRITE(1000+mpime,'(4x,"Screened Coulomb: q =",3f7.3,"  G =",3f7.3)') xq(:), g(:,ig)
-
       !From the inputcard we can choose whether to use a model dielectric or 
       !do the full sternheimer treatment.
 
@@ -111,23 +108,15 @@ DO ig = igstart, igstop
         !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
         !(W-v) = (inveps(w) - delta) v
          drhoscfs (nl(ig_unique(ig)), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
-
 !        WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
-
        ELSE
 
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, + 1)
          CALL solve_linter (dvbare, iw, drhoscfs)
-
-        ! IF (convt .ne. .true.) WRITE( stdout, '(/,5x,"No convergence ")')
-        ! IF (convt .ne. .true.) WRITE( 1000+mpime, '(/,5x,"No convergence ")')
-
          call cft3 (drhoscfs, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, - 1)
-        ! WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
          if(iq.eq.1) then
          WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
-         WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
          endif
        ENDIF
 
@@ -177,17 +166,12 @@ DO ig = igstart, igstop
              z(iw) = dcmplx( fiu(iw), 0.0d0)
              u(iw) = scrcoul (ig_unique(ig), ig_unique(igp),iw,nspin_mag)
            enddo
-
            if (igp.ne.ig) then 
               diag=.false.
            else
               diag=.true.
            endif
-
            CALL godby_needs_coeffs(nfs, diag, z, u, a)
-
-           !write(1000+mpime,*)a
-
            do iw = 1, nfs 
               scrcoul (ig_unique(ig),ig_unique(igp),iw,nspin_mag) = a(iw)
            enddo
@@ -209,12 +193,13 @@ DO ig = igstart, igstop
        enddo !enddo on igp
     ENDIF
 ENDDO 
+
 !on G
 !Here writing to disc the pade co-efficients of the analytically continued screened
 !coulomb interaction. These co-efficients are then read back in when the GW product
 !routine is called.  
-!  CALL davcio(scrcoul, lrcoul, iuncoul, iq, 1 )
-!  CALL mp_barrier()
+!CALL davcio(scrcoul, lrcoul, iuncoul, iq, 1 )
+!CALL mp_barrier()
 
 tcpu = get_clock ('GW')
 

@@ -37,8 +37,7 @@ SUBROUTINE gwq_readin()
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift
-                          !HLS do_sigma_extra
+                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
@@ -59,7 +58,8 @@ SUBROUTINE gwq_readin()
   USE paw_variables, ONLY : okpaw
 ! HL USE ramanm,        ONLY : eth_rps, eth_ns, lraman, elop, dek
 
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon
+  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
+                            greenzero
   USE gw_restart,    ONLY : gw_readfile
   USE gwsigma,       ONLY : ecutsig, nbnd_sig, ecutsex, ecutsco, ecutpol, ecutgrn
   USE gwsymm,        ONLY : use_symm
@@ -97,8 +97,8 @@ SUBROUTINE gwq_readin()
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin,&
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
-                       padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon
-                      !do_sigma_extra
+                       padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
+                       greenzero
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -206,7 +206,9 @@ SUBROUTINE gwq_readin()
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
-  plasmon        = 18.0d0
+  plasmon      = 17.0d0
+  greenzero    = 0.0d0 
+ 
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
   ecutgrn      = ecutsig
@@ -231,7 +233,7 @@ SUBROUTINE gwq_readin()
   do_sigma_exx   = .FALSE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
-!HLS  do_sigma_extra = .FALSE.
+  do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
 
 !Frequency variables

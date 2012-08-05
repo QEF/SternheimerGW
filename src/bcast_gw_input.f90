@@ -23,14 +23,12 @@ subroutine bcast_gw_input ( )
                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
                          do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
-                         multishift
-                         !do_sigma_extra
+                         multishift, do_sigma_extra
  
   USE gamma_gamma, ONLY : asr
   USE disp, ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial, ONLY : nat_todo, nrapp
- !HL new freq variable
-  USE freq_gw, ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw
+  USE freq_gw, ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero
   USE output, ONLY : fildvscf, fildyn, fildrho
   use io_files, ONLY : tmp_dir, prefix
   USE control_flags, only: iverbosity, modenum
@@ -110,7 +108,9 @@ subroutine bcast_gw_input ( )
   call mp_bcast (do_green, ionode_id)
   call mp_bcast (do_sigma_matel, ionode_id)
   call mp_bcast (do_q0_only, ionode_id)
-!HLS  call mp_bcast (do_sigma_extra, ionode_id)
+  call mp_bcast (do_sigma_extra, ionode_id)
+  call mp_bcast (plasmon,ionode_id)
+  call mp_bcast (greenzero,ionode_id)
 
 !Frequency grid
   call mp_bcast (wsigmamin, ionode_id)

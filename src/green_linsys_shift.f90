@@ -205,9 +205,7 @@ WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
              gr_A(:,:) = (0.0d0, 0.0d0) 
              lter = 0
              etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-!            cw = CMPLX( 0, eta, kind=DP)
              cw = CMPLX( 0, 0, kind=DP)
-
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
@@ -278,9 +276,7 @@ WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
     CALL mp_barrier(inter_pool_comm)
 #endif
 ENDDO !iq
-
 if(allocated(niters)) DEALLOCATE(niters)
-
 CALL stop_clock('greenlinsys')
 RETURN
 END SUBROUTINE green_linsys_shift
