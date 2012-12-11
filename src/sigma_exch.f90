@@ -10,7 +10,7 @@ SUBROUTINE sigma_exch(ik0)
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
-  USE cell_base,     ONLY : omega, tpiba2
+  USE cell_base,     ONLY : omega, tpiba2, at, bg
   USE eqv,           ONLY : evq, eprec
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc,&
                             iunsex, lrsex
@@ -24,7 +24,7 @@ SUBROUTINE sigma_exch(ik0)
 IMPLICIT NONE
 
 !ARRAYS to describe exchange operator.
-  LOGICAL :: do_band, do_iq, setup_pw, exst
+  LOGICAL :: do_band, do_iq, setup_pw, exst, limit
   COMPLEX(DP), ALLOCATABLE ::  greenf_na (:,:), greenf_nar(:,:)
   COMPLEX(DP), ALLOCATABLE ::  barcoul(:,:), barcoulr(:,:)
   REAL(DP) :: rcut, spal
@@ -32,11 +32,10 @@ IMPLICIT NONE
   INTEGER :: ig, igp, npe, irr, icounter, ir, irp
   INTEGER :: iq, ipol, ibnd, jbnd, counter
   INTEGER :: rec0, ios
-  REAL(DP) :: qg2, xq0s(3), qg, xxq(3)
+  REAL(DP) :: qg2, qg 
   COMPLEX(DP) :: ZDOTC
   COMPLEX(DP) :: czero
   COMPLEX(DP) :: aux(nrsex)
-  COMPLEX(DP) :: aux1(nrsex)
   COMPLEX(DP) :: sigma_band_ex(nbnd_sig, nbnd_sig)
  
 !q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
@@ -50,11 +49,6 @@ IMPLICIT NONE
 
 ! Self-Energy grid:
 ! iGv
-  ALLOCATE ( barcoul     (ngmsex, ngmsex) )
-  ALLOCATE ( barcoulr    (nrsex,  nrsex)  )
-  ALLOCATE ( greenf_na   (ngmsex, ngmsex) )
-  ALLOCATE ( greenf_nar  (nrsex,  nrsex)  )
-  ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex) ) 
   ALLOCATE ( sigma_ex    (nrsex, nrsex)   ) 
 
   CALL start_clock('sigma_exch')
@@ -85,8 +79,10 @@ WRITE(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), i
 
 czero = (0.0d0, 0.0d0)
 sigma_ex(:,:) = (0.0d0, 0.0d0)
+limit =.false.
 
 DO iq = 1, nksq
+
 WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
 ! odd numbers xk
      if (lgamma) then
@@ -128,8 +124,8 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
        endif
     enddo
 
+ALLOCATE ( greenf_na   (ngmsex, ngmsex) )
     greenf_na = (0.0d0, 0.0d0)
-
 !   psi_{k+q}(r)psi^{*}_{k+q}(r')
     do ig = 1, counter
       do igp = 1, counter
@@ -137,12 +133,17 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
            greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
                                             tpi * (0.0d0, 1.0d0) * (evq(igkq_ig(ig),ibnd))* &
                                             conjg((evq(igkq_ig(igp), ibnd)))
+
+!           greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
+!                                            tpi * (0.0d0, 1.0d0) * (evq(igkq_ig(ig),ibnd))* &
+!                                            conjg((evq(igkq_ig(igp), ibnd)))
         enddo
       enddo
     enddo
 
 !Fourier transform of green's function
 !   WRITE(6, '("FFT_GREEN")')
+ALLOCATE ( greenf_nar  (nrsex,  nrsex)  )
     greenf_nar(:,:) = czero
     do ig = 1, ngmsex
         aux(:) = czero
@@ -154,7 +155,7 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
            greenf_nar(ig, irp) = aux(irp) / omega
         enddo
     enddo
-
+DEALLOCATE(greenf_na)
 !   the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
 !   following the convention set in the paper
 !  [because the standard transform is sum_G f(G) exp(iGr) ]
@@ -167,34 +168,41 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
         greenf_nar(1:nrsex,irp) = conjg ( aux )
     enddo
 
-    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-    ! -q
-    xq0s = (/ -0.01 , 0.00, 0.00 /) ! this should be set from input
-    barcoul(:,:) = (0.0d0,0.0d0)
-    ! -q = k0 - (k0 + q)
-    xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
+ALLOCATE ( barcoul     (ngmsex, ngmsex) )
 
+    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+
+!HL using  sax cutoff
+!    rcut = 0.50d0*minval(sqrt(sum(bg**2,1)))/sqrt(tpiba2)
+!    rcut = rcut-rcut/50.0d0
+! q
+! q = (k0 +q) - k0
+! xq_coul(:) = xk(:,ikq) - xk_kpoints(:,ik0)
+    barcoul(:,:) = (0.0d0,0.0d0)
+! -q = k0 - (k0 + q)
+    xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
     do ig = 1, ngmsex
-        qg = sqrt((g(1,ig)   + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
+         qg = sqrt((g(1,ig)  + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
                 + (g(3,ig )  + xq_coul(3))**2.d0)
 
         qg2 =   (g(1,ig)     + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
                 + ((g(3,ig)) + xq_coul(3))**2.d0 
 
-      ! These if conditions need to go...
-        if (qg < eps8) qg =  sqrt((g(1, ig) + xq0s(1))**2.d0 + (g(2, ig) + xq0s(2))**2.d0 & 
-                                                             + (g(3, ig) + xq0s(3))**2.d0)
-
-        if (qg2 < eps8) qg2 =  ((g(1, ig) + xq0s(1))**2.d0   + (g(2, ig) + xq0s(2))**2.d0 & 
-                                                             + (g(3, ig) + xq0s(3))**2.d0)
-
-        spal = 1.0d0 - cos (rcut * sqrt(tpiba2) * qg)
-        barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
+        if (qg < eps8) limit=.true.
+        if(.not.limit) then
+            spal = 1.0d0 - cos (rcut * sqrt(tpiba2) * qg)
+            barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
+            limit=.false.
+        else
+            write(6,'("Taking Limit.")')
+            barcoul(ig,ig)= (fpi*e2*(rcut**2))/2 
+            limit=.false.
+        endif
     enddo
 
 !   WRITE(6, '("FFT_COULOMB")')
+ALLOCATE ( barcoulr    (nrsex,  nrsex)  )
     barcoulr(:,:) = (0.0d0, 0.0d0)
-!   CALL fft6_g2r(ngmsex, nrsex, nlsex, barcoul, barcoulr, 2)
     do ig = 1, ngmsex
        aux(:) = czero
        do igp = 1, ngmsex
@@ -205,9 +213,8 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
           barcoulr(ig, irp) = aux(irp) / omega
        enddo
     enddo
-! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
-! following the convention set in the paper
-! [because the standard transform is sum_G f(G) exp(iGr) ]
+
+DEALLOCATE(barcoul)
     do irp = 1, nrsex
        aux = czero
        do ig = 1, ngmsex
@@ -216,19 +223,21 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
        call cfft3d (aux, nr1sex, nr2sex, nr3sex, nr1sex, nr2sex, nr3sex, +1)
        barcoulr(1:nrsex,irp) = conjg ( aux )
     enddo
-!   should use open mp here.
-    sigma_ex = sigma_ex + wq(iq)* (0.0d0,1.0d0) / tpi * barcoulr * greenf_nar
+!might want to keep it as Gv rather than vG
+    sigma_ex = sigma_ex + wq(iq)* (0.0d0,1.0d0) / tpi *  greenf_nar * barcoulr
+DEALLOCATE(barcoulr)
+DEALLOCATE(greenf_nar)
 ENDDO ! on q
+
+    ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex) ) 
+    sigma_g_ex(:,:) = (0.0d0,0.0d0)
 
 !WRITE(6, '("FFT_SIGMA")')
     CALL sigma_r2g_ex(sigma_ex, sigma_g_ex)
-
 !Storing full sigma_ex operator in G  space...
     CALL davcio(sigma_g_ex, lrsex, iunsex, 1, 1)
     CALL stop_clock('sigma_exch')
 
     DEALLOCATE(sigma_g_ex)
     DEALLOCATE (sigma_ex)
-    DEALLOCATE (greenf_na, greenf_nar)
-    DEALLOCATE (barcoul, barcoulr)
 END SUBROUTINE sigma_exch

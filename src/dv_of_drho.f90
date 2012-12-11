@@ -143,6 +143,16 @@ subroutine dv_of_drho (mode, dvscf, flag)
           if (qg2 > 1.d-8) then
              dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
                                 e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
+
+           !this is where we need to put in the truncation
+           !v(k) = e2*fpi/k2{1 - e^{-k_{xq}*zcut}cos(kz*z_c)}
+           !FORTRAN
+           !kxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(1))**2)
+           !kz   = (g(3,ig))
+           !spal = 1.0d0 - EXP(-kxy*zcut)*cos(kz*zcut)
+           !dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
+           !                   e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2) * dcmplx(spal, 0.0d0)
+
           endif
        enddo
        !

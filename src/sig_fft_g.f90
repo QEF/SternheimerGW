@@ -169,6 +169,5 @@
      write(6,'(5x,"nr3sex = ",i10)') nr3tmp
      write(6,'(5x,"nrsex  = ",i10)') nrtmp
   endif
-
   DEALLOCATE(nltmp)
   END SUBROUTINE sig_fft_g

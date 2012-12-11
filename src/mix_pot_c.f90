@@ -129,36 +129,43 @@
      beta (i, i) = w0**2 + w (i) **2
   enddo
   !
-  call ZHETRF ('U', iter_used, beta, maxter, iwork, work, maxter, info)
+ !The factorisation seems to go screwy here if we enforce the hermiticity
+ !going to try it with a generalized inversion routine in case the matrix is no longer hermitian.
+ !call ZHETRF ('U', iter_used, beta, maxter, iwork, work, maxter, info)
+ !HL generalized for non-hermitian matrix:
+  call ZGETRF (iter_used, iter_used, beta, maxter, iwork, info)
   call errore ('broyden', 'factorization', info)
-  call ZHETRI ('U', iter_used, beta, maxter, iwork, work, info)
+ !HL
+ !call ZHETRI ('U', iter_used, beta, maxter, iwork, work, info)
+ !Generalized back substituion for non-hermitian matrix:
+  call ZGETRI (iter_used, beta, maxter, iwork, work, maxter, info)
   call errore ('broyden', 'ZSYTRI', info)
-  !
-  do i = 1, iter_used
-     do j = i + 1, iter_used
-        beta (j, i) = conjg ( beta (i, j) ) 
-     enddo
-  enddo
-  !
+!HL Trying with the hermiticity condition led to disaster and tears
+! do i = 1, iter_used
+!    do j = i + 1, iter_used
+!       beta (j, i) = conjg ( beta (i, j) ) 
+!    enddo
+! enddo
+!
   do i = 1, iter_used
      work (i) = ZDOTC (ndim, df (1, i), 1, vout, 1)
   enddo
-  !
+!
   do n = 1, ndim
      vin (n) = vin (n) + alphamix * vout (n)
   enddo
-  !
+!
   do i = 1, iter_used
      gamma = 0.d0
      do j = 1, iter_used
         gamma = gamma + beta (j, i) * w (j) * work (j)
      enddo
-     !
+!
      do n = 1, ndim
         vin (n) = vin (n) - w (i) * gamma * (alphamix * df (n, i) + dv (n, i) )
      enddo
   enddo
-  !
+!
   inext = iter - ( (iter - 1) / n_iter) * n_iter
   call ZCOPY (ndim, vout, 1, df (1, inext), 1)
   call ZCOPY (ndim, vinsave, 1, dv (1, inext), 1)

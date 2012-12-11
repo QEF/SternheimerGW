@@ -75,11 +75,13 @@ SUBROUTINE openfilq()
   !
   !    The file with deltaV_{bare} * psi
   !
+
   iubar = 21
   lrbar = 2 * nbnd * npwx * npol
   CALL diropn (iubar, 'bar', lrbar, exst)
   IF (ext_recover.AND..NOT.exst) &
      CALL errore ('openfilq','file '//trim(prefix)//'.bar not found', 1)
+
   !
   !    The file with the solution delta psi
   !
@@ -116,7 +118,6 @@ SUBROUTINE openfilq()
 !HL write files for \Delta\psi^{\pm}
   iudwfm = 29 
   iudwfp = 30
-
   CALL diropn (iudwfp, 'dwfp', lrdwf, exst)
   CALL diropn (iudwfm, 'dwfm', lrdwf, exst)
 

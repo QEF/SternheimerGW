@@ -19,7 +19,6 @@ SUBROUTINE green_linsys_shift (ik0)
   USE paw_variables,        ONLY : okpaw
   USE paw_onecenter,        ONLY : paw_dpotential, paw_dusymmetrize, &
                                    paw_dumqsymmetrize
-
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
@@ -32,7 +31,7 @@ SUBROUTINE green_linsys_shift (ik0)
   USE recover_mod,          ONLY : read_rec, write_rec
   USE mp,                   ONLY : mp_sum
   USE disp,                 ONLY : nqs
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
+  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen, deltaw
   USE gwsigma,              ONLY : ngmgrn, ecutsco
   USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
                                    nproc_pool, nproc, me_pool, my_pool_id, npool
@@ -40,7 +39,7 @@ SUBROUTINE green_linsys_shift (ik0)
 
   IMPLICIT NONE 
 
-  real(DP) :: thresh, anorm, averlt, dr2
+  real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   logical :: conv_root
 
   !should be freq blocks...
@@ -51,7 +50,7 @@ SUBROUTINE green_linsys_shift (ik0)
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
   INTEGER :: rec0, n1, gveccount
-  REAL(DP) :: dirac, x, delta
+  REAL(DP) :: dirac, x, delta, support
   real(DP) :: k0mq(3) 
   real(DP) :: w_ryd(nwgreen)
   external cg_psi, cch_psi_all_fix, cch_psi_all_green
@@ -76,11 +75,9 @@ SUBROUTINE green_linsys_shift (ik0)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
-
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
     REAL(DP) :: tr_cgsolve = 1.0d-8
-
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
@@ -97,16 +94,16 @@ SUBROUTINE green_linsys_shift (ik0)
 
     ci = (0.0d0, 1.0d0)
     nblocks = 1
+   !We support the numerical delta fxn in a x eV window...
+    support = 2.0d0/RYTOEV
 
 !Convert freq array generated in freqbins into rydbergs.
     w_ryd(:) = wgreen(:)/RYTOEV
-
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
     if (nksq.gt.1) rewind (unit = iunigk)
 !Loop over q in the IBZ_{k}
 do iq = 1, nksq 
-!do iq = 10, nksq 
         if (lgamma) then
             ikq = iq
             else
@@ -124,7 +121,8 @@ do iq = 1, nksq
            read (iunigk, err = 200, iostat = ios) npwq, igkq
  200       call errore ('green_linsys', 'reading igkq', abs (ios) )
       endif
-      
+     
+!write(1000+mpime,*) igkq 
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
@@ -187,6 +185,8 @@ do iq = 1, nksq
                         (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
        enddo
 WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
+WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
+
      green  = (0.0d0, 0.0d0)
      h_diag = 0.d0
 
@@ -195,9 +195,9 @@ WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
            h_diag(ig,1) =  1.0d0
      enddo
 
-!Due to memory constraints we break up the green's fxn into frequency blocks:
+!Due to memory constraints we might break up the green's fxn into frequency blocks:
 !On first frequency block we do the seed system with BiCG:
-     gveccount = 1
+     gveccount = 1 
      do ig = igstart, igstop
        do block = 1, nblocks
              rhs(:,:)  = (0.0d0, 0.0d0)
@@ -209,54 +209,83 @@ WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
-                 call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
-                                      npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-                                      cw, niters(gveccount))
+              !HL cbcg
+              call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
+                                     npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
+                                     cw, niters(gveccount))
              endif
-                 write(600+mpime,'("ig", i4 "niters", i4 )')ig, niters(gveccount)
-                 call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
+                call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-                                                            gr_A_shift(igkq_ig(igp),iw)
+                                                    !HL calculating conjg(G(k+q))W{-q}= G(-k-q)W(q)
+!                                                            conjg(gr_A_shift(igkq_ig(igp),iw))
+                                                             gr_A_shift(igkq_ig(igp),iw)
                 enddo
              enddo
-
-             gveccount = gveccount + 1
+         gveccount = gveccount + 1
 !Green's Fxn Non-analytic Component:
+!HLGREEN TEST
          do iw = 1, nwgreen
-           do igp = 1, counter       
-!!should be nbnd_occ:
-            do ibnd = 1, 4
-               x = w_ryd(iw) - et(ibnd, ikq)
-               dirac = eta / pi / (x**2.d0 + eta**2.d0)
-               green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
-                                                         tpi*ci*(evq(igkq_ig(ig), ibnd))    * &
-                                                         conjg(evq(igkq_ig(igp), ibnd))     * dirac
+           do igp = 1, counter
+!should be nbnd_occ:
+            do ibnd = 1, nbnd
+              x = et(ibnd, ikq) - w_ryd(iw)
+              dirac = eta / pi / (x**2.d0 + eta**2.d0)
+             !if(abs(w_ryd(iw) - et(ibnd,ikq)).lt.deltaw/RYTOEV) then 
+             !   dirac = (1.0d0-(abs(w_ryd(iw) - et(ibnd,ikq)))/deltaw )*RYTOEV/deltaw
+             !else
+             !   dirac = 0.0d0
+             !endif
+!Piecewise support fxn:
+!              if(abs(x).le.(0.5*support)) then
+!                 dirac = (2.0d0/support)*(1-Abs(x/support)-4*Abs(x/support)**2+4*Abs(x/support)**3)
+!              else if((abs(x).gt.(0.50d0*support)).and.(abs(x).le.support)) then
+!                 dirac = (2.0d0/support)*(1.0d0-(11.0d0/3.0d0)*Abs(x/support)+4*Abs(x/support)**2 &
+!                                     - (4.0d0/3.0d0)*Abs(x/support)**3)
+!              else
+!                 dirac = 0.0d0
+!              endif
+!             dirac =  EXP(-(x**2.d0)/(4.0d0*eta))*(1.0d0/(2.0d0*sqrtpi*sqrt(eta)))
+
+              green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
+                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))  * &
+                                                        (evq(igkq_ig(igp), ibnd)) * dirac
+
+!              green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
+!                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
+!                                                        evq(igkq_ig(igp), ibnd) * dirac
             enddo 
            enddo!igp
          enddo!iw
        enddo !blocks
      enddo !ig
-!     do ig = igstart, igstop
+!    do ig = igstart, igstop
 !     do igp = igstart, igstop
-!     G=000, G'=000
-!     if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1))   write(400+mpime, '("G00")')
-!     if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7))   write(400+mpime, '("G11")')
-!     if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11))  write(400+mpime, '("G12")')
-!     if((igkq_tmp(ig).eq.11).and.(igkq_tmp(igp).eq.13)) write(400+mpime, '("G23")')
-!     do iw =1, nwgreen
-!     if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
+!        if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1))   write(400+mpime, '("G00")')
+!        if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7))   write(400+mpime, '("G11")')
+!        if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11))  write(400+mpime, '("G12")')
+!        if((igkq_tmp(ig).eq.11).and.(igkq_tmp(igp).eq.13)) write(400+mpime, '("G23")')
+!      do iw =1, nwgreen
+!        if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
 !     G=111, G'= 111
-!     if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
+!    if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
+!    if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
 !     G=111, G'= 200
-!     if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!    if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!        if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
 !     G=200, G'= 020 
-!     if((igkq_tmp(ig).eq.11).and.(igkq_tmp(igp).eq.13)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!        if((igkq_tmp(ig).eq.44).and.(igkq_tmp(igp).eq.23))   write(400+mpime, '("G")')
+!        if((igkq_tmp(ig).eq.78).and.(igkq_tmp(igp).eq.62))   write(400+mpime, '("G")')
+!        if((igkq_tmp(ig).eq.87).and.(igkq_tmp(igp).eq.87))   write(400+mpime, '("G")')
+!        if((igkq_tmp(ig).eq.136).and.(igkq_tmp(igp).eq.136)) write(400+mpime, '("G")')
+!        if((igkq_tmp(ig).eq.44).and.(igkq_tmp(igp).eq.23)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!        if((igkq_tmp(ig).eq.78).and.(igkq_tmp(igp).eq.62)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!        if((igkq_tmp(ig).eq.87).and.(igkq_tmp(igp).eq.87)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!        if((igkq_tmp(ig).eq.136).and.(igkq_tmp(igp).eq.136)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
+!      enddo
 !     enddo 
-!     enddo
-!CALL mp_global_end()
-!STOP
+!    enddo
 !Collect G vectors across processors and then write the full green's function to file.
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
@@ -276,7 +305,10 @@ WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
     CALL mp_barrier(inter_pool_comm)
 #endif
 ENDDO !iq
+
 if(allocated(niters)) DEALLOCATE(niters)
+if(allocated(h_diag)) DEALLOCATE(h_diag)
+if(allocated(etc))    DEALLOCATE(etc)
 CALL stop_clock('greenlinsys')
 RETURN
 END SUBROUTINE green_linsys_shift

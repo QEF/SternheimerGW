@@ -192,6 +192,7 @@ SUBROUTINE setup_green (xq)
   !
   ! ... distribute k-points (and their weights and spin indices)
   !
+  !HL this should be cause for concern...
   CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
   !
 #else

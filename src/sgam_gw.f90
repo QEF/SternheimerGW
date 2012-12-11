@@ -154,6 +154,8 @@ subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
            raq(ipol) = raq(ipol) + DBLE( s(ipol,jpol,irot) ) * aq( jpol)
         enddo
      enddo
+
+!THIS IS were we get -q +G from ....
      sym (irot) = eqvect (raq, aq, zero)
      !
      !  if "iswitch.le.-3" (modenum.ne.0) S must be such that Sq=q exactly !
@@ -163,11 +165,12 @@ subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
            sym(irot) = sym(irot) .and. (abs(raq(ipol)-aq(ipol)) < 1.0d-5)
         enddo
      endif
-     if (sym (irot) .and..not.minus_q) then
+     !HL SYMMFIX?
+      if (sym (irot) .and..not.minus_q) then
         ! l'istruzione "originale" in kreductor era la seguente...
         !         if (.not. minus_q) then
         raq = - raq
-        minus_q = eqvect (raq, aq, zero)
+       minus_q = eqvect (raq, aq, zero)
      endif
 100  continue
   enddo

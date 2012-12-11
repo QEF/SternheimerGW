@@ -26,9 +26,9 @@ PROGRAM gw
   USE gw_restart,       ONLY : gw_writefile, destroy_status_run
   USE save_gw,          ONLY : clean_input_variables
 
-  USE mp_global,          ONLY: mp_startup, nimage, npool, intra_image_comm, inter_image_comm, &
-                             nproc_pool, mpime, nproc, my_pool_id, me_pool, &
-                             mp_global_end, inter_pool_comm
+  USE mp_global,        ONLY: mp_startup, nimage, npool, intra_image_comm, inter_image_comm, &
+                              nproc_pool, mpime, nproc, my_pool_id, me_pool, &
+                              mp_global_end, inter_pool_comm
 
   USE mp,                 ONLY: mp_barrier, mp_bcast, mp_sum, mp_end
   USE parallel_include,   ONLY: mpi_comm_world 
@@ -54,7 +54,7 @@ PROGRAM gw
                                ngmsig, ngmsex, ecutsig, ngmsco, ngmgrn, ngmpol
   USE gvect,            ONLY : nl
   USE kinds,            ONLY : DP
-  USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm
+  USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
 
   
   IMPLICIT NONE
@@ -106,6 +106,8 @@ PROGRAM gw
 
     ALLOCATE ( scrcoul_g( ngmpol, ngmpol, nfs, 1) )
     ALLOCATE ( ig_unique( ngmpol) )
+    ALLOCATE ( sym_ig(ngmpol))
+    ALLOCATE ( sym_friend(ngmpol))
 
     iuncoul = 28
     lrcoul = 2 * ngmpol * ngmpol * nfs
@@ -116,6 +118,7 @@ PROGRAM gw
 if(multishift) then
     iunresid = 34
     lrresid  = 2*npwx
+
 ! Could probably keep the alphabeta coefficients in memory.
     iunalphabeta = 35
     lralphabeta  = 4
@@ -144,12 +147,14 @@ IF (ionode) THEN
 ENDIF
 
 IF(do_coulomb) THEN
-!Just calculating head with shifted grid.
      DO iq = w_of_q_start, nqs
         scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
+!Prepare k, k+q grids, run nscf calculation, find small group of q.
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
+!Determine the unique G vectors in the small group of q if symmetry is being used.
+!If not then all the vectors up to ngmpol (correlation cutoff) are treated as unique and calculated.
         if(use_symm) then
            WRITE(6,'("")')
            WRITE(6,'("SYMMETRIZING COULOMB Perturbations")')
@@ -161,7 +166,6 @@ IF(do_coulomb) THEN
               ig_unique(ig) = ig
            enddo
         endif
-
 !Distribute unique G-vectors between processors:
 #ifdef __PARA
       npool = nproc / nproc_pool
@@ -188,15 +192,19 @@ IF(do_coulomb) THEN
        if((igstop-igstart+1).ne.0) then
            CALL coulomb(iq, igstart, igstop, scrcoul_g)
        endif
+
 !COLLECT G-VECTORS:
         CALL mp_barrier(inter_pool_comm)
         CALL mp_sum ( scrcoul_g, inter_pool_comm )
         CALL mp_barrier(inter_pool_comm)
+
 !Write W_{q}(G,G';iw) to file:
         IF (ionode) THEN
-            CALL unfold_w(scrcoul_g)
+            CALL unfold_w(scrcoul_g,iq)
             CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
         ENDIF
+
+        CALL mp_barrier(inter_pool_comm)
         CALL clean_pw_gw(iq)
         CALL mp_barrier(inter_pool_comm)
         if(do_q0_only) GOTO 124
@@ -218,14 +226,16 @@ ENDIF
        lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
        setup_pw = .TRUE.
        do_band  = .TRUE.
+
 ! Generates small group of k and then forms IBZ_{k}.
        CALL run_pwscf_green(do_band)     
        CALL initialize_gw()
+
 ! CALCULATE G(r,r'; w) 
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
-       if(do_green.and.multishift) CALL green_linsys_shift(ik)
+       if(do_green.and.multishift)        CALL green_linsys_shift(ik)
 
        call mp_barrier()
 
@@ -234,16 +244,15 @@ ENDIF
           CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
        endif
 
-
 !  CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
 !  Parallel routine for Sigma_c
        if(do_sigma_c) CALL sigma_c(ik)
+
 ! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 
-            if(do_sigma_extra) CALL sigma_extra(ik)
-            if(do_sigma_exx) CALL sigma_exch(ik)
+!           if(do_sigma_extra) CALL sigma_extra(ik)
+            if(do_sigma_exx)   CALL sigma_exch(ik)
        endif
-
        if(ionode) WRITE(6, '("Finished CALCULATING SIGMA")') 
        CALL mp_barrier(inter_pool_comm)
        CALL clean_pw_gw(ik)

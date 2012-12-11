@@ -9,11 +9,15 @@ SUBROUTINE freqbins()
   ! from (wsigmamin-wcoulmax) to (wsigmamax+wcoulmax)
   ! the freq. dependence of the GF is inexpensive, so we use the same spacing
   ! NB: I assume wcoulmax>0, wsigmamin=<0, wsigmamax>0 and zero of energy at the Fermi level
-
+  ! TODO HL: should set two frequency windows one fine grid for the range around the fermi level
+  ! say  ef + 60 eV  down to the lowest pseudo state included. and a second 
+  ! course window for everything outside this range. 
+ 
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
                          wgreenmax, fiu, nfs, greenzero
+
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
   USE control_gw, ONLY : eta
@@ -29,9 +33,8 @@ SUBROUTINE freqbins()
 !  wsigmamax =  28.d0 
 !  deltaw    = 0.25d0
 !  wcoulmax  = 80.d0
-
-
-   greenzero      = 0.0d0
+!  greenzero      = 0.0d0
+   zero = 0.0d0
 
    wgreenmin = wsigmamin-wcoulmax
    wgreenmax = wsigmamax+wcoulmax
@@ -40,19 +43,20 @@ SUBROUTINE freqbins()
 
    allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc) )
 
-   wcoul = greenzero
-   wgreen = greenzero
-   wsigma = greenzero
+   wcoul = zero
+   wgreen = zero
+   wsigma = zero
 
   do iw = 1, nwalloc
     wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
   enddo
 
  !align the bins with the zero of energy
+ !HL?
+ !wtmp = wtmp - minval ( abs ( wgreen) )
+ !HLF
+  wtmp = wtmp - greenzero
 
-  wtmp = wtmp - minval ( abs ( wgreen) )
-
- !
   nwgreen = 0
   nwcoul = 0
   nwsigma = 0
@@ -64,7 +68,7 @@ SUBROUTINE freqbins()
      wgreen(nwgreen) = wtmp(iw)
    endif
 
-   if ( ( wtmp(iw) .ge. greenzero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
+   if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
      nwcoul = nwcoul + 1
      wcoul(nwcoul) = wtmp(iw)
    endif

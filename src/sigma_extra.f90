@@ -1,4 +1,12 @@
 SUBROUTINE sigma_extra(ik0)
+!Sigma Extra
+!now could add extra ananlytic piece: -\inf to wsigmamin-wcoul
+!and from wsigmamin+wcoul to +\inf
+!G(r,r';w'-w0) =  FFT[\delta(\G,G')/(w-w0-w1)]
+!W(r,r';w')
+!\Sigma(r, r'; w0) = \Sigma(r,r'; w0) + \int_{\-inf}^{wcoul) G(r,r'; w0 - w')W(r,\r';w')dw'
+!                                     + \int_{wcoul}^{\inf) G(r,r'; w0 - w')W(r,\r';w')dw'
+!
   USE kinds,                ONLY : DP
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi

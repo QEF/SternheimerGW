@@ -1,4 +1,30 @@
 SUBROUTINE sigma_matel (ik0)
+  !HL AUGUST 7 2:20. RESTORING THIS OLD BUG NOTE. 
+  !I wonder if there isn't a problem with the definition of 
+  !\delta(G,G') in the green_linsys.
+  !from my  reckoning it should be \delta(-G,G') 
+  !
+  ! Known bug: below (grep @) the code works fine with the convention
+  ! <i|Sigma|j> = sum_G,G' [u_i,k(G)]* <G|Sigma|G'> u_j,k(G')
+  ! which is NOT the convention set in the paper. The convention of
+  ! the paper should be:
+  ! <i|Sigma|j> = sum_G,G' u_i,-k(G) <G|Sigma|G'> [u_j,-k(G')]*
+  ! but if I use -xk0 below the code gives wrong results. Indeed the
+  ! shape of Sigma^c is slightly wrong, but most importantly the
+  ! Sigma^ex is totally wrong. A quick sanity check is to calculate
+  ! the sandwiches of Sigma^ex with v set to the delta function - 
+  ! this should give the normalization of the wfs. With -xk0 this
+  ! normalization is screwed up, while everything works fine with
+  ! +xk0. Also the QP energies are ok when using +xk0.
+  ! In particolar, with -xk0 the Gamma point at 1 1 1 does not give   
+  ! the same Sigma^ex as 0 0 0, while this is the case for +xk0.
+  ! The most obvious conclusion is that I messed up somewhere in the
+  ! analytical calculation of the matrix elements - need to check this
+  ! out once more.
+  !
+  ! Note that in any case Sigma(-k,-G,-G') = Sigma(k,G,G') for silicon
+  ! if we exploit inversion symmetry.
+  !
   USE io_global,            ONLY : stdout, ionode_id, ionode
   USE io_files,             ONLY : prefix, iunigk
   USE kinds,                ONLY : DP
@@ -27,10 +53,9 @@ REAL(DP)                  ::   w_ryd(nwsigma)
 REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
                                et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
 REAL(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
-                             sigma_ex_tr, sigma_ex_diag(nbnd_sig)
+                               sigma_ex_tr, sigma_ex_diag(nbnd_sig)
 
-COMPLEX(DP)               :: sigma_band_extra(nbnd_sig,nbnd_sig)
-
+COMPLEX(DP)               ::   sigma_band_extra(nbnd_sig,nbnd_sig)
 REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                et_qp_tr, z_tr, z(nbnd_sig)
 REAL(DP)                  ::   one
@@ -51,11 +76,9 @@ REAL(DP) :: vtxc, etxc, ehart, eth, charge
 ALLOCATE (igkq_tmp(npwx))
 ALLOCATE (igkq_ig(npwx))
 
-
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)
      w_ryd = wsigma/RYTOEV
-
      nbnd = nbnd_sig 
 
      iq = 1 
@@ -157,13 +180,15 @@ IF (ionode) THEN
 !@10TION: only looping up to counter so need to watch that...
 !setting these arrays to dim ngmsex lets us calculate all matrix elements with sigma as 
 !a vector^{T}*matrix*vector product.
- ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex))
+
+ ALLOCATE (sigma_g_ex  (ngmsex, ngmsex))
  ALLOCATE (evc_tmp_i(ngmsex))
  ALLOCATE (evc_tmp_j(ngmsex))
 
  sigma_g_ex(:,:) = (0.0d0, 0.0d0)
  CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
  sigma_band_ex (:, :) = czero
+
  do ibnd = 1, nbnd_sig
      evc_tmp_i(:) = czero
   do jbnd = 1, nbnd_sig
@@ -171,10 +196,12 @@ IF (ionode) THEN
      do ig = 1, counter
         evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
      enddo
-     do ig = 1, counter
+     do ig = 1, ngmsex
         do igp = 1, counter
-           aux(igp) = sigma_g_ex (igp, ig)
            evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
+        enddo
+        do igp = 1, ngmsex
+           aux(igp) = sigma_g_ex (igp, ig)
         enddo
            sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
            evc_tmp_i (ig) * ZDOTC(ngmsex, evc_tmp_j (1:ngmsex), 1, aux, 1)
@@ -200,6 +227,7 @@ IF (ionode) THEN
  counter     = 0
  igkq_tmp(:) = 0
  igkq_ig(:)  = 0
+
  do ig = 1, npwq
     if((igkq(ig).le.ngmsco).and.((igkq(ig)).gt.0)) then
         counter = counter + 1
@@ -208,79 +236,97 @@ IF (ionode) THEN
     endif
  enddo
 
+ sigma = dcmplx(0.0d0, 0.0d0)
  CALL davcio (sigma, lrsigma, iunsigma, 1, -1)
-
- WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i4)') counter, npwq
  WRITE(6,*) 
-
+ WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i8)') counter, npwq
+ WRITE(6,*) 
  sigma_band_c (:,:,:) = czero
- do ibnd = 1, nbnd_sig
+  do ibnd = 1, nbnd_sig
      evc_tmp_i(:) = czero
-  do jbnd = 1, nbnd_sig
-     evc_tmp_j(:) = czero
-   do iw = 1, nwsigma
-      do ig = 1, counter
-            evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-      enddo
-      do ig = 1, counter
+   do jbnd = 1, nbnd_sig
+      evc_tmp_j(:) = czero
+      do iw = 1, nwsigma
+       do ig = 1, counter
+             evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
+       enddo
+      do ig = 1, ngmsco
             do igp = 1, counter
-               auxsco(igp) = sigma (igp, ig, iw)
                evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
             enddo
+            do igp = 1, ngmsco
+               auxsco(igp) = sigma (igp, ig, iw)
+               !auxsco(igp) = sigma (ig, igp, iw)
+            enddo
+!   psi_{i}(G)\Sigma(G',G)\psi_{j}^{*}(G')
+!           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
+!           evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
             sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-            evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
+            evc_tmp_i(ig)*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
+!           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
+!           conjg(evc_tmp_i(ig))*ZDOTC(ngmsco, auxsco, 1, evc_tmp_j, 1)
       enddo
    enddo
   enddo
  enddo
- DEALLOCATE (sigma) 
+DEALLOCATE (sigma) 
+
+write(stdout,'("Sigma_Correlation in the middle of the calculated frequency range:")')
+write(stdout,'("Re(Sigma^{c})")')
+write(stdout,'(8(1x,f12.7))') real(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
+WRITE(6,*) 
+write(stdout,'("Im(Sigma^{c})")')
+write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
+
 !HLS
-ALLOCATE ( sigma_g_ex  (ngmsco, ngmsco))
-sigma_g_ex(:,:) = (0.0d0, 0.0d0)
-CALL davcio (sigma_g_ex, lrsigext, iunsigext, 1, -1)
-sigma_band_extra (:,:) = czero
+!GOTO 127
+!ALLOCATE ( sigma_g_ex  (ngmsco, ngmsco))
+!sigma_g_ex(:,:) = (0.0d0, 0.0d0)
+!CALL davcio (sigma_g_ex, lrsigext, iunsigext, 1, -1)
+!sigma_band_extra (:,:) = czero
 !Code for taking matrix elements...
-    sigma_band_extra (:,:) = czero
-    do ibnd = 1, nbnd_sig
-        evc_tmp_i(:) = czero
-     do jbnd = 1, nbnd_sig
-        evc_tmp_j(:) = czero
-        do ig = 1, counter
-              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-        enddo
-        do ig = 1, counter
-              do igp = 1, counter
-                 auxsco(igp) = sigma_g_ex (igp, ig)
-                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-              enddo
-              sigma_band_extra (ibnd, jbnd) = sigma_band_extra (ibnd, jbnd) + &
-              evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
-        enddo
-     enddo
-    enddo
-
- DEALLOCATE(sigma_g_ex)
-
- WRITE(6,*) 
- write(stdout,'(4x,"Sigma_extra (eV)")')
- write(stdout,'(8(1x,f12.7))') real(sigma_band_extra(:,:))*RYTOEV
-
- WRITE(6,*) 
- write(stdout,'(8(1x,f12.7))') aimag(sigma_band_extra(:,:))*RYTOEV
-
- DEALLOCATE(evc_tmp_i)
- DEALLOCATE(evc_tmp_j)
+!    sigma_band_extra (:,:) = czero
+!    do ibnd = 1, nbnd_sig
+!        evc_tmp_i(:) = czero
+!     do jbnd = 1, nbnd_sig
+!        evc_tmp_j(:) = czero
+!        do ig = 1, counter
+!              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
+!        enddo
+!        do ig = 1, counter
+!              do igp = 1, counter
+!                 auxsco(igp) = sigma_g_ex (igp, ig)
+!                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
+!              enddo
+! conjg(\psi_{j}(G'))*\Sigma(G')_{G}
+!              sigma_band_extra (ibnd, jbnd) = sigma_band_extra (ibnd, jbnd) + &
+!              evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
+!        enddo
+!     enddo
+!    enddo
+! DEALLOCATE(sigma_g_ex)
+!127 CONTINUE
+! WRITE(6,*) 
+! write(stdout,'(4x,"Sigma_extra (eV)")')
+! write(stdout,'(8(1x,f12.7))') real(sigma_band_extra(:,:))*RYTOEV
+! WRITE(6,*) 
+! write(stdout,'(8(1x,f12.7))') aimag(sigma_band_extra(:,:))*RYTOEV
+! DEALLOCATE(evc_tmp_i)
+! DEALLOCATE(evc_tmp_j)
 
  do ibnd = 1, nbnd_sig
     do iw = 1, nwsigma
-      resig_diag (iw,ibnd) = real( sigma_band_c(ibnd, ibnd, iw)) + real(sigma_band_ex(ibnd, ibnd)) 
-      dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) - real( vxc(ibnd,ibnd) )
-      imsig_diag (iw,ibnd) = aimag ( sigma_band_c (ibnd, ibnd, iw) )
-      a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
-          ( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
-          + abs ( imsig_diag (iw,ibnd) )**2.d0 )
+!     resig_diag (iw,ibnd) = real( sigma_band_c(ibnd, ibnd, iw)) + real(sigma_band_ex(ibnd, ibnd)) 
+       resig_diag (iw,ibnd) = real( sigma_band_c(ibnd, ibnd, iw))
+       dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) + real(sigma_band_ex(ibnd,ibnd)) - real( vxc(ibnd,ibnd) )
+       imsig_diag (iw,ibnd) = aimag ( sigma_band_c (ibnd, ibnd, iw) )
+       a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
+           ( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
+           + abs ( imsig_diag (iw,ibnd) )**2.d0 )
     enddo
-      call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ikq), et_qp (ibnd), z(ibnd) )
+    call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ikq), et_qp (ibnd), z(ibnd) )
+!This makes the QP-Eigenvalue  include exchange, the of sigma will only be correlation energy
+!    call qp_eigval ( nwsigma, w_ryd, (dresig_diag(1,ibnd)+real(sigma_band_ex(ibnd,ibnd))), et(ibnd,ikq), et_qp (ibnd), z(ibnd))
  enddo
 
   ! Now take the trace (get rid of phase arbitrariness of the wfs)
@@ -288,25 +334,26 @@ sigma_band_extra (:,:) = czero
   ! degenerate subspaces and diagonalize)
   ! count degenerate manifolds and degeneracy...
 
-   nman = 1
-   ndeg = 1
+  nman = 1
+  ndeg = 1
 
-   do ibnd = 2, nbnd_sig
+  do ibnd = 2, nbnd_sig
      if ( abs( et (ibnd, ikq) - et (ibnd-1, ikq)  ) .lt. 1.d-5 ) then
-       ndeg (nman) = ndeg(nman) + 1
+        ndeg (nman) = ndeg(nman) + 1
      else
-       nman = nman + 1
+        nman = nman + 1
      endif
-   enddo
+  enddo
 
-   write(6,'(" Manifolds")')
-   write (stdout, *) nman, (ndeg (iman) ,iman=1,nman)
-   write(6,*)
+  write(6,'(" Manifolds")')
+  write (stdout, *) nman, (ndeg (iman) ,iman=1,nman)
+  write(6,*)
   
   ! ...and take the trace over the manifold
   
   ibnd = 0
   jbnd = 0
+
   do iman = 1, nman
     resig_diag_tr = 0.d0
     imsig_diag_tr = 0.d0
@@ -339,29 +386,87 @@ sigma_band_extra (:,:) = czero
     enddo
   enddo
 
-  write(stdout,*)
-  write(stdout,'(/4x,"LDA eigenval (eV)",8(1x,f7.3))')     et(1:nbnd_sig, ikq)*RYTOEV
-  write(stdout,'(4x,"Vxc expt val (eV)",8(1x,f7.3))')      vxc_diag(1:nbnd_sig)*RYTOEV
-  write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.3))')      sigma_ex_diag(1:nbnd_sig)*RYTOEV
-  write(stdout,'(4x,"GW qp energy (eV)",8(1x,f7.3))')      et_qp(1:nbnd_sig)*RYTOEV
-  write(stdout,'(4x,"GW qp renorm     ",8(1x,f7.3)/)')     z(1:nbnd_sig)
+  write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))')  et(1:nbnd_sig, ikq)*RYTOEV
 
+!!  if(nbnd_sig.gt.8) then
+!!  do ideg = 9, nbnd_sig, 8 
+!!     if(ideg+7.lt.nbnd_sig) write(stdout,9000)  et(ideg:ideg+7, ikq)*RYTOEV
+!!     if(ideg+7.ge.nbnd_sig) write(stdout,9000)  et(ideg:nbnd_sig, ikq)*RYTOEV
+!!  enddo
+!!  endif
+
+  write(stdout,'(4x,"Vxc expt val (eV)",8(1x,f7.2))')  vxc_diag(1:nbnd_sig)*RYTOEV
+!  if(nbnd_sig.gt.8) then
+!  do ideg = 9, nbnd_sig, 8 
+!     if(ideg+7.lt.nbnd_sig) write(stdout,9000)  vxc_diag(ideg:ideg+7)*RYTOEV
+!     if(ideg+7.ge.nbnd_sig) write(stdout,9000)  vxc_diag(ideg:nbnd_sig)*RYTOEV
+!  enddo
+!  endif
+
+  write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))')  sigma_ex_diag(1:nbnd_sig)*RYTOEV
+!  if(nbnd_sig.gt.8) then
+!  do ideg = 9, nbnd_sig, 8 
+!     if(ideg+7.lt.nbnd_sig) write(stdout,9000)  sigma_ex_diag(ideg:ideg+7)*RYTOEV
+!     if(ideg+7.ge.nbnd_sig) write(stdout,9000)  sigma_ex_diag(ideg:nbnd_sig)*RYTOEV
+!  enddo
+!  endif
+
+  write(stdout,'(4x,"GW qp energy (eV)",8(1x,f7.2))')  et_qp(1:nbnd_sig)*RYTOEV
+!  if(nbnd_sig.gt.8) then
+!  do ideg = 9, nbnd_sig, 8 
+!     if(ideg+7.lt.nbnd_sig) write(stdout,9000)  et_qp(ideg:ideg+7)*RYTOEV
+!     if(ideg+7.ge.nbnd_sig) write(stdout,9000)  et_qp(ideg:nbnd_sig)*RYTOEV
+!  enddo
+!  endif
+
+  write(stdout,'(4x,"GW qp renorm     ",8(1x,f7.2))') z(1:nbnd_sig)
+!  if(nbnd_sig.gt.8) then
+!  do ideg = 9, nbnd_sig, 8 
+!     if(ideg+7.lt.nbnd_sig) write(stdout,9000)  z(ideg:ideg+7)
+!     if(ideg+7.ge.nbnd_sig) write(stdout,9000)  z(ideg:nbnd_sig)
+!     if(ideg+7.ge.nbnd_sig) write(stdout,*)
+!  enddo
+!  endif
+
+  write(stdout,*)
+  write(stdout,'("REsigma")')
   do iw = 1, nwsigma
-    write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
+    write(stdout,'(9f14.7)') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
+!    if(nbnd_sig.gt.8) then
+!    do ideg = 9, nbnd_sig, 8 
+!       if(ideg+7.lt.nbnd_sig) write(stdout,9005) (RYTOEV*resig_diag (iw,ideg:ideg+7)) 
+!       if(ideg+7.ge.nbnd_sig) write(stdout,9005) (RYTOEV*resig_diag (iw,ideg:nbnd_sig)) 
+!    enddo
+!    endif
   enddo
 
   write(stdout,*)
+  write(stdout,'("IMsigma")')
   do iw = 1, nwsigma
-    write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,nbnd_sig)
+     write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,nbnd_sig)
+!     if(nbnd_sig.gt.8) then
+!     do ideg = 9, nbnd_sig, 8
+!        if(ideg+7.lt.nbnd_sig) write(stdout, 9005) (RYTOEV*imsig_diag (iw,ibnd), ibnd=ideg,ideg+7)
+!        if(ideg+7.ge.nbnd_sig) write(stdout, 9005) (RYTOEV*imsig_diag (iw,ibnd), ibnd=ideg,nbnd_sig)
+!     enddo
+!     endif
   enddo
 
   write(stdout,*)
+  write(stdout,'("ASpec")')
   do iw = 1, nwsigma
-    write(stdout,'(9f15.8)') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV, ibnd=1,nbnd_sig)
+     write(stdout,'(9f15.8)') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV, ibnd=1,nbnd_sig)
+!     if(nbnd_sig.gt.8) then
+!     do ideg = 9, nbnd_sig, 8
+!        if(ideg+7.lt.nbnd_sig) write(stdout, 9005) (RYTOEV*resig_diag (iw,ibnd), ibnd=ideg,ideg+7)
+!        if(ideg+7.ge.nbnd_sig) write(stdout, 9005) (RYTOEV*resig_diag (iw,ibnd), ibnd=ideg,nbnd_sig)
+!     enddo
+!     endif
   enddo
 ENDIF
-
     CALL clean_pw_gw(ikq)
+    9000 format(21x, 8(1x,f7.2))
+    9005 format(17x, 8(1x,f14.7))
 RETURN
 END SUBROUTINE sigma_matel
 
@@ -371,6 +476,7 @@ END SUBROUTINE sigma_matel
 !----------------------------------------------------------------
 !
   USE kinds,         ONLY : DP
+  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
 
   IMPLICIT NONE
 
@@ -382,8 +488,8 @@ END SUBROUTINE sigma_matel
 
  if ((et.lt.w(1)+dw).or.(et.gt.w(nw)-dw)) then
  !call errore ('qp_eigval','original eigenvalues outside the frequency range of the self-energy',1)
- write(6,*)et, w(1)+dw, w(nw) - dw
- write(6,'("original eigenvalues outside the frequency range of the self-energy")')
+  write(6,'("original eigenvalues outside the frequency range of the self-energy")')
+  write(6,'(3f7.2)') RYTOEV*et, RYTOEV*(w(1)+dw), RYTOEV*(w(nw) - dw)
  return
  endif
 
@@ -403,11 +509,8 @@ END SUBROUTINE sigma_matel
 !
   sig_der = ( sig2 - sig1 ) / ( w2 - w1 )
   z = one / ( one - sig_der)
-!
 ! temporary - until I do not have Vxc
-!
   et_qp = et + z * sig_et
-!
   END SUBROUTINE qp_eigval
 !----------------------------------------------------------------
 !

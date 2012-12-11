@@ -53,6 +53,8 @@ SUBROUTINE run_pwscf(do_band)
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'
+
+
   restart = ext_restart
   pseudo_dir= TRIM( tmp_dir_save ) // TRIM( prefix ) // '.save'
 

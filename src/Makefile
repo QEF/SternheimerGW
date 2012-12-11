@@ -86,6 +86,7 @@ unfold_w.o\
 mix_pot_c.o\
 godby_needs.o\
 sigma_extra.o\
+spheric_coulomb.o\
 
 HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a

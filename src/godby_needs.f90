@@ -1,4 +1,4 @@
-SUBROUTINE godby_needs_coeffs (N, diag, z, u, a)
+SUBROUTINE godby_needs_coeffs (N, z, u, a)
 USE kinds,                     ONLY : DP
 USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
 implicit none
@@ -6,11 +6,11 @@ complex(DP) :: z(N), u(N)
 complex(DP) :: a(N)
 real(DP) :: ar, ai
 integer  :: p, N,i 
-logical  :: diag
 
 !Instead of a higher order pad\'e approximant to the self energy we just calculate two 
 !frequency points one at w = 0 and one at w = i\Omega_{p}. and fit it to the plasmon pole
 !model: this is the godby_needs plasmon pole.
+!The sign here is wrong on the imaginary part...
 !The assumed form of the function is:
 !\epsilon^{-1}_{\G,\G'}(\q,\omega) = \frac{A_{GG'(q)}}{\omega - \omegatilde + idelta} -
 !                                    \frac{A_{GG'(q)}}{\omega + \omegatilde - idelta}
@@ -24,14 +24,35 @@ logical  :: diag
       STOP
     endif
 
-    if(diag) then
-      a(1) = z(2)*SQRT((u(2))/((u(1))-(u(2))))
-    else
-      a(1) = z(2)*SQRT((u(2))/(u(1)-u(2)))
-    endif
+!Currently using the same criterion as in SaX
+!this essentially checks if the real part of the pole
+!is smaller than the imaginary part of the pole and if so
+!kills the pole...
+!for inclusion of plasmon pole parameters...
+!might be more appropriate to think about the conditions some more.
+!this essentially says:
+!\sqrt(a + ib) = c + id
+!a + ib = c**2 - d**2 +2icd
+!if a < 0 :: d > c
+!so they kill that pole...
+!The exact meaning of all this eludes me...
+!essentially we cast aside any heavily damped oscillations
+!(which would not effect the real part of the selfenergy anyway...
+!a(1) = \tilde(\omega) a(2) = R
 
-!weight(A_{GG'qq})
+   if(real(u(2)/(u(1)-u(2))).lt.0) then
+       !We zero the weight of the pole and place the pole way out
+       !on the real axis to avoid numerical instability.
+           a(1) = 10.0
+           a(2) = 0.0
+   else
+!\tilde{\omega}:
+     a(1) = z(2)*SQRT((u(2))/(u(1)-u(2)))
+!(A_{GG'qq}):
      a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
+   endif
+
+!Condition for catching nan's!
      do p = 1, N
         ar = real(a(p))
         ai = aimag(a(p))
@@ -42,21 +63,4 @@ logical  :: diag
            a(2) = DCMPLX(0.0d0,0.0d0)
         endif
      enddo
-     !write(1000+mpime,*)z, u
 END SUBROUTINE godby_needs_coeffs
-
-!SUBROUTINE godby_needs_eval(N, a, w, padapp)
-!USE kinds,    ONLY : DP
-!implicit none
- !----------------------------------------------------
- ! a(1:N) - coefficients for the PPM
- ! w      - point at which we need the approximant
- ! output
- ! 
- ! padapp - value of the approximant at the point w
- !----------------------------------------------------
-! complex(DP) :: a(N)
-! cone   = (1.0d0, 0.0d0)
-! ci     = (0.0d0, 0.0d0)
-! padapp = (a(2)/( w - a(1) + ci*eta )) - ((a(2))/(w + a(1) -ci*eta))
-!END SUBROUTINE godby_needs_eval

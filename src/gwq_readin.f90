@@ -163,10 +163,10 @@ SUBROUTINE gwq_readin()
   ! ... set default values for variables in namelist
   !
   tr2_gw       = 1.D-9
-  tr2_green    = 1.D-5
+  tr2_green    = 1.D-4
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
-  alpha_mix(1) = 0.7D0
+  alpha_mix(1) = 0.6D0
   niter_gw     = maxter
   nmix_gw      = 5
   nat_todo     = 0
@@ -202,7 +202,7 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        = .FALSE.
   lrpa         = .FALSE.
-  maxter_green = 200
+  maxter_green = 120
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
@@ -222,7 +222,7 @@ SUBROUTINE gwq_readin()
   godbyneeds   = .FALSE.
   cohsex       = .FALSE.
   padecont     = .FALSE.
-  multishift     = .FALSE.
+  multishift   = .FALSE.
 
 
 !imaginary component added to linear system should be in Rydberg
@@ -239,7 +239,7 @@ SUBROUTINE gwq_readin()
 !Frequency variables
   wsigmamin      =-10.0d0
   wsigmamax      = 10.0d0
-  deltaw         =  0.1d0 
+  deltaw         =  0.2d0 
   wcoulmax       = 80.0d0   
 
  !Symmetry Default:yes!, which q, point to start on.
@@ -457,7 +457,9 @@ SUBROUTINE gwq_readin()
   ! It also reads in wavefunctions in "distributed form" i.e. split over k-points...
 
 
+  CALL mp_barrier( )
   CALL read_file ( )
+
   tmp_dir=tmp_dir_save
   !
   IF (modenum > 3*nat) CALL errore ('gwq_readin', ' Wrong modenum ', 2)

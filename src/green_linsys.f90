@@ -41,13 +41,16 @@ SUBROUTINE green_linsys (ik0)
 
   real(DP) :: thresh, anorm, averlt, dr2
   logical :: conv_root
-  COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx, 1)
+ !HL desperation
+ !COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx, 1)
+  COMPLEX(DP) :: rhs(npwx, 1)
   COMPLEX(DP) :: aux1(npwx)
   COMPLEX(DP) :: ci, cw, green(ngmgrn,ngmgrn)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
   REAL(DP)    :: eprecloc 
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
+  INTEGER :: ngvecs, ngsol
   INTEGER :: rec0, n1
   REAL(DP) :: dirac, delta
   REAL(DP) :: x
@@ -55,6 +58,8 @@ SUBROUTINE green_linsys (ik0)
   real(DP) :: w_ryd(nwgreen)
   external cg_psi, cch_psi_all_fix, cch_psi_all_green
   real(DP) , allocatable :: h_diag (:,:)
+
+  COMPLEX(DP), ALLOCATABLE :: gr_A(:,:)
 
   integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
@@ -77,7 +82,7 @@ SUBROUTINE green_linsys (ik0)
 
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-  REAL(DP) :: tr_cgsolve = 1.0d-4
+  REAL(DP) :: tr_cgsolve = 1.0d-2
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
@@ -86,25 +91,24 @@ SUBROUTINE green_linsys (ik0)
   INTEGER :: igstart, igstop, ngpool, ngr, igs
 !LINALG
   COMPLEX(DP), EXTERNAL :: zdotc
-
 !HL NOTA BENE:
 !Green's function has dimensions npwx, 1 in current notation...
 !Since we store in G space there is no truncation error at this stage...
 !When we start going to real space we want to transform on to the full correlation density grid to 
 !do our GW products and avoid aliasing.
-
    ALLOCATE (h_diag (npwx, 1))
    ALLOCATE (etc(nbnd, nkstot))
-
    ci = (0.0d0, 1.0d0)
 !Convert freq array generated in freqbins into rydbergs.
    w_ryd(:) = wgreen(:)/RYTOEV
-
    CALL start_clock('greenlinsys')
    where_rec='no_recover'
 
-
    if (nksq.gt.1) rewind (unit = iunigk)
+
+   ngvecs = igstart - igstop + 1
+  !ALLOCATE(gr_A(npwx, ngvecs))
+   ALLOCATE(gr_A(npwx, 1))
 
 !Loop over q in the IBZ_{k}
    do iq = 1, nksq 
@@ -175,32 +179,32 @@ SUBROUTINE green_linsys (ik0)
 ! Now the G-vecs up to the correlation cutoff have been divided between pools.
 ! Calculates beta functions (Kleinman-Bylander projectors), with
 ! structure factor, for all atoms, in reciprocal space
-       call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
+      call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
 ! psi_{k+q}(r) is every ikq entry
-       call davcio (evq, lrwfc, iuwfc, ikq, - 1)
-       do ig = 1, npwq
-          g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-                        (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                        (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
-       enddo
-
-   WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-!WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
+      call davcio (evq, lrwfc, iuwfc, ikq, - 1)
+      do ig = 1, npwq
+         g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+                       (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+                       (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+      enddo
+  WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
+  WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
 !Set eprecloc to kinetic energy matrix element at top of valence band for the k point.
 !NOTA BENE nbnd_occ hardwired to four this should be variable!!
-   aux1=(0.d0,0.d0)
-   DO ig = 1, npwq
-      aux1 (ig) = g2kin (ig) * evq (ig,4)
-   END DO
-   eprecloc = 1.35d0*zdotc(npwx*npol, evq(1,4), 1, aux1(1),1)
-   WRITE(6,'("<|(k+G)^2|>", 1f12.7)') eprecloc*RYTOEV
+  aux1=(0.d0,0.d0)
+  DO ig = 1, npwq
+     aux1 (ig) = g2kin (ig) * evq (ig,4)
+  END DO
+  eprecloc = 1.35d0*zdotc(npwx*npol, evq(1,4), 1, aux1(1),1)
+  WRITE(6,'("<|(k+G)^2|>", 1f12.7)') eprecloc*RYTOEV
 
-   DO iw = 1, nwgreen
+  gr_A(:,:) = (0.0d0, 0.0d0)
+  DO iw = 1, nwgreen
       green =(0.0d0, 0.0d0)
       h_diag(:,:) = 0.d0
       do ibnd = 1, 1
 !For all elements up to <Ekin> use standard TPA:
-         if (w_ryd(iw).lt.0.0d0) then
+         if (w_ryd(iw).le.0.0d0) then
             do ig = 1, npwq
 !The preconditioner needs to be real and symmetric to decompose as E^T*E
                x = (g2kin(ig)-w_ryd(iw))/eprecloc
@@ -213,7 +217,8 @@ SUBROUTINE green_linsys (ik0)
                if(g2kin(ig).gt.w_ryd(iw)) then
                !if((g2kin(ig).gt.w_ryd(iw)).and.(.gt.eps8)) then
                !if((g2kin(ig) - w_ryd(iw)).gt.0.037d0) then
-                  x = (g2kin(ig) - w_ryd(iw))/eprecloc
+               !x = (g2kin(ig) - w_ryd(iw))/eprecloc
+                  x = (g2kin(ig))/eprecloc
                   h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
                                     /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
                else
@@ -230,37 +235,43 @@ SUBROUTINE green_linsys (ik0)
 !         enddo
 !      endif
 !PARA case:
-     do ig = igstart, igstop
+!write(600+mpime,*) g(:,igkq_tmp(ig))
+      do ig = igstart, igstop
+!allows us to use the solution for the previous frequency for the current frequency
+         ngsol = ngvecs - (igstop-igstart)
          rhs(:,:)  = (0.0d0, 0.0d0)
          rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
          gr_A(:,:) = (0.0d0, 0.0d0) 
          lter = 0
          etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
          cw = CMPLX( w_ryd(iw), eta, kind=DP)
-! Doing Linear System with Wavefunction cutoff (full density). 
-         call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag, &
-                              npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, cw, .true.)
-       !Brutal conditions.
-       !if(anorm.gt.0.50d0) write(600+mpime,'(f15.10, i4)')anorm, lter 
-       !if(anorm.gt.0.50d0) write(600+mpime,'(f15.10)')    wgreen(iw)
-       !if(.not.conv_root)  write(600 + mpime,'("root not converged")')
-       !if(anorm.gt.1.0d0)  write(600 + mpime,'("anorm greater than one ")') 
-       !if(.gt.1.0d0)  gr_A = (0.0d0, 0.0d0) 
-        if(.not.conv_root) gr_A = (0.0d0, 0.0d0)
-       !instead of zeroing green's function why not try  G(G,G';\omega) = - Delta(G,G')/((k+g)**2 - \omega)
+         anorm = 0.0d0
+!Doing Linear System with Wavefunction cutoff (full density).
+         !call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:, ngsol), h_diag, &
+         call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:, 1), h_diag, &
+                              npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, cw, .true.)
+!Might be good idea to save the solution vector from the previous frequency...:
+!Brutal conditions.
+!if(anorm.gt.1.0d0)  write(600 + mpime,'("anorm greater than one ")') 
+!      if(.not.conv_root) write(600+mpime,*) g(:,igkq_tmp(ig))
+!      if(.not.conv_root) write(600+mpime,'(2f15.6)') wgreen(iw), anorm
+!     if(.not.conv_root) gr_A(:,:) = dcmplx(0.0d0, 0.0d0)
+!     if(.not.conv_root) gr_A(:,ngsol) = dcmplx(0.0d0, 0.0d0)
+!instead of zeroing green's function why not try  G(G,G';\omega) = - Delta(G,G')/((k+g)**2 - \omega)
+!Brutal conditions.
+!        if(.not.conv_root) write(1000+mpime, *)g(:,igkq_tmp(ig))
+!        if(.not.conv_root) write(1000+mpime, '(2f15.10)') w_ryd(iw)*RYTOEV, anorm
+!if(anorm.gt.1.0d0)  write(600 + mpime,'("anorm greater than one ")') 
+!if(.not.conv_root) gr_A = (0.0d0, 0.0d0)
+!instead of zeroing green's function why not try  G(G,G';\omega) = - Delta(G,G')/((k+g)**2 - \omega)
        !if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (-1.0d0, 0.0d0)/(DCMPLX(g2kin(igkq_ig(ig)), 0.d0)-DCMPLX(w_ryd(iw),eta))
        !alternatively:
        !if(anorm.gt.1.0d0) gr_A(igkq_ig(ig), 1) = (1.0d0, 0.0d0)/(DCMPLX(w_ryd(iw),eta))
-
        do igp = 1, counter
           green (igkq_tmp(ig), igkq_tmp(igp)) = green (igkq_tmp(ig), igkq_tmp(igp)) + gr_A(igkq_ig(igp),1)
-          !wonder if this is the problem with LiCl and SiC
-          !green (igkq_tmp(ig), igkq_tmp(igp)) = green (igkq_tmp(ig), igkq_tmp(igp)) + conjg(gr_A(igkq_ig(igp),1))
-          !green (:,:) = conjg(green (:,:))
        enddo
- enddo !ig
+      enddo !ig
 !Green's Fxn Non-analytic Component:
-!do ig = 1, counter
 !PARA
     do ig = igstart, igstop
        do igp = 1, counter       
@@ -271,9 +282,9 @@ SUBROUTINE green_linsys (ik0)
           !Green should now be indexed (igkq_tmp(ig), igkq_tmp(igp)) according to the
           !large G-grid which extends out to 4*ecutwfc. Keep this in mind when doing
           !ffts and taking matrix elements (especially matrix elements in G space!). 
-           green(igkq_tmp(ig), igkq_tmp(igp)) =  green(igkq_tmp(ig), igkq_tmp(igp)) + &
-                                                 tpi*ci*(evq(igkq_ig(ig), ibnd))    * &
-                                                 conjg(evq(igkq_ig(igp), ibnd))     * dirac
+           green(igkq_tmp(ig), igkq_tmp(igp)) =  green(igkq_tmp(ig), igkq_tmp(igp))   + &
+                                                 tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
+                                                 evq(igkq_ig(igp), ibnd) * dirac
         enddo 
 !G=000, G'=000
 !if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp))
@@ -283,9 +294,12 @@ SUBROUTINE green_linsys (ik0)
 !if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp))
 !G=200, G'= 020 
 !if((igkq_tmp(ig).eq.11).and.(igkq_tmp(igp).eq.13)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp))
+!G=400, G'= 040 
+!if((igkq_tmp(ig).eq.87).and.(igkq_tmp(igp).eq.87)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp))
+!if((igkq_tmp(ig).eq.44).and.(igkq_tmp(igp).eq.23)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp))
+!if((igkq_tmp(ig).eq.87).and.(igkq_tmp(igp).eq.87)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp))
        enddo
     enddo 
-
 !Collect G vectors across processors and then write the full green's function to file. 
 #ifdef __PARA
     CALL mp_barrier(inter_pool_comm)
@@ -305,7 +319,6 @@ SUBROUTINE green_linsys (ik0)
 #ifdef __PARA
     endif
     CALL mp_barrier(inter_pool_comm)
-!HL 1707
 #endif
   ENDDO  ! iw 
 ENDDO    ! iq

@@ -30,6 +30,7 @@
   USE gvect,         ONLY : ig1, ig2, ig3, ngm, &
                             nr1, nr2, nr3, g
   USE cell_base,     ONLY : at, bg
+
 #ifdef __PARA
   USE mp_global,    ONLY : my_pool_id
 #endif
@@ -44,9 +45,11 @@
   !
   ! output variables
   !
-  integer :: gmapsym (ngm, 48)
+  !integer :: gmapsym (ngm, 48)
+  integer :: gmapsym (ngm, nsym)
   ! the map S(G) = gmapsym (G,S) 1...nsym
-  complex(kind=DP) :: eigv (ngm, 48)
+  !complex(kind=DP) :: eigv (ngm, 48)
+  complex(kind=DP) :: eigv (ngm, nsym)
   ! e^{ iGv} for 1...nsym
   !
   ! local variables
@@ -93,6 +96,8 @@
       ! now the phase factors e^{iGv}
       !
       IF ( ftau (1, isym).ne.0 .or. ftau (2, isym).ne.0 .or. ftau (3, isym).ne.0 ) THEN
+        write(6,'("FTAU")')
+        write(6,*) ftau(:,:)
         !
         ! fractional traslation in crystal coord is ftau/nr*
         ! for cart/crys transform of the G-vecctors have a look at the bottom
@@ -114,7 +119,7 @@
        write(6,'("WRITE GVEC not rotated properly gmap_sym.")')
        stop
     ENDIF
-  !    CALL errore ('gmap_sym','incomplete mapping of G vectors: notfound = ',notfound)
+    ! CALL errore ('gmap_sym','incomplete mapping of G vectors: notfound = ',notfound)
     !
   ENDDO
   !

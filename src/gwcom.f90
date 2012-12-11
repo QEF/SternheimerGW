@@ -607,6 +607,8 @@ END MODULE gwsigma
 MODULE gwsymm
        INTEGER :: ngmunique
        INTEGER, ALLOCATABLE :: ig_unique(:)
+       INTEGER, ALLOCATABLE :: sym_ig(:)
+       INTEGER, ALLOCATABLE :: sym_friend(:)
        LOGICAL   :: use_symm
 END MODULE gwsymm
 

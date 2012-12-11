@@ -238,6 +238,8 @@
      else
         do ik = 1, nks
            nbnd_occ (ik) = nint (nelec) / degspin
+!HL writing out band numbers... why all four?
+!           write(6,*) nbnd_occ(ik)
         enddo
      endif
   endif
@@ -251,7 +253,7 @@
      enddo
   enddo
 
-!@10TION
+!@10TION@10TION
 #ifdef __PARA
   ! find the minimum across pools
   call mp_min( emin, inter_pool_comm )
@@ -281,7 +283,8 @@
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
 
   !  set the alpha_mix parameter
-
+  !HL probably want restart functionality here.
+  
   do it = 2, niter_gw
      if (alpha_mix (it) .eq.0.d0) alpha_mix (it) = alpha_mix (it - 1)
   enddo

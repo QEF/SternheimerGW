@@ -5,7 +5,7 @@ SUBROUTINE sigma_c(ik0)
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec
   USE klist,         ONLY : wk, xk
   USE io_files,      ONLY : prefix, iunigk, prefix, tmp_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -25,6 +25,9 @@ SUBROUTINE sigma_c(ik0)
                             nproc_pool, me_pool, my_pool_id, nproc
   USE mp,            ONLY : mp_barrier, mp_bcast, mp_sum
   USE fft_scalar,    ONLY : cfft3d
+  USE modes,         ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  USE wavefunctions_module, ONLY : evc
+  USE control_flags,        ONLY : noinv
 
   IMPLICIT NONE
 
@@ -32,6 +35,9 @@ SUBROUTINE sigma_c(ik0)
   COMPLEX(DP)         :: aux (nrsco)
 !For running PWSCF need some variables 
   LOGICAL             :: pade_catch
+  LOGICAL             :: found_q
+!
+  LOGICAL             :: limit
 !Pade arrays
   COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
 !W arrays 
@@ -39,12 +45,16 @@ SUBROUTINE sigma_c(ik0)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g_R (:,:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_pade_g (:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul(:,:)
+!v array
+!COMPLEX(DP), ALLOCATABLE ::  barcoul(:,:), barcoulr(:,:), barcoul_R(:,:)
+  REAL(DP) :: qg2, qg
 !G arrays:
-  COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfp(:,:), greenfm(:,:)
+!COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfp(:,:), greenfm(:,:)
+  COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfr(:,:)
 !Integration Variable 
   COMPLEX(DP) :: cprefac
 !FREQUENCY GRIDS/COUNTERS
-  INTEGER  :: iwim, iw, ikq 
+  INTEGER  :: iwim, iw, ikq
   INTEGER  :: iw0, iw0mw, iw0pw
   REAL(DP) :: w_ryd(nwcoul)
 !COUNTERS
@@ -54,14 +64,25 @@ SUBROUTINE sigma_c(ik0)
   INTEGER :: ikmq, ik0, ik, nkpool
   INTEGER :: rec0, ios
   INTEGER :: counter, ierr
+  INTEGER :: inversym
 !SYMMETRY
   REAL(DP)              :: xq_ibk(3), xq_ibz(3)
   INTEGER               :: isym
   INTEGER, ALLOCATABLE  :: gmapsym(:,:)
-  COMPLEX(DP)           :: eigv(ngm,48)
 
+!For G^NA
+  INTEGER     :: igkq_ig(npwx) 
+  INTEGER     :: igkq_tmp(npwx) 
+
+  COMPLEX(DP), ALLOCATABLE           :: eigv(:,:)
+!q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
+  REAL(DP) :: xq_coul(3)
+  REAL(DP) :: rcut, spal
+  INTEGER  :: ibnd
 !CHECK FOR NAN's
   REAL(DP)     :: ar, ai
+!For dirac delta fxn.
+  REAL(DP)     :: dirac, x, support
 
 !File related:
   character(len=256) :: tempfile, filename
@@ -83,27 +104,24 @@ SUBROUTINE sigma_c(ik0)
    ALLOCATE ( scrcoul_g_R    (ngmpol, ngmpol, nfs)     )
    ALLOCATE ( scrcoul_pade_g (ngmpol, ngmpol)          )
    ALLOCATE ( greenf_g       (ngmgrn, ngmgrn)          )
+!barcoul
+!  ALLOCATE ( barcoul     (ngmpol, ngmpol)  )
+!  ALLOCATE ( barcoulr    (nrsco,  nrsco)   )
+!  ALLOCATE ( barcoul_R   (ngmpol,  ngmpol) )
+!  ALLOCATE ( gmapsym     (ngm, 48)         )
 
-!These go on the big grid...
-   ALLOCATE ( scrcoul        (nrsco, nrsco)            )
-   ALLOCATE ( greenfp        (nrsco, nrsco)            )
-   ALLOCATE ( greenfm        (nrsco, nrsco)            )
-   ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
-   ALLOCATE ( gmapsym        (ngm, 48)                 )
-!  Pade Approximants.
+! This should be more efficient should also only store up to ngmsco but 
+! that won't be invented until it is necessary.
+   ALLOCATE ( gmapsym        (ngm, nsym)                 )
+   ALLOCATE ( eigv(ngm, nsym) )
+
+! Technically only need gmapsym up to ngmpol or ngmgrn...
    ALLOCATE  (z(nfs), a(nfs))
 
-! Array for coulomb frequencies.
+!We support the numerical delta fxn in a x eV window...
+   support = 4.0d0/RYTOEV
+!do we need two instances of the frequency?
    w_ryd(:) = wcoul(:)/RYTOEV
-
-   if(allocated(sigma)) then
-     WRITE(6,'(4x,"Sigma allocated")')
-   else
-     WRITE(6,'(4x,"Sigma too large!")')
-     CALL mp_global_end()
-     STOP
-   endif
-
 
    WRITE(6," ")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk(ipol, ik0), ipol=1,3)
@@ -114,11 +132,48 @@ SUBROUTINE sigma_c(ik0)
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
    sigma(:,:,:) = (0.0d0, 0.0d0)
+   limit=.false.
 
    CALL start_clock('sigmac')
-!Here we generate the G-vector rotation array.
    CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
+!eigv only required if we have 
+   DEALLOCATE(eigv)
+!These go on the big grid...
+   ALLOCATE ( scrcoul        (nrsco, nrsco)            )
+
+!could just reduce this to greenfr.... i.e. 2 gigs is less than one.
+!  ALLOCATE ( greenfp        (nrsco, nrsco)            )
+!  ALLOCATE ( greenfm        (nrsco, nrsco)            )
+   ALLOCATE ( greenfr        (nrsco, nrsco)            )
+   ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
+
+   if(allocated(sigma)) then
+     WRITE(6,'(4x,"Sigma allocated")')
+   else
+     WRITE(6,'(4x,"Sigma too large!")')
+     CALL mp_global_end()
+     STOP
+   endif
+
+   WRITE(6,'("nsym, nsymq ", 2i4)'), nsym, nsymq
+   WRITE(6,'("Should be inversion matrix ...")')
+   !if(nsym.lt.48) then
+   if(.not.noinv.and.lgamma) then
+      !inversym= 25
+      !inversym= invs(1)
+       inversym = 1 + nsymq/2
+       WRITE(6,'(3i4)') s(:,:,inversym)
+   else if (noinv) then
+       inversym = nsym + 1
+       !inversym = 25
+       !inversym= invs(1)
+       WRITE(6,'(3i4)') s(:,:,inversym)
+   else
+       inversym = 1+nsymq/2  
+       !inversym= invs(1)
+       WRITE(6,'(3i4)') s(:,:,inversym)
+   endif
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
@@ -130,8 +185,9 @@ SUBROUTINE sigma_c(ik0)
          wq(iq) = 0.5d0*wk(2*iq-1) 
       endif
    enddo
-
 !Every processor needs access to the files: _gw0si.coul1 and _gw0si.green1
+
+!HL@10TION
 call mp_barrier(inter_pool_comm)
 
 #ifdef __PARA
@@ -142,7 +198,6 @@ if(.not.ionode) then
    unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-
 !OPEN green file (only written to by head node as well).
    filename = trim(prefix)//"."//"green1"
    tempfile = trim(tmp_dir) // trim(filename)
@@ -151,6 +206,7 @@ if(.not.ionode) then
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 endif
 #endif
+
 #ifdef __PARA
       npool = nproc / nproc_pool
       write(stdout,'("npool", i4, i5)') npool, nksq
@@ -177,7 +233,9 @@ endif
 #endif
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
-!  WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
+   WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
+
+   if (nksq.gt.1) rewind (unit = iunigk)
    DO iq = iqstart, iqstop
       if (lgamma) then
           ikq = iq
@@ -185,26 +243,83 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !k+q is in even positions of list (k,k+q)
           ikq = 2*iq
       endif
+
 !q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
 !-q = k0 - (k0 + q)
-      xq_ibk(:) = xk_kpoints(:,ik0) - xk(:,ikq)
+!this works for diamond at L... (minus 3 tenths of an ev...)
+!   xq_ibk(:) = xk_kpoints(:,ik0) - xk(:,ikq)
+!  q = (k0 + q) - k0
+!HL works for si at gamma:
+    xq_ibk(:) = xk(:,ikq) - xk_kpoints(:, ik0)
 
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
-     call find_q_ibz(xq_ibk, s, iqrec, isym)
-     write(6, *)  
-     write(6, '("xq_IBK point")')
-     write(6, '(3f11.7)') xq_ibk
-     write(6, '("equivalent xq_IBZ point, symop, iqrec")')
-     write(6, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
-     write(6,*)
+!q is stored in the list x_q as positive q but all the calculations have
+!been done at -q therefore we are just going to calculate \SumG_{k+q}W_{-q}
 
-!lrcoul = 2 * ngmsig * ngmsig * nfs.
-!CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1 )
-!Read the equivalent q_point in the IBZ of crystal:
+    call find_q_ibz(xq_ibk, s, iqrec, isym, found_q)
 
-!If we get really facsistic about memory could:
-!ALLOCATE(scrcoul_g)
+!not for diamond but for sic:
+!   isym  = inversym
+!   isym  = nsymq/2 + 1
+!Read igkq indices:
+!HOW DO YOU KNOW THESE ARE READING THE CORRECT igkqs in parallel ?????
+!      if (nksq.gt.1) then
+!            read (iunigk, err = 100, iostat = ios) npw, igk
+! 100        call errore ('green_linsys', 'reading igk', abs (ios) )
+!      endif
+    
+    if(lgamma) npwq=npw 
+
+!      if (.not.lgamma.and.nksq.gt.1) then
+!           read (iunigk, err = 200, iostat = ios) npwq, igkq
+! 200       call errore ('green_linsys', 'reading igkq', abs (ios) )
+!      endif
+
+    write(6, *)  
+    write(6, '("xq_IBK point")')
+    write(6, '(3f11.7)') xq_ibk
+    write(6, '("equivalent xq_IBZ point, symop, iqrec")')
+    write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
+    write(6,*)
+
+!Time Reversal?
+!  isym  = 1
+!  iqrec = iq
+
+   write(1000+mpime, *)  
+   write(1000+mpime, '("xq_IBK point")')
+   write(1000+mpime, '(3f11.7)') xq_ibk
+   write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
+   write(1000+mpime, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
+
+!write(600+mpime,*)
+!write(600+mpime, '(3i4)')s(:,:,isym) 
+!Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
+!igkq_tmp is gamma centered index up to ngmsco,
+!igkq_ig  is the linear index for looping up to npwq.
+!Also since we are in parallel here I might have to use the gk_sort
+!igk is fine!!!
+!EXCHANGE TEST
+!    call davcio (evq, lrwfc, iuwfc, ikq, - 1)
+     CALL gk_sort( xk(1,ikq), ngm, g, ecutwfc / tpiba2, npw, igkq, g2kin )
+
+     counter = 0
+     igkq_tmp(:) = 0
+     igkq_ig(:)  = 0 
+
+     do ig = 1, npwx
+        if((igkq(ig).le.ngmgrn).and.((igkq(ig)).gt.0)) then
+            counter = counter + 1
+           !index in total G grid.
+            igkq_tmp (counter) = igkq(ig)
+           !index for loops 
+            igkq_ig  (counter) = ig
+        endif
+     enddo
+
+!Dielectric Function should be written to file at this point
+!So we read that in, rotate it, and then apply the coulomb operator.
      CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
 
 !Rotate G_vectors for FFT.
@@ -222,29 +337,91 @@ IF(iqstop-iqstart+1.ne.0) THEN
 
      do ig = 1, ngmpol
         do igp = 1, ngmpol
-           if((gmapsym(ig,isym).lt.ngmpol).and.(gmapsym(igp,isym).lt.ngmpol)&
+!THIS IF LOOP really slows things down...
+           if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(igp,isym).le.ngmpol)&
                .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
                do iwim = 1, nfs
+!ROTATE DIELECTRIC MATRIX
                   scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)
                enddo
            endif
         enddo
      enddo
 
+!APPLY COULOMB INTERACTION TO DIELECTRIC MATRIX
+!to form eps^{-1}_{q1}(R^{-1}G, R^{-1}G')v(-q + G) = W_{-q}(G,G') -> W_{-q}(\G, G')
+    CALL spheric_coulomb(scrcoul_g_R, -xq_ibk)
+    
+!Calculate GODBY NEEDS OR PADE:
+    IF (modielec) then
+     If (padecont) then
+       do igp = ig, ig
+!   Pade input points on the imaginary axis
+         do iw = 1, nfs
+           z(iw) = dcmplx( 0.d0, fiu(iw))
+           u(iw) = scrcoul_g_R(ig, igp, iw)
+         enddo
+!        Pade coefficients
+         call pade_coeff ( nfs, z, u, a)
+         do iw = 1, nfs
+            scrcoul_g_R (ig,igp,iw) = a(iw)
+         enddo
+       enddo !enddo on igp
+     ELSE IF (godbyneeds.and.modielec) then
+       do igp = ig, ig
+           do iw = 1, nfs
+              z(iw) = dcmplx( fiu(iw), 0.0d0)
+              u(iw) = scrcoul_g_R(ig, igp, iw)
+           enddo
+           CALL godby_needs_coeffs(nfs, z, u, a)
+           do iw = 1, nfs
+              scrcoul_g_R (ig,igp,iw) = a(iw)
+           enddo
+       enddo
+     ENDIF
+    ELSE IF ((.not.modielec).and.(godbyneeds)) then
+       do igp = 1, ngmpol 
+          !for godby-needs plasmon pole the algebra is done assuming real frequency*i...
+          !that is: the calculation is done at i*wp but we pass a real number as the freq. 
+          !just trust me...
+           do iw = 1, nfs
+             z(iw) = dcmplx( fiu(iw), 0.0d0)
+             u(iw) = scrcoul_g_R(ig, igp, iw)
+           enddo
+           CALL godby_needs_coeffs(nfs, z, u, a)
+           do iw = 1, nfs 
+             !just overwrite
+              scrcoul_g_R (ig, igp, iw) = a(iw)
+           enddo
+       enddo
+    ELSE
+       do igp = 1, ngmpol
+!   Pade input points on the imaginary axis
+         do iw = 1, nfs
+           z(iw) = dcmplx( 0.d0, fiu(iw))
+           u(iw) = scrcoul_g_R (ig, igp,iw)
+         enddo
+!        Pade coefficients      
+         call pade_coeff ( nfs, z, u, a)
+!        Overwrite scrcoul with Pade coefficients to be read in gw_product.
+         do iw = 1, nfs 
+            scrcoul_g_R (ig, igp, iw) = a(iw)
+         enddo
+       enddo !enddo on igp
+    ENDIF
 
-!deallocate(scrcoul_g)
 !Start integration over iw +/- wcoul. 
     WRITE(6,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
         scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
         do ig = 1, ngmpol
            do igp = 1, ngmpol
-             do iwim = 1, nfs
-                 z(iwim) = dcmplx( 0.d0, fiu(iwim))
+              do iwim = 1, nfs
+                  z(iwim) = dcmplx( 0.d0, fiu(iwim))
              !normal ordering.
              !a(iwim) = scrcoul_g (ig,igp,iwim)
              !For rotated g-vects.
-                 a(iwim) = scrcoul_g_R (ig,igp,iwim)
+                  a(iwim) = scrcoul_g_R (ig,igp,iwim)
              enddo
              pade_catch=.false.
              do iwim = 1, nfs
@@ -257,10 +434,8 @@ IF(iqstop-iqstart+1.ne.0) THEN
              enddo
              if(padecont) then
                 call pade_eval ( nfs, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
-             else if (cohsex) then
-                  scrcoul_pade_g(ig,igp) = a(1)
              else if(godbyneeds) then
-                     scrcoul_pade_g(ig,igp)=(a(2)/(dcmplx(w_ryd(iw),0.0d0)-a(1)+ci*eta ))-((a(2))/(dcmplx(w_ryd(iw), 0.0d0) + a(1) - ci*eta))
+                   scrcoul_pade_g(ig,igp)= (dcmplx(2.0d0,0.0d0)*a(2)*a(1))/((dcmplx(w_ryd(iw), eta))**2 - a(1)**2)
              else 
                   WRITE(6,'("No screening model chosen!")')
                   STOP
@@ -269,35 +444,54 @@ IF(iqstop-iqstart+1.ne.0) THEN
            enddo
         enddo
 !W(G,G';w)
-         czero = (0.0d0, 0.0d0)
-         scrcoul(:,:) = czero
-         do ig = 1, ngmpol
-            aux(:) = czero
-            do igp = 1, ngmpol
-               aux(nlsco(igp)) = scrcoul_pade_g(ig,igp)
-            enddo
-            call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
-            do irp = 1, nrsco
-               scrcoul(ig, irp) = aux(irp) / omega
-            enddo
-         enddo
-         do irp = 1, nrsco
-            aux = czero
-            do ig = 1, ngmpol
+        czero = (0.0d0, 0.0d0)
+        scrcoul(:,:) = czero
+        do ig = 1, ngmpol
+           aux(:) = czero
+           do igp = 1, ngmpol
+                    aux(nlsco(igp)) = scrcoul_pade_g(ig,igp)
+           enddo
+           call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
+           do irp = 1, nrsco
+              scrcoul(ig, irp) = aux(irp) / omega
+           enddo
+        enddo
+
+        do irp = 1, nrsco
+           aux = czero
+           do ig = 1, ngmpol
                aux(nlsco(ig)) = conjg(scrcoul(ig,irp))
-            enddo
-            call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
-            scrcoul(1:nrsco,irp) = conjg ( aux )
-         enddo
+           enddo
+           call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
+           scrcoul(1:nrsco,irp) = conjg ( aux )
+        enddo
 !Now have W(r,r';omega')
+       ! simpson quadrature: int_w1^wN f(w)dw = deltaw * 
+       ! [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
          cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-         DO iw0 = 1, nwsigma
+       !Presumably the fxn should be zero at the cutoff but might as well be consistent...
+         if ( iw/2*2.eq.iw ) then
+            cprefac = cprefac * 4.d0/3.d0
+         else
+            cprefac = cprefac * 2.d0/3.d0
+         endif
+
+       !Presumably the fxn should be zero at the cutoff but might as well be consistent...
+         if (iw.eq.1) then
+             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
+         else if (iw.eq.nwcoul) then
+             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
+         endif
+
+         do iw0 = 1, nwsigma
             iw0mw = ind_w0mw (iw0,iw)
             iw0pw = ind_w0pw (iw0,iw)
 !rec0 = (iw0mw-1) * 1 * nqs + (ik0-1) * nqs + (iq-1) + 1
             rec0 = (iw0mw-1) * 1 * nksq + (iq-1) + 1
+!GOTO 128
             CALL davcio( greenf_g, lrgrn, iungreen, rec0, -1 )
-            greenfm(:,:) = czero
+!            greenfm(:,:) = czero
+            greenfr(:,:) = czero
             do ig = 1, ngmgrn
                aux(:) = czero
                do igp = 1, ngmgrn
@@ -305,62 +499,64 @@ IF(iqstop-iqstart+1.ne.0) THEN
                enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
                do irp = 1, nrsco
-                  greenfm(ig, irp) = aux(irp)/omega
+                 greenfr(ig, irp) = aux(irp)/omega
                enddo
             enddo
+!additionally this means what I've actually calculated in green linsys is G = \psi_k^*(G)\psi_k(G')
+!instead of \psi_{k}(G)\psi_{k}^*(G'), in Si inversion symmetry means:  
+!G = \psi_{-k}(-G)\psi^*_-k(-G') 
             do irp = 1, nrsco
                aux = czero
-               do ig = 1, ngmgrn
-                  aux(nlsco(ig)) = conjg(greenfm(ig,irp))
-               enddo
-               call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
-               greenfm(1:nrsco,irp) = conjg ( aux )
+                    do ig = 1, ngmgrn
+                          aux(nlsco(ig)) = conjg(greenfr(ig,irp))
+                    enddo
+                    call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
+                    greenfr(1:nrsco,irp) = conjg ( aux )
             enddo
+
+            sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
 !Now have G(r,r';omega-omega')
 !rec0 = (iw0pw-1) * 1 * nqs + (ik0-1) * nqs + (iq-1) + 1
             rec0 = (iw0pw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio(greenf_g, lrgrn, iungreen, rec0, -1)
 !Inlining FFT:
-            greenfp(:,:) = czero
+            greenfr(:,:) = czero
             do ig = 1, ngmgrn
                aux(:) = czero
                do igp = 1, ngmgrn
                   aux(nlsco(igp)) = greenf_g(ig,igp)
                enddo
-              call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
+               call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
                do irp = 1, nrsco
-                  greenfp(ig, irp) = aux(irp) / omega
+                  greenfr(ig, irp) = aux(irp) / omega
                enddo
             enddo
             do irp = 1, nrsco
                aux = czero
-               do ig = 1, ngmgrn
-                  aux(nlsco(ig)) = conjg(greenfp(ig,irp))
-               enddo
+                    do ig = 1, ngmgrn
+                           aux(nlsco(ig)) = conjg(greenfr(ig,irp))
+                    enddo
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
-               greenfp(1:nrsco,irp) = conjg ( aux )
+               greenfr(1:nrsco,irp) = conjg ( aux )
             enddo
-!Now have G(\r,\r';\omega+\omega')
-               sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * (greenfp(:,:) + greenfm(:,:)) * scrcoul(:,:)
+!Should do decomposition here: |<\PHI(r-r')|i\int G(r,r';w-wp)W(r,r';wp) dwp|\PHI(r-r')>| = G(r,r';\omega)W(r,r';\omega)
+            sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
-
-!now could add extra ananlytic piece: -\inf to wsigmamin-wcoul
-!and from wsigmamin+wcoul to +\inf
-!G(r,r';w'-w0) =  FFT[\delta(\G,G')/(w-w0-w1)]
-!W(r,r';w')
-!\Sigma(r, r'; w0) = \Sigma(r,r'; w0) + \int_{\-inf}^{wcoul) G(r,r'; w0 - w')W(r,\r';w')dw'
-!                                     + \int_{wcoul}^{\inf) G(r,r'; w0 - w')W(r,\r';w')dw'
     ENDDO ! end loop iqstart, iqstop 
 ENDIF
 
     DEALLOCATE ( gmapsym          )
-    DEALLOCATE ( greenfm, greenfp )
+!   DEALLOCATE ( greenfm, greenfp )
+    DEALLOCATE ( greenfr)
     DEALLOCATE ( greenf_g         )
     DEALLOCATE ( scrcoul          )
     DEALLOCATE ( scrcoul_pade_g   )
     DEALLOCATE ( scrcoul_g        )
     DEALLOCATE ( z,a )
+!    DEALLOCATE (barcoulr)
+!    DEALLOCATE (barcoul)
+!    DEALLOCATE (barcoul_R)
 
 #ifdef __PARA
     CALL mp_barrier(inter_pool_comm)
@@ -374,9 +570,6 @@ ENDIF
 CALL mp_barrier(inter_pool_comm)
 
 IF (ionode) then
- !I use to say there was no chance of doing this
- !on the big grid, but now we do it on a bigger grid
- !and later using windowing we will do it on the full density grid.
   ALLOCATE ( sigma_g (ngmsco, ngmsco, nwsigma))
   if(allocated(sigma_g)) then
      WRITE(6,'(4x,"Sigma_g allocated")')
@@ -409,9 +602,7 @@ IF (ionode) then
            sigma (ig,igp,iw) = conjg ( aux( nlsco( ig )) ) * omega
         enddo
       enddo
-!CALL davcio (sigma_g, lrsigma, iunsigma, iw, 1)
     enddo
-
     do ig = ngmsco + 1, nrsco
        do igp = ngmsco + 1, nrsco
           do iw = 1, nwsigma
@@ -419,7 +610,6 @@ IF (ionode) then
           enddo 
        enddo
     enddo
-
 !sigma_g = sigma(1:ngmsco,1:ngmsco,:)
     do ig = 1, ngmsco
      do igp = 1, ngmsco
@@ -429,16 +619,14 @@ IF (ionode) then
      enddo
     enddo
 !Now write Sigma in G space to file. 
-    WRITE(6,'(4x,"Writing Sigma to File")')
 !HL Original:
 !Just storing in first record no matter what k-point.
     CALL davcio (sigma_g, lrsigma, iunsigma, 1, 1)
-
 !or could store sigma same way green's fxn is stored...
+    WRITE(6,'(4x,"Sigma Written to File")')
     CALL stop_clock('sigmac') 
     DEALLOCATE ( sigma_g  )
 ENDIF !ionode
-
     call mp_barrier(inter_pool_comm)
     DEALLOCATE ( sigma    )
     RETURN

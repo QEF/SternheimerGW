@@ -7,7 +7,7 @@ SUBROUTINE stern_symm()
 USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsigma,       ONLY : sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmpol
-USE gwsymm,        ONLY : ngmunique, ig_unique
+USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm, ecutwfc, nl
 USE modes,         ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
 
@@ -20,6 +20,7 @@ LOGICAL      :: unique_g
 
 
 ig_unique(:) = 0
+gmapsym(:,:) = 0
 
 !what order does gmap_sym assume symmetry operations are in?
 CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
@@ -27,14 +28,17 @@ CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 ngmunique = 0
 
 !Find number of unique vectors:
-write(6,'("Number of symmops in q vectors", i4)'), nsymq
+write(6,'("Number of symmops in Small G_q: ", i4)'), nsymq
 DO ig = 1, ngmpol
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
+!should use invs since this is the actual relation I'll be using?
    DO isym = 1, nsymq
       DO igp = 1, ngmunique
-         IF (gmapsym(ig,isym).eq.ig_unique(igp)) then
+         IF (gmapsym(ig,invs(isym)).eq.ig_unique(igp)) then
              unique_g = .false.
+             sym_ig(ig) = isym
+             sym_friend(ig) = ig_unique(igp)
          ENDIF
       ENDDO
    ENDDO
@@ -43,8 +47,8 @@ DO ig = 1, ngmpol
       ngmunique = ngmunique + 1
       ig_unique(ngmunique) = ig
    ENDIF
-ENDDO
 
+ENDDO
 write(6,'("ngmpol and ngmunique", i4, i4)'), ngmpol, ngmunique
 
 END SUBROUTINE stern_symm

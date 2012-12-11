@@ -98,12 +98,18 @@ SUBROUTINE setup_nscf_green(xq)
   ! ... that are not symmetry operations of the small group of q.
 
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
+!Hack for turning off minus_q=.true.
+! write(6,'("MODE NUMBER!")')
+! write(6,*) modenum
+! HL turns of minus_q = .true.
+! modenum = 3
+! write(6,'("MODE NUMBER!")')
+! write(6,*) modenum
 
-  !write(6, '("The kpoint")')
-  !write(6,*) xq
-
-  !write(6, '("true symmetry operations.")')
-  !write(6,*) sym
+!write(6, '("The kpoint")')
+!write(6,*) xq
+!write(6, '("true symmetry operations.")')
+!write(6,*) sym
 
 
   IF ( .not. time_reversal ) minus_q = .false.
@@ -118,6 +124,9 @@ SUBROUTINE setup_nscf_green(xq)
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
 
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
+  
+    if (invsymq)      WRITE(6,'("SYSTEM HAS INVERSION SYMMETRY")')
+    if (.not.invsymq) WRITE(6,'("SYSTEM DOES NOT HAVE INVERSION")')
 
   ! Since the order of the s matrices is changed we need to recalculate:
 
@@ -126,10 +135,9 @@ SUBROUTINE setup_nscf_green(xq)
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
   ! ... lattice, with the full point symmetry of the lattice.
 
-  nkstot = nks_start
-
-  xk(:,1:nkstot) = xk_start(:,1:nkstot)
-  wk(1:nkstot)   = wk_start(1:nkstot)
+    nkstot = nks_start
+    xk(:,1:nkstot) = xk_start(:,1:nkstot)
+    wk(1:nkstot)   = wk_start(1:nkstot)
 
   ! ... If some symmetries of the lattice no longer apply for this kpoint
   ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
@@ -183,13 +191,13 @@ SUBROUTINE setup_nscf_green(xq)
   !
   IF ( ABS( xq(1) ) < eps8 .AND. ABS( xq(2) ) < eps8 .AND. &
        ABS( xq(3) ) < eps8 ) THEN
-     !
-     kunit = 1
-     !
+  !
+       kunit = 1
+  !
   ELSE
-     !
+  !
      kunit = 2
-     !
+  !
   ENDIF
   !
   !
