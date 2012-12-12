@@ -96,8 +96,8 @@
       ! now the phase factors e^{iGv}
       !
       IF ( ftau (1, isym).ne.0 .or. ftau (2, isym).ne.0 .or. ftau (3, isym).ne.0 ) THEN
-        write(6,'("FTAU")')
-        write(6,*) ftau(:,:)
+        if(ig.eq.1)  write(6,'("FTAU")')
+        if(ig.eq.1)  write(6,*) isym, ftau(:,isym)
         !
         ! fractional traslation in crystal coord is ftau/nr*
         ! for cart/crys transform of the G-vecctors have a look at the bottom

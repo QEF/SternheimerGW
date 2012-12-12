@@ -13,6 +13,7 @@ IMPLICIT NONE
 
 COMPLEX(DP)  :: scrcoul_g_in(ngmpol, ngmpol, nfs, 1)
 COMPLEX(DP)  :: scrcoul_g_tmp(ngmpol, nfs)
+COMPLEX(DP)  :: phase
 
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
 !counter
@@ -87,7 +88,10 @@ ELSE
 !the relationship R between ig and sym_friend(ig) is given by sym_ig.
         DO iwim = 1, nfs
             DO igp = 1, ngmpol
-              scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)
+            !For symmetry operations with fraction translations we need to include:
+            !e^{-i2\pi(G - G')\cdot\tau_{r}} = eigv(G)*conjg(eigv(G'))
+              phase = eigv(sym_friend(ig), sym_ig(ig))*conjg(eigv(igp, sym_ig(ig)))
+              scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
             ENDDO
         ENDDO
 
@@ -104,7 +108,6 @@ ENDIF
                   !scrcoul_g_tmp(gmapsym(igp,invs(isym)), iwim) = scrcoul_g_in(ig_unique(ig), igp, iwim, 1)
 !               ENDDO
 !            ENDDO
-
 !Rotate the unique vector to the W_{q} (R^{-1}G, WR^{-1}G').
 !I should have a completed shell of unique G vectors so there shouldn't be problems with mapping outside of ngmpol
 !however I'm sure a number of pathological cases exist for different bravais lattices, etc...
