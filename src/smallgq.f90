@@ -7,7 +7,7 @@
 !
 !-----------------------------------------------------------------------
 
-subroutine smallgq (xq, at, bg, s, nsym, irgq, nsymq, irotmq, &
+subroutine sgq (xq, at, bg, s, nsym, irgq, nsymq, irotmq, &
      minus_q, gi, gimq)
   !-----------------------------------------------------------------------
   !
@@ -19,11 +19,18 @@ subroutine smallgq (xq, at, bg, s, nsym, irgq, nsymq, irotmq, &
   ! Revised   2 Sept. 1995 by Andrea Dal Corso
   ! Modified 22 April 1997 by SdG: minus_q is sought also among sym.op.
   !                such that Sq=q+G (i.e. the case q=-q+G is dealt with).
+  ! Modified  6 Aug. 2012 by HL: So this routine is from the phonon code with the
+  !                         with the minor difference that we want to use it for
+  !                         any situation where we need W_{-q} = W_{Sq}(\G,\G')=W_{q}(S^-1\G,S^-1\G')
+  !
+  ! If necessary we symmetrize with respect to  S(irotmq)*q = -q + Gi.
   !
   !
-  !  The dummy variables
+  ! The dummy variables
   !
   USE kinds, only : DP
+  USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
+                            nproc_pool, me_pool, my_pool_id, nproc
   implicit none
 
   real(DP) :: bg (3, 3), at (3, 3), xq (3), gi (3, 48), gimq (3)
@@ -72,6 +79,8 @@ subroutine smallgq (xq, at, bg, s, nsym, irgq, nsymq, irotmq, &
   !
   !   test all symmetries to see if the operation S sends q in q+G ...
   !
+  WRITE(6,'("Running Smallgq")')
+  WRITE(1000+mpime,'("Running Smallgq")')
   nsymq = 0
   do isym = 1, nsym
      raq = 0.d0
@@ -89,31 +98,34 @@ subroutine smallgq (xq, at, bg, s, nsym, irgq, nsymq, irotmq, &
         enddo
         call cryst_to_cart (1, wrk, bg, 1)
         gi (:, nsymq) = wrk (:) 
-        !
-        !   ... and in -q+G
-        !
+!        write(1000+mpime,*) gi(:,nsymq)
+!        write(1000+mpime,*) wrk
+!
+!   ... and in -q+G
+!
         if (look_for_minus_q.and..not.minus_q) then
            raq (:) = - raq(:)
            if (eqvect (raq, aq, zero) ) then
               minus_q = .true.
               irotmq = isym
+!HL
+!              write(1000+mpime,'(i4)')isym
               do ipol = 1, 3
                  wrk (ipol) = - raq (ipol) + aq (ipol)
               enddo
               call cryst_to_cart (1, wrk, bg, 1)
               gimq (:) = wrk (:) 
+              write(1000+mpime,*)gimq
            endif
         endif
      endif
   enddo
-  !
-  ! if xq=(0,0,0) minus_q always apply with the identity operation
-  !
-  if (xq (1) == 0.d0 .and. xq (2) == 0.d0 .and. xq (3) == 0.d0) then
-     minus_q = .true.
-     irotmq = 1
-     gimq = 0.d0
-  endif
-  !
+  !HL SYM
+  !if xq=(0,0,0) minus_q always apply with the identity operation
+  !if (xq (1) == 0.d0 .and. xq (2) == 0.d0 .and. xq (3) == 0.d0) then
+  !   minus_q = .true.
+  !   irotmq = 1
+  !   gimq = 0.d0
+  !endif
   return
-end subroutine smallgq
+end subroutine sgq

@@ -47,29 +47,6 @@ MODULE modes
   !     
 END MODULE modes
  
-MODULE gwsigma
-  USE kinds, ONLY : DP
-  COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
-  COMPLEX (DP), ALLOCATABLE :: green(:,:)
-
- !HL very large array...
-  COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
-  COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
-
-  INTEGER, ALLOCATABLE :: nlsig(:)
-  
-! Cutoff wave vector for the description of the self-energy.
-  REAL(DP) :: ecutsig
-  REAL(DP) :: gcutmsig
-  INTEGER  :: ngmsig
-  INTEGER  :: nbnd_sig
-
-! Real space mesh for description of self-energy.
-  INTEGER :: nr1sig, nr2sig, nr3sig, nrsig
- 
-END MODULE gwsigma
-!
-!
 MODULE dynmat
   USE kinds, ONLY :  DP
   !
@@ -90,7 +67,14 @@ MODULE dynmat
   !
 END MODULE dynmat
 !
-!
+
+! MODULE gwconst
+!  USE kinds, ONLY : DP
+!  SAVE
+!  COMPLEX(DP),PARAMETER :: ci = (0.000000D0, 1.0000000D0)
+!  COMPLEX(DP),PARAMETER :: czero = (0.000000D0, 0.0000000D0)
+! END MODULE gwconst
+
 MODULE qpoint
   USE kinds, ONLY :  DP
   USE parameters, ONLY : npk
@@ -99,7 +83,7 @@ MODULE qpoint
   !
   SAVE
   !
-  INTEGER, POINTER :: igkq(:)     ! npwx)
+  INTEGER, POINTER :: igkq(:)     ! npwx
   ! correspondence k+q+G <-> G
   INTEGER :: nksq, npwq
   ! the real number of k points
@@ -111,6 +95,7 @@ MODULE qpoint
   ! the coordinates of the q point
   COMPLEX (DP), ALLOCATABLE :: eigqts(:) ! nat)
   ! the phases associated to the q
+
   !
 END MODULE qpoint
 !
@@ -326,7 +311,7 @@ MODULE control_gw
   ! last representation of this run
   ! current q point
   ! initial q in the list, last_q in the list
-  real(DP) :: tr2_gw
+  real(DP) :: tr2_gw, tr2_green
   !
   real(DP) :: eta
   ! threshold for gw calculation
@@ -338,6 +323,9 @@ MODULE control_gw
   CHARACTER(LEN=256) :: flmixdpot, tmp_dir_gw
   INTEGER :: rec_code, &   ! code for recover
              rec_code_read=-1000 ! code for recover. Not changed during the run
+
+  INTEGER :: maxter_green
+
   LOGICAL :: lgamma,      &! if .TRUE. this is a q=0 computation
              lgamma_gamma,&! if .TRUE. this is a q=0 computation with k=0 only 
              convt,       &! if .TRUE. the GW has converged
@@ -366,8 +354,19 @@ MODULE control_gw
              u_from_file=.FALSE.,  & ! if true the u are on file
              recover_read=.FALSE., & ! if true the recover data have been read
              all_done, &      ! if .TRUE. all representations have been done
-             modielec   ! if .TRUE. uses a model dielectric function to calculate W.
-  !
+             modielec, & ! if .TRUE. uses a model dielectric function to calculate W.
+             do_coulomb, &
+             do_sigma_c, &
+             do_sigma_exx, &
+             do_green, &
+             do_sigma_matel,&
+             do_q0_only,&
+             godbyneeds,&
+             padecont,&
+             cohsex,&
+             multishift,&
+             do_sigma_extra
+
 END MODULE control_gw
 !
 !
@@ -391,6 +390,8 @@ MODULE freq_gw
   REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax
   REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:) 
   INTEGER, ALLOCATABLE :: ind_w0mw (:,:), ind_w0pw (:,:)
+  REAL(DP) :: plasmon
+  REAL(DP) :: greenzero
 
 END MODULE freq_gw
 !
@@ -405,7 +406,10 @@ MODULE units_gw
        iuwfc, lrwfc, iuvkb, iubar, lrbar, iuebar, lrebar, iudwf, iupsir, &
        lrdwf, iudrhous, lrdrhous, iudyn, iupdyn, iunrec, iudvscf, iudrho, &
        lrdrho, iucom, lrcom, iudvkb3, lrdvkb3, iuncoul, iungreen, iunsigma, &
-       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna
+       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex, lrsex, &
+       lrresid, lralphabeta, iunresid, iunalphabeta, iunsigext, lrsigext
+
+
   ! iunit with the wavefunctions
   ! the length of wavefunction record
   ! unit with vkb
@@ -447,47 +451,237 @@ END MODULE output
 !
 !
 MODULE disp
-  !
-  USE kinds, ONLY: DP
-  !
-  SAVE
-  !
-  INTEGER, PARAMETER :: nqmax = 1000
-  !
-  INTEGER :: nq1, nq2, nq3
+   !
+   USE kinds, ONLY: DP
+   !
+   SAVE
+   !
+   INTEGER, PARAMETER :: nqmax = 1000
+   !
+   INTEGER :: nq1, nq2, nq3
     ! number of q-points in each direction
-  INTEGER :: iq1, iq2, iq3
+   INTEGER :: iq1, iq2, iq3
     ! specific q point from the regular grid
     ! (i.e., iq1/nq1,iq2/nq2,iq3/nq3)
-  INTEGER :: nqs
+   INTEGER :: nqs
     ! number of q points to be calculated 
-  REAL (DP), ALLOCATABLE :: x_q(:,:)
+   REAL (DP), ALLOCATABLE :: x_q(:,:)
     ! coordinates of the q points
-  INTEGER, ALLOCATABLE :: done_iq(:)
+   INTEGER, ALLOCATABLE :: done_iq(:)
     ! if 1 this q point has been already calculated
-  INTEGER, ALLOCATABLE :: comp_iq(:)
+   INTEGER, ALLOCATABLE :: comp_iq(:)
     ! if 1 this q point has to be calculated
-  INTEGER, ALLOCATABLE :: rep_iq(:)
+   INTEGER, ALLOCATABLE :: rep_iq(:)
     ! number of irreducible representation per q point
-  INTEGER, ALLOCATABLE :: done_rep_iq(:,:)
+   INTEGER, ALLOCATABLE :: done_rep_iq(:,:)
     ! which representation have been already done in each q
-  INTEGER, ALLOCATABLE :: nsymq_iq(:)
+   INTEGER, ALLOCATABLE :: nsymq_iq(:)
     ! dimension of the small group of q
-  INTEGER, ALLOCATABLE :: comp_irr_iq(:,:)
+   INTEGER, ALLOCATABLE :: comp_irr_iq(:,:)
     ! for each q, comp_irr. Used for image parallelization 
-  INTEGER, ALLOCATABLE :: npert_iq(:,:)
+   INTEGER, ALLOCATABLE :: npert_iq(:,:)
     ! for each q, the number of perturbation of each irr
-  REAL(DP) , ALLOCATABLE :: wq(:)
+   REAL(DP) , ALLOCATABLE :: wq(:)
 
-   !HL Variables required for shuffling the k/q grid. 
-  INTEGER, ALLOCATABLE :: gmap(:,:)
-  REAL(DP) :: g0vec(3,27)
-  REAL(DP), ALLOCATABLE :: eval_occ(:,:) ! array of eigenvalues after folding.
+  !HL Variables required for shuffling the k/q grid. 
+   INTEGER, ALLOCATABLE :: gmap(:,:)
+   REAL(DP) :: g0vec(3,27)
+   REAL(DP), ALLOCATABLE :: eval_occ(:,:) ! array of eigenvalues after folding.
+
+ ! kpoints: default false.
+ ! if true specifies the k-points we want to look 
+ ! at in the brillouin zone specified by user in punch card.  
+   LOGICAL  :: kpoints 
+   REAL(DP) :: xk_kpoints(3,10)
+   INTEGER  :: num_k_pts
+   INTEGER  :: w_of_q_start
   
 
 END MODULE disp
-!
-!
+
+MODULE coulomb_app
+CONTAINS
+SUBROUTINE spheric_coulomb(ngmpol, nfs, diel_matrix, xq_coul)
+  USE kinds,         ONLY : DP
+  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE cell_base,     ONLY : alat, tpiba2, omega
+  USE gvect,         ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
+  USE disp,          ONLY : nqs, nq1, nq2, nq3
+  IMPLICIT NONE
+!SUBROUTINE SPHERIC CUT  COULOMB POTENTIAL Appliead to v_q.
+!Spencer/Alavi truncation of the bare coulomb interaction
+![PRB 77,193110 (2008)]
+  LOGICAL     :: limq
+  REAL(DP)    :: xq_coul(3)
+  REAL(DP)    :: qg, rcut, spal
+  INTEGER     :: ig, igp, iw, ngmpol, nfs
+  INTEGER     :: unf_recl, recl, ios
+  COMPLEX(DP), INTENT(INOUT) :: diel_matrix(ngmpol,ngmpol,nfs) 
+  !COMPLEX(DP) :: diel_matrix(:,:,:) 
+  REAL(DP)    :: qg2, qg2coul
+
+
+rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+
+DO iw = 1, nfs
+   DO ig = 1, ngmpol
+       qg2 = (g(1,ig) + xq_coul(1))**2 + (g(2,ig) + xq_coul(2))**2 + (g(3,ig) + xq_coul(3))**2
+       !if(qg2.lt.eps8) limq =.true.
+       limq = (qg2.lt.eps8) 
+       IF(.not.limq) then
+           DO igp = 1, ngmpol
+              diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+           ENDDO
+       ELSE 
+           if(ig.ne.1) then
+              DO igp = 1, ngmpol
+                 diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+              ENDDO
+           endif
+       ENDIF
+
+       qg = sqrt(qg2)
+       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
+
+!Normal case using truncated coulomb potential.
+       if(.not.limq) then
+          do igp = 1, ngmpol
+              diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx(spal, 0.0d0)
+          enddo
+       else
+!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
+             write(6,'("Taking Limit.")')
+             write(6,*) (fpi*e2*(rcut**2))/2.0d0
+             write(6,*) ig, iw
+             write(6,*) g(:, ig)
+             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+             !we enforce that here:
+         if(iw.eq.1) then
+            diel_matrix(ig, igp, iw) = real(diel_matrix(ig,igp,iw))
+         endif
+         do igp = 1, ngmpol
+            diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+         enddo
+       endif
+   ENDDO !ig
+ENDDO!iw
+END SUBROUTINE
+END MODULE coulomb_app
+
+MODULE gwsigma
+  USE kinds,       ONLY : DP
+  USE cell_base,   ONLY : omega, alat
+  USE qpoint,      ONLY : xq, igkq
+  
+  PUBLIC :: fft6_g2r
+  
+  SAVE
+
+  COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
+  COMPLEX (DP), ALLOCATABLE :: green(:,:)
+
+! HL self energy is a huge quantity!
+  COMPLEX (DP), ALLOCATABLE :: sigma_ex(:,:)
+  COMPLEX (DP), ALLOCATABLE :: sigma_g_ex(:,:)
+
+  COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
+  COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
+
+  INTEGER, ALLOCATABLE ::         nlsig(:)
+  INTEGER, TARGET, ALLOCATABLE :: nlsex(:)
+  INTEGER, TARGET, ALLOCATABLE :: nlsco(:)
+  
+! Cutoff for the sigma + exchange/correlation.
+  REAL(DP) :: ecutsig
+  REAL(DP) :: ecutpol
+  REAL(DP) :: ecutgrn
+  REAL(DP) :: ecutsex
+  REAL(DP) :: ecutsco
+
+  REAL(DP) :: gcutmsig
+  INTEGER  :: nbnd_sig
+  INTEGER  :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
+
+! Real space mesh for description of self-energy.
+  INTEGER :: nr1sig, nr2sig, nr3sig, nrsig
+  INTEGER :: nr1sco, nr2sco, nr3sco, nrsco
+  INTEGER :: nr1sex, nr2sex, nr3sex, nrsex
+
+  CONTAINS
+
+  SUBROUTINE fft6_g2r(ngmtmp, nrtmp, nltmp, f_g, f_r, corx)
+   USE qpoint,  ONLY :  npwq, igkq 
+
+   IMPLICIT NONE
+   INTEGER                          ::  ios
+   INTEGER                          ::  ig, igp, ir, irp
+   COMPLEX(DP)                      ::  czero
+
+  ! corx: correlation or exchange grid
+  ! gorc: green's function (transforms igkq), or coulomb
+
+   INTEGER, INTENT(IN) ::  corx
+   INTEGER             ::  nr1tmp, nr2tmp, nr3tmp, nrtmp, ngmtmp, ngmtmp1
+   COMPLEX(DP)         :: f_g (ngmtmp, ngmtmp)
+   COMPLEX(DP)         :: f_r (nrtmp,nrtmp)
+   COMPLEX(DP)         :: aux (nrtmp)
+   INTEGER             :: nltmp(:)
+
+     if (corx.eq.1) then
+       nr1tmp = nr1sco
+       nr2tmp = nr2sco
+       nr3tmp = nr3sco
+     else if (corx.eq.2) then 
+       nr1tmp = nr1sex
+       nr2tmp = nr2sex
+       nr3tmp = nr3sex
+     else
+        WRITE(6,'("error fft6_g2r_coulomb what to do?")')
+        STOP
+     endif
+
+  ! if ngmsex exceeds npwq we are going beyond the highest G-vector describing the wavefunction. 
+     czero = (0.0d0, 0.0d0)
+     f_r(:,:) = czero
+     do ig = 1, ngmtmp
+        aux(:) = czero
+        WRITE(6,'("FFT G-prime")')
+        do igp = 1, ngmtmp
+           aux(nltmp(igp)) = f_g(ig,igp)
+        enddo
+        WRITE(6,*)nr1tmp, nr2tmp, nr3tmp, nrtmp
+        call cft3s (aux, nr1tmp, nr2tmp, nr3tmp, nr1tmp, nr2tmp, nr3tmp, +1)
+        do irp = 1, nrtmp
+           f_r(ig, irp) = aux(irp) / omega
+        enddo
+     enddo
+
+  ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
+  ! following the convention set in the paper
+  ! [because the standard transform is sum_G f(G) exp(iGr) ]
+     WRITE(6,'("FFT G")')
+     do irp = 1, nrtmp
+        aux = czero
+        do ig = 1, ngmtmp
+           aux(nltmp(ig)) = conjg( f_r(ig,irp) )
+        enddo
+        call cft3s (aux, nr1tmp, nr2tmp, nr3tmp, nr1tmp, nr2tmp, nr3tmp, +1)
+        f_r(1:nrtmp,irp) = conjg ( aux )
+     enddo
+
+ END SUBROUTINE fft6_g2r
+END MODULE gwsigma
+
+
+MODULE gwsymm
+       INTEGER :: ngmunique
+       INTEGER, ALLOCATABLE :: ig_unique(:)
+       INTEGER, ALLOCATABLE :: sym_ig(:)
+       INTEGER, ALLOCATABLE :: sym_friend(:)
+       LOGICAL   :: use_symm
+END MODULE gwsymm
+
+
 MODULE gwcom
   USE modes
   USE dynmat

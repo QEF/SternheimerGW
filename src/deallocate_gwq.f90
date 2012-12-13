@@ -66,15 +66,10 @@ subroutine deallocate_gwq
   !HL \psi\pm W,G, dvbare 
   if(allocated(dpsim)) deallocate(dpsim)
   if(allocated(dpsip)) deallocate(dpsip)
-!  if(allocated(scrcoul)) deallocate(scrcoul)
-!  if(allocated(green)) deallocate(green)
   if(allocated (dvbare)) deallocate(dvbare)
-
-
 
   if(allocated(alphasum)) deallocate (alphasum)
   if(allocated(this_dvkb3_is_on_file)) deallocate (this_dvkb3_is_on_file)    
-
   if(allocated(this_pcxpsi_is_on_file)) deallocate (this_pcxpsi_is_on_file)
   if(allocated(alphap)) then
      do ik=1,nksq

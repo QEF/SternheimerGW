@@ -14,7 +14,7 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   !  doing the band calculation. 
     
   !  In particular if ldisp=true it sets:
-  !  xq : the q point for the phonon calculation
+  !  xq : the q point for the q calculation
   !  current_iq : the current q point
   !  do_iq : if .true. q point has to be calculated
   !  setup_pw : if .true. the pw_setup has to be run
@@ -68,13 +68,15 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
      !
      ! ... set the q point
      !
-     xq(1:3)  = x_q(1:3,iq)
+!    xq(1:3)  = x_q(1:3,iq)
+!MINUS Q
+     xq(1:3)  = -x_q(1:3,iq)
      !
      !Check if it is lgamma
 
      !HL need to find a smooth way of setting xq(1) = 0.01 for q->0 calculations 
-     if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = 0.01
-     lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
+     if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = -0.01
+     lgamma = (xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0)
 
      !
      IF ( lgamma ) THEN
@@ -124,7 +126,6 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   !  and the current q, the fact that we are before the bands
   !
   CALL gw_writefile('init',0)
-
   !
   ! ... In the case of q != 0, we make first a non selfconsistent run
   !

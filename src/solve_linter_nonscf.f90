@@ -319,9 +319,9 @@ SUBROUTINE solve_linter_nonscf(igpert, drhoscf)
               call stop_clock ('vpsifft')
 
         !
-        !  In the case of US pseudopotentials there is an additional 
-        !  selfconsist term which comes from the dependence of D on 
-        !  V_{eff} on the bare change of the potential
+        ! In the case of US pseudopotentials there is an additional 
+        ! selfconsist term which comes from the dependence of D on 
+        ! V_{eff} on the bare change of the potential
         !
         ! HL- adddvscf now needed to include the augmentation charges and core charges.
         ! This routine computes the contribution of the selfconsistent

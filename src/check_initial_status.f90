@@ -70,7 +70,9 @@ SUBROUTINE check_initial_status(auxdyn)
 !  check which representation files are available on the disk and 
 !  sets which q points and representations have been already calculated
 !
+
      CALL check_status_run()
+
 !
 ! write the information on output
 !
@@ -116,6 +118,9 @@ SUBROUTINE check_initial_status(auxdyn)
         
         ! ... Calculate the q-points for the dispersion
         CALL q_points()
+
+    
+       
 
         IF (last_q<1.or.last_q>nqs) last_q=nqs
         

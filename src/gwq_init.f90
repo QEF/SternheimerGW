@@ -163,9 +163,7 @@ SUBROUTINE gwq_init()
      IF ( lgamma ) THEN
 
      !
-
         npwq = npw
-
      !
      ELSE   
      !
@@ -186,16 +184,18 @@ SUBROUTINE gwq_init()
         END IF
         !
      END IF
-     !
+
      ! ... d) The functions vkb(k+G)
      !
      CALL init_us_2( npw, igk, xk(1,ikk), vkb )
      !
      ! ... read the wavefunctions at k
      !
-
      CALL davcio( evc, lrwfc, iuwfc, ikk, -1 )
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!ALL of this between !!!-!!! can be deleted, has to do with phonon perturbations.!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      !
      ! ... e) we compute the becp terms which are used in the rest of
      ! ...    the code
@@ -233,6 +233,7 @@ SUBROUTINE gwq_init()
      ! diagonal elements of the unperturbed Hamiltonian, 
      ! needed for preconditioning
      !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      do ig = 1, npwq
         g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
@@ -264,18 +265,6 @@ SUBROUTINE gwq_init()
 #endif
   !
   DEALLOCATE( aux1 )
-  ! HL
-  ! dvanqq and drho calculate the Dal Corso integrals for B20 B21 B22... 
-  ! CALL dvanqq()
-  ! CALL drho()
-  !
-  !  IF ( ( epsil .OR. zue ) .AND. okvan ) THEN
-  !   CALL compute_qdipol(dpqq)
-  !   IF (lspinorb) CALL compute_qdipol_so(dpqq, dpqq_so)
-  !   CALL qdipol_cryst()
-  ! END IF
-  !
-  !  IF ( trans ) CALL dynmat0()
 
   CALL stop_clock( 'gwq_init' )
   !

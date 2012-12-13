@@ -31,29 +31,29 @@
 # With the exception of IBM xlf, FDFLAGS = $(DFLAGS)
 # For IBM xlf, FDFLAGS is the same as DFLAGS with separating commas 
 
-DFLAGS         =  -D__INTEL -D__FFTW3
+DFLAGS         =  -D__INTEL -D__FFTW3 -D__MPI -D__PARA
 FDFLAGS        = $(DFLAGS)
 
 # IFLAGS = how to locate directories where files to be included are
-# In most cases, IFLAGS = -I../include
+# In most cases, IFLAGS = -I/home/lambert/espresso-4.2.1/include
 
-IFLAGS         = -I/users2/lambert/espresso-4.2.1/include
+IFLAGS         = -I/home/lambert/espresso-4.2.1/include
 
 # MOD_FLAGS = flag used by f90 compiler to locate modules
 # Each Makefile defines the list of needed modules in MODFLAGS
 
-MOD_FLAG      = -I/users2/lambert/espresso-4.2.1
+MOD_FLAG      = -I/home/lambert/espresso-4.2.1
 
 # Compilers: fortran-90, fortran-77, C
 # If a parallel compilation is desired, MPIF90 should be a fortran-90 
 # compiler that produces executables for parallel execution using MPI
-# (such as for instance mpif90, mpf90, mpxlf90,...);
-# otherwise, an ordinary fortran-90 compiler (f90, g95, xlf90, ifort,...)
+# (such as for instance mpif90, mpf90, mpxlf90,/home/lambert/espresso-4.2.1.);
+# otherwise, an ordinary fortran-90 compiler (f90, g95, xlf90, ifort,/home/lambert/espresso-4.2.1.)
 # If you have a parallel machine but no suitable candidate for MPIF90,
 # try to specify the directory containing "mpif.h" in IFLAGS
 # and to specify the location of MPI libraries in MPI_LIBS
 
-MPIF90         = ifort
+MPIF90         = mpif90
 #F90           = ifort
 CC             = icc
 F77            = ifort
@@ -69,21 +69,21 @@ CPPFLAGS       = -P -traditional $(DFLAGS) $(IFLAGS)
 # C flags must include DFLAGS and IFLAGS
 # F90 flags must include MODFLAGS, IFLAGS, and FDFLAGS with appropriate syntax
 
-CFLAGS         = -O0 $(DFLAGS) $(IFLAGS)
+CFLAGS         = $(DFLAGS) $(IFLAGS)
 F90FLAGS       = $(FFLAGS) -nomodule -fpp $(FDFLAGS) $(IFLAGS) $(MODFLAGS)
-FFLAGS         = -O0 -assume byterecl -g -traceback 
-#FFLAGS         = -O0 -assume byterecl -g -traceback -fpe:0 -check bounds
+FFLAGS         = -O2 -assume byterecl
+#FFLAGS         = -O0 -g -traceback -assume byterecl
 
 # compiler flags without optimization for fortran-77
 # the latter is NEEDED to properly compile dlamch.f, used by lapack
 
-FFLAGS_NOOPT   = -O0 -assume byterecl -g -traceback
+FFLAGS_NOOPT   =
 
 # Linker, linker-specific flags (if any)
 # Typically LD coincides with F90 or MPIF90, LD_LIBS is empty
 
-LD             = ifort
-LDFLAGS        = -static-intel -L/usr/local/intel/mkl/10.2.5.035/lib/em64t/libmkl_core.a
+LD             = mpif90
+LDFLAGS        = -static-intel
 LD_LIBS        = 
 
 # External Libraries (if any) : blas, lapack, fft, MPI
@@ -92,7 +92,7 @@ LD_LIBS        =
 # BLAS_LIBS = /your/path/to/espresso/BLAS/blas.a
 # BLAS_LIBS_SWITCH = internal
 
-BLAS_LIBS      = -L/users2/lambert/espresso-4.2.1/install -lmkl_em64t_nothread 
+BLAS_LIBS      = -L/home/lambert/espresso-4.2.1/install -L/opt/intel/Compiler/11.0/083/mkl/lib/em64t -lmkl_em64t_nothread 
 BLAS_LIBS_SWITCH = external
 
 # If you have nothing better, use the local copy :
@@ -109,7 +109,7 @@ SCALAPACK_LIBS =
 # nothing needed here if the the internal copy of FFTW is compiled
 # (needs -D__FFTW in DFLAGS)
 
-FFT_LIBS       = -L/users2/lambert/fftw-3.2.2/.libs -lfftw3 
+FFT_LIBS       = -L/home/lambert/libs/fftw-3.2.2/.libs/ -lfftw3 
 
 # For parallel execution, the correct path to MPI libraries must
 # be specified in MPI_LIBS (except for IBM if you use mpxlf)
@@ -138,9 +138,8 @@ RANLIB         = ranlib
 
 FLIB_TARGETS   = all
 
-LIBOBJS        = /users2/lambert/espresso-4.2.1/flib/ptools.a /users2/lambert/espresso-4.2.1/flib/flib.a /users2/lambert/espresso-4.2.1/clib/clib.a /users2/lambert/espresso-4.2.1/iotk/src/libiotk.a /users2/lambert/espresso-4.2.1/Multigrid/mglib.a
+LIBOBJS        = /home/lambert/espresso-4.2.1/flib/ptools.a /home/lambert/espresso-4.2.1/flib/flib.a /home/lambert/espresso-4.2.1/clib/clib.a /home/lambert/espresso-4.2.1/iotk/src/libiotk.a /home/lambert/espresso-4.2.1/Multigrid/mglib.a
 LIBS           = $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(PGPLOT_LIBS) $(LD_LIBS)
 
 # topdir for linking espresso libs with plugins
-TOPDIR = /users2/lambert/espresso-4.2.1
-
+TOPDIR = /home/lambert/espresso-4.2.1

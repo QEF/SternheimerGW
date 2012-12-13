@@ -31,19 +31,20 @@ SUBROUTINE gwq_readin()
   USE lsda_mod,      ONLY : lsda, nspin
   USE printout_base, ONLY : title
   USE control_gw,    ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
-                            zue, zeu,       &
-                            trans, reduce_io, tr2_gw, niter_gw,       &
+                            zue, zeu,  &
+                            trans, reduce_io, tr2_gw, niter_gw, tr2_green, &
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
-                            ext_recover, ext_restart, u_from_file, modielec, eta
-                           !elph 
+                            ext_recover, ext_restart, u_from_file, modielec, eta, &
+                            do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
+                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
   USE output,        ONLY : fildyn, fildvscf, fildrho
-  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3
+  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, kpoints, num_k_pts, w_of_q_start
   USE io_files,      ONLY : tmp_dir, prefix, trimcheck
   USE noncollin_module, ONLY : i_cons, noncolin
   USE ldaU,          ONLY : lda_plus_u
@@ -51,14 +52,17 @@ SUBROUTINE gwq_readin()
   USE io_global,     ONLY : ionode, stdout
   USE mp_global,     ONLY : nproc, nproc_pool, nproc_file, nproc_pool_file, &
                             nimage, my_image_id,    &
-                            nproc_image_file, nproc_image
+                            nproc_image_file, nproc_image, mp_global_end, mpime, &
+                            mp_barrier
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
 ! HL USE ramanm,        ONLY : eth_rps, eth_ns, lraman, elop, dek
 
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax
+  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
+                            greenzero
   USE gw_restart,    ONLY : gw_readfile
-  USE gwsigma,       ONLY : ecutsig, nbnd_sig
+  USE gwsigma,       ONLY : ecutsig, nbnd_sig, ecutsex, ecutsco, ecutpol, ecutgrn
+  USE gwsymm,        ONLY : use_symm
   !
   !
   IMPLICIT NONE
@@ -88,7 +92,13 @@ SUBROUTINE gwq_readin()
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, fpol, asr, lrpa, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta
+                       start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
+                       ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
+                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin,&
+                       wsigmamax, deltaw, wcoulmax,&
+                       use_symm, maxter_green, w_of_q_start, godbyneeds,& 
+                       padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
+                       greenzero
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -152,18 +162,18 @@ SUBROUTINE gwq_readin()
   !
   ! ... set default values for variables in namelist
   !
-  tr2_gw       = 1.D-10
+  tr2_gw       = 1.D-9
+  tr2_green    = 1.D-4
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
-  alpha_mix(1) = 0.7D0
+  alpha_mix(1) = 0.6D0
   niter_gw     = maxter
-  nmix_gw      = 4
+  nmix_gw      = 5
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
   iverbosity   = 0
   trans        = .TRUE.
-  lrpa         = .FALSE.
   lnoloc       = .FALSE.
   epsil        = .FALSE.
   zeu          = .TRUE.
@@ -177,7 +187,6 @@ SUBROUTINE gwq_readin()
   fildyn       = 'matdyn'
   fildrho      = ' '
   fildvscf     = ' '
-  ldisp        = .FALSE.
   nq1          = 0
   nq2          = 0
   nq3          = 0
@@ -191,15 +200,61 @@ SUBROUTINE gwq_readin()
   last_irr     = -1000
   start_q      = 1
   last_q       =-1000
-  ecutsig      = 1.3
- !ecutsig      = 2.2
+  ldisp        = .FALSE.
+  lrpa         = .FALSE.
+  maxter_green = 120
+
+!Sigma cutoff, correlation cutoff, exchange cutoff
+  ecutsig      = 2.5
+  plasmon      = 17.0d0
+  greenzero    = 0.0d0 
+ 
+!this is in case we want to define different cutoffs for 
+!W and G. G cannot exceed sigma.
+  ecutgrn      = ecutsig
+  ecutpol      = ecutsig
+  ecutsco      = ecutgrn
+  ecutsex      = 5.0
   nbnd_sig     = 8
+
+!Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
-  eta          = 0.04
-  !
+  godbyneeds   = .FALSE.
+  cohsex       = .FALSE.
+  padecont     = .FALSE.
+  multishift   = .FALSE.
+
+
+!imaginary component added to linear system should be in Rydberg
+  eta            = 0.04
+  kpoints        = .FALSE.
+  do_coulomb     = .FALSE.
+  do_sigma_c     = .FALSE.
+  do_sigma_exx   = .FALSE.
+  do_green       = .FALSE.
+  do_sigma_matel = .FALSE.
+  do_sigma_extra = .FALSE.
+  do_q0_only     = .FALSE.
+
+!Frequency variables
+  wsigmamin      =-10.0d0
+  wsigmamax      = 10.0d0
+  deltaw         =  0.2d0 
+  wcoulmax       = 80.0d0   
+
+ !Symmetry Default:yes!, which q, point to start on.
+ !can be used in conjunction with do_q0_only.
+  use_symm       = .TRUE.
+  w_of_q_start   = 1
+
+  
+
   ! ...  reading the namelist inputgw
-  !
+
   IF (ionode) READ( 5, INPUTGW, IOSTAT = ios )
+
+
+!HL TEST PARA FINE
 
    CALL mp_bcast(ios, ionode_id)
   !
@@ -208,6 +263,9 @@ SUBROUTINE gwq_readin()
   IF (ionode) tmp_dir = trimcheck (outdir)
   CALL bcast_gw_input ( ) 
   CALL mp_bcast(nogg, ionode_id )
+
+!HL FINE
+
   !
   ! ... Check all namelist variables
   !
@@ -286,11 +344,14 @@ SUBROUTINE gwq_readin()
            READ (5, *, iostat = ios) nfs
         ENDIF
      ENDIF
+
      CALL mp_bcast(ios, ionode_id )
      CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
      CALL mp_bcast(nfs, ionode_id )
+
      if (nfs > nfsmax) call errore('gwq_readin','Too many frequencies',1) 
      if (nfs < 1) call errore('gwq_readin','Too few frequencies',1) 
+
      IF (ionode) THEN
         IF ( TRIM(card) == 'FREQUENCIES' .OR. &
              TRIM(card) == 'frequencies' .OR. &
@@ -302,13 +363,55 @@ SUBROUTINE gwq_readin()
            END DO
         END IF
      END IF
+
      CALL mp_bcast(ios, ionode_id)
      CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
      CALL mp_bcast(fiu, ionode_id )
+
   ELSE
      nfs=0
      fiu=0.0_DP
   END IF
+
+! Reading in kpoints specified by user.
+! Note max number of k-points is 10. 
+! Why? Because that's the number I picked. 
+! If k-points option is not specified it defaults to Gamma. 
+
+ IF (kpoints) then
+     num_k_pts = 0
+     IF (ionode) THEN
+        READ (5, *, iostat = ios) card
+        READ (5, *, iostat = ios) card
+        IF ( TRIM(card)=='K_POINTS'.OR. &
+             TRIM(card)=='k_points'.OR. &
+             TRIM(card)=='K_points') THEN
+           READ (5, *, iostat = ios) num_k_pts
+        ENDIF
+     ENDIF
+     CALL mp_bcast(ios, ionode_id )
+     CALL errore ('gwq_readin', 'reading number of kpoints', ABS(ios) )
+     CALL mp_bcast(num_k_pts, ionode_id )
+     if (num_k_pts > 10) call errore('gwq_readin','Too many k-points',1) 
+     if (num_k_pts < 1) call errore('gwq_readin','Too few kpoints',1) 
+     IF (ionode) THEN
+        IF ( TRIM(card)=='K_POINTS'.OR. &
+             TRIM(card)=='k_points'.OR. &
+             TRIM(card)=='K_points') THEN
+           DO i = 1, num_k_pts
+           !DO i = 1, 2
+              !HL Need to convert frequencies from electron volts into Rydbergs
+              READ (5, *, iostat = ios) xk_kpoints(1,i), xk_kpoints(2,i), xk_kpoints(3,i)
+              !write(6,'(3f11.7)') xk_kpoints(:,i)
+           END DO
+        END IF
+     END IF
+     CALL mp_bcast(ios, ionode_id)
+     CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
+     CALL mp_bcast(xk_kpoints, ionode_id )
+ ELSE
+     num_k_pts = 1
+ ENDIF
   !
   !
   !   Here we finished the reading of the input file.
@@ -344,7 +447,19 @@ SUBROUTINE gwq_readin()
   ENDIF
 1001 CONTINUE
 
+  ! HL !!ATTENZIONE!! This is where the files from the SCF step are read.
+  ! QE description:
+  ! read_file reads the variables defining the system
+  ! in parallel execution, only root proc reads the file
+  ! and then broadcast the values to all other procs
+  ! distribute across pools k-points and related variables.
+  ! nks is defined by divide et_impera.
+  ! It also reads in wavefunctions in "distributed form" i.e. split over k-points...
+
+
+  CALL mp_barrier( )
   CALL read_file ( )
+
   tmp_dir=tmp_dir_save
   !
   IF (modenum > 3*nat) CALL errore ('gwq_readin', ' Wrong modenum ', 2)
@@ -469,23 +584,8 @@ SUBROUTINE gwq_readin()
      CALL mp_bcast(list, ionode_id )
   ENDIF
   
-  !HL Commmenting various epsil/lgaus stuff.
-  ! IF (epsil.AND.lgauss) &
-  !      CALL errore ('phq_readin', 'no elec. field with metals', 1)
-  !IF (modenum > 0) THEN
-  !   IF ( ldisp ) &
-  !        CALL errore('phq_readin','Dispersion calculation and &
-  !        & single mode calculation not possibile !',1)
-  !   nrapp = 1
-  !   nat_todo = 0
-  !   list (1) = modenum
-  ! ENDIF
-  !IF (modenum > 0 .OR. lraman ) lgamma_gamma=.FALSE.
   IF (.NOT.lgamma_gamma) asr=.FALSE.
-  !
    IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
        CALL errore('phq_readin','nq1, nq2, and nq3 must be greater than 0',1)
-  !
   RETURN
-  !
 END SUBROUTINE gwq_readin

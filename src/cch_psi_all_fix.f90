@@ -99,9 +99,10 @@ subroutine cch_psi_all_fix (n, h, ah, e, cw, ik, m)
   !HL need to remember the projector should be double complex
    ps (:,:) = ps(:,:) * dcmplx(alpha_pv,0.0d0)
 
-#ifdef __PARA
-  call mp_sum (ps, intra_pool_comm)
-#endif
+!#ifdef __PARA
+!  @10TION
+!  call mp_sum (ps, intra_pool_comm)
+!#endif
 
   hpsi (:,:) = (0.d0, 0.d0)
   call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &

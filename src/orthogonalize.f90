@@ -106,7 +106,8 @@ ELSE
    nbnd_eff=nbnd_occ(ikk)
 END IF
 #ifdef __PARA
-   call mp_sum(ps(:,1:nbnd_eff),intra_pool_comm)
+!@10TION
+!   call mp_sum(ps(:,1:nbnd_eff),intra_pool_comm)
 #endif
 !
 ! dpsi is used as work space to store S|evc>

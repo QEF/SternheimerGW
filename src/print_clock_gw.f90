@@ -29,9 +29,10 @@ subroutine print_clock_gw
   call print_clock ('newd')
   call print_clock ('dvanqq')
   call print_clock ('drho')
+
   if(trans) then 
      WRITE( stdout, * )
-     WRITE( stdout,  * ) '    DYNAMICAL MATRIX:'
+     WRITE( stdout,  * ) ' DYNAMICAL MATRIX:'
      call print_clock ('dynmat0')
      call print_clock ('gwqscf')
      WRITE( stdout, * )
@@ -39,6 +40,14 @@ subroutine print_clock_gw
      call print_clock ('solve_linter')
      call print_clock ('drhodv')
   endif
+
+  WRITE( stdout,  * ) ' G, W and sigma: '
+
+  call print_clock ('coulomb')
+  call print_clock ('greenlinsys')
+  call print_clock ('sigmac')
+  call print_clock ('sigma_exch')
+
   WRITE( stdout, * )
   call print_clock ('d2ionq')
   WRITE( stdout, * )
@@ -50,7 +59,6 @@ subroutine print_clock_gw
   call print_clock ('ortho')
   call print_clock ('cgsolve')
   call print_clock ('incdrhoscf')
-  call print_clock ('addusddens')
   call print_clock ('vpsifft')
   call print_clock ('dv_of_drho')
   call print_clock ('mix_pot')
@@ -61,15 +69,9 @@ subroutine print_clock_gw
 #else
 !  call print_clock ('symdvscf')
 #endif
-  call print_clock ('newdq')
-  call print_clock ('adddvscf')
-
-
-  call print_clock ('drhodvus')
   WRITE( stdout, * )
   WRITE( stdout, * )
   call print_clock ('cgsolve')
-
   call print_clock ('ch_psi')
   WRITE( stdout, * )
   call print_clock ('ch_psi')

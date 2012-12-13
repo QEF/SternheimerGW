@@ -23,14 +23,26 @@ SUBROUTINE initialize_gw()
   !
   ! ... nksq is the number of k-points, NOT including k+q points
   !
+   IF ( lgamma ) THEN
+      !
+      nksq = nks
+      ALLOCATE(ikks(nksq), ikqs(nksq))
+      DO ik=1,nksq
+         ikks(ik) = ik
+         ikqs(ik) = ik
+      ENDDO
+     !
+   ELSE
+     !
+      nksq = nks / 2
+      ALLOCATE(ikks(nksq), ikqs(nksq))
+      DO ik=1,nksq
+         ikks(ik) = 2 * ik - 1
+         ikqs(ik) = 2 * ik
+      ENDDO
+      !
+   END IF
 
-     nksq = nks / 2
-     ALLOCATE(ikks(nksq), ikqs(nksq))
-
-     DO ik=1,nksq
-        ikks(ik) = 2 * ik - 1
-        ikqs(ik) = 2 * ik
-     ENDDO
   !
   !
   !  Save again the status of the run because now the bands have been

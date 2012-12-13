@@ -1,4 +1,0 @@
-Wed Jun 29 17:13:47 BST 2011
-Moved the green_linsys.f90 from src5 to the trunk. This routine has been modified so that the correct kinetic energy, and pseudopotential operators get initialized in green_linsys which are then required by h_psiq.f90. I have tested this for the first few plane waves of the green's function the results are in grouppresentations/062811. There is still problems with convergence for w > 30 eV. Still do not understand this! After all the changes I've made... mildly infuriating!
-
-Still above 30 ev the Green's function is basically zero in most cases and the shape of the green's function in the region below this follws the SOS green's function very closely.

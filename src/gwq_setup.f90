@@ -123,23 +123,10 @@
   real(DP), allocatable :: w2(:)
 
   logical :: sym (48), is_symmorgwic, magnetic_sym
-  ! the symmetry operations
   integer, allocatable :: ifat(:)
   integer :: ierr
 
   call start_clock ('gwq_setup')
-  ! 0) A few checks
-  !
-!  IF (dft_is_gradient().and.(lraman.or.elop)) call errore('gwq_setup', &
-!     'third order derivatives not implemented with GGA', 1) 
-  !
-  !  read the displacement patterns 
-  !
-  !HL not sure displacement files are necessary
-  !IF (u_from_file) THEN
-  !   CALL gw_readfile('data_u',ierr)
-  !   IF (ierr /= 0) CALL errore('gw_setup', 'problem with modes file',1)
-  !ENDIF
   !
   ! 1) Computes the total local potential (external+scf) on the smooth grid
   !
@@ -170,6 +157,7 @@
      ux=0.0_DP
      if (dft_is_gradient()) call compute_ux(m_loc,ux,nat)
   ENDIF
+
   !
   ! 3) Computes the derivative of the xc potential
   !
@@ -201,21 +189,15 @@
      END IF
   endif
 
-  !
   ! 3.1) Setup all gradient correction stuff
-  !
+  ! call setup_dgc
 
-  call setup_dgc
-
-  !
   ! 4) Computes the inverse of each matrix of the crystal symmetry group
-  !
+
   !HL-
    call inverse_s ( )
-  !
-  !
+
   ! 5) Computes the number of occupied bands for each k point
-  !
 
   if (lgauss) then
      !
@@ -256,6 +238,8 @@
      else
         do ik = 1, nks
            nbnd_occ (ik) = nint (nelec) / degspin
+!HL writing out band numbers... why all four?
+!           write(6,*) nbnd_occ(ik)
         enddo
      endif
   endif
@@ -268,6 +252,8 @@
         emin = min (emin, et (ibnd, ik) )
      enddo
   enddo
+
+!@10TION@10TION
 #ifdef __PARA
   ! find the minimum across pools
   call mp_min( emin, inter_pool_comm )
@@ -296,312 +282,19 @@
   magnetic_sym = noncolin .AND. domag
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
 
-
-  ! HL-I have commented the symettrization routines which are relevant to phonons.
-
-  ! allocate and calculate rtau, the rotated position of each atom
-  ! sym (1:nsym) = .true.
-  ! call sgam_ph (at, bg, nsym, s, irt, tau, rtau, nat, sym)
-  !
-  ! nmodes = 3 * nat
-  ! minus_q = (modenum .eq. 0)
-  ! if minus_q=.t. set_irr will search for Sq=-q+G symmetry.
-  ! On output minus_q=.t. if such a symmetry has been found
-  ! TEMP: set_irr_* should not find again the small group of q
-  !
-
-#if 0
-  IF (lgamma) nsymq=nsym
-  isym=nsymq
-  allocate( w2(3*nat) )
-  if (modenum .ne. 0) then
-     ! workaround: isym in the following call should be nsymq,
-     ! but nsymq is re-calculated inside, so a copy is needed
-     IF (isym==0) THEN
-        sym(1:nsym)=.true.
-        call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
-        call sgam_ph (at, bg, nsym, s, irt, tau, rtau, nat, sym)
-        call mode_group (modenum, xq, at, bg, nat, nsym, s, irt, &
-                         minus_q, rtau, sym)
-        isym = copy_sym ( nsym, sym )
-     ENDIF
-     npertx=1
-     CALL allocate_pert()
-     call set_irr_mode (nat, at, bg, xq, s, invs, isym, rtau, irt, &
-          irgq, nsymq, minus_q, irotmq, t, tmq, npertx, u, npert, &
-          nirr, gi, gimq, iverbosity, modenum)
-  else
-     if (nsym > 1.and..not.lgamma_gamma) then
-        call set_irr (nat, at, bg, xq, s, invs, nsym, rtau, irt, &
-             irgq, nsymq, minus_q, irotmq, u, npert, &
-             nirr, gi, gimq, iverbosity,u_from_file,w2)
-        npertx = 0
-        DO irr = 1, nirr
-           npertx = max (npertx, npert (irr) )
-           WRITE(stdout, '("npert(irr)     ", i5 )'), npert(irr) !HL
-        ENDDO
-        CALL allocate_pert()
-        CALL set_irr_sym (nat, at, bg, xq, s, rtau, irt, irgq, nsymq,  &
-                          minus_q, irotmq, t, tmq, u, npert, nirr, npertx )
-     else
-        npertx=1
-        CALL allocate_pert()
-        call set_irr_nosym (nat, at, bg, xq, s, invs, nsym, rtau, irt, &
-             irgq, nsymq, minus_q, irotmq, t, tmq, npertx, u, npert, &
-             nirr, gi, gimq, iverbosity)
-     endif
-  endif
-  IF ( isym /= nsymq ) CALL errore('phq_setup',&
-           'internal error: mismatch in the order of small group',isym)
-  
-  IF (.NOT.time_reversal) minus_q=.false.
-  is_symmorphic=.true.
-  DO isym=1,nsymq
-     is_symmorphic=( is_symmorphic.and.(ftau(1,irgq(isym))==0).and.  &
-                                       (ftau(2,irgq(isym))==0).and.  &
-                                       (ftau(3,irgq(isym))==0) )
-  END DO
- search_sym=.true.
-  IF (.not.is_symmorphic) THEN
-     DO isym=1,nsymq
-        search_sym=( search_sym.and.(abs(gi(1,irgq(isym)))<1.d-8).and.  &
-                                    (abs(gi(2,irgq(isym)))<1.d-8).and.  &
-                                    (abs(gi(3,irgq(isym)))<1.d-8) )
-     END DO
-  END IF
-  IF (search_sym) THEN
-     CALL find_group(nsymq,sr,gname,code_group)
-     CALL set_irr_rap(code_group,nclass,char_mat,name_rap,name_class,ir_ram)
-     CALL divide_class(code_group,nsymq,sr,nclass,nelem,elem,which_irr)
-     IF (noncolin .and. domag) THEN
-        nsym_is=0.d0
-        DO isym=1,nsymq
-           IF (t_rev(isym)==0) THEN
-              nsym_is=nsym_is+1
-              sr_is(:,:,nsym_is) = sr(:,:,isym)
-           ENDIF
-        END DO
-        CALL find_group(nsym_is,sr_is,gname_is,code_group_is)
-     ENDIF
-     IF (.not.lgamma_gamma.and.modenum==0.and..NOT.u_from_file) &
-              CALL find_mode_sym (u, w2, at, bg, nat, nsymq, &
-                        sr, irt, xq, rtau, pmass, ntyp, ityp, 0)
-  ENDIF
-
-  IF (lgamma_gamma) THEN
-     ALLOCATE(has_equivalent(nat))
-     ALLOCATE(with_symmetry(3*nat))
-     ALLOCATE(n_equiv_atoms(nat))
-     ALLOCATE(equiv_atoms(nat,nat))
-     CALL find_equiv_sites (nat,nat,nsym,irt,has_equivalent,n_diff_sites, &
-                       n_equiv_atoms,equiv_atoms)
-
-     IF (n_diff_sites .LE. 0 .OR. n_diff_sites .GT. nat)            &
-          &      CALL errore('phq_setup','problem with n_diff_sites',1)
-     !
-     ! look if ASR can be exploited to reduce the number of calculations
-     ! we need to locate an independent atom with no equivalent atoms
-     nasr=0
-     IF (asr.AND.n_diff_sites.GT.1) THEN
-        DO na = 1, n_diff_sites
-           IF (n_equiv_atoms(na).EQ.1 ) THEN
-              nasr = equiv_atoms(na, 1)
-              GO TO 1
-           END IF
-        END DO
- 1      CONTINUE
-     END IF
-  END IF
-
-  if (fildrho.ne.' ') call io_pattern (fildrho,nirr,npert,u,+1)
-
-  if (start_irr < 0) call errore('phq_setup', 'wrong start_irr', 1)
-  last_irr_eff=last_irr
-  if (last_irr > nirr.or.last_irr<0) last_irr_eff=nirr
-#endif 0
-
   !  set the alpha_mix parameter
-
+  !HL probably want restart functionality here.
+  
   do it = 2, niter_gw
      if (alpha_mix (it) .eq.0.d0) alpha_mix (it) = alpha_mix (it - 1)
   enddo
 
-  !
-  ! Set flmixdpot
-  !
-
-  if (reduce_io) then
+!HL always reduce_io...
+  !if (reduce_io) then
      flmixdpot = ' '
-  else
-     flmixdpot = 'mixd'
-  endif
-  !
-  !
-  ! 8) Set the ubar
-  !
-
-  !ubar(:) =( 0.d0,0.d0)
-
-  !
-  !   NB: the following instructions are for testing purposes of delta rho
-  !       the user must know how many atoms there are in the system
-  !
-  !      ubar(1)=(1.d-3,0.d0)
-  !      ubar(5)=(1.d0,0.d0)
-  !      ubar(6)=(1.d0,0.d0)
-  !
-  !  9) set the variables needed for the partial computation:
-  !     nat_todo, atomo, comp_irr
-#if 0
- ALLOCATE(ifat(nat))
-  comp_irr = 0
-  comp_irr(0)=1
-  IF (nrapp==0 .AND. nat_todo==0) THEN
-     !
-     !  Case 1)  The partial computation option is not used, make all
-     !           representation between start_irr and last_irr
-     !
-     IF (start_irr <= last_irr_eff) comp_irr(start_irr: last_irr_eff) = 1
-     !
-  ELSEIF (nat_todo /= 0) THEN
-     !
-     !   Case 2) Sets the atoms which must be computed: the requested
-     !   atoms and all the symmetry related atoms
-     !
-     ifat = 0
-     DO na = 1, nat_todo
-        ifat (atomo (na) ) = 1
-        DO isym = 1, nsymq
-           irot = irgq (isym)
-           ifat (irt (irot, atomo (na) ) ) = 1
-        ENDDO
-     ENDDO
-     !
-     !  Find the irreducible representations where the required atoms moves
-     !
-     imode0 = 0
-     do irr = 1, nirr
-        do ipert = 1, npert (irr)
-           mu = imode0 + ipert
-           do na = 1, nat
-              if (ifat (na) == 1 .and. comp_irr (irr) == 0) then
-                 do ipol = 1, 3
-                    nu = 3 * (na - 1) + ipol
-                    if (abs (u (nu, mu) ) > 1.d-6)  comp_irr (irr) = 1
-                 enddo
-              endif
-           enddo
-        enddo
-        imode0 = imode0 + npert (irr)
-     enddo
-  ELSEIF (nrapp /= 0) THEN
-     !
-     !   Case 3) The representation which must be computed are given
-     !           as input
-     !
-     if (nrapp > nirr) call errore ('phq_setup', 'too many representations', 1)
-     do irr = 1, nirr
-        do mu = 1, nrapp
-           if (list (mu) == irr) comp_irr (irr) = 1
-        enddo
-     enddo
-  ELSE
-    call errore('phq_setup','nat_todo or nrap wrong',1)
-  ENDIF
-  !
-  !  The gamma_gamma case needs a different treatment
-  !
-  if (lgamma_gamma) then
-     with_symmetry=1
-     comp_irr = 0
-     comp_irr(0)=1
-     do na=1,nat
-        if (has_equivalent(na)==0) then
-            do ipol=1,3
-               comp_irr(3*(na-1)+ipol)=1
-               with_symmetry(3*(na-1)+ipol)=0
-            enddo
-        endif
-     enddo
-     if (nasr>0) then
-        do ipol=1,3
-           comp_irr(3*(nasr-1)+ipol)=0
-           with_symmetry(3*(nasr-1)+ipol)=0
-        enddo
-     endif
-     IF (start_irr <= last_irr_eff) THEN
-        DO irr=1,start_irr-1
-           comp_irr(irr) = 0
-        ENDDO
-        DO irr=last_irr_eff+1,3*nat
-           comp_irr(irr) = 0
-        ENDDO
-     ENDIF
-  endif
-!
-!  In this case the number of irreducible representations to compute
-!  has been done elsewhere
-!
-  IF (nimage > 1 ) THEN
-     DO irr=0,nirr
-        comp_irr(irr)=comp_irr_iq(irr,current_iq)
-     ENDDO
-  ENDIF
-
-  !
-  !  Compute how many atoms moves and set the list atomo
-  !
-  ifat = 0
-  imode0 = 0
-  DO irr = 1, nirr
-     if (comp_irr (irr) .eq.1) then
-        do ipert = 1, npert (irr)
-           do na = 1, nat
-              do ipol = 1, 3
-                 mu = 3 * (na - 1) + ipol
-                 if (abs (u (mu, imode0+ipert) ) > 1.d-12) ifat (na) = 1
-              enddo
-           enddo
-        enddo
-     endif
-     imode0 = imode0 + npert (irr)
-  ENDDO
-  nat_todo = 0
-  DO na = 1, nat
-     IF (ifat (na) == 1) THEN
-        nat_todo = nat_todo + 1
-        atomo (nat_todo) = na
-     ENDIF
-  ENDDO
-
-  DEALLOCATE(ifat)
-#endif
-!HL
-!   Initialize done_irr, find max dimension of the irreps
-!
-!  all_comp = nat_todo.eq.nat.or.lgamma_gamma
-!  all_done = .FALSE.
-!  npertx = 0
-!  done_irr = 0
-!  DO irr = 1, nirr
-!     npertx = max (npertx, npert (irr) )
-!  ENDDO
-!HL
-
-!HL
-!  set to zero the variable written on file
-!  dyn=(0.0_DP,0.0_DP)
-!  dyn00=(0.0_DP,0.0_DP)
-!  dyn_rec=(0.0_DP,0.0_DP)
-!  IF (epsil.and..not.done_epsil) epsilon=0.0_DP
-!  IF (zeu.and..not.done_zeu) zstareu=0.0_DP
-!  IF (lraman.and..not.done_lraman) ramtns=0.0_DP
-!  IF (elop.and..not.done_elop)  eloptns=0.0_DP
-!  where_rec='phq_setup.'
-!  rec_code=-40
-!  CALL ph_writefile('data',0)
-!  deallocate(w2)
-!HL
+  !else
+  !   flmixdpot = 'mixd'
+  !endif
 
   where_rec='gwq_setup.'
   rec_code=-40

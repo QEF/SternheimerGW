@@ -5,24 +5,19 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
-!----------------------------------------------------------------------------
-
-SUBROUTINE setup_nscf (xq)
-
   !----------------------------------------------------------------------------
-  !
-  ! ... This routine initializes variables for the non-scf calculations at k 
-  ! ... and k+q required by the linear response calculation at finite q.
-  ! I think I can just use the monkhorst pack generated q-mesh to do a run.
-  ! This approach means doing an nscf step for each of the unique q-points to generate
-  ! the full k, k+q grid with all the weights and nice symmetry reduction properties built in.
-  ! ... Here we find the symmetry group of the crystal that leaves
-  ! ... the GW q-vector (xq) unchanged; determines the k- and k+q points in the irreducible BZ
+SUBROUTINE setup_green (xq)
+  !----------------------------------------------------------------------------
+  ! ... This routine initializes variables for the non-scf calculations required to generate the 
+  ! ... wave functions and solve the green linear system it requires 
+  ! ... all the points in the small group of G_{"k-q"}.
+  ! ... from the list of symmetry operations of this group we can then generate \sum_{R} W(R^{-1}q).
+  ! ... required for the convolution to form sigma_k.
   ! ... Needed on input (read from data file):
   ! ... "nsym" crystal symmetries s, ftau, t_rev, "nrot" lattice symetries "s"
   ! ... "nkstot" k-points in the irreducible BZ wrt lattice symmetry
   ! ... Produced on output:
-  ! ... symmetries ordered with the "nsymq" GW symmetries first
+  ! ... symmetries ordered with the "nsym of k-q" GW symmetries first
   ! ... "nkstot" k- and k+q-points in the IBZ calculated for the GW symmetries.)
   ! ... Misc. data needed for running the non-scf calculation
 
@@ -52,7 +47,6 @@ SUBROUTINE setup_nscf (xq)
   USE start_k,            ONLY : nks_start, xk_start, wk_start
   USE paw_variables,      ONLY : okpaw
   USE modes,              ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
-  USE disp,               ONLY : xk_kpoints
   !
   IMPLICIT NONE
   !
@@ -62,7 +56,6 @@ SUBROUTINE setup_nscf (xq)
   LOGICAL  :: minus_q, magnetic_sym, sym(48)
   !
   INTEGER, EXTERNAL :: n_atom_wfc
-  INTEGER   :: ik
   !
   IF ( .NOT. ALLOCATED( force ) ) ALLOCATE( force( 3, nat ) )
   !
@@ -87,24 +80,18 @@ SUBROUTINE setup_nscf (xq)
 
   ! ... Symmetry and k-point section
   ! ... time_reversal = use q=>-q symmetry for k-point generation
-  !HL time_reversal 
+
   magnetic_sym = noncolin .AND. domag 
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
 
+  !
+  ! ... smallg_q flags to false the  symmetry operations of the crystal
+  ! ... that are not symmetry operations of the small group of q
+  !
+
   sym(1:nsym)=.true.
-!Hack for turning off minus_q=.true.
-!  write(6,'("MODE NUMBER!")')
-!  write(6,*) modenum
-!  HL turns off minus_q = .true.
-!  modenum = 0
-!  write(6,'("MODE NUMBER!")')
-!  write(6,*) modenum
-! ... smallg_q flags to false the  symmetry operations of the crystal
-! ... that are not symmetry operations of the small group of q.
-!@10TION HL-symmfix.
-! minus_q=.false.
-! HL this condition enforces that Sq = q exactly! none of this q -> -q + G none-sense. 
-  modenum = -3
+
+! xq should = k find all symmetry operations that leave k invariant.
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
 
   IF ( .not. time_reversal ) minus_q = .false.
@@ -112,17 +99,6 @@ SUBROUTINE setup_nscf (xq)
   ! ... for single-mode calculation: find symmetry operations
   ! ... that leave the chosen mode unchanged. Note that array irt 
   ! ... must be available: it is allocated and read from xml file 
-!HL Commenting Phonon specific symmetrization routine:
-!# if 0
-! if (modenum /= 0) then
-! allocate(rtau (3, 48, nat))
-!  call sgam_ph (at, bg, nsym, s, irt, tau, rtau, nat, sym)
-!  call mode_group (modenum, xq, at, bg, nat, nrot, s, irt, &
-!                      minus_q, rtau, sym)
-!  deallocate (rtau)
-!# endif
-
-  !
   ! Here we re-order all rotations in such a way that true sym.ops.
   ! are the first nsymq; rotations that are not sym.ops. follow
   !
@@ -145,19 +121,25 @@ SUBROUTINE setup_nscf (xq)
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
   ! ... lattice, with the full point symmetry of the lattice.
   !
+
   nkstot = nks_start
   xk(:,1:nkstot) = xk_start(:,1:nkstot)
+
+  !write(6,'(3f11.7)') xk(:,:)
+
   wk(1:nkstot)   = wk_start(1:nkstot)
-  ! ... If some symmetries of the lattice no longer apply for this particular perturbation
-  ! ... "irreducible_BZ" computes generates the missing k-points with the reduced number of.
-  ! ... symmetry operations. 
+
+  !
+  ! ... If some symmetries of the lattice are missing in the crystal,
+  ! ... "irreducible_BZ" computes the missing k-points.
+  !
+
   CALL irreducible_BZ (nrot, s, nsymq, minus_q, at, bg, npk, nkstot, xk, wk, &
                        t_rev)
-  !
-  ! ... add k+q to the list of k
-  !
-  CALL set_kplusq( xk, wk, xq, nkstot, npk )
-  !
+  
+  ! NOW xk, wk should have the appropriate kpoints and weights for all the points required in the green's 
+  ! function. 
+
   IF ( lsda ) THEN
      !
      ! ... LSDA case: two different spin polarizations,
@@ -208,26 +190,11 @@ SUBROUTINE setup_nscf (xq)
      !
   ENDIF
   !
-  ! ...distribute k-points (and their weights and spin indices)
+  ! ... distribute k-points (and their weights and spin indices)
   !
-  ! CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
+  !HL this should be cause for concern...
+  CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
   !
-  ! HL @10TION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! distribute k-points (and their weights and spin indices)
-  ! Actually this causes problems with the calls to PW... so I think I still need to use
-  ! Divide et impera ... an alternate scheme is this use n processors. leave npool as 1 
-  ! and then have a separate variable for the G vectors.   
-  ! Up to here each  processor has a full slice of kpoints.
-  ! CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
-  ! HL 
-  ! After divide et impera xk on each processor has as its first entries it's 
-  ! unique slice of k-points 1-2, 3-4, etc.
-  ! if I turned off divide et impera each xk list would be unperturbed...  
-  ! Should mimic no parallelisation across k-points. 
-    nks = nkstot
-  ! DO i = 1, nkstot
-  !    WRITE(1000+mpime, '(4f13.9)') xk(:,i), wk(i) 
-  ! ENDDO
 #else
   !
   nks = nkstot

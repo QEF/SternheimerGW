@@ -9,7 +9,7 @@
 SUBROUTINE clean_pw_gw(iq)
   !-----------------------------------------------------------------------
   !
-  ! This routine deallocate all the variables of pwscf and of the
+  ! This routine deallocates all the variables of pwscf and of the
   ! GW code and resets the same variables as after reading input in
   ! gwq_readin, so that it is possible to start a calculation at
   ! a new q.
@@ -37,6 +37,8 @@ SUBROUTINE clean_pw_gw(iq)
   twfcollect=.FALSE. 
 
   CALL clean_pw( .FALSE. )
+! CALL clean_pw( .TRUE. )
+
   CALL deallocate_gwq()
   rec_code_read=-1000
   !
@@ -44,7 +46,9 @@ SUBROUTINE clean_pw_gw(iq)
   !
   CALL close_gwq( .TRUE. )
   !
-  CALL restore_gw_input_variables()
+  !HL not sure this is necessary
+  !all stems from partial module which should probably be trashed... 
+  !CALL restore_gw_input_variables()
   !
 RETURN
 END SUBROUTINE clean_pw_gw

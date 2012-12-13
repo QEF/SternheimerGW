@@ -23,6 +23,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   !   and check PW for how it stores/symmetrizes charge densities.
 !----------------------------------------------------------------------------
 !------------------------------------------------------------------------------
+! grep @10TION for all the instances where I've turned off the regular
+! PH parallelism which always assumes we have split k-points across processors.
+! Each processor has a full slice of k-points. 
+
+
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
@@ -62,8 +67,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE recover_mod,          ONLY : read_rec, write_rec
 
   ! used oly to write the restart file
-  USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm
-  USE mp,                   ONLY : mp_sum
+  USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mpime, mp_global_end,&
+                                   intra_image_comm
+
+  USE mp,                   ONLY : mp_sum, mp_barrier
   !  
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
 
@@ -82,9 +89,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (nrxxs)
 
+! HL prec
+! HL careful now... complexifying preconditioner:
   real(DP) , allocatable :: h_diag (:,:)
-
-  ! h_diag: diagonal part of the Hamiltonian
+! h_diag: diagonal part of the Hamiltonian
   real(DP) :: thresh, anorm, averlt, dr2
 
   ! thresh: convergence threshold
@@ -121,10 +129,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! dbecsum: the derivative of becsum
   ! becsum1 PAW array.
   REAL(DP), allocatable :: becsum1(:,:,:)
-
-  !HL temp array so I can look at fourier components of drho.
-  complex(DP), allocatable :: drhoaux (:,:)
   COMPLEX (DP), ALLOCATABLE :: hpsi(:,:)
+  !For approx, mixing scheme.
+  real(kind=DP) :: DZNRM2
+  complex(kind=DP) :: ZDOTC
+  external ZDOTC, DZNRM2
 
   logical :: conv_root,  & ! true if linear system is converged
              exst,       & ! used to open the recover file
@@ -154,18 +163,17 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
  
-  !HL Q:what is the difference between tr_cgsolve and thresh? 
-  REAL(DP) :: tr_cgsolve = 1.0d-10
-  external ch_psi_all, cg_psi, cch_psi_all, ccg_psi, cch_psi_all_fix
+  !external ch_psi_all, cg_psi, ccg_psi, cch_psi_all_fix
+   external ch_psi_all, cg_psi, cch_psi_all_fix
   
   IF (rec_code_read > 20 ) RETURN
 
   !HL- Allocate arrays for dV_scf (need to alter these from (nrxx, nspin_mag, npe) to just (nrxx, nspin_mag).
-  npe = 1
+  npe    = 1
   imode0 = 1
-  irr = 1
-  ipert = 1
-  lter = 0
+  irr    = 1
+  ipert  = 1
+  lter   = 0
 
 !HLallocate (hpsi(npwx*npol, 4)) ! Test array for whether linear system is being properly solved
   call start_clock ('solve_linter')
@@ -182,38 +190,27 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   endif
 
   allocate (drhoscfh ( nrxx , nspin_mag))    
-
-
-  !HL  allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat , nspin_mag, npe))    
   allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))    
-  allocate (drhoaux ( nrxx , nspin_mag))
-
 
 !Complex eigenvalues
   allocate (etc(nbnd, nkstot))
 
-
   IF (okpaw) THEN
-!HL  allocate (mixin(nrxx*nspin_mag*npe+(nhm*(nhm+1)*nat*nspin_mag*npe)/2) )
-!    allocate (mixout(nrxx*nspin_mag*npe+(nhm*(nhm+1)*nat*nspin_mag*npe)/2) )
      allocate (mixin(nrxx*nspin_mag+(nhm*(nhm+1)*nat*nspin_mag)/2) )
      allocate (mixout(nrxx*nspin_mag+(nhm*(nhm+1)*nat*nspin_mag)/2) )
      mixin=(0.0_DP,0.0_DP)
   ENDIF
   IF (noncolin) allocate (dbecsum_nc (nhm,nhm, nat , nspin, npe))
-
   allocate (aux1 ( nrxxs, npol))    
   allocate (h_diag ( npwx*npol, nbnd))    
 
-
   if (rec_code_read == 10.AND.ext_recover) then
-     ! restart from GW calculation
+    ! restart from GW calculation
      IF (okpaw) THEN
         CALL read_rec(dr2, iter0, npe, dvscfin, dvscfins, drhoscfh, dbecsum)
         CALL setmixout(npe*nrxx*nspin_mag,(nhm*(nhm+1)*nat*nspin_mag*npe)/2, &
                     mixin, dvscfin, dbecsum, ndim, -1 )
      ELSE
-        CALL read_rec(dr2, iter0, npe, dvscfin, dvscfins, drhoscfh)
      ENDIF
      rec_code=0
   else
@@ -222,42 +219,18 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
     where_rec='no_recover'
   endif
 
-  IF (ionode .AND. fildrho /= ' ') THEN
-     INQUIRE (UNIT = iudrho, OPENED = exst)
-     IF (exst) CLOSE (UNIT = iudrho, STATUS='keep')
-     CALL DIROPN (iudrho, TRIM(fildrho)//'.u', lrdrho, exst)
-  END IF
-
   IF (convt) GOTO 155
-
-!HL commenting lmetq related procedures.
-! if q=0 for a metal: allocate and compute local DOS at Ef
-!  lmetq0 = lgauss.and.lgamma
-!  if (lmetq0) then
-!     allocate ( ldos ( nrxx  , nspin_mag) )
-!     allocate ( ldoss( nrxxs , nspin_mag) )
-!     IF (okpaw) THEN
-!        allocate (becsum1 ( (nhm * (nhm + 1))/2 , nat , nspin_mag))
-!        call localdos_paw ( ldos , ldoss , becsum1, dos_ef )
-!     ELSE
-!        call localdos ( ldos , ldoss , dos_ef )
-!     ENDIF
-!  endif
-!HL
-
-  ! In this case it has recovered after computing the contribution
-  ! to the dynamical matrix. This is a new iteration that has to 
-  ! start from the beginning.
+! In this case it has recovered after computing the contribution
+! to the dynamical matrix. This is a new iteration that has to 
+! start from the beginning.
 
   IF (iter0==-1000) iter0=0
 
-!
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
 
-!@HL Again manually shifting the eigenvalues so the top of the valence band is at zero. This is done in SGW
-!by just shift the local potential down. 
-!  et(:,:) = et(:,:) - (6.58D0/13.605)
+!HL all fine...
+!write(6,*) nbnd_occ(:)
 
   do kter = 1, niter_gw
      iter = kter + iter0
@@ -265,14 +238,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      lintercall = 0
      drhoscf(:,:) = (0.d0, 0.d0)
-     !HL
-     !dbecsum(:,:,:,:) = (0.d0, 0.d0)
      dbecsum(:,:,:) = (0.d0, 0.d0)
 
      IF (noncolin) dbecsum_nc = (0.d0, 0.d0)
-     !
      if (nksq.gt.1) rewind (unit = iunigk)
-
 !start kpoints loop
      do ik = 1, nksq
         if (nksq.gt.1) then
@@ -280,32 +249,27 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 100        call errore ('solve_linter', 'reading igk', abs (ios) )
         endif
 
-
-
 ! lgamma is a q=0 computation
         if (lgamma)  npwq = npw
 
 ! k and k+q mesh defined in initialize_gw:
 !       ikks(ik) = 2 * ik - 1
 !       ikqs(ik) = 2 * ik
-
         ikk = ikks(ik)
         ikq = ikqs(ik)
-
-!      WRITE(stdout, '("ikk  ", i4, " ikq ", i4, " ik ", i4, " nksq ", i4)')ikk, ikq, ik, nksq
 
         if (lsda) current_spin = isk (ikk)
         if (.not.lgamma.and.nksq.gt.1) then
            read (iunigk, err = 200, iostat = ios) npwq, igkq
 200        call errore ('solve_linter', 'reading igkq', abs (ios) )
         endif
-       !   Calculates beta functions (Kleinman-Bylander projectors), with
-       !   structure factor, for all atoms, in reciprocal space
-       !   HL the beta functions (vkb) are being generated properly.  
+       !Calculates beta functions (Kleinman-Bylander projectors), with
+       !structure factor, for all atoms, in reciprocal space
+       !HL the beta functions (vkb) are being generated properly.  
 
         call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
 
-       ! Reads unperturbed wavefuctions psi(k) and psi(k+q)
+       !Reads unperturbed wavefuctions psi(k) and psi(k+q)
 
         if (nksq.gt.1) then
            if (lgamma) then
@@ -316,32 +280,16 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            endif
         endif
 
-!write(6,*)evq
-!DEBUG the eigenvectors at k and k+q should be exactly the same as in the PH sample code here
-!        WRITE(6,*)npwq, igkq 
-!        do ibnd=1,4
-!          WRITE(6,'("NBND", i4)' ) ibnd
-!          do ig = 1, npwq
-!          WRITE (stdout, '("psi_k   ",  3f7.4)') evc(ig, ibnd)*conjg(evc(ig,ibnd))
-!         WRITE (stdout,*)evq(ig, ibnd)
-!          enddo
-!        enddo
-! Compute the kinetic energy
-! HL- I checked this. It is reading in the eigenfunctions at this point just right. 
-! through all iterations.
-
         do ig = 1, npwq
            g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
                           (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
 
-!HL gvectors/kvectors are also being read properly...
-
         h_diag = 0.d0
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              h_diag(ig,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+              h_diag(ig,ibnd)= 1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
            enddo
            IF (noncolin) THEN
               do ig = 1, npwq
@@ -349,30 +297,18 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               enddo
            END IF
         enddo
-        !
-        ! diagonal elements of the unperturbed hamiltonian
 
-!HL changing indices freezing perturbations.
+!HL indices freezing perturbations.
+           mode = 1
+           nrec = ik
 
-        ! do ipert = 1, npe
-        !   mode = imode0 + ipert
-        !   nrec = (ipert - 1) * nksq + ik
-            mode = 1
-            nrec = ik
-
-           !
-           !  and now adds the contribution of the self consistent term
-           !
-
+!and now adds the contribution of the self consistent term
            if (where_rec =='solve_lint'.or.iter>1) then
-
+             !HL is this necessary?
              ! After the first iteration dvbare_q*psi_kpoint is read from file
-
               call davcio (dvpsi, lrbar, iubar, nrec, - 1)
-
              ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
              ! dvscf_q from previous iteration (mix_potential)
-
               call start_clock ('vpsifft')
               do ibnd = 1, nbnd_occ (ikk)
                 !FFT translated according to igk
@@ -381,258 +317,113 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                 !FFT translated according to igkq: DeltaV(q)psi(k).
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
-
               call stop_clock ('vpsifft')
-
-        ! In the case of US pseudopotentials there is an additional 
-        ! selfconsist term which comes from the dependence of D on 
-        ! V_{eff} on the bare change of the potential
-        ! HL- adddvscf:
-        ! This routine computes the contribution of the selfconsistent
-        ! change of the potential (i.e. of the augmentation charge  to the known
-        ! part of the linear system system and adds it to dvpsi.
-        ! It implements the second term in Eq. B30 of PRB 64, 235118 (2001). 
-        ! HL but we'll comment this since the V^SCF is solely due to rho_v(r)
-        ! no change in augmentation charge, S, D, ... 
-        ! call adddvscf (ipert,ik)
-
            else
-
         !  At the first iteration dvbare_q*psi_kpoint is calculated
         !  and written to file
-        !  call dvqpsi_us (ik, 1, .false.)
-        !  call dvqpsi_us (igpert, ik, 1, .false.)
-
             call dvqpsi_us (dvbarein, ik, 1, .false.)
-
-        !    WRITE (6,'("dvqpsi_us")')
-        !    WRITE (6, *) dvbarein(:)
-
             call davcio (dvpsi, lrbar, iubar, nrec, +1)
            endif
 
-           ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
-           ! Apply -P_c^+.
-           ! -P_c^ = - (1-P_v^)  need to check consistency of GW routine and this one:
-           ! SGW := call emptyproj ( evq, dvpsi)
-
+        ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
+        ! Apply -P_c^+.
+        ! -P_c^ = - (1-P_v^):
+        ! SGW := call emptyproj ( evq, dvpsi)
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
-
-!           WRITE (6,'("Orthogonalize")')
-!           WRITE (6, *) dpsi(:,1)*conjg(dpsi(:,1))
-
            if (where_rec=='solve_lint'.or.iter > 1) then
-
-              ! starting value for delta_psi is read from iudwf
-
+              !starting value for delta_psi is read from iudwf
                nrec1 = ik
-
-               call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
-               call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
-               call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
-              
-             ! threshold for iterative solution of the linear system
-              thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
-
+              !HL Don't need to read/write the full wave fxn at each iteration...
+            !  call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
+              call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
+              call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
+             !  dpsi(:,:)  = (0.d0, 0.d0) 
+             !  dpsim(:,:) = (0.d0, 0.d0) 
+             !  dpsip(:,:) = (0.d0, 0.d0) 
+              !threshold for iterative solution of the linear system
+              !write(6,*)1.d-1*sqrt(dr2), 1.d-4
+               thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
            else
-
-              !
-              !  At the first iteration dpsi and dvscfin are set to zero
-              !
-              
+            !
+            ! At the first iteration dpsi and dvscfin are set to zero
+            !
               dpsi(:,:) = (0.d0, 0.d0) 
               dpsim(:,:) = (0.d0, 0.d0) 
               dpsip(:,:) = (0.d0, 0.d0) 
-              dvscfin (:, :) = (0.d0, 0.d0)
-
+              dvscfin(:, :) = (0.d0, 0.d0)
               !
               ! starting threshold for iterative solution of the linear system
               !
-
               thresh = 1.0d-2
            endif
 
-!
-!HL putting in cgsolver variable for testing purposes to figure out why everything has decided to stop 
-!working with the linear system solvers.
-!        cgsolver = .true.
-!        cgsolver = .false.
-!        if(cgsolver.eq.true.) then
-!        call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi, &
-!                          h_diag, npwx, npwq, tr_cgsolve, ik, lter, conv_root, &
-!                          anorm, nbnd_occ(ikk), npol )
-!        write(6,*) dpsi(:,2) 
-!        cw = dcmplx ( w, 0.00734981) ! 0.1 eV imaginary component
-!           else
-!
-         etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
-         cw       =  CMPLX(0.0d0, fiu(iw), kind=DP) 
- 
-         call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+       etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
+       cw       = CMPLX(0.0d0,  fiu(iw), kind=DP) 
 
-         call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+!HL should just use cgsolve_all when fiu(iw) = 0.0d0! probably gain at least factor of 
+!two for static case...
 
-! HL Swapping thresh for tr_cgsolve might make good sense... 
-! With threshold at 1.0d0-10 cgsolve and cbcgsolve
-! give identical results, with no imaginary part as expected for w = 0. 
+       if(iw.eq.1) then
+           call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
+                      dpsim(:,:) = dpsip(:,:)
+       else
+            call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
 
-!       call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-!                npwx, npwq, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-!       call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-!                npwx, npwq, tr_cgsolve, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-!           endif
-
-! HL - DEBUG same as in SGW. Going to check that (H-e_{vk}+alphaPv*)dpsi + Pcdvpsi = 0
-! For some reason in SGW they only check (H-et+alpha*Pv)*dpsi-dvpsi = 0 
-! Reason = dvpsi already projected onto valence states.
-!          if (ikk.eq.1) then
-!          WRITE(stdout, '("(H-et+alpha*Pv)*dpsi-dvpsi=0")')
-!          do ibnd = 1, nbnd_occ(ikk)
-!             call ch_psi_all(ndim, dpsi, hpsi, et(1,ikk), ikk, nbnd_occ(ikk))
-!             hpsi(:,1)  = hpsi(:,1) - dvpsi(:,1) 
-!             do ig = 1, npwq
-!              WRITE(stdout, '("LHS - RHS ", 3f15.5 )'), hpsi(ig,1) 
-!             enddo
-!          enddo
-!          endif
-! HL
+            call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+       endif
 
            ltaver = ltaver + lter
            lintercall = lintercall + 1
 
-           if (.not.conv_root) WRITE( stdout, '(5x,"kpoint",i4," ibnd",i4,  &
-                &              " solve_linter: root not converged ",e10.3)') &
-                &              ik , ibnd, anorm
-
-          ! writes delta_psi on iunit iudwf, k=kpoint,
-          ! nrec1 = (ipert - 1) * nksq + ik
+         if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4, &
+              &              " solve_linter: root not converged ",e10.3)')  &
+              &                ik , ibnd, anorm
 
            nrec1 =  ik
+           dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
 
-!HL Writing the positive and negative frequency components.
-!   call davcio (dpsip(:,:), lrdwf, iudwfp, nrec1, + 1)
-!dpsi is needed in incdrhoscf to generate the \DeltaV from the \Delta n(r).
-!factor of 0.5 is to remove the factor of 2 included in the spin weights by Q.E.
-!i.e. sum over k points weights is 2 x 1. 
- 
-          !if(cgsolver.ne..true.) dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
-
-          dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
-
-!          write(6,'("dpsi")')
-!          WRITE (6, *) dpsi(:,1)*conjg(dpsi(:,1))
-
-          call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
-          call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
-          call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
+          !call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
+           call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
+           call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
 
           ! calculates dvscf, sum over k => dvscf_q_ipert
           ! incdrhoscf:  This routine computes the change of the charge density due to the
           ! perturbation. It is called at the end of the computation of the
           ! change of the wavefunction for a given k point.
-
            weight = wk (ikk)
            IF (noncolin) THEN
               call incdrhoscf_nc(drhoscf(1,1),weight,ik, &
                                        dbecsum_nc(1,1,1,1,ipert))
            ELSE
-            !
-            !HL
-            !call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
-            !             dbecsum(1,1,current_spin,ipert))
-             call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
-                               dbecsum(1,1,current_spin))
-
-!            write(6,*)
-!            write(6,*)drhoscf(:,current_spin)
+              call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
+                                dbecsum(1,1,current_spin))
            END IF
      enddo 
-! on kpoints
-#ifdef __PARA
-     !  The calculation of dbecsum is distributed across processors (see addusdbec)
-     !  Sum over processors the contributions coming from each slice of bands
 
-     IF (noncolin) THEN
-        call mp_sum ( dbecsum_nc, intra_pool_comm )
-     ELSE
-        call mp_sum ( dbecsum, intra_pool_comm )
-     ENDIF
-#endif
+        if (doublegrid) then
+             do is = 1, nspin_mag
+                call cinterpolate (drhoscfh(1,is), drhoscf(1,is), 1)
+             enddo
+        else
+                call zcopy (nspin_mag*nrxx, drhoscf, 1, drhoscfh, 1)
+        endif
 
-     if (doublegrid) then
-        do is = 1, nspin_mag
-              call cinterpolate (drhoscfh(1,is), drhoscf(1,is), 1)
-        enddo
-     else
-        call zcopy (nspin_mag*nrxx, drhoscf, 1, drhoscfh, 1)
-     endif
+        call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
 
-! In the noncolinear, spin-orbit case rotate dbecsum
-! HL IF (noncolin.and.okvan) CALL set_dbecsum_nc(dbecsum_nc, dbecsum, npe)
+!!!! HL @10TION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!#ifdef __PARA
+!   Reduce the delta rho across pools
+!    call mp_sum ( drhoscf, inter_pool_comm )
+!    call mp_sum ( drhoscfh, inter_pool_comm )
+!    IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
+!#endif
 
-   call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
+!       if (fildrho.ne.' ') call davcio_drho (drhoscfh(1,1), lrdrho, &
+!                                             iudrho, imode0+ipert, +1)
 
-!  call addusddens (drhoscfh, dbecsum, 1, 1, 0)
-
-#ifdef __PARA
-     !   Reduce the delta rho across pools
-     call mp_sum ( drhoscf, inter_pool_comm )
-     call mp_sum ( drhoscfh, inter_pool_comm )
-     IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
-#endif
-
-!   q=0 in metallic case deserve special care (e_Fermi can shift)
-!   After the loop over the perturbations we have the linear change 
-!   in the charge density for each mode of this representation. 
-!   Here we symmetrize them ...
-!   HL 
-!   IF (okpaw) THEN
-!      IF (lmetq0) &
-!         call ef_shift_paw (drhoscfh, dbecsum, ldos, ldoss, becsum1, &
-!                                                dos_ef, irr, npe, .false.)
-!      IF (noncolin) THEN
-!         call errore('solve_linter','not programmed yet',1)
-!      ELSE
-!         DO ipert=1,npe
-!            dbecsum(:,:,:,ipert)=2.0_DP *dbecsum(:,:,:,ipert) &
-!                             +becsumort(:,:,:,imode0+ipert)
-!         ENDDO
-!      ENDIF
-!   ELSE
-!      IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)
-!   ENDIF
-!   After the loop over the perturbations we have the linear change
-!   in the charge density for each mode of this representation.
-!   Here we symmetrize them ...
-! HL
-
-     IF (.not.lgamma_gamma) THEN
-#ifdef __PARA
-!     HL Turning symmetry off for the moment
-!     call psymdvscf (npe, irr, drhoscfh)
-!     IF ( noncolin.and.domag ) &
-!     CALL psym_dmag( npe, irr, drhoscfh)
-#else
-! HL more symmetry
-!        call symdvscf (npe, irr, drhoscfh)
-!        IF ( noncolin.and.domag ) CALL sym_dmag( npe, irr, drhoscfh)
-#endif
-        IF (okpaw) THEN
-           IF (minus_q) CALL PAW_dumqsymmetrize(dbecsum,npe,irr, &
-                             npertx,irotmq,rtau,xq,tmq)
-           CALL  &
-                PAW_dusymmetrize(dbecsum,npe,irr,npertx,nsymq,irgq,rtau,xq,t)
-        END IF
-     ENDIF
-
-     !  ... save them on disk and 
-     !  compute the corresponding change in scf potential 
-     !HL do ipert = 1, npe
-
-        if (fildrho.ne.' ') call davcio_drho (drhoscfh(1,1), lrdrho, &
-                                              iudrho, imode0+ipert, +1)
         call zcopy (nrxx*nspin_mag,drhoscfh(1,1),1,dvscfout(1,1),1)
 
      ! SGW: here we enforce zero average variation of the charge density
@@ -640,60 +431,25 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      ! (otherwise the numerical error, coupled with a small denominator
      ! in the coulomb term, gives rise to a spurious dvscf response)
      ! One wing of the dielectric matrix is particularly badly behaved 
-     ! I think this enforced zeroing should emulate the use of the symmetrized hermitian di-electric
-     ! Matrix. 
-           meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
-           if (meandvb.lt.1.d-8) then 
+
+          meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
+          if (meandvb.lt.1.d-8) then 
+     !        WRITE(1000+mpime,'("Zeroing dvscf")')  
+     !        WRITE(1000+mpime,*) meandvb
+     !        WRITE(1000+mpime,*) dvscfout(nl(1), current_spin) 
              call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
              dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
              call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
-!            write(stdout, '(" Zeroing G=0 ")')
-           endif
-
-!       call dv_of_drho (imode0+ipert, dvscfout(1,1), .true.)
-
-!Here we calculate Delta V from Delta rho.
-
+     !     else
+     !        WRITE(1000+mpime,'("NOT Zeroing dvscf")')  
+     !        WRITE(1000+mpime,*) meandvb
+     !        WRITE(1000+mpime,*) dvscfout(nl(1), current_spin) 
+          endif
         call dv_of_drho (1, dvscfout(1,1), .true.)
 
-!HL enddo on ipert
-!   And we mix with the old potential
-
-     IF (okpaw) THEN
-! HL mixing in of PAW core charge. 
-! In this case we mix also dbecsum
-!        call setmixout(npe*nrxx*nspin_mag,(nhm*(nhm+1)*nat*nspin_mag*npe)/2, &
-!                    mixout, dvscfout, dbecsum, ndim, -1 )
-!        call mix_potential (2*npe*nrxx*nspin_mag+2*ndim, &
-!                         mixout, mixin, &
-!                         alpha_mix(kter), dr2, npe*tr2_ph/npol, iter, &
-!                         nmix_ph, flmixdpot, convt)
-!        call setmixout(npe*nrxx*nspin_mag,(nhm*(nhm+1)*nat*nspin_mag*npe)/2, &
-!                       mixin, dvscfin, dbecsum, ndim, 1 )
-!     HL commenting lmetq again
-!        if (lmetq0.and.convt) &
-!            call ef_shift_paw (drhoscf, dbecsum, ldos, ldoss, becsum1, &
-!                                        dos_ef, irr, npe, .true.)
-     ELSE
-!        write(6,*)
-!        write(6,*)dvscfin(:,1)
-!        call mix_potential (2*npe*nrxx*nspin_mag, dvscfout, dvscfin, &
-!HL here's where tr2_gw comes in!
-!         call mix_potential (2*nrxx*nspin_mag, dvscfout, dvscfin, &
-!                         alpha_mix(kter), dr2, npe*tr2_gw/npol, iter, &
-!                         nmix_gw, flmixdpot, convt)
-
-         call mix_potential (2*nrxx*nspin_mag, dvscfout, dvscfin, &
-                         alpha_mix(kter), dr2, tr2_gw, iter, &
-                         nmix_gw, flmixdpot, convt)
-
-       !       write(6,'("After mix_pot")')
-       !       write(6,*)dvscfout(:,1)
-       !HL    if (lmetq0.and.convt) &
-       !    call ef_shift (drhoscf, ldos, ldoss, dos_ef, irr, npe, .true.)
-
-     ENDIF
-
+        call mix_potential_c(nrxx, dvscfout, dvscfin, &
+                             alpha_mix(kter), dr2, tr2_gw, iter, &
+                             nmix_gw, convt)
      if (doublegrid) then
         do ipert = 1, npe
            do is = 1, nspin_mag
@@ -702,11 +458,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         enddo
      endif
 
-!   calculate here the change of the D1-~D1 coefficients due to the PH
-!   perturbation
-
-     IF (okpaw) CALL PAW_dpotential(dbecsum,rho%bec,int3_paw,npe)
-
      ! with the new change of the potential we compute the integrals
      ! of the change of potential and Q 
      ! HL-Q denotes the augmentation charge. Look at Vanderbilt PRB 41 7892
@@ -714,25 +465,24 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      ! USPP valence charge density is described 
      ! n_v(r) =  \sum_{n,k} \phi^{*}_{nk} (r) \phi_{nk}(r) + \sum_{i,j} p_{i,j}Q_{j,i}
      ! p_{i,j} = \sum_{n,k} <beta_{i}|\phi_{nk}><phi_{nk}|beta_{j}> 
-     ! HL not updating Q in SCF: no need for newdq.  
-     ! call newdq (dvscfin)
 
 #ifdef __PARA
      aux_avg (1) = DBLE (ltaver)
      aux_avg (2) = DBLE (lintercall)
-     call mp_sum ( aux_avg, inter_pool_comm )
+
+!@10TION
+!     call mp_sum ( aux_avg, inter_pool_comm )
+
      averlt = aux_avg (1) / aux_avg (2)
 #else
      averlt = DBLE (ltaver) / lintercall
 #endif
-
      tcpu = get_clock ('GW')
-     dr2 = dr2 / npe
+     dr2 = dr2 / DBLE(npe)
 
-
-!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!   WRITE( 1000 + mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !   " secs   av.it.: ",f5.1)') iter, tcpu, averlt
-!   WRITE( stdout, '(5x," thresh=",e10.3, " alpha_mix = ",f6.3, &
+!   WRITE( 1000+mpime, '(5x," thresh=",e10.3, " alpha_mix = ",f6.3, &
 !   " |ddv_scf|^2 = ",e10.3 )') thresh, alpha_mix (kter) , dr2
 !   Here we save the information for recovering the run from this point
 !   HL-  CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, dvscfin, drhoscfh) 
@@ -741,57 +491,43 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      CALL flush_unit( stdout )
 
      rec_code=10
-     IF (okpaw) THEN
-        CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, &
-                                               dvscfin, drhoscfh, dbecsum)
-     ELSE
-        CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, &
-                                               dvscfin, drhoscfh)
-     ENDIF
-     if (check_stop_now()) call stop_smoothly_gw (.false.)
+
+!@10TION more hanging, more clumsy parallelisation.
+!     IF (okpaw) THEN
+!        CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, &
+!                                               dvscfin, drhoscfh, dbecsum)
+!     ELSE
+!        CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, &
+!                                               dvscfin, drhoscfh)
+!     ENDIF
+!     if (check_stop_now()) call stop_smoothly_gw (.false.)
+
      if (convt) goto 155
   enddo !loop on kter (iterations)
 
 155 iter0=0
 
 !   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!   " secs   av.it.: ",f5.1)') iter, tcpu, averlt
-!   write(6,'("     iterations", i4)')iter
-!   A part of the dynamical matrix requires the integral of
-!   the self consistent change of the potential and the variation of 
-!   the charge due to the displacement of the atoms. 
-!   We compute it here. 
+!         "secs av.it.:",f5.1)') iter, tcpu, averlt
+!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+
 !   HL setting drhoscf to dvscfin here this is a temporary hack. 
 !   need to understand why drhoscf is zeroed in PH code...
 !   possibly because they write to disc davcio_drho ?
 !   drhoscf(igpert, 1) = dvscfin + dvbare
-!   at this point drhoscf is dv_hartree(RPA)
-
-  drhoscf(:,1) = dvscfin(:,1)
-
-  if (convt) then
-
-  !HL add the contribution drhodvus to dynamical matrix  
-  !call drhodvus (irr, imode0, dvscfin, npe)
-
-  if (fildvscf.ne.' ') then
-  write(6, '("fildvscf")') 
-
+!   after this point drhoscf is dv_hartree(RPA)
+    drhoscf(:,1) = dvscfin(:,1)
+    if (convt) then
+    if (fildvscf.ne.' ') then
+    write(6, '("fildvscf")') 
   !HL 
   ! do ipert = 1, npe
   ! call davcio_drho ( dvscfin(1,1),  lrdrho, iudvscf, 
   ! imode0 + ipert+(current_iq-1)*3*nat, +1 )
   ! enddo
-  !HL
-    !call davcio_drho ( dvscfin(1,1),  lrdrho, iudvscf, (current_iq-1)*3*nat, +1 )
-     call davcio_drho ( dvscfin(1,1),  lrdrho, iudvscf, (current_iq-1), +1 )
      end if
   endif
-
- !HL
- !if (convt.and.nlcc_any) call addnlcc (imode0, drhoscfh, npe)
- !if (lmetq0) deallocate (ldoss)
- !if (lmetq0) deallocate (ldos)
 
   deallocate (h_diag)
   deallocate (aux1)
@@ -807,7 +543,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   deallocate (drhoscfh)
   if (doublegrid) deallocate (dvscfins)
   deallocate (dvscfin)
-
   call stop_clock ('solve_linter')
 END SUBROUTINE solve_linter
 

@@ -6,14 +6,15 @@ SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   Iterative solution of the linear system:
 !
 !                 ( h - e + w + i * eta ) * x = b
+!                 ( h - cw + i * eta ) * G(G,G') = -\delta(G,G')
 !
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
-!
 
-USE kinds, ONLY : DP
-USE mp_global, ONLY: intra_pool_comm
-USE mp,        ONLY: mp_sum
+USE kinds,       ONLY: DP
+USE mp_global,   ONLY: intra_pool_comm, mpime
+USE mp,          ONLY: mp_sum
+USE control_gw,  ONLY: maxter_green
 
 implicit none
 
@@ -21,7 +22,7 @@ implicit none
 
 logical :: tprec
 
-integer :: ndmx, & ! input: the maximum dimension of the vectors
+integer ::   ndmx, & ! input: the maximum dimension of the vectors
              ndim, & ! input: the actual dimension of the vectors
              kter, & ! output: counter on iterations
              nbnd, & ! input: the number of bands
@@ -30,8 +31,10 @@ integer :: ndmx, & ! input: the maximum dimension of the vectors
 
 real(DP) :: &
              anorm,   & ! output: the norm of the error in the solution
-             h_diag(ndmx*npol,nbnd), & ! input: an estimate of ( H - \epsilon )
-             ethr       ! input: the required precision
+             ethr,    & ! input: the required precision
+             h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
+
+!COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
   complex(DP) :: &
              dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
@@ -49,9 +52,9 @@ real(DP) :: &
 
 !HL upping iterations to get convergence with green_linsys?
 
-   integer, parameter :: maxter = 200
+  !integer, parameter :: maxter = 200
   !integer, parameter :: maxter = 600
-  ! the maximum number of iterations
+  !the maximum number of iterations
   integer :: iter, ibnd, lbnd
   ! counters on iteration, bands
   integer , allocatable :: conv (:)
@@ -126,48 +129,35 @@ real(DP) :: &
 
 !HL PH.x does explicit do loop: 
 !I'd prefer to mimic SGW approach here, but Quesspro Guys like there goto etc
-!and I want to stick with there convergence parameters/mindset etc. 
+!and I want to stick with their convergence parameters/mindset etc. 
 
-  do iter = 1, maxter
-
-     !   kter = kter + 1
-
-        ! g  = (-PcDv\Psi) - (H \Delta\Psi)
-        ! gt = conjg( g)
-        ! r  = b - Ax 
-        ! rt = conjg ( r )
-
-! write(6, '("cBiCG")')
-
+  do iter = 1, maxter_green
+    ! kter = kter + 1
+    ! g    = (-PcDv\Psi) - (H \Delta\Psi)
+    ! gt   = conjg( g)
+    ! r    = b - Ax 
+    ! rt   = conjg ( r )
+    ! write(6, '("cBiCG")')
      if (iter .eq. 1) then
         !r = b - A* x
         !rt = conjg (r) 
-
         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
-        !call h_psi (ndim, dpsi, g, e, ik, nbnd)
-
+       !call h_psi (ndim, dpsi, g, e, ik, nbnd)
         do ibnd = 1, nbnd
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-
            gt(:,ibnd) = conjg ( g(:,ibnd) )
-
         ! p   =  inv(M) * r
         ! pt  =  conjg ( p )
-
-
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
-
-
            if(tprec) call cg_psi(ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd) )
            ht(:,ibnd) = conjg( h(:,ibnd) )
-
         enddo
         IF (npol==2) THEN
            do ibnd = 1, nbnd
               call zaxpy (ndim, (-1.d0,0.d0), d0psi(ndmx+1,ibnd), 1, &
                                               g(ndmx+1,ibnd), 1)
-             gt(:,ibnd) = conjg ( g(:,ibnd) )
+              gt(:,ibnd) = conjg ( g(:,ibnd) )
            enddo
         END IF
      endif
@@ -213,8 +203,8 @@ real(DP) :: &
 
      conv_root = .true.
      do ibnd = 1, nbnd
-        anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)  ) )
-        !write(6,*) anorm, ibnd, ethr
+        anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)))
+!        write(mpime+600,*) iter, anorm
         if (anorm.lt.ethr) conv (ibnd) = 1
         conv_root = conv_root.and.(conv (ibnd).eq.1)
      enddo
@@ -254,13 +244,8 @@ real(DP) :: &
 !     write(6,'("Search Directions")')
 !     write(6,*) t(:,:)
 !     stop
-
-     
-!    call h_psi (ndim, h, t, e(1), ik, nbnd)
-!    call h_psi (ndim, ht, tt, e(1), ik, nbnd)
-
-
-!
+!     call h_psi (ndim, h, t, e(1), ik, nbnd)
+!     call h_psi (ndim, ht, tt, e(1), ik, nbnd)
 !     compute the coefficients a and c for the line minimization
 !     compute step length lambda
 !     lbnd=0
@@ -268,16 +253,13 @@ real(DP) :: &
 !        if (conv (ibnd) .eq.0) then
 !           lbnd=lbnd+1
 !           lbnd = ibnd
-
 !           old regular CG stuff
 !           HL a(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, g(1,ibnd), 1)
 !           HL c(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, t(1,lbnd), 1)
-
 !           call zcopy(ndmx*npol, g(1,ibnd), 1, gp(1,ibnd), 1)
 !           call cg_psi(ndmx, ndim,1, gp(1,ibnd), h_diag(1,ibnd)) 
 !        end if
 !     end do
-!
 
 #ifdef __PARA
 !HL   call mp_sum(  a(1:lbnd), intra_pool_comm )
@@ -288,7 +270,7 @@ real(DP) :: &
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
 
-          !HL packing? lbnd=lbnd+1
+        !HL packing? lbnd=lbnd+1
 
           lbnd = ibnd
 
@@ -299,11 +281,12 @@ real(DP) :: &
         ! [ the denominator is stored for subsequent use in beta ]
         !
 
-          call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
-          if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd) )
-          a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
-          c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
-          alpha = a(ibnd) / c(ibnd)
+         call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+         if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd) )
+         a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
+         c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
+         alpha = a(ibnd) / c(ibnd)
+        ! write(mpime+600,*) a(ibnd), c(ibnd), alpha
 
         !
         !  x  = x  + alpha        * p
@@ -329,7 +312,7 @@ real(DP) :: &
 
          a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
          beta = - a(ibnd) / c(ibnd)
-
+        ! write(mpime+600,*) a(ibnd), beta
         !
         ! pold  = p
         ! ptold = pt

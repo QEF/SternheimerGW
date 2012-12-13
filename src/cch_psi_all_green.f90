@@ -75,78 +75,18 @@ subroutine cch_psi_all_green (n, h, ah, e, cw, ik, m)
   !write(6,*) cw
   do ibnd = 1, m
      do ig = 1, n
-        ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd))
-
-!         ah (ig, ibnd)= hpsi(ig, ibnd) - (e(ibnd)- cw)*spsi(ig, ibnd)
-!         ah (ig, ibnd)= hpsi(ig, ibnd) - cw*spsi(ig, ibnd)
-!         ah (ig, ibnd)= hpsi(ig, ibnd) - cw*(h(ig,ibnd)) 
-!         ah (ig, ibnd)= hpsi(ig, ibnd) - e(ibnd)*spsi(ig, ibnd)
-
+        !ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd))
+        ah (ig, ibnd)= hpsi(ig, ibnd) - cw*(h(ig,ibnd))
      enddo
   enddo
 
   IF (noncolin) THEN
      do ibnd = 1, m
         do ig = 1, n
-!     HL modified so that omega is not included in the eigenvalue
-!     ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd)
           ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd) - cw*(h(ig+npwx,ibnd)) 
         end do
      end do
   END IF
-  !
-  !   Here we compute the projector in the valence band
-  !
-  !@10TION I don't think we need the projector onto the valence states when we are solving for the green 
-  !analytic linear system. Currently trying to guess what this means... i think it should evaluate to zero anyway
-  !but either way it shouldn't be there.
-  !HL 
-
-  use_projector = .false.
-  IF (use_projector) then
-      !write(6,'("Using projectors")')
-
-      ikq = ikqs(ik)
-      ps (:,:) = (0.d0, 0.d0)
-    
-      call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
-           npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
-
-      !ps (:,:) = ps(:,:) * alpha_pv
-      !HL need to remember the projector should be double complex
-
-       ps (:,:) = ps(:,:) * dcmplx(alpha_pv,0.0d0)
-    
-#ifdef __PARA
-  call mp_sum (ps, intra_pool_comm)
-#endif
-    
-      hpsi (:,:) = (0.d0, 0.d0)
-      call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
-           npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
-      spsi(:,:) = hpsi(:,:)
-      !Although there is no projector I think we still need the calbec to apply
-      !the non-local components of the pseudopotential... 
-      !
-      !And apply S again
-      !HL anyway we shall see tomorrow!
-      !
-
-      call calbec (n, vkb, hpsi, becp, m)
-      call s_psi (npwx, n, m, hpsi, spsi)
-      do ibnd = 1, m
-         do ig = 1, n
-            ah (ig, ibnd) = ah (ig, ibnd) + spsi (ig, ibnd)
-         enddo
-      enddo
-      IF (noncolin) THEN
-         do ibnd = 1, m
-            do ig = 1, n
-               ah (ig+npwx, ibnd) = ah (ig+npwx, ibnd) + spsi (ig+npwx, ibnd)
-            enddo
-         enddo
-      ENDIF
-  ENDIF !END use projector.
 
   deallocate (spsi)
   deallocate (hpsi)

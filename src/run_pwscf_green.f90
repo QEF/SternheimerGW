@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE run_pwscf(do_band)
+SUBROUTINE run_pwscf_green(do_band)
 !-----------------------------------------------------------------------
 !
 ! This is the driver for when gw calls pwscf.
@@ -46,46 +46,47 @@ SUBROUTINE run_pwscf(do_band)
 
   tmp_dir=tmp_dir_gw
 
-!  write(6,*)tmp_dir_gw
-
+  ! write(6,*)tmp_dir_gw
   ! ... Setting the values for the nscf run
 
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'
-
-
   restart = ext_restart
   pseudo_dir= TRIM( tmp_dir_save ) // TRIM( prefix ) // '.save'
 
-!  write(6,*) pseudo_dir
+! write(6,*) pseudo_dir
 
   CALL restart_from_file()
   conv_ions=.true.
-!
-  CALL setup_nscf (xq)
 
-! IN PW- MODIFIED FOR PARALLEL RUN.
+ !Generate all eigenvectors in IBZ_{k}.
+  CALL setup_nscf_green (xq)
+
   CALL init_run()
 
   IF (do_band) write(6,'("Calling PW electrons")')
   IF (do_band) CALL electrons()
-  !
+
   IF (.NOT.reduce_io.and.do_band) THEN
      twfcollect=.FALSE. 
      CALL punch( 'all' )
      done_bands=.TRUE.
   ENDIF
-  !
+
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
+
+
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
+
   ext_restart=.FALSE.
-  !
+
   CALL close_files()
-  !
+
   bands_computed=.TRUE.
-  !
+
+
   CALL stop_clock( 'PWSCF' )
-  !
+
   RETURN
-END SUBROUTINE run_pwscf
+END SUBROUTINE run_pwscf_green

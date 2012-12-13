@@ -18,7 +18,6 @@ gwq_summary.o \
 run_pwscf.o \
 set_defaults_pw.o \
 solve_linter.o \
-solve_linter_nonscf.o \
 coulomb.o \
 save_gw_input.o \
 write_rec.o \
@@ -38,7 +37,6 @@ gwq_setup.o \
 openfilq.o \
 gwq_init.o \
 deallocate_gwq.o \
-setup_dgc.o \
 setlocq.o \
 compute_vsgga.o \
 smallgq.o \
@@ -47,16 +45,11 @@ davcio_drho.o \
 apply_dpot.o \
 cft_wave.o \
 orthogonalize.o \
-adddvscf.o \
 ch_psi_all.o \
-cg_psi.o \
 cgsolve_all.o \
 incdrhoscf.o \
 incdrhoscf_nc.o \
-psymdvscf.o \
-psym_dmag.o \
 dv_of_drho.o\
-newdq.o \
 h_psiq.o \
 dgradcorr.o \
 setqmod.o \
@@ -65,30 +58,36 @@ dvqpsi_us_only.o\
 addusddens.o\
 addusdbec.o\
 set_drhoc.o\
-cBiCG_solve.o\
 cBiCG_solve_fix.o\
-cch_psi_all.o\
+cBiCG_solve_green.o\
 cch_psi_all_fix.o\
 cch_psi_all_green.o\
-ccg_psi.o\
+cg_psi.o\
 green_linsys.o\
-green_linsys_test.o\
+green_linsys_shift.o\
+green_multishift.o\
 pade.o\
 freqbins.o\
 refold.o\
 ktokpmq.o\
-grid_shuffle.o\
 prepare_kmq.o\
-fft6_g2r.o\
-fft6_g2r_green.o\
-fft6_g2r_coulomb.o\
-gw_product.o\
-sigma_r2g.o\
-ggensig.o\
+sigma_r2g_sco.o\
+sigma_r2g_ex.o\
+sig_fft_g.o\
+sigma_exch.o\
+sigma_c.o\
 sigma_matel.o\
-fft6_r2g_coulomb.o\
+setup_nscf_green.o\
+run_pwscf_green.o\
+find_q_ibz.o\
+gmap_sym.o\
+stern_symm.o\
+unfold_w.o\
+mix_pot_c.o\
+godby_needs.o\
+sigma_extra.o\
 
-HOME =/users2/lambert/espresso-4.2.1
+HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a
 EEOBJS=$(HOME)/EE/libee.a
 QEMODS =$(HOME)/Modules/libqemod.a

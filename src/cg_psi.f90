@@ -26,7 +26,8 @@ subroutine cg_psi (lda, n, m, psi, h_diag)
   complex(DP) :: psi (lda*npol, m)
   ! inp/out: the vector to be preconditioned
 
-  real(DP) :: h_diag (lda*npol, m)
+   real(DP) :: h_diag (lda*npol, m)
+  !COMPLEX(DP) :: h_diag (lda*npol, m)
   ! input: the preconditioning vector
 
   integer :: k, i

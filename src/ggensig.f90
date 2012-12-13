@@ -10,10 +10,9 @@
   ! the G^2 cutoff in units of 2pi/a_0
   ! Note that in Ry units the kinetic energy is G^2, not G^2/2
   !
-  !FG
+  ! FG
   ! determine G-vectors within the cutoff from the
   ! array already created in ggen
-  !
   ! HL basically the same as in SGWI except i've had to change all the ngm(s) etc. into (sig) 
   ! TESTED THIS DOES PRODUCE SAME ORDERING A ggen.f90 4.2.1 if the same cutoff is used. 
   ! nls is already reserved for  the smooth grid in Quantum espresso. 
@@ -22,7 +21,8 @@
   USE kinds,            ONLY : DP
   USE constants,        ONLY : tpi
   USE gvect,            ONLY : gcutm, ecutwfc, dual, nr1, nr2, nr3, ngm, g, igtongl, gl, nl
-  USE gwsigma,          ONLY : gcutmsig, nlsig, ngmsig, nr1sig, nr2sig, nr3sig, nrsig, ecutsig
+  USE gwsigma,          ONLY : gcutmsig, nlsig, ngmsig, nr1sig, nr2sig, nr3sig, nrsig, ecutsig, &
+                               nlsex, nlsco
   USE cell_base,        ONLY : at, tpiba2
   USE fft_scalar,       ONLY : allowed
   USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
@@ -39,7 +39,9 @@
   integer :: n1, n2, n3, i, j, k, ipol, ig, igl, ng
 
   !HL ecutsig defined in punch card
+  !cutmsig = 4.D0 * ecutsig / tpiba2
 
+!HL
   gcutmsig = 4.D0 * ecutsig / tpiba2
 
   nr1sig = 1 + int (2 * sqrt (gcutmsig) * sqrt( at(1,1)**2 + at(2,1)**2 + at(3,1)**2 ) )
@@ -96,6 +98,8 @@
 
   ALLOCATE ( nlsig(ngmsig) )
 
+!HL upping cutoff of nlsig
+  !ALLOCATE ( nlsig(ngmsig) )
   !
   ! Now set nl with the correct fft correspondence
   !
@@ -120,15 +124,12 @@
         STOP
      endif
   enddo
-  !
-  !
-  ! total number of real-space grid points
-  !
 
-  nrsig = nr1sig * nr2sig * nr3sig
-
+  !total number of real-space grid points
   !write(6,*) nl(:)
   !write(6,*) nlsig(:)
+
+  nrsig = nr1sig * nr2sig * nr3sig
 
   write(6,'(4x,"")')
   write(6,'(4x,"ngmsig = ",i10)') ngmsig

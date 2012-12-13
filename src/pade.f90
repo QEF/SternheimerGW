@@ -1,4 +1,3 @@
- !
   ! General note:
   ! Lebegue, Arnaud, Alouani, and Blochel [PRB 67, 155208 (2003)]
   ! state that when they use Pade of order N = 12 (resulting in
@@ -63,23 +62,16 @@ USE kinds,                     ONLY : DP
          ! when u(:) is very small
          !
 !if(abs(g(p-1,i)) .eq. 0) then
-!       write(6,*) z(:)
-!       write(6,'(4x, "fitting parameter too small. g(p-1,i)= ",2f9.5)')g(p-1,i)
-!       write(6,*) u(:)
-!       stop
+!  write(6,*) z(:)
+!  write(6,'(4x, "fitting parameter too small. g(p-1,i)= ",2f9.5)')g(p-1,i)
+!  write(6,*) u(:)
+!  stop
 !end if
-!VERY HACK HL:
-!        if (abs (g(p-1,i)) .lt. 1d-10 ) g(p-1,i) = 0.001
-
          tmp1 = g(p-1,p-1)/g(p-1,i)
          tmp2 = g(p-1,i)/g(p-1,i)
          g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
-
-        !
         !Helps stability.
-        !
-
-         if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
+        !if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
       enddo
     endif
     a(p) = g (p,p)
@@ -89,9 +81,9 @@ USE kinds,                     ONLY : DP
     ar = real(a(p))
     ai = aimag(a(p))
     if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-       write(6,*) (z(i),i=1,N)
-       write(6,*) (u(i),i=1,N)
-       write(6,*) (a(i),i=1,N)
+!       write(6,*) (z(i),i=1,N)
+!       write(6,*) (u(i),i=1,N)
+!       write(6,*) (a(i),i=1,N)
 !      call error ('pade_coeff','one or more coefficients are NaN',1)
     endif
     !
@@ -142,14 +134,11 @@ USE kinds,                     ONLY : DP
     acap(i) = acap(i-1) + (w-z(i-1)) * a(i) * acap(i-2)
     bcap(i) = bcap(i-1) + (w-z(i-1)) * a(i) * bcap(i-2)
   enddo
-
-!HL
-
   padapp = acap(N)/bcap(N)
 
+!Turning on pade catch.
   ar = real(padapp)
   ai = aimag(padapp)
-
   if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
     padapp = (0.0d0,0.0d0)
   endif

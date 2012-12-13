@@ -41,10 +41,10 @@ SUBROUTINE close_gwq( flag )
   END IF
   !
   IF (flag) THEN
-     CLOSE( UNIT = iudwf, STATUS = 'DELETE' )
-     CLOSE( UNIT = iudwfp, STATUS = 'DELETE' )
-     CLOSE( UNIT = iudwfm, STATUS = 'DELETE' )
-     CLOSE( UNIT = iubar, STATUS = 'DELETE' )
+    CLOSE( UNIT = iudwf, STATUS = 'DELETE' )
+    CLOSE( UNIT = iudwfp, STATUS = 'DELETE' )
+    CLOSE( UNIT = iudwfm, STATUS = 'DELETE' )
+    CLOSE( UNIT = iubar, STATUS = 'DELETE' )
      !
      IF ( okvan ) CLOSE( UNIT = iudrhous, STATUS = 'DELETE' )
      !

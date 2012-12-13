@@ -717,8 +717,10 @@ MODULE gw_restart
   ! ...
   ! ... This routine sets the situation of the grid according to
   ! ... the files that it finds in the directory .gwsave.
+
   ! ... From phonon days it checks if representation files exist and which representations 
   ! ... have been already calculated.
+
   ! ... set the initial information on the grid
   ! ... it sets done_iq and done_rep_iq to 1 for the q and the 
   ! ... representations that have already been done.

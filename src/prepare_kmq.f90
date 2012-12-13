@@ -24,7 +24,8 @@ SUBROUTINE prepare_kmq(do_band, do_iq, setup_pw, iq, ik)
   USE io_global,       ONLY : stdout, ionode
   USE klist,           ONLY : lgauss, xk
   USE qpoint,          ONLY : xq
-  USE disp,            ONLY : x_q, done_iq, rep_iq, done_rep_iq, comp_iq
+  USE disp,            ONLY : x_q, done_iq, rep_iq, done_rep_iq, comp_iq, &
+                              xk_kpoints
   USE control_gw,      ONLY : ldisp, lgamma, epsil, trans, zue, zeu, &
                               start_irr, last_irr, current_iq, &
                               done_bands
@@ -64,65 +65,31 @@ SUBROUTINE prepare_kmq(do_band, do_iq, setup_pw, iq, ik)
 
 IF ( ldisp ) THEN
 
-!HL obsolete name for output file.
-!   fildyn = TRIM( auxdyn ) // TRIM( int_to_char( iq ) )
-
 !   HL Don't need to reset gamma!  
      IF ( x_q(1,iq) == 0.D0 .AND. x_q(2,iq) == 0.D0 .AND. x_q(3,iq) == 0.D0 ) x_q(1,iq) = 0.00d0
 
-     xq(:)  = xk (:, ik) - x_q(:,iq)
+!    xq(:)  = xk (:, ik) - x_q(:,iq)
+!    HL should be CBB...
+!     xq(1)  = 0.0d0
+!     xq(2)  = 0.0d0
+!     xq(3)  = 0.878
 
-     lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
+      xq(:)  = xk_kpoints(:,ik)
 
+      lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
+ 
      !epsil = .FALSE.
      !zue   = .FALSE.
      !zeu   = .FALSE.
 
 ENDIF
 
-
-  ! write(6,*) xq, x_q(:,iq), xk(:,ik)
-  ! ... for q /= 0 no calculation of the dielectric tensor,
-  ! ...            Born eff. charges, electro-optic, raman or
-  ! ...            frequency dependent tensor
-  !
-  !    epsil = .FALSE.
-  !    zue   = .FALSE.
-  !    zeu   = .FALSE.
-  !    fpol  =  .FALSE.
-  !
-  !  Save the current status of the run: all the flags, the list of q,
-  !  and the current q, the fact that we are before the bands
-  !
+!Might want to scrap this?
   CALL gw_writefile('init',0)
-  !
-  ! ... In the case of q != 0, we make first a non selfconsistent run
-  !
-  !HL this setup_pw and do bands are obsolete, they were for checking
-  !that certain phonon modes had been computed etc.  
-  !setup_pw = (.NOT.lgamma.OR.modenum /= 0).AND..NOT. done_bands
 
-  do_band=.FALSE.
-
-  !DO irr=start_irr, MIN(ABS(last_irr),rep_iq(iq))
-  !   IF (done_rep_iq(irr,iq) /= 1) THEN
-  !      do_band=.TRUE.
-  !      EXIT
-  !   ENDIF
-  !ENDDO
-
-!There are two special cases. When start_irr=0 and last_irr=0 we generate only
-!the displacement patterns, and do not calculate the bands. If this q
-!has been already calculated we only diagonalize the dynamical matrix
-!IF ( start_irr == 0 .AND. last_irr == 0 ) do_band=.FALSE.
-!IF ( done_iq(iq) == 1 ) do_band=.FALSE.
-
-!@HL bit of a mess with old PH way of keeping track of which q points have been calculated.
-!I'm just commenting all of this and saying if prepare kq is being called its probably because
-!I want to calculate the eigenvectors at these k/q points.  
-
+  do_band  = .FALSE.
   setup_pw = .TRUE.
-  do_band = .TRUE.
+  do_band  = .TRUE.
 
   WRITE( stdout, '(/,5X,"Calculation of k-q = ",3F12.7)') xq
   WRITE(6,*) setup_pw, do_band, lgamma
