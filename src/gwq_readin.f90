@@ -202,7 +202,7 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        = .FALSE.
   lrpa         = .FALSE.
-  maxter_green = 120
+  maxter_green = 150
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5

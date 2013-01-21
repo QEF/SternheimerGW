@@ -129,16 +129,9 @@ DO ig = igstart, igstop
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
          endif
        ENDIF
-!Generate an entire row of the irreducible Screened Coulomb Matrix with 4pi*e2*|q+G|^{-2}eps_{GG'}. 
-!W(Girr, G'irr) (irr= irreducible, red=reducible)
-!Then W(Gred, G'red) = \sum_{Girr, Girr')\sum_{R \in Gq} W(Girr, G'irr)
-!Every element except the divergent element q->0 g=0.
-!MAYBE THIS IS WHERE THINGS GET CONFUSED i.e. rotation needs to be done with epsilon!!
-!!CAUSING PROBLEMS LATER ON AS WELL? let's see...
-!Let's just write epsilon^{-1} to disk.
-        DO igp = 1, ngmpol
+       DO igp = 1, ngmpol
            scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
-        ENDDO
+       ENDDO
     enddo !iw
 ENDDO 
 tcpu = get_clock ('GW')

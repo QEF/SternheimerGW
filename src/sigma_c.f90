@@ -243,9 +243,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
       endif
 
 !q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
-!-q = k0 - (k0 + q)
-!this works for diamond at L... (minus 3 tenths of an ev...) SO IT DOESN'T WORK!
-!  xq_ibk(:) = xk_kpoints(:,ik0) - xk(:,ikq)
 !  q = (k0 + q) - k0
 !HL works for si at gamma:
     xq_ibk(:) = xk(:,ikq) - xk_kpoints(:, ik0)
@@ -311,7 +308,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !Dielectric Function should be written to file at this point
 !So we read that in, rotate it, and then apply the coulomb operator.
 
-     scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
+     scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
      scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
 
      CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
@@ -347,22 +344,24 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !APPLY COULOMB INTERACTION TO DIELECTRIC MATRIX
 !to form (eps^{-1}_{q1}(R^{-1}G, R^{-1}G') - \delta_{GG'}) v(-q + G) = W_{-q}(G,G') -> W_{-q}(\G, G')
 !INLINING THIS STUPID FUCKING ROUTINE BECAUSE I CANT SEEM TO PASS A FUCKING ARRAY TO A FUCKING SUBROUTINE
+
+
 rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 DO iw = 1, nfs
    DO ig = 1, ngmpol
        qg2 = (g(1,ig) - xq_ibk(1))**2 + (g(2,ig) - xq_ibk(2))**2 + (g(3,ig)-xq_ibk(3))**2
-       !if(qg2.lt.eps8) limq =.true.
        limq = (qg2.lt.eps8) 
        IF(.not.limq) then
            DO igp = 1, ngmpol
               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
            ENDDO
-       ELSE 
-           if(ig.ne.1) then
-              DO igp = 1, ngmpol
-                 scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-              ENDDO
-           endif
+       !ELSE 
+       !THIS PART OF THE IF STATEMENT NEVER GETS EXECUTED DELETE IT!
+       !    if(ig.ne.1) then
+       !       DO igp = 1, ngmpol
+       !          scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+       !       ENDDO
+       !    endif
        ENDIF
        qg = sqrt(qg2)
        spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
@@ -377,14 +376,16 @@ DO iw = 1, nfs
              write(6,*) (fpi*e2*(rcut**2))/2.0d0
              write(6,*) ig, iw
              write(6,*) g(:, ig)
+             write(6,*) xq_ibk(:)
+             write(6,*) qg2
              !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
              !we enforce that here:
-         if(iw.eq.1) then
-            scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
-         endif
-         do igp = 1, ngmpol
-            scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-         enddo
+             if(iw.eq.1) then
+                scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
+             endif
+             do igp = 1, ngmpol
+                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+             enddo
        endif
    ENDDO !ig
 ENDDO
@@ -434,7 +435,7 @@ ENDDO
            enddo
        enddo
       enddo
-    ELSE
+    ELSE IF ((.not.modielec).and.(padecont)) then
       do igp = 1, ngmpol
        do ig = 1, ngmpol
 !   Pade input points on the imaginary axis
@@ -475,7 +476,7 @@ ENDDO
                  endif
              enddo
              if(padecont) then
-                call pade_eval ( nfs, z, a, dcmplx( w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+                call pade_eval ( nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
              else if(godbyneeds) then
                 scrcoul_pade_g(ig,igp)=(dcmplx(2.0d0,0.0d0)*a(2)*a(1))/((dcmplx(w_ryd(iw),eta))**2-a(1)**2)
              else 

@@ -97,7 +97,7 @@ ELSE
 
 128 CONTINUE
     ENDDO
-    write(6,*) ngmdonelist(:)
+!    write(6,*) ngmdonelist(:)
 ENDIF
 
 !Populate tmp array with the unique row of perturbations 
@@ -144,7 +144,7 @@ IF(iq.eq.1) then
   endif
 ENDIF
          do ig = 20, 50
-             write(6,'(i4, f14.7)')ig, real( scrcoul_g_in(ig,ig,1,1))
+             write(6,'(i4, f14.7)')ig, real(scrcoul_g_in(ig,ig,1,1))
          enddo
 
          do ig = 1, 14

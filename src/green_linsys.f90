@@ -82,7 +82,9 @@ SUBROUTINE green_linsys (ik0)
 
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-  REAL(DP) :: tr_cgsolve = 1.0d-2
+  INTEGER, PARAMETER   ::  lmres = 1
+  REAL(DP) :: tr_cgsolve = 1.0d-3
+
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
@@ -91,6 +93,7 @@ SUBROUTINE green_linsys (ik0)
   INTEGER :: igstart, igstop, ngpool, ngr, igs
 !LINALG
   COMPLEX(DP), EXTERNAL :: zdotc
+  REAL(DP) :: ar, ai
 !HL NOTA BENE:
 !Green's function has dimensions npwx, 1 in current notation...
 !Since we store in G space there is no truncation error at this stage...
@@ -195,19 +198,20 @@ SUBROUTINE green_linsys (ik0)
   DO ig = 1, npwq
      aux1 (ig) = g2kin (ig) * evq (ig,4)
   END DO
-  eprecloc = 1.35d0*zdotc(npwx*npol, evq(1,4), 1, aux1(1),1)
+  eprecloc = zdotc(npwx*npol, evq(1,4), 1, aux1(1),1)
   WRITE(6,'("<|(k+G)^2|>", 1f12.7)') eprecloc*RYTOEV
 
   gr_A(:,:) = (0.0d0, 0.0d0)
   DO iw = 1, nwgreen
-      green =(0.0d0, 0.0d0)
+      green = DCMPLX(0.0d0, 0.0d0)
       h_diag(:,:) = 0.d0
       do ibnd = 1, 1
 !For all elements up to <Ekin> use standard TPA:
          if (w_ryd(iw).le.0.0d0) then
             do ig = 1, npwq
 !The preconditioner needs to be real and symmetric to decompose as E^T*E
-               x = (g2kin(ig)-w_ryd(iw))/eprecloc
+               !x = (g2kin(ig)-w_ryd(iw))/eprecloc
+               x = (g2kin(ig)-w_ryd(iw))
                h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
                                  /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
             enddo
@@ -217,12 +221,19 @@ SUBROUTINE green_linsys (ik0)
                if(g2kin(ig).gt.w_ryd(iw)) then
                !if((g2kin(ig).gt.w_ryd(iw)).and.(.gt.eps8)) then
                !if((g2kin(ig) - w_ryd(iw)).gt.0.037d0) then
-               !x = (g2kin(ig) - w_ryd(iw))/eprecloc
-                  x = (g2kin(ig))/eprecloc
+               !This seemed to make things converge quite well...
+               !x = (g2kin(ig)-w_ryd(iw))/w_ryd(iw)
+               !x = (g2kin(ig)-w_ryd(iw))/eprecloc
+               !Trying without... 
+                  x = (g2kin(ig)-w_ryd(iw))
+               !maybe eprecloc is no goood...
+               !  x = (g2kin(ig)-w_ryd(iw))
                   h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
                                     /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
                else
-                   h_diag(ig,ibnd) = 1.0d0
+                  h_diag(ig,ibnd) = 1.0d0
+                !  if w_ryd(iw) is big enough.gt.80?
+                !  h_diag(ig,ibnd) = -1.0d0
                endif
             enddo
          endif
@@ -239,24 +250,30 @@ SUBROUTINE green_linsys (ik0)
       do ig = igstart, igstop
 !allows us to use the solution for the previous frequency for the current frequency
          ngsol = ngvecs - (igstop-igstart)
-         rhs(:,:)  = (0.0d0, 0.0d0)
-         rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
-         gr_A(:,:) = (0.0d0, 0.0d0) 
+         rhs(:,:)  = DCMPLX(0.0d0, 0.0d0)
+         rhs(igkq_ig(ig), 1) = DCMPLX(-1.0d0, 0.0d0)
+         gr_A(:,:) = DCMPLX(0.0d0, 0.0d0) 
          lter = 0
-         etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-         cw = CMPLX( w_ryd(iw), eta, kind=DP)
+         etc(:, :) = CMPLX(0.0d0, 0.0d0, kind=DP)
+         cw = CMPLX(w_ryd(iw), eta, kind=DP)
          anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density).
-         !call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:, ngsol), h_diag, &
-         call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:, 1), h_diag, &
-                              npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, cw, .true.)
-!Might be good idea to save the solution vector from the previous frequency...:
-!Brutal conditions.
-!if(anorm.gt.1.0d0)  write(600 + mpime,'("anorm greater than one ")') 
+      !call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:, ngsol), h_diag, &
+      !call  cbcg_solve_fix(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:, 1), h_diag, &
+      !                     npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, cw, .true.)
+       call  cbicgstabl(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A(:,1), h_diag, &
+                        npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, cw, lmres, .true.)
+
 !      if(.not.conv_root) write(600+mpime,*) g(:,igkq_tmp(ig))
-!      if(.not.conv_root) write(600+mpime,'(2f15.6)') wgreen(iw), anorm
-!     if(.not.conv_root) gr_A(:,:) = dcmplx(0.0d0, 0.0d0)
-!     if(.not.conv_root) gr_A(:,ngsol) = dcmplx(0.0d0, 0.0d0)
+       if(.not.conv_root) write(600+mpime,'(2f15.6)') wgreen(iw), anorm
+!      if(.not.conv_root) gr_A(:,:) = dcmplx(0.0d0, 0.0d0)
+!In case of breakdown...
+       ar = real(anorm)
+      !ai = aimag(anorm)
+       if (( ar .ne. ar )) then
+          gr_A(:,:) = (0.0d0,0.0d0)
+          write(600 + mpime,'("anorm imaginary")') 
+       endif
 !instead of zeroing green's function why not try  G(G,G';\omega) = - Delta(G,G')/((k+g)**2 - \omega)
 !Brutal conditions.
 !        if(.not.conv_root) write(1000+mpime, *)g(:,igkq_tmp(ig))
@@ -277,7 +294,8 @@ SUBROUTINE green_linsys (ik0)
        do igp = 1, counter       
 !should be nbnd_occ:
         do ibnd = 1, 4
-           x = w_ryd(iw) - et(ibnd, ikq)
+          !x = w_ryd(iw) - et(ibnd, ikq)
+           x = et(ibnd, ikq) - w_ryd(iw)
            dirac = eta / pi / (x**2.d0 + eta**2.d0)
           !Green should now be indexed (igkq_tmp(ig), igkq_tmp(igp)) according to the
           !large G-grid which extends out to 4*ecutwfc. Keep this in mind when doing

@@ -77,7 +77,7 @@ SUBROUTINE green_linsys_shift (ik0)
              mode          ! mode index
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-    REAL(DP) :: tr_cgsolve = 1.0d-8
+    REAL(DP) :: tr_cgsolve = 1.0d-10
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
@@ -213,6 +213,7 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
               call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
                                      npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
                                      cw, niters(gveccount))
+                 if(.not.conv_root) write(1000+mpime, '("root not converged.")')
              endif
                 call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
              do iw = 1, nwgreen
@@ -232,61 +233,15 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
             do ibnd = 1, nbnd
               x = et(ibnd, ikq) - w_ryd(iw)
               dirac = eta / pi / (x**2.d0 + eta**2.d0)
-             !if(abs(w_ryd(iw) - et(ibnd,ikq)).lt.deltaw/RYTOEV) then 
-             !   dirac = (1.0d0-(abs(w_ryd(iw) - et(ibnd,ikq)))/deltaw )*RYTOEV/deltaw
-             !else
-             !   dirac = 0.0d0
-             !endif
-!Piecewise support fxn:
-!              if(abs(x).le.(0.5*support)) then
-!                 dirac = (2.0d0/support)*(1-Abs(x/support)-4*Abs(x/support)**2+4*Abs(x/support)**3)
-!              else if((abs(x).gt.(0.50d0*support)).and.(abs(x).le.support)) then
-!                 dirac = (2.0d0/support)*(1.0d0-(11.0d0/3.0d0)*Abs(x/support)+4*Abs(x/support)**2 &
-!                                     - (4.0d0/3.0d0)*Abs(x/support)**3)
-!              else
-!                 dirac = 0.0d0
-!              endif
-!             dirac =  EXP(-(x**2.d0)/(4.0d0*eta))*(1.0d0/(2.0d0*sqrtpi*sqrt(eta)))
-
               green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
                                                         tpi*ci*conjg(evq(igkq_ig(ig), ibnd))  * &
                                                         (evq(igkq_ig(igp), ibnd)) * dirac
-
-!              green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
-!                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
-!                                                        evq(igkq_ig(igp), ibnd) * dirac
             enddo 
            enddo!igp
          enddo!iw
        enddo !blocks
      enddo !ig
-!    do ig = igstart, igstop
-!     do igp = igstart, igstop
-!        if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1))   write(400+mpime, '("G00")')
-!        if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7))   write(400+mpime, '("G11")')
-!        if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11))  write(400+mpime, '("G12")')
-!        if((igkq_tmp(ig).eq.11).and.(igkq_tmp(igp).eq.13)) write(400+mpime, '("G23")')
-!      do iw =1, nwgreen
-!        if((igkq_tmp(ig).eq.1).and.(igkq_tmp(igp).eq.1)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
-!     G=111, G'= 111
-!    if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
-!    if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.7)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp), iw)
-!     G=111, G'= 200
-!    if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
-!        if((igkq_tmp(ig).eq.7).and.(igkq_tmp(igp).eq.11)) write(400+mpime, '(3f15.10)') wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
-!     G=200, G'= 020 
-!        if((igkq_tmp(ig).eq.44).and.(igkq_tmp(igp).eq.23))   write(400+mpime, '("G")')
-!        if((igkq_tmp(ig).eq.78).and.(igkq_tmp(igp).eq.62))   write(400+mpime, '("G")')
-!        if((igkq_tmp(ig).eq.87).and.(igkq_tmp(igp).eq.87))   write(400+mpime, '("G")')
-!        if((igkq_tmp(ig).eq.136).and.(igkq_tmp(igp).eq.136)) write(400+mpime, '("G")')
-!        if((igkq_tmp(ig).eq.44).and.(igkq_tmp(igp).eq.23)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
-!        if((igkq_tmp(ig).eq.78).and.(igkq_tmp(igp).eq.62)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
-!        if((igkq_tmp(ig).eq.87).and.(igkq_tmp(igp).eq.87)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
-!        if((igkq_tmp(ig).eq.136).and.(igkq_tmp(igp).eq.136)) write(400+mpime,'(3f15.10)')  wgreen(iw), green(igkq_tmp(ig), igkq_tmp(igp),iw)
-!      enddo
-!     enddo 
-!    enddo
-!Collect G vectors across processors and then write the full green's function to file.
+
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
     CALL mp_barrier(inter_pool_comm)
@@ -300,6 +255,7 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
        CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)
     enddo
+
 #ifdef __PARA
     endif
     CALL mp_barrier(inter_pool_comm)

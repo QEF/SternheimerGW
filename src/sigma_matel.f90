@@ -59,7 +59,7 @@ COMPLEX(DP)               ::   sigma_band_extra(nbnd_sig,nbnd_sig)
 REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                et_qp_tr, z_tr, z(nbnd_sig)
 REAL(DP)                  ::   one
-COMPLEX(DP)               ::   czero
+COMPLEX(DP)               ::   czero, temp
 COMPLEX(DP)               ::   aux(ngmsex), psic(nrxx), vpsi(ngm),auxsco(ngmsco)
 COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
@@ -255,16 +255,19 @@ IF (ionode) THEN
                evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
             enddo
             do igp = 1, ngmsco
-               auxsco(igp) = sigma (igp, ig, iw)
-               !auxsco(igp) = sigma (ig, igp, iw)
+               ! auxsco(igp) = sigma (igp, ig, iw)
+               !With inversion symmetry these are perfectly symmetric ig -> igp
+               auxsco(igp) = sigma (ig, igp, iw)
             enddo
 !   psi_{i}(G)\Sigma(G',G)\psi_{j}^{*}(G')
 !           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
 !           evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
-            sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-            evc_tmp_i(ig)*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
-!           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-!           conjg(evc_tmp_i(ig))*ZDOTC(ngmsco, auxsco, 1, evc_tmp_j, 1)
+            temp = dcmplx(0.0d0, 0.0d0)
+            do igp = 1, ngmsco
+           !Tried conjg on both sides to little effect...
+               temp = temp + conjg(evc_tmp_j(igp))*auxsco(igp)  
+            enddo
+            sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) +  evc_tmp_i(ig)*temp
       enddo
    enddo
   enddo
@@ -321,7 +324,8 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
        dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) + real(sigma_band_ex(ibnd,ibnd)) - real( vxc(ibnd,ibnd) )
        imsig_diag (iw,ibnd) = aimag ( sigma_band_c (ibnd, ibnd, iw) )
        a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
-           ( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
+           ( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) + sigma_band_ex(ibnd, ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
+          !( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
            + abs ( imsig_diag (iw,ibnd) )**2.d0 )
     enddo
     call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ikq), et_qp (ibnd), z(ibnd) )
@@ -438,6 +442,19 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
   enddo
   endif
 
+  if(single_line) then
+     write(stdout,'(4x,"QP renorm",8(1x,f7.2))')  z(1:8)
+  else
+     write(stdout,'(4x,"QP renorm",8(1x,f7.2))', advance='no')  z(1:8)
+  endif
+
+  if(nbnd_sig.gt.8) then
+  do ideg = 9, nbnd_sig, 8 
+     if(ideg+7.lt.nbnd_sig) write(stdout,9000, advance='no')  z(ideg:ideg+7)
+     if(ideg+7.ge.nbnd_sig) write(stdout,9000)  z(ideg:nbnd_sig)
+  enddo
+  endif
+
   write(stdout,*)
   write(stdout,'("REsigma")')
   do iw = 1, nwsigma
@@ -488,6 +505,7 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
      endif
   enddo
 ENDIF
+    write(stdout,*)
     CALL clean_pw_gw(ikq)
     9000 format(21x, 8(1x,f7.2))
     9005 format(17x, 8(1x,f14.7))

@@ -334,7 +334,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               !starting value for delta_psi is read from iudwf
                nrec1 = ik
               !HL Don't need to read/write the full wave fxn at each iteration...
-            !  call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
+            ! call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
               call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
               call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
              !  dpsi(:,:)  = (0.d0, 0.d0) 
@@ -445,6 +445,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      !        WRITE(1000+mpime,*) meandvb
      !        WRITE(1000+mpime,*) dvscfout(nl(1), current_spin) 
           endif
+
         call dv_of_drho (1, dvscfout(1,1), .true.)
 
         call mix_potential_c(nrxx, dvscfout, dvscfin, &
@@ -509,8 +510,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 !   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !         "secs av.it.:",f5.1)') iter, tcpu, averlt
-!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
 !   HL setting drhoscf to dvscfin here this is a temporary hack. 
 !   need to understand why drhoscf is zeroed in PH code...
