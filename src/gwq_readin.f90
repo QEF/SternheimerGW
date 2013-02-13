@@ -166,9 +166,9 @@ SUBROUTINE gwq_readin()
   tr2_green    = 1.D-4
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
-  alpha_mix(1) = 0.6D0
+  alpha_mix(1) = 0.4D0
   niter_gw     = maxter
-  nmix_gw      = 5
+  nmix_gw      = 1
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0

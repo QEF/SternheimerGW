@@ -163,9 +163,9 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
  
 
      kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
-#ifdef __PARA
-     call mp_sum(  rho(1:lbnd) , intra_pool_comm )
-#endif
+!#ifdef __PARA
+!     call mp_sum(  rho(1:lbnd) , intra_pool_comm )
+!#endif
      do ibnd = nbnd, 1, -1
         if (conv(ibnd).eq.0) then
            rho(ibnd)=rho(lbnd)
@@ -228,10 +228,10 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
            c(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, t(1,lbnd), 1)
         end if
      end do
-#ifdef __PARA
-     call mp_sum(  a(1:lbnd), intra_pool_comm )
-     call mp_sum(  c(1:lbnd), intra_pool_comm )
-#endif
+!#ifdef __PARA
+!     call mp_sum(  a(1:lbnd), intra_pool_comm )
+!     call mp_sum(  c(1:lbnd), intra_pool_comm )
+!#endif
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then

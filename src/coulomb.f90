@@ -62,17 +62,19 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   COMPLEX(DP) :: cw
   COMPLEX(DP), allocatable :: z(:), u(:), a(:)
   INTEGER :: unf_recl, recl, ios
-  INTEGER :: iq 
+  INTEGER :: iq, screening 
   LOGICAL :: exst
 !again should decide if this should be allocated globally. 
   COMPLEX(DP) :: scrcoul(ngmpol, ngmpol, nfs, 1)
-!modeps and spenceralavi vars
+!modeps and spencer-alavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
 !for Godby needs plasmon pole.
   LOGICAL :: diag, limit
 ! used to test the recover file
   EXTERNAL get_clock
+!Extended plasmon pole model
+  REAL(DP) :: wwpi2, wwpj2, qxy, meff
   CALL start_clock ('coulomb')
 
 !DUMMY VARIABLES
@@ -88,38 +90,77 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 DO ig = igstart, igstop
    qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
     do iw = 1, nfs
+!HL DEBUG BROYDEN
+       !do iw = nfs, nfs
          drhoscfs(:,:) = (0.0d0, 0.0d0)
          dvbare(:)     = (0.0d0, 0.0d0)
          dvbare (nl (ig_unique(ig)) ) = (1.d0, 0.d0)
-         !From the inputcard we can choose whether to use a model dielectric or 
-         !do the full sternheimer treatment.
+       !From the inputcard we can choose whether to use a model dielectric or 
+       !do the full sternheimer treatment.
        IF (modielec) then
-       !The 'magic dielectric function' Inkson 1972
-       !Silicon parameters...
-       !check resta for parameters Phys. Rev. B 16, 2717 2722 (1977)
-       ! wwp    = 18.0/RYTOEV  ! plasma frequency in Ry
-       ! eps0   = 11.4         ! static diel constant of Si
-       ! q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
-       !LiCL parameters
-       !wwp    = 17.0/RYTOEV   ! plasma frequency in Ry
-       !eps0   = 11.04         ! static diel constant of 
-       !q0     = 1.2           ! characteristic momentum of Si, a.u. from Resta
-       ! MoS2 there are two well defined excitation for parallel and perpendicular.
-       ! this is an anisotropic material though!
-       ! should have (at least) 2 different plasmons!
-        wwp    = 24.0/RYTOEV   ! plasma frequency in Ry
-        eps0   = 7.4           ! static diel constant of Si
-        q0     = 1.90          ! characteristic momentum of MoS2 calculated from Resta..
+!      !The 'magic dielectric function' Inkson 1972
+!      !Silicon parameters...
+!      !check resta for parameters Phys. Rev. B 16, 2717 2722 (1977)
+!      !wwp    = 18.0/RYTOEV  ! plasma frequency in Ry
+!      !eps0   = 11.4         ! static diel constant of Si
+!      !q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
+!      !LiCL parameters
+!      !wwp    = 17.0/RYTOEV   ! plasma frequency in Ry
+!      !eps0   = 11.04         ! static diel constant of 
+!      !q0     = 1.2           ! characteristic momentum of Si, a.u. from Resta
+!      !MoS2 there are two well defined excitation for parallel and perpendicular.
+!      !this is an anisotropic material though!
+!      !should have (at least) 2 different plasmons!
+        wwp    = 24.0/RYTOEV ! plasma frequency in Ry
+        eps0   = 7.4         ! static diel constant of MoS2
+        q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
+        qg     = sqrt(tpiba2*qg2)
+        fac    = 1.d0/(1.d0-1.d0/eps0)
+        wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
+!        meff   = 1.0d0
+!        qg      = sqrt(tpiba2*qg2)
+!        if(screening.eq.1) then
+!     !Standard 3D-bulk ppm:
+!     !diagonal term ig = igp (all the others remain 0)
+  !   drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
+!     !(W-v) = (inveps(w) - delta) v
+!           fac    = 1.d0/(1.d0-1.d0/eps0)
+!           wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
+           drhoscfs (nl(ig_unique(ig)), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
+!        else if(screening.eq.2) then
+!     !Effective bi-layer plasmon model
+!     !Inkson and White semicond. sci. technol. 4 1989
+!           wwpi2   = (2*pi)/(eps0*meff)*qg
+!           wwpj2   = (2*pi)/(eps0*meff)*qg
+!           qxy     = sqrt(tpiba2((q(1)+g(1, ig_unique(ig)))**2 + (q(2)+g(2, ig_unique(ig)))**2))
+!           alpha   = wwpi2 + wwpj2*exp(-qxy*z)
+!     !need to use inkson's relation here... wwq = alpha*(1-inveps(q,0))^{-1}
+!           wwq  = alpha / (1 - inveps(q,0))
+!     !Skip through frequencies.
+!           scrcoul(ig_unique(ig), igp, 1, nspin_mag) = alpha
+!           scrcoul(ig_unique(ig), igp, 2, nspin_mag) = wwq
+!           CYCLE
+!        else if(screening.eq.3) then
+     !Bilayer plasmon model 
+        !   wwpi2   = (2*pi)/(eps0*meff)*qg
+        !   wwpj2   = (2*pi)/(eps0*meff)*qg
 
-         qg     = sqrt(tpiba2*qg2)
-         fac    = 1.d0/(1.d0-1.d0/eps0)
-         wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
-        !diagonal term ig = igp (all the others remain 0)
-        !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
-        !(W-v) = (inveps(w) - delta) v
-         drhoscfs (nl(ig_unique(ig)), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
-        !WRITE(1000+mpime, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig),1) + dvbare(nl(ig))
-        !SHOULD PUT IN A MODEL 2D fxn...
+        !   wwpl = ()
+        !   wwmi = ()
+        !else if(screening.eq.4) then
+!Multilayer plasmon modelM gives the expression for stern 2-D dielectric response.
+!analytic layered electron gas inverse dielectric function from hawyrlak and co-workers.
+!bqg=cosh(qg*d)-((2*pi)/(eps0*x))*((eps0*meff)/(kf*x)-sqrt((eps0*meff/(kf*x))-1))*sinh(qxy*d)
+!# \inveps(q,0) = sinh(qd)/sqrt(b**2-1)
+! fqg  = sinh(x*d)/(sqrt(b(x)**2-1))
+!#alpha parameter
+! aqg     = ((2*pi*n0)/(eps0*meff)*x)/(1-exp(-2*x*d))
+! weff2qg = aqg/(1-fqg)
+!#finally the static dielectric fxn is
+!invepsqg = 1 - aqg/weff2qg
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+        !endif
        ELSE
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, + 1)
          CALL solve_linter (dvbare, iw, drhoscfs)
@@ -128,10 +169,10 @@ DO ig = igstart, igstop
          if(iq.eq.1) then
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
          endif
+         DO igp = 1, ngmpol
+            scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
+         ENDDO
        ENDIF
-       DO igp = 1, ngmpol
-           scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
-       ENDDO
     enddo !iw
 ENDDO 
 tcpu = get_clock ('GW')

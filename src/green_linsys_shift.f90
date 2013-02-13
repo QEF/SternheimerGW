@@ -45,7 +45,7 @@ SUBROUTINE green_linsys_shift (ik0)
   !should be freq blocks...
   COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
-  COMPLEX(DP) :: gr(npwx, 1), ci, cw, green(ngmgrn,ngmgrn,nwgreen)
+  COMPLEX(DP) :: gr(npwx, 1), ci, cw, green(ngmgrn, ngmgrn, nwgreen)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
@@ -77,7 +77,7 @@ SUBROUTINE green_linsys_shift (ik0)
              mode          ! mode index
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-    REAL(DP) :: tr_cgsolve = 1.0d-10
+    REAL(DP) :: tr_cgsolve = 1.0d-8
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
@@ -209,7 +209,6 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
-              !HL cbcg
               call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
                                      npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
                                      cw, niters(gveccount))
@@ -219,8 +218,6 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-                                                    !HL calculating conjg(G(k+q))W{-q}= G(-k-q)W(q)
-!                                                            conjg(gr_A_shift(igkq_ig(igp),iw))
                                                              gr_A_shift(igkq_ig(igp),iw)
                 enddo
              enddo
@@ -234,7 +231,7 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
               x = et(ibnd, ikq) - w_ryd(iw)
               dirac = eta / pi / (x**2.d0 + eta**2.d0)
               green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
-                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))  * &
+                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))   * &
                                                         (evq(igkq_ig(igp), ibnd)) * dirac
             enddo 
            enddo!igp
@@ -250,6 +247,11 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
     CALL mp_barrier(inter_pool_comm)
     if(ionode) then
 #endif
+
+!Green's fxn now collected on head node. 
+!  do iw = 1, nwsigma
+!     CALL sigma_c(ik, green(:,:,iw))
+!  enddo
 !Write all frequencies to disk
     do iw = 1, nwgreen
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1

@@ -63,14 +63,13 @@
   ! must be kept in memory and saved between calls 
 
   complex(kind=DP), allocatable, save :: df (:,:), dv (:,:)
-  !
   complex(kind=DP), allocatable :: vinsave (:)
   real(kind=DP) :: norm
   complex(kind=DP) :: gamma, beta (maxter, maxter), work (maxter)
   real(kind=DP) :: DZNRM2
   complex(kind=DP) :: ZDOTC
   external ZDOTC, DZNRM2
-  ! adjustable parameters as suggested in the original paper
+  !adjustable parameters as suggested in the original paper
   real(kind=DP) w (maxter), w0
   !data w0 / 0.01d0 /, w / maxter * 1.d0 /
 !HL Hard coding the number of iterations
@@ -131,21 +130,22 @@
   !
  !The factorisation seems to go screwy here if we enforce the hermiticity
  !going to try it with a generalized inversion routine in case the matrix is no longer hermitian.
- !call ZHETRF ('U', iter_used, beta, maxter, iwork, work, maxter, info)
+  call ZHETRF ('U', iter_used, beta, maxter, iwork, work, maxter, info)
  !HL generalized for non-hermitian matrix:
-  call ZGETRF (iter_used, iter_used, beta, maxter, iwork, info)
+ !call ZGETRF (iter_used, iter_used, beta, maxter, iwork, info)
   call errore ('broyden', 'factorization', info)
  !HL
- !call ZHETRI ('U', iter_used, beta, maxter, iwork, work, info)
+  call ZHETRI ('U', iter_used, beta, maxter, iwork, work, info)
  !Generalized back substituion for non-hermitian matrix:
-  call ZGETRI (iter_used, beta, maxter, iwork, work, maxter, info)
+ !call ZGETRI (iter_used, beta, maxter, iwork, work, maxter, info)
   call errore ('broyden', 'ZSYTRI', info)
+
 !HL Trying with the hermiticity condition led to disaster and tears
-! do i = 1, iter_used
-!    do j = i + 1, iter_used
-!       beta (j, i) = conjg ( beta (i, j) ) 
-!    enddo
-! enddo
+ do i = 1, iter_used
+    do j = i + 1, iter_used
+       beta (j, i) = conjg ( beta (i, j) ) 
+    enddo
+ enddo
 !
   do i = 1, iter_used
      work (i) = ZDOTC (ndim, df (1, i), 1, vout, 1)
@@ -174,4 +174,3 @@
   return
   end subroutine mix_potential_c
   !-----------------------------------------------------------------------
-  !

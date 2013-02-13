@@ -84,6 +84,7 @@ gmap_sym.o\
 stern_symm.o\
 unfold_w.o\
 mix_pot_c.o\
+mix_pot_real.o\
 godby_needs.o\
 sigma_extra.o\
 bicgstabl.o\

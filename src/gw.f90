@@ -228,7 +228,7 @@ ENDIF
        do_band  = .TRUE.
 
 ! Generates small group of k and then forms IBZ_{k}.
-       CALL run_pwscf_green(do_band)     
+       CALL run_pwscf_green(do_band)
        CALL initialize_gw()
 
 ! CALCULATE G(r,r'; w) 
@@ -236,6 +236,9 @@ ENDIF
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
        if(do_green.and.multishift)        CALL green_linsys_shift(ik)
+
+!Should be an option for doing sigma_c separately:
+       if(do_sigma_c) CALL sigma_c(ik)
 
        call mp_barrier()
 
@@ -246,7 +249,6 @@ ENDIF
 
 !  CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
 !  Parallel routine for Sigma_c
-       if(do_sigma_c) CALL sigma_c(ik)
 
 ! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 

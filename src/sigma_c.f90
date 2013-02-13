@@ -1,3 +1,4 @@
+!SUBROUTINE sigma_c(ik0, green) 
 SUBROUTINE sigma_c(ik0) 
 ! G TIMES W PRODUCT
   USE io_global,     ONLY : stdout, ionode_id, ionode
@@ -184,7 +185,6 @@ SUBROUTINE sigma_c(ik0)
       endif
    enddo
 !Every processor needs access to the files: _gw0si.coul1 and _gw0si.green1
-
 !HL@10TION
 call mp_barrier(inter_pool_comm)
 
@@ -313,6 +313,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
 
      CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
 
+
 !Rotate G_vectors for FFT.
 !In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
 !I have checked that here as well and it works.
@@ -343,10 +344,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !APPLY COULOMB INTERACTION TO DIELECTRIC MATRIX
 !to form (eps^{-1}_{q1}(R^{-1}G, R^{-1}G') - \delta_{GG'}) v(-q + G) = W_{-q}(G,G') -> W_{-q}(\G, G')
-!INLINING THIS STUPID FUCKING ROUTINE BECAUSE I CANT SEEM TO PASS A FUCKING ARRAY TO A FUCKING SUBROUTINE
-
-
-rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 DO iw = 1, nfs
    DO ig = 1, ngmpol
        qg2 = (g(1,ig) - xq_ibk(1))**2 + (g(2,ig) - xq_ibk(2))**2 + (g(3,ig)-xq_ibk(3))**2
@@ -355,13 +352,6 @@ DO iw = 1, nfs
            DO igp = 1, ngmpol
               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
            ENDDO
-       !ELSE 
-       !THIS PART OF THE IF STATEMENT NEVER GETS EXECUTED DELETE IT!
-       !    if(ig.ne.1) then
-       !       DO igp = 1, ngmpol
-       !          scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-       !       ENDDO
-       !    endif
        ENDIF
        qg = sqrt(qg2)
        spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
@@ -378,8 +368,8 @@ DO iw = 1, nfs
              write(6,*) g(:, ig)
              write(6,*) xq_ibk(:)
              write(6,*) qg2
-             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
-             !we enforce that here:
+!for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+!we enforce that here:
              if(iw.eq.1) then
                 scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
              endif
@@ -389,8 +379,7 @@ DO iw = 1, nfs
        endif
    ENDDO !ig
 ENDDO
-!  CALL spheric_coulomb(ngmpol, nfs, scrcoul_g_R, -xq_ibk)
-    
+!CALL spheric_coulomb(ngmpol, nfs, scrcoul_g_R, -xq_ibk)
 !Calculate GODBY NEEDS OR PADE:
     IF (modielec) then
      If (padecont) then
@@ -416,7 +405,9 @@ ENDDO
            do iw = 1, nfs
               scrcoul_g_R (ig,ig,iw) = a(iw)
            enddo
+
        enddo
+      !ELSE IF(inkmod)
      ENDIF
     ELSE IF ((.not.modielec).and.(godbyneeds)) then
      do ig = 1, ngmpol
@@ -486,6 +477,13 @@ ENDDO
              endif
            enddo
         enddo
+
+      !  do ig = 1, ngmpol
+      !want to calculate W_{-q}
+      !should just be a fxn.
+      !     CALL mod_diel(ig, -xq_ibk, dcmplx(w_ryd(iw),eta), scrcoul_pade_g(ig,ig), 1)
+      !  enddo
+
 !W(G,G';w)
         czero = (0.0d0, 0.0d0)
         scrcoul(:,:) = czero

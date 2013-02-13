@@ -158,7 +158,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode,       & ! mode index
-             igpert        ! bare perturbation g vector.
+             igpert,     & ! bare perturbation g vector.
+             lmres         ! number of gmres iterations to include when using bicgstabl.
 
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
@@ -174,6 +175,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   irr    = 1
   ipert  = 1
   lter   = 0
+  lmres  = 1
 
 !HLallocate (hpsi(npwx*npol, 4)) ! Test array for whether linear system is being properly solved
   call start_clock ('solve_linter')
@@ -280,12 +282,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            endif
         endif
 
+!IS TPA preconditioner better?
         do ig = 1, npwq
            g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
                           (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
-
         h_diag = 0.d0
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
@@ -294,6 +296,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            IF (noncolin) THEN
               do ig = 1, npwq
                  h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+!                h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig) + (fiu/eprec(ibnd,ik))
               enddo
            END IF
         enddo
@@ -328,8 +331,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
         ! Apply -P_c^+.
         ! -P_c^ = - (1-P_v^):
-        ! SGW := call emptyproj ( evq, dvpsi)
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
+
+
            if (where_rec=='solve_lint'.or.iter > 1) then
               !starting value for delta_psi is read from iudwf
                nrec1 = ik
@@ -363,16 +367,21 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !HL should just use cgsolve_all when fiu(iw) = 0.0d0! probably gain at least factor of 
 !two for static case...
 
-       if(iw.eq.1) then
+       if(fiu(iw).eq.0.0d0) then
            call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                       dpsim(:,:) = dpsip(:,:)
+
        else
             call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-
             call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+!Is BICGSTABL a better bet might be able to use the G preconditioner... ????
+!       call  cbicgstabl(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+!                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, lmres, .true.)
+!       call  cbicgstabl(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+!                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, lmres, .true.)
        endif
 
            ltaver = ltaver + lter
@@ -432,25 +441,27 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      ! in the coulomb term, gives rise to a spurious dvscf response)
      ! One wing of the dielectric matrix is particularly badly behaved 
 
-          meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
-          if (meandvb.lt.1.d-8) then 
-     !        WRITE(1000+mpime,'("Zeroing dvscf")')  
-     !        WRITE(1000+mpime,*) meandvb
-     !        WRITE(1000+mpime,*) dvscfout(nl(1), current_spin) 
-             call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-             dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
-             call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
-     !     else
-     !        WRITE(1000+mpime,'("NOT Zeroing dvscf")')  
-     !        WRITE(1000+mpime,*) meandvb
-     !        WRITE(1000+mpime,*) dvscfout(nl(1), current_spin) 
-          endif
+     meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
+     if (meandvb.lt.1.d-8) then 
+         call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+         dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
+         call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
+     endif
 
-        call dv_of_drho (1, dvscfout(1,1), .true.)
+     call dv_of_drho (1, dvscfout(1,1), .true.)
 
+
+     if (fiu(iw).eq.0.0d0) then
+!just using standard broyden for the zero freq. case.
+        call mix_potential_real(2*nrxx*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
+                           dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
+     else
+!what is with the 2*nrxx??
         call mix_potential_c(nrxx, dvscfout, dvscfin, &
                              alpha_mix(kter), dr2, tr2_gw, iter, &
                              nmix_gw, convt)
+     endif
+
      if (doublegrid) then
         do ipert = 1, npe
            do is = 1, nspin_mag
@@ -481,10 +492,17 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      tcpu = get_clock ('GW')
      dr2 = dr2 / DBLE(npe)
 
-!   WRITE( 1000 + mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!   if(fiu(iw).eq.0.0d0) then
+!      WRITE(1000+mpime, '("using pw broyden mixing and cg")')
+!   else
+!      WRITE(1000+mpime, '("using sgw broyden mixing and cbicg")')
+!   endif
+
+!   WRITE( 1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !   " secs   av.it.: ",f5.1)') iter, tcpu, averlt
 !   WRITE( 1000+mpime, '(5x," thresh=",e10.3, " alpha_mix = ",f6.3, &
 !   " |ddv_scf|^2 = ",e10.3 )') thresh, alpha_mix (kter) , dr2
+
 !   Here we save the information for recovering the run from this point
 !   HL-  CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, dvscfin, drhoscfh) 
 !   write_rec('solve_linte, k, dr2, iter, cont, q, dvscfin, drhoscfh) 
