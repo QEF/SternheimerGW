@@ -89,7 +89,8 @@ ELSE
         DO iwim = 1, nfs
             DO igp = 1, ngmpol
             !For symmetry operations with fraction translations we need to include:
-            !e^{-i2\pi(G - G')\cdot\tau_{r}} = eigv(G)*conjg(eigv(G'))
+            !the \tau_{r} part which applies to the original G, G' rotation on R
+            !e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))
               phase = eigv(sym_friend(ig), sym_ig(ig))*conjg(eigv(igp, sym_ig(ig)))
               scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
             ENDDO
@@ -125,20 +126,20 @@ IF(iq.eq.1) then
   Write(6, '("Zeroing Wings of W.")')
   if(godbyneeds) then
      do igp = 2, ngmpol
-        scrcoul_g_in(1,igp,1,1) = (10.0d0, 0.0d0)
-        scrcoul_g_in(1,igp,2,1) = ( 0.0d0, 0.0d0)
+        !scrcoul_g_in(1,igp,1,1) = ( 0.0d0, 0.0d0)
+        !scrcoul_g_in(1,igp,2,1) = ( 0.0d0, 0.0d0)
      enddo
      do igp = 2, ngmpol
-        scrcoul_g_in(igp,1,1,1) = (10.0d0, 0.0d0)
-        scrcoul_g_in(igp,1,2,1) = ( 0.0d0, 0.0d0)
+        !scrcoul_g_in(igp,1,1,1) = ( 0.0d0, 0.0d0)
+        !scrcoul_g_in(igp,1,2,1) = ( 0.0d0, 0.0d0)
      enddo
   endif
 !How to zero for pade continuation?
   if(padecont) then
      do igp = 2, ngmpol
         do iwim = 1, nfs
-           scrcoul_g_in(1,igp,iwim,1) = (0.0d0, 0.0d0)
-           scrcoul_g_in(igp,1,iwim,1) = (0.0d0, 0.0d0)
+        !   scrcoul_g_in(1,igp,iwim,1) = (0.0d0, 0.0d0)
+        !   scrcoul_g_in(igp,1,iwim,1) = (0.0d0, 0.0d0)
         enddo
      enddo
   endif

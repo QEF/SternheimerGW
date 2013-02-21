@@ -379,7 +379,8 @@ MODULE freq_gw
   LOGICAL :: fpol ! if .TRUE. dynamic dielectric constant is computed
   INTEGER, PARAMETER :: nfsmax=50  ! # of maximum frequencies
   INTEGER :: nfs                   ! # of frequencies
-  REAL (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
+  !REAL (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
+  COMPLEX (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
   !variables for convolution
   INTEGER :: nwcoul, nwgreen, nwalloc, nwsigma
 

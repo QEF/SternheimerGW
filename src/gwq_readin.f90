@@ -85,6 +85,7 @@ SUBROUTINE gwq_readin()
   INTEGER, EXTERNAL  :: atomic_number
   REAL(DP), EXTERNAL :: atom_weight
   LOGICAL, EXTERNAL  :: imatches
+  REAL(DP)           :: ar, ai
   !
   NAMELIST / INPUTGW / tr2_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
@@ -202,7 +203,7 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        = .FALSE.
   lrpa         = .FALSE.
-  maxter_green = 150
+  maxter_green = 200
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 2.5
@@ -358,8 +359,8 @@ SUBROUTINE gwq_readin()
              TRIM(card) == 'Frequencies' ) THEN
            DO i = 1, nfs
               !HL Need to convert frequencies from electron volts into Rydbergs
-              READ (5, *, iostat = ios) fiu(i)
-              fiu(i) = fiu(i) / RYTOEV
+              READ (5, *, iostat = ios) ar, ai 
+              fiu(i) = dcmplx(ar, ai) / dcmplx(RYTOEV,0.0d0)
            END DO
         END IF
      END IF
@@ -367,10 +368,13 @@ SUBROUTINE gwq_readin()
      CALL mp_bcast(ios, ionode_id)
      CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
      CALL mp_bcast(fiu, ionode_id )
+!     write(1000+mpime,*) fiu(:)
 
   ELSE
      nfs=0
-     fiu=0.0_DP
+     !fiu=0.0_DP
+      fiu=DCMPLX(0.0d0, 0.d0)
+      CALL mp_bcast(fiu, ionode_id )
   END IF
 
 ! Reading in kpoints specified by user.
@@ -400,7 +404,6 @@ SUBROUTINE gwq_readin()
              TRIM(card)=='K_points') THEN
            DO i = 1, num_k_pts
            !DO i = 1, 2
-              !HL Need to convert frequencies from electron volts into Rydbergs
               READ (5, *, iostat = ios) xk_kpoints(1,i), xk_kpoints(2,i), xk_kpoints(3,i)
               !write(6,'(3f11.7)') xk_kpoints(:,i)
            END DO
@@ -426,7 +429,7 @@ SUBROUTINE gwq_readin()
   tmp_dir_gw= TRIM (tmp_dir) // '_gw' // int_to_char(my_image_id)
   ext_restart=.FALSE.
   ext_recover=.FALSE.
-
+  recover=.false.
   IF (recover) THEN
      CALL gw_readfile('init',ierr)
      IF (ierr /= 0 ) THEN
@@ -445,7 +448,7 @@ SUBROUTINE gwq_readin()
                                                       tmp_dir=tmp_dir_gw
      u_from_file=.true.
   ENDIF
-1001 CONTINUE
+1001 continue
 
   ! HL !!ATTENZIONE!! This is where the files from the SCF step are read.
   ! QE description:

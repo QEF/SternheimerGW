@@ -46,9 +46,10 @@ SUBROUTINE sigma_matel (ik0)
   USE fft_scalar,           ONLY : cfft3ds, cfft3d
   USE fft_base,             ONLY : dffts
   USE fft_parallel,         ONLY : tg_cft3s
+  USE cell_base,            ONLY : omega, tpiba2, at, bg
 
 IMPLICIT NONE
-INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir, counter
+INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
 REAL(DP)                  ::   w_ryd(nwsigma)
 REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
                                et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
@@ -60,7 +61,7 @@ REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a
                                et_qp_tr, z_tr, z(nbnd_sig)
 REAL(DP)                  ::   one
 COMPLEX(DP)               ::   czero, temp
-COMPLEX(DP)               ::   aux(ngmsex), psic(nrxx), vpsi(ngm),auxsco(ngmsco)
+COMPLEX(DP)               ::   aux(ngmsex), psic(nrxx), vpsi(ngm),auxsco(ngmsco)!, auxr(nrxxs)
 COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
 LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
@@ -69,6 +70,9 @@ COMPLEX(DP), ALLOCATABLE  ::   sigma(:,:,:)
 COMPLEX(DP), ALLOCATABLE  ::   evc_tmp_j(:), evc_tmp_i(:)
 INTEGER, ALLOCATABLE      ::   igkq_ig(:) 
 INTEGER, ALLOCATABLE      ::   igkq_tmp(:) 
+!COMPLEX(DP), ALLOCATABLE  :: sigma_corr(:,:)
+COMPLEX(DP)               :: corr_element
+REAL(DP)                  :: dvoxel
 
 !For VXC matrix elements:
 REAL(DP) :: vtxc, etxc, ehart, eth, charge
@@ -238,6 +242,66 @@ IF (ionode) THEN
 
  sigma = dcmplx(0.0d0, 0.0d0)
  CALL davcio (sigma, lrsigma, iunsigma, 1, -1)
+
+!!!!!!!!REAL SPACE SIGMA_C
+ sigma_band_c (:,:,:) = czero
+! if (nksq.gt.1) rewind (unit = iunigk)
+! if (nksq.gt.1) then
+!     read (iunigk, err = 100, iostat = ios) npw, igk
+!100        call errore ('green_linsys', 'reading igk', abs (ios) )
+! endif
+! if (.not.lgamma.and.nksq.gt.1) then
+!     read (iunigk, err = 100, iostat = ios) npwq, igkq
+! 200             call errore ('green_linsys', 'reading igkq', abs (ios) )
+! endif
+! if(lgamma) npwq = npw
+! if (lgamma) then
+!    CALL davcio (evc, lrwfc, iuwfc, 1, -1)
+! else
+!else then psi_{\k+\gamma = \psi_{k}} should be second entry in list.
+!    CALL davcio (evc, lrwfc, iuwfc, 2, -1)
+! endif
+!!!!!!!!!!
+! ALLOCATE (sigma_corr(nrxxs, nrxxs))
+! dvoxel = (omega/nrxxs)**2
+! do iw = 1, nwsigma
+!       sigma_corr = czero
+!       do ig = 1, ngmsco
+!         auxr = czero
+!         do igp = 1, ngmsco
+!            auxr(nls(igp)) = sigma(ig, igp, iw)
+!         enddo
+!         call cft3s (auxr, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +2)
+!         do irp = 1, nrxxs
+!            sigma_corr(ig,irp) = auxr(irp) / omega
+!         enddo
+!       enddo
+!       do irp = 1, nrxxs
+!          auxr = czero
+!          do ig = 1, ngmsco
+!             auxr(nls(ig)) = conjg(sigma_corr(ig,irp))
+!          enddo
+!          call cft3s (auxr, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +2)
+!          sigma_corr(1:nrxxs,irp) = conjg(auxr)
+!       enddo
+!!Take all diagonal matrix elements with the correlation potential in real space.
+!       do ibnd = 1, nbnd_sig
+!          psic = czero
+!          do ig = 1, npwq
+!             psic(nls(igkq(ig))) = evc(ig, ibnd)
+!          enddo
+!          call cft3s (psic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +2)
+!          psic = psic/sqrt(omega)
+!          corr_element = DCMPLX(0.0d0, 0.0d0)
+!          do irp = 1, nrxxs
+!             do ir = 1, nrxxs
+!                corr_element = corr_element + psic(ir)*sigma_corr(ir,irp)*conjg(psic(irp))*dvoxel
+!             enddo
+!          enddo
+!          sigma_band_c(ibnd,ibnd,iw) = corr_element
+!       enddo
+! enddo
+!!!!!!!!
  WRITE(6,*) 
  WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i8)') counter, npwq
  WRITE(6,*) 
@@ -255,19 +319,19 @@ IF (ionode) THEN
                evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
             enddo
             do igp = 1, ngmsco
-               ! auxsco(igp) = sigma (igp, ig, iw)
-               !With inversion symmetry these are perfectly symmetric ig -> igp
-               auxsco(igp) = sigma (ig, igp, iw)
+              !auxsco(igp) = sigma (igp, ig, iw)
+              !With inversion symmetry these are perfectly symmetric ig -> igp
+              !i.e.\Sigma(ig,igp) = \Sigma(igp,ig)
+               auxsco(igp) = sigma (igp, ig, iw)
             enddo
-!   psi_{i}(G)\Sigma(G',G)\psi_{j}^{*}(G')
-!           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-!           evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
-            temp = dcmplx(0.0d0, 0.0d0)
-            do igp = 1, ngmsco
+           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
+           evc_tmp_i(ig)*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
+           !temp = dcmplx(0.0d0, 0.0d0)
+           ! do igp = 1, ngmsco
            !Tried conjg on both sides to little effect...
-               temp = temp + conjg(evc_tmp_j(igp))*auxsco(igp)  
-            enddo
-            sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) +  evc_tmp_i(ig)*temp
+           !    temp = temp + conjg(evc_tmp_j(igp))*auxsco(igp)  
+           ! enddo
+           ! sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) +  evc_tmp_i(ig)*temp
       enddo
    enddo
   enddo

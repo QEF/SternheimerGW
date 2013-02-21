@@ -10,7 +10,7 @@ SUBROUTINE sigma_exch(ik0)
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
-  USE cell_base,     ONLY : omega, tpiba2, at, bg
+  USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
   USE eqv,           ONLY : evq, eprec
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc,&
                             iunsex, lrsex
@@ -170,11 +170,10 @@ DEALLOCATE(greenf_na)
 
 ALLOCATE ( barcoul     (ngmsex, ngmsex) )
 
-    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-
+!    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 !HL using  sax cutoff
-!    rcut = 0.50d0*minval(sqrt(sum(bg**2,1)))/sqrt(tpiba2)
-!    rcut = rcut-rcut/50.0d0
+    rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
+    rcut = rcut-rcut/50.0d0
 ! q
 ! q = (k0 +q) - k0
 ! xq_coul(:) = xk(:,ikq) - xk_kpoints(:,ik0)
@@ -190,7 +189,7 @@ ALLOCATE ( barcoul     (ngmsex, ngmsex) )
 
         if (qg < eps8) limit=.true.
         if(.not.limit) then
-            spal = 1.0d0 - cos (rcut * sqrt(tpiba2) * qg)
+            spal = 1.0d0 - cos (rcut * tpiba * qg)
             barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
             limit=.false.
         else
@@ -224,7 +223,7 @@ DEALLOCATE(barcoul)
        barcoulr(1:nrsex,irp) = conjg ( aux )
     enddo
 !might want to keep it as Gv rather than vG
-    sigma_ex = sigma_ex + wq(iq)* (0.0d0,1.0d0) / tpi *  greenf_nar * barcoulr
+       sigma_ex = sigma_ex + wq(iq)* (0.0d0,1.0d0) / tpi *  greenf_nar * barcoulr
 DEALLOCATE(barcoulr)
 DEALLOCATE(greenf_nar)
 ENDDO ! on q

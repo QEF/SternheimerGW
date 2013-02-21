@@ -80,12 +80,12 @@ USE kinds,                     ONLY : DP
     !
     ar = real(a(p))
     ai = aimag(a(p))
-    if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+!    if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
 !       write(6,*) (z(i),i=1,N)
 !       write(6,*) (u(i),i=1,N)
 !       write(6,*) (a(i),i=1,N)
 !      call error ('pade_coeff','one or more coefficients are NaN',1)
-    endif
+!    endif
     !
   enddo
   !

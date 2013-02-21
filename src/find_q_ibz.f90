@@ -47,26 +47,29 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q)
   REAL(DP), PARAMETER     :: eps=1.0d-5
 
 
-  !The logic of this routine is: 
-  !xq_ibk_locr is the symmetry rotated xq_ibk 
+  !xq_ibk_locr is the symmetry rotated xq_ibk. 
   !x_q_loc is the q point in the IBZ in crystal co-ordinates.
+  !The logic of this routine is: 
   !if x_q_loc = xq_ibk_locr then we have found the symmetry operation
   !which rotates x_q_ibk to i_q_ibz. 
-  !R(q_{IBK}) = xq_{IBZ}
+  !R(q_{IBK}) = q_{IBZ}
+  !q_{IBK} = R^{-1} q_{IBZ}
+  !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
   !q_{IBK} = R^{-1} xq_{IBZ}
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
 
-  !Possible solutions to not using symmetry
+  !Possible solution to not using symmetry
   !1) Give up, join a monastery and commit myself to a life of good deeds (simplest). 
-  !Transform xq into cartesian co-ordinates. 
-
    xq_ibk_loc(:) = xq_ibk 
+  !Transform xq into cartesian co-ordinates. 
    CALL cryst_to_cart(1, xq_ibk_loc(:), at, -1)
    found_q=.false.
 
 DO iq = 1, nqs
   !Transform xq into cartesian co-ordinates. 
-   x_q_loc(:) = x_q(:,iq)
+  !x_q_loc(:) = x_q(:,iq)
+  !Symmfix
+   x_q_loc(:) = -x_q(:,iq)
    CALL cryst_to_cart(1, x_q_loc(:), at, -1)
    DO isym = 1, nsym
       ism1 = invs(isym)

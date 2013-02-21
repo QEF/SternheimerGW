@@ -20,7 +20,7 @@ SUBROUTINE sigma_c(ik0)
   USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
                             nr1sco, nr2sco, nr3sco, ngmgrn, ngmpol
   USE gvect,         ONLY : g, ngm, ecutwfc, nl
-  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat
+  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
   USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
                             nproc_pool, me_pool, my_pool_id, nproc
@@ -50,7 +50,7 @@ SUBROUTINE sigma_c(ik0)
   COMPLEX(DP), ALLOCATABLE :: scrcoul(:,:)
 !v array
 !COMPLEX(DP), ALLOCATABLE ::  barcoul(:,:), barcoulr(:,:), barcoul_R(:,:)
-  REAL(DP) :: qg2, qg
+  REAL(DP) :: qg2, qg, qxy, qz
 !G arrays:
 !COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfp(:,:), greenfm(:,:)
   COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfr(:,:)
@@ -80,7 +80,7 @@ SUBROUTINE sigma_c(ik0)
   COMPLEX(DP), ALLOCATABLE           :: eigv(:,:)
 !q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
   REAL(DP) :: xq_coul(3)
-  REAL(DP) :: rcut, spal
+  REAL(DP) :: rcut, spal, zcut
   INTEGER  :: ibnd
 !CHECK FOR NAN's
   REAL(DP)     :: ar, ai
@@ -110,15 +110,13 @@ SUBROUTINE sigma_c(ik0)
 !These go on the big grid...
    ALLOCATE ( scrcoul        (nrsco, nrsco)            )
    ALLOCATE ( greenfr        (nrsco, nrsco)            )
-
 !barcoul
 !  ALLOCATE ( barcoul     (ngmpol, ngmpol)  )
 !  ALLOCATE ( barcoulr    (nrsco,  nrsco)   )
 !  ALLOCATE ( barcoul_R   (ngmpol,  ngmpol) )
 !  ALLOCATE ( gmapsym     (ngm, 48)         )
-
-! This should be more efficient should also only store up to ngmsco but 
-! that won't be invented until it is necessary.
+!  This should be more efficient should also only store up to ngmsco but 
+!  that won't be invented until it is necessary.
    ALLOCATE ( gmapsym        (ngm, nsym)                 )
    ALLOCATE ( eigv(ngm, nsym) )
 !This is a memory hog...
@@ -156,26 +154,28 @@ SUBROUTINE sigma_c(ik0)
    endif
 
    WRITE(6,'("nsym, nsymq ", 2i4)'), nsym, nsymq
-   WRITE(6,'("Should be inversion matrix ...")')
+!   WRITE(6,'("Should be inversion matrix ...")')
    !if(nsym.lt.48) then
-   if(.not.noinv.and.lgamma) then
+!   if(.not.noinv.and.lgamma) then
       !inversym= 25
       !inversym= invs(1)
-       inversym = 1 + nsymq/2
-       WRITE(6,'(3i4)') s(:,:,inversym)
-   else if (noinv) then
-       inversym = nsym + 1
+!       inversym = 1 + nsymq/2
+!       WRITE(6,'(3i4)') s(:,:,inversym)
+!   else if (noinv) then
+!       inversym = nsym + 1
        !inversym = 25
        !inversym= invs(1)
-       WRITE(6,'(3i4)') s(:,:,inversym)
-   else
-       inversym = 1+nsymq/2  
+!       WRITE(6,'(3i4)') s(:,:,inversym)
+!   else
+!       inversym = 1+nsymq/2  
        !inversym= invs(1)
-       WRITE(6,'(3i4)') s(:,:,inversym)
-   endif
+!       WRITE(6,'(3i4)') s(:,:,inversym)
+!   endif
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
+
+   wq(:) = 0.0d0
    do iq = 1, nksq
       if(lgamma) then
          write(6, '(" lgamma ")')
@@ -209,7 +209,7 @@ endif
       npool = nproc / nproc_pool
       write(stdout,'("npool", i4, i5)') npool, nksq
       if (npool.gt.1) then
-      ! number of g-vec per pool and reminder
+      ! number of q-vec per pool and remainder
         nkpool = nksq / npool
         nkr = nksq - nkpool * npool
 
@@ -232,27 +232,29 @@ endif
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
    WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
-
    if (nksq.gt.1) rewind (unit = iunigk)
-   DO iq = iqstart, iqstop
+DO iq = iqstart, iqstop
       if (lgamma) then
           ikq = iq
       else
 !k+q is in even positions of list (k,k+q)
           ikq = 2*iq
       endif
-
 !q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
 !  q = (k0 + q) - k0
-!HL works for si at gamma:
-    xq_ibk(:) = xk(:,ikq) - xk_kpoints(:, ik0)
+!  xq_ibk(:) = xk(:,ikq) - xk_kpoints(:, ik0)
+!  by actually searching for -q and calculating w of -q  
+!  we ensure there is no confusion in which symmetry routine is required.
+!  SYMMFIX
+!  -q =  k0 - (k0 + q)
+   xq_ibk(:) = xk_kpoints(:, ik0) - xk(:, ikq)
 
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
 !q is stored in the list x_q as positive q but all the calculations have
 !been done at -q therefore we are just going to calculate \SumG_{k+q}W_{-q}
 
-    call find_q_ibz(xq_ibk, s, iqrec, isym, found_q)
+   call find_q_ibz(xq_ibk, s, iqrec, isym, found_q)
 
 !Read igkq indices:
 !HOW DO YOU KNOW THESE ARE READING THE CORRECT igkqs in parallel ?????
@@ -275,9 +277,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
     write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
     write(6,*)
 
-!Time Reversal?
-!  isym  = 1
-!  iqrec = iq
+! Time Reversal?
+! isym  = 1
+! iqrec = iq
 
    write(1000+mpime, *)  
    write(1000+mpime, '("xq_IBK point")')
@@ -326,135 +328,162 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !1) Could pad scrcoul_g_R so that all the vectors still fall in side of it up to ngmsco
 !   then trim them off later.
 !2) Modify gmapsym so that it only keeps vectors up to ngmsco.
-    do ig = 1, ngmpol
-       do igp = 1, ngmpol
-          if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(igp,isym).le.ngmpol)&
+    do igp = 1, ngmpol
+       do ig = 1, ngmpol
+          if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(igp,isym).le.ngmpol) &
               .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
               do iwim = 1, nfs
-             !Rotating dielectric matrix with phase factor for nonsymmorphic space groups: 
-                phase = eigv(ig, isym)*conjg(eigv(igp,isym))
-                scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)*phase
+!Rotating dielectric matrix with phase factor for nonsymmorphic space groups: 
+!phase = eigv(ig, isym)*conjg(eigv(igp,isym))
+!According to some subtle considerations this should be \tau_{R^{-1}}
+!           phase = eigv(ig, invs(isym))*conjg(eigv(igp,invs(isym)))
+!this should be INVSYM!
+!           scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)*phase
+!following HL:
+              phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
+              scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
               enddo
           endif
        enddo
     enddo
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!Generate bare coulomb:
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!APPLY COULOMB INTERACTION TO DIELECTRIC MATRIX
-!to form (eps^{-1}_{q1}(R^{-1}G, R^{-1}G') - \delta_{GG'}) v(-q + G) = W_{-q}(G,G') -> W_{-q}(\G, G')
+!Generate bare coulomb:                     !!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+!HL using  sax cutoff
+!this should be L_{z}/2
+!     rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
+!     rcut = rcut-rcut/50.0d0
 DO iw = 1, nfs
    DO ig = 1, ngmpol
-       qg2 = (g(1,ig) - xq_ibk(1))**2 + (g(2,ig) - xq_ibk(2))**2 + (g(3,ig)-xq_ibk(3))**2
+!2D screening.
+       qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
        limq = (qg2.lt.eps8) 
+
+       qxy  = sqrt((g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2)
+       qz   = (g(3,ig)+xq_ibk(3))
+
+!Choose zcut to be 1/2*L_{z} which it does because it all comes out in the wash.
+!      at(:,:) = at(:,:) / alat
+       zcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
+       spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
        IF(.not.limq) then
            DO igp = 1, ngmpol
               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
            ENDDO
        ENDIF
-       qg = sqrt(qg2)
-       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!Normal case using truncated coulomb potential.
        if(.not.limq) then
           do igp = 1, ngmpol
               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
           enddo
        else
-!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
-             write(6,'("Taking Limit.")')
-             write(6,*) (fpi*e2*(rcut**2))/2.0d0
-             write(6,*) ig, iw
-             write(6,*) g(:, ig)
-             write(6,*) xq_ibk(:)
-             write(6,*) qg2
-!for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
-!we enforce that here:
+!             write(6,*) qg2
+!             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+!             !we enforce that here:
              if(iw.eq.1) then
                 scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
              endif
              do igp = 1, ngmpol
+!               what is the qxy = 0, qz = 0 component???
+!               l'hopital the expression and taking the limits qxy goes to zero
+!               and then qz goes to zero seems to give me this(same as before):
+
                 scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+!               taking limits the other way gives a divergent result...
              enddo
        endif
+!SPHERICAL SCREENING
+!       qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
+!       limq = (qg2.lt.eps8) 
+!       IF(.not.limq) then
+!           DO igp = 1, ngmpol
+!              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+!           ENDDO
+!       !ELSE 
+!       !THIS PART OF THE IF STATEMENT NEVER GETS EXECUTED DELETE IT!
+!       !    if(ig.ne.1) then
+!       !       DO igp = 1, ngmpol
+!       !          scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+!       !       ENDDO
+!       !    endif
+!       ENDIF
+!       qg = sqrt(qg2)
+!       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
+!!Normal case using truncated coulomb potential.
+!       if(.not.limq) then
+!          do igp = 1, ngmpol
+!              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
+!          enddo
+!       else
+!!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
+!             write(6,'("Taking Limit.")')
+!             write(6,*) (fpi*e2*(rcut**2))/2.0d0
+!             write(6,*) ig, iw
+!             write(6,*) g(:, ig)
+!             write(6,*) xq_ibk(:)
+!             write(6,*) qg2
+!             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+!             !we enforce that here:
+!             if(iw.eq.1) then
+!                scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
+!             endif
+!             do igp = 1, ngmpol
+!                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+!             enddo
+!       endif
    ENDDO !ig
 ENDDO
 !CALL spheric_coulomb(ngmpol, nfs, scrcoul_g_R, -xq_ibk)
 !Calculate GODBY NEEDS OR PADE:
-    IF (modielec) then
-     If (padecont) then
-       do ig = 1, ngmpol
-!   Pade input points on the imaginary axis
-         do iw = 1, nfs
-           z(iw) = dcmplx( 0.d0, fiu(iw))
-           u(iw) = scrcoul_g_R(ig, ig, iw)
-         enddo
-!        Pade coefficients
-         call pade_coeff ( nfs, z, u, a)
-         do iw = 1, nfs
-            scrcoul_g_R (ig,ig,iw) = a(iw)
-         enddo
-       enddo !enddo on ig
-     ELSE IF (godbyneeds.and.modielec) then
-       do ig = 1, ngmpol
-           do iw = 1, nfs
-              z(iw) = dcmplx( fiu(iw), 0.0d0)
-              u(iw) = scrcoul_g_R(ig, ig, iw)
-           enddo
-           CALL godby_needs_coeffs(nfs, z, u, a)
-           do iw = 1, nfs
-              scrcoul_g_R (ig,ig,iw) = a(iw)
-           enddo
 
-       enddo
-      !ELSE IF(inkmod)
-     ENDIF
-    ELSE IF ((.not.modielec).and.(godbyneeds)) then
-     do ig = 1, ngmpol
-      do igp = 1, ngmpol 
-          !for godby-needs plasmon pole the algebra is done assuming real frequency*i...
-          !that is: the calculation is done at i*wp but we pass a real number as the freq. 
-          !just trust me...
-           do iw = 1, nfs
-             z(iw) = dcmplx( fiu(iw), 0.0d0)
-             u(iw) = scrcoul_g_R(ig, igp, iw)
-           enddo
-           CALL godby_needs_coeffs(nfs, z, u, a)
-           do iw = 1, nfs 
-             !just overwrite
-              scrcoul_g_R (ig, igp, iw) = a(iw)
-           enddo
-       enddo
-      enddo
-    ELSE IF ((.not.modielec).and.(padecont)) then
-      do igp = 1, ngmpol
-       do ig = 1, ngmpol
-!   Pade input points on the imaginary axis
-         do iw = 1, nfs
-            z(iw) = dcmplx( 0.d0, fiu(iw))
-            u(iw) = scrcoul_g_R (ig, igp,iw)
-         enddo
-!        Pade coefficients      
-         call pade_coeff ( nfs, z, u, a)
-!        Overwrite scrcoul with Pade coefficients to be read in gw_product.
-         do iw = 1, nfs 
-            scrcoul_g_R (ig, igp, iw) = a(iw)
-         enddo
-       enddo !enddo on ig
-      enddo  !enddo on igp
-    ENDIF
-
+    if(.not.modielec) then 
+        if(godbyneeds) then
+        do ig = 1, ngmpol
+          do igp = 1, ngmpol 
+              !for godby-needs plasmon pole the algebra is done assuming real frequency*i...
+              !that is: the calculation is done at i*wp but we pass a real number as the freq. 
+              !just trust me...
+               do iw = 1, nfs
+                 z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
+                 u(iw) = scrcoul_g_R(ig, igp, iw)
+               enddo
+               CALL godby_needs_coeffs(nfs, z, u, a)
+               do iw = 1, nfs 
+              !just overwrite scrcoul_g_R with godby-needs coefficients.
+                  scrcoul_g_R (ig, igp, iw) = a(iw)
+               enddo
+          enddo
+        enddo
+        else if (padecont) then
+          do igp = 1, ngmpol
+           do ig = 1, ngmpol
+!     Pade input points on the imaginary axis
+             do iw = 1, nfs
+                z(iw) = fiu(iw)
+                u(iw) = scrcoul_g_R (ig, igp, iw)
+             enddo
+!     Pade coefficients      
+            call pade_coeff ( nfs, z, u, a)
+!     Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
+             do iw = 1, nfs 
+                scrcoul_g_R (ig, igp, iw) = a(iw)
+             enddo
+           enddo !enddo on ig
+        enddo  !enddo on igp
+        else if(.not.padecont.and..not.godbyneeds) then
+                 WRITE(6,'("No screening model chosen!")')
+        endif
+    endif
 !Start integration over iw +/- wcoul. 
     WRITE(6,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
-        scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
+       scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
+!!!!!!!
+     if(.not.modielec) then
         do ig = 1, ngmpol
            do igp = 1, ngmpol
               do iwim = 1, nfs
-                  z(iwim) = dcmplx( 0.d0, fiu(iwim))
-             !normal ordering.
-             !a(iwim) = scrcoul_g (ig,igp,iwim)
-             !For rotated g-vects.
+                  z(iwim) = fiu(iwim)
                   a(iwim) = scrcoul_g_R (ig,igp,iwim)
              enddo
              pade_catch=.false.
@@ -477,13 +506,19 @@ ENDDO
              endif
            enddo
         enddo
+     else if(modielec)  then
+          !do ig = 1, ngmpol
+          !   call mod_dielec(ig, xq_ibk, w_ryd(iw), scrcoul_pade_g(ig,ig), screening)
+          !enddo
+     endif
 
-      !  do ig = 1, ngmpol
-      !want to calculate W_{-q}
-      !should just be a fxn.
-      !     CALL mod_diel(ig, -xq_ibk, dcmplx(w_ryd(iw),eta), scrcoul_pade_g(ig,ig), 1)
-      !  enddo
-
+!!!!!!!
+!padecatch     
+!       if(padecont) then
+!          do ig =2, ngmpol 
+!              scrcoul_pade_g(ig,1) = dcmplx(0.d0,0.0d0)
+!          enddo
+!       endif
 !W(G,G';w)
         czero = (0.0d0, 0.0d0)
         scrcoul(:,:) = czero
@@ -494,7 +529,7 @@ ENDDO
            enddo
            call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
            do irp = 1, nrsco
-              scrcoul(ig, irp) = aux(irp) / omega
+              scrcoul(ig, irp) = aux(irp) / omega 
            enddo
         enddo
 
@@ -510,14 +545,12 @@ ENDDO
        ! simpson quadrature: int_w1^wN f(w)dw = deltaw * 
        ! [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
          cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-       !Presumably the fxn should be zero at the cutoff but might as well be consistent...
          if ( iw/2*2.eq.iw ) then
             cprefac = cprefac * 4.d0/3.d0
          else
             cprefac = cprefac * 2.d0/3.d0
          endif
-
-       !Presumably the fxn should be zero at the cutoff but might as well be consistent...
+       ! Presumably the fxn should be zero at the cutoff but might as well be consistent...
          if (iw.eq.1) then
              cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
          else if (iw.eq.nwcoul) then
@@ -601,7 +634,6 @@ ENDIF
 #endif
 
 #ifdef __PARA
-!sum up sigma across processors.
     CALL mp_sum(sigma, inter_pool_comm)
 #endif __PARA
 

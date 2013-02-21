@@ -184,7 +184,11 @@ do iq = 1, nksq
                         (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
                         (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
        enddo
-WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
+
+!WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV.
+!We want to form product \Sum_{q} w(q) G_{k+q}W_{-q}.
+
+WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
 WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
 
      green  = (0.0d0, 0.0d0)

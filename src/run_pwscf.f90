@@ -23,8 +23,10 @@ SUBROUTINE run_pwscf(do_band)
                               ext_restart, bands_computed
   USE save_gw,         ONLY : tmp_dir_save
   USE control_flags,   ONLY: iprint
-  USE gvect,           ONlY: ecutwfc
-  USE gwsigma,         ONLY: ecutsco, ecutsex
+  USE gvect,           ONlY: ecutwfc, g
+  USE gwsigma,         ONLY: ecutsco, ecutsex, ngmpol
+  USE cell_base,       ONLY: tpiba
+  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
   !
   IMPLICIT NONE
   !
@@ -33,6 +35,8 @@ SUBROUTINE run_pwscf(do_band)
   LOGICAL, INTENT(IN) :: do_band
   !
   LOGICAL :: exst
+  !
+  INTEGER :: ig, isym
   !
   CALL start_clock( 'PWSCF' )
   !
@@ -68,6 +72,22 @@ SUBROUTINE run_pwscf(do_band)
 ! IN PW- MODIFIED FOR PARALLEL RUN.
   CALL init_run()
 
+!  WRITE(400,'("Symmetry Matrices in Crystal Axis")')
+!  do isym = 1, nsym
+!      WRITE(400,'(3i4)') s(:,:,isym) 
+!      WRITE(400,*)
+!  enddo
+!  WRITE(400,*)
+!  do isym = 1, nsym
+!      WRITE(400,'(3i4)') s(:,:,invs(isym)) 
+!      WRITE(400,*)
+!  enddo
+!  write(400,'(1f12.7)') tpiba
+!  do ig = 1, ngmpol
+!     write(400,'(3f12.7)') g(1,ig), g(2,ig), g(3,ig)
+!  enddo
+!  STOP
+
   IF (do_band) write(6,'("Calling PW electrons")')
   IF (do_band) CALL electrons()
   !
@@ -77,8 +97,8 @@ SUBROUTINE run_pwscf(do_band)
      done_bands=.TRUE.
   ENDIF
   !
-  CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
-  CLOSE( UNIT = 4, STATUS = 'DELETE' )
+  !CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
+  !CLOSE( UNIT = 4, STATUS = 'DELETE' )
   ext_restart=.FALSE.
   !
   CALL close_files()

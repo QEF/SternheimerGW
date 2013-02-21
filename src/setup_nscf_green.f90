@@ -97,8 +97,8 @@ SUBROUTINE setup_nscf_green(xq)
   ! ... smallg_q flags to false the symmetry operations of the crystal
   ! ... that are not symmetry operations of the small group of q.
   !should try this...
-  ! HL this condition enforces that Sq = q exactly! none of this q -> -q + G none-sense. 
-  modenum = -3
+  !HL this condition enforces that Sq = q exactly! none of this q -> -q + G none-sense. 
+  !modenum = -3
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
 !Hack for turning off minus_q=.true.
 ! write(6,'("MODE NUMBER!")')

@@ -113,6 +113,11 @@ REAL(DP) :: anorm(nwgreen)
           pi_coeff     (iw) = pi_coeff_new(iw)
         enddo!iw
      enddo!iter
+!     do iw = 1,nfreq
+        !if (anorm(iw).gt.1.d-1) then
+        !    write(1000+mpime,*) w_ryd(iw), anorm(iw)
+        !endif
+!     enddo
 
   DEALLOCATE(r)
   DEALLOCATE(u_sig)

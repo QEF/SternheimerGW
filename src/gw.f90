@@ -52,7 +52,7 @@ PROGRAM gw
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
                                ngmsig, ngmsex, ecutsig, ngmsco, ngmgrn, ngmpol
-  USE gvect,            ONLY : nl
+  USE gvect,            ONLY : nl, g
   USE kinds,            ONLY : DP
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
 
@@ -149,8 +149,11 @@ ENDIF
 IF(do_coulomb) THEN
      DO iq = w_of_q_start, nqs
         scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
+
 !Prepare k, k+q grids, run nscf calculation, find small group of q.
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
+
+
         CALL run_pwscf(do_band)
         CALL initialize_gw()
 !Determine the unique G vectors in the small group of q if symmetry is being used.
@@ -219,7 +222,6 @@ ENDIF
 
    if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
    if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
-
    DO ik = 1, 1
        xq(:) = xk_kpoints(:, ik)
        do_iq=.TRUE.
@@ -259,7 +261,6 @@ ENDIF
        CALL mp_barrier(inter_pool_comm)
        CALL clean_pw_gw(ik)
    ENDDO
-
    DO ik = 1, 1
          if(do_sigma_matel) CALL sigma_matel(ik) 
    ENDDO

@@ -70,7 +70,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
 
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) + fac * rho_core (:)
-        dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
+ !      dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
      enddo
   endif
   do is = 1, nspin_mag
@@ -90,10 +90,13 @@ subroutine dv_of_drho (mode, dvscf, flag)
        (rho%of_r, grho, dvxc_rr, dvxc_sr, dvxc_ss, dvxc_s, xq, &
        dvscf, nr1, nr2, nr3, nrx1, nrx2, nrx3, nrxx, nspin_mag, nspin_gga, &
        nl, ngm, g, alat, dvaux)
+
+!Here they subtract out the core charge.
   if (nlcc_any.and.flag) then
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) - fac * rho_core (:)
-        dvscf(:, is) = dvscf(:, is) - fac * drhoc (:)
+!drhoc is derivative of rho-charge which we have not calculated...
+!       dvscf(:, is) = dvscf(:, is) - fac * drhoc (:)
      enddo
   endif
 

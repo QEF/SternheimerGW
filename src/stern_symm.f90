@@ -22,7 +22,6 @@ LOGICAL      :: unique_g
 ig_unique(:) = 0
 gmapsym(:,:) = 0
 
-!what order does gmap_sym assume symmetry operations are in?
 CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
 ngmunique = 0
@@ -32,12 +31,13 @@ write(6,'("Number of symmops in Small G_q: ", i4)'), nsymq
 DO ig = 1, ngmpol
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
-!should use invs since this is the actual relation I'll be using?
    DO isym = 1, nsymq
       DO igp = 1, ngmunique
          IF (gmapsym(ig,invs(isym)).eq.ig_unique(igp)) then
              unique_g = .false.
+           !Rotation R^{-1}(ig) = ig_{un}
              sym_ig(ig) = isym
+           !Corresponding unique vector
              sym_friend(ig) = ig_unique(igp)
          ENDIF
       ENDDO

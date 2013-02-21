@@ -362,7 +362,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            endif
 
        etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
-       cw       = CMPLX(0.0d0,  fiu(iw), kind=DP) 
+!HL fiufix
+       cw       = fiu(iw) 
+!      cw       = CMPLX(0.0d0,  fiu(iw), kind=DP) 
+!      should generalize for real and imaginary frequencies:
+!      cw       = fiu(iw) 
 
 !HL should just use cgsolve_all when fiu(iw) = 0.0d0! probably gain at least factor of 
 !two for static case...

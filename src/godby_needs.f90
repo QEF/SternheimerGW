@@ -1,7 +1,10 @@
 SUBROUTINE godby_needs_coeffs (N, z, u, a)
 USE kinds,                     ONLY : DP
 USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
-implicit none
+USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps4, pi, eps8
+
+IMPLICIT NONE
+
 complex(DP) :: z(N), u(N)
 complex(DP) :: a(N)
 real(DP) :: ar, ai
@@ -39,12 +42,16 @@ integer  :: p, N,i
 !essentially we cast aside any heavily damped oscillations
 !(which would not effect the real part of the selfenergy anyway...
 !a(1) = \tilde(\omega) a(2) = R
-
    if(real(u(2)/(u(1)-u(2))).lt.0) then
        !We zero the weight of the pole and place the pole way out
        !on the real axis to avoid numerical instability.
-           a(1) = 10.0
+       !although this isn't really that far out....
+           a(1) = 100.0
            a(2) = 0.0
+!   else if (real(abs(u(1)-u(2))).lt.eps8) then
+!           write(1000+mpime,'("zeroing eps")')
+!          a(1) = 10.0d0
+!          a(2) = 0.0
    else
 !\tilde{\omega}:
      a(1) = z(2)*SQRT((u(2))/(u(1)-u(2)))
@@ -60,6 +67,7 @@ integer  :: p, N,i
            write(1000+mpime,*) (z(i),i=1,N)
            write(1000+mpime,*) (u(i),i=1,N)
            write(1000+mpime,*) (a(i),i=1,N)
+           a(1) = DCMPLX(10.0d0,0.0d0)
            a(2) = DCMPLX(0.0d0,0.0d0)
         endif
      enddo
