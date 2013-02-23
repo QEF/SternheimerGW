@@ -46,15 +46,15 @@ integer  :: p, N,i
        !We zero the weight of the pole and place the pole way out
        !on the real axis to avoid numerical instability.
        !although this isn't really that far out....
-           a(1) = 100.0
-           a(2) = 0.0
+           a(1) = 10.0
+           a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
 !   else if (real(abs(u(1)-u(2))).lt.eps8) then
 !           write(1000+mpime,'("zeroing eps")')
 !          a(1) = 10.0d0
 !          a(2) = 0.0
    else
 !\tilde{\omega}:
-     a(1) = z(2)*SQRT((u(2))/(u(1)-u(2)))
+     a(1) = z(2)*SQRT(real(u(2))/(u(1)-u(2)))
 !(A_{GG'qq}):
      a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
    endif
