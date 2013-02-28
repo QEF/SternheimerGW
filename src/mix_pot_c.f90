@@ -34,10 +34,10 @@
   !
   !USE parameters, only : DP, maxter => nmax_iter 
 
-  USE kinds, ONLY  : DP 
+  USE kinds,       ONLY : DP 
   USE control_gw,  ONLY : nmix_gw
-  USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mpime, mp_global_end,&
-                                   intra_image_comm
+  USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mpime, mp_global_end,&
+                          intra_image_comm
 
 
   !max number of iterations used in mixing: n_iter must be.le.maxter

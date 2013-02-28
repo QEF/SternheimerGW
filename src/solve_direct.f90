@@ -7,7 +7,7 @@
 !
 !-------------------------------------------------------------------------------
 !SUBROUTINE solve_linter(igpert, iw, drhoscf)
-SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
+SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
 !-----------------------------------------------------------------------------
   !  HL
   !  Driver routine for the solution of the linear system which
@@ -231,10 +231,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
 
-!HL all fine...
-!write(6,*) nbnd_occ(:)
+!No self-consistency:
+  do kter = 1, 1
 
-  do kter = 1, niter_gw
      iter = kter + iter0
      ltaver = 0
 
@@ -346,7 +345,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              !  dpsip(:,:) = (0.d0, 0.d0) 
              !threshold for iterative solution of the linear system
              !write(6,*)1.d-1*sqrt(dr2), 1.d-4
-               thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+             !thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+               thresh = 1.d-6
            else
             !
             ! At the first iteration dpsi and dvscfin are set to zero
@@ -355,40 +355,30 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               dpsim(:,:) = (0.d0, 0.d0) 
               dpsip(:,:) = (0.d0, 0.d0) 
               dvscfin(:, :) = (0.d0, 0.d0)
-              dvscfout(:, :) = (0.d0, 0.d0)
               !
               ! starting threshold for iterative solution of the linear system
               !
-              thresh = 1.0d-2
+              thresh = 1.0d-4
            endif
 
        etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
-!HL fiufix
        cw       = fiu(iw) 
-!      cw       = CMPLX(0.0d0,  fiu(iw), kind=DP) 
-!      should generalize for real and imaginary frequencies:
-!      cw       = fiu(iw) 
 
-!HL should just use cgsolve_all when fiu(iw) = 0.0d0! probably gain at least factor of 
-!two for static case...
-
-       if(fiu(iw).eq.0.0d0) then
-           call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
-                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
-                      dpsim(:,:) = dpsip(:,:)
-
-       else
-            call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+             if(iw.eq.1) then
+                  call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, &
+                            npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
+                            dpsim(:,:) = dpsip(:,:)
+             else
+                  call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-            call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-!Is BICGSTABL a better bet might be able to use the G preconditioner... ????
-!       call  cbicgstabl(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-!                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, lmres, .true.)
-!       call  cbicgstabl(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-!                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, lmres, .true.)
-       endif
-
+  
+                  call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+             endif
+           ! call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
+           !                        npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
+           !                        cw, niters(gveccount))
+           ! call coul_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
            ltaver = ltaver + lter
            lintercall = lintercall + 1
 
@@ -438,14 +428,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !       if (fildrho.ne.' ') call davcio_drho (drhoscfh(1,1), lrdrho, &
 !                                             iudrho, imode0+ipert, +1)
 
-        call zcopy (nrxx*nspin_mag,drhoscfh(1,1),1,dvscfout(1,1),1)
+     call zcopy (nrxx*nspin_mag,drhoscfh(1,1),1,dvscfout(1,1),1)
 
      ! SGW: here we enforce zero average variation of the charge density
      ! if the bare perturbation does not have a constant term
      ! (otherwise the numerical error, coupled with a small denominator
      ! in the coulomb term, gives rise to a spurious dvscf response)
      ! One wing of the dielectric matrix is particularly badly behaved 
-
      meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
      if (meandvb.lt.1.d-8) then 
          call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
@@ -455,17 +444,16 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      call dv_of_drho (1, dvscfout(1,1), .true.)
 
-
-     if (fiu(iw).eq.0.0d0) then
+!     if (fiu(iw).eq.0.0d0) then
 !just using standard broyden for the zero freq. case.
-        call mix_potential_real(2*nrxx*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
-                           dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
-     else
-        call mix_potential_c(nrxx, dvscfout, dvscfin, &
-                             alpha_mix(kter), dr2, tr2_gw, iter, &
-                             nmix_gw, convt)
-     endif
-
+!        call mix_potential_real(2*nrxx*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
+!                           dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
+!     else
+!what is with the 2*nrxx??
+!        call mix_potential_c(nrxx, dvscfout, dvscfin, &
+!                             alpha_mix(kter), dr2, tr2_gw, iter, &
+!                             nmix_gw, convt)
+!     endif
      if (doublegrid) then
         do ipert = 1, npe
            do is = 1, nspin_mag
@@ -524,8 +512,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !                                               dvscfin, drhoscfh)
 !     ENDIF
 !     if (check_stop_now()) call stop_smoothly_gw (.false.)
-
-     if (convt) goto 155
+!     if (convt) goto 155
   enddo !loop on kter (iterations)
 
 155 iter0=0
@@ -540,7 +527,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !   possibly because they write to disc davcio_drho ?
 !   drhoscf(igpert, 1) = dvscfin + dvbare
 !   after this point drhoscf is dv_hartree(RPA)
-    drhoscf(:,1) = dvscfin(:,1)
+!   drhoscf(:,1) = dvscfin(:,1)
+!   -vc\Chi
+    drhoscf(:,1) = -dvscfout(:,1)
+
     if (convt) then
     if (fildvscf.ne.' ') then
     write(6, '("fildvscf")') 
@@ -567,7 +557,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   if (doublegrid) deallocate (dvscfins)
   deallocate (dvscfin)
   call stop_clock ('solve_linter')
-END SUBROUTINE solve_linter
+END SUBROUTINE solve_direct
 
 SUBROUTINE setmixout(in1, in2, mix, dvscfout, dbecsum, ndim, flag )
 USE kinds, ONLY : DP

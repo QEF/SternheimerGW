@@ -88,6 +88,8 @@ mix_pot_real.o\
 godby_needs.o\
 sigma_extra.o\
 bicgstabl.o\
+solve_direct.o\
+invert_epsilon.o\
 
 HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a

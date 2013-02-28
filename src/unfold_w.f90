@@ -95,7 +95,6 @@ ELSE
               scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
             ENDDO
         ENDDO
-
 128 CONTINUE
     ENDDO
 !    write(6,*) ngmdonelist(:)

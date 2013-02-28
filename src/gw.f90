@@ -204,7 +204,9 @@ IF(do_coulomb) THEN
 !Write W_{q}(G,G';iw) to file:
         IF (ionode) THEN
             CALL unfold_w(scrcoul_g,iq)
-            CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+!now need to invert epsilon:
+            CALL invert_epsilon(scrcoul_g, iq)
+!            CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
         ENDIF
 
         CALL mp_barrier(inter_pool_comm)

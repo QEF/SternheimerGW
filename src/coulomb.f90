@@ -121,14 +121,20 @@ DO ig = igstart, igstop
         fac    = 1.d0/(1.d0-1.d0/eps0)
         wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
         drhoscfs (nl(ig_unique(ig)), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
+        scrcoul(ig_unique(ig), ig_unique(ig), iw, nspin_mag) = drhoscfs(nl(ig),1)
 !if mod_diel we just skip the whole coulomb routine and jump straight to sigma_c.
        ELSE
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, + 1)
-         CALL solve_linter (dvbare, iw, drhoscfs)
+        !if(direct) then
+         CALL solve_direct (dvbare, iw, drhoscfs)
+        !else
+        !CALL solve_linter (dvbare, iw, drhoscfs)
+        !endif
          call cft3 (drhoscfs, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
          call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, - 1)
          if(iq.eq.1) then
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
+            WRITE(stdout, *), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
          endif
          DO igp = 1, ngmpol
             scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
