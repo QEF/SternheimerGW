@@ -1,4 +1,3 @@
-!SUBROUTINE sigma_c(ik0, green) 
 SUBROUTINE sigma_c(ik0) 
 ! G TIMES W PRODUCT
   USE io_global,     ONLY : stdout, ionode_id, ionode
@@ -336,9 +335,6 @@ DO iq = iqstart, iqstop
 !Rotating dielectric matrix with phase factor for nonsymmorphic space groups: 
 !phase = eigv(ig, isym)*conjg(eigv(igp,isym))
 !According to some subtle considerations this should be \tau_{R^{-1}}
-!           phase = eigv(ig, invs(isym))*conjg(eigv(igp,invs(isym)))
-!this should be INVSYM!
-!           scrcoul_g_R(gmapsym(ig,isym), gmapsym(igp,isym), iwim) = scrcoul_g(ig,igp,iwim)*phase
 !following HL:
               phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
               scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
@@ -349,78 +345,32 @@ DO iq = iqstart, iqstop
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Generate bare coulomb:                     !!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 !HL using  sax cutoff
 !this should be L_{z}/2
 !     rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
 !     rcut = rcut-rcut/50.0d0
+rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 DO iw = 1, nfs
    DO ig = 1, ngmpol
 !2D screening.
-       qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-       limq = (qg2.lt.eps8) 
-
-       qxy  = sqrt((g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2)
-       qz   = (g(3,ig)+xq_ibk(3))
-
-!Choose zcut to be 1/2*L_{z} which it does because it all comes out in the wash.
-!      at(:,:) = at(:,:) / alat
-       zcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
-       spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-       IF(.not.limq) then
-           DO igp = 1, ngmpol
-              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-           ENDDO
-       ENDIF
-       if(.not.limq) then
-          do igp = 1, ngmpol
-              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
-          enddo
-       else
-!             write(6,*) qg2
-!             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
-!             !we enforce that here:
-             if(iw.eq.1) then
-                scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
-             endif
-             do igp = 1, ngmpol
-!               what is the qxy = 0, qz = 0 component???
-!               l'hopital the expression and taking the limits qxy goes to zero
-!               and then qz goes to zero seems to give me this(same as before):
-
-                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-!               taking limits the other way gives a divergent result...
-             enddo
-       endif
-!SPHERICAL SCREENING
 !       qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
 !       limq = (qg2.lt.eps8) 
+!       qxy  = sqrt((g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2)
+!       qz   = (g(3,ig)+xq_ibk(3))
+!Choose zcut to be 1/2*L_{z} which it does because it all comes out in the wash.
+!      at(:,:) = at(:,:) / alat
+!       zcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
+!       spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
 !       IF(.not.limq) then
 !           DO igp = 1, ngmpol
 !              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
 !           ENDDO
-!       !ELSE 
-!       !THIS PART OF THE IF STATEMENT NEVER GETS EXECUTED DELETE IT!
-!       !    if(ig.ne.1) then
-!       !       DO igp = 1, ngmpol
-!       !          scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-!       !       ENDDO
-!       !    endif
 !       ENDIF
-!       qg = sqrt(qg2)
-!       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!!Normal case using truncated coulomb potential.
 !       if(.not.limq) then
 !          do igp = 1, ngmpol
 !              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
 !          enddo
 !       else
-!!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
-!             write(6,'("Taking Limit.")')
-!             write(6,*) (fpi*e2*(rcut**2))/2.0d0
-!             write(6,*) ig, iw
-!             write(6,*) g(:, ig)
-!             write(6,*) xq_ibk(:)
 !             write(6,*) qg2
 !             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
 !             !we enforce that here:
@@ -428,13 +378,49 @@ DO iw = 1, nfs
 !                scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
 !             endif
 !             do igp = 1, ngmpol
-!                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+!               what is the qxy = 0, qz = 0 component???
+!               l'hopital the expression and taking the limits qxy goes to zero
+!               and then qz goes to zero seems to give me this(same as before):
+!               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+!               taking limits the other way gives a divergent result...
 !             enddo
 !       endif
+!SPHERICAL SCREENING
+       qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
+       limq = (qg2.lt.eps8) 
+       IF(.not.limq) then
+           do igp = 1, ngmpol
+              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+           enddo
+       ENDIF
+       qg = sqrt(qg2)
+       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
+       !spal = 1.0d0 - cos(rcut*qg)
+!Normal case using truncated coulomb potential.
+       if(.not.limq) then
+          do igp = 1, ngmpol
+              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
+          enddo
+       else
+!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
+             write(6,'("Taking Limit.")')
+             write(6,*) (rcut)
+             write(6,*) (fpi*e2*(rcut**2))/2.0d0
+             write(6,*) ig, iw
+             write(6,*) g(:, ig)
+             write(6,*) xq_ibk(:)
+             write(6,*) qg2
+             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+             !we enforce that here:
+             if(iw.eq.1) then
+                scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
+             endif
+             do igp = 1, ngmpol
+                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+             enddo
+       endif
    ENDDO !ig
-ENDDO
-!CALL spheric_coulomb(ngmpol, nfs, scrcoul_g_R, -xq_ibk)
-!Calculate GODBY NEEDS OR PADE:
+ENDDO !nfs
 
     if(.not.modielec) then 
         if(godbyneeds) then
@@ -478,7 +464,6 @@ ENDDO
     WRITE(6,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
        scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
-!!!!!!!
      if(.not.modielec) then
         do ig = 1, ngmpol
            do igp = 1, ngmpol
@@ -498,7 +483,8 @@ ENDDO
              if(padecont) then
                 call pade_eval ( nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
              else if(godbyneeds) then
-                scrcoul_pade_g(ig,igp)=(dcmplx(2.0d0,0.0d0)*a(2)*a(1))/((dcmplx(w_ryd(iw),eta))**2-a(1)**2)
+                !scrcoul_pade_g(ig,igp)=(dcmplx(2.0d0,0.0d0)*a(2)*a(1))/((dcmplx(w_ryd(iw),eta))**2-a(1)**2)
+                scrcoul_pade_g(ig,igp) = (a(2)/(dcmplx(w_ryd(iw), eta) - a(1))) - (a(2)/(dcmplx(w_ryd(iw), eta) + a(1)))
              else 
                   WRITE(6,'("No screening model chosen!")')
                   STOP

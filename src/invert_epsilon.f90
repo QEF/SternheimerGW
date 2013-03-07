@@ -6,27 +6,44 @@ USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
 IMPLICIT NONE    
 
 COMPLEX(DP)       :: scrcoul_g_in(ngmpol, ngmpol, nfs, 1)
+COMPLEX(DP)       :: work(ngmpol)
 INTEGER           :: ig, igp, npe, irr, icounter, ir, irp
 INTEGER           :: isym, iwim, iq, iw
 INTEGER           :: iwork(ngmpol), info
-complex(kind(DP)) :: work(ngmpol)
+
+
 !NOTE: the polar and w operators are HERMITEAN when calculated for imaginary frequencies
 !Need block inversion routine if iq is gamma.
-!The factorisation seems to go screwy here if we enforce the hermiticity
-!going to try it with a generalized inversion routine in case the matrix is no longer hermitian.
-!might have to enforce this...
 
 do iw = 1, nfs
-  call ZHETRF ('U', ngmpol, scrcoul_g_in(:,:,iw,1), ngmpol, iwork, work, ngmpol, info)
-  call errore ('invert epsilon', 'factorization', info)
-
-  call ZHETRI ('U', ngmpol, scrcoul_g_in(:,:,iw,1), ngmpol, iwork, work, info)
-  call errore ('invert epsilon', 'inversion', info)
-
-  write(6,*)
-  do ig = 1, 14
-        write(6,'(14f14.7)')real(scrcoul_g_in(ig,1:14,1,1))
-  enddo
+ ! call ZHETRF ('U', ngmpol, scrcoul_g_in(1:ngmpol,1:ngmpol,iw,1), ngmpol, iwork, work, ngmpol, info)
+   call ZGETRF (ngmpol, ngmpol, scrcoul_g_in(1:ngmpol,1:ngmpol,iw,1), ngmpol, iwork, info)
+   call errore ('invert epsilon', 'factorization', info)
+ ! call ZHETRI ('U', ngmpol, scrcoul_g_in(1:ngmpol,1:ngmpol,iw,1), ngmpol, iwork, work, info)
+   call ZGETRI (ngmpol, scrcoul_g_in(1:ngmpol,1:ngmpol,iw,1), ngmpol, iwork, work, ngmpol, info)
+   call errore ('invert epsilon', 'inversion', info)
 enddo
+!if(iq.eq.1) then
+!Add the extra piece from block inversion of the dielectric matrix.
+!endif
+
+write(6,*)
+write(6,'("Done epsilon inversion.")') 
+
+!We store epsilon-1 to disk:
+do iw = 1, nfs
+   do ig = 1, ngmpol
+      scrcoul_g_in(ig,ig,iw,1) = scrcoul_g_in(ig,ig,iw,1) - dcmplx(1.0d0,0.0d0)
+   enddo  
+enddo
+
+do iw = 1, nfs
+   write(6,*)
+   do ig = 1, 14
+      write(6,'(14f14.7)') real(scrcoul_g_in(ig,1:14,iw,1))
+   enddo
+   write(6,*)
+enddo
+
 
 END SUBROUTINE invert_epsilon

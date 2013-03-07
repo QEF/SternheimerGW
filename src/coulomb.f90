@@ -136,9 +136,20 @@ DO ig = igstart, igstop
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
             WRITE(stdout, *), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
          endif
+        !if (.not.direct)
+        ! DO igp = 1, ngmpol
+        !    scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
+        !ENDDO
+        !else
+        !we want the whole bit epsilon then invert
          DO igp = 1, ngmpol
-            scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
+            if(igp.ne.ig_unique(ig)) then
+               scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
+            else
+               scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1) + dvbare(nl(ig_unique(ig)))
+            endif
          ENDDO
+        !endif
        ENDIF
     enddo !iw
 ENDDO 

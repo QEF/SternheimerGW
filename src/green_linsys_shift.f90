@@ -216,7 +216,7 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
               call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
                                      npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
                                      cw, niters(gveccount))
-                 if(.not.conv_root) write(1000+mpime, '("root not converged.")')
+              if(.not.conv_root) write(1000+mpime, '("root not converged.")')
              endif
                 call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
              do iw = 1, nwgreen

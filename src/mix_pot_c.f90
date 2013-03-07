@@ -152,7 +152,7 @@
   enddo
 !
   do n = 1, ndim
-     vin (n) = vin (n) + alphamix * vout (n)
+     vin (n) = vin (n) + alphamix * vout (n) 
   enddo
 !
   do i = 1, iter_used

@@ -152,8 +152,6 @@ IF(do_coulomb) THEN
 
 !Prepare k, k+q grids, run nscf calculation, find small group of q.
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
-
-
         CALL run_pwscf(do_band)
         CALL initialize_gw()
 !Determine the unique G vectors in the small group of q if symmetry is being used.
@@ -206,7 +204,7 @@ IF(do_coulomb) THEN
             CALL unfold_w(scrcoul_g,iq)
 !now need to invert epsilon:
             CALL invert_epsilon(scrcoul_g, iq)
-!            CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+            CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
         ENDIF
 
         CALL mp_barrier(inter_pool_comm)

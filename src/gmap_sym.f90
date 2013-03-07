@@ -9,17 +9,18 @@
   SUBROUTINE gmap_sym ( nsym, s, ftau, gmapsym, eigv, invs )
   !-----------------------------------------------------------------------
   !
-  !   For every G vector, find S(G) for all the symmetry operations
-  !   of the crystal. Construct the matrix
-  !   eigv(ig,isym) = e^{i G v(S)} where v(S) is the (possible) 
-  !   fractional translation associated with the symmetry operation
+  !  For every G vector, find S(G) for all the symmetry operations
+  !  of the crystal. Construct the matrix
+  !  eigv(ig,isym) = e^{i G v(S)} where v(S) is the (possible) 
+  !  fractional translation associated with the symmetry operation
   !
-  !   No parallelization on G-vecs at the moment  
-  !   (actually this is done on the global array, but in elphel2.f90
-  !   every processor has just a chunk of the array, I may need some
-  !   communication)
+  !  No parallelization on G-vecs at the moment  
+  !  (actually this is done on the global array, but in elphel2.f90
+  !  every processor has just a chunk of the array, I may need some
+  !  communication)
   !
-  !   No ultrasoft now
+  !  No ultrasoft now
+  !  HL: Is ftau properly re-ordered? I know the first fsym are but maybe not the others.
   !
   !
   !----------------------------------------------------------------------
@@ -96,8 +97,8 @@
       ! now the phase factors e^{iGv}
       !
       IF ( ftau (1, isym).ne.0 .or. ftau (2, isym).ne.0 .or. ftau (3, isym).ne.0 ) THEN
-        if(ig.eq.1)  write(6,'("FTAU")')
-        if(ig.eq.1)  write(6,*) isym, ftau(:,isym)
+  !      if(ig.eq.1)  write(6,'("FTAU")')
+  !      if(ig.eq.1)  write(6,*) isym, ftau(:,isym)
         !
         ! fractional traslation in crystal coord is ftau/nr*
         ! for cart/crys transform of the G-vecctors have a look at the bottom

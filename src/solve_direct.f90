@@ -333,21 +333,22 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
 
 
-           if (where_rec=='solve_lint'.or.iter > 1) then
+!           if (where_rec=='solve_lint'.or.iter > 1) then
               !starting value for delta_psi is read from iudwf
-               nrec1 = ik
+!               nrec1 = ik
               !HL Don't need to read/write the full wave fxn at each iteration...
             ! call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
-              call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
-              call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
+!              call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
+!              call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
              !  dpsi(:,:)  = (0.d0, 0.d0) 
              !  dpsim(:,:) = (0.d0, 0.d0) 
              !  dpsip(:,:) = (0.d0, 0.d0) 
              !threshold for iterative solution of the linear system
              !write(6,*)1.d-1*sqrt(dr2), 1.d-4
              !thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
-               thresh = 1.d-6
-           else
+!               thresh = 1.d-6
+!           else
+!ONLY ITER TO GET EXECUTED:
             !
             ! At the first iteration dpsi and dvscfin are set to zero
             !
@@ -355,14 +356,10 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
               dpsim(:,:) = (0.d0, 0.d0) 
               dpsip(:,:) = (0.d0, 0.d0) 
               dvscfin(:, :) = (0.d0, 0.d0)
-              !
-              ! starting threshold for iterative solution of the linear system
-              !
+            ! starting threshold for iterative solution of the linear system
               thresh = 1.0d-4
-           endif
-
-       etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
-       cw       = fiu(iw) 
+              etc(:,:) = CMPLX(et(:,:), 0.0d0 , kind=DP)
+              cw       = fiu(iw)
 
              if(iw.eq.1) then
                   call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, &
@@ -438,7 +435,7 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
      meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
      if (meandvb.lt.1.d-8) then 
          call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-         dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
+         dvscfout ( nl(1),current_spin ) = dcmplx(0.d0, 0.0d0)
          call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
      endif
 
@@ -519,8 +516,8 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
 
 !   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !         "secs av.it.:",f5.1)') iter, tcpu, averlt
-   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+    WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+         "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
 !   HL setting drhoscf to dvscfin here this is a temporary hack. 
 !   need to understand why drhoscf is zeroed in PH code...

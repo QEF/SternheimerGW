@@ -34,6 +34,7 @@ DO ig = 1, ngmpol
    DO isym = 1, nsymq
       DO igp = 1, ngmunique
          IF (gmapsym(ig,invs(isym)).eq.ig_unique(igp)) then
+         !IF (gmapsym(ig,isym).eq.ig_unique(igp)) then
              unique_g = .false.
            !Rotation R^{-1}(ig) = ig_{un}
              sym_ig(ig) = isym
