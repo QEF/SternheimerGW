@@ -45,5 +45,9 @@ do iw = 1, nfs
    write(6,*)
 enddo
 
+        do ig = 1, ngmpol
+            write(6,'(i4, f14.7)')ig, real(scrcoul_g_in(ig,ig,1,1))
+        enddo
+
 
 END SUBROUTINE invert_epsilon

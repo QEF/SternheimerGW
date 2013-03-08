@@ -336,8 +336,12 @@ DO iq = iqstart, iqstop
 !phase = eigv(ig, isym)*conjg(eigv(igp,isym))
 !According to some subtle considerations this should be \tau_{R^{-1}}
 !following HL:
-              phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
-              scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+                 phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
+                 scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+!also the deriviation suggest i should do this:
+!where q_{bk}=R^{-1}q_{bz}
+!              phase = conjg(eigv(ig, isym))*eigv(igp,isym)
+!              scrcoul_g_R(gmapsym(ig,invs(isym)), gmapsym(igp,invs(isym)), iwim)=scrcoul_g(ig,igp,iwim)*phase
               enddo
           endif
        enddo

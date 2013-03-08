@@ -46,20 +46,23 @@ if(.not.use_symm)GOTO 126
 if(nsymq.eq.1)GOTO 126
 !end Cases
 
-ngmdonelist(:) = 0
-ngmdone = 0
 
 !stack ngmdone list with vectors that aren't unique:
    xq_loc = xq
    CALL cryst_to_cart(1, xq_loc(:), at, -1)
    write(6,*) xq_loc
+!   write(6,'(14i4)')sym_ig(:)
+!   write(6,*)
+!   write(6,'(14i4)')sym_friend(:)
 
 
-
+ngmdonelist(:) = 0
+ngmdone = 0
 do ig = 1, ngmunique
    ngmdone = ngmdone + 1
    ngmdonelist(ngmdone) = ig_unique(ig)
 enddo
+
 IF(modielec) then
 !only diagonal needs unfolding:
       DO ig = 1, ngmunique
@@ -86,7 +89,9 @@ ELSE
 !still need to unfold this vector so we append it to the done list:
         ngmdone = ngmdone + 1
         ngmdonelist(ngmdone) = ig
-        write(6,*) sym_ig(ig), sym_friend(ig)
+!        write(6,*) sym_ig(ig), sym_friend(ig)
+!        write(6,'(14i4)')gmapsym(1:ngmpol, invs(sym_ig(ig)))
+
 !and unfold it with the correct correspondence ig has sym_friend(ig) where R^{-1} ig = ig_unique:
         DO iwim = 1, nfs
             DO igp = 1, ngmpol
@@ -99,11 +104,16 @@ ELSE
             !For symmetry operations with fraction translations we need to include:
             !the \tau_{r} part which applies to the original G, G' rotation on R
             !e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))
-               phase = conjg(eigv(sym_friend(ig), sym_ig(ig)))*(eigv(igp, sym_ig(ig)))
-               scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
+            !   phase = conjg(eigv(sym_friend(ig), sym_ig(ig)))*(eigv(igp, sym_ig(ig)))
+            !   scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
             !tick knock?
             !   phase = conjg(eigv(ig, invs(sym_ig(ig))))*(eigv(igp, invs(sym_ig(ig))))
-            !   scrcoul_g_in(ig, igp, iwim, 1) = scrcoul_g_tmp(gmapsym(igp, sym_ig(ig)), iwim)*phase
+            !     scrcoul_g_in(ig, igp, iwim, 1) = scrcoul_g_tmp(gmapsym(igp, invs(sym_ig(ig))), iwim)*phase
+             phase = conjg(eigv(sym_friend(ig), sym_ig(ig)))*(eigv(igp, sym_ig(ig)))
+             scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
+            !scrcoul_g_in(ig, igp, iwim, 1) = scrcoul_g_tmp(gmapsym(igp, sym_ig(ig)), iwim)*phase
+            !for a while i was convinced this was right:
+            !scrcoul_g_in(ig, igp, iwim, 1) = scrcoul_g_tmp(gmapsym(igp, sym_ig(ig)), iwim)*phase
             !scrcoul_g_in(ig, gmapsym(igp, sym_ig(ig)), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
             ENDDO
         ENDDO
@@ -155,7 +165,7 @@ IF(iq.eq.1) then
      enddo
   endif
 ENDIF
-!        do ig = 20, 50
+!        do ig = 1, ngmpol
 !            write(6,'(i4, f14.7)')ig, real(scrcoul_g_in(ig,ig,1,1))
 !        enddo
          do ig = 1, 25

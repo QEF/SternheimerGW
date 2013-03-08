@@ -58,7 +58,7 @@
   integer :: ig, jg, i, j, k, notfound, isym, ism1
   logical :: tfound
   real(kind=DP), PARAMETER :: twopi = 6.28318530717959
-  real(kind=DP) :: rdotk
+  real(kind=DP) :: rdotk, ft(3)
   complex(kind=DP), PARAMETER :: ci = (0.d0,1.d0), &
      czero = (0.d0, 0.d0), cone = (1.d0, 0.d0)
   !
@@ -106,7 +106,15 @@
         rdotk = float( ig1 (ig) * ftau (1, isym) ) / float (nr1) &
               + float( ig2 (ig) * ftau (2, isym) ) / float (nr2) &
               + float( ig3 (ig) * ftau (3, isym) ) / float (nr3)
-        !
+
+        !     ft(:)    = at(:,1)*ftau(1,ns)/nr1 + &
+        !                at(:,2)*ftau(2,ns)/nr2 + &
+        !                at(:,3)*ftau(3,ns)/nr3
+
+        !     rdotk    = g(1,ig) * ft(1) + &
+        !                g(2,ig) * ft(2) + &
+        !                g(3,ig) * ft(3)        !
+
         ! the actual translation is -v (have a look at ruota_ijk.f90)
         ! 
         eigv (ig, isym) = exp( - ci*twopi*rdotk ) 

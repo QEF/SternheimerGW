@@ -87,17 +87,14 @@ irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only... these then get written into the full matrix.
 !g is sorted in magnitude order...
-
-
-
 DO ig = igstart, igstop
    qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
     do iw = 1, nfs
 !HL DEBUG BROYDEN
        !do iw = nfs, nfs
-         drhoscfs(:,:) = (0.0d0, 0.0d0)
-         dvbare(:)     = (0.0d0, 0.0d0)
-         dvbare (nl (ig_unique(ig)) ) = (1.d0, 0.d0)
+         drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+         dvbare(:)     = dcmplx(0.0d0, 0.0d0)
+         dvbare (nl (ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
        !From the inputcard we can choose whether to use a model dielectric or 
        !do the full sternheimer treatment.
        IF (modielec) then
