@@ -170,7 +170,9 @@ DEALLOCATE(greenf_na)
 
 ALLOCATE ( barcoul     (ngmsex, ngmsex) )
 
-    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+!    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+!Sax for silicon:
+     rcut = 21.329d0
 !HL using  sax cutoff
 !    rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
 !    rcut = rcut-rcut/50.0d0

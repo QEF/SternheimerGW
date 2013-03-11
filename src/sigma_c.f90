@@ -337,7 +337,9 @@ DO iq = iqstart, iqstop
 !According to some subtle considerations this should be \tau_{R^{-1}}
 !following HL:
                  phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
-                 scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+              !   normal:
+              !   scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+              scrcoul_g_R(gmapsym(ig,invs(isym)), gmapsym(igp,invs(isym)), iwim)=real(scrcoul_g(ig,igp,iwim))*phase
 !also the deriviation suggest i should do this:
 !where q_{bk}=R^{-1}q_{bz}
 !              phase = conjg(eigv(ig, isym))*eigv(igp,isym)
@@ -353,7 +355,9 @@ DO iq = iqstart, iqstop
 !this should be L_{z}/2
 !     rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
 !     rcut = rcut-rcut/50.0d0
-rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+!Sax for silicon
+     rcut = 21.329d0
 DO iw = 1, nfs
    DO ig = 1, ngmpol
 !2D screening.

@@ -262,7 +262,22 @@ ENDIF
        CALL clean_pw_gw(ik)
    ENDDO
    DO ik = 1, 1
-         if(do_sigma_matel) CALL sigma_matel(ik) 
+         if(do_sigma_matel)  then
+           !In case we want more bands:   
+            nbnd = nbnd_sig 
+           !
+            xq(:) = xk_kpoints(:, ik)
+            do_iq=.TRUE.
+            lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
+            setup_pw = .TRUE.
+            do_band  = .TRUE.
+            CALL run_pwscf_green(do_band)
+            CALL initialize_gw()
+            CALL sigma_matel(ik) 
+            CALL mp_barrier(inter_pool_comm)
+            CALL clean_pw_gw(ik)
+         endif
+         !if(do_sigma_matel) CALL sigma_matel(ik) 
    ENDDO
 
    call mp_barrier(inter_pool_comm)

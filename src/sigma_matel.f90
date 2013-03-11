@@ -98,9 +98,9 @@ ALLOCATE (igkq_ig(npwx))
      endif
 
      write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
-     WRITE(6,'("Running PWSCF")')
-     CALL run_pwscf(do_band)
-     CALL initialize_gw()
+     !WRITE(6,'("Running PWSCF")')
+     !CALL run_pwscf(do_band)
+     !CALL initialize_gw()
 
 IF (ionode) THEN
      if (nksq.gt.1) rewind (unit = iunigk)
@@ -455,6 +455,8 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
   enddo
 
   if(nbnd_sig.le.8) single_line=.true.
+  if(nbnd_sig.gt.8) single_line=.false.
+
   if(single_line) then
      write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))')  et(1:8, ikq)*RYTOEV
   else
@@ -570,7 +572,9 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
   enddo
 ENDIF
     write(stdout,*)
-    CALL clean_pw_gw(ikq)
+!barrier should be here.
+    CALL mp_barrier(inter_pool_comm)
+    !CALL clean_pw_gw(ikq)
     9000 format(21x, 8(1x,f7.2))
     9005 format(17x, 8(1x,f14.7))
 RETURN
