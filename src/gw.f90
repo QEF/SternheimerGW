@@ -51,7 +51,7 @@ PROGRAM gw
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
   USE gwsigma,          ONLY : nr1sex, nr2sex, nr3sex, nrsex, nlsex, ecutsex, &
                                nr1sco, nr2sco, nr3sco, nrsco, nlsco, ecutsco, &
-                               ngmsig, ngmsex, ecutsig, ngmsco, ngmgrn, ngmpol
+                               ngmsig, ngmsex, ecutsig, ngmsco, ngmgrn, ngmpol, nbnd_sig
   USE gvect,            ONLY : nl, g
   USE kinds,            ONLY : DP
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig

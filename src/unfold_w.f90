@@ -168,11 +168,11 @@ ENDIF
 !        do ig = 1, ngmpol
 !            write(6,'(i4, f14.7)')ig, real(scrcoul_g_in(ig,ig,1,1))
 !        enddo
-         do ig = 1, 25
+         do ig = 1, 14
              write(6,'(14f14.7)')real(scrcoul_g_in(ig,1:14,1,1))
          enddo
 
-         do ig = 1, 25
+         do ig = 1, 14
              write(6,'(14f14.7)')aimag(scrcoul_g_in(ig,1:14,1,1))
          enddo
 END SUBROUTINE unfold_w

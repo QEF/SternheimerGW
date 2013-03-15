@@ -324,7 +324,7 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
         !  At the first iteration dvbare_q*psi_kpoint is calculated
         !  and written to file
             call dvqpsi_us (dvbarein, ik, 1, .false.)
-            call davcio (dvpsi, lrbar, iubar, nrec, +1)
+        !   call davcio (dvpsi, lrbar, iubar, nrec, +1)
            endif
 
         ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
@@ -334,19 +334,19 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
 
 
 !           if (where_rec=='solve_lint'.or.iter > 1) then
-              !starting value for delta_psi is read from iudwf
-!               nrec1 = ik
-              !HL Don't need to read/write the full wave fxn at each iteration...
-            ! call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
-!              call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
-!              call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
-             !  dpsi(:,:)  = (0.d0, 0.d0) 
-             !  dpsim(:,:) = (0.d0, 0.d0) 
-             !  dpsip(:,:) = (0.d0, 0.d0) 
-             !threshold for iterative solution of the linear system
-             !write(6,*)1.d-1*sqrt(dr2), 1.d-4
-             !thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
-!               thresh = 1.d-6
+!           starting value for delta_psi is read from iudwf
+!           nrec1 = ik
+!           HL Don't need to read/write the full wave fxn at each iteration...
+!           call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
+!           call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
+!           call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
+!           dpsi(:,:)  = (0.d0, 0.d0) 
+!           dpsim(:,:) = (0.d0, 0.d0) 
+!           dpsip(:,:) = (0.d0, 0.d0) 
+!           threshold for iterative solution of the linear system
+!           write(6,*)1.d-1*sqrt(dr2), 1.d-4
+!           thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+!           thresh = 1.d-6
 !           else
 !ONLY ITER TO GET EXECUTED:
             !
@@ -357,7 +357,7 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
               dpsip(:,:) = (0.d0, 0.d0) 
               dvscfin(:, :) = (0.d0, 0.d0)
             ! starting threshold for iterative solution of the linear system
-              thresh = 1.0d-4
+              thresh = 1.0d-6
               etc(:,:) = CMPLX(et(:,:), 0.0d0 , kind=DP)
               cw       = fiu(iw)
 
@@ -387,8 +387,8 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
            dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
 
           !call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
-           call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
-           call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
+          !call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
+          !call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
 
           ! calculates dvscf, sum over k => dvscf_q_ipert
           ! incdrhoscf:  This routine computes the change of the charge density due to the

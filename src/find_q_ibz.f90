@@ -43,7 +43,7 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q)
 
   INTEGER,  INTENT(OUT)   :: iq, isym
   INTEGER                 :: s(3,3,48), invs(48), ism1
-  INTEGER                 :: i, j, k
+  INTEGER                 :: i, j, k, invsym
   REAL(DP), PARAMETER     :: eps=1.0d-5
 
 
@@ -71,27 +71,44 @@ DO iq = 1, nqs
   !Symmfix
    x_q_loc(:) = -x_q(:,iq)
    CALL cryst_to_cart(1, x_q_loc(:), at, -1)
+!  write(1000+mpime, *) 
+!  write(1000+mpime, '(3f11.7)') x_q_loc(:)
    DO isym = 1, nsym
       ism1 = invs(isym)
       xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
       xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
       xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
+
+!      write(1000+mpime, '(3f11.7)') xq_ibk_locr(:)
  
-      found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).lt.eps).and. &
-                 (abs(x_q_loc(2) - xq_ibk_locr(2)).lt.eps).and. & 
-                 (abs(x_q_loc(3) - xq_ibk_locr(3)).lt.eps) 
+      found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
+                 (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
+                 (abs(x_q_loc(3) - xq_ibk_locr(3)).le.eps) 
       if (found_q) return
    END DO
 END DO
 
-if ((.not.found_q).and.(.not.invsymq)) then 
-   !Search for a symmop that gives Sq = -q+G.
-   ! xq_ibk_loc(:) = xq_ibk 
-   ! s_minus_q=.true.
-   !CALL sgq(xq_ibk_loc, at, bg, s, nsym, irgq, nsymq, irotmq, s_minus_q, gi, gimq)
-    write(1000+mpime,'("q_point not found in IBZ.")')
-   !CALL mp_global_end()
-   !STOP
+if (.not.found_q) then 
+   write(1000+mpime,'("q_point not found in IBZ using time reversal.")')
+   DO iq = 1, nqs
+!Transform xq into cartesian co-ordinates. 
+!x_q_loc(:) = x_q(:,iq)
+!Symmfix
+      x_q_loc(:) = x_q(:,iq)
+      CALL cryst_to_cart(1, x_q_loc(:), at, -1)
+      DO isym = 1, nsym
+         ism1 = invs(isym)
+         xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
+         xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
+         xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
+         found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
+                    (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
+                    (abs(x_q_loc(3) - xq_ibk_locr(3)).le.eps) 
+      if (found_q) then
+          return
+      endif
+    END DO
+   END DO
 endif
 
 RETURN

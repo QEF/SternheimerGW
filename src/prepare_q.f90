@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
+SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
   !-----------------------------------------------------------------------
   !
   !  This routine prepares a few variables that are needed to control
@@ -40,6 +40,7 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   IMPLICIT NONE
   !
   INTEGER, INTENT(IN) :: iq
+  LOGICAL, INTENT(INOUT) :: minq
   LOGICAL, INTENT(OUT) :: do_band, do_iq, setup_pw
   CHARACTER (LEN=6), EXTERNAL :: int_to_char
   INTEGER :: irr
@@ -70,7 +71,8 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
      !
 !    xq(1:3)  = x_q(1:3,iq)
 !MINUS Q
-     xq(1:3)  = -x_q(1:3,iq)
+        xq(1:3)  = -x_q(1:3,iq)
+
      !
      !Check if it is lgamma
 

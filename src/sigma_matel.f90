@@ -47,6 +47,10 @@ SUBROUTINE sigma_matel (ik0)
   USE fft_base,             ONLY : dffts
   USE fft_parallel,         ONLY : tg_cft3s
   USE cell_base,            ONLY : omega, tpiba2, at, bg
+  USE mp,                   ONLY: mp_barrier, mp_bcast, mp_sum, mp_end
+  USE mp_global,            ONLY: mp_startup, nimage, npool, intra_image_comm, inter_image_comm, &
+                                  nproc_pool, mpime, nproc, my_pool_id, me_pool, &
+                                  mp_global_end, inter_pool_comm
 
 IMPLICIT NONE
 INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter

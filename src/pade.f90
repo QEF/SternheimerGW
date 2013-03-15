@@ -53,14 +53,14 @@ USE kinds,                     ONLY : DP
       enddo
     else
       do i = p, N
-      !  g (p,i) = ( g(p-1,p-1) - g(p-1,i) ) / &
-      !           ( ( z(i) - z(p-1) ) * g (p-1,i) )
-         !
-         ! this seems necessary to avoid nasty NaN when
-         ! still don't quite understand why the procedure
-         ! becomes unstable - certainly it happens only
-         ! when u(:) is very small
-         !
+      !  g (p,i) =  (g(p-1,p-1) - g(p-1,i)) / &
+      !            ((z(i) - z(p-1) ) * g (p-1,i) )
+      !
+      ! this seems necessary to avoid nasty NaN when
+      ! still don't quite understand why the procedure
+      ! becomes unstable - certainly it happens only
+      ! when u(:) is very small
+      !
 !if(abs(g(p-1,i)) .eq. 0) then
 !  write(6,*) z(:)
 !  write(6,'(4x, "fitting parameter too small. g(p-1,i)= ",2f9.5)')g(p-1,i)

@@ -189,7 +189,7 @@ do iq = 1, nksq
 !We want to form product \Sum_{q} w(q) G_{k+q}W_{-q}.
 
 WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
+WRITE(6, '(4x,"tr_cgsolve for green_linsys",e10.3)') tr_cgsolve
 
      green  = (0.0d0, 0.0d0)
      h_diag = 0.d0
@@ -213,9 +213,12 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",f10.3)') tr_cgsolve
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
-              call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
-                                     npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
-                                     cw, niters(gveccount))
+                call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
+                                       npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
+                                       cw, niters(gveccount))
+              !call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
+              !                      npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
+              !                      cw, niters(gveccount))
               if(.not.conv_root) write(1000+mpime, '("root not converged.")')
              endif
                 call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)

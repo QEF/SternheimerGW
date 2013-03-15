@@ -153,22 +153,22 @@ SUBROUTINE sigma_c(ik0)
    endif
 
    WRITE(6,'("nsym, nsymq ", 2i4)'), nsym, nsymq
-!   WRITE(6,'("Should be inversion matrix ...")')
-   !if(nsym.lt.48) then
+   WRITE(6,'("Should be inversion matrix ...")')
+!   if(nsym.lt.48) then
 !   if(.not.noinv.and.lgamma) then
-      !inversym= 25
-      !inversym= invs(1)
-!       inversym = 1 + nsymq/2
-!       WRITE(6,'(3i4)') s(:,:,inversym)
+!   inversym= 25
+!   inversym= invs(1)
+!   inversym = 12
+!   WRITE(6,'(3i4)') s(:,:,inversym)
 !   else if (noinv) then
-!       inversym = nsym + 1
-       !inversym = 25
-       !inversym= invs(1)
-!       WRITE(6,'(3i4)') s(:,:,inversym)
+!   inversym = nsym + 1
+!   inversym = 25
+!   inversym= invs(1)
+!   WRITE(6,'(3i4)') s(:,:,inversym)
 !   else
-!       inversym = 1+nsymq/2  
-       !inversym= invs(1)
-!       WRITE(6,'(3i4)') s(:,:,inversym)
+!   inversym = 1+nsymq/2  
+!   inversym= invs(1)
+!   WRITE(6,'(3i4)') s(:,:,inversym)
 !   endif
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
@@ -270,10 +270,13 @@ DO iq = iqstart, iqstop
 !      endif
 
     write(6, *)  
+    write(6, '("xk point")') 
+    write(6, '(3f11.7)') xk_kpoints(:,ik0)
     write(6, '("xq_IBK point")')
     write(6, '(3f11.7)') xq_ibk
     write(6, '("equivalent xq_IBZ point, symop, iqrec")')
-    write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
+!   write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
+!   write(6, '(3f11.7)') x_q(:,1:10)
     write(6,*)
 
 ! Time Reversal?
@@ -284,7 +287,7 @@ DO iq = iqstart, iqstop
    write(1000+mpime, '("xq_IBK point")')
    write(1000+mpime, '(3f11.7)') xq_ibk
    write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-   write(1000+mpime, '(3f11.7, 3i4)') x_q(:,iqrec), isym, iqrec, iuncoul
+   write(1000+mpime, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
 
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
@@ -336,9 +339,9 @@ DO iq = iqstart, iqstop
 !phase = eigv(ig, isym)*conjg(eigv(igp,isym))
 !According to some subtle considerations this should be \tau_{R^{-1}}
 !following HL:
-                 phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
-              !   normal:
-              !   scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+              phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
+          !   normal:
+          !   scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
               scrcoul_g_R(gmapsym(ig,invs(isym)), gmapsym(igp,invs(isym)), iwim)=real(scrcoul_g(ig,igp,iwim))*phase
 !also the deriviation suggest i should do this:
 !where q_{bk}=R^{-1}q_{bz}
@@ -355,9 +358,9 @@ DO iq = iqstart, iqstop
 !this should be L_{z}/2
 !     rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
 !     rcut = rcut-rcut/50.0d0
-!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 !Sax for silicon
-     rcut = 21.329d0
+!     rcut = 21.329d0
 DO iw = 1, nfs
    DO ig = 1, ngmpol
 !2D screening.
@@ -456,8 +459,14 @@ ENDDO !nfs
                 z(iw) = fiu(iw)
                 u(iw) = scrcoul_g_R (ig, igp, iw)
              enddo
-!     Pade coefficients      
+!Use symmetry propert of pade to double number of interpolants.
+!             do iw = 2, nfs
+!               z(nfs+iw-1) = -fiu(iw)
+!               u(nfs+iw-1) = conjg(scrcoul_g_R (ig, igp, iw))
+!             enddo
+!     Pade coefficients
             call pade_coeff ( nfs, z, u, a)
+!           call pade_coeff ( 2*nfs-1, z, u, a)
 !     Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
              do iw = 1, nfs 
                 scrcoul_g_R (ig, igp, iw) = a(iw)
@@ -490,6 +499,8 @@ ENDDO !nfs
              enddo
              if(padecont) then
                 call pade_eval ( nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+            !symmetrized pade
+            !call pade_eval ( 2*nfs-1, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
              else if(godbyneeds) then
                 !scrcoul_pade_g(ig,igp)=(dcmplx(2.0d0,0.0d0)*a(2)*a(1))/((dcmplx(w_ryd(iw),eta))**2-a(1)**2)
                 scrcoul_pade_g(ig,igp) = (a(2)/(dcmplx(w_ryd(iw), eta) - a(1))) - (a(2)/(dcmplx(w_ryd(iw), eta) + a(1)))
@@ -505,14 +516,6 @@ ENDDO !nfs
           !   call mod_dielec(ig, xq_ibk, w_ryd(iw), scrcoul_pade_g(ig,ig), screening)
           !enddo
      endif
-
-!!!!!!!
-!padecatch     
-!       if(padecont) then
-!          do ig =2, ngmpol 
-!              scrcoul_pade_g(ig,1) = dcmplx(0.d0,0.0d0)
-!          enddo
-!       endif
 !W(G,G';w)
         czero = (0.0d0, 0.0d0)
         scrcoul(:,:) = czero
