@@ -357,7 +357,7 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
               dpsip(:,:) = (0.d0, 0.d0) 
               dvscfin(:, :) = (0.d0, 0.d0)
             ! starting threshold for iterative solution of the linear system
-              thresh = 1.0d-6
+              thresh = 1.0d-5
               etc(:,:) = CMPLX(et(:,:), 0.0d0 , kind=DP)
               cw       = fiu(iw)
 

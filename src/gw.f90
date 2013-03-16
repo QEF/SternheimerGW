@@ -79,6 +79,7 @@ PROGRAM gw
    !/Modules/environment.f90 prints out all parallel information and opening message.
     CALL environment_start ( code )
 
+    WRITE(stdout, '(/5x, "Reading variables")') 
     CALL gwq_readin()
     WRITE(stdout, '(/5x, "Finished reading variables")') 
 

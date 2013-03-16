@@ -147,6 +147,7 @@ SUBROUTINE gwq_readin()
   ! ... Read the first line of the input file
   !
      READ( 5, '(A)', IOSTAT = ios ) title
+     WRITE(6,*) nsx, maxter
   !
   ENDIF
   !
@@ -206,7 +207,7 @@ SUBROUTINE gwq_readin()
   maxter_green = 200
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
-  ecutsig      = 2.5
+  ecutsig      = 5.0
   plasmon      = 17.0d0
   greenzero    = 0.0d0 
  
@@ -254,8 +255,8 @@ SUBROUTINE gwq_readin()
 
   IF (ionode) READ( 5, INPUTGW, IOSTAT = ios )
 
-
 !HL TEST PARA FINE
+!  write(6,'("read name list.")')
 
    CALL mp_bcast(ios, ionode_id)
   !
@@ -265,12 +266,14 @@ SUBROUTINE gwq_readin()
   CALL bcast_gw_input ( ) 
   CALL mp_bcast(nogg, ionode_id )
 
-!HL FINE
+! write(6,'("broadcast.")')
+! HL FINE
 
   !
   ! ... Check all namelist variables
   !
   IF (tr2_gw <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_gw ', 1)
+  IF (tr2_green <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_green ', 1)
 
   !HL raman thresholds
   !IF (eth_rps<= 0.D0) CALL errore ( 'gwq_readin', ' Wrong eth_rps', 1)
@@ -280,6 +283,7 @@ SUBROUTINE gwq_readin()
      IF (alpha_mix (iter) .LT.0.D0.OR.alpha_mix (iter) .GT.1.D0) CALL &
           errore ('gwq_readin', ' Wrong alpha_mix ', iter)
   ENDDO
+!  write(6,'("alphamix.")')
 
   IF (niter_gw.LT.1.OR.niter_gw.GT.maxter) CALL errore ('gwq_readin', &
        ' Wrong niter_gw ', 1)
@@ -314,6 +318,7 @@ SUBROUTINE gwq_readin()
   CALL mp_bcast(ios, ionode_id)
   CALL errore ('gwq_readin', 'reading xq', ABS (ios) )
   CALL mp_bcast(xq, ionode_id )
+!  write(6,'("bcast xq.")')
   IF (.NOT.ldisp) THEN
      lgamma = xq (1) .EQ.0.D0.AND.xq (2) .EQ.0.D0.AND.xq (3) .EQ.0.D0
      IF ( (epsil.OR.zue) .AND..NOT.lgamma) CALL errore ('gwq_readin', &
@@ -376,6 +381,7 @@ SUBROUTINE gwq_readin()
       fiu=DCMPLX(0.0d0, 0.d0)
       CALL mp_bcast(fiu, ionode_id )
   END IF
+!  write(6,'("freq read.")')
 
 ! Reading in kpoints specified by user.
 ! Note max number of k-points is 10. 
@@ -415,6 +421,7 @@ SUBROUTINE gwq_readin()
  ELSE
      num_k_pts = 1
  ENDIF
+!  write(6,'("kpoints")')
   !
   !
   !   Here we finished the reading of the input file.
@@ -461,8 +468,10 @@ SUBROUTINE gwq_readin()
 
 
   CALL mp_barrier( )
-  CALL read_file ( )
 
+!!! RFHL Some bug...
+  CALL read_file ( )
+!!!
   tmp_dir=tmp_dir_save
   !
   IF (modenum > 3*nat) CALL errore ('gwq_readin', ' Wrong modenum ', 2)
@@ -566,6 +575,9 @@ SUBROUTINE gwq_readin()
   ! of the dynamical matrix
   ! CALL allocate_part ( nat )
   ! HL
+
+!HL64
+  write(6,'("Almostdonle")')
 
   IF ( nat_todo < 0 .OR. nat_todo > nat ) &
      CALL errore ('gwq_readin', 'nat_todo is wrong', 1)

@@ -47,7 +47,7 @@ SUBROUTINE green_linsys (ik0)
   COMPLEX(DP) :: aux1(npwx)
   COMPLEX(DP) :: ci, cw, green(ngmgrn,ngmgrn)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
-  REAL(DP)    :: eprecloc 
+  REAL(DP)    :: eprecloc
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
   INTEGER :: ngvecs, ngsol
