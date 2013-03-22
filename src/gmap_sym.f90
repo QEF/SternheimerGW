@@ -31,6 +31,7 @@
   USE gvect,         ONLY : ig1, ig2, ig3, ngm, &
                             nr1, nr2, nr3, g
   USE cell_base,     ONLY : at, bg
+  USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool
 
 #ifdef __PARA
   USE mp_global,    ONLY : my_pool_id
@@ -126,6 +127,7 @@
     !
     IF (notfound.gt.0) then
        write(6,'("WRITE GVEC not rotated properly gmap_sym.")')
+       write(1000+mpime,'("WRITE GVEC not rotated properly gmap_sym.")')
        stop
     ENDIF
     ! CALL errore ('gmap_sym','incomplete mapping of G vectors: notfound = ',notfound)

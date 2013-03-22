@@ -260,9 +260,11 @@ SUBROUTINE gwq_init()
      END DO
      !
   END DO
-#ifdef __PARA
-     CALL mp_sum ( eprec, intra_pool_comm )
-#endif
+
+!#ifdef __PARA
+!     CALL mp_sum ( eprec, intra_pool_comm )
+!#endif
+
   !
   DEALLOCATE( aux1 )
 

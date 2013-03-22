@@ -1,4 +1,4 @@
-SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q)
+SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
 ! Routine finds which symmetry operation folds xq to the required qpoint, xq_req.
 ! While it is true we can use the full symmetry group of the crystal for W
 ! regardless of still need to use only valid symops 
@@ -37,7 +37,7 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q)
   !_loc so i don't operate on arrays passed to subroutine
   !that would require rotating the vectors twice each time. 
 
-  LOGICAL                 :: found_q, s_minus_q
+  LOGICAL                 :: found_q, s_minus_q, inv_q
  !variable to acknowledge we've rotated q back the IBZ
  !dummy variable for routine to find Sq = -q + G
 
@@ -90,6 +90,7 @@ END DO
 
 if (.not.found_q) then 
    write(1000+mpime,'("q_point not found in IBZ using time reversal.")')
+   inv_q =.true.
    DO iq = 1, nqs
 !Transform xq into cartesian co-ordinates. 
 !x_q_loc(:) = x_q(:,iq)

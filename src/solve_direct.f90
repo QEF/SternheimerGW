@@ -94,6 +94,7 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
   real(DP) , allocatable :: h_diag (:,:)
 ! h_diag: diagonal part of the Hamiltonian
   real(DP) :: thresh, anorm, averlt, dr2
+  real(DP) :: x
 
   ! thresh: convergence threshold
   ! anorm : the norm of the error
@@ -290,11 +291,14 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
         h_diag = 0.d0
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              h_diag(ig,ibnd)= 1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+             !    h_diag(ig,ibnd)= 1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+                  x = (g2kin(ig))/eprec(ibnd,ik)
+                  h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+                                    /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
            enddo
            IF (noncolin) THEN
               do ig = 1, npwq
-                 h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+                 !h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
 !                h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig) + (fiu/eprec(ibnd,ik))
               enddo
            END IF
@@ -357,7 +361,7 @@ SUBROUTINE solve_direct(dvbarein, iw, drhoscf)
               dpsip(:,:) = (0.d0, 0.d0) 
               dvscfin(:, :) = (0.d0, 0.d0)
             ! starting threshold for iterative solution of the linear system
-              thresh = 1.0d-5
+              thresh = tr2_gw
               etc(:,:) = CMPLX(et(:,:), 0.0d0 , kind=DP)
               cw       = fiu(iw)
 

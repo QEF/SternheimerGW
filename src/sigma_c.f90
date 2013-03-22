@@ -20,7 +20,7 @@ SUBROUTINE sigma_c(ik0)
                             nr1sco, nr2sco, nr3sco, ngmgrn, ngmpol
   USE gvect,         ONLY : g, ngm, ecutwfc, nl
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
-  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
+  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
                             nproc_pool, me_pool, my_pool_id, nproc
   USE mp,            ONLY : mp_barrier, mp_bcast, mp_sum
@@ -39,7 +39,7 @@ SUBROUTINE sigma_c(ik0)
   LOGICAL             :: pade_catch
   LOGICAL             :: found_q
 !
-  LOGICAL             :: limit,limq
+  LOGICAL             :: limit, limq, inv_q, found
 !Pade arrays
   COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
 !W arrays 
@@ -69,12 +69,13 @@ SUBROUTINE sigma_c(ik0)
   INTEGER :: inversym
 !SYMMETRY
   REAL(DP)              :: xq_ibk(3), xq_ibz(3)
-  INTEGER               :: isym
+  INTEGER               :: isym, jsym
   INTEGER, ALLOCATABLE  :: gmapsym(:,:)
 
 !For G^NA
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
+  INTEGER     :: ss(3,3)
 
   COMPLEX(DP), ALLOCATABLE           :: eigv(:,:)
 !q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
@@ -116,8 +117,13 @@ SUBROUTINE sigma_c(ik0)
 !  ALLOCATE ( gmapsym     (ngm, 48)         )
 !  This should be more efficient should also only store up to ngmsco but 
 !  that won't be invented until it is necessary.
-   ALLOCATE ( gmapsym        (ngm, nsym)                 )
-   ALLOCATE ( eigv(ngm, nsym) )
+!   ALLOCATE ( gmapsym        (ngm, nsym)                 )
+!   ALLOCATE ( eigv(ngm, nsym) )
+
+!
+   ALLOCATE ( gmapsym  (ngm, nrot)   )
+   ALLOCATE ( eigv     (ngm, nrot)   )
+
 !This is a memory hog...
    ALLOCATE ( sigma          (nrsco, nrsco, nwsigma)   )
 
@@ -141,7 +147,8 @@ SUBROUTINE sigma_c(ik0)
    limit=.false.
 
    CALL start_clock('sigmac')
-   CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+  !CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+   CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
 
 
    if(allocated(sigma)) then
@@ -152,28 +159,17 @@ SUBROUTINE sigma_c(ik0)
      STOP
    endif
 
-   WRITE(6,'("nsym, nsymq ", 2i4)'), nsym, nsymq
-   WRITE(6,'("Should be inversion matrix ...")')
-!   if(nsym.lt.48) then
-!   if(.not.noinv.and.lgamma) then
-!   inversym= 25
-!   inversym= invs(1)
-!   inversym = 12
-!   WRITE(6,'(3i4)') s(:,:,inversym)
-!   else if (noinv) then
-!   inversym = nsym + 1
-!   inversym = 25
-!   inversym= invs(1)
-!   WRITE(6,'(3i4)') s(:,:,inversym)
-!   else
-!   inversym = 1+nsymq/2  
-!   inversym= invs(1)
-!   WRITE(6,'(3i4)') s(:,:,inversym)
-!   endif
+   WRITE(6,'("nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
+
+  !WRITE(6,'("Should be inversion matrix ...")')
+  !if(noinv) then
+  !    inversym= 2*nsym+1
+  !    WRITE(6,'(3i4)') s(:,:,inversym)
+  !endif
+
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
-
    wq(:) = 0.0d0
    do iq = 1, nksq
       if(lgamma) then
@@ -246,15 +242,34 @@ DO iq = iqstart, iqstop
 !  we ensure there is no confusion in which symmetry routine is required.
 !  SYMMFIX
 !  -q =  k0 - (k0 + q)
-   xq_ibk(:) = xk_kpoints(:, ik0) - xk(:, ikq)
-
+     xq_ibk(:) = xk_kpoints(:, ik0) - xk(:, ikq)
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
 !q is stored in the list x_q as positive q but all the calculations have
 !been done at -q therefore we are just going to calculate \SumG_{k+q}W_{-q}
+   inv_q=.false.
+   call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
+   WRITE(6,'(3i4)') s(:,:,isym)
+   WRITE(1000+mpime,'(3i4)') s(:,:,isym)
+!Find rotation matrix IR
+   if(inv_q) then
+      xq_ibk = -xq_ibk
+      found = .FALSE.
+      DO jsym = 1, nrot
+         if(found) cycle
+         ss = s(:,:,jsym)
+         IF ( ALL ( ss(:,:) == -s(:,:,isym) ) ) THEN
+              isym = jsym
+              found = .TRUE.
+         END IF
+      END DO
+      IF ( .NOT.found) CALL errore ('inverse_s', ' Cant find inversion.', 1)
+   endif
+   WRITE(6,*) 
+   WRITE(6,'(3i4)') s(:,:,isym)
+   WRITE(1000+mpime,'(3i4)') s(:,:,isym)
 
-   call find_q_ibz(xq_ibk, s, iqrec, isym, found_q)
-
+!END DO
 !Read igkq indices:
 !HOW DO YOU KNOW THESE ARE READING THE CORRECT igkqs in parallel ?????
 !      if (nksq.gt.1) then
@@ -275,7 +290,7 @@ DO iq = iqstart, iqstop
     write(6, '("xq_IBK point")')
     write(6, '(3f11.7)') xq_ibk
     write(6, '("equivalent xq_IBZ point, symop, iqrec")')
-!   write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
+    write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
 !   write(6, '(3f11.7)') x_q(:,1:10)
     write(6,*)
 
@@ -283,11 +298,12 @@ DO iq = iqstart, iqstop
 ! isym  = 1
 ! iqrec = iq
 
+!Using symmetry of dielectric matrix to generate -xq.
    write(1000+mpime, *)  
    write(1000+mpime, '("xq_IBK point")')
    write(1000+mpime, '(3f11.7)') xq_ibk
    write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-   write(1000+mpime, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
+   write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
 
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
@@ -336,21 +352,17 @@ DO iq = iqstart, iqstop
               .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
               do iwim = 1, nfs
 !Rotating dielectric matrix with phase factor for nonsymmorphic space groups: 
-!phase = eigv(ig, isym)*conjg(eigv(igp,isym))
-!According to some subtle considerations this should be \tau_{R^{-1}}
 !following HL:
-              phase = conjg(eigv(ig, invs(isym)))*eigv(igp,invs(isym))
           !   normal:
-          !   scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
-              scrcoul_g_R(gmapsym(ig,invs(isym)), gmapsym(igp,invs(isym)), iwim)=real(scrcoul_g(ig,igp,iwim))*phase
-!also the deriviation suggest i should do this:
-!where q_{bk}=R^{-1}q_{bz}
-!              phase = conjg(eigv(ig, isym))*eigv(igp,isym)
-!              scrcoul_g_R(gmapsym(ig,invs(isym)), gmapsym(igp,invs(isym)), iwim)=scrcoul_g(ig,igp,iwim)*phase
+              phase = conjg(eigv(ig,isym))*eigv(igp,isym)
+              scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+          !  phase = eigv(ig, invs(isym))*conjg(eigv(igp,invs(isym)))
+          !  scrcoul_g_R(gmapsym(ig,invs(isym)), gmapsym(igp,invs(isym)), iwim)=real(scrcoul_g(ig,igp,iwim))*phase
               enddo
           endif
        enddo
     enddo
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Generate bare coulomb:                     !!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -361,6 +373,7 @@ DO iq = iqstart, iqstop
 rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 !Sax for silicon
 !     rcut = 21.329d0
+
 DO iw = 1, nfs
    DO ig = 1, ngmpol
 !2D screening.
@@ -455,10 +468,10 @@ ENDDO !nfs
           do igp = 1, ngmpol
            do ig = 1, ngmpol
 !     Pade input points on the imaginary axis
-             do iw = 1, nfs
-                z(iw) = fiu(iw)
-                u(iw) = scrcoul_g_R (ig, igp, iw)
-             enddo
+              do iw = 1, nfs
+                 z(iw) = fiu(iw)
+                 u(iw) = scrcoul_g_R (ig, igp, iw)
+              enddo
 !Use symmetry propert of pade to double number of interpolants.
 !             do iw = 2, nfs
 !               z(nfs+iw-1) = -fiu(iw)

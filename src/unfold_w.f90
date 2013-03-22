@@ -109,7 +109,8 @@ ELSE
             !tick knock?
             !   phase = conjg(eigv(ig, invs(sym_ig(ig))))*(eigv(igp, invs(sym_ig(ig))))
             !     scrcoul_g_in(ig, igp, iwim, 1) = scrcoul_g_tmp(gmapsym(igp, invs(sym_ig(ig))), iwim)*phase
-             phase = conjg(eigv(sym_friend(ig), sym_ig(ig)))*(eigv(igp, sym_ig(ig)))
+            !phase = conjg(eigv(sym_friend(ig), sym_ig(ig)))*(eigv(igp, sym_ig(ig)))
+             phase = eigv(sym_friend(ig), sym_ig(ig))*conjg(eigv(igp, sym_ig(ig)))
              scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
             !scrcoul_g_in(ig, igp, iwim, 1) = scrcoul_g_tmp(gmapsym(igp, sym_ig(ig)), iwim)*phase
             !for a while i was convinced this was right:
@@ -119,25 +120,7 @@ ELSE
         ENDDO
 128 CONTINUE
     ENDDO
-!    write(6,*) ngmdonelist(:)
 ENDIF
-
-!Populate tmp array with the unique row of perturbations 
-!tmp array required or we fold on top of each other ...
-!            DO iwim = 1, nfs
-!               DO igp = 1, ngmpol
-!                   scrcoul_g_tmp(igp,iwim) = scrcoul_g_in(ig_unique(ig), igp, iwim, 1)
-                   !scrcoul_g_tmp(gmapsym(igp,invs(isym)), iwim) = scrcoul_g_in(ig_unique(ig), igp, iwim, 1)
-!               ENDDO
-!            ENDDO
-!Rotate the unique vector to the W_{q} (R^{-1}G, WR^{-1}G').
-!I should have a completed shell of unique G vectors so there shouldn't be problems with mapping outside of ngmpol
-!however I'm sure a number of pathological cases exist for different bravais lattices, etc...
-!           DO iwim = 1, nfs
-!              DO igp = 1, ngmpol
-!                scrcoul_g_in(gmapsym(ig, invs(sym_ig(ig, ))), gmapsym(igp, invs(isym), iwim, 1) = scrcoul_g_tmp(igp, iwim)
-!               ENDDO
-!            ENDDO
 
 126 CONTINUE
 
@@ -159,8 +142,8 @@ IF(iq.eq.1) then
   if(padecont) then
      do igp = 2, ngmpol
         do iwim = 1, nfs
-        !   scrcoul_g_in(1,igp,iwim,1) = (0.0d0, 0.0d0)
-        !   scrcoul_g_in(igp,1,iwim,1) = (0.0d0, 0.0d0)
+!          scrcoul_g_in(1,igp,iwim,1) = (0.0d0, 0.0d0)
+!          scrcoul_g_in(igp,1,iwim,1) = (0.0d0, 0.0d0)
         enddo
      enddo
   endif
@@ -168,11 +151,10 @@ ENDIF
 !        do ig = 1, ngmpol
 !            write(6,'(i4, f14.7)')ig, real(scrcoul_g_in(ig,ig,1,1))
 !        enddo
-         do ig = 1, 14
-             write(6,'(14f14.7)')real(scrcoul_g_in(ig,1:14,1,1))
-         enddo
-
-         do ig = 1, 14
-             write(6,'(14f14.7)')aimag(scrcoul_g_in(ig,1:14,1,1))
-         enddo
+!        do ig = 1, 14
+!            write(6,'(14f14.7)')real(scrcoul_g_in(ig,1:14,1,1))
+!        enddo
+!        do ig = 1, 14
+!            write(6,'(14f14.7)')aimag(scrcoul_g_in(ig,1:14,1,1))
+!        enddo
 END SUBROUTINE unfold_w

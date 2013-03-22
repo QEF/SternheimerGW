@@ -164,7 +164,7 @@ SUBROUTINE gwq_readin()
   !
   ! ... set default values for variables in namelist
   !
-  tr2_gw       = 1.D-9
+  tr2_gw       = 1.D-5
   tr2_green    = 1.D-6
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
@@ -204,7 +204,7 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        = .FALSE.
   lrpa         = .FALSE.
-  maxter_green = 200
+  maxter_green = 220
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 5.0

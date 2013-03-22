@@ -64,10 +64,10 @@ integer  :: p, N,i
         ar = real(a(p))
         ai = aimag(a(p))
         if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-           write(1000+mpime,*) (z(i),i=1,N)
-           write(1000+mpime,*) (u(i),i=1,N)
-           write(1000+mpime,*) (a(i),i=1,N)
-           a(1) = DCMPLX(10.0d0,0.0d0)
+           write(1000+mpime,'(2f12.7)') (z(i),i=1,N)
+           write(1000+mpime,'(2f12.7)') (u(i),i=1,N)
+           write(1000+mpime,'(2f12.7)') (a(i),i=1,N)
+           a(1) = DCMPLX(20.0d0,0.0d0)
            a(2) = DCMPLX(0.0d0,0.0d0)
         endif
      enddo
