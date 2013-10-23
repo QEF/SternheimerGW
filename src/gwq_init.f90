@@ -132,6 +132,12 @@ SUBROUTINE gwq_init()
      !
   END DO
   !
+
+  if (nbnd.lt.nbnd_occ(1)) then
+      write(6, '("nbnd_sig is less than the number of occupied states!")')
+      STOP
+  endif
+
   IF ( nksq > 1 ) REWIND( iunigk )
   !
   DO ik = 1, nksq
@@ -193,9 +199,6 @@ SUBROUTINE gwq_init()
      !
      CALL davcio( evc, lrwfc, iuwfc, ikk, -1 )
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!ALL of this between !!!-!!! can be deleted, has to do with phonon perturbations.!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      !
      ! ... e) we compute the becp terms which are used in the rest of
      ! ...    the code
@@ -203,26 +206,29 @@ SUBROUTINE gwq_init()
 
      CALL calbec (npw, vkb, evc, becp1(ik) )
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!ALL of this between !!!-!!! can be deleted, has to do with phonon perturbations.!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      !
      ! ... e') we compute the derivative of the becp term with respect to an
      !         atomic displacement i.e. equation B9
      !
-      DO ipol = 1, 3
-         aux1=(0.d0,0.d0)
-         DO ibnd = 1, nbnd
-            DO ig = 1, npw
-               aux1(ig,ibnd) = evc(ig,ibnd) * tpiba * ( 0.D0, 1.D0 ) * & 
-                               ( xk(ipol,ikk) + g(ipol,igk(ig)) )
-            END DO
-            IF (noncolin) THEN
-               DO ig = 1, npw
-                  aux1(ig+npwx,ibnd)=evc(ig+npwx,ibnd)*tpiba*(0.D0,1.D0)*& 
-                            ( xk(ipol,ikk) + g(ipol,igk(ig)) )
-               END DO
-            END IF
-         END DO
-         CALL calbec (npw, vkb, aux1, alphap(ipol,ik) )
-      END DO
+     ! DO ipol = 1, 3
+     !    aux1=(0.d0,0.d0)
+     !    DO ibnd = 1, nbnd
+     !       DO ig = 1, npw
+     !          aux1(ig,ibnd) = evc(ig,ibnd) * tpiba * ( 0.D0, 1.D0 ) * & 
+     !                          ( xk(ipol,ikk) + g(ipol,igk(ig)) )
+     !       END DO
+     !       IF (noncolin) THEN
+     !          DO ig = 1, npw
+     !             aux1(ig+npwx,ibnd)=evc(ig+npwx,ibnd)*tpiba*(0.D0,1.D0)*& 
+     !                       ( xk(ipol,ikk) + g(ipol,igk(ig)) )
+     !          END DO
+     !       END IF
+     !    END DO
+     !    CALL calbec (npw, vkb, aux1, alphap(ipol,ik) )
+     ! END DO
 
      !
 
@@ -241,7 +247,7 @@ SUBROUTINE gwq_init()
                        (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
      enddo
 
-     aux1=(0.d0,0.d0)
+     aux1 = (0.d0,0.d0)
 
      DO ig = 1, npwq
         aux1 (ig,1:nbnd_occ(ikk)) = g2kin (ig) * evq (ig, 1:nbnd_occ(ikk))

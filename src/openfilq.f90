@@ -59,6 +59,7 @@ SUBROUTINE openfilq()
   tmp_dir=tmp_dir_gw
 
   !IF (lgamma.AND.modenum==0) tmp_dir=tmp_dir_save
+   write(6,*) tmp_dir
 
   iuwfc = 20
   lrwfc = 2 * nbnd * npwx * npol

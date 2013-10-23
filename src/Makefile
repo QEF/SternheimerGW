@@ -54,7 +54,6 @@ h_psiq.o \
 dgradcorr.o \
 setqmod.o \
 dvqpsi_us.o\
-dvqpsi_us_only.o\
 addusddens.o\
 addusdbec.o\
 set_drhoc.o\
@@ -75,6 +74,7 @@ sigma_r2g_sco.o\
 sigma_r2g_ex.o\
 sig_fft_g.o\
 sigma_exch.o\
+sigma_exchG.o\
 sigma_c.o\
 sigma_matel.o\
 setup_nscf_green.o\
@@ -90,6 +90,13 @@ sigma_extra.o\
 bicgstabl.o\
 solve_direct.o\
 invert_epsilon.o\
+mod_diel.o\
+coulomb_ms.o\
+solve_direct_shift.o\
+coul_multishift.o\
+cBiCG_solve_coul.o\
+truncate_2D.o
+
 
 HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a

@@ -13,10 +13,10 @@ subroutine ch_psi_all (n, h, ah, e, ik, m)
   ! to a vector h. The result is given in Ah.
   !
 
-  USE kinds, only : DP
-  USE wvfct, ONLY : npwx, nbnd
-  USE becmod, ONLY : bec_type, becp, calbec
-  USE uspp, ONLY: nkb, vkb
+  USE kinds,   ONLY : DP
+  USE wvfct,   ONLY : npwx, nbnd
+  USE becmod,  ONLY : bec_type, becp, calbec
+  USE uspp,    ONLY : nkb, vkb
   USE noncollin_module, ONLY : noncolin, npol
 
   USE control_gw, ONLY : alpha_pv, nbnd_occ
@@ -94,9 +94,11 @@ subroutine ch_psi_all (n, h, ah, e, ik, m)
        npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
   ENDIF
   ps (:,:) = ps(:,:) * alpha_pv
-#ifdef __PARA
-  call mp_sum ( ps, intra_pool_comm )
-#endif
+
+!hl ps intrapool
+!#ifdef __PARA
+! call mp_sum ( ps, intra_pool_comm )
+!#endif
 
   hpsi (:,:) = (0.d0, 0.d0)
   IF (noncolin) THEN

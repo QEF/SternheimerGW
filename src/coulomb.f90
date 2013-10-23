@@ -7,28 +7,21 @@
 SUBROUTINE coulomb(iq, igstart, igstop, scrcoul) 
 !-----------------------------------------------------------------------
 ! This subroutine is the main driver of the COULOMB self consistent cycle
-! which calculates the Screened Coulomb interaction along the imaginary axis
-! a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G). 
-
-!What we actually calculate is the dielectric matrix.
-!This can then be stored and we applye the coulom operator and do all the analytic continuation 
-!stuff in sigma_c. This means we can actually play around with the dielectric matrix 
-!as a function of frequency which I think make's more sense anyway to store.
-
+! which calculates the dielectric matrix by generating the density response
+! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
 !The dielectric matrix is given by:
-!eps_{q}^{-1}(G,G',iw) - (\delta_{GG'} = drhoscfs_{G,G',iw})
-
+!eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
 
   USE kinds,      ONLY : DP
   USE ions_base,  ONLY : nat
   USE gvect,      ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
-  USE gsmooth,    ONLY : nrxxs, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, nls, ngms
+  USE gsmooth,    ONLY : nrxxs, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, nls, ngms, doublegrid
   USE constants,  ONLY : e2, fpi, RYTOEV, pi, eps8
   USE cell_base,  ONLY : alat, tpiba2, omega
   USE lsda_mod,   ONLY : nspin
   USE io_global,  ONLY : stdout, ionode
   USE uspp,       ONLY: okvan
-  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont
+  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont, solve_direct
   USE partial,    ONLY : done_irr, comp_irr
   USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
@@ -60,7 +53,6 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   COMPLEX(DP) :: padapp, w
 !HL temp variable for scrcoul to write to file.  
   COMPLEX(DP) :: cw
-  COMPLEX(DP), allocatable :: z(:), u(:), a(:)
   INTEGER :: unf_recl, recl, ios
   INTEGER :: iq, screening 
   LOGICAL :: exst
@@ -69,90 +61,53 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 !modeps and spencer-alavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
-!for Godby needs plasmon pole.
-  LOGICAL :: diag, limit
 ! used to test the recover file
   EXTERNAL get_clock
-!Extended plasmon pole model
-  REAL(DP) :: wwpi2, wwpj2, qxy, meff
   CALL start_clock ('coulomb')
 
-!DUMMY VARIABLES
-!Change in charge density
-
 ALLOCATE (drhoscfs(nrxx , nspin_mag))    
-ALLOCATE ( z(nfs), u(nfs), a(nfs) )
-
 irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
-!LOOP OVER ig, unique g vectors only... these then get written into the full matrix.
-!g is sorted in magnitude order...
+!LOOP OVER ig, unique g vectors only. 
+!g is sorted in magnitude order.
 DO ig = igstart, igstop
    qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
-    do iw = 1, nfs
-!HL DEBUG BROYDEN
-       !do iw = nfs, nfs
-         drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
-         dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-         dvbare (nl (ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-       !From the inputcard we can choose whether to use a model dielectric or 
-       !do the full sternheimer treatment.
-       IF (modielec) then
-!      !The 'magic dielectric function' Inkson 1972
-!      !Silicon parameters...
-!      !check resta for parameters Phys. Rev. B 16, 2717 2722 (1977)
-!      !wwp    = 18.0/RYTOEV  ! plasma frequency in Ry
-!      !eps0   = 11.4         ! static diel constant of Si
-!      !q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
-!      !LiCL parameters
-!      !wwp    = 17.0/RYTOEV   ! plasma frequency in Ry
-!      !eps0   = 11.04         ! static diel constant of 
-!      !q0     = 1.2           ! characteristic momentum of Si, a.u. from Resta
-!      !MoS2 there are two well defined excitation for parallel and perpendicular.
-!      !this is an anisotropic material though!
-!      !should have (at least) 2 different plasmons!
-        wwp    = 24.0/RYTOEV ! plasma frequency in Ry
-        eps0   = 7.4         ! static diel constant of MoS2
-        q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
-        qg     = sqrt(tpiba2*qg2)
-        fac    = 1.d0/(1.d0-1.d0/eps0)
-        wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
-        drhoscfs (nl(ig_unique(ig)), 1)  = - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
-        scrcoul(ig_unique(ig), ig_unique(ig), iw, nspin_mag) = drhoscfs(nl(ig),1)
-!if mod_diel we just skip the whole coulomb routine and jump straight to sigma_c.
-       ELSE
-         call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, + 1)
-        !if(direct) then
-         CALL solve_direct (dvbare, iw, drhoscfs)
-        !else
-        !CALL solve_linter (dvbare, iw, drhoscfs)
-        !endif
-         call cft3 (drhoscfs, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-         call cft3 (dvbare, nr1, nr2, nr3, nrx1, nrx2, nrx3, - 1)
-         if(iq.eq.1) then
-            WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f9.5)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
-            WRITE(stdout, *), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nl(ig_unique(ig)))
-         endif
-        !if (.not.direct)
-        ! DO igp = 1, ngmpol
-        !    scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
-        !ENDDO
-        !else
-        !we want the whole bit epsilon then invert
-         DO igp = 1, ngmpol
-            if(igp.ne.ig_unique(ig)) then
-               scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
-            else
-               scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1) + dvbare(nl(ig_unique(ig)))
-            endif
-         ENDDO
-        !endif
-       ENDIF
-    enddo !iw
+   do iw = 1, nfs
+      drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+      dvbare(:)     = dcmplx(0.0d0, 0.0d0)
+      dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
+!From the inputcard we can choose whether 
+!to use a model dielectric or 
+!do the full sternheimer treatment.
+      call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +1)
+      if(solve_direct) then
+         CALL solve_lindir (dvbare, iw, drhoscfs)
+      else
+         CALL solve_linter (dvbare, iw, drhoscfs)
+      endif
+      call cft3  (drhoscfs, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+      call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, - 1)
+      if(iq.eq.1) then
+         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
+      endif
+
+      if (solve_direct) then !we store eps(w).
+       DO igp = 1, ngmpol
+          if(igp.ne.ig_unique(ig)) then
+             scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
+          else
+             scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1) + dvbare(nls(ig_unique(ig)))
+          endif
+       ENDDO
+      else !if self-consistent we store : eps^{-1}(w)-1.
+       DO igp = 1, ngmpol
+          scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp),1)
+       ENDDO
+      endif
+   enddo !iw
 ENDDO 
 tcpu = get_clock ('GW')
 DEALLOCATE (drhoscfs)
-DEALLOCATE ( z, u, a )
 CALL stop_clock ('coulomb')
 RETURN
 END SUBROUTINE coulomb

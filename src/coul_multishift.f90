@@ -1,5 +1,4 @@
-SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
-!SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
+SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, freq, x_sig)
    USE kinds,       ONLY : DP
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
    USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
@@ -12,19 +11,20 @@ IMPLICIT NONE
 !coefficient of quadratic form
   INTEGER :: nfreq, iw, iwp
   COMPLEX(DP)   :: alpha, beta
-!complex(kind=DP), allocatable, INTENT(OUT) :: x_sig (:,:)
   COMPLEX(DP), INTENT(OUT) :: x_sig (ndmx,nfreq)
   complex(kind=DP), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:), r_sig(:,:)
   complex(kind=DP) :: alpha_old, beta_old , beta_sig(nfreq), alpha_sig(nfreq)
 !pi coefficients for each frequency up to nfreqgreen.
   complex(kind=DP) :: pi_coeff (nfreq), pi_coeff_old (nfreq), pi_coeff_new(nfreq)
   real(DP) :: w_ryd(nwgreen)
-!HLA should use anorm keep track of divergent elements...
+
 REAL(DP) :: anorm(nwgreen)
+
 !variable for reading in the stored alpha beta coefficients.
   COMPLEX(DP)                 :: alphabeta(2)
   COMPLEX(DP), PARAMETER      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
   complex(DP), external       :: zdotc
+  complex(DP)                 :: freq(nfreq)
   integer ::   ndmx, & ! input: the maximum dimension of the vectors
                ndim, & ! input: the actual dimension of the vectors
                ngvecs,&
@@ -35,7 +35,10 @@ REAL(DP) :: anorm(nwgreen)
 !ALLOCATE(x_sig(ndmx,nfreq), r(ndmx))
   ALLOCATE(r(ndmx))
   ALLOCATE(u_sig(ndmx,nfreq), u_sig_old(ndmx,nfreq), r_sig(ndmx,nfreq))
-  w_ryd(:) = wgreen(:)/RYTOEV
+
+! w_ryd(:) = wgreen(:)/RYTOEV
+  w_ryd(:) = freq(:)
+
 !Green shifted system.
      u_sig(:,:) = czero
      x_sig(:,:) = czero
@@ -44,6 +47,8 @@ REAL(DP) :: anorm(nwgreen)
      nrec = 0
      alpha = czero
      beta = czero
+!HLA
+!    conv(:)=.false.
      do iter = 1, niters-1
 !now need to read residual vectors which have been written to disk in green_linsys:
            call davcio (alphabeta, lralphabeta, iunalphabeta, iter, -1)
@@ -52,9 +57,9 @@ REAL(DP) :: anorm(nwgreen)
 !initialize variables for shifted system.
               x_sig(:,:)        = czero
               call davcio (r, lrresid, iunresid, iter, -1)
+!r: in case we want to check the convergence of the residuals of the shifted system
+!             beta = ZDOTC (ndim, r(1), 1, r(1), 1)
               do iw = 1, nfreq 
-                 !u_sig(:,iw) = r(:)
-                 !r_sig(:,iw) = r(:)
                  u_sig(:,iw) = r(:)
                  r_sig(:,iw) = r(:)
               enddo
@@ -68,20 +73,21 @@ REAL(DP) :: anorm(nwgreen)
          do iw = 1, nfreq
 !-alpha because we are solve (H-w^{+}):
            pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), eta))*pi_coeff(iw) - &
-! conjg means something...
                               ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
+
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
             alpha_sig(iw)    = ( pi_coeff(iw)/pi_coeff_new(iw))*alpha
+
 ! x_sig = x_sig + alpha_sig*u_sig
             x_sig(:,iw) = x_sig(:,iw) + alpha_sig(iw) * u_sig(:,iw)
          enddo!iw
 !update residuals:
          nrec = iter + 1
          call davcio (r, lrresid, iunresid, nrec, -1)
-!Now residual is updated(i.e. read in):
-!         do iw = 1, nfreq
-!            r_sig(:,iw) = (cone/pi_coeff_new(iw))*r(:)
-!         enddo!iw
+!The shifted residual tells us if we are converged. 
+         do iw = 1, nfreq
+            r_sig(:,iw) = (cone/pi_coeff_new(iw))*r(:)
+         enddo!iw
 !alpha=k, beta = k+1
           beta  = alphabeta(2)
 !update the u's for the shifted systems
@@ -105,4 +111,5 @@ REAL(DP) :: anorm(nwgreen)
   DEALLOCATE(u_sig)
   DEALLOCATE(u_sig_old) 
   DEALLOCATE(r_sig)
-END SUBROUTINE
+
+END SUBROUTINE coul_multishift

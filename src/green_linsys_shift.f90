@@ -173,11 +173,11 @@ do iq = 1, nksq
        ngvecs = igstop-igstart + 1
        if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
        niters = 0 
+
 ! Now the G-vecs up to the correlation cutoff have been divided between pools.
 ! Calculates beta functions (Kleinman-Bylander projectors), with
 ! structure factor, for all atoms, in reciprocal space
        call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
-! psi_{k+q}(r) is every ikq entry
        call davcio (evq, lrwfc, iuwfc, ikq, - 1)
        do ig = 1, npwq
           g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
@@ -185,11 +185,8 @@ do iq = 1, nksq
                         (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
        enddo
 
-!WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV.
-!We want to form product \Sum_{q} w(q) G_{k+q}W_{-q}.
-
 WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-WRITE(6, '(4x,"tr_cgsolve for green_linsys",e10.3)') tr2_green
+WRITE(6, '(4x,"tr_green for green_linsys",e10.3)') tr2_green
 
      green  = (0.0d0, 0.0d0)
      h_diag = 0.d0
@@ -213,20 +210,19 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",e10.3)') tr2_green
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
-                call  cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
-                                       npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-                                       cw, niters(gveccount))
-              !call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
-              !                      npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
-              !                      cw, niters(gveccount))
-              if(.not.conv_root) write(1000+mpime, '("root not converged.")')
-              if(.not.conv_root) write(1000+mpime, *) anorm
+              call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
+                                    npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
+                                    cw, niters(gveccount))
+              if(.not.conv_root) write(600+mpime, '("root not converged.")')
+              if(.not.conv_root) write(600+mpime, *) anorm
              endif
                 call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
                                                              gr_A_shift(igkq_ig(igp),iw)
+                   !green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
+                   !                                          conjg(gr_A_shift(igkq_ig(igp),iw))
                 enddo
              enddo
          gveccount = gveccount + 1
@@ -255,12 +251,6 @@ WRITE(6, '(4x,"tr_cgsolve for green_linsys",e10.3)') tr2_green
     CALL mp_barrier(inter_pool_comm)
     if(ionode) then
 #endif
-
-!Green's fxn now collected on head node. 
-!  do iw = 1, nwsigma
-!     CALL sigma_c(ik, green(:,:,iw))
-!  enddo
-!Write all frequencies to disk
     do iw = 1, nwgreen
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
        CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)

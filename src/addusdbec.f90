@@ -22,6 +22,8 @@ subroutine addusdbec (ik, wgt, psi, dbecsum)
   USE gwus,   ONLY : becp1
   USE qpoint, ONLY : npwq, ikks
   USE control_gw, ONLY : nbnd_occ
+  USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mpime, mp_global_end,&
+                                   intra_image_comm
   implicit none
   !
   !   the dummy variables
@@ -68,8 +70,10 @@ subroutine addusdbec (ik, wgt, psi, dbecsum)
   !
   !  Band parallelization: each processor takes care of its slice of bands
   !
-  call divide (nbnd_occ (ikk), startb, lastb)
-  !
+  !HLUSPP
+  !call divide (nbnd_occ (ikk), startb, lastb)
+  startb = 1
+  lastb = nbnd_occ(ikk)
   ijkb0 = 0
   do nt = 1, ntyp
      if (upf(nt)%tvanp ) then
@@ -96,9 +100,6 @@ subroutine addusdbec (ik, wgt, psi, dbecsum)
                        dbecsum (ijh, na) = dbecsum (ijh, na) + &
                          wgt*( CONJG(becp1(ik)%k(ikb,ibnd))*dbecq(jkb,ibnd) + &
                                CONJG(becp1(ik)%k(jkb,ibnd))*dbecq(ikb,ibnd) )
-                    ! dbecsum (ijh, na) = (0.0d0, 0.0d0)
-                    ! if(ik.eq.1) WRITE(6,*) dbecsum (ijh, na)
-                    ! WRITE(6,*) dbecsum (ijh, na)
                     enddo
                     ijh = ijh + 1
                  enddo
@@ -108,7 +109,7 @@ subroutine addusdbec (ik, wgt, psi, dbecsum)
         enddo
      else
         do na = 1, nat
-           if (ityp (na) .eq.nt) ijkb0 = ijkb0 + nh (nt)
+           if (ityp (na).eq.nt) ijkb0 = ijkb0 + nh (nt)
         enddo
      endif
   enddo

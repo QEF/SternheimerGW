@@ -37,7 +37,7 @@ PROGRAM gw
   USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel,&
-                               do_q0_only, multishift, do_sigma_extra
+                               do_q0_only, multishift, do_sigma_extra, solve_direct, tinvert
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -150,11 +150,12 @@ ENDIF
 IF(do_coulomb) THEN
      DO iq = w_of_q_start, nqs
         scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
-
 !Prepare k, k+q grids, run nscf calculation, find small group of q.
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
+
+
 !Determine the unique G vectors in the small group of q if symmetry is being used.
 !If not then all the vectors up to ngmpol (correlation cutoff) are treated as unique and calculated.
         if(use_symm) then
@@ -196,22 +197,23 @@ IF(do_coulomb) THEN
        endif
 
 !COLLECT G-VECTORS:
-        CALL mp_barrier(inter_pool_comm)
-        CALL mp_sum ( scrcoul_g, inter_pool_comm )
-        CALL mp_barrier(inter_pool_comm)
+       CALL mp_barrier(inter_pool_comm)
+       CALL mp_sum ( scrcoul_g, inter_pool_comm )
+       CALL mp_barrier(inter_pool_comm)
 
 !Write W_{q}(G,G';iw) to file:
-        IF (ionode) THEN
-            CALL unfold_w(scrcoul_g,iq)
-!now need to invert epsilon:
-            CALL invert_epsilon(scrcoul_g, iq)
-            CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
-        ENDIF
+       IF (ionode) THEN
+           CALL unfold_w(scrcoul_g,iq)
+!If solve direct now need to invert epsilon:
+           IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
+           CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+       ENDIF
 
-        CALL mp_barrier(inter_pool_comm)
-        CALL clean_pw_gw(iq)
-        CALL mp_barrier(inter_pool_comm)
-        if(do_q0_only) GOTO 124
+       CALL mp_barrier(inter_pool_comm)
+       CALL clean_pw_gw(iq)
+       CALL mp_barrier(inter_pool_comm)
+
+       if(do_q0_only) GOTO 124
    END DO
    WRITE(stdout, '("Finished Calculating Screened Coulomb")') 
 ENDIF
@@ -221,26 +223,28 @@ ENDIF
    DEALLOCATE( scrcoul_g )
    DEALLOCATE( ig_unique )
 
-   if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
-   if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
-   DO ik = 1, 1
+    DO ik = 1, 1
+   !DO ik = 1, num_k_pts
+      if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
+      if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
+
        xq(:) = xk_kpoints(:, ik)
+
+       WRITE(6,'(4x,"Sigma_k", 3f12.7)') xk_kpoints(:,ik)
+
        do_iq=.TRUE.
        lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
        setup_pw = .TRUE.
        do_band  = .TRUE.
-
 ! Generates small group of k and then forms IBZ_{k}.
        CALL run_pwscf_green(do_band)
        CALL initialize_gw()
-
 ! CALCULATE G(r,r'; w) 
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
        if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
        if(do_green.and.multishift)        CALL green_linsys_shift(ik)
-
-!Should be an option for doing sigma_c separately:
+! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
        if(do_sigma_c) CALL sigma_c(ik)
 
        call mp_barrier()
@@ -250,23 +254,19 @@ ENDIF
           CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
        endif
 
-!  CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
-!  Parallel routine for Sigma_c
-
-! CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
        if(ionode) then 
-!           if(do_sigma_extra) CALL sigma_extra(ik)
-            if(do_sigma_exx)   CALL sigma_exch(ik)
+!CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
+!         if(do_sigma_exx)   CALL sigma_exch(ik)
        endif
        if(ionode) WRITE(6, '("Finished CALCULATING SIGMA")') 
        CALL mp_barrier(inter_pool_comm)
        CALL clean_pw_gw(ik)
+       CALL mp_barrier(inter_pool_comm)
    ENDDO
    DO ik = 1, 1
          if(do_sigma_matel)  then
-           !In case we want more bands:   
+        !Calculates QP Corrections for bands 1:nbnd_sig.
             nbnd = nbnd_sig 
-           !
             xq(:) = xk_kpoints(:, ik)
             do_iq=.TRUE.
             lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
@@ -274,11 +274,13 @@ ENDIF
             do_band  = .TRUE.
             CALL run_pwscf_green(do_band)
             CALL initialize_gw()
+            WRITE(6,'(4x,"Sigma exchange")')
+            if(ionode.and.do_sigma_exx) CALL sigma_exchg(ik)
+            CALL mp_barrier(inter_pool_comm)
             CALL sigma_matel(ik) 
             CALL mp_barrier(inter_pool_comm)
             CALL clean_pw_gw(ik)
          endif
-         !if(do_sigma_matel) CALL sigma_matel(ik) 
    ENDDO
 
    call mp_barrier(inter_pool_comm)

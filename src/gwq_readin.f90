@@ -37,7 +37,8 @@ SUBROUTINE gwq_readin()
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra
+                            do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
+                            solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
@@ -99,7 +100,7 @@ SUBROUTINE gwq_readin()
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
-                       greenzero
+                       greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -165,12 +166,12 @@ SUBROUTINE gwq_readin()
   ! ... set default values for variables in namelist
   !
   tr2_gw       = 1.D-5
-  tr2_green    = 1.D-6
+  tr2_green    = 1.D-2
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
-  alpha_mix(1) = 0.4D0
+  alpha_mix(1) = 0.6D0
   niter_gw     = maxter
-  nmix_gw      = 1
+  nmix_gw      = 5
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -205,6 +206,10 @@ SUBROUTINE gwq_readin()
   ldisp        = .FALSE.
   lrpa         = .FALSE.
   maxter_green = 220
+  w_green_start   = 1
+
+  coul_multishift = .FALSE.
+  trunc_2d        = .FALSE.
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 5.0
@@ -237,6 +242,8 @@ SUBROUTINE gwq_readin()
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
+  solve_direct   = .FALSE.
+  tinvert        = .TRUE.
 
 !Frequency variables
   wsigmamin      =-10.0d0
@@ -248,6 +255,7 @@ SUBROUTINE gwq_readin()
  !can be used in conjunction with do_q0_only.
   use_symm       = .TRUE.
   w_of_q_start   = 1
+  w_green_start  = 1 
 
   
 
@@ -376,7 +384,7 @@ SUBROUTINE gwq_readin()
 !     write(1000+mpime,*) fiu(:)
 
   ELSE
-     nfs=0
+      nfs=0
      !fiu=0.0_DP
       fiu=DCMPLX(0.0d0, 0.d0)
       CALL mp_bcast(fiu, ionode_id )
@@ -410,6 +418,7 @@ SUBROUTINE gwq_readin()
              TRIM(card)=='K_points') THEN
            DO i = 1, num_k_pts
            !DO i = 1, 2
+!should be in units of 2pi/a0 cartesian co-ordinates
               READ (5, *, iostat = ios) xk_kpoints(1,i), xk_kpoints(2,i), xk_kpoints(3,i)
               !write(6,'(3f11.7)') xk_kpoints(:,i)
            END DO
@@ -575,10 +584,6 @@ SUBROUTINE gwq_readin()
   ! of the dynamical matrix
   ! CALL allocate_part ( nat )
   ! HL
-
-!HL64
-  write(6,'("Almostdonle")')
-
   IF ( nat_todo < 0 .OR. nat_todo > nat ) &
      CALL errore ('gwq_readin', 'nat_todo is wrong', 1)
   IF (nat_todo.NE.0) THEN

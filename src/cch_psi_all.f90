@@ -96,12 +96,12 @@ subroutine cch_psi_all (n, h, ah, e, ik, m)
   call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
        npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
 
-   ps (:,:) = ps(:,:) * alpha_pv
-  !HL need to remember the projector should be double complex
-  ! ps (:,:) = ps(:,:) * dcmplx(alpha_pv,0.0d0)
-#ifdef __PARA
-  call mp_sum (ps, intra_pool_comm)
-#endif
+!ps (:,:) = ps(:,:) * alpha_pv
+!HL need to remember the projector should be double complex
+ps (:,:) = ps(:,:) * dcmplx(alpha_pv,0.0d0)
+!#ifdef __PARA
+!  call mp_sum (ps, intra_pool_comm)
+!#endif
 
   hpsi (:,:) = (0.d0, 0.d0)
   call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &

@@ -30,7 +30,7 @@ subroutine dvqpsi_us_only (ik, uact)
   USE uspp, ONLY: okvan, nkb, vkb
   USE uspp_param, ONLY: nh, nhm
   USE qpoint,    ONLY : igkq, npwq, ikks, ikqs
-  USE gwus,      ONLY : int1, int1_nc, int2, int2_so, alphap, becp1
+  USE gwus,      ONLY : int1, int1_nc, int2, int2_so, becp1!, alphap
   USE eqv,       ONLY : dvpsi
   USE control_gw, ONLY : lgamma
 

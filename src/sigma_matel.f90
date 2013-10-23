@@ -1,8 +1,4 @@
 SUBROUTINE sigma_matel (ik0)
-  !HL AUGUST 7 2:20. RESTORING THIS OLD BUG NOTE. 
-  !I wonder if there isn't a problem with the definition of 
-  !\delta(G,G') in the green_linsys.
-  !from my  reckoning it should be \delta(-G,G') 
   !
   ! Known bug: below (grep @) the code works fine with the convention
   ! <i|Sigma|j> = sum_G,G' [u_i,k(G)]* <G|Sigma|G'> u_j,k(G')
@@ -74,9 +70,8 @@ COMPLEX(DP), ALLOCATABLE  ::   sigma(:,:,:)
 COMPLEX(DP), ALLOCATABLE  ::   evc_tmp_j(:), evc_tmp_i(:)
 INTEGER, ALLOCATABLE      ::   igkq_ig(:) 
 INTEGER, ALLOCATABLE      ::   igkq_tmp(:) 
-!COMPLEX(DP), ALLOCATABLE  :: sigma_corr(:,:)
-COMPLEX(DP)               :: corr_element
-REAL(DP)                  :: dvoxel
+COMPLEX(DP)               ::   corr_element
+REAL(DP)                  ::   dvoxel
 
 !For VXC matrix elements:
 REAL(DP) :: vtxc, etxc, ehart, eth, charge
@@ -209,7 +204,7 @@ IF (ionode) THEN
            evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
         enddo
         do igp = 1, ngmsex
-           aux(igp) = sigma_g_ex (igp, ig)
+            aux(igp) = sigma_g_ex (igp, ig)
         enddo
            sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
            evc_tmp_i (ig) * ZDOTC(ngmsex, evc_tmp_j (1:ngmsex), 1, aux, 1)
@@ -224,6 +219,8 @@ IF (ionode) THEN
  WRITE(6,*) 
  write(stdout,'(4x,"Sigma_ex (eV)")')
  write(stdout,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
+ write(stdout,*)
+ write(stdout,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
 
 !MATRIX ELEMENTS OF SIGMA_C:
  WRITE(6,*) 
@@ -245,8 +242,7 @@ IF (ionode) THEN
  enddo
 
  sigma = dcmplx(0.0d0, 0.0d0)
- CALL davcio (sigma, lrsigma, iunsigma, 1, -1)
-
+ CALL davcio (sigma, lrsigma, iunsigma, ik0, -1)
 !!!!!!!!REAL SPACE SIGMA_C
  sigma_band_c (:,:,:) = czero
 ! if (nksq.gt.1) rewind (unit = iunigk)
@@ -323,24 +319,18 @@ IF (ionode) THEN
                evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
             enddo
             do igp = 1, ngmsco
-              !auxsco(igp) = sigma (igp, ig, iw)
-              !With inversion symmetry these are perfectly symmetric ig -> igp
-              !i.e.\Sigma(ig,igp) = \Sigma(igp,ig)
-               auxsco(igp) = sigma (igp, ig, iw)
+           !With inversion symmetry these are perfectly symmetric ig -> igp
+              auxsco(igp) = sigma (ig, igp, iw)
             enddo
            sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-           evc_tmp_i(ig)*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
-           !temp = dcmplx(0.0d0, 0.0d0)
-           ! do igp = 1, ngmsco
-           !Tried conjg on both sides to little effect...
-           !    temp = temp + conjg(evc_tmp_j(igp))*auxsco(igp)  
-           ! enddo
-           ! sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) +  evc_tmp_i(ig)*temp
+           (evc_tmp_i(ig))*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
       enddo
    enddo
   enddo
  enddo
 DEALLOCATE (sigma) 
+
+!125 CONTINUE
 
 write(stdout,'("Sigma_Correlation in the middle of the calculated frequency range:")')
 write(stdout,'("Re(Sigma^{c})")')
@@ -393,12 +383,9 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
        imsig_diag (iw,ibnd) = aimag ( sigma_band_c (ibnd, ibnd, iw) )
        a_diag (iw,ibnd) = one/pi * abs ( imsig_diag (iw,ibnd) ) / &
            ( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) + sigma_band_ex(ibnd, ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
-          !( abs ( w_ryd(iw) - et(ibnd, ikq) - ( resig_diag (iw,ibnd) - vxc(ibnd,ibnd) ) )**2.d0 &
            + abs ( imsig_diag (iw,ibnd) )**2.d0 )
     enddo
     call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ikq), et_qp (ibnd), z(ibnd) )
-!This makes the QP-Eigenvalue  include exchange, the of sigma will only be correlation energy
-!    call qp_eigval ( nwsigma, w_ryd, (dresig_diag(1,ibnd)+real(sigma_band_ex(ibnd,ibnd))), et(ibnd,ikq), et_qp (ibnd), z(ibnd))
  enddo
 
   ! Now take the trace (get rid of phase arbitrariness of the wfs)
@@ -569,8 +556,8 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
 
      if(nbnd_sig.gt.8) then
      do ideg = 9, nbnd_sig, 8
-        if(ideg+7.lt.nbnd_sig) write(stdout, 9005,advance='no') (RYTOEV*resig_diag (iw,ibnd), ibnd=ideg,ideg+7)
-        if(ideg+7.ge.nbnd_sig) write(stdout, 9005) (RYTOEV*resig_diag (iw,ibnd), ibnd=ideg,nbnd_sig)
+        if(ideg+7.lt.nbnd_sig) write(stdout, 9005,advance='no') (a_diag (iw,ibnd)/RYTOEV, ibnd=ideg,ideg+7)
+        if(ideg+7.ge.nbnd_sig) write(stdout, 9005) (a_diag (iw,ibnd)/RYTOEV, ibnd=ideg,nbnd_sig)
      enddo
      endif
   enddo
@@ -579,8 +566,10 @@ ENDIF
 !barrier should be here.
     CALL mp_barrier(inter_pool_comm)
     !CALL clean_pw_gw(ikq)
-    9000 format(21x, 8(1x,f7.2))
-    9005 format(17x, 8(1x,f14.7))
+    9000 format(8(1x,f7.2))
+    9005 format(8(1x,f14.7))
+    !9000 format(21x, 8(1x,f7.2))
+    !9005 format(17x, 8(1x,f14.7))
 RETURN
 END SUBROUTINE sigma_matel
 
@@ -618,7 +607,8 @@ END SUBROUTINE sigma_matel
   w2 = w(iw2)
   sig1 = sig(iw1)
   sig2 = sig(iw2)
-!
+
+!diff!
   sig_et = sig1 + ( sig2 - sig1 ) * (et-w1) / (w2-w1)
 !
   sig_der = ( sig2 - sig1 ) / ( w2 - w1 )

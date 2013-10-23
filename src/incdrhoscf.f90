@@ -74,14 +74,10 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum)
      call cft3s (dpsic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
      do ir = 1, nrxxs
         drhoscf (ir) = drhoscf (ir) + wgt * CONJG(psi (ir) ) * dpsic (ir)
-        !if(ibnd.eq.1.and.ik.eq.1)  write(6,*) drhoscf(ir)
      enddo
   enddo
-
 ! HL adds B15 of DalCorso.
-
   call addusdbec (ik, weight, dpsi, dbecsum)   
-
   deallocate (psi)
   deallocate (dpsic)
 

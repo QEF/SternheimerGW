@@ -18,7 +18,7 @@ subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
   ! of the local pseudopotential is calculated here, that of the nonlocal
   ! pseudopotential in dvqpsi_us_only.
   !
-  ! HL- FORMERLY this routine does what it says up there. I've commented out the stuff I think pertains
+  ! HL- FORMERLY this routine does what it says up there. I've commented out the stuff that pertains
   ! to initializing a phonon perturbation. And simply multiply the perturbing potential generated in coulomb
   ! a single plane wave by the eigenvector psi_nk
   !
@@ -237,7 +237,7 @@ subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
 !  We add the contribution of the nonlocal potential in the US form
 !  First a term similar to the KB case.
 !  Then a term due to the change of the D coefficients. 
-!  HL I don't think we need to add anything else to the right hand side.
+!  HL We need to add anything else to the right hand side.
 !  No change in Q, Beta, or S of the self-consistent potential. Just the shift due to 
 !  electrons. 
 !  HL call dvqpsi_us_only (ik, uact)

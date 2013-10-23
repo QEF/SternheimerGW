@@ -55,7 +55,7 @@ SUBROUTINE freqbins()
  !HL?
  !wtmp = wtmp - minval ( abs ( wgreen) )
  !HLF
-  wtmp = wtmp - greenzero
+ ! wtmp = wtmp - greenzero
 
   nwgreen = 0
   nwcoul = 0

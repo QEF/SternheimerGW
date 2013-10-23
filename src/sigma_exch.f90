@@ -82,20 +82,16 @@ sigma_ex(:,:) = (0.0d0, 0.0d0)
 limit =.false.
 
 DO iq = 1, nksq
-
 WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
-! odd numbers xk
+!odd numbers xk
      if (lgamma) then
         ikq = iq
      else
-! even k + q 
+!even k + q 
         ikq = 2*iq
      endif
-
 !\psi_{k+q}(r)\psi_{k+q}(r')
-
      CALL davcio (evq, lrwfc, iuwfc, ikq, -1)
-
      if (nksq.gt.1) then
           read (iunigk, err = 100, iostat = ios) npw, igk
 100       CALL errore ('green_linsys', 'reading igk', abs (ios) )
@@ -112,10 +108,7 @@ WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
      counter  = 0
      igkq_tmp = 0
      igkq_ig  = 0
-
 !Should have a data_type which keeps track of these indices...
-    !do ig = 1, npwx
-    !HL be careful about going past end of npwq?
     do ig = 1, npwq
        if((igkq(ig).le.ngmsex).and.((igkq(ig)).gt.0)) then
            counter = counter + 1
@@ -267,7 +260,8 @@ ENDDO ! on q
 !WRITE(6, '("FFT_SIGMA")')
     CALL sigma_r2g_ex(sigma_ex, sigma_g_ex)
 !Storing full sigma_ex operator in G  space...
-    CALL davcio(sigma_g_ex, lrsex, iunsex, 1, 1)
+    !CALL davcio(sigma_g_ex, lrsex, iunsex, 1, 1)
+    CALL davcio(sigma_g_ex, lrsex, iunsex, ik0, 1)
     CALL stop_clock('sigma_exch')
 
     DEALLOCATE(sigma_g_ex)

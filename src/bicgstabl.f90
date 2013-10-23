@@ -146,8 +146,8 @@ external cg_psi      ! input: the routine computing cg_psi
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! iterj allows for the bicgstab(2,3,4,...) generalizations.
   ! a choice of lmresloc = 1 corresponds to the standard bicgstab.
-    !H. A. Van Der Corst Siam J. Sci. Stat. Comput.
-    !Vol. 13, No. 2, pp. 631-644
+  !H. A. Van Der Corst Siam J. Sci. Stat. Comput.
+  !Vol. 13, No. 2, pp. 631-644
             if (iter .eq. 1) then
                !initialize iter 0 stuff
                !r = b - A* x

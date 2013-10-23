@@ -73,7 +73,8 @@ subroutine cch_psi_all_fix (n, h, ah, e, cw, ik, m)
   !write(6,*) cw
   do ibnd = 1, m
      do ig = 1, n
-         ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd)) 
+        ah (ig, ibnd)= hpsi(ig, ibnd)-(e(ibnd) + cw)*spsi(ig, ibnd)
+        !ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd) - cw*(h(ig,ibnd)) 
         !ah (ig, ibnd)= hpsi(ig, ibnd)- e(ibnd)*spsi(ig, ibnd)
      enddo
   enddo
@@ -83,7 +84,8 @@ subroutine cch_psi_all_fix (n, h, ah, e, cw, ik, m)
         do ig = 1, n
 !     HL modified so that omega is not included in the eigenvalue
 !     ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd)
-          ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd) - cw*(h(ig+npwx,ibnd)) 
+!         ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd) - cw*(h(ig+npwx,ibnd)) 
+          ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-(e(ibnd) + cw)*spsi(ig+npwx,ibnd)
         end do
      end do
   END IF
@@ -95,9 +97,8 @@ subroutine cch_psi_all_fix (n, h, ah, e, cw, ik, m)
 
   call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
        npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
-  !ps (:,:) = ps(:,:) * alpha_pv
   !HL need to remember the projector should be double complex
-   ps (:,:) = ps(:,:) * dcmplx(alpha_pv,0.0d0)
+   ps (:,:) = ps(:,:) * dcmplx(alpha_pv, 0.0d0)
 
 !#ifdef __PARA
 !  @10TION

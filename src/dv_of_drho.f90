@@ -25,7 +25,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   USE nlcc_gw,   ONLY : nlcc_any
   USE qpoint,    ONLY : xq
   USE gc_gw,     ONLY : grho, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s
-  USE control_gw, ONLY : lrpa
+  USE control_gw, ONLY : lrpa, trunc_2d
   USE control_flags, only : gamma_only
   !OBM: gamma_only is disregarded for phonon calculations, TDDFPT purposes only
 
@@ -125,6 +125,8 @@ subroutine dv_of_drho (mode, dvscf, flag)
          endif
       enddo
       !
+      !HL apply 2D truncation:
+       if(trunc_2d) call truncate_2D(dvaux(1,is), xq, 1)
       !  and transformed back to real space
       !
       call cft3 (dvhart (1, is), nr1, nr2, nr3, nrx1, nrx2, nrx3, +1)
@@ -148,6 +150,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
                                 e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
 
            !this is where we need to put in the truncation
+           !2D Screening.
            !v(k) = e2*fpi/k2{1 - e^{-k_{xq}*zcut}cos(kz*z_c)}
            !FORTRAN
            !kxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(1))**2)

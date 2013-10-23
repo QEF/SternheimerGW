@@ -24,23 +24,30 @@ subroutine addusddens (drhoscf, dbecsum, mode0, npe, iflag)
   !  and added. The contribution of the change of 
   !  the Fermi energy is not calculated here but added later by ef_shift.
   !  [1] PRB 64, 235118 (2001).
-  !
-  !
-  USE kinds, only : DP
-  USE gvect,  ONLY : gg, ngm, nrxx, nr1, nr2, nr3, nrx1, nrx2, nrx3, &
-                     nl, g, eigts1, eigts2, eigts3, ig1, ig2, ig3
-  USE uspp,     ONLY : okvan, becsum
-  USE cell_base, ONLY : tpiba
-  USE ions_base, ONLY : nat, ityp, ntyp => nsp
+  !  Eq. A17 
+  !  d\rho/du = 2 \sum_{kv}\psi^{*}_{kv}(\r)\Delta\psi_{kv}(\r) + 2 \sum_{kv}\sum_{Inm} Q_{nm}(r-R_{I})
+  !              <\psi_{k\v}|\Beta^{I}_{n}> <\Beta^{I}_{m}|\Delta\psi_{v\sigma}> 
+  !  Eq. B31
+  !  d\rho/du =  2 FT_{q+G} \sum_{kv}psi(\r) \delta \psi(r) +  \sum_{s_{1}}\sum_{nm}Q_{nm}(q+G)
+  !                e^{-i(q+G)\tau_{s_{1}}*[a_{s1,nm}]
+  !  a_{s_{1}nm} = \frac{2}{N} \sum_{kv}
+
+
+  USE kinds,                 ONLY : DP
+  USE gvect,                 ONLY : gg, ngm, nrxx, nr1, nr2, nr3, nrx1, nrx2, nrx3, &
+                                    nl, g, eigts1, eigts2, eigts3, ig1, ig2, ig3
+  USE uspp,                  ONLY : okvan, becsum
+  USE cell_base,             ONLY : tpiba
+  USE ions_base,             ONLY : nat, ityp, ntyp => nsp
   USE wavefunctions_module,  ONLY: psic
-  USE uspp_param, ONLY: upf, lmaxq, nh, nhm
-  USE paw_variables, ONLY : okpaw
-  USE modes,     ONLY : u
-  USE qpoint,    ONLY : xq, eigqts
-  USE gwus,    ONLY : becsumort, alphasum
-  USE units_gw,  ONLY : iudrhous, lrdrhous
-  USE control_gw, ONLY : lgamma
-  USE noncollin_module, ONLY : nspin_mag
+  USE uspp_param,            ONLY: upf, lmaxq, nh, nhm
+  USE paw_variables,         ONLY : okpaw
+  USE modes,                 ONLY : u
+  USE qpoint,                ONLY : xq, eigqts
+  USE gwus,                  ONLY : becsumort, alphasum
+  USE units_gw,              ONLY : iudrhous, lrdrhous
+  USE control_gw,            ONLY : lgamma
+  USE noncollin_module,      ONLY : nspin_mag
 
   implicit none
   !
@@ -89,6 +96,7 @@ subroutine addusddens (drhoscf, dbecsum, mode0, npe, iflag)
   ! auxiliary variable for drho(G)
 
   if (.not.okvan) return
+
   call start_clock ('addusddens')
   allocate (aux(  ngm , nspin_mag))    
   allocate (sk (  ngm))    
@@ -114,14 +122,11 @@ subroutine addusddens (drhoscf, dbecsum, mode0, npe, iflag)
   endif
 
   fact = cmplx (0.d0, - tpiba, kind=DP)
-  !HL
-  !aux(:,:,:) = (0.d0, 0.d0)
   aux(:,:) = (0.d0, 0.d0)
 
 !HL freezing modes perts
   npe = 1
   ipert = 1
-!HL Debug
 
   do nt = 1, ntyp
      if (upf(nt)%tvanp  ) then
@@ -132,100 +137,45 @@ subroutine addusddens (drhoscf, dbecsum, mode0, npe, iflag)
               call qvan2 (ngm, ih, jh, nt, qmod, qgm, ylmk0)
               ijh = ijh + 1
              do na = 1, nat
-                 if (ityp (na) .eq.nt) then
-                    mu = 3 * (na - 1)
+                 if (ityp (na).eq.nt) then
                     !
                     ! calculate the structure factor
                     !
                     do ig = 1, ngm
-                     ! HL phase factor ?
                        sk (ig) = eigts1 (ig1 (ig), na) * &
                                  eigts2 (ig2 (ig), na) * &
                                  eigts3 (ig3 (ig), na) * &
                                  eigqts (na) * qgm (ig)
-!                     sk (ig) = qgm(ig) 
-!                     write(6,*) qgm(ig), eigqts(na), sk(ig)
-!                     sk (ig) = (0.d0, 0.d0)
                     enddo
                     !
                     !  And qgmq and becp and dbecq
                     !
-!HL                 do ipert = 1, npe
                        do is = 1, nspin_mag
-                         ! mode = mode0 + ipert
-                           mode = 1
                           if (iflag==1) then
                              zsum = dbecsum (ijh, na, is)
                           else
                              zsum = 2.0_DP*dbecsum (ijh, na, is)
-!                            write (6,*) dbecsum (ijh, na, is)
                           endif
-
-! HL iflag = 1 only occurs if this routine is called from drho.f90 
-! i.e. for situations where the augmentation charge/ beta functions have changed. 
-!                         u1 = u (mu + 1, mode)
-!                         u2 = u (mu + 2, mode)
-!                         u3 = u (mu + 3, mode)
-!                          if (abs(u1) + abs(u2) + abs(u3) .gt.1d-12 .and. &
-!                              iflag.eq.1) then
-!
-!                             bb = becsum (ijh, na, is)
-!                             zsum = zsum + &
-!                                  ( alphasum (ijh, 1, na, is) * u1 &
-!                                  + alphasum (ijh, 2, na, is) * u2 &
-!                                  + alphasum (ijh, 3, na, is) * u3)
-
-!HL okpaw related stuff may want to uncomment eventually.
-
-!                             IF (okpaw) becsumort(ijh,na,is,mode) =  zsum
-!                             u1 = u1 * fact
-!                             u2 = u2 * fact
-!                             u3 = u3 * fact
-!                             alpha_0 = xq(1)*u1 + xq(2)*u2 + xq(3)*u3
-!                             do ig = 1, ngm
-!                                alpha = alpha_0 + &
-!                                        g(1,ig)*u1 + g(2,ig)*u2 + g(3,ig)*u3
-!                                aux(ig,is,ipert) = aux(ig,is,ipert) + &
-!                                                   (zsum + alpha*bb) * sk(ig)
-!                             enddo
-!                          else
-!
-!HL                          call zaxpy (ngm, zsum, sk, 1, aux(1,is,ipert), 1)
-
                              call zaxpy (ngm, zsum, sk, 1, aux(1,is), 1)
-
-                             IF (okpaw.and.iflag==1) &
-                                    becsumort(ijh,na,is,mode) = zsum
-!                          endif
                        enddo
-!                   enddo
                  endif
               enddo
            enddo
         enddo
      endif
   enddo
-  !
-  !     convert aux to real space
-  !
-!HL again freezing ipert i
-!  do ipert = 1, npe
-!    mu = mode0 + ipert
+ !
+ !     convert aux to real space and add to density
+ !
      mu = 1
      do is = 1, nspin_mag
         psic(:) = (0.d0, 0.d0)
         do ig = 1, ngm
-         ! HL psic (nl (ig) ) = aux (ig, is, ipert)
            psic (nl (ig) ) = aux (ig, is)
-!          write (6,*) psic (nl (ig) ) 
         enddo
         call cft3 (psic, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
-!        do ig = 1, ngm
-!        write(6,*) psic(ig)
-!        enddo
         call daxpy (2*nrxx, 1.0_DP, psic, 1, drhoscf(1,is), 1)
      enddo
-!  enddo
 
   if (.not.lgamma) deallocate (qpg)
   deallocate (qmod)
@@ -233,20 +183,6 @@ subroutine addusddens (drhoscf, dbecsum, mode0, npe, iflag)
   deallocate (ylmk0)
   deallocate (sk)
   deallocate (aux)
-
-! HL commenting NON-SCF contribution from perturbation of Augmentation Charge.
-!  if (iflag == 0) then
-!     allocate (drhous( nrxx, nspin_mag))    
-!     do ipert = 1, npe
-!        mu = mode0 + ipert
-!         mu = 1
-!        I think drhous (Calculated in drho.f90) is unnecessary in GW case. 
-!        call davcio (drhous, lrdrhous, iudrhous, mu, -1)
-!        call daxpy (2*nrxx*nspin_mag, 1.d0, drhous, 1, drhoscf(1,1), 1)
-!     enddo
-!     deallocate (drhous)
-!  end if
-
   call stop_clock ('addusddens')
   return
 end subroutine addusddens

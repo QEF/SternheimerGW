@@ -78,6 +78,7 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
 
      !HL need to find a smooth way of setting xq(1) = 0.01 for q->0 calculations 
      if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = -0.01
+     !if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(3) = -0.01
      lgamma = (xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0)
 
      !
@@ -118,7 +119,7 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
         epsil = .FALSE.
         zue   = .FALSE.
         zeu   = .FALSE.
-        fpol =.FALSE.
+        fpol  = .FALSE.
         !
         !
      END IF

@@ -67,6 +67,7 @@ SUBROUTINE run_pwscf_green(do_band)
 
   IF (do_band) write(6,'("Calling PW electrons")')
   IF (do_band) CALL electrons()
+  IF (do_band) write(6,'("Finished PW electrons")')
 
   IF (.NOT.reduce_io.and.do_band) THEN
      twfcollect=.FALSE. 
@@ -74,7 +75,7 @@ SUBROUTINE run_pwscf_green(do_band)
      done_bands=.TRUE.
   ENDIF
 
-  !CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
+  CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
 
 
   CLOSE( UNIT = 4, STATUS = 'DELETE' )

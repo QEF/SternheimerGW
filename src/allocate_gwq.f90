@@ -74,15 +74,16 @@ subroutine allocate_gwq
   endif
   !
   allocate (dvpsi ( npwx*npol , nbnd))    
-  allocate (dpsi ( npwx*npol , nbnd))    
+  allocate (dpsi  ( npwx*npol , nbnd))    
   allocate (dpsim ( npwx*npol , nbnd))    
   allocate (dpsip ( npwx*npol , nbnd))    
   !
   allocate (vlocq ( ngm , ntyp))    
-  allocate (dmuxc ( nrxx , nspin_mag , nspin_mag))    
   allocate (eprec ( nbnd, nksq) )
   allocate (eigqts ( nat))
+  allocate (dmuxc ( nrxx , nspin_mag , nspin_mag))    
   allocate (dvbare(nrxxs))    
+
    if (okvan) then
   !int1, int2, etc are all defined in PRB 64 235118
      allocate (int1 ( nhm, nhm, 3, nat, nspin_mag))
@@ -112,12 +113,12 @@ subroutine allocate_gwq
    endif
 
   ALLOCATE (becp1(nksq))
-  ALLOCATE (alphap(3,nksq))
+  !ALLOCATE (alphap(3,nksq))
   DO ik=1,nksq
      call allocate_bec_type ( nkb, nbnd, becp1(ik) )
-     DO ipol=1,3
-        call allocate_bec_type ( nkb, nbnd, alphap(ipol,ik) )
-     ENDDO
+     !DO ipol=1,3
+     !   call allocate_bec_type ( nkb, nbnd, alphap(ipol,ik) )
+     !ENDDO
   END DO
   CALL allocate_bec_type ( nkb, nbnd, becp )
   return

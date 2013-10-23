@@ -36,7 +36,9 @@
   ! a(1:N) - coefficients of the continued fraction
   !-----------------------------------------------------------
 
-USE kinds,                     ONLY : DP
+USE kinds,         ONLY : DP
+USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
+                          nproc_pool, me_pool, my_pool_id, nproc
   implicit none
   integer :: N
   complex(DP) :: z(N), u(N)
@@ -53,20 +55,6 @@ USE kinds,                     ONLY : DP
       enddo
     else
       do i = p, N
-      !  g (p,i) =  (g(p-1,p-1) - g(p-1,i)) / &
-      !            ((z(i) - z(p-1) ) * g (p-1,i) )
-      !
-      ! this seems necessary to avoid nasty NaN when
-      ! still don't quite understand why the procedure
-      ! becomes unstable - certainly it happens only
-      ! when u(:) is very small
-      !
-!if(abs(g(p-1,i)) .eq. 0) then
-!  write(6,*) z(:)
-!  write(6,'(4x, "fitting parameter too small. g(p-1,i)= ",2f9.5)')g(p-1,i)
-!  write(6,*) u(:)
-!  stop
-!end if
          tmp1 = g(p-1,p-1)/g(p-1,i)
          tmp2 = g(p-1,i)/g(p-1,i)
          g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
@@ -75,17 +63,15 @@ USE kinds,                     ONLY : DP
       enddo
     endif
     a(p) = g (p,p)
-    !
-    ! check whether a(p) is not NaN
-    !
+  ! check whether a(p) is not NaN
     ar = real(a(p))
     ai = aimag(a(p))
-!    if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-!       write(6,*) (z(i),i=1,N)
-!       write(6,*) (u(i),i=1,N)
-!       write(6,*) (a(i),i=1,N)
-!      call error ('pade_coeff','one or more coefficients are NaN',1)
-!    endif
+    if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+       write(600+mpime,*) (z(i),i=1,N)
+       write(600+mpime,*) (u(i),i=1,N)
+       write(600+mpime,*) (a(i),i=1,N)
+       STOP
+    endif
     !
   enddo
   !
@@ -93,7 +79,8 @@ USE kinds,                     ONLY : DP
 
   !
   !-----------------------------------------------------------
-  subroutine pade_eval ( N, z, a, w, padapp)
+  !subroutine pade_eval ( N, z, a, w, padapp)
+  subroutine pade_eval ( N, z, a, scrcoul_g, w, padapp)
   !-----------------------------------------------------------
   ! N-point Pade' approximant - evaluate the Pade' approximant
   !
@@ -116,11 +103,14 @@ USE kinds,                     ONLY : DP
   !-----------------------------------------------------------
   !
 
-  USE kinds,          ONLY : DP
+  USE kinds,         ONLY : DP
+  USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
+                            nproc_pool, me_pool, my_pool_id, nproc
   implicit none
   integer :: N
   complex(DP) :: a(N), z(N), acap(0:N), bcap(0:N)
   complex(DP) :: w, padapp
+  complex(DP) :: scrcoul_g
   integer :: i
   real(DP) :: ar, ai
 
@@ -139,10 +129,13 @@ USE kinds,                     ONLY : DP
 !Turning on pade catch.
   ar = real(padapp)
   ai = aimag(padapp)
-  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-    padapp = (0.0d0,0.0d0)
-  endif
- 
+  !if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+  !  write(600+mpime,*)padapp 
+  !  padapp = scrcoul_g
+  !  padapp = (0.0d0,0.0d0)
+  !  call mp_global_end()
+  !  STOP
+  !endif
   !
   end subroutine pade_eval
   !-----------------------------------------------------------

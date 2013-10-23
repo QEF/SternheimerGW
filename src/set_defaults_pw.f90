@@ -68,7 +68,9 @@ SUBROUTINE setup_nscf (xq)
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
   !
-  ethr= 1.0D-9 / nelec
+  !ethr= 1.0D-9 / nelec
+  !HL might speed things up a bit
+   ethr= 1.0D-8
   !
   ! ... variables for iterative diagonalization (Davidson is assumed)
   !
@@ -90,7 +92,6 @@ SUBROUTINE setup_nscf (xq)
   !HL time_reversal 
   magnetic_sym = noncolin .AND. domag 
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
-
   sym(1:nsym)=.true.
 !Hack for turning off minus_q=.true.
 !  write(6,'("MODE NUMBER!")')
@@ -104,7 +105,7 @@ SUBROUTINE setup_nscf (xq)
 !@10TION HL-symmfix.
 ! minus_q=.false.
 ! HL this condition enforces that Sq = q exactly! none of this q -> -q + G none-sense. 
-  modenum = -3
+! modenum = -3
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
 
   IF ( .not. time_reversal ) minus_q = .false.

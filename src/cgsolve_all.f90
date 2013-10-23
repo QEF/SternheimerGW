@@ -160,9 +160,8 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
            rho(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, g(1,ibnd), 1)
         endif
      enddo
- 
-
      kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
+
 !#ifdef __PARA
 !     call mp_sum(  rho(1:lbnd) , intra_pool_comm )
 !#endif
@@ -171,7 +170,6 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
            rho(ibnd)=rho(lbnd)
            lbnd = lbnd -1
            anorm = sqrt (rho (ibnd) )
-!          write(6,*) ibnd, anorm
            if (anorm.lt.ethr) conv (ibnd) = 1
         endif
      enddo
@@ -206,20 +204,13 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
            eu (lbnd) = e (ibnd)
         endif
      enddo
-
 !
 !    compute t = A*h
 !
-
-  !   write(6,*) hold(:,:)
      call h_psi (ndim, hold, t, eu, ik, lbnd)
-  !   write(6,'(" Search Directions ")')
-  !   write(6,*) t(:,:)
-  !   stop
-
-     !
-     !        compute the coefficients a and c for the line minimization
-     !        compute step length lambda
+!
+!    compute the coefficients a and c for the line minimization
+!    compute step length lambda
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
@@ -228,10 +219,7 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
            c(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, t(1,lbnd), 1)
         end if
      end do
-!#ifdef __PARA
-!     call mp_sum(  a(1:lbnd), intra_pool_comm )
-!     call mp_sum(  c(1:lbnd), intra_pool_comm )
-!#endif
+
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
