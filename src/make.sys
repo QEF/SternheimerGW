@@ -83,8 +83,8 @@ FFLAGS_NOOPT   =
 # Typically LD coincides with F90 or MPIF90, LD_LIBS is empty
 
 LD             = mpif90
-LDFLAGS        = -00 -g -traceback -assume-byterecl -static-intel
-#LDFLAGS        = -03 -assume-byterecl -static-intel
+#LDFLAGS        = -00 -g -traceback -assume-byterecl -static-intel
+LDFLAGS        = -03 -assume-byterecl -static-intel
 LD_LIBS        = 
 
 # External Libraries (if any) : blas, lapack, fft, MPI

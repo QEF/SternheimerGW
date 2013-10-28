@@ -72,6 +72,7 @@ subroutine print_clock_gw
   WRITE( stdout, * )
   WRITE( stdout, * )
   call print_clock ('cgsolve')
+  call print_clock ('cbcgsolve')
   call print_clock ('ch_psi')
   WRITE( stdout, * )
   call print_clock ('ch_psi')

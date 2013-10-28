@@ -87,8 +87,8 @@ DO ig = igstart, igstop
       endif
       call cft3  (drhoscfs, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
       call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, - 1)
-      if(iq.eq.1) then
-         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
+      if(nl(ig_unique(ig)).eq.1) then
+      WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
       endif
 
       if (solve_direct) then !we store eps(w).

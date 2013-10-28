@@ -159,10 +159,10 @@ external cg_psi      ! input: the routine computing cg_psi
                ! call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
                   call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
                   call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-               !copy r -> u, i.e.  u = r_{0}
-               !call zcopy (ndim, g (1, ibnd), 1, h (1, ibnd), 1)
-    !           set \tilde{r} = r^{*}
-    !             gt(:,ibnd) = conjg ( g(:,ibnd) )
+    ! copy r -> u, i.e. u = r_{0}
+    ! call zcopy (ndim, g (1, ibnd), 1, h (1, ibnd), 1)
+    ! set \tilde{r} = r^{*}
+    ! gt(:,ibnd)    = conjg ( g(:,ibnd) )
                   gt(:,ibnd) = g(:,ibnd)
     !for preconditioning we solve the system MAx = Mb
     !x shouldn't change...
@@ -186,9 +186,7 @@ external cg_psi      ! input: the routine computing cg_psi
      rhoold  = -omega*rhoold
      do iterj = 1, lmresloc
         do ibnd = 1, nbnd
-               !rho     = ZDOTC (ndim, g(1,ibnd), 1, gt(1,ibnd), 1)
                 rho     = ZDOTC (ndim, gt(1,ibnd), 1, g(1,ibnd), 1)
-               !rho     = ZDOTC (ndim, g(1,ibnd), 1, gt(1,ibnd), 1)
                 beta    = alpha*(rho/rhoold)
                 rhoold  = rho
                 do iteri = 1, iterj 

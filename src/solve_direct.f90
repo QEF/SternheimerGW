@@ -351,24 +351,19 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
                            npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                            dpsim(:,:) = dpsip(:,:)
              else
-             call start_clock('cbcg')
                   call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-  
+
                   call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-             call  stop_clock('cbcg')
              endif
 
-             call print_clock ('cbcg')
+             ltaver = ltaver + lter
+             lintercall = lintercall + 1
 
-
-           ltaver = ltaver + lter
-           lintercall = lintercall + 1
-
-         if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4, &
-              &              " solve_linter: root not converged ",e10.3)')  &
-              &                ik , ibnd, anorm
+           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4, &
+               &              " solve_linter: root not converged ",e10.3)')  &
+               &                ik , ibnd, anorm
 
            nrec1 =  ik
            dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
@@ -376,7 +371,6 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
           !call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
           !call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
           !call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
-
           ! calculates dvscf, sum over k => dvscf_q_ipert
           ! incdrhoscf:  This routine computes the change of the charge density due to the
           ! perturbation. It is called at the end of the computation of the
@@ -389,7 +383,7 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
               call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
                                 dbecsum(1,1,current_spin))
            END IF
-     enddo 
+     enddo !kpoints
 
         if (doublegrid) then
              do is = 1, nspin_mag
@@ -400,7 +394,7 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
         endif
 
        call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
-       call zcopy (nrxx*nspin_mag,drhoscfh(1,1),1,dvscfout(1,1),1)
+       call zcopy (nrxx*nspin_mag, drhoscfh(1,1),1, dvscfout(1,1),1)
 
      ! SGW: here we enforce zero average variation of the charge density
      ! if the bare perturbation does not have a constant term
@@ -433,18 +427,10 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
      ! n_v(r) =  \sum_{n,k} \phi^{*}_{nk} (r) \phi_{nk}(r) + \sum_{i,j} p_{i,j}Q_{j,i}
      ! p_{i,j} = \sum_{n,k} <beta_{i}|\phi_{nk}><phi_{nk}|beta_{j}> 
 
-#ifdef __PARA
-     aux_avg (1) = DBLE (ltaver)
-     aux_avg (2) = DBLE (lintercall)
-!@10TION
-!     call mp_sum ( aux_avg, inter_pool_comm )
-     averlt = aux_avg (1) / aux_avg (2)
-#else
      averlt = DBLE (ltaver) / lintercall
-#endif
      tcpu = get_clock ('GW')
      dr2 = dr2 / DBLE(npe)
-
+!
 !   WRITE( 1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !   " secs   av.it.: ",f5.1)') iter, tcpu, averlt
 !   WRITE( 1000+mpime, '(5x," thresh=",e10.3, " alpha_mix = ",f6.3, &
@@ -453,16 +439,6 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 
      rec_code=10
 
-!@10TION more hanging, more clumsy parallelisation.
-!     IF (okpaw) THEN
-!        CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, &
-!                                               dvscfin, drhoscfh, dbecsum)
-!     ELSE
-!        CALL write_rec('solve_lint', irr, dr2, iter, convt, npe, &
-!                                               dvscfin, drhoscfh)
-!     ENDIF
-!     if (check_stop_now()) call stop_smoothly_gw (.false.)
-!     if (convt) goto 155
   enddo !loop on kter (iterations)
 
 155 iter0=0
@@ -471,7 +447,6 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 !         "secs av.it.:",f5.1)') iter, tcpu, averlt
 !    WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !         "secs   av.it.: ",f5.1)') iter, tcpu, averlt
-
 !   after this point drhoscf is dv_hartree(RPA)
 !   drhoscf(:,1) = dvscfin(:,1)
 !  -vc\Chi
@@ -486,12 +461,6 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
   deallocate (h_diag)
   deallocate (aux1)
   deallocate (dbecsum)
-
-  IF (okpaw) THEN
-     if (lmetq0.and.allocated(becsum1)) deallocate (becsum1)
-     deallocate (mixin)
-     deallocate (mixout)
-  ENDIF
   IF (noncolin) deallocate (dbecsum_nc)
   deallocate (dvscfout)
   deallocate (drhoscfh)

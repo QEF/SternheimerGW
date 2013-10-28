@@ -56,7 +56,7 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   !   revised (to reduce memory) 29 May 2004 by S. de Gironcoli
   !
   USE kinds, only : DP
-  USE mp_global, ONLY: intra_pool_comm
+  USE mp_global, ONLY: intra_pool_comm, mpime
   USE mp,        ONLY: mp_sum
 
   implicit none
@@ -185,30 +185,21 @@ subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      lbnd = 0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
-!
 !          change sign to h 
-!
            call dscal (2 * ndmx * npol, - 1.d0, h (1, ibnd), 1)
            if (iter.ne.1) then
               dcgamma = rho (ibnd) / rhoold (ibnd)
               call zaxpy (ndmx*npol, dcgamma, hold (1, ibnd), 1, h (1, ibnd), 1)
            endif
-
-!
 ! here hold is used as auxiliary vector in order to efficiently compute t = A*h
 ! it is later set to the current (becoming old) value of h 
-!
            lbnd = lbnd+1
-
            call zcopy (ndmx*npol, h (1, ibnd), 1, hold (1, lbnd), 1)
            eu (lbnd) = e (ibnd)
         endif
      enddo
-!
 !    compute t = A*h
-!
      call h_psi (ndim, hold, t, eu, ik, lbnd)
-!
 !    compute the coefficients a and c for the line minimization
 !    compute step length lambda
      lbnd=0

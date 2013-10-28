@@ -72,7 +72,6 @@ subroutine cch_psi_all (n, h, ah, e, ik, m)
   !
   ah =(0.0d0, 0.0d0)
   do ibnd = 1, m
-  write(6,*) e(ibnd)
      do ig = 1, n
         ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * spsi (ig, ibnd)
 !       write(6,*) e(ibnd)*spsi(ig,ibnd)
