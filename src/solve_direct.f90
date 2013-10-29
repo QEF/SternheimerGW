@@ -325,21 +325,28 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
 !           HL Don't need to read/write the full wave fxn at each iteration...
 !           call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
-!           call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
-!           call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
-!           dpsi(:,:)  = (0.d0, 0.d0) 
-!           dpsim(:,:) = (0.d0, 0.d0) 
-!           dpsip(:,:) = (0.d0, 0.d0) 
+!           if (iw.eq.0) then
+              dpsi(:,:)     = (0.d0, 0.d0) 
+              dpsim(:,:)    = (0.d0, 0.d0) 
+              dpsip(:,:)    = (0.d0, 0.d0) 
+              dvscfin(:, :) = (0.d0, 0.d0)
+!           else
+!             call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
+!             call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
+!             dpsi(:,:)  = (0.d0, 0.d0) 
+!             dvscfin(:, :) = (0.d0, 0.d0)
+!           endif
+
 !           threshold for iterative solution of the linear system
 !           write(6,*)1.d-1*sqrt(dr2), 1.d-4
 !           thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
 !           thresh = 1.d-6
 !           else
 ! At the first iteration dpsi and dvscfin are set to zero
-             dpsi(:,:) = (0.d0, 0.d0) 
-             dpsim(:,:) = (0.d0, 0.d0) 
-             dpsip(:,:) = (0.d0, 0.d0) 
-             dvscfin(:, :) = (0.d0, 0.d0)
+!             dpsi(:,:) = (0.d0, 0.d0) 
+!             dpsim(:,:) = (0.d0, 0.d0) 
+!             dpsip(:,:) = (0.d0, 0.d0) 
+!             dvscfin(:, :) = (0.d0, 0.d0)
 
 ! starting threshold for iterative solution of the linear system
              thresh    = tr2_gw
@@ -351,30 +358,39 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
                            npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                            dpsim(:,:) = dpsip(:,:)
              else
-                  call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                  call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, dpsim, h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-
-                  call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+!              dpsip(:,:) = (0.d0, 0.d0) 
+!              call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+!              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+!              write (1000+mpime,'("freq", i4)') iw
+!              do ibnd = 15, 18
+!              write (1000+mpime,'("normal ", 2f12.7, "mod ", 2f12.7, "diff ", 2f12.7)') dpsip(:,ibnd),
+!              dpsim(:,ibnd), dpsip(:,ibnd)-dpsim(:,ibnd)
+!              enddo
              endif
 
              ltaver = ltaver + lter
              lintercall = lintercall + 1
 
-           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4, &
+           if (.not.conv_root) then 
+                                WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4, &
                &              " solve_linter: root not converged ",e10.3)')  &
                &                ik , ibnd, anorm
+           endif
 
            nrec1 =  ik
            dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
 
-          !call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
-          !call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
-          !call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
+          ! write freq grid to be read back in.
+          ! call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
+          ! call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
+          ! call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)
           ! calculates dvscf, sum over k => dvscf_q_ipert
           ! incdrhoscf:  This routine computes the change of the charge density due to the
           ! perturbation. It is called at the end of the computation of the
           ! change of the wavefunction for a given k point.
+
            weight = wk (ikk)
            IF (noncolin) THEN
               call incdrhoscf_nc(drhoscf(1,1),weight,ik, &
@@ -405,7 +421,7 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
      meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
      if (meandvb.lt.1.d-8) then 
          call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-         dvscfout ( nl(1),current_spin ) = dcmplx(0.d0, 0.0d0)
+         dvscfout  (nl(1),current_spin ) = dcmplx(0.d0, 0.0d0)
          call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
      endif
 

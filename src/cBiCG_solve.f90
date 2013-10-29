@@ -1,4 +1,4 @@
-SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
+SUBROUTINE cbcg_solve(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, tprec)
 !
 !-----------------------------------------------------------------------
@@ -91,9 +91,6 @@ real(DP) :: &
   ! coefficient of quadratic form
   !
   
-!HL 
-      call start_clock ('cgsolve')
-!     call start_clock ('cbcgsolve')
 
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
              hold(ndmx*npol ,nbnd) )
@@ -127,13 +124,14 @@ real(DP) :: &
   gp(:,:) = (0.d0, 0.0d0)
   gtp(:,:) = (0.d0, 0.0d0)
 
+  call start_clock ('cbcgsolve')
+
   do iter = 1, maxter_green
     ! kter = kter + 1
     ! g    = (-PcDv\Psi) - (H \Delta\Psi)
     ! gt   = conjg( g)
     ! r    = b - Ax 
     ! rt   = conjg ( r )
-    ! write(6, '("cBiCG")')
      if (iter .eq. 1) then
         !r = b - A* x
         !rt = conjg (r) 
@@ -155,11 +153,7 @@ real(DP) :: &
      do ibnd = 1, nbnd
         if (conv (ibnd).eq.0) then
             lbnd = lbnd+1
-            if(iter.gt.1) then
-               rho(lbnd) = abs(ZDOTC (ndim, gp(1,ibnd), 1, gp(1,ibnd), 1))
-            else
-               rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
-            endif
+            rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
         endif
      enddo
 
@@ -168,6 +162,7 @@ real(DP) :: &
      do ibnd = nbnd, 1, -1
         if (conv(ibnd).eq.0) then
             rho(ibnd) = rho(lbnd)
+            lbnd = lbnd -1
             anorm = sqrt(rho(ibnd))
             if (anorm.lt.ethr) conv (ibnd) = 1
         endif
@@ -193,7 +188,6 @@ real(DP) :: &
     enddo
 
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-    write(1000+mpime,*) iter, lbnd
     call h_psi (ndim, hold, t, eu(1), cw, ik, lbnd)
     call h_psi (ndim, htold, tt, eu(1), conjg(cw), ik, lbnd)
 
@@ -201,7 +195,7 @@ real(DP) :: &
     do ibnd = 1, nbnd
        if (conv (ibnd) .eq.0) then
            lbnd=lbnd+1
-! alpha = <rt|rp>/<pt|q>
+!alpha = <rt|rp>/<pt|q>
            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
            if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd) )
            a(lbnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
@@ -228,7 +222,7 @@ real(DP) :: &
            call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
            if (tprec) call cg_psi (ndmx, ndmx*npol, 1, gp  (1,ibnd), h_diag(1,ibnd) )
            if (tprec) call cg_psi (ndmx, ndmx*npol, 1, gtp (1,ibnd), h_diag(1,ibnd) )
-!
+
 ! beta = - <qt|rp>/<pt|q>
            a(lbnd) = ZDOTC (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
            beta = - a(lbnd) / c(lbnd)
@@ -237,6 +231,7 @@ real(DP) :: &
 ! ptold = pt
          call ZCOPY (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
          call ZCOPY (ndmx*npol, ht (1, ibnd), 1, htold (1, ibnd), 1)
+
 ! p  = rp  +       beta  * pold
 ! pt = rtp + conjg(beta) * ptold
          call ZCOPY (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
@@ -255,7 +250,7 @@ real(DP) :: &
   deallocate (g, t, h, hold)
   deallocate (gt, tt, ht, htold)
   deallocate (gtp, gp)
-  call stop_clock ('cgsolve')
+  call stop_clock ('cbcgsolve')
   return
-END SUBROUTINE cbcg_solve_fix
+END SUBROUTINE cbcg_solve
  

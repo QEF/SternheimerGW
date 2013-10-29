@@ -1,4 +1,4 @@
-SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
+SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, dpsitil, h_diag, &
      ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, tprec)
 !
 !-----------------------------------------------------------------------
@@ -37,8 +37,9 @@ real(DP) :: &
 !COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
 
   complex(DP) :: &
-             dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
-             d0psi (ndmx*npol, nbnd)   ! input: the known term
+             dpsi    (ndmx*npol, nbnd), & ! output: the solution of the linear syst
+             d0psi   (ndmx*npol, nbnd), & ! input: the known term
+             dpsitil (ndmx*npol, nbnd)    ! output: the conjugate solution!
 
   logical :: conv_root ! output: if true the root is converged
 
@@ -162,7 +163,7 @@ real(DP) :: &
      do ibnd = nbnd, 1, -1
         if (conv(ibnd).eq.0) then
             rho(ibnd) = rho(lbnd)
-            lbnd = lbnd -1
+            lbnd = lbnd-1
             anorm = sqrt(rho(ibnd))
             if (anorm.lt.ethr) conv (ibnd) = 1
         endif
@@ -210,6 +211,9 @@ real(DP) :: &
            alpha = a(lbnd) / c(lbnd)
 ! x  = x  + alpha        * p
            call ZAXPY (ndmx*npol,  alpha,        h(1,ibnd), 1, dpsi(1,ibnd), 1)
+
+!HLTIL
+           call ZAXPY (ndmx*npol,  conjg(alpha), ht(1,ibnd), 1, dpsitil(1,ibnd), 1)
 
 ! r  = r  - alpha        * q
 ! rt = rt - conjg(alpha) * qt

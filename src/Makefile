@@ -57,6 +57,7 @@ dvqpsi_us.o\
 addusddens.o\
 addusdbec.o\
 set_drhoc.o\
+cBiCG_solve.o\
 cBiCG_solve_fix.o\
 cBiCG_solve_green.o\
 cch_psi_all_fix.o\
