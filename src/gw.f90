@@ -256,8 +256,9 @@ ENDIF
 
        if(ionode) then 
 !CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
-!         if(do_sigma_exx)   CALL sigma_exch(ik)
+         if(do_sigma_exx)   CALL sigma_exch(ik)
        endif
+
        if(ionode) WRITE(6, '("Finished CALCULATING SIGMA")') 
        CALL mp_barrier(inter_pool_comm)
        CALL clean_pw_gw(ik)
@@ -275,7 +276,7 @@ ENDIF
             CALL run_pwscf_green(do_band)
             CALL initialize_gw()
             WRITE(6,'(4x,"Sigma exchange")')
-            if(ionode.and.do_sigma_exx) CALL sigma_exchg(ik)
+            !if(ionode.and.do_sigma_exx) CALL sigma_exchg(ik)
             CALL mp_barrier(inter_pool_comm)
             CALL sigma_matel(ik) 
             CALL mp_barrier(inter_pool_comm)

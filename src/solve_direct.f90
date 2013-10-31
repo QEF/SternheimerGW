@@ -326,10 +326,10 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 !           HL Don't need to read/write the full wave fxn at each iteration...
 !           call davcio ( dpsi, lrdwf, iudwf, nrec1, -1)
 !           if (iw.eq.0) then
-              dpsi(:,:)     = (0.d0, 0.d0) 
-              dpsim(:,:)    = (0.d0, 0.d0) 
-              dpsip(:,:)    = (0.d0, 0.d0) 
-              dvscfin(:, :) = (0.d0, 0.d0)
+              dpsi(:,:)     = dcmplx(0.d0, 0.d0) 
+              dpsim(:,:)    = dcmplx(0.d0, 0.d0) 
+              dpsip(:,:)    = dcmplx(0.d0, 0.d0) 
+              dvscfin(:, :) = dcmplx(0.d0, 0.d0)
 !           else
 !             call davcio ( dpsip, lrdwf, iudwfp, nrec1, -1)
 !             call davcio ( dpsim, lrdwf, iudwfm, nrec1, -1)
@@ -357,17 +357,20 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
                   call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, &
                            npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                            dpsim(:,:) = dpsip(:,:)
+
+                 !dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:)  + dpsim(:,:))
+                  dpsi(:,:)  = (dpsip(:,:)  + dpsim(:,:))
+
              else
+!HLTIL
                   call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, dpsim, h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-!              dpsip(:,:) = (0.d0, 0.d0) 
+                  dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:)  + dconjg(dpsim(:,:)))
+!HLTIL
+!              call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+!              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, +cw, .true.)
 !              call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
 !              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-!              write (1000+mpime,'("freq", i4)') iw
-!              do ibnd = 15, 18
-!              write (1000+mpime,'("normal ", 2f12.7, "mod ", 2f12.7, "diff ", 2f12.7)') dpsip(:,ibnd),
-!              dpsim(:,ibnd), dpsip(:,ibnd)-dpsim(:,ibnd)
-!              enddo
              endif
 
              ltaver = ltaver + lter
@@ -379,10 +382,9 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
                &                ik , ibnd, anorm
            endif
 
-           nrec1 =  ik
-           dpsi(:,:) = (0.5d0,0.0d0) * (dpsim(:,:) + dpsip(:,:) ) 
+          nrec1 =  ik
 
-          ! write freq grid to be read back in.
+
           ! call davcio (dpsi, lrdwf, iudwf, nrec1, + 1)
           ! call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
           ! call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)

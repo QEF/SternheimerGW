@@ -180,19 +180,6 @@ DO iq = 1, nksq
             do ig = 1, npwq
                 sigma_band_ex(ibnd, jbnd) = sigma_band_ex(ibnd, jbnd) - wgt*wq(iq)*miv(ig)*mvj(ig)*barcoul(ig)
             enddo 
-!           dipole = (0.0d0, 0.0d0)
-!           do ig = 1, npwq
-!              dipole(ig) = mvj(nl(ig))*miv(nl(ig)) 
-!           enddo
-!           call cft3s (dipole, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, 1)
-!           matel = (0.0d0, 0.0d0)
-!           do ir = 1, nrxxs
-!              matel       = matel + dipole(ir)/nrxxs
-!           enddo
-!write(6,'("matel",2f7.4)') matel
-!ENDTEST
-!write(6,'(2f7.4)') sigma_band_ex(ibnd,jbnd)
-!sigma_band_ex(ibnd, jbnd) = sigma_band_ex(ibnd, jbnd) + mvj(ig)*miv(ig)
         enddo !jbnd
       enddo !ibnd
    enddo !v\inocc

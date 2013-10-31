@@ -412,7 +412,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      ! if the bare perturbation does not have a constant term
      ! (otherwise the numerical error, coupled with a small denominator
      ! in the coulomb term, gives rise to a spurious dvscf response)
-     ! One wing of the dielectric matrix is particularly badly behaved 
+     ! One wing of the dielectric matrix is particularly badly behaved
 
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(nrxxs)
 

@@ -77,7 +77,7 @@ SUBROUTINE green_linsys_shift (ik0)
              mode          ! mode index
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-    REAL(DP) :: tr_cgsolve = 1.0d-8
+    REAL(DP) :: tr_cgsolve = 1.0d-6
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
@@ -186,7 +186,7 @@ do iq = 1, nksq
        enddo
 
 WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-WRITE(6, '(4x,"tr_green for green_linsys",e10.3)') tr2_green
+WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 
      green  = (0.0d0, 0.0d0)
      h_diag = 0.d0
@@ -211,12 +211,13 @@ WRITE(6, '(4x,"tr_green for green_linsys",e10.3)') tr2_green
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
               call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
-                                    npwx, npwq, tr_cgsolve, ikq, lter, conv_root, anorm, 1, npol, &
+                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                     cw, niters(gveccount))
               if(.not.conv_root) write(600+mpime, '("root not converged.")')
               if(.not.conv_root) write(600+mpime, *) anorm
              endif
                 call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
+
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &

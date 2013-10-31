@@ -1,26 +1,5 @@
 SUBROUTINE sigma_matel (ik0)
-  !
-  ! Known bug: below (grep @) the code works fine with the convention
-  ! <i|Sigma|j> = sum_G,G' [u_i,k(G)]* <G|Sigma|G'> u_j,k(G')
-  ! which is NOT the convention set in the paper. The convention of
-  ! the paper should be:
-  ! <i|Sigma|j> = sum_G,G' u_i,-k(G) <G|Sigma|G'> [u_j,-k(G')]*
-  ! but if I use -xk0 below the code gives wrong results. Indeed the
-  ! shape of Sigma^c is slightly wrong, but most importantly the
-  ! Sigma^ex is totally wrong. A quick sanity check is to calculate
-  ! the sandwiches of Sigma^ex with v set to the delta function - 
-  ! this should give the normalization of the wfs. With -xk0 this
-  ! normalization is screwed up, while everything works fine with
-  ! +xk0. Also the QP energies are ok when using +xk0.
-  ! In particolar, with -xk0 the Gamma point at 1 1 1 does not give   
-  ! the same Sigma^ex as 0 0 0, while this is the case for +xk0.
-  ! The most obvious conclusion is that I messed up somewhere in the
-  ! analytical calculation of the matrix elements - need to check this
-  ! out once more.
-  !
-  ! Note that in any case Sigma(-k,-G,-G') = Sigma(k,G,G') for silicon
-  ! if we exploit inversion symmetry.
-  !
+
   USE io_global,            ONLY : stdout, ionode_id, ionode
   USE io_files,             ONLY : prefix, iunigk
   USE kinds,                ONLY : DP
@@ -245,62 +224,6 @@ IF (ionode) THEN
  CALL davcio (sigma, lrsigma, iunsigma, ik0, -1)
 !!!!!!!!REAL SPACE SIGMA_C
  sigma_band_c (:,:,:) = czero
-! if (nksq.gt.1) rewind (unit = iunigk)
-! if (nksq.gt.1) then
-!     read (iunigk, err = 100, iostat = ios) npw, igk
-!100        call errore ('green_linsys', 'reading igk', abs (ios) )
-! endif
-! if (.not.lgamma.and.nksq.gt.1) then
-!     read (iunigk, err = 100, iostat = ios) npwq, igkq
-! 200             call errore ('green_linsys', 'reading igkq', abs (ios) )
-! endif
-! if(lgamma) npwq = npw
-! if (lgamma) then
-!    CALL davcio (evc, lrwfc, iuwfc, 1, -1)
-! else
-!else then psi_{\k+\gamma = \psi_{k}} should be second entry in list.
-!    CALL davcio (evc, lrwfc, iuwfc, 2, -1)
-! endif
-!!!!!!!!!!
-! ALLOCATE (sigma_corr(nrxxs, nrxxs))
-! dvoxel = (omega/nrxxs)**2
-! do iw = 1, nwsigma
-!       sigma_corr = czero
-!       do ig = 1, ngmsco
-!         auxr = czero
-!         do igp = 1, ngmsco
-!            auxr(nls(igp)) = sigma(ig, igp, iw)
-!         enddo
-!         call cft3s (auxr, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +2)
-!         do irp = 1, nrxxs
-!            sigma_corr(ig,irp) = auxr(irp) / omega
-!         enddo
-!       enddo
-!       do irp = 1, nrxxs
-!          auxr = czero
-!          do ig = 1, ngmsco
-!             auxr(nls(ig)) = conjg(sigma_corr(ig,irp))
-!          enddo
-!          call cft3s (auxr, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +2)
-!          sigma_corr(1:nrxxs,irp) = conjg(auxr)
-!       enddo
-!!Take all diagonal matrix elements with the correlation potential in real space.
-!       do ibnd = 1, nbnd_sig
-!          psic = czero
-!          do ig = 1, npwq
-!             psic(nls(igkq(ig))) = evc(ig, ibnd)
-!          enddo
-!          call cft3s (psic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +2)
-!          psic = psic/sqrt(omega)
-!          corr_element = DCMPLX(0.0d0, 0.0d0)
-!          do irp = 1, nrxxs
-!             do ir = 1, nrxxs
-!                corr_element = corr_element + psic(ir)*sigma_corr(ir,irp)*conjg(psic(irp))*dvoxel
-!             enddo
-!          enddo
-!          sigma_band_c(ibnd,ibnd,iw) = corr_element
-!       enddo
-! enddo
 !!!!!!!!
  WRITE(6,*) 
  WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i8)') counter, npwq
@@ -330,8 +253,6 @@ IF (ionode) THEN
  enddo
 DEALLOCATE (sigma) 
 
-!125 CONTINUE
-
 write(stdout,'("Sigma_Correlation in the middle of the calculated frequency range:")')
 write(stdout,'("Re(Sigma^{c})")')
 write(stdout,'(8(1x,f12.7))') real(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
@@ -339,45 +260,8 @@ WRITE(6,*)
 write(stdout,'("Im(Sigma^{c})")')
 write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
 
-!HLS
-!GOTO 127
-!ALLOCATE ( sigma_g_ex  (ngmsco, ngmsco))
-!sigma_g_ex(:,:) = (0.0d0, 0.0d0)
-!CALL davcio (sigma_g_ex, lrsigext, iunsigext, 1, -1)
-!sigma_band_extra (:,:) = czero
-!Code for taking matrix elements...
-!    sigma_band_extra (:,:) = czero
-!    do ibnd = 1, nbnd_sig
-!        evc_tmp_i(:) = czero
-!     do jbnd = 1, nbnd_sig
-!        evc_tmp_j(:) = czero
-!        do ig = 1, counter
-!              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-!        enddo
-!        do ig = 1, counter
-!              do igp = 1, counter
-!                 auxsco(igp) = sigma_g_ex (igp, ig)
-!                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-!              enddo
-! conjg(\psi_{j}(G'))*\Sigma(G')_{G}
-!              sigma_band_extra (ibnd, jbnd) = sigma_band_extra (ibnd, jbnd) + &
-!              evc_tmp_i(ig)*ZDOTC(counter, evc_tmp_j (1:counter), 1, auxsco, 1)
-!        enddo
-!     enddo
-!    enddo
-! DEALLOCATE(sigma_g_ex)
-!127 CONTINUE
-! WRITE(6,*) 
-! write(stdout,'(4x,"Sigma_extra (eV)")')
-! write(stdout,'(8(1x,f12.7))') real(sigma_band_extra(:,:))*RYTOEV
-! WRITE(6,*) 
-! write(stdout,'(8(1x,f12.7))') aimag(sigma_band_extra(:,:))*RYTOEV
-! DEALLOCATE(evc_tmp_i)
-! DEALLOCATE(evc_tmp_j)
-
  do ibnd = 1, nbnd_sig
     do iw = 1, nwsigma
-!     resig_diag (iw,ibnd) = real( sigma_band_c(ibnd, ibnd, iw)) + real(sigma_band_ex(ibnd, ibnd)) 
        resig_diag (iw,ibnd) = real( sigma_band_c(ibnd, ibnd, iw))
        dresig_diag (iw,ibnd) = resig_diag (iw,ibnd) + real(sigma_band_ex(ibnd,ibnd)) - real( vxc(ibnd,ibnd) )
        imsig_diag (iw,ibnd) = aimag ( sigma_band_c (ibnd, ibnd, iw) )
@@ -388,10 +272,10 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
     call qp_eigval ( nwsigma, w_ryd, dresig_diag(1,ibnd), et(ibnd,ikq), et_qp (ibnd), z(ibnd) )
  enddo
 
-  ! Now take the trace (get rid of phase arbitrariness of the wfs)
-  ! (alternative and more appropriate: calculate non-diagonal, elements of
-  ! degenerate subspaces and diagonalize)
-  ! count degenerate manifolds and degeneracy...
+ ! Now take the trace (get rid of phase arbitrariness of the wfs)
+ ! (alternative and more appropriate: calculate non-diagonal, elements of
+ ! degenerate subspaces and diagonalize)
+ ! count degenerate manifolds and degeneracy...
 
   nman = 1
   ndeg = 1
@@ -608,11 +492,10 @@ END SUBROUTINE sigma_matel
   sig1 = sig(iw1)
   sig2 = sig(iw2)
 
-!diff!
   sig_et = sig1 + ( sig2 - sig1 ) * (et-w1) / (w2-w1)
-!
   sig_der = ( sig2 - sig1 ) / ( w2 - w1 )
   z = one / ( one - sig_der)
+
 ! temporary - until I do not have Vxc
   et_qp = et + z * sig_et
   END SUBROUTINE qp_eigval

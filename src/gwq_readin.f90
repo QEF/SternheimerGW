@@ -166,7 +166,7 @@ SUBROUTINE gwq_readin()
   ! ... set default values for variables in namelist
   !
   tr2_gw       = 1.D-5
-  tr2_green    = 1.D-2
+  tr2_green    = 1.D-5
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
   alpha_mix(1) = 0.6D0
