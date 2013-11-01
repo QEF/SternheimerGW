@@ -125,8 +125,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
          endif
       enddo
       !
-      !HL apply 2D truncation:
-       if(trunc_2d) call truncate_2D(dvaux(1,is), xq, 1)
       !  and transformed back to real space
       !
       call cft3 (dvhart (1, is), nr1, nr2, nr3, nrx1, nrx2, nrx3, +1)
@@ -145,20 +143,11 @@ subroutine dv_of_drho (mode, dvscf, flag)
        call cft3 (dvaux (1, is), nr1, nr2, nr3, nrx1, nrx2, nrx3, - 1)
        do ig = 1, ngm
           qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
-          if (qg2 > 1.d-8) then
-             dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
-                                e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
-
-           !this is where we need to put in the truncation
-           !2D Screening.
-           !v(k) = e2*fpi/k2{1 - e^{-k_{xq}*zcut}cos(kz*z_c)}
-           !FORTRAN
-           !kxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(1))**2)
-           !kz   = (g(3,ig))
-           !spal = 1.0d0 - EXP(-kxy*zcut)*cos(kz*zcut)
-           !dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
-           !                   e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2) * dcmplx(spal, 0.0d0)
-
+           if (qg2 > 1.d-8) then
+              dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
+                                 e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
+      !HL apply 2D truncation:
+           if(trunc_2d) call truncate_2D(dvaux(1,is), xq, 1)
           endif
        enddo
        !

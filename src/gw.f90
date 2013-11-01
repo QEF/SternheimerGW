@@ -223,10 +223,10 @@ ENDIF
    DEALLOCATE( scrcoul_g )
    DEALLOCATE( ig_unique )
 
-    DO ik = 1, 1
+   DO ik = 1, 1
    !DO ik = 1, num_k_pts
-      if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
-      if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
+       if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
+       if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
 
        xq(:) = xk_kpoints(:, ik)
 

@@ -355,17 +355,32 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                       dpsim(:,:) = dpsip(:,:)
+                      dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
        else
-            call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+!HLTIL
+!               call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, dpsim, h_diag, &
+!                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+               !dpsip(:,:)     = (0.d0, 0.d0) 
+               call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
 
-            call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-!Is BICGSTABL a better bet might be able to use the G preconditioner... ????
-!   call  cbicgstabl(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-!                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, lmres, .true.)
-!   call  cbicgstabl(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-!                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, lmres, .true.)
+               call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+
+!HLTIL
+              !dpsi(:,:) = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:) + dconjg(dpsim(:,:)))
+               dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
+
+!           if(iter.gt.3) then
+!           do ibnd = 4, 4
+!              do ig = 1, npwx
+!                 write(1000+mpime,'("norm "2f12.8, "mod", 2f12.8 "diff" 2f12.8)') dconjg(dpsip(ig,ibnd))*dpsip(ig,ibnd), &
+!                 dconjg(dpsim(ig,ibnd))*dpsim(ig,ibnd), &
+!                 dconjg(dpsip(ig,ibnd))*dpsip(ig,ibnd)-dconjg(dpsim(ig,ibnd))*dpsim(ig,ibnd)
+!                 write(2000+mpime,'("norm "2f12.8, "mod", 2f12.8 "diff" 2f12.8)') dpsip(ig,ibnd), dpsim(ig,ibnd), dpsip(ig,ibnd)-dpsim(ig,ibnd)
+!             enddo
+!           enddo
+!           endif
        endif
 
          ltaver = ltaver + lter
@@ -376,7 +391,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               &                ik , ibnd, anorm
 
            nrec1 =  ik
-           dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
 
            call davcio (dpsim, lrdwf, iudwfm, nrec1, + 1)
            call davcio (dpsip, lrdwf, iudwfp, nrec1, + 1)

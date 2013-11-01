@@ -90,6 +90,15 @@ DO ig = igstart, igstop
       if(nl(ig_unique(ig)).eq.1) then
       WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
       endif
+      if(ig.eq.3) then
+      WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(5)), 1)
+      endif
+      if(ig.eq.15) then
+      WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(11)), 1)
+      endif
+      if(ig.eq.11) then
+      WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(15)), 1)
+      endif
 
       if (solve_direct) then !we store eps(w).
        DO igp = 1, ngmpol

@@ -91,8 +91,9 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 
 ! HL prec
 ! HL careful now... complexifying preconditioner:
-  real(DP) , allocatable :: h_diag (:,:)
+! real(DP) , allocatable :: h_diag (:,:)
 ! h_diag: diagonal part of the Hamiltonian
+  complex(DP) , allocatable :: h_diag (:,:)
   real(DP) :: thresh, anorm, averlt, dr2
   real(DP) :: x
 
@@ -357,21 +358,34 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
                   call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, &
                            npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                            dpsim(:,:) = dpsip(:,:)
-
-                 !dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:)  + dpsim(:,:))
-                  dpsi(:,:)  = (dpsip(:,:)  + dpsim(:,:))
+!HLTIL
+                 dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:) + dpsim(:,:))
 
              else
 !HLTIL
-                  call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, dpsim, h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-                  dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:)  + dconjg(dpsim(:,:)))
+!              call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, dpsim, h_diag, &
+!              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+               call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, +cw, .true.)
+
+               call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+
+               dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:) + dpsim(:,:))
 !HLTIL
-!              call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-!              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, +cw, .true.)
-!              call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-!              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+!           dpsi(:,:)  = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:) + dconjg(dpsim(:,:)))
+!           do ibnd = 1, 4
+!           do ig = 1, npwx
+!                 write(1000+mpime,'("norm "2f12.8, "mod", 2f12.8 "diff" 2f12.8)') dconjg(dpsip(ig,ibnd))*dpsip(ig,ibnd), &
+!                 dconjg(dpsim(ig,ibnd))*dpsim(ig,ibnd), &
+!                 dconjg(dpsip(ig,ibnd))*dpsip(ig,ibnd)-dconjg(dpsim(ig,ibnd))*dpsim(ig,ibnd)
+!                 write(2000+mpime,'("norm "2f12.8, "mod", 2f12.8 "diff" 2f12.8)') dpsip(ig,ibnd), dpsim(ig,ibnd), dpsip(ig,ibnd)-dpsim(ig,ibnd)
+!           enddo
+!           enddo
              endif
+
+              
+             
 
              ltaver = ltaver + lter
              lintercall = lintercall + 1

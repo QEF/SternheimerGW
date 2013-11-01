@@ -146,6 +146,9 @@ real(DP) :: &
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
            if(tprec) call cg_psi(ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd) )
            ht(:,ibnd) = dconjg( h(:,ibnd) )
+!NoCOPY
+!           gp(:,ibnd)  = h(:,ibnd)
+!           gtp(:,ibnd) = ht(:,ibnd)
         enddo
      endif
 
@@ -185,7 +188,7 @@ real(DP) :: &
             call zcopy(ndmx*npol, ht(1,ibnd), 1, htold(1, lbnd), 1)
 ! No Copy
 !            call zcopy(ndmx*npol, gp(1,ibnd),  1, hold(1,  lbnd), 1)
-!            call zcopy(ndmx*npol, gpt(1,ibnd), 1, htold(1, lbnd), 1)
+!            call zcopy(ndmx*npol, gtp(1,ibnd), 1, htold(1, lbnd), 1)
             eu(lbnd) = e(ibnd)
         endif
     enddo
@@ -201,7 +204,10 @@ real(DP) :: &
            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
            if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd) )
            a(lbnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
-           c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
+!Extra Copy
+          c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
+!No Copy
+!           c(lbnd) = ZDOTC (ndim, gtp(1,ibnd), 1, t (1,lbnd), 1)
        endif
     enddo
 
@@ -215,10 +221,12 @@ real(DP) :: &
 !HLTIL
 ! xt  = xt  + conjg(alpha) * pt
            call ZAXPY (ndmx*npol,  dconjg(alpha), ht(1,ibnd), 1, dpsitil(1,ibnd), 1)
+
 ! r  = r  - alpha        * q
 ! rt = rt - conjg(alpha) * qt
            call ZAXPY (ndmx*npol, -alpha,        t  (1, lbnd), 1, g  (1,ibnd), 1)
            call ZAXPY (ndmx*npol, -dconjg(alpha), tt (1, lbnd), 1, gt (1,ibnd), 1)
+
 ! rp  = inv(M) * r
 ! rtp = inv(M) * rt
            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
@@ -230,16 +238,18 @@ real(DP) :: &
            beta = - a(lbnd) / c(lbnd)
 ! pold  = p
 ! ptold = pt
+!Extra Copy
          call ZCOPY (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
          call ZCOPY (ndmx*npol, ht (1, ibnd), 1, htold (1, ibnd), 1)
 ! p  = rp  +       beta  * pold
 ! pt = rtp + conjg(beta) * ptold
-!ExtraCopy
          call ZCOPY (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
          call ZCOPY (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
          call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
          call ZAXPY (ndmx*npol, dconjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
 !No Copy
+! p  = rp  +       beta  * pold
+! pt = rtp + conjg(beta) * ptold
 !        call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, gp  (1,ibnd), 1)
 !        call ZAXPY (ndmx*npol, conjg(beta), htold (1,ibnd), 1, gtp (1,ibnd), 1)
         endif

@@ -53,7 +53,7 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum)
   allocate (dpsic(  nrxxs))    
   allocate (psi  (  nrxxs))    
  !wgt = 2.d0 * weight / omega
- !HL til
+ !HLTIL
   wgt = weight / omega
 
   ikk = ikks(ik)
@@ -76,8 +76,8 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum)
 
      call cft3s (dpsic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
      do ir = 1, nrxxs
-        !drhoscf (ir) = drhoscf (ir) + wgt * (CONJG(psi (ir) ) * dpsic (ir))
-        !HLtil
+       !drhoscf (ir) = drhoscf (ir) + wgt * (CONJG(psi (ir) ) * dpsic (ir))
+       !HLTIL
         drhoscf (ir) = drhoscf (ir) + wgt * (DCONJG(psi (ir) ) * dpsic (ir) + psi(ir)*DCONJG(dpsic(ir)))
      enddo
   enddo

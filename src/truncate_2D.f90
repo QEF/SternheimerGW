@@ -25,8 +25,6 @@ IMPLICIT NONE
 !2D screening.
 !Choose zcut to be 1/2*L_{z}.
 
-
-
 at1(:,:) = at(:,:)
 zcut = 0.50d0*sqrt(at1(1,3)**2 + at1(2,3)**2 + at1(3,3)**2)*alat
 IF(opt.eq.1) then
