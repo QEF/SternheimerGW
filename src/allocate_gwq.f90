@@ -65,30 +65,27 @@ subroutine allocate_gwq
  !
   allocate (evq ( npwx*npol , nbnd))    
   allocate (igkq ( npwx))    
-
-! HL moving this allocation to the routine refold. Since like the frequency bins these variables
-! do not change from q-point to q-point.
-! allocate (gmap (ngm, 27))
-! allocate (eval_occ(nbnd, nkstot))
-
   endif
   !
   allocate (dvpsi ( npwx*npol , nbnd))    
-  allocate (dpsi  ( npwx*npol , nbnd))    
-  allocate (dpsim ( npwx*npol , nbnd))    
-  allocate (dpsip ( npwx*npol , nbnd))    
+
+!  if(.not.coul_multi) then
+!  allocate (dpsi  ( npwx*npol , nbnd))    
+!  allocate (dpsim ( npwx*npol , nbnd))    
+!  allocate (dpsip ( npwx*npol , nbnd))    
+!  endif
+
   !
   allocate (vlocq ( ngm , ntyp))    
   allocate (eprec ( nbnd, nksq) )
   allocate (eigqts ( nat))
-  allocate (dmuxc ( nrxx , nspin_mag , nspin_mag))    
+  allocate (dmuxc (nrxx , nspin_mag , nspin_mag))    
   allocate (dvbare(nrxxs))    
 
    if (okvan) then
   !int1, int2, etc are all defined in PRB 64 235118
      allocate (int1 ( nhm, nhm, 3, nat, nspin_mag))
      allocate (int2 ( nhm , nhm , 3 , nat , nat))
-
      if (okpaw) then
         allocate (becsumort ( nhm*(nhm+1)/2 , nat , nspin, 3*nat))
      endif
@@ -111,14 +108,9 @@ subroutine allocate_gwq
      allocate (this_pcxpsi_is_on_file(nksq,3))
      this_pcxpsi_is_on_file(:,:)=.false.
    endif
-
   ALLOCATE (becp1(nksq))
-  !ALLOCATE (alphap(3,nksq))
   DO ik=1,nksq
      call allocate_bec_type ( nkb, nbnd, becp1(ik) )
-     !DO ipol=1,3
-     !   call allocate_bec_type ( nkb, nbnd, alphap(ipol,ik) )
-     !ENDDO
   END DO
   CALL allocate_bec_type ( nkb, nbnd, becp )
   return

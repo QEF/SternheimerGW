@@ -205,8 +205,8 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        = .FALSE.
   lrpa         = .FALSE.
-  maxter_green = 220
-  w_green_start   = 1
+  maxter_green  = 220
+  w_green_start = 1
 
   coul_multishift = .FALSE.
   trunc_2d        = .FALSE.

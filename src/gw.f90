@@ -193,7 +193,15 @@ IF(do_coulomb) THEN
 #endif
 !CALCULATE W(G,G';iw):
        if((igstop-igstart+1).ne.0) then
+
+
            CALL coulomb(iq, igstart, igstop, scrcoul_g)
+
+           if(do_green.and.multishift) then 
+                CLOSE(UNIT = iunresid, STATUS = 'DELETE')
+                CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
+           endif
+
        endif
 
 !COLLECT G-VECTORS:

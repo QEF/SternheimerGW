@@ -1,6 +1,6 @@
-SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
-     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, niters)
-!
+SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
+           ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, niters, alphabeta)
+
 !-----------------------------------------------------------------------
 !
 !   Iterative solution of the linear system:
@@ -29,8 +29,9 @@ integer ::   ndmx,  & ! input: the maximum dimension of the vectors
              nbnd,  & ! input: the number of bands
              npol,  & ! input: number of components of the wavefunctions
              ik,    & ! input: the k point
-             niters,&  !number of iterations for this BiCG min
              nrec   ! for composite rec numbers
+
+integer :: niters(nbnd)
 
 real(DP) :: &
              anorm,   &        ! output: the norm of the error in the solution
@@ -39,11 +40,19 @@ real(DP) :: &
 
 
 !Frommer paper defines beta as \frac{\rho_{k}}{\rho_{k-1}}
-COMPLEX(DP)      :: alphabeta(2), beta_old
+COMPLEX(DP)    :: beta_old 
 
 complex(DP) :: &
              dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
              d0psi (ndmx*npol, nbnd)   ! input: the known term
+COMPLEX(DP)    :: alphabeta(2, nbnd, maxter_green+1)
+COMPLEX(DP)    :: dpsic(ndmx, nbnd, maxter_green+1)
+
+!complex(DP) :: &
+!             dpsi (:,:), & ! output: the solution of the linear syst
+!             d0psi (:,:)   ! input: the known term
+!COMPLEX(DP)    :: alphabeta(:, :, :)
+!COMPLEX(DP)    :: dpsic(:,:,:)
 
 logical :: conv_root ! output: if true the root is converged
 
@@ -86,7 +95,7 @@ external cg_psi      ! input: the routine computing cg_psi
   complex(DP) :: e(nbnd)
 
   ! the scalar product
-  real(DP), allocatable :: rho (:), rhoold (:), a(:), c(:), astar(:), cstar(:)
+  real(DP), allocatable :: rho (:), rhoold (:), a(:), c(:)
   ! the residue
   ! auxiliary for h_diag
   real(DP) :: kter_eff
@@ -102,7 +111,10 @@ external cg_psi      ! input: the routine computing cg_psi
   allocate (a(nbnd), c(nbnd))
   allocate (conv ( nbnd))
   allocate (rho(nbnd),rhoold(nbnd))
+
+
   kter_eff = 0.d0
+  
   do ibnd = 1, nbnd
      conv (ibnd) = 0
   enddo
@@ -117,8 +129,11 @@ external cg_psi      ! input: the routine computing cg_psi
   htold = (0.d0,0.d0)
   gp(:,:) = (0.d0, 0.0d0)
   gtp(:,:) = (0.d0, 0.0d0)
-  do iter = 1, maxter_green
 
+!seed frequency should be cw=0
+  cw = (0.0d0, 0.0d0)
+
+  do iter = 1, maxter_green
         ! kter = kter + 1
         ! g    = (-PcDv\Psi) - (H \Delta\Psi)
         ! gt   = conjg( g)
@@ -131,28 +146,19 @@ external cg_psi      ! input: the routine computing cg_psi
         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
         do ibnd = 1, nbnd
 !initial residual should be r = b
-           call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
-           !if (mpime.eq.0) then
-               !write(503,*)iter
-               !write(503,*)d0psi
-           !endif
-           call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
-           call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-           gt(:,ibnd) = conjg ( g(:,ibnd) )
+           !call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
+            dpsic(:, ibnd, iter) = d0psi(:,ibnd)
+            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
+            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
+            gt(:,ibnd) = conjg ( g(:,ibnd) )
         ! p   =  inv(M) * r
         ! pt  =  conjg ( p )
-           call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
-           ht(:,ibnd) = conjg( h(:,ibnd) )
+            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
+            ht(:,ibnd) = conjg( h(:,ibnd) )
         enddo
-        IF (npol==2) THEN
-           do ibnd = 1, nbnd
-              call zaxpy (ndim, (-1.d0,0.d0), d0psi(ndmx+1,ibnd), 1, &
-                                              g(ndmx+1,ibnd), 1)
-              gt(:,ibnd) = conjg ( g(:,ibnd) )
-           enddo
-        END IF
      endif!iter.eq.1
 
+!HL needs to be altered when we do band packing.
      lbnd = nbnd
      kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
 ! "get out if all bands are converged."
@@ -161,13 +167,14 @@ external cg_psi      ! input: the routine computing cg_psi
         anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)  ) )
         !write(6,*) anorm, ibnd, ethr
         if (anorm.lt.ethr) conv (ibnd) = 1
+     !   print*, ibnd, conv(ibnd)
         conv_root = conv_root.and.(conv (ibnd).eq.1)
+!Needs to become a function of band packing!
+        niters(:) =  iter
      enddo
 
      if (conv_root) goto 100
-
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-
      call h_psi (ndim, h, t, e(1), cw, ik, nbnd)
      call h_psi (ndim, ht, tt, e(1), conjg(cw), ik, nbnd)
 
@@ -181,7 +188,9 @@ external cg_psi      ! input: the routine computing cg_psi
          a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
          c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
          alpha = a(ibnd) / c(ibnd)
-         alphabeta(1) = alpha
+
+         alphabeta(1,ibnd,iter) = alpha
+
         !  x  = x  + alpha        * u
         !  r  = r  - alpha       * Au
         !  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
@@ -193,14 +202,18 @@ external cg_psi      ! input: the routine computing cg_psi
          call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
          call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
          nrec = iter+1
-         call davcio (g(:,1), lrresid, iunresid, nrec, +1)
+
+!        call davcio (g(:,1), lrresid, iunresid, nrec, +1)
+         dpsic(:, ibnd, iter+1) = g(:,ibnd)
+ 
         ! if (mpime.eq.0) then
         !     write(503,*)g(:,1)
         ! endif
          a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
          beta = - a(ibnd) / c(ibnd)
-         alphabeta(2) = beta
-         call davcio (alphabeta, lralphabeta, iunalphabeta, iter, +1)
+!        alphabeta(2) = beta
+!        call davcio (alphabeta, lralphabeta, iunalphabeta, iter, +1)
+         alphabeta(2,ibnd,iter) = beta
         ! u_{old}  = u
         ! \tilde{u}_{old} = \tilde{u}
          call ZCOPY (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
@@ -217,14 +230,17 @@ external cg_psi      ! input: the routine computing cg_psi
   enddo!iter
 
 100 continue
-  niters =  iter
+!if not function of band packing
+! niters = iter
   kter   =  kter_eff
+
   deallocate (rho, rhoold)
   deallocate (conv)
   deallocate (a,c)
   deallocate (g, t, h, hold)
   deallocate (gt, tt, ht, htold)
   deallocate (gtp, gp)
+
   call stop_clock ('cgsolve')
   return
 END SUBROUTINE cbcg_solve_coul

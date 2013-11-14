@@ -48,6 +48,7 @@ orthogonalize.o \
 ch_psi_all.o \
 cgsolve_all.o \
 incdrhoscf.o \
+incdrhoscf_w.o \
 incdrhoscf_nc.o \
 dv_of_drho.o\
 h_psiq.o \
@@ -60,6 +61,7 @@ set_drhoc.o\
 cBiCG_solve.o\
 cBiCG_solve_fix.o\
 cBiCG_solve_green.o\
+cBiCG_solve_coul.o\
 cch_psi_all_fix.o\
 cch_psi_all_green.o\
 cg_psi.o\
@@ -95,7 +97,6 @@ mod_diel.o\
 coulomb_ms.o\
 solve_direct_shift.o\
 coul_multishift.o\
-cBiCG_solve_coul.o\
 truncate_2D.o
 
 

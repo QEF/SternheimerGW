@@ -140,7 +140,7 @@ ELSE
                 dvpsi, npwx*npol )
    ELSE
       CALL zgemm( 'N', 'N', npwq, nbnd_occ(ikk), nbnd_occ(ikk), &
-             (1.d0,0.d0), dpsi, npwx, ps, nbnd, (-1.0d0,0.d0), &
+             (1.d0,0.d0), dpsi(1,1), npwx, ps, nbnd, (-1.0d0,0.d0), &
               dvpsi, npwx )
    END IF
 ENDIF
