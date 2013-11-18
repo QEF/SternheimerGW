@@ -223,7 +223,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      ltaver = 0
 
      lintercall = 0
-     drhoscf(:,:) = (0.d0, 0.d0)
+     drhoscf(:,:)   = (0.d0, 0.d0)
      dbecsum(:,:,:) = (0.d0, 0.d0)
 
      IF (noncolin) dbecsum_nc = (0.d0, 0.d0)
@@ -357,30 +357,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                       dpsim(:,:) = dpsip(:,:)
                       dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
        else
-!HLTIL
-!               call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, dpsim, h_diag, &
-!                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-               !dpsip(:,:)     = (0.d0, 0.d0) 
-               call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+               call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
 
-               call cbcg_solve(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+               call cbcg_solve_fix(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
 
-!HLTIL
-              !dpsi(:,:) = dcmplx(0.5d0, 0.0d0)*(dpsip(:,:) + dconjg(dpsim(:,:)))
                dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
-
-!           if(iter.gt.3) then
-!           do ibnd = 4, 4
-!              do ig = 1, npwx
-!                 write(1000+mpime,'("norm "2f12.8, "mod", 2f12.8 "diff" 2f12.8)') dconjg(dpsip(ig,ibnd))*dpsip(ig,ibnd), &
-!                 dconjg(dpsim(ig,ibnd))*dpsim(ig,ibnd), &
-!                 dconjg(dpsip(ig,ibnd))*dpsip(ig,ibnd)-dconjg(dpsim(ig,ibnd))*dpsim(ig,ibnd)
-!                 write(2000+mpime,'("norm "2f12.8, "mod", 2f12.8 "diff" 2f12.8)') dpsip(ig,ibnd), dpsim(ig,ibnd), dpsip(ig,ibnd)-dpsim(ig,ibnd)
-!             enddo
-!           enddo
-!           endif
        endif
 
          ltaver = ltaver + lter
@@ -401,13 +384,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           ! change of the wavefunction for a given k point.
 
            weight = wk (ikk)
-           IF (noncolin) THEN
-              call incdrhoscf_nc(drhoscf(1,1),weight,ik, &
-                                       dbecsum_nc(1,1,1,1,ipert))
-           ELSE
-              call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
-                                dbecsum(1,1,current_spin))
-           END IF
+           call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
+                             dbecsum(1,1,current_spin))
      enddo 
 
         if (doublegrid) then
@@ -484,10 +462,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 155 iter0=0
 
-   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-         "secs av.it.:",f5.1)') iter, tcpu, averlt
-   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!         "secs av.it.:",f5.1)') iter, tcpu, averlt
+!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
     drhoscf(:,1) = dvscfin(:,1)
 

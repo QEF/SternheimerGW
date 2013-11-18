@@ -49,9 +49,7 @@ REAL(DP) :: anorm(nwgreen)
      alpha(:) = czero
      beta(:) = czero
 
-print*, maxval(niters)
      do iter = 1, maxval(niters)-1
-        print*, iter
 !now need to read residual vectors which have been written to disk in green_linsys:
 !          call davcio (alphabeta, lralphabeta, iunalphabeta, iter, -1)
 !          alpha = alphabeta(1)

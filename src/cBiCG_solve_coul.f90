@@ -43,8 +43,8 @@ real(DP) :: &
 COMPLEX(DP)    :: beta_old 
 
 complex(DP) :: &
-             dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
-             d0psi (ndmx*npol, nbnd)   ! input: the known term
+                  dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
+                  d0psi (ndmx*npol, nbnd)   ! input: the known term
 COMPLEX(DP)    :: alphabeta(2, nbnd, maxter_green+1)
 COMPLEX(DP)    :: dpsic(ndmx, nbnd, maxter_green+1)
 

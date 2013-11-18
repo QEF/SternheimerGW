@@ -1,4 +1,4 @@
-SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, dpsitil, h_diag, &
+SUBROUTINE cbcg_solve_fix(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, tprec)
 !
 !-----------------------------------------------------------------------
@@ -38,8 +38,8 @@ real(DP) :: &
 
   complex(DP) :: &
              dpsi    (ndmx*npol, nbnd), & ! output: the solution of the linear syst
-             d0psi   (ndmx*npol, nbnd), & ! input: the known term
-             dpsitil (ndmx*npol, nbnd)    ! output: the conjugate solution!
+             d0psi   (ndmx*npol, nbnd)    ! input: the known term
+!             dpsitil (ndmx*npol, nbnd)   ! output: the conjugate solution!
 
   logical :: conv_root ! output: if true the root is converged
 
@@ -183,9 +183,6 @@ real(DP) :: &
             lbnd = lbnd + 1
             call zcopy(ndmx*npol, h(1,ibnd),  1, hold(1,  lbnd), 1)
             call zcopy(ndmx*npol, ht(1,ibnd), 1, htold(1, lbnd), 1)
-! No Copy
-!            call zcopy(ndmx*npol, gp(1,ibnd),  1, hold(1,  lbnd), 1)
-!            call zcopy(ndmx*npol, gtp(1,ibnd), 1, htold(1, lbnd), 1)
             eu(lbnd) = e(ibnd)
         endif
     enddo
@@ -214,7 +211,7 @@ real(DP) :: &
            call ZAXPY (ndmx*npol,  alpha,        h(1,ibnd), 1, dpsi(1,ibnd), 1)
 !HLTIL
 ! xt  = xt  + conjg(alpha) * pt
-           call ZAXPY (ndmx*npol,  dconjg(alpha), ht(1,ibnd), 1, dpsitil(1,ibnd), 1)
+!           call ZAXPY (ndmx*npol,  dconjg(alpha), ht(1,ibnd), 1, dpsitil(1,ibnd), 1)
 
 ! r  = r  - alpha        * q
 ! rt = rt - conjg(alpha) * qt

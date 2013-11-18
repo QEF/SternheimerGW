@@ -110,7 +110,6 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
                               dbecsum (:,:,:), dbecsum_nc(:,:,:,:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
-  complex(DP), allocatable :: alphabeta(:,:,:)
 
 
   ! ldos : local density of states af Ef
@@ -154,9 +153,14 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
   real(DP) :: meandvb
 
   INTEGER                   :: gveccount
-  INTEGER, ALLOCATABLE      :: niters(:)
 
-  COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:), dpsit(:,:,:), dpsi(:,:,:)
+! COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:), dpsit(:,:,:), dpsi(:,:,:)
+! complex(DP), allocatable :: alphabeta(:,:,:)
+! INTEGER, ALLOCATABLE      :: niters(:)
+
+  INTEGER     :: niters(nbnd)
+  COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1), dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
+  COMPLEX(DP) :: alphabeta(npwx,nbnd,maxter_green+1)
  
   external ch_psi_all, cg_psi, cch_psi_all_fix
   
@@ -177,11 +181,13 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
-  allocate (niters(nbnd))
-  allocate (dpsit ( npwx, nbnd, nfs))
-  allocate (dpsi  ( npwx, nbnd, nfs))
-  allocate (dpsic ( npwx, nbnd, maxter_green+1))
-  allocate (alphabeta ( 2, nbnd, maxter_green+1))
+
+!Multishift arrays.
+!  allocate (niters(nbnd))
+!  allocate (dpsit ( npwx, nbnd, nfs))
+!  allocate (dpsi  ( npwx, nbnd, nfs))
+!  allocate (dpsic ( npwx, nbnd, maxter_green+1))
+!  allocate (alphabeta ( 2, nbnd, maxter_green+1))
 
   iter0 = 0
   convt =.FALSE.
@@ -271,17 +277,19 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
              etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
 
-             call cbcg_solve_coul(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,1), dpsic, h_diag, &
+             call cbcg_solve_coul(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,:), dpsic, h_diag, &
                                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                                   npol, niters(:), alphabeta(:,:,:))
 !            dpsi = dpsi^{+}
-             call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-             dpsi(:,:,:) = dpsit(:,:,:) 
+
+            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+            dpsi(:,:,:) = dpsit(:,:,:) 
 
 !            dpsi = dpsi^{+} + dpsi^{-}
              dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-             call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, -fiu)
-             dpsi(:,:,:) = dpsi(:,:,:) + dpsit(:,:,:)
+
+            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, -fiu)
+            dpsi(:,:,:) = dpsi(:,:,:) + dpsit(:,:,:)
 
 
              ltaver = ltaver + lter
@@ -295,11 +303,14 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
            enddo
      enddo !kpoints
 
-     deallocate (dpsic)
-     deallocate (dpsit)
-     deallocate (niters)
-     deallocate (alphabeta)
-     deallocate (dpsi)
+     print*, "finished kpoints"
+
+!     deallocate (niters)
+!     deallocate (alphabeta)
+!     deallocate (dpsi)
+!     deallocate (dpsic)
+!     deallocate (dpsit)
+
 
      call zcopy (nspin_mag*nrxx, drhoscf, 1, drhoscfh, 1)
      call addusddens (drhoscfh, dbecsum, imode0, npe, 0)

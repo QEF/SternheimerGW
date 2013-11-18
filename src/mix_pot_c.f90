@@ -140,7 +140,6 @@
  !call ZGETRI (iter_used, beta, maxter, iwork, work, maxter, info)
   call errore ('broyden', 'ZSYTRI', info)
 
-!HL Trying with the hermiticity condition led to disaster and tears
  do i = 1, iter_used
     do j = i + 1, iter_used
        beta (j, i) = conjg ( beta (i, j) ) 
@@ -152,7 +151,7 @@
   enddo
 !
   do n = 1, ndim
-     vin (n) = vin (n) + alphamix * vout (n) 
+     vin (n) = vin (n) + dcmplx(alphamix, 0.00) * vout (n) 
   enddo
 !
   do i = 1, iter_used

@@ -52,7 +52,7 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum)
   call start_clock ('incdrhoscf')
   allocate (dpsic(  nrxxs))    
   allocate (psi  (  nrxxs))    
-  wgt = 2.d0 * weight / omega
+ wgt = 2.d0 * weight / omega
  !HLTIL
  !wgt = weight / omega
 
@@ -76,9 +76,9 @@ subroutine incdrhoscf (drhoscf, weight, ik, dbecsum)
 
      call cft3s (dpsic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
      do ir = 1, nrxxs
-        drhoscf (ir) = drhoscf (ir) + wgt * (CONJG(psi (ir) ) * dpsic (ir))
+       drhoscf (ir) = drhoscf (ir) + wgt * (DCONJG(psi (ir) ) * dpsic (ir))
        !HLTIL
-       !drhoscf (ir) = drhoscf (ir) + wgt * (psi (ir)*conjg(dpsic (ir)))
+       !drhoscf (ir) = drhoscf (ir) + wgt * (DCONJG(psi (ir) ) * dpsic (ir) + psi(ir)*DCONJG(dpsic(ir)))
      enddo
   enddo
 ! HL adds B15 of DalCorso.
