@@ -44,6 +44,7 @@ REAL(DP) :: anorm(nwgreen)
      nrec = 0
      alpha = czero
      beta = czero
+
      do iter = 1, niters-1
 !now need to read residual vectors which have been written to disk in green_linsys:
            call davcio (alphabeta, lralphabeta, iunalphabeta, iter, -1)
@@ -53,8 +54,8 @@ REAL(DP) :: anorm(nwgreen)
               x_sig(:,:)        = czero
               call davcio (r, lrresid, iunresid, iter, -1)
               do iw = 1, nfreq 
-                 !u_sig(:,iw) = r(:)
-                 !r_sig(:,iw) = r(:)
+                !u_sig(:,iw) = r(:)
+                !r_sig(:,iw) = r(:)
                  u_sig(:,iw) = r(:)
                  r_sig(:,iw) = r(:)
               enddo
@@ -67,21 +68,17 @@ REAL(DP) :: anorm(nwgreen)
 !with rhs as delta <rt,r> is always one on the first iteration.
          do iw = 1, nfreq
 !-alpha because we are solve (H-w^{+}):
-           pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), eta))*pi_coeff(iw) - &
 ! conjg means something...
+           pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), eta))*pi_coeff(iw) - &
                               ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
-            alpha_sig(iw)    = ( pi_coeff(iw)/pi_coeff_new(iw))*alpha
+            alpha_sig(iw)   = (pi_coeff(iw)/pi_coeff_new(iw))*alpha
 ! x_sig = x_sig + alpha_sig*u_sig
             x_sig(:,iw) = x_sig(:,iw) + alpha_sig(iw) * u_sig(:,iw)
          enddo!iw
 !update residuals:
          nrec = iter + 1
          call davcio (r, lrresid, iunresid, nrec, -1)
-!Now residual is updated(i.e. read in):
-!         do iw = 1, nfreq
-!            r_sig(:,iw) = (cone/pi_coeff_new(iw))*r(:)
-!         enddo!iw
 !alpha=k, beta = k+1
           beta  = alphabeta(2)
 !update the u's for the shifted systems

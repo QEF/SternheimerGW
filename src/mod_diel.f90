@@ -28,9 +28,9 @@ IMPLICIT NONE
 !The 'magic dielectric function' Inkson 1972
 !Silicon parameters...
 !check resta for parameters Phys. Rev. B 16, 2717 2722 (1977)
-!wwp    = 16.0/RYTOEV  ! plasma frequency in Ry
-!eps0   = 11.4         ! static diel constant of Si
-!q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
+wwp    = 16.0/RYTOEV  ! plasma frequency in Ry
+eps0   = 11.4         ! static diel constant of Si
+q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
 !LiCL parameters
 !wwp    = 17.0/RYTOEV   ! plasma frequency in Ry
 !eps0   = 11.04         ! static diel constant of 
@@ -38,10 +38,12 @@ IMPLICIT NONE
 !MoS2 there are two well defined excitation for parallel and perpendicular.
 !this is an anisotropic material though!
 !should have (at least) 2 different plasmons!
-     wwp    = 16.0/RYTOEV ! plasma frequency in Ry
-     eps0   = 7.4         ! static diel constant of MoS2
-     q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
+!     wwp    = 16.0/RYTOEV ! plasma frequency in Ry
+!     eps0   = 7.4         ! static diel constant of MoS2
+!     q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
+!!!!!!
      fac    = 1.d0/(1.d0-1.d0/eps0)
+!!!!!
 !effective mass annd density of electrons in layer i,j.
      meff   = 1.0d0
 !or should this be the fourier co-efficient of the density at the particular G vector?

@@ -92,10 +92,10 @@ external cg_psi      ! input: the routine computing cg_psi
   complex(DP), external :: zdotc
   !HL (eigenvalue + iw) 
 
-  complex(DP) :: e(nbnd)
+  complex(DP) :: e(nbnd), eu(nbnd)
 
-  ! the scalar product
-  real(DP), allocatable :: rho (:), rhoold (:), a(:), c(:)
+ !the scalar product
+  real(DP), allocatable :: rho (:), a(:), c(:)
   ! the residue
   ! auxiliary for h_diag
   real(DP) :: kter_eff
@@ -110,7 +110,7 @@ external cg_psi      ! input: the routine computing cg_psi
   allocate ( gp(ndmx*npol,nbnd), gtp(ndmx*npol,nbnd))
   allocate (a(nbnd), c(nbnd))
   allocate (conv ( nbnd))
-  allocate (rho(nbnd),rhoold(nbnd))
+  allocate (rho(nbnd))
 
 
   kter_eff = 0.d0
@@ -158,59 +158,85 @@ external cg_psi      ! input: the routine computing cg_psi
         enddo
      endif!iter.eq.1
 
-!HL needs to be altered when we do band packing.
-     lbnd = nbnd
+     lbnd = 0
+     do ibnd = 1, nbnd
+        if (conv (ibnd).eq.0) then
+            lbnd = lbnd+1
+            rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
+        endif
+     enddo
+
      kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
-! "get out if all bands are converged."
+
+     do ibnd = nbnd, 1, -1
+        if (conv(ibnd).eq.0) then
+            rho(ibnd) = rho(lbnd)
+            lbnd = lbnd-1
+            anorm = sqrt(rho(ibnd))
+            if (anorm.lt.ethr) conv (ibnd) = 1
+        !band dependent number of iterations
+            niters(ibnd) = iter
+        endif
+     enddo
+
      conv_root = .true.
      do ibnd = 1, nbnd
-        anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)  ) )
-        !write(6,*) anorm, ibnd, ethr
-        if (anorm.lt.ethr) conv (ibnd) = 1
-     !   print*, ibnd, conv(ibnd)
         conv_root = conv_root.and.(conv (ibnd).eq.1)
-!Needs to become a function of band packing!
-        niters(:) =  iter
      enddo
 
      if (conv_root) goto 100
+! compute t = A*h
+! we only apply hamiltonian to unconverged bands.
+     lbnd = 0
+     do ibnd = 1, nbnd
+        if (conv(ibnd).eq.0) then
+            lbnd = lbnd + 1
+            call zcopy(ndmx*npol, h(1,ibnd),  1, hold(1,  lbnd), 1)
+            call zcopy(ndmx*npol, ht(1,ibnd), 1, htold(1, lbnd), 1)
+            eu(lbnd) = e(ibnd)
+        endif
+     enddo
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-     call h_psi (ndim, h, t, e(1), cw, ik, nbnd)
-     call h_psi (ndim, ht, tt, e(1), conjg(cw), ik, nbnd)
+     call h_psi (ndim, hold, t, eu(1), cw, ik, lbnd)
+     call h_psi (ndim, htold, tt, eu(1), conjg(cw), ik, lbnd)
 
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
-          lbnd = ibnd
+            lbnd=lbnd+1
         ! alpha = <\tilde{r}|M^{-1}r>/<\tilde{u}|A{u}>
         ! [ the denominator is stored for subsequent use in beta ]
-         call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
-         a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
-         c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
-         alpha = a(ibnd) / c(ibnd)
+            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+            a(lbnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
+            c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
+        endif
+    enddo
 
-         alphabeta(1,ibnd,iter) = alpha
-
+     lbnd=0
+     do ibnd = 1, nbnd
+        if (conv (ibnd) .eq.0) then
+           lbnd=lbnd+1 
+           alpha = a(lbnd) / c(lbnd)
+           alphabeta(1,ibnd,iter) = alpha
         !  x  = x  + alpha        * u
+         call ZAXPY (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
         !  r  = r  - alpha       * Au
         !  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
-         call ZAXPY (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
          call ZAXPY (ndmx*npol, -alpha,        t  (1,lbnd), 1, g  (1,ibnd), 1)
-         call ZAXPY (ndmx*npol, -conjg(alpha), tt (1,ibnd), 1, gt (1,ibnd), 1)
+         call ZAXPY (ndmx*npol, -conjg(alpha), tt (1,lbnd), 1, gt (1,ibnd), 1)
         !rp  = inv(M) * r
         !rtp = inv(M) * rt
          call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
          call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
-         nrec = iter+1
-
+!        nrec = iter+1
 !        call davcio (g(:,1), lrresid, iunresid, nrec, +1)
          dpsic(:, ibnd, iter+1) = g(:,ibnd)
  
         ! if (mpime.eq.0) then
         !     write(503,*)g(:,1)
         ! endif
-         a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
-         beta = - a(ibnd) / c(ibnd)
+         a(lbnd) = ZDOTC (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
+         beta = - a(lbnd) / c(lbnd)
 !        alphabeta(2) = beta
 !        call davcio (alphabeta, lralphabeta, iunalphabeta, iter, +1)
          alphabeta(2,ibnd,iter) = beta
@@ -230,11 +256,8 @@ external cg_psi      ! input: the routine computing cg_psi
   enddo!iter
 
 100 continue
-!if not function of band packing
-! niters = iter
   kter   =  kter_eff
-
-  deallocate (rho, rhoold)
+  deallocate (rho)
   deallocate (conv)
   deallocate (a,c)
   deallocate (g, t, h, hold)
@@ -244,4 +267,3 @@ external cg_psi      ! input: the routine computing cg_psi
   call stop_clock ('cgsolve')
   return
 END SUBROUTINE cbcg_solve_coul
- 

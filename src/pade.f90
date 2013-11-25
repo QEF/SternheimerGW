@@ -67,9 +67,9 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
     ar = real(a(p))
     ai = aimag(a(p))
     if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-       write(600+mpime,*) (z(i),i=1,N)
-       write(600+mpime,*) (u(i),i=1,N)
-       write(600+mpime,*) (a(i),i=1,N)
+       write(1000+mpime,*) (z(i),i=1,N)
+       write(1000+mpime,*) (u(i),i=1,N)
+       write(1000+mpime,*) (a(i),i=1,N)
        STOP
     endif
     !

@@ -105,6 +105,7 @@ real(DP) :: &
  ! WRITE(6,*) g,t,h,hold
  ! Initialize
 
+  eu(:) = dcmplx(0.0d0,0.0d0)
   kter_eff = 0.d0
 
   do ibnd = 1, nbnd

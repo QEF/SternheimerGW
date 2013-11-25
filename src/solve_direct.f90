@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-------------------------------------------------------------------------------
-SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
+SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !-----------------------------------------------------------------------------
   !  HL
   !  Driver routine for the solution of the linear system which
@@ -157,10 +157,9 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 ! COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:), dpsit(:,:,:), dpsi(:,:,:)
 ! complex(DP), allocatable :: alphabeta(:,:,:)
 ! INTEGER, ALLOCATABLE      :: niters(:)
-
   INTEGER     :: niters(nbnd)
   COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1), dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
-  COMPLEX(DP) :: alphabeta(npwx,nbnd,maxter_green+1)
+  COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
  
   external ch_psi_all, cg_psi, cch_psi_all_fix
   
@@ -265,73 +264,87 @@ SUBROUTINE solve_lindir(dvbarein, iw, drhoscf)
 ! Apply -P_c^+.
 ! -P_c^ = - (1-P_v^):
 
-             CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,iw))
+             CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
 
-             dpsic(:,:,:)   =  dcmplx(0.d0, 0.d0)
-             dpsit(:,:,:)   =  dcmplx(0.d0, 0.d0)
-             dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
+             dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
+             dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
+             dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
+             alphabeta(:,:,:) =  dcmplx(0.d0, 0.d0)
+             niters(:)        = 0  
 
              thresh    = tr2_gw
              conv_root = .true.
 
              etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
+!test
+!            call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi, h_diag, &
+!                              npwx, npwq, thresh, ik, lter, conv_root, anorm,nbnd_occ(ikk), npol)
 
-             call cbcg_solve_coul(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,:), dpsic, h_diag, &
+             call cbcg_solve_coul(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
                                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
-                                  npol, niters(:), alphabeta(:,:,:))
-!            dpsi = dpsi^{+}
+                                  npol, niters, alphabeta)
 
-            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-            dpsi(:,:,:) = dpsit(:,:,:) 
-
-!            dpsi = dpsi^{+} + dpsi^{-}
-             dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-
-            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, -fiu)
-            dpsi(:,:,:) = dpsi(:,:,:) + dpsit(:,:,:)
+           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", i4," ibnd", i4, &
+               &               "solve_linter: root not converged ", e10.3)')  &
+               &                ik , ibnd, anorm
 
 
-             ltaver = ltaver + lter
-             lintercall = lintercall + 1
-             nrec1 =  ik
-             weight = wk (ikk)
+!          dpsi = dpsi^{+}
+           dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
+           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+           dpsi(:,:,:) = dpsit(:,:,:)
+
+!          dpsi = dpsi^{+} + dpsi^{-}
+           dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
+           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
+
+           dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
+
+           do iw = 1, nfs
+              do ibnd=1, nbnd 
+               if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
+                   write(1000+mpime,'("dpsi is NAN")')
+                   dpsi(:,ibnd,iw) = dcmplx(0.0d0,0.0d0)
+               endif
+              enddo
+           enddo
+
+           ltaver = ltaver + lter
+           lintercall = lintercall + 1
+           nrec1 =  ik
+           weight = wk (ikk)
 
            do iw = 1 , nfs
                  call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
-                                    dbecsum(1,1,current_spin), dpsi(1,1,iw))
+                                    dbecsum(1,1,current_spin), dpsi(:,:,iw))
            enddo
      enddo !kpoints
 
-     print*, "finished kpoints"
+     do iw = 1, nfs
+        call zcopy (nspin_mag*nrxx, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
+        call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
+        call zcopy (nrxx*nspin_mag, drhoscfh(1,iw),1, dvscfout(1,iw),1)
+     enddo
 
-!     deallocate (niters)
-!     deallocate (alphabeta)
-!     deallocate (dpsi)
-!     deallocate (dpsic)
-!     deallocate (dpsit)
-
-
-     call zcopy (nspin_mag*nrxx, drhoscf, 1, drhoscfh, 1)
-     call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
-     call zcopy (nrxx*nspin_mag, drhoscfh(1,1),1, dvscfout(1,1),1)
-
-     ! SGW: here we enforce zero average variation of the charge density
-     ! if the bare perturbation does not have a constant term
-     ! (otherwise the numerical error, coupled with a small denominator
-     ! in the coulomb term, gives rise to a spurious dvscf response)
-     ! One wing of the dielectric matrix is particularly badly behaved 
+! SGW: here we enforce zero average variation of the charge density
+! if the bare perturbation does not have a constant term
+! (otherwise the numerical error, coupled with a small denominator
+! in the coulomb term, gives rise to a spurious dvscf response)
+! One wing of the dielectric matrix is particularly badly behaved 
 
      meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
      do iw = 1, nfs 
          if (meandvb.lt.1.d-8) then 
-             call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+             call cft3 (dvscfout(:,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
              dvscfout  (nl(1), iw) = dcmplx(0.d0, 0.0d0)
-             call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
+             call cft3 (dvscfout(:,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
          endif
     enddo
 
-     call dv_of_drho (1, dvscfout(1,1), .true.)
+    do iw = 1, nfs
+       call dv_of_drho (1, dvscfout(1,iw), .true.)
+    enddo
 
      averlt = DBLE (ltaver) / lintercall
      tcpu = get_clock ('GW')

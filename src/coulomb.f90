@@ -47,7 +47,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 
 ! timing variables
   REAL(DP) :: qg2, qg2coul
-  INTEGER :: ig, igp, iw, iw1, npe, irr, icounter
+  INTEGER :: ig, igp, iw, npe, irr, icounter
   INTEGER :: igstart, igstop, igpert
   COMPLEX(DP), allocatable :: drhoaux (:,:) 
   COMPLEX(DP) :: padapp, w
@@ -72,46 +72,41 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
 DO ig = igstart, igstop
-   qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
-   !do iw = 1, nfs
-   !multishift coulomb
-    do iw = 1, nfs
+      qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
+      if(solve_direct) then
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
          dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-!From the inputcard we can choose whether 
-!to use a model dielectric or 
-!do the full sternheimer treatment.
          call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +1)
-         if(solve_direct) then
-            CALL solve_lindir (dvbare, iw, drhoscfs(:,:))
-         else
-            CALL solve_linter (dvbare, iw, drhoscfs)
-         endif
- 
-       WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
-       if (solve_direct) then !we store eps(w).
-       do iw1 = 1, nfs
+         CALL solve_lindir (dvbare, drhoscfs)
+         call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s,  -1)
+         do iw = 1, nfs
+            call cft3  (drhoscfs(:,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+            WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
+            do igp = 1, ngmpol
+               if(igp.ne.ig_unique(ig)) then
+                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
+               else
+                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw) + dvbare(nls(ig_unique(ig)))
+               endif
+            enddo
+         enddo !iw
+      else
+        do iw = 1, nfs
+           drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+           dvbare(:)     = dcmplx(0.0d0, 0.0d0)
+           dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
+           call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +1)
+           CALL solve_linter (dvbare, iw, drhoscfs)
+           call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s,  -1)
+           call cft3  (drhoscfs(1,1), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
            do igp = 1, ngmpol
-              if(igp.ne.ig_unique(ig)) then
-                 scrcoul(ig_unique(ig), igp, iw1, nspin_mag) = drhoscfs(nl(igp),iw1)
-              else
-                 scrcoul(ig_unique(ig), igp, iw1, nspin_mag) = drhoscfs(nl(igp),iw1) + dvbare(nls(ig_unique(ig)))
-              endif
+              scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), 1)
            enddo
-       enddo
-       GOTO 126 
-       else !if self-consistent we store : eps^{-1}(w)-1.
-          call cft3  (drhoscfs(1,1), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-          call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, - 1)
-          DO igp = 1, ngmpol
-            scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), 1)
-          ENDDO
+        enddo
       endif
-   enddo !iw
 ENDDO 
-
-126 CONTINUE
 
 tcpu = get_clock ('GW')
 DEALLOCATE (drhoscfs)

@@ -221,9 +221,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-                                                             gr_A_shift(igkq_ig(igp),iw)
-                   !green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-                   !                                          conjg(gr_A_shift(igkq_ig(igp),iw))
+                                                            gr_A_shift(igkq_ig(igp),iw)
                 enddo
              enddo
          gveccount = gveccount + 1

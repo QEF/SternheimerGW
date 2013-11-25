@@ -80,8 +80,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
         enddo
      enddo
   enddo
- 
-  
   !
   ! add gradient correction to xc, NB: if nlcc is true we need to add here
   ! its contribution. grho contains already the core charge

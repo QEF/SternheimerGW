@@ -60,7 +60,7 @@ IF(modielec) then
       DO ig = 1, ngmunique
          DO done = 1, ngmdone
             if (ig.eq.ngmdonelist(done)) then
-                write(6,'("Cycling: unique or already unfolded.")')
+!               write(6,'("Cycling: unique or already unfolded.")')
                 CYCLE
             endif
          ENDDO
@@ -74,7 +74,7 @@ ELSE
     DO ig = 1, ngmpol
         DO done = 1, ngmdone
            if (ig.eq.ngmdonelist(done)) then
-               write(6,'("Cycling: unique or already unfolded.")') 
+!               write(6,'("Cycling: unique or already unfolded.")') 
                GOTO 128
            endif
         ENDDO 
