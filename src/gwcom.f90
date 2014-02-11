@@ -369,7 +369,9 @@ MODULE control_gw
              solve_direct,&
              tinvert,&
              coul_multishift,&
-             trunc_2d
+             trunc_2d,&
+             do_epsil !in case you want to set xq point
+                      !from input file for epsilon
 
 END MODULE control_gw
 !

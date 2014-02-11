@@ -227,11 +227,8 @@ ENDIF
    !DO ik = 1, num_k_pts
        if(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
        if(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
-
        xq(:) = xk_kpoints(:, ik)
-
        WRITE(6,'(4x,"Sigma_k", 3f12.7)') xk_kpoints(:,ik)
-
        do_iq=.TRUE.
        lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
        setup_pw = .TRUE.
@@ -242,12 +239,19 @@ ENDIF
 ! CALCULATE G(r,r'; w) 
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
-       if(do_green.and.(.not.multishift)) CALL green_linsys(ik)
-       if(do_green.and.multishift)        CALL green_linsys_shift(ik)
-! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
-       if(do_sigma_c) CALL sigma_c(ik)
 
-       call mp_barrier()
+       if(do_green.and.(.not.multishift)) then
+            CALL green_linsys(ik)
+            call mp_barrier()
+            if(do_sigma_c) CALL sigma_c(ik)
+       endif
+
+! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
+       if(do_green.and.multishift) then 
+            CALL green_linsys_shift(ik)
+            call mp_barrier()
+            if(do_sigma_c) CALL sigma_c(ik)
+       endif
 
        if(do_green.and.multishift) then 
           CLOSE(UNIT = iunresid, STATUS = 'DELETE')
@@ -264,6 +268,7 @@ ENDIF
        CALL clean_pw_gw(ik)
        CALL mp_barrier(inter_pool_comm)
    ENDDO
+
    DO ik = 1, 1
          if(do_sigma_matel)  then
         !Calculates QP Corrections for bands 1:nbnd_sig.

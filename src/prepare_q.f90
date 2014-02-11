@@ -29,10 +29,11 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
   USE io_global,       ONLY : stdout, ionode
   USE klist,           ONLY : lgauss
   USE qpoint,          ONLY : xq
-  USE disp,            ONLY : x_q, done_iq, rep_iq, done_rep_iq, comp_iq
+  USE disp,            ONLY : x_q, done_iq, rep_iq, done_rep_iq, comp_iq,&
+                              xk_kpoints
   USE control_gw,      ONLY : ldisp, lgamma, epsil, trans, zue, zeu, &
                               start_irr, last_irr, current_iq, &
-                              done_bands
+                              done_bands, do_epsil
   USE freq_gw,         ONLY : fpol
   USE output,          ONLY : fildyn
   USE gw_restart,      ONLY : gw_writefile
@@ -72,13 +73,12 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
 !    xq(1:3)  = x_q(1:3,iq)
 !MINUS Q
         xq(1:3)  = -x_q(1:3,iq)
-
+        if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = -0.01
+        if (do_epsil) xq(:) = xk_kpoints(:, 1)
      !
      !Check if it is lgamma
 
      !HL need to find a smooth way of setting xq(1) = 0.01 for q->0 calculations 
-     if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = -0.01
-     !if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(3) = -0.01
      lgamma = (xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0)
 
      !

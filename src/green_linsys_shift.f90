@@ -250,6 +250,9 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
     CALL mp_barrier(inter_pool_comm)
     if(ionode) then
 #endif
+
+!do sigma_c
+
     do iw = 1, nwgreen
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
        CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)

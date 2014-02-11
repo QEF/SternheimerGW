@@ -100,7 +100,7 @@ DO ig = igstart, igstop
            CALL solve_linter (dvbare, iw, drhoscfs)
            call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s,  -1)
            call cft3  (drhoscfs(1,1), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
+           if(ig.eq.1) WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
            do igp = 1, ngmpol
               scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), 1)
            enddo

@@ -288,6 +288,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
            if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", i4," ibnd", i4, &
                &               "solve_linter: root not converged ", e10.3)')  &
                &                ik , ibnd, anorm
+           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
 
 
 !          dpsi = dpsi^{+}
