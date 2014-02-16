@@ -37,7 +37,8 @@ PROGRAM gw
   USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel,&
-                               do_q0_only, multishift, do_sigma_extra, solve_direct, tinvert
+                               do_q0_only, multishift, do_sigma_extra, solve_direct, tinvert, lrpa,&
+                               do_serial
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -103,6 +104,16 @@ PROGRAM gw
 !   Generating Exchange and Correlation grid.
     CALL sig_fft_g(nr1sco, nr2sco, nr3sco, nrsco, ecutsig, 1)
     CALL sig_fft_g(nr1sex, nr2sex, nr3sex, nrsex, ecutsex, 2)
+
+    write(6,'(4x,"Exchange cutoffs: ")')
+    if(lrpa) then
+         write(6,'(5x,"RPA Screening")') 
+        else
+         write(6,'(5x,"Using Approx. Vertex Correction")')
+    endif
+
+
+
     CALL clean_pw( .FALSE. )
 
     ALLOCATE ( scrcoul_g( ngmpol, ngmpol, nfs, 1) )
@@ -135,7 +146,9 @@ IF (ionode) THEN
        CALL diropn (iungreen, 'green', lrgrn, exst)
 !   Sigma file
        iunsigma = 32
-       lrsigma = 2 * ngmsco * ngmsco * nwsigma
+!      lrsigma = 2 * ngmsco * ngmsco * nwsigma
+!HRF:
+       lrsigma = 2 * ngmsco * ngmsco 
        CALL diropn(iunsigma, 'sigma', lrsigma, exst)
 !   Should sigma_ex need to be written to file:
        iunsex = 33
@@ -247,10 +260,14 @@ ENDIF
        endif
 
 ! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
-       if(do_green.and.multishift) then 
-            CALL green_linsys_shift(ik)
+       if(do_green.and.multishift.and.do_serial) then 
+            write(6,'("Green Linsys_Shift Serial")')
+            CALL green_linsys_serial(ik)
             call mp_barrier()
-            if(do_sigma_c) CALL sigma_c(ik)
+!       else if (do_green.and.multishift.and.(.not.do_serial))then
+!            CALL green_linsys_shift(ik)
+!            if(do_sigma_c) CALL sigma_c(ik)
+!            call mp_barrier()
        endif
 
        if(do_green.and.multishift) then 

@@ -221,7 +221,10 @@ IF (ionode) THEN
  enddo
 
  sigma = dcmplx(0.0d0, 0.0d0)
- CALL davcio (sigma, lrsigma, iunsigma, ik0, -1)
+ do iw = 1, nwsigma
+     CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
+ enddo
+
 !!!!!!!!REAL SPACE SIGMA_C
  sigma_band_c (:,:,:) = czero
 !!!!!!!!

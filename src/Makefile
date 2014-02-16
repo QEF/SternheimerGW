@@ -67,6 +67,7 @@ cch_psi_all_green.o\
 cg_psi.o\
 green_linsys.o\
 green_linsys_shift.o\
+green_linsys_serial.o\
 green_multishift.o\
 pade.o\
 freqbins.o\
@@ -79,6 +80,7 @@ sig_fft_g.o\
 sigma_exch.o\
 sigma_exchG.o\
 sigma_c.o\
+sigma_c_serial.o\
 sigma_matel.o\
 setup_nscf_green.o\
 run_pwscf_green.o\
@@ -97,7 +99,9 @@ mod_diel.o\
 coulomb_ms.o\
 solve_direct_shift.o\
 coul_multishift.o\
-truncate_2D.o
+truncate_2D.o\
+fft6.o\
+write_sigma.o
 
 
 HOME =/home/lambert/espresso-4.2.1

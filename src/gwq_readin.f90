@@ -38,7 +38,7 @@ SUBROUTINE gwq_readin()
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
-                            solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil
+                            solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil, do_serial
 
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
@@ -101,7 +101,7 @@ SUBROUTINE gwq_readin()
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil
+                       do_epsil, do_serial
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -212,6 +212,7 @@ SUBROUTINE gwq_readin()
   coul_multishift = .FALSE.
   trunc_2d        = .FALSE.
   do_epsil        = .FALSE.
+  do_serial       = .TRUE.
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 5.0
