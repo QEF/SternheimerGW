@@ -2,7 +2,7 @@ SUBROUTINE green_linsys_serial (ik0)
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix, iunigk
+  USE io_files,             ONLY : prefix, iunigk, tmp_dir
   USE check_stop,           ONLY : check_stop_now
   USE wavefunctions_module, ONLY : evc
   USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
@@ -25,7 +25,8 @@ SUBROUTINE green_linsys_serial (ik0)
                                    where_rec, flmixdpot, current_iq, &
                                    ext_recover, eta, tr2_green
   USE nlcc_gw,              ONLY : nlcc_any
-  USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn, lrsigma, iunsigma
+  USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn, lrsigma,&
+                                   iunsigma, lrcoul, iuncoul
   USE eqv,                  ONLY : evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE recover_mod,          ONLY : read_rec, write_rec
@@ -85,13 +86,21 @@ SUBROUTINE green_linsys_serial (ik0)
 
 !PARALLEL
     INTEGER :: igstart, igstop, ngpool, ngr, igs, ngvecs
+    INTEGER :: iwstart, iwstop, nwpool, nwr, iws, nws
 
 !tmp number of blocks
     INTEGER :: nblocks, block
     COMPLEX(DP) :: sigma_g(ngmsco, ngmsco)
 
-     allocate  (h_diag (npwx, 1))
-     allocate  (etc(nbnd, nkstot))
+!File related:
+    character(len=256) :: tempfile, filename
+!Complete file name
+    integer*8 :: unf_recl
+
+#define DIRECT_IO_FACTOR 8 
+
+    allocate  (h_diag (npwx, 1))
+    allocate  (etc(nbnd, nkstot))
 
     ci = (0.0d0, 1.0d0)
     nblocks = 1
@@ -103,6 +112,25 @@ SUBROUTINE green_linsys_serial (ik0)
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
     if (nksq.gt.1) rewind (unit = iunigk)
+
+#ifdef __PARA
+if(.not.ionode) then
+!OPEN coulomb file (only written to by head node).
+    filename = trim(prefix)//"."//"sigma1"
+    tempfile = trim(tmp_dir) // trim(filename)
+    unf_recl = DIRECT_IO_FACTOR * int(lrsigma, kind=kind(unf_recl))
+    open(iunsigma, file = trim(adjustl(tempfile)), iostat = ios, &
+    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+
+!OPEN coulomb file (only written to by head node).
+   filename = trim(prefix)//"."//"coul1"
+   tempfile = trim(tmp_dir) // trim(filename)
+   unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
+   open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
+   form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+endif
+#endif
+
 !Loop over q in the IBZ_{k}
 !do iq = 1, nksq 
 do iq = 1, nksq 
@@ -241,55 +269,58 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
     CALL mp_barrier(inter_pool_comm)
+
 !Collect all elements of green's matrix from different processors.
     CALL mp_sum (green, inter_pool_comm )
     CALL mp_barrier(inter_pool_comm)
-    if(ionode) then
 #endif
+
 !store full sigma matrix.
 !need to split up over iw0...
-!#ifdef __PARA
-!      npool = nproc / nproc_pool
-!      write(stdout,'("npool", i4, i5)') npool, nwsigma
-!      if (npool.gt.1) then
-!      ! number of g-vec per pool and reminder
-!        nwpool = nwsigma / npool
-!        nws = nwsigma - ngpool * npool
-!      ! the remainder goes to the first nws pools
-!        if ( my_pool_id < nws ) ngpool = ngpool + 1
-!        iws = nwpool * my_pool_id + 1
-!        if ( my_pool_id >= ngr ) iws = iws + nws
-!      ! the index of the first and the last g vec in this pool
-!        iwstart = iws
-!        iwstop = iws - 1 + ngpool
-!        write (stdout,'(/4x,"Max n. of G vecs in Green_linsys per pool = ",i5)') igstop-igstart+1
-!      else
-!#endif
-!       iwstart = 1
-!       iwstop = nwsigma
-!#ifdef __PARA
-!      endif
-!#endif
-        do iw0 = 1, nwsigma
-!        do iw0 = iwstart, iwstop
+#ifdef __PARA
+      npool = nproc / nproc_pool
+      write(stdout,'("npool", i4, i5)') npool, nwsigma
+      if (npool.gt.1) then
+      ! number of g-vec per pool and reminder
+        nwpool = nwsigma / npool
+        nws = nwsigma - nwpool * npool
+      ! the remainder goes to the first nws pools
+        if ( my_pool_id < nws ) nwpool = nwpool + 1
+        iws = nwpool * my_pool_id + 1
+        if ( my_pool_id >= nws ) iws = iws + nws
+      ! the index of the first and the last g vec in this pool
+        iwstart = iws
+        iwstop = iws - 1 + ngpool
+        write (stdout,'(/4x,"Max n. of w0 per pool = ",i5)') iwstop-iwstart+1
+      else
+#endif
+       iwstart = 1
+       iwstop = nwsigma
+#ifdef __PARA
+      endif
+#endif
+    IF(iwstop-iwstart+1.ne.0) THEN
+        write(1000+mpime, *) nwsigma
+        write(1000+mpime, *) iwstart, iwstop
+!       do iw0 = 1, nwsigma
+        do iw0 = iwstart, iwstop
             if ((iq.gt.1)) then
                 sigma_g = dcmplx(0.0d0,0.0d0)
                 CALL davcio (sigma_g, lrsigma, iunsigma, iw0, -1)
                 sigma = dcmplx(0.0d0,0.0d0)
                 call fft6(sigma_g, sigma, 1)
             endif
-
-           if (iq.eq.1) sigma(:,:) = dcmplx(0.00, 0.00)
-
-           CALL sigma_c_serial(ik0, ikq, green, sigma, iw0)
-           CALL write_sigma(sigma(1,1), iw0)
-
+            if (iq.eq.1) sigma(:,:) = dcmplx(0.00, 0.00)
+            write(6, '("starting sigma_c")') 
+               CALL sigma_c_serial(ik0, ikq, green, sigma, iw0)
+               CALL write_sigma(sigma(1,1), iw0)
         enddo
+    ENDIF !iw0.neq.0
 #ifdef __PARA
-    endif
-    CALL mp_barrier(inter_pool_comm)
-#endif
+      CALL mp_barrier(inter_pool_comm)
+#endif __PARA
 ENDDO !iq
+
 
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)

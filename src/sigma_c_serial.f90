@@ -133,19 +133,6 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
       endif
    enddo
 
-!Every processor needs access to the files: _gw0si.coul1 and _gw0si.green1
-call mp_barrier(inter_pool_comm)
-#ifdef __PARA
-if(.not.ionode) then
-!OPEN coulomb file (only written to by head node).
-   filename = trim(prefix)//"."//"coul1"
-   tempfile = trim(tmp_dir) // trim(filename)
-   unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
-   open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
-   form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-endif
-#endif
-
 !ONLY PROCESSORS WITH K points to process: 
 !WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
 !if (nksq.gt.1) rewind (unit = iunigk)
@@ -305,7 +292,6 @@ endif
         endif
     endif
 !Start integration over iw +/- wcoul. 
-    WRITE(6,'("Starting Frequency Integration")')
     do iw = 1, nwcoul
         scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
         if(.not.modielec) then

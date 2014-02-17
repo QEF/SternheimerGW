@@ -7,7 +7,7 @@ SUBROUTINE sigma_c(ik0)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec
   USE klist,         ONLY : wk, xk
-  USE io_files,      ONLY : prefix, iunigk, prefix, tmp_dir
+  USE io_files,      ONLY : iunigk, prefix, tmp_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax,&
