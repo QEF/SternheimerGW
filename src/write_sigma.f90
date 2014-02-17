@@ -1,7 +1,6 @@
 SUBROUTINE write_sigma(sigma, iw0)
   USE io_global,     ONLY : stdout, ionode_id, ionode
   USE kinds,         ONLY : DP
-  USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE klist,         ONLY : wk, xk
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
@@ -45,5 +44,4 @@ INTEGER      :: ig, igp, irr, icounter, ir, irp, iw0
      enddo
    enddo
    CALL davcio (sigma_g, lrsigma, iunsigma, iw0, 1)
-   WRITE(6,'(4x,"Sigma Written to File")')
 END SUBROUTINE write_sigma

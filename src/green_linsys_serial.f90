@@ -40,6 +40,7 @@ SUBROUTINE green_linsys_serial (ik0)
 
   IMPLICIT NONE 
 
+
   real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   logical :: conv_root
 
@@ -77,12 +78,14 @@ SUBROUTINE green_linsys_serial (ik0)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
+
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
     INTEGER     :: counter
+
 
 !PARALLEL
     INTEGER :: igstart, igstop, ngpool, ngr, igs, ngvecs
@@ -91,16 +94,12 @@ SUBROUTINE green_linsys_serial (ik0)
 !tmp number of blocks
     INTEGER :: nblocks, block
     COMPLEX(DP) :: sigma_g(ngmsco, ngmsco)
-
+!Complete file name
 !File related:
     character(len=256) :: tempfile, filename
-!Complete file name
     integer*8 :: unf_recl
-
 #define DIRECT_IO_FACTOR 8 
 
-    allocate  (h_diag (npwx, 1))
-    allocate  (etc(nbnd, nkstot))
 
     ci = (0.0d0, 1.0d0)
     nblocks = 1
@@ -110,11 +109,16 @@ SUBROUTINE green_linsys_serial (ik0)
 !Convert freq array generated in freqbins into rydbergs.
     w_ryd(:) = wgreen(:)/RYTOEV
     CALL start_clock('greenlinsys')
+    allocate (h_diag (npwx, 1))
+    allocate  (etc(nbnd, nkstot))
     where_rec='no_recover'
+
     if (nksq.gt.1) rewind (unit = iunigk)
 
 #ifdef __PARA
+call mp_barrier(inter_pool_comm)
 if(.not.ionode) then
+    write(1000+mpime, '("OPENING COULOMB")')
 !OPEN coulomb file (only written to by head node).
     filename = trim(prefix)//"."//"sigma1"
     tempfile = trim(tmp_dir) // trim(filename)
@@ -177,7 +181,7 @@ do iq = 1, nksq
 !nodes as with the coulomb i.e. igstart and igstop.
 #ifdef __PARA
       npool = nproc / nproc_pool
-      write(stdout,'("npool", i4, i5)') npool, counter
+      write(stdout,'(/4x,"npool", i4, i5)') npool, counter
       if (npool.gt.1) then
       ! number of g-vec per pool and reminder
         ngpool = counter / npool
@@ -269,7 +273,6 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
     CALL mp_barrier(inter_pool_comm)
-
 !Collect all elements of green's matrix from different processors.
     CALL mp_sum (green, inter_pool_comm )
     CALL mp_barrier(inter_pool_comm)
@@ -290,7 +293,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
         if ( my_pool_id >= nws ) iws = iws + nws
       ! the index of the first and the last g vec in this pool
         iwstart = iws
-        iwstop = iws - 1 + ngpool
+        iwstop = iws - 1 + nwpool
         write (stdout,'(/4x,"Max n. of w0 per pool = ",i5)') iwstop-iwstart+1
       else
 #endif
@@ -299,6 +302,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 #ifdef __PARA
       endif
 #endif
+
     IF(iwstop-iwstart+1.ne.0) THEN
         write(1000+mpime, *) nwsigma
         write(1000+mpime, *) iwstart, iwstop
@@ -311,14 +315,10 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
                 call fft6(sigma_g, sigma, 1)
             endif
             if (iq.eq.1) sigma(:,:) = dcmplx(0.00, 0.00)
-            write(6, '("starting sigma_c")') 
                CALL sigma_c_serial(ik0, ikq, green, sigma, iw0)
                CALL write_sigma(sigma(1,1), iw0)
         enddo
     ENDIF !iw0.neq.0
-#ifdef __PARA
-      CALL mp_barrier(inter_pool_comm)
-#endif __PARA
 ENDDO !iq
 
 

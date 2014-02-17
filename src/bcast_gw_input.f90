@@ -126,10 +126,11 @@ subroutine bcast_gw_input ( )
   call mp_bcast (deltaw,    ionode_id)
 
 !units information
-  call mp_bcast (iuncoul,    ionode_id)
+!  call mp_bcast (iuncoul,    ionode_id)
+!  call mp_bcast (iungreen,    ionode_id)
+!  call mp_bcast (iunsigma,    ionode_id)
   call mp_bcast (lrcoul,    ionode_id)
   call mp_bcast (lrgrn,    ionode_id)
-  call mp_bcast (iungreen,    ionode_id)
 
   call mp_bcast (use_symm, ionode_id)
   call mp_bcast (w_of_q_start, ionode_id)

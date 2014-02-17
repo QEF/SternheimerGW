@@ -127,6 +127,9 @@ PROGRAM gw
     iungreen = 31
     lrgrn  = 2 * ngmgrn * ngmgrn
 
+    iunsigma = 32
+    lrsigma  = 2*ngmsco*ngmsco
+
 if(multishift) then
     iunresid = 34
     lrresid  = 2*npwx
@@ -254,6 +257,7 @@ ENDIF
        if(do_green) write(6,'("Do green_linsys")')
 
        if(do_green.and.(.not.multishift)) then
+            write(6,'("Green Not MultiShift Serial", i4)') ik
             CALL green_linsys(ik)
             call mp_barrier()
             if(do_sigma_c) CALL sigma_c(ik)
@@ -261,13 +265,13 @@ ENDIF
 
 ! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
        if(do_green.and.multishift.and.do_serial) then 
-            write(6,'("Green Linsys_Shift Serial")')
+            write(6,'("Green Linsys_Shift Serial", i4)') ik
             CALL green_linsys_serial(ik)
             call mp_barrier()
-!       else if (do_green.and.multishift.and.(.not.do_serial))then
-!            CALL green_linsys_shift(ik)
-!            if(do_sigma_c) CALL sigma_c(ik)
-!            call mp_barrier()
+       else if (do_green.and.multishift.and.(.not.do_serial))then
+            CALL green_linsys_shift(ik)
+            if(do_sigma_c) CALL sigma_c(ik)
+            call mp_barrier()
        endif
 
        if(do_green.and.multishift) then 
