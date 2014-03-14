@@ -59,7 +59,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
   USE output,               ONLY : fildrho, fildvscf
   USE gwus,                 ONLY : int3_paw, becsumort
-  USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec, dpsim, dpsip
+! USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec, dpsim, dpsip
+  USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE modes,                ONLY : npertx, npert, u, t, irotmq, tmq, &
                                    minus_q, irgq, nsymq, rtau 
@@ -77,7 +78,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   ! counter on frequencies.
 
-  integer :: iw 
+  integer :: iw, ir 
   integer :: irr, imode0, npe
 
   ! input: the irreducible representation
@@ -163,9 +164,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
  
-  !external ch_psi_all, cg_psi, ccg_psi, cch_psi_all_fix
-   external ch_psi_all, cg_psi, cch_psi_all_fix
-  
+ !external ch_psi_all, cg_psi, ccg_psi, cch_psi_all_fix
+  external ch_psi_all, cg_psi, cch_psi_all_fix
+  COMPLEX(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
+
+  allocate (dpsi(npwx*npol, nbnd))
+ 
   IF (rec_code_read > 20 ) RETURN
 
   !HL- Allocate arrays for dV_scf (need to alter these from (nrxx, nspin_mag, npe) to just (nrxx, nspin_mag).
@@ -301,7 +305,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               do ibnd = 1, nbnd_occ (ikk)
                 !FFT translated according to igk
                  call cft_wave (evc (1, ibnd), aux1, +1) 
-                 call apply_dpot(aux1, dvscfins(1,iw), current_spin)
+                 call apply_dpot (aux1, dvscfins(1,iw), current_spin)
                 !FFT translated according to igkq: DeltaV(q)psi(k).
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
@@ -387,9 +391,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           ! change of the wavefunction for a given k point.
 
            weight = wk (ikk)
-        write(1000+mpime,'("wtf")')
-           call incdrhoscf ( drhoscf(1,iw) , weight, ik, &
-                             dbecsum(1,1,current_spin))
+           call incdrhoscf ( drhoscf(1,iw) , weight, ik, dbecsum(1,1,current_spin))
      enddo 
 
         if (doublegrid) then
@@ -414,20 +416,26 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      if (meandvb.lt.1.d-8) then 
          call cft3 (dvscfout(1,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-         dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
+         dvscfout ( nl(1), current_spin ) = (0.d0, 0.0d0)
          call cft3 (dvscfout(1,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
      endif
 
      call dv_of_drho (1, dvscfout(1,iw), .true.)
 
      if (iw.eq.1) then
+!Density reponse in real space should be real at zero freq no matter what!
+        dvscfout(:,iw) = dcmplx(real(dvscfout(:,iw)), 0.0d0)
 !just using standard broyden for the zero freq. case.
         call mix_potential_real(2*nrxx*nspin_mag, dvscfout(1,iw), dvscfin(1,iw), alpha_mix(kter), &
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
      else
+!for pure imaginary freqs. the density reponse should be real...
         call mix_potential_c(nrxx, dvscfout(1,iw), dvscfin(1,iw), &
                              alpha_mix(kter), dr2, tr2_gw, iter, &
                              nmix_gw, convt)
+        do ir = 1, nrxx 
+           dvscfin(ir,iw) = dcmplx(real(dvscfin(ir,iw)), 0.0d0)
+        enddo
      endif
 
      if (doublegrid) then
@@ -482,12 +490,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   deallocate (h_diag)
   deallocate (aux1)
   deallocate (dbecsum)
-
   IF (noncolin) deallocate (dbecsum_nc)
   deallocate (dvscfout)
   deallocate (drhoscfh)
   if (doublegrid) deallocate (dvscfins)
   deallocate (dvscfin)
+  deallocate (dpsi)
   call stop_clock ('solve_linter')
 END SUBROUTINE solve_linter
 

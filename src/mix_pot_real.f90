@@ -172,10 +172,6 @@ subroutine mix_potential_real (ndim, vout, vin, alphamix, dr2, tr2, &
      do j = i + 1, iter_used
         beta (i, j) = w (i) * w (j) * ddot (ndim, df (1, j), 1, df (1, i), 1)
 
-!#ifdef __PARA
-!        call mp_sum ( beta (i, j), intra_pool_comm )
-!#endif
-
      enddo
      beta (i, i) = w0**2 + w (i) **2
   enddo
@@ -194,11 +190,6 @@ subroutine mix_potential_real (ndim, vout, vin, alphamix, dr2, tr2, &
   do i = 1, iter_used
      work (i) = ddot (ndim, df (1, i), 1, vout, 1)
   enddo
-
-!#ifdef __PARA
-!  call mp_sum ( work(1:iter_used), intra_pool_comm )
-!#endif
-
   !
   do n = 1, ndim
      vin (n) = vin (n) + alphamix * vout (n)

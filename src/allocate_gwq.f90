@@ -66,16 +66,8 @@ subroutine allocate_gwq
   allocate (evq ( npwx*npol , nbnd))    
   allocate (igkq ( npwx))    
   endif
-  !
+
   allocate (dvpsi ( npwx*npol , nbnd))    
-
-!  if(.not.coul_multi) then
-!  allocate (dpsi  ( npwx*npol , nbnd))    
-!  allocate (dpsim ( npwx*npol , nbnd))    
-!  allocate (dpsip ( npwx*npol , nbnd))    
-!  endif
-
-  !
   allocate (vlocq ( ngm , ntyp))    
   allocate (eprec ( nbnd, nksq) )
   allocate (eigqts ( nat))

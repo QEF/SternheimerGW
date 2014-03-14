@@ -64,15 +64,12 @@ subroutine dv_of_drho (mode, dvscf, flag)
   if (lrpa) goto 111
   fac = 1.d0 / DBLE (nspin_lsda)
   if (nlcc_any.and.flag) then
-
-!HL no shifting cores again
-!if (mode > 0) call addcore (mode, drhoc)
-
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) + fac * rho_core (:)
  !      dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
      enddo
   endif
+
   do is = 1, nspin_mag
      do is1 = 1, nspin_mag
         do ir = 1, nrxx
@@ -119,7 +116,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
          qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
          if (qg2 > 1.d-8) then
             dvhart(nl(ig),is) = e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
-            dvhart(nlm(ig),is)=conjg(dvhart(nl(ig),is))
+            dvhart(nlm(ig),is) = conjg(dvhart(nl(ig),is))
          endif
       enddo
       !

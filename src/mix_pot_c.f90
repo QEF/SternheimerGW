@@ -131,18 +131,14 @@
  !The factorisation seems to go screwy here if we enforce the hermiticity
  !going to try it with a generalized inversion routine in case the matrix is no longer hermitian.
   call ZHETRF ('U', iter_used, beta, maxter, iwork, work, maxter, info)
- !HL generalized for non-hermitian matrix:
- !call ZGETRF (iter_used, iter_used, beta, maxter, iwork, info)
   call errore ('broyden', 'factorization', info)
  !HL
   call ZHETRI ('U', iter_used, beta, maxter, iwork, work, info)
- !Generalized back substituion for non-hermitian matrix:
- !call ZGETRI (iter_used, beta, maxter, iwork, work, maxter, info)
   call errore ('broyden', 'ZSYTRI', info)
 
  do i = 1, iter_used
     do j = i + 1, iter_used
-       beta (j, i) = conjg ( beta (i, j) ) 
+       beta (j, i) = dconjg ( beta (i, j) ) 
     enddo
  enddo
 !

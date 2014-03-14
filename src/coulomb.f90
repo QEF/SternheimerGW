@@ -85,8 +85,10 @@ DO ig = igstart, igstop
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
             do igp = 1, ngmpol
                if(igp.ne.ig_unique(ig)) then
+!diagonal elements drho(G,G').
                   scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
                else
+!diagonal elements \delta(G,G') + drho(G,G').
                   scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw) + dvbare(nls(ig_unique(ig)))
                endif
             enddo
