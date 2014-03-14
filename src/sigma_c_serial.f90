@@ -168,11 +168,13 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 !   write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
 !   write(6,*)
 
-   write(1000+mpime, *)  
-   write(1000+mpime, '("xq_IBK point")')
-   write(1000+mpime, '(3f11.7)') xq_ibk
-   write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-   write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+   if(iw0.eq.1) then
+       write(1000+mpime, *)  
+       write(1000+mpime, '("xq_IBK point")')
+       write(1000+mpime, '(3f11.7)') xq_ibk
+       write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
+       write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+    endif
 
 !Dielectric Function should be written to file at this point
 !So we read that in, rotate it, and then apply the coulomb operator.

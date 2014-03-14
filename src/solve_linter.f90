@@ -84,7 +84,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! input: the number of perturbation
   ! input: the position of the modes
 
-  complex(DP) :: drhoscf (nrxx, nspin_mag)
+  complex(DP) :: drhoscf (nrxx, nfs)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (nrxxs)
 
@@ -128,7 +128,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! dbecsum: the derivative of becsum
   ! becsum1 PAW array.
   REAL(DP), allocatable :: becsum1(:,:,:)
-  COMPLEX (DP), ALLOCATABLE :: hpsi(:,:)
+
   !For approx, mixing scheme.
   real(kind=DP) :: DZNRM2
   complex(kind=DP) :: ZDOTC
@@ -180,21 +180,21 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   call start_clock ('solve_linter')
 
   !HL allocate (dvscfin ( nrxx , nspin_mag , npe))
-  allocate (dvscfout ( nrxx , nspin_mag))    
-  allocate (dvscfin ( nrxx , nspin_mag))    
+  allocate (dvscfout ( nrxx , nfs))    
+  allocate (drhoscfh ( nrxx , nfs))    
+  allocate (dvscfin  ( nrxx , nfs))    
+  allocate (etc(nbnd, nkstot))
+  allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))    
 
   if (doublegrid) then
   !HL allocate (dvscfins ( nrxxs , nspin_mag , npe))
-     allocate (dvscfins ( nrxxs , nspin_mag))    
+     allocate (dvscfins ( nrxxs , nfs))    
   else
      dvscfins => dvscfin
   endif
 
-  allocate (drhoscfh ( nrxx , nspin_mag))    
-  allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))    
 
 !Complex eigenvalues
-  allocate (etc(nbnd, nkstot))
 
   IF (noncolin) allocate (dbecsum_nc (nhm,nhm, nat , nspin, npe))
   allocate (aux1 ( nrxxs, npol))    
@@ -219,11 +219,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
   do kter = 1, niter_gw
+
      iter = kter + iter0
      ltaver = 0
 
      lintercall = 0
      drhoscf(:,:)   = (0.d0, 0.d0)
+     drhoscfh(:,:)  = (0.d0, 0.d0)
      dbecsum(:,:,:) = (0.d0, 0.d0)
 
      IF (noncolin) dbecsum_nc = (0.d0, 0.d0)
@@ -299,7 +301,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               do ibnd = 1, nbnd_occ (ikk)
                 !FFT translated according to igk
                  call cft_wave (evc (1, ibnd), aux1, +1) 
-                 call apply_dpot(aux1, dvscfins(1,1), current_spin)
+                 call apply_dpot(aux1, dvscfins(1,iw), current_spin)
                 !FFT translated according to igkq: DeltaV(q)psi(k).
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
@@ -310,6 +312,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
             call dvqpsi_us (dvbarein, ik, 1, .false.)
             call davcio (dvpsi, lrbar, iubar, nrec, +1)
            endif
+
 
         ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
         ! Apply -P_c^+.
@@ -384,21 +387,22 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           ! change of the wavefunction for a given k point.
 
            weight = wk (ikk)
-           call incdrhoscf ( drhoscf(1,current_spin) , weight, ik, &
+        write(1000+mpime,'("wtf")')
+           call incdrhoscf ( drhoscf(1,iw) , weight, ik, &
                              dbecsum(1,1,current_spin))
      enddo 
 
         if (doublegrid) then
              do is = 1, nspin_mag
-                call cinterpolate (drhoscfh(1,is), drhoscf(1,is), 1)
+                call cinterpolate (drhoscfh(1,iw), drhoscf(1,iw), 1)
              enddo
         else
-                call zcopy (nspin_mag*nrxx, drhoscf, 1, drhoscfh, 1)
+                call zcopy (nspin_mag*nrxx, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
         endif
 
-        call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
+        call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
 
-        call zcopy (nrxx*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
+        call zcopy (nrxx*nspin_mag, drhoscfh(1,iw), 1, dvscfout(1,iw),1)
 
      ! SGW: here we enforce zero average variation of the charge density
      ! if the bare perturbation does not have a constant term
@@ -409,19 +413,19 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(nrxxs)
 
      if (meandvb.lt.1.d-8) then 
-         call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+         call cft3 (dvscfout(1,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
          dvscfout ( nl(1),current_spin ) = (0.d0, 0.0d0)
-         call cft3 (dvscfout, nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
+         call cft3 (dvscfout(1,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
      endif
 
-     call dv_of_drho (1, dvscfout(1,1), .true.)
+     call dv_of_drho (1, dvscfout(1,iw), .true.)
 
      if (iw.eq.1) then
 !just using standard broyden for the zero freq. case.
-        call mix_potential_real(2*nrxx*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
+        call mix_potential_real(2*nrxx*nspin_mag, dvscfout(1,iw), dvscfin(1,iw), alpha_mix(kter), &
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
      else
-        call mix_potential_c(nrxx, dvscfout, dvscfin, &
+        call mix_potential_c(nrxx, dvscfout(1,iw), dvscfin(1,iw), &
                              alpha_mix(kter), dr2, tr2_gw, iter, &
                              nmix_gw, convt)
      endif
@@ -429,7 +433,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      if (doublegrid) then
         do ipert = 1, npe
            do is = 1, nspin_mag
-              call cinterpolate (dvscfin(1,is), dvscfins(1,is), -1)
+              call cinterpolate (dvscfin(1,iw), dvscfins(1,iw), -1)
            enddo
         enddo
      endif
@@ -467,7 +471,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
-    drhoscf(:,1) = dvscfin(:,1)
+    drhoscf(:,iw) = dvscfin(:,iw)
 
   if (convt) then
    if (fildvscf.ne.' ') then

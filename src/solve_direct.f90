@@ -181,12 +181,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
 
-!Multishift arrays.
-!  allocate (niters(nbnd))
-!  allocate (dpsit ( npwx, nbnd, nfs))
-!  allocate (dpsi  ( npwx, nbnd, nfs))
-!  allocate (dpsic ( npwx, nbnd, maxter_green+1))
-!  allocate (alphabeta ( 2, nbnd, maxter_green+1))
 
   iter0 = 0
   convt =.FALSE.
@@ -294,7 +288,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !          dpsi = dpsi^{+}
            dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-           dpsi(:,:,:) = dpsit(:,:,:)
+           dpsi(:,:,:)    = dpsit(:,:,:)
 
 !          dpsi = dpsi^{+} + dpsi^{-}
            dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)

@@ -38,10 +38,10 @@ enddo
 endif
 
 
-do iw=1,nfs
-    write(6,'(15f12.7)') real(scrcoul_g_in(1:15,1:15,iw,1))
-    print*,""
-enddo
+!do iw=1,nfs
+!    write(6,'(15f12.7)') real(scrcoul_g_in(1:15,1:15,iw,1))
+!    print*,""
+!enddo
 
 !We store epsilon-1 to disk:
 do iw = 1, nfs

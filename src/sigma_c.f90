@@ -526,8 +526,15 @@ endif
             enddo
 !Should do decomposition here: |<\PHI(r-r')|i\int G(r,r';w-wp)W(r,r';wp) dwp|\PHI(r-r')>| = G(r,r';\omega)W(r,r';\omega)
              sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
+
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
+
+       print*,"output"
+       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
+       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
+       print*,""
+
     ENDDO ! end loop iqstart, iqstop 
 ENDIF
 
@@ -547,6 +554,11 @@ ENDIF
     CALL mp_sum(sigma, inter_pool_comm)
     CALL mp_barrier(inter_pool_comm)
 #endif __PARA
+
+       print*,"output"
+       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
+       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
+       print*,""
 
 
 IF (ionode) then
@@ -599,6 +611,9 @@ IF (ionode) then
        enddo
       enddo
     enddo 
+
+
+
 !Now write Sigma in G space to file. 
 !HL Original:
 !Just storing in first record no matter what k-point.
