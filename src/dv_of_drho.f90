@@ -90,8 +90,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
   if (nlcc_any.and.flag) then
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) - fac * rho_core (:)
-!drhoc is derivative of rho-charge which we have not calculated...
-!       dvscf(:, is) = dvscf(:, is) - fac * drhoc (:)
      enddo
   endif
 

@@ -430,6 +430,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
      else
 !for pure imaginary freqs. the density reponse should be real...
+        do ir = 1, nrxx 
+           dvscfout(ir,iw) = dcmplx(real(dvscfout(ir,iw)), 0.0d0)
+        enddo
+
         call mix_potential_c(nrxx, dvscfout(1,iw), dvscfin(1,iw), &
                              alpha_mix(kter), dr2, tr2_gw, iter, &
                              nmix_gw, convt)

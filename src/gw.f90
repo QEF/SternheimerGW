@@ -103,20 +103,20 @@ PROGRAM gw
 
 !   Generating Exchange and Correlation grid.
     CALL sig_fft_g(nr1sco, nr2sco, nr3sco, nrsco, ecutsig, 1)
+    write(6,'(4x,"Exchange cutoffs: ")')
     CALL sig_fft_g(nr1sex, nr2sex, nr3sex, nrsex, ecutsex, 2)
 
-    write(6,'(4x,"Exchange cutoffs: ")')
+    write(6,*)
+    write(6,'(4x, "Screening:")')
     if(lrpa) then
-         write(6,'(5x,"RPA Screening")') 
+         write(6,'(4x,"RPA Screening")') 
         else
-         write(6,'(5x,"Using Approx. Vertex Correction")')
+         write(6,'(4x,"Using Approx. Vertex Correction")')
     endif
-
-
 
     CALL clean_pw( .FALSE. )
 
-    ALLOCATE ( scrcoul_g( ngmpol, ngmpol, nfs, 1) )
+    ALLOCATE ( scrcoul_g( ngmpol, ngmpol, nfs, 1))
     ALLOCATE ( ig_unique( ngmpol) )
     ALLOCATE ( sym_ig(ngmpol))
     ALLOCATE ( sym_friend(ngmpol))
@@ -257,7 +257,7 @@ ENDIF
        if(do_green) write(6,'("Do green_linsys")')
 
        if(do_green.and.(.not.multishift)) then
-            write(6,'("Green Not MultiShift Serial", i4)') ik
+            write(6,'("Green Not-MultiShift, Serial sigma_C", i4)') ik
             CALL green_linsys(ik)
             call mp_barrier()
             if(do_sigma_c) CALL sigma_c(ik)

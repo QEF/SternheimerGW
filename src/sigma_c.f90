@@ -530,10 +530,10 @@ endif
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
 
-       print*,"output"
-       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
-       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
-       print*,""
+!       print*,"output"
+!       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
+!       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
+!       print*,""
 
     ENDDO ! end loop iqstart, iqstop 
 ENDIF

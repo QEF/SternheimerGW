@@ -118,7 +118,6 @@ SUBROUTINE green_linsys_serial (ik0)
 #ifdef __PARA
 call mp_barrier(inter_pool_comm)
 if(.not.ionode) then
-    write(1000+mpime, '("OPENING COULOMB")')
 !OPEN coulomb file (only written to by head node).
     filename = trim(prefix)//"."//"sigma1"
     tempfile = trim(tmp_dir) // trim(filename)
@@ -136,7 +135,6 @@ endif
 #endif
 
 !Loop over q in the IBZ_{k}
-!do iq = 1, nksq 
 do iq = 1, nksq 
         if (lgamma) then
             ikq = iq
@@ -304,9 +302,6 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 #endif
 
     IF(iwstop-iwstart+1.ne.0) THEN
-        write(1000+mpime, *) nwsigma
-        write(1000+mpime, *) iwstart, iwstop
-!       do iw0 = 1, nwsigma
         do iw0 = iwstart, iwstop
             if ((iq.gt.1)) then
                 sigma_g = dcmplx(0.0d0,0.0d0)

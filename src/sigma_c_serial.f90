@@ -5,7 +5,8 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
+                            do_diag_g, do_diag_w
   USE klist,         ONLY : wk, xk
   USE io_files,      ONLY : prefix, iunigk, prefix, tmp_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -120,7 +121,7 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
 
-!  WRITE(6,'("nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
+!WRITE(6,'("nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
@@ -159,7 +160,7 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
    inv_q=.false.
    call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
 
-   if(lgamma) npwq=npw 
+   if(lgamma) npwq=npw
 
 !   write(6, *)  
 !   write(6, '("xq_IBK point")')
@@ -174,27 +175,39 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
        write(1000+mpime, '(3f11.7)') xq_ibk
        write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
        write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-    endif
+   endif
 
 !Dielectric Function should be written to file at this point
 !So we read that in, rotate it, and then apply the coulomb operator.
      scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
      scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
-     if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
+    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
 
 !Rotate G_vectors for FFT.
-     do igp = 1, ngmpol
-        do ig = 1, ngmpol
-           if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(igp,isym).le.ngmpol) &
-               .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
-               do iwim = 1, nfs
+
+    if (.not.do_diag_w) then
+         do igp = 1, ngmpol
+            do ig = 1, ngmpol
+               if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(igp,isym).le.ngmpol) &
+                   .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
+                   do iwim = 1, nfs
 !Rotating dielectric matrix with phase factor:
+                   phase = eigv(ig,isym)*conjg(eigv(igp,isym))
+                   scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+                   enddo
+               endif
+            enddo
+         enddo
+    else if (do_diag_w) then
+        do ig = 1, ngmpol
+            if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(ig,isym).gt.0)) then
                phase = eigv(ig,isym)*conjg(eigv(igp,isym))
-               scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
+               do iwim = 1, nfs
+                    scrcoul_g_R(ig, ig, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(ig,isym),iwim)*phase
                enddo
-           endif
+            endif
         enddo
-     enddo
+    endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Generate bare coulomb:                      !!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -224,13 +237,6 @@ DO iw = 1, nfs
           enddo
        else
 !should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
-!             write(6,'("Taking Limit.")')
-!             write(6,*) (rcut)
-!             write(6,*) (fpi*e2*(rcut**2))/2.0d0
-!             write(6,*) ig, iw
-!             write(6,*) g(:, ig)
-!             write(6,*) xq_ibk(:)
-!             write(6,*) qg2
 !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
 !we enforce that here:
              if(iw.eq.1) then
@@ -252,7 +258,7 @@ if(ikq.eq.1) then
         scrcoul_g_R(ig,1,iw)  = dcmplx(0.0d0, 0.d0)
      enddo
      do igp = 2, ngmpol
-          scrcoul_g_R(1,igp,iw) = dcmplx(0.0d0, 0.d0)
+        scrcoul_g_R(1,igp,iw) = dcmplx(0.0d0, 0.d0)
      enddo
     enddo
 endif
@@ -302,12 +308,12 @@ endif
                   do iwim = 1, nfs
                       z(iwim) = fiu(iwim)
                       a(iwim) = scrcoul_g_R (ig,igp,iwim)
-                enddo
+               enddo
                pade_catch=.false.
-                if(padecont) then
-                  call pade_eval ( nfs, z, a, scrcoul_g_R(ig,igp,1), dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+               if(padecont) then
+                    call pade_eval ( nfs, z, a, scrcoul_g_R(ig,igp,1), dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
                else if(godbyneeds) then
-                 scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd(iw)**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
+                    scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd(iw)**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
                else 
                     WRITE(6,'("No screening model chosen!")')
                     STOP
@@ -334,17 +340,6 @@ endif
            enddo
         endif
 
-!W_{q=0}(G,G';w)
-!if(ikq.eq.1) then
-!    WRITE(6,'(4x,"Zeroing wings")')
-!     do ig = 2, ngmpol
-!        scrcoul_pade_g(ig,1)  = dcmplx(0.0d0, 0.d0)
-!     enddo
-!     do igp = 2, ngmpol
-!          scrcoul_pade_g(1,igp) = dcmplx(0.0d0, 0.d0)
-!     enddo
-!endif
-
         czero = (0.0d0, 0.0d0)
         scrcoul(:,:) = czero
         call fft6(scrcoul_pade_g(1,1), scrcoul(1,1), 1)
@@ -356,7 +351,6 @@ endif
             iq = ikq
         else
             iq = ikq/2
-            print*, iq, wq(iq)
         endif
 
         cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
@@ -377,22 +371,40 @@ endif
         iw0mw = ind_w0mw (iw0,iw)
         iw0pw = ind_w0pw (iw0,iw)
 
-
         rec0 = (iw0mw-1) + 1
-        greenf_g(:,:) = green(:,:, rec0)
-        greenfr(:,:) = czero
+
+        if (.not.do_diag_g) then
+            greenf_g(:,:) = czero
+            greenf_g(:,:) = green(:,:, rec0)
+        else if(do_diag_g) then 
+            greenf_g(:,:) = czero
+            do ig = 1, ngmpol 
+                greenf_g(ig,ig) = green(ig,ig, rec0)
+            enddo
+        endif
+
+        greenfr(:,:)  = czero
         call fft6(greenf_g(1,1), greenfr(1,1), 1)
 
         sigma (:,:) = sigma (:,:) + cprefac * greenfr(:,:)*scrcoul(:,:)
 
 !Now have G(r,r';omega-omega')
         rec0 = (iw0pw-1) + 1
-        greenf_g(:,:) = green(:,:,rec0)
-        greenfr(:,:) = czero
+
+        if (.not.do_diag_g) then
+            greenf_g(:,:) = czero
+            greenf_g(:,:) = green(:,:,rec0)
+        else if(do_diag_g) then 
+            greenf_g(:,:) = czero
+            do ig = 1, ngmpol 
+                greenf_g(ig,ig) = green(ig,ig,rec0)
+            enddo
+        endif
+
+        greenfr(:,:)  = czero
         call fft6(greenf_g(1,1), greenfr(1,1),1)
 
         sigma (:,:) = sigma (:,:) + cprefac * greenfr(:,:)*scrcoul(:,:)
-
     enddo
 
     DEALLOCATE ( gmapsym          )

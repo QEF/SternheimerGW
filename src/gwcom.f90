@@ -371,6 +371,8 @@ MODULE control_gw
              coul_multishift,&
              do_serial,&
              trunc_2d,&
+             do_diag_w,&
+             do_diag_g,&
              do_epsil !in case you want to set xq point
                       !from input file for epsilon
 
