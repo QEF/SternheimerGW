@@ -181,7 +181,8 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 !So we read that in, rotate it, and then apply the coulomb operator.
      scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
      scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
-    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
+
+     if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
 
 !Rotate G_vectors for FFT.
 
@@ -201,8 +202,8 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
     else if (do_diag_w) then
         do ig = 1, ngmpol
             if((gmapsym(ig,isym).le.ngmpol).and.(gmapsym(ig,isym).gt.0)) then
-               phase = eigv(ig,isym)*conjg(eigv(igp,isym))
                do iwim = 1, nfs
+                    phase = eigv(ig,isym)*conjg(eigv(ig,isym))
                     scrcoul_g_R(ig, ig, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(ig,isym),iwim)*phase
                enddo
             endif
