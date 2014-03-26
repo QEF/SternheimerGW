@@ -44,19 +44,24 @@ SUBROUTINE green_linsys_serial (ik0)
   real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   logical :: conv_root
 
-  !should be freq blocks...
-  COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
-  COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
-  COMPLEX(DP) :: sigma(nrsco, nrsco)
-  COMPLEX(DP) :: gr(npwx, 1), ci, cw, green(ngmgrn, ngmgrn, nwgreen)
+! COMPLEX(DP) :: sigma(nrsco, nrsco)
+! COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
+! COMPLEX(DP) :: green(ngmgrn, ngmgrn, nwgreen)
+  COMPLEX(DP), ALLOCATABLE :: gr_A_shift(:, :)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
+  COMPLEX(DP), ALLOCATABLE :: sigma(:, :)
+  COMPLEX(DP), ALLOCATABLE :: green(:, :, :)
+
+
+  COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
   INTEGER :: iw, igp, iwi, iw0
   INTEGER :: iq, ik0
   INTEGER :: rec0, n1, gveccount
-  REAL(DP) :: dirac, x, delta, support
+  REAL(DP) :: dirac, x, delta
   real(DP) :: k0mq(3) 
   real(DP) :: w_ryd(nwgreen)
-  external cg_psi, cch_psi_all_fix, cch_psi_all_green
+  COMPLEX(DP) :: ci, cw 
+
   INTEGER, ALLOCATABLE      :: niters(:)
   REAL(DP) , allocatable :: h_diag (:,:)
   REAL(DP)               :: eprec_gamma
@@ -79,38 +84,35 @@ SUBROUTINE green_linsys_serial (ik0)
              ios,        & ! integer variable for I/O control
              mode          ! mode index
 
-!HL need a threshold here for the linear system solver. This could also go in the punch card
-!with some default at a later date. 
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
     INTEGER     :: counter
 
-
 !PARALLEL
     INTEGER :: igstart, igstop, ngpool, ngr, igs, ngvecs
     INTEGER :: iwstart, iwstop, nwpool, nwr, iws, nws
-
-!tmp number of blocks
-    INTEGER :: nblocks, block
     COMPLEX(DP) :: sigma_g(ngmsco, ngmsco)
 !Complete file name
 !File related:
     character(len=256) :: tempfile, filename
     integer*8 :: unf_recl
+
+    external cg_psi, cch_psi_all_fix, cch_psi_all_green
 #define DIRECT_IO_FACTOR 8 
-
-
     ci = (0.0d0, 1.0d0)
-    nblocks = 1
-   !We support the numerical delta fxn in a x eV window...
-    support = 2.0d0/RYTOEV
+
 
 !Convert freq array generated in freqbins into rydbergs.
     w_ryd(:) = wgreen(:)/RYTOEV
+
     CALL start_clock('greenlinsys')
-    allocate (h_diag (npwx, 1))
-    allocate  (etc(nbnd, nkstot))
+
+
+    ALLOCATE (h_diag (npwx, 1))
+    ALLOCATE (etc(nbnd, nkstot))
+    ALLOCATE (green(ngmgrn, ngmgrn, nwgreen))
+
     where_rec='no_recover'
 
     if (nksq.gt.1) rewind (unit = iunigk)
@@ -179,7 +181,7 @@ do iq = 1, nksq
 !nodes as with the coulomb i.e. igstart and igstop.
 #ifdef __PARA
       npool = nproc / nproc_pool
-      write(stdout,'(/4x,"npool", i4, i5)') npool, counter
+      write(stdout,'(/4x,"npool, ngvecs", i4, i5)') npool, counter
       if (npool.gt.1) then
       ! number of g-vec per pool and reminder
         ngpool = counter / npool
@@ -216,14 +218,18 @@ do iq = 1, nksq
 
 WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
 WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
+WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgreen))/(float(2)**26)
 
-     green  = (0.0d0, 0.0d0)
+     green  = dcmplx(0.0d0, 0.0d0)
      h_diag = 0.d0
 !No preconditioning with multishift
      do ig = 1, npwx
            h_diag(ig,1) =  1.0d0
      enddo
      gveccount = 1 
+
+     ALLOCATE (gr_A_shift(npwx, nwgreen))
+
      do ig = igstart, igstop
              rhs(:,:)  = (0.0d0, 0.0d0)
              rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
@@ -236,6 +242,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
              call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                    cw, niters(gveccount))
+!
              if(.not.conv_root) write(600+mpime, '("root not converged.")')
              if(.not.conv_root) write(600+mpime, *) anorm
              if(.not.conv_root) print*, "root not converged."
@@ -244,6 +251,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 !Calculate frequency slice:
 !do iw1= 1*slice*(nwgreen/nslices), nwgreen/nslices
 !do iw1=1, nwgreen:
+
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
              do iw = 1, nwgreen
                 do igp = 1, counter
@@ -268,6 +276,8 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
          enddo!iw
      enddo !ig
 
+    deallocate(gr_A_shift)
+
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
     CALL mp_barrier(inter_pool_comm)
@@ -280,7 +290,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 !need to split up over iw0...
 #ifdef __PARA
       npool = nproc / nproc_pool
-      write(stdout,'("npool", i4, i5)') npool, nwsigma
+      write(stdout,'(/4x,"npool, nwsigma", i4, i5)') npool, nwsigma
       if (npool.gt.1) then
       ! number of g-vec per pool and reminder
         nwpool = nwsigma / npool
@@ -302,6 +312,7 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 #endif
 
     IF(iwstop-iwstart+1.ne.0) THEN
+        ALLOCATE(sigma(nrsco,nrsco))
         do iw0 = iwstart, iwstop
             if ((iq.gt.1)) then
                 sigma_g = dcmplx(0.0d0,0.0d0)
@@ -313,9 +324,9 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
                CALL sigma_c_serial(ik0, ikq, green, sigma, iw0)
                CALL write_sigma(sigma(1,1), iw0)
         enddo
+        DEALLOCATE(sigma)
     ENDIF !iw0.neq.0
 ENDDO !iq
-
 
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)

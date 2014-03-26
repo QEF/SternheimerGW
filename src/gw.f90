@@ -46,7 +46,7 @@ PROGRAM gw
   USE qpoint,           ONLY : xq
   USE save_gw,          ONLY : tmp_dir_save
   USE environment,      ONLY: environment_start
-  USE freq_gw,          ONLY : nfs, nwsigma
+  USE freq_gw,          ONLY : nfs, nwsigma, nwgreen
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex,&
                                iunresid, lrresid, iunalphabeta, lralphabeta, iunsigext, lrsigext
   USE basis,            ONLY : starting_wfc, starting_pot, startingconfig
@@ -64,6 +64,7 @@ PROGRAM gw
   LOGICAL :: do_band, do_iq, setup_pw, exst
   CHARACTER (LEN=9)   :: code = 'GW'
   CHARACTER (LEN=256) :: auxdyn
+  REAL(DP)            :: Gb
  
 !Variables to split Planewaves perturbations across processors.
   INTEGER :: igstart, igstop, ngpool, ngr, igs, ig
@@ -103,8 +104,15 @@ PROGRAM gw
 
 !   Generating Exchange and Correlation grid.
     CALL sig_fft_g(nr1sco, nr2sco, nr3sco, nrsco, ecutsig, 1)
+
     write(6,'(4x,"Exchange cutoffs: ")')
     CALL sig_fft_g(nr1sex, nr2sex, nr3sex, nrsex, ecutsex, 2)
+
+    Gb = (DBLE(2)**26)
+    WRITE( stdout, '(8x,"Greens fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,",",i7,")")') &
+        ((DBLE(ngmgrn)**2)*float(nwgreen))/Gb, ngmgrn, ngmgrn, nwgreen
+    WRITE( stdout, '(8x,"Sigma(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+        ((DBLE(nrsco)**2))/Gb, nrsco, nrsco
 
     write(6,*)
     write(6,'(4x, "Screening:")')
@@ -113,6 +121,7 @@ PROGRAM gw
         else
          write(6,'(4x,"Using Approx. Vertex Correction")')
     endif
+    write(6,*)
 
     CALL clean_pw( .FALSE. )
 

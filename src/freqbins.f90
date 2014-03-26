@@ -120,5 +120,7 @@ SUBROUTINE freqbins()
   DO i = 1, nfs
        WRITE(6,'(i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
   ENDDO
+  WRITE(6,'("nwgreen:")')
+  write(6,*) nwgreen
 
 END SUBROUTINE freqbins
