@@ -134,15 +134,6 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
       endif
    enddo
 
-!ONLY PROCESSORS WITH K points to process: 
-!WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
-!if (nksq.gt.1) rewind (unit = iunigk)
-!   if (lgamma) then
-!       ikq = iq
-!   else
-!k+q is in even positions of list (k,k+q)
-!       ikq = 2*iq
-!   endif
 !q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
 !  q = (k0 + q) - k0
 !  xq_ibk(:) = xk(:,ikq) - xk_kpoints(:, ik0)
@@ -309,7 +300,7 @@ endif
                   do iwim = 1, nfs
                       z(iwim) = fiu(iwim)
                       a(iwim) = scrcoul_g_R (ig,igp,iwim)
-               enddo
+                  enddo
                pade_catch=.false.
                if(padecont) then
                     call pade_eval ( nfs, z, a, scrcoul_g_R(ig,igp,1), dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))

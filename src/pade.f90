@@ -70,7 +70,8 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
        write(1000+mpime,*) (z(i),i=1,N)
        write(1000+mpime,*) (u(i),i=1,N)
        write(1000+mpime,*) (a(i),i=1,N)
-       STOP
+  !if it seems weird... it is
+  !     STOP
     endif
     !
   enddo
@@ -129,13 +130,10 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
 !Turning on pade catch.
   ar = real(padapp)
   ai = aimag(padapp)
-  !if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-  !  write(600+mpime,*)padapp 
-  !  padapp = scrcoul_g
-  !  padapp = (0.0d0,0.0d0)
-  !  call mp_global_end()
-  !  STOP
-  !endif
+  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+    write(1000+mpime,*) padapp 
+    padapp = (0.0d0,0.0d0)
+  endif
   !
   end subroutine pade_eval
   !-----------------------------------------------------------
