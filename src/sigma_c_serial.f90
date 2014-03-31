@@ -160,12 +160,13 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 !   write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
 !   write(6,*)
 
-   if(iw0.eq.1) then
-       write(1000+mpime, *)  
-       write(1000+mpime, '("xq_IBK point")')
-       write(1000+mpime, '(3f11.7)') xq_ibk
-       write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-       write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+   if(mpime.eq.1) then
+       write(6,'("",i4)')  
+!       write(1000+mpime, *)  
+!       write(1000+mpime, '("xq_IBK point")')
+!       write(1000+mpime, '(3f11.7)') xq_ibk
+!       write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
+!       write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
    endif
 
 !Dielectric Function should be written to file at this point
@@ -293,6 +294,9 @@ endif
     endif
 !Start integration over iw +/- wcoul. 
     do iw = 1, nwcoul
+
+       if(mpime.eq.1) write(6,'("iwcoul",i4)')iw 
+
         scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
         if(.not.modielec) then
           do ig = 1, ngmpol

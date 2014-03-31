@@ -300,9 +300,12 @@ ENDIF
    ENDDO
 
    DO ik = 1, 1
-         if(do_sigma_matel)  then
-        !Calculates QP Corrections for bands 1:nbnd_sig.
-            nbnd = nbnd_sig 
+
+     if (do_sigma_matel) then
+         nbnd = nbnd_sig
+         if(nbnd_sig.lt.nbnd) write(6, '("nbnd_sig is less than the number of occupied states. Setting default nbnd=nbnd+4.")')
+         if(nbnd_sig.lt.nbnd) nbnd = nbnd + 4  
+
             xq(:) = xk_kpoints(:, ik)
             do_iq=.TRUE.
             lgamma = ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 )
@@ -316,7 +319,7 @@ ENDIF
             CALL sigma_matel(ik) 
             CALL mp_barrier(inter_pool_comm)
             CALL clean_pw_gw(ik)
-         endif
+        endif
    ENDDO
 
    call mp_barrier(inter_pool_comm)

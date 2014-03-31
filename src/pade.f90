@@ -67,9 +67,9 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
     ar = real(a(p))
     ai = aimag(a(p))
     if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-       write(1000+mpime,*) (z(i),i=1,N)
-       write(1000+mpime,*) (u(i),i=1,N)
-       write(1000+mpime,*) (a(i),i=1,N)
+  !     write(1000+mpime,*) (z(i),i=1,N)
+  !     write(1000+mpime,*) (u(i),i=1,N)
+  !    write(1000+mpime,*) (a(i),i=1,N)
   !if it seems weird... it is
   !     STOP
     endif
@@ -131,7 +131,7 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
   ar = real(padapp)
   ai = aimag(padapp)
   if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-    write(1000+mpime,*) padapp 
+    !write(1000+mpime,*) padapp 
     padapp = (0.0d0,0.0d0)
   endif
   !
