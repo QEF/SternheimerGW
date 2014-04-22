@@ -387,9 +387,9 @@ write(stdout,'(8(1x,f12.7))') aimag(sigma_band_c(:,:, INT(nwsigma/2)))*RYTOEV
   endif
 
   if(single_line) then
-     write(stdout,'(4x,"QP renorm",8(1x,f7.2))')  z(1:8)
+     write(stdout,'(8x,"QP renorm",8(1x,f7.2))')  z(1:8)
   else
-     write(stdout,'(4x,"QP renorm",8(1x,f7.2))', advance='no')  z(1:8)
+     write(stdout,'(8x,"QP renorm",8(1x,f7.2))', advance='no')  z(1:8)
   endif
 
   if(nbnd_sig.gt.8) then
