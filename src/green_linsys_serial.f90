@@ -245,8 +245,8 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
 !
              if(.not.conv_root) write(600+mpime, '("root not converged.")')
              if(.not.conv_root) write(600+mpime, *) anorm
-             if(.not.conv_root) print*, "root not converged."
-             if(.not.conv_root) print*,  anorm
+!             if(.not.conv_root) print*, "root not converged."
+!             if(.not.conv_root) print*,  anorm
 !Now every processor has its slice of residuals.
 !Calculate frequency slice:
 !do iw1= 1*slice*(nwgreen/nslices), nwgreen/nslices

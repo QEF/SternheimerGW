@@ -69,7 +69,8 @@ SUBROUTINE setup_nscf_green(xq)
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
   !
-  ethr= 1.0D-9 / nelec
+  !ethr= 1.0D-9 / nelec
+  ethr= 1.0D-7 / nelec
   !
   ! ... variables for iterative diagonalization (Davidson is assumed)
   !
