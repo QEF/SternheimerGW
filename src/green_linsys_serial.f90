@@ -44,9 +44,6 @@ SUBROUTINE green_linsys_serial (ik0)
   real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   logical :: conv_root
 
-! COMPLEX(DP) :: sigma(nrsco, nrsco)
-! COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
-! COMPLEX(DP) :: green(ngmgrn, ngmgrn, nwgreen)
   COMPLEX(DP), ALLOCATABLE :: gr_A_shift(:, :)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
   COMPLEX(DP), ALLOCATABLE :: sigma(:, :)
@@ -237,6 +234,7 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
              lter = 0
              etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
              cw = CMPLX( 0, 0, kind=DP)
+             conv_root = .true.
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
 !            WRITE(6,'("Starting BiCG")')
              call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
@@ -245,14 +243,15 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
 !
              if(.not.conv_root) write(600+mpime, '("root not converged.")')
              if(.not.conv_root) write(600+mpime, *) anorm
-!             if(.not.conv_root) print*, "root not converged."
-!             if(.not.conv_root) print*,  anorm
+
 !Now every processor has its slice of residuals.
 !Calculate frequency slice:
 !do iw1= 1*slice*(nwgreen/nslices), nwgreen/nslices
 !do iw1=1, nwgreen:
-
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
+
+             if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
+
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &

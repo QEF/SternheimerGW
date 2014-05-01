@@ -22,10 +22,10 @@ integer  :: p, N,i
      a(:) = DCMPLX(0.0d0, 0.0d0)
 !pole position(omegatilde):
 !real frequency
-    if(N.ne.2) then
-      write(6,'("Only two freqs. allowed with godby needs")')
-      STOP
-    endif
+ !   if(N.ne.2) then
+ !     write(6,'("Only two freqs. allowed with godby needs")')
+ !     STOP
+ !   endif
 
 !Currently using the same criterion as in SaX
 !this essentially checks if the real part of the pole
@@ -49,7 +49,6 @@ integer  :: p, N,i
        !   a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
            a(1) = 10.0
            a(2) = -u(1)*a(1)**2 
-
    else if(real(u(1)-u(2)).eq.0.0) then 
     !case for wings having been zerod
 !          a(1) = 20.0

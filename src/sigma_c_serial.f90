@@ -6,7 +6,7 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
-                            do_diag_g, do_diag_w
+                            do_diag_g, do_diag_w, trunc_2d
   USE klist,         ONLY : wk, xk
   USE io_files,      ONLY : prefix, iunigk, prefix, tmp_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -55,7 +55,7 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 !Integration Variable 
   COMPLEX(DP) :: cprefac
 !FREQUENCY GRIDS/COUNTERS
-  INTEGER  :: iwim, iw, ikq
+  INTEGER  :: iwim, iw, ikq, ppmfreq
   INTEGER  :: iw0, iw0mw, iw0pw
   REAL(DP) :: w_ryd(nwcoul)
 !COUNTERS
@@ -211,36 +211,40 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
 if(.not.modielec) then
-DO iw = 1, nfs
-   DO ig = 1, ngmpol
-!SPHERICAL SCREENING
-       qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-       limq = (qg2.lt.eps8) 
-       IF(.not.limq) then
-           do igp = 1, ngmpol
-              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-           enddo
-       ENDIF
-       qg = sqrt(qg2)
-       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!Normal case using truncated coulomb potential.
-       if(.not.limq) then
-          do igp = 1, ngmpol
-              scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
-          enddo
-       else
-!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
-!for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
-!we enforce that here:
-             if(iw.eq.1) then
-                scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
-             endif
+  if(trunc_2d) then
+    call truncate_2D(scrcoul_g_R(1,1,1), xq_ibk(1), 2)
+  else
+    do iw = 1, nfs
+       do ig = 1, ngmpol
+!SPHERICAL TRUNCATION
+         qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
+         limq = (qg2.lt.eps8) 
+         if(.not.limq) then
              do igp = 1, ngmpol
-                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
              enddo
-       endif
-   ENDDO!ig
-ENDDO!nfs
+         endif
+         qg = sqrt(qg2)
+         spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
+!Normal case using truncated coulomb potential.
+         if(.not.limq) then
+            do igp = 1, ngmpol
+                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
+            enddo
+         else
+  !should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
+  !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+  !we enforce that here:
+            if(iw.eq.1) then
+               scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
+            endif
+            do igp = 1, ngmpol
+               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+            enddo
+         endif
+       enddo!ig
+    enddo!nfs
+  endif
 endif
 
 !zeroing wings of W again!
@@ -258,21 +262,38 @@ endif
 
     if(.not.modielec) then 
         if(godbyneeds) then
-        do ig = 1, ngmpol
-          do igp = 1, ngmpol 
+          if (nfs.eq.2) then
+            do ig = 1, ngmpol
+              do igp = 1, ngmpol 
 !         for godby-needs plasmon pole the algebra is done assuming real frequency*i...
 !         that is: the calculation is done at i*wp but we pass a real number as the freq. 
-               do iw = 1, nfs
-                 z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
-                 u(iw) = scrcoul_g_R(ig, igp, iw)
-               enddo
-               CALL godby_needs_coeffs(nfs, z, u, a)
-               do iw = 1, nfs 
+                do iw = 1, nfs
+                  z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
+                  u(iw) = scrcoul_g_R(ig, igp, iw)
+                enddo
+                CALL godby_needs_coeffs(nfs, z, u, a)
+                do iw = 1, nfs 
 !         just overwrite scrcoul_g_R with godby-needs coefficients.
-                  scrcoul_g_R (ig, igp, iw) = a(iw)
-               enddo
-          enddo
-        enddo
+                   scrcoul_g_R (ig, igp, iw) = a(iw)
+                enddo
+              enddo
+            enddo
+          else  !case where nfs is greater than two but we just want godby needs.
+            do ig = 1, ngmpol
+              do igp = 1, ngmpol 
+                  z(1) = dcmplx(aimag(fiu(1)), 0.0d0)
+                  u(1) = scrcoul_g_R(ig, igp, 1)
+                  ppmfreq = 7
+                  z(2) = dcmplx(aimag(fiu(ppmfreq)), 0.0d0)
+                  u(2) = scrcoul_g_R(ig, igp, ppmfreq)
+                CALL godby_needs_coeffs(nfs, z, u, a)
+                do iw = 1, nfs 
+!         just overwrite scrcoul_g_R with godby-needs coefficients.
+                   scrcoul_g_R (ig, igp, iw) = a(iw)
+                enddo
+              enddo
+            enddo
+          endif
         else if (padecont) then
           do igp = 1, ngmpol
            do ig = 1, ngmpol
@@ -294,9 +315,6 @@ endif
     endif
 !Start integration over iw +/- wcoul. 
     do iw = 1, nwcoul
-
-       if(mpime.eq.1) write(6,'("iwcoul",i4)')iw 
-
         scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
         if(.not.modielec) then
           do ig = 1, ngmpol
@@ -399,7 +417,6 @@ endif
 
         greenfr(:,:)  = czero
         call fft6(greenf_g(1,1), greenfr(1,1),1)
-
         sigma (:,:) = sigma (:,:) + cprefac * greenfr(:,:)*scrcoul(:,:)
     enddo
 

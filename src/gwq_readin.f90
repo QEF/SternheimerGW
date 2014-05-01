@@ -238,7 +238,7 @@ SUBROUTINE gwq_readin()
 
 
 !imaginary component added to linear system should be in Rydberg
-  eta            = 0.04
+  eta            = 0.02
   kpoints        = .FALSE.
   do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.

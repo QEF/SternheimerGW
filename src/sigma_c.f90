@@ -5,14 +5,14 @@ SUBROUTINE sigma_c(ik0)
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d
   USE klist,         ONLY : wk, xk
   USE io_files,      ONLY : iunigk, prefix, tmp_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax,&
-                            nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,&
-                            wgreen, wsigma, wsigmamin, wsigmamax,&
+  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
+                            nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
+                            wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax, ind_w0mw, ind_w0pw
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
@@ -529,12 +529,6 @@ endif
 
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
-
-!       print*,"output"
-!       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
-!       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
-!       print*,""
-
     ENDDO ! end loop iqstart, iqstop 
 ENDIF
 
@@ -545,9 +539,6 @@ ENDIF
     DEALLOCATE ( scrcoul_pade_g   )
     DEALLOCATE ( scrcoul_g, scrcoul_g_R )
     DEALLOCATE ( z,a,u )
-!   DEALLOCATE (barcoulr)
-!   DEALLOCATE (barcoul)
-!   DEALLOCATE (barcoul_R)
 
 #ifdef __PARA
     CALL mp_barrier(inter_pool_comm)
@@ -611,8 +602,6 @@ IF (ionode) then
        enddo
       enddo
     enddo 
-
-
 
 !Now write Sigma in G space to file. 
 !HL Original:

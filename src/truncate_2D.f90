@@ -1,4 +1,4 @@
-subroutine truncate_2D(dv_rho, xqloc, opt)
+subroutine truncate_2D(scrcoul, xqloc, opt)
   USE io_global,     ONLY : stdout, ionode_id, ionode
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
@@ -18,7 +18,7 @@ IMPLICIT NONE
   REAL(DP) :: qg2, qg, qxy, qz
   REAL(DP) :: xqloc(3)     
   REAL(DP) :: rcut, spal, zcut
-  REAL(DP), INTENT(INOUT) :: dv_rho(nrxx)
+  REAL(DP) :: dv_rho(1)
   INTEGER   :: is
   REAL(DP)  :: at1(3,3)
   COMPLEX(DP)  :: scrcoul(ngmpol, ngmpol, nfs)
@@ -40,8 +40,8 @@ IF(opt.eq.1) then
 ELSE IF (opt.eq.2) then
       DO iw = 1, nfs
         DO ig = 1, ngmpol
-         qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
-         limq = (qg2.lt.eps8) 
+                qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
+                limq = (qg2.lt.eps8) 
           IF(.not.limq) then
            do igp = 1, ngmpol
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
