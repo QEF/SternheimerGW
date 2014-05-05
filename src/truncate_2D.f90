@@ -53,9 +53,6 @@ ELSE IF (opt.eq.2) then
           ELSE  
 !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
 !we enforce that here:
-           if(iw.eq.1) then
-              scrcoul(ig, igp, iw) = real(scrcoul(ig,igp,iw))
-           endif
            do igp = 1, ngmpol
               scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
            enddo
