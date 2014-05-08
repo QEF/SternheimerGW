@@ -331,9 +331,10 @@ SUBROUTINE solve_direct_shift(dvbarein, iw, drhoscf)
            if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4,    &
                     &               "solve_linter: root not converged ",e10.3)') &
                     &                ik , ibnd, anorm
-
-           call coul_multishift(npwx, npwq, nfs, niters(gveccount), -fiu(iw), 1, dpsiwm(:,:))
-           call coul_multishift(npwx, npwq, nfs, niters(gveccount), fiu(iw), 1, dpsiwp(:,:))
+          if(conv_root) then
+             call coul_multishift(npwx, npwq, nfs, niters(gveccount), -fiu(iw), 1, dpsiwm(:,:))
+             call coul_multishift(npwx, npwq, nfs, niters(gveccount), fiu(iw), 1, dpsiwp(:,:))
+          endif
 
            ltaver = ltaver + lter
            lintercall = lintercall + 1

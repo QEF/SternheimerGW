@@ -133,6 +133,9 @@ SUBROUTINE gwq_init()
   END DO
   !
 
+  if (nbnd.lt.nbnd_occ(1)) then
+      write(6, '("nbnd_sig is less than the number of occupied states!")')
+  endif
 
   IF ( nksq > 1 ) REWIND( iunigk )
   !

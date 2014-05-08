@@ -466,7 +466,7 @@ END SUBROUTINE sigma_matel
 !----------------------------------------------------------------
 !
   USE kinds,         ONLY : DP
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
+  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, pi
 
   IMPLICIT NONE
 

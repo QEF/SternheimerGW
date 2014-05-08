@@ -310,9 +310,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
               call stop_clock ('vpsifft')
+              !Need to check this for ultrasoft
+              !HL THIS TERM PROBABLY NEEDS TO BE INCLUDED.
+              !This is the variation in the D matrix due to the electric field.
+              !call adddvscf (ipert, ik)
            else
         !  At the first iteration dvbare_q*psi_kpoint is calculated
         !  and written to file
+            !call dvqpsi_us (dvbarein, ik, 1, .false.)
             call dvqpsi_us (dvbarein, ik, 1, .false.)
             call davcio (dvpsi, lrbar, iubar, nrec, +1)
            endif
@@ -391,7 +396,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           ! change of the wavefunction for a given k point.
 
            weight = wk (ikk)
-           call incdrhoscf ( drhoscf(1,iw) , weight, ik, dbecsum(1,1,current_spin))
+
+           !IF (noncolin) THEN
+           !   call incdrhoscf_nc(drhoscf(1,1),weight,ik, &
+           !                      dbecsum_nc(1,1,1,1), dpsi)
+           !ELSE
+             call incdrhoscf ( drhoscf(1,iw) , weight, ik, dbecsum(1,1,current_spin))
+           !ENDIF
      enddo 
 
         if (doublegrid) then

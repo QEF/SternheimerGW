@@ -36,7 +36,7 @@ SUBROUTINE gwq_readin()
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
-                            do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
+                            do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil, do_serial, &
                             do_diag_g, do_diag_w
@@ -96,7 +96,7 @@ SUBROUTINE gwq_readin()
                        recover, fpol, asr, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin,&
+                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
@@ -243,6 +243,7 @@ SUBROUTINE gwq_readin()
   do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
+  do_sigma_exxG   = .FALSE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.
@@ -413,31 +414,26 @@ SUBROUTINE gwq_readin()
         ENDIF
      ENDIF
      CALL mp_bcast(ios, ionode_id )
-     CALL errore ('gwq_readin', 'reading number of kpoints', ABS(ios) )
+     CALL errore ('pwq_readin', 'reading number of kpoints', ABS(ios) )
      CALL mp_bcast(num_k_pts, ionode_id )
-     if (num_k_pts > 10) call errore('gwq_readin','Too many k-points',1) 
-     if (num_k_pts < 1) call errore('gwq_readin','Too few kpoints',1) 
+     if (num_k_pts > 10) call errore('phq_readin','Too many k-points',1) 
+     if (num_k_pts < 1) call errore('phq_readin','Too few kpoints',1) 
      IF (ionode) THEN
         IF ( TRIM(card)=='K_POINTS'.OR. &
              TRIM(card)=='k_points'.OR. &
              TRIM(card)=='K_points') THEN
            DO i = 1, num_k_pts
-           !DO i = 1, 2
-!should be in units of 2pi/a0 cartesian co-ordinates
+              !should be in units of 2pi/a0 cartesian co-ordinates
               READ (5, *, iostat = ios) xk_kpoints(1,i), xk_kpoints(2,i), xk_kpoints(3,i)
-              !write(6,'(3f11.7)') xk_kpoints(:,i)
            END DO
         END IF
      END IF
      CALL mp_bcast(ios, ionode_id)
-     CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
+     CALL errore ('gwq_readin', 'reading KPOINTS card', ABS(ios) )
      CALL mp_bcast(xk_kpoints, ionode_id )
  ELSE
      num_k_pts = 1
  ENDIF
-!  write(6,'("kpoints")')
-  !
-  !
   !   Here we finished the reading of the input file.
   !   Now allocate space for pwscf variables, read and check them.
   !
@@ -451,6 +447,7 @@ SUBROUTINE gwq_readin()
   ext_restart=.FALSE.
   ext_recover=.FALSE.
   recover=.false.
+
   IF (recover) THEN
      CALL gw_readfile('init',ierr)
      IF (ierr /= 0 ) THEN

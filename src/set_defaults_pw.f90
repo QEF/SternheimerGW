@@ -106,6 +106,12 @@ SUBROUTINE setup_nscf (xq)
 ! minus_q=.false.
 ! HL this condition enforces that Sq = q exactly! none of this q -> -q + G none-sense. 
 ! modenum = -3
+!!!!from __future__ 
+  ! ... smallg_q flags in symmetry operations of the crystal
+  ! ... that are not symmetry operations of the small group of q
+  !
+  !CALL set_small_group_of_q(nsymq,invsymq,minus_q)
+!!!!!!!
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
 
   IF ( .not. time_reversal ) minus_q = .false.

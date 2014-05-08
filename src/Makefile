@@ -96,8 +96,6 @@ bicgstabl.o\
 solve_direct.o\
 invert_epsilon.o\
 mod_diel.o\
-coulomb_ms.o\
-solve_direct_shift.o\
 coul_multishift.o\
 truncate_2D.o\
 fft6.o\

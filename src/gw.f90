@@ -36,9 +36,9 @@ PROGRAM gw
   USE path_io_routines,   ONLY : io_path_start
   USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
-                               do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel,&
+                               do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel,&
                                do_q0_only, multishift, do_sigma_extra, solve_direct, tinvert, lrpa,&
-                               do_serial
+                               do_serial, do_epsil
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -239,6 +239,7 @@ IF(do_coulomb) THEN
        CALL mp_barrier(inter_pool_comm)
 
        if(do_q0_only) GOTO 124
+       if(do_epsil) GOTO 126
    END DO
    WRITE(stdout, '("Finished Calculating Screened Coulomb")') 
 ENDIF
@@ -290,7 +291,7 @@ ENDIF
 
        if(ionode) then 
 !CALCULATE Sigma_ex(r,r') = iG(r,r')v(r,r')
-         if(do_sigma_exx)   CALL sigma_exch(ik)
+         if(do_sigma_exx.and..not.(do_sigma_exxG)) CALL sigma_exch(ik)
        endif
 
        if(ionode) WRITE(6, '("Finished CALCULATING SIGMA")') 
@@ -314,13 +315,15 @@ ENDIF
             CALL run_pwscf_green(do_band)
             CALL initialize_gw()
             WRITE(6,'(4x,"Sigma exchange")')
-            !if(ionode.and.do_sigma_exx) CALL sigma_exchg(ik)
+            if(ionode.and.do_sigma_exxG) CALL sigma_exchg(ik)
             CALL mp_barrier(inter_pool_comm)
             CALL sigma_matel(ik) 
             CALL mp_barrier(inter_pool_comm)
             CALL clean_pw_gw(ik)
         endif
    ENDDO
+
+126 CONTINUE
 
    call mp_barrier(inter_pool_comm)
    CALL gw_writefile('init',0)

@@ -21,7 +21,7 @@ subroutine bcast_gw_input ( )
                          niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
-                         do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
+                         do_sigma_exx, do_sigma_exxG, do_green, do_sigma_matel, tr2_green,&
                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                          coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w
@@ -106,6 +106,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (do_coulomb, ionode_id)
   call mp_bcast (do_sigma_c, ionode_id)
   call mp_bcast (do_sigma_exx, ionode_id)
+  call mp_bcast (do_sigma_exxG, ionode_id)
   call mp_bcast (do_green, ionode_id)
   call mp_bcast (do_sigma_matel, ionode_id)
   call mp_bcast (do_q0_only, ionode_id)

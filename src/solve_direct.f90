@@ -271,9 +271,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
              etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
-!test
-!            call cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi, h_diag, &
-!                              npwx, npwq, thresh, ik, lter, conv_root, anorm,nbnd_occ(ikk), npol)
 
              call cbcg_solve_coul(cch_psi_all_fix, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
                                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
@@ -287,12 +284,16 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
 !          dpsi = dpsi^{+}
            dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
-           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-           dpsi(:,:,:)    = dpsit(:,:,:)
-
+           if(conv_root) then
+             call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+             dpsi(:,:,:)    = dpsit(:,:,:)
+           endif
 !          dpsi = dpsi^{+} + dpsi^{-}
+
            dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
+           if(conv_root) then
+             call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
+           endif 
 
            dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
 
@@ -328,7 +329,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! in the coulomb term, gives rise to a spurious dvscf response)
 ! One wing of the dielectric matrix is particularly badly behaved 
 
-     meandvb = sqrt ( (sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 ) / float(nrxxs)
+     meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0) / float(nrxxs)
      do iw = 1, nfs 
          if (meandvb.lt.1.d-8) then 
              call cft3 (dvscfout(:,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)

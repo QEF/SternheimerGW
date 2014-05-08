@@ -24,11 +24,11 @@ SUBROUTINE sigma_exchg(ik0)
 IMPLICIT NONE
 
 !ARRAYS to describe exchange operator.
-  LOGICAL  :: do_band, do_iq, setup_pw, exst, limit
+  LOGICAL  :: do_band, do_iq, setup_pw, exst, limit, single_line
   COMPLEX(DP), ALLOCATABLE :: sigma_band_ex(:,:), barcoul(:), miv(:), mvj(:)
   COMPLEX(DP), ALLOCATABLE ::  psi_ij(:,:), psi(:), dpsic(:)
   COMPLEX(DP) :: dipole(nrxxs), matel
-  REAL(DP) :: rcut, spal, dvoxel, wgt
+  REAL(DP) :: rcut, spal, dvoxel, wgt, sigma_ex_tr
   INTEGER  :: ikmq, ik0, ik, igkdim
   INTEGER  :: ig, igp, npe, irr, icounter, ir, irp
   INTEGER  :: iq, ipol, ibnd, jbnd, vbnd, counter
@@ -43,7 +43,9 @@ IMPLICIT NONE
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkmat(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
-  INTEGER     :: ikq
+  REAL(DP)    :: sigma_ex_diag(nbnd_sig)
+  INTEGER     :: iman, nman, ndeg(nbnd_sig), ideg, ikq
+
   CALL start_clock('sigma_exch')
 
 if (nksq.gt.1) rewind (unit = iunigk)
@@ -185,15 +187,66 @@ DO iq = 1, nksq
    enddo !v\inocc
 enddo ! on q
 
+
  WRITE(6,*) 
  write(stdout,'(4x,"Sigma_ex (eV)")')
- !write(stdout,'(8(1x,f12.5))') real(sigma_band_ex(:,:))
  write(stdout,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
  write(stdout,*)
- !write(stdout,'(8(1x,f12.5))') aimag(sigma_band_ex(:,:))
  write(stdout,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
  write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))') real(sigma_band_ex(1:nbnd_sig,1:nbnd_sig))*RYTOEV
 
+
+!choose appropriate k point
+  if (lgamma) then
+     ikq = ik0
+  else
+     ikq = 2*ik0
+  endif
+
+  nman = 1
+  ndeg = 1
+  if(nbnd_sig.le.8) single_line=.true.
+  if(nbnd_sig.gt.8) single_line=.false.
+
+  do ibnd = 2, nbnd_sig
+     if ( abs( et (ibnd, ikq) - et (ibnd-1, ikq)  ) .lt. 1.d-4 ) then
+        ndeg (nman) = ndeg(nman) + 1
+     else
+        nman = nman + 1
+     endif
+  enddo
+
+
+  ibnd = 0
+  jbnd = 0
+  do iman = 1, nman
+     sigma_ex_tr = 0.0d0
+     do ideg = 1, ndeg(iman)
+        ibnd = ibnd + 1
+        sigma_ex_tr = sigma_ex_tr + real(sigma_band_ex(ibnd,ibnd))
+     enddo
+     do ideg = 1, ndeg(iman)
+        jbnd = jbnd + 1
+        sigma_ex_diag(jbnd)= sigma_ex_tr/float(ndeg(iman))
+     enddo
+  enddo
+
+  if(single_line) then 
+     write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))') sigma_ex_diag(1:8)*RYTOEV
+  else
+     write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))', advance='no') sigma_ex_diag(1:8)*RYTOEV
+  endif
+
+  if(nbnd_sig.gt.8) then
+  do ideg = 9, nbnd_sig, 8  
+     if(ideg+7.lt.nbnd_sig) write(stdout,9000, advance='no') sigma_ex_diag(ideg:ideg+7)*RYTOEV
+     if(ideg+7.ge.nbnd_sig) write(stdout,9000) sigma_ex_diag(ideg:nbnd_sig)*RYTOEV
+  enddo
+  endif
+
  CALL stop_clock('sigma_exch')
+
+ 9000 format(8(1x,f7.2))
+ 9005 format(8(1x,f14.7))
 
 END SUBROUTINE sigma_exchg
