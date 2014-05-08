@@ -8,24 +8,15 @@ IMPLICIT NONE
 complex(DP) :: z(N), u(N)
 complex(DP) :: a(N)
 real(DP) :: ar, ai
-integer  :: p, N,i 
+integer  :: p, N, i 
 
 !Instead of a higher order pad\'e approximant to the self energy we just calculate two 
 !frequency points one at w = 0 and one at w = i\Omega_{p}. and fit it to the plasmon pole
 !model: this is the godby_needs plasmon pole.
-!The sign here is wrong on the imaginary part...
 !The assumed form of the function is:
 !\epsilon^{-1}_{\G,\G'}(\q,\omega) = \frac{A_{GG'(q)}}{\omega - \omegatilde + idelta} -
 !                                    \frac{A_{GG'(q)}}{\omega + \omegatilde - idelta}
-!Except we solve only for the correlation energy:
-!(\epsilon^{-1} - 1)
      a(:) = DCMPLX(0.0d0, 0.0d0)
-!pole position(omegatilde):
-!real frequency
- !   if(N.ne.2) then
- !     write(6,'("Only two freqs. allowed with godby needs")')
- !     STOP
- !   endif
 
 !Currently using the same criterion as in SaX
 !this essentially checks if the real part of the pole
@@ -41,7 +32,8 @@ integer  :: p, N,i
 !essentially we cast aside any heavily damped oscillations
 !(which would not effect the real part of the selfenergy anyway...
 !a(1) = \tilde(\omega) a(2) = R
-   if(real(u(2)/(u(1)-u(2))).lt.0.0) then
+
+   if(real(u(2)/(u(1)-u(2))).lt.(0.0d0)) then
        !We zero the weight of the pole and place the pole way out
        !on the real axis to avoid numerical instability.
        !although this isn't really that far out....
@@ -49,7 +41,7 @@ integer  :: p, N,i
        !   a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
            a(1) = 10.0
            a(2) = -u(1)*a(1)**2 
-   else if(real(u(1)-u(2)).eq.0.0) then 
+   else if(real(u(1)-u(2)).eq.(0.0d0)) then 
     !case for wings having been zerod
 !          a(1) = 20.0
 !          a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
@@ -69,6 +61,7 @@ integer  :: p, N,i
         ar = real(a(p))
         ai = aimag(a(p))
         if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
+           write(1000+mpime,'("padenan")')
            write(1000+mpime,'(2f12.7)') (z(i),i=1,N)
            write(1000+mpime,'(2f12.7)') (u(i),i=1,N)
            write(1000+mpime,'(2f12.7)') (a(i),i=1,N)

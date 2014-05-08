@@ -1,6 +1,7 @@
 subroutine truncate_2D(scrcoul, xqloc, opt)
   USE io_global,     ONLY : stdout, ionode_id, ionode
   USE kinds,         ONLY : DP
+  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE gvect,         ONLY : nrxx, nr1, nr2, nr3, nrx1, nrx2, nrx3, &
                             nl, ngm, g, nlm
@@ -25,8 +26,16 @@ IMPLICIT NONE
 !2D screening.
 !Choose zcut to be 1/2*L_{z}.
 
+!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2))**(float(1)/float(3))
+
 at1(:,:) = at(:,:)
 zcut = 0.50d0*sqrt(at1(1,3)**2 + at1(2,3)**2 + at1(3,3)**2)*alat
+
+!from prb 73 205119
+!rcut = -2.0*pi*zcut**2
+!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2))**(float(1)/float(3))
+rcut = 0.5d0*zcut
+
 IF(opt.eq.1) then
            DO ig = 1, ngm
                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2

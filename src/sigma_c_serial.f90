@@ -278,21 +278,25 @@ endif
                 enddo
               enddo
             enddo
-          else  !case where nfs is greater than two but we just want godby needs.
+          else if (nfs.gt.2) then  !case where nfs is greater than two but we just want godby needs.
+!         for godby-needs plasmon pole the algebra is done assuming real frequency*i...
+!         that is: the calculation is done at i*wp but we pass a real number as the freq. 
             do ig = 1, ngmpol
               do igp = 1, ngmpol 
                   z(1) = dcmplx(aimag(fiu(1)), 0.0d0)
                   u(1) = scrcoul_g_R(ig, igp, 1)
-                  ppmfreq = 7
+                  ppmfreq = 6
                   z(2) = dcmplx(aimag(fiu(ppmfreq)), 0.0d0)
                   u(2) = scrcoul_g_R(ig, igp, ppmfreq)
-                CALL godby_needs_coeffs(nfs, z, u, a)
-                do iw = 1, nfs 
+                  CALL godby_needs_coeffs(nfs, z, u, a)
+                  do iw = 1, nfs 
 !         just overwrite scrcoul_g_R with godby-needs coefficients.
                    scrcoul_g_R (ig, igp, iw) = a(iw)
-                enddo
+                  enddo
               enddo
             enddo
+          else
+            print*, "godby needs failed."
           endif
         else if (padecont) then
           do igp = 1, ngmpol
