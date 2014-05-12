@@ -99,7 +99,11 @@ mod_diel.o\
 coul_multishift.o\
 truncate_2D.o\
 fft6.o\
-write_sigma.o
+write_sigma.o\
+green_multishift_im.o\
+sigma_c_serial_im.o\
+green_linsys_serial_im.o
+
 
 
 HOME =/home/lambert/espresso-4.2.1

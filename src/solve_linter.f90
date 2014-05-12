@@ -403,6 +403,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            !ELSE
              call incdrhoscf ( drhoscf(1,iw) , weight, ik, dbecsum(1,1,current_spin))
            !ENDIF
+          !should do non-collin spin as well!!
+          !call incdrhoscf (drhoscf(1,current_spin,ipert), weight, ik, &
+          !                 dbecsum(1,1,current_spin,ipert), dpsi)
      enddo 
 
         if (doublegrid) then

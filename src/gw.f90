@@ -38,7 +38,7 @@ PROGRAM gw
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel,&
                                do_q0_only, multishift, do_sigma_extra, solve_direct, tinvert, lrpa,&
-                               do_serial, do_epsil
+                               do_serial, do_epsil, do_imag
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -276,7 +276,11 @@ ENDIF
 ! CALCULATE Sigma_corr(r,r';w) = i\int G(r,r'; w + w')(W(r,r';w') - v(r,r')) dw'
        if(do_green.and.multishift.and.do_serial) then 
             write(6,'("Green Linsys_Shift Serial", i4)') ik
-            CALL green_linsys_serial(ik)
+            if(.not.do_imag) then
+                CALL green_linsys_serial(ik)
+            else if(do_imag) then
+                CALL green_linsys_serial_im(ik)
+            endif
             call mp_barrier()
        else if (do_green.and.multishift.and.(.not.do_serial))then
             CALL green_linsys_shift(ik)

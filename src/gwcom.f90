@@ -374,8 +374,8 @@ MODULE control_gw
              trunc_2d,&
              do_diag_w,&
              do_diag_g,&
-             do_epsil !in case you want to set xq point
-                      !from input file for epsilon
+             do_epsil,& !in case you want to set xq point
+             do_imag    !from input file for epsilon
 
 END MODULE control_gw
 !
