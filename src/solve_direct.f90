@@ -284,19 +284,16 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
 !          dpsi = dpsi^{+}
            dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
-           if(conv_root) then
-             call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-             dpsi(:,:,:)    = dpsit(:,:,:)
-           endif
+           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+
+           dpsi(:,:,:)    = dpsit(:,:,:)
 !          dpsi = dpsi^{+} + dpsi^{-}
 
            dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-           if(conv_root) then
-             call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
-           endif 
+           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
 
            dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
-
+        
            do iw = 1, nfs
               do ibnd=1, nbnd 
                if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
