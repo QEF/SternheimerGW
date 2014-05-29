@@ -230,7 +230,7 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
      do ig = igstart, igstop
              rhs(:,:)  = (0.0d0, 0.0d0)
              rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
-             gr_A(:,:) = (0.0d0, 0.0d0) 
+             gr_A(:,:) = dcmplx(0.0d0, 0.0d0) 
              lter = 0
              etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
              cw = CMPLX( 0, 0, kind=DP)
@@ -241,16 +241,14 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                    cw, niters(gveccount))
 !
-             if(.not.conv_root) write(600+mpime, '("root not converged.")')
-             if(.not.conv_root) write(600+mpime, *) anorm
+!            if(.not.conv_root) write(600+mpime, '("root not converged.")')
+!            if(.not.conv_root) write(600+mpime, *) anorm
 
 !Now every processor has its slice of residuals.
 !Calculate frequency slice:
 !do iw1= 1*slice*(nwgreen/nslices), nwgreen/nslices
 !do iw1=1, nwgreen:
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
-
-             if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
 
              do iw = 1, nwgreen
                 do igp = 1, counter

@@ -15,6 +15,8 @@ USE kinds,       ONLY: DP
 USE mp_global,   ONLY: intra_pool_comm, mpime
 USE mp,          ONLY: mp_sum
 USE control_gw,  ONLY: maxter_green
+USE gwsigma,     ONLY: ngmsco, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
+                        nr1sco, nr2sco, nr3sco, ngmgrn, ngmpol
 
 implicit none
 
@@ -90,9 +92,6 @@ real(DP) :: &
   real(DP) :: kter_eff
   ! account the number of iterations with b
   ! coefficient of quadratic form
-  !
-  
-
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
              hold(ndmx*npol ,nbnd) )
   allocate ( gt(ndmx*npol,nbnd), tt(ndmx*npol,nbnd), ht(ndmx*npol,nbnd), &
@@ -101,10 +100,8 @@ real(DP) :: &
   allocate (a(nbnd), c(nbnd))
   allocate (conv ( nbnd))
   allocate (rho(nbnd))
-
- ! WRITE(6,*) g,t,h,hold
- ! Initialize
-
+ !WRITE(6,*) g,t,h,hold
+ !Initialize
   eu(:) = dcmplx(0.0d0,0.0d0)
   kter_eff = 0.d0
 
@@ -156,6 +153,8 @@ real(DP) :: &
         if (conv (ibnd).eq.0) then
             lbnd = lbnd+1
             rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
+!           trick where we truncate early.
+!           rho(lbnd) = abs(ZDOTC (ngmpol, g(1,ibnd), 1, g(1,ibnd), 1))
         endif
      enddo
 
@@ -239,11 +238,6 @@ real(DP) :: &
            call ZCOPY (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
            call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
            call ZAXPY (ndmx*npol, dconjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
-!No Copy
-! p  = rp  +       beta  * pold
-! pt = rtp + conjg(beta) * ptold
-!        call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, gp  (1,ibnd), 1)
-!        call ZAXPY (ndmx*npol, conjg(beta), htold (1,ibnd), 1, gtp (1,ibnd), 1)
         endif
      enddo
   enddo

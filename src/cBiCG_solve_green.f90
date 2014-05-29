@@ -138,17 +138,17 @@ external cg_psi      ! input: the routine computing cg_psi
            !endif
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-           gt(:,ibnd) = conjg ( g(:,ibnd) )
+           gt(:,ibnd) = dconjg ( g(:,ibnd) )
         ! p   =  inv(M) * r
         ! pt  =  conjg ( p )
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
-           ht(:,ibnd) = conjg( h(:,ibnd) )
+           ht(:,ibnd) = dconjg( h(:,ibnd) )
         enddo
         IF (npol==2) THEN
            do ibnd = 1, nbnd
               call zaxpy (ndim, (-1.d0,0.d0), d0psi(ndmx+1,ibnd), 1, &
                                               g(ndmx+1,ibnd), 1)
-              gt(:,ibnd) = conjg ( g(:,ibnd) )
+              gt(:,ibnd) = dconjg ( g(:,ibnd) )
            enddo
         END IF
      endif!iter.eq.1
@@ -177,8 +177,9 @@ external cg_psi      ! input: the routine computing cg_psi
           lbnd = ibnd
         ! alpha = <\tilde{r}|M^{-1}r>/<\tilde{u}|A{u}>
         ! [ the denominator is stored for subsequent use in beta ]
-         call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
-         a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
+        ! HL:
+        ! call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+         a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, g(1,ibnd), 1)
          c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
          alpha = a(ibnd) / c(ibnd)
          alphabeta(1) = alpha
@@ -194,9 +195,6 @@ external cg_psi      ! input: the routine computing cg_psi
          call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
          nrec = iter+1
          call davcio (g(:,1), lrresid, iunresid, nrec, +1)
-        ! if (mpime.eq.0) then
-        !     write(503,*)g(:,1)
-        ! endif
          a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
          beta = - a(ibnd) / c(ibnd)
          alphabeta(2) = beta

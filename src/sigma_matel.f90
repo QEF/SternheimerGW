@@ -229,37 +229,37 @@ IF (ionode) THEN
  enddo
 
 !!!!!!!!REAL SPACE SIGMA_C
- sigma_band_c (:,:,:) = czero
+  sigma_band_c (:,:,:) = czero
 !!!!!!!!
- WRITE(6,*) 
- WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i8)') counter, npwq
- WRITE(6,*) 
- sigma_band_c (:,:,:) = czero
-  do ibnd = 1, nbnd_sig
-     evc_tmp_i(:) = czero
-   do jbnd = 1, nbnd_sig
-      evc_tmp_j(:) = czero
-      do iw = 1, nwsigma
-       do ig = 1, counter
-             evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
+  WRITE(6,*) 
+  WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i8)') counter, npwq
+  WRITE(6,*) 
+  sigma_band_c (:,:,:) = czero
+   do ibnd = 1, nbnd_sig
+    evc_tmp_i(:) = czero
+    do jbnd = 1, nbnd_sig
+       evc_tmp_j(:) = czero
+       do iw = 1, nwsigma
+        do ig = 1, counter
+              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
+        enddo
+       do ig = 1, ngmsco
+             do igp = 1, counter
+                evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
+             enddo
+             do igp = 1, ngmsco
+          !With inversion symmetry these are perfectly symmetric ig -> igp
+               auxsco(igp) = sigma (ig, igp, iw)
+             enddo
+            sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
+            (evc_tmp_i(ig))*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
        enddo
-      do ig = 1, ngmsco
-            do igp = 1, counter
-               evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-            enddo
-            do igp = 1, ngmsco
-           !With inversion symmetry these are perfectly symmetric ig -> igp
-              auxsco(igp) = sigma (ig, igp, iw)
-            enddo
-           sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-           (evc_tmp_i(ig))*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
-      enddo
+    enddo
    enddo
   enddo
- enddo
-DEALLOCATE (sigma) 
+  DEALLOCATE (sigma) 
 
-if (do_imag) then 
+  if (do_imag) then 
 !Can set arbitrary sigma windows with analytic continuation:
     wsigmax   =  15.0
     wsigmin   = -10.0
@@ -279,10 +279,9 @@ if (do_imag) then
 !do analytic continuation and print real
     call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
     call print_matel(ikq, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-else
+  else
     call print_matel(vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
-endif
-
+  endif
 ENDIF
 
 if(allocated(sigma_band_con)) deallocate(sigma_band_con)
