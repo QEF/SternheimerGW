@@ -81,7 +81,7 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
   !
   !-----------------------------------------------------------
   !subroutine pade_eval ( N, z, a, w, padapp)
-  subroutine pade_eval ( N, z, a, scrcoul_g, w, padapp)
+  subroutine pade_eval ( N, z, a, w, padapp)
   !-----------------------------------------------------------
   ! N-point Pade' approximant - evaluate the Pade' approximant
   !
@@ -111,7 +111,6 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
   integer :: N
   complex(DP) :: a(N), z(N), acap(0:N), bcap(0:N)
   complex(DP) :: w, padapp
-  complex(DP) :: scrcoul_g
   integer :: i
   real(DP) :: ar, ai
 

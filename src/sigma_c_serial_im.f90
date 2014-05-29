@@ -313,9 +313,10 @@ endif
                   enddo
                pade_catch=.false.
                if(padecont) then
-                    call pade_eval ( nfs, z, a, scrcoul_g_R(ig,igp,1), dcmplx(0.0d0, w_ryd(iw)), scrcoul_pade_g (ig,igp))
+                    call pade_eval ( nfs, z, a, dcmplx(0.0d0, w_ryd(iw)), scrcoul_pade_g (ig,igp))
                else if(godbyneeds) then
-                    scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd(iw)**2,0.0d0)+(a(1))**2)
+                !for imaginary w
+                    scrcoul_pade_g(ig,igp) = (dcmplx(-1.0d0,0.0d0)*a(2))/(dcmplx(w_ryd(iw)**2, 0.0d0) + (a(1))**2)
                else 
                     WRITE(6,'("No screening model chosen!")')
                     STOP
