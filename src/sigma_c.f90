@@ -215,9 +215,7 @@ DO iq = iqstart, iqstop
 !been done at -q therefore we are just going to calculate \Sum G_{k+q}W_{-q}
    inv_q=.false.
    call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
-
    if(lgamma) npwq=npw 
-
    write(6, *)  
 !  write(6, '("xk point")') 
 !  write(6, '(3f11.7)') xk_kpoints(:,ik0)
@@ -401,8 +399,6 @@ endif
               if(padecont) then
                  call pade_eval ( nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
               else if(godbyneeds) then
-!             scrcoul_pade_g(ig,igp) = (a(2)/(dcmplx(w_ryd(iw), eta) - a(1))) - (a(2)/(dcmplx(w_ryd(iw), eta) + a(1)))
-!new math
                 scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd(iw)**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
               else 
                    WRITE(6,'("No screening model chosen!")')
@@ -525,8 +521,7 @@ endif
                greenfr(1:nrsco,irp) = conjg ( aux )
             enddo
 !Should do decomposition here: |<\PHI(r-r')|i\int G(r,r';w-wp)W(r,r';wp) dwp|\PHI(r-r')>| = G(r,r';\omega)W(r,r';\omega)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
-
+            sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
     ENDDO ! end loop iqstart, iqstop 

@@ -269,7 +269,7 @@ endif
               do igp = 1, ngmpol 
                   z(1) = dcmplx(aimag(fiu(1)), 0.0d0)
                   u(1) = scrcoul_g_R(ig, igp, 1)
-                  ppmfreq = 6
+                  ppmfreq = 7
                   z(2) = dcmplx(aimag(fiu(ppmfreq)), 0.0d0)
                   u(2) = scrcoul_g_R(ig, igp, ppmfreq)
                   CALL godby_needs_coeffs(nfs, z, u, a)
@@ -328,7 +328,7 @@ endif
            do ig = 1, ngmpol
               call mod_diel(ig, xq_ibk, w_ryd(iw), scrcoul_pade_g(ig,ig), 1)
               qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-              limq = (qg2.lt.eps8) 
+              limq = (qg2.lt.eps8)
               IF(.not.limq) then
                  scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
               ENDIF
@@ -356,22 +356,17 @@ endif
             iq = ikq/2
         endif
 
-       !cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-        cprefac = (deltaw/RYTOEV) * wq(iq) * (-1.0d0, 0.0d0)/ tpi
+        cprefac = (deltaw/RYTOEV) * wq(iq) * (1.0d0, 0.0d0)/ tpi
 
         if ( iw/2*2.eq.iw ) then
             cprefac = cprefac * 4.d0/3.d0
         else
             cprefac = cprefac * 2.d0/3.d0
         endif
-
-!Presumably the fxn should be zero at the cutoff but might as well be consistent...
         if (iw.eq.1) then
-             !cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/tpi
-             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (-1.0d0, 0.0d0)/tpi
+             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (1.0d0, 0.0d0)/tpi
         else if (iw.eq.nwcoul) then
-             !cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (-1.0d0, 0.0d0)/tpi
+             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (1.0d0, 0.0d0)/tpi
         endif
 
         iw0mw = ind_w0mw (iw0,iw)
@@ -409,6 +404,7 @@ endif
 
         greenfr(:,:)  = czero
         call fft6(greenf_g(1,1), greenfr(1,1),1)
+
         sigma (:,:) = sigma (:,:) + cprefac * greenfr(:,:)*scrcoul(:,:)
     enddo
 

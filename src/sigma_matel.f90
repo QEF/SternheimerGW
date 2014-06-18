@@ -228,13 +228,10 @@ IF (ionode) THEN
      CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
  enddo
 
-!!!!!!!!REAL SPACE SIGMA_C
   sigma_band_c (:,:,:) = czero
-!!!!!!!!
   WRITE(6,*) 
-  WRITE(6,'("Number of G vectors for sigma_corr, npwq", 2i8)') counter, npwq
+  WRITE(6,'("Number of G vectors for sigma_corr, npwq, nbnd_sig", 3i8)') counter, npwq, nbnd_sig
   WRITE(6,*) 
-  sigma_band_c (:,:,:) = czero
    do ibnd = 1, nbnd_sig
     evc_tmp_i(:) = czero
     do jbnd = 1, nbnd_sig
@@ -248,7 +245,6 @@ IF (ionode) THEN
                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
              enddo
              do igp = 1, ngmsco
-          !With inversion symmetry these are perfectly symmetric ig -> igp
                auxsco(igp) = sigma (ig, igp, iw)
              enddo
             sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
@@ -258,29 +254,28 @@ IF (ionode) THEN
    enddo
   enddo
   DEALLOCATE (sigma) 
+  Write(6,'("Finished Sigma_c")')
 
   if (do_imag) then 
 !Can set arbitrary sigma windows with analytic continuation:
-    wsigmax   =  15.0
-    wsigmin   = -10.0
-    deltaws   =   0.1
+    wsigmax   =  30.0
+    wsigmin   = -30.0
+    deltaws   =   0.2
     nwsigwin  = 1 + ceiling((wsigmax - wsigmin)/deltaws)
     allocate (wsigwin(nwsigwin))
     do iw = 1, nwsigwin
         wsigwin(iw) = wsigmin + (wsigmax-wsigmin)/float(nwsigwin-1)*float(iw-1)
     enddo
     allocate (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
-
-    write(6,*) wsigwin(:)
+!print selfenergy on the imaginary axis.
+    call print_matel_im(ikq, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+!do analytic continuation and print selfenergy on the real axis.
     sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
-
-!print imaginary representation
-!   call print_matel(vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
-!do analytic continuation and print real
     call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
     call print_matel(ikq, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
   else
-    call print_matel(vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+    Write(6,'("Printing matrix elemenets")')
+    call print_matel(ikq, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
   endif
 ENDIF
 

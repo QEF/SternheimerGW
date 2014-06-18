@@ -285,7 +285,7 @@ endif
               do igp = 1, ngmpol 
                   z(1) = dcmplx(aimag(fiu(1)), 0.0d0)
                   u(1) = scrcoul_g_R(ig, igp, 1)
-                  ppmfreq = 6
+                  ppmfreq = 7
                   z(2) = dcmplx(aimag(fiu(ppmfreq)), 0.0d0)
                   u(2) = scrcoul_g_R(ig, igp, ppmfreq)
                   CALL godby_needs_coeffs(nfs, z, u, a)

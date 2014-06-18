@@ -224,9 +224,7 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
            h_diag(ig,1) =  1.0d0
      enddo
      gveccount = 1 
-
      ALLOCATE (gr_A_shift(npwx, nwgreen))
-
      do ig = igstart, igstop
              rhs(:,:)  = (0.0d0, 0.0d0)
              rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
@@ -240,16 +238,12 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
              call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                    cw, niters(gveccount))
-!
-!            if(.not.conv_root) write(600+mpime, '("root not converged.")')
-!            if(.not.conv_root) write(600+mpime, *) anorm
-
 !Now every processor has its slice of residuals.
 !Calculate frequency slice:
 !do iw1= 1*slice*(nwgreen/nslices), nwgreen/nslices
 !do iw1=1, nwgreen:
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
-
+             if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
@@ -274,7 +268,6 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
      enddo !ig
 
     deallocate(gr_A_shift)
-
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
     CALL mp_barrier(inter_pool_comm)
@@ -282,7 +275,6 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
     CALL mp_sum (green, inter_pool_comm )
     CALL mp_barrier(inter_pool_comm)
 #endif
-
 !store full sigma matrix.
 !need to split up over iw0...
 #ifdef __PARA
@@ -308,8 +300,8 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
       endif
 #endif
 
-    IF(iwstop-iwstart+1.ne.0) THEN
-        ALLOCATE(sigma(nrsco,nrsco))
+    if(iwstop-iwstart+1.ne.0) then
+        allocate(sigma(nrsco,nrsco))
         do iw0 = iwstart, iwstop
             if ((iq.gt.1)) then
                 sigma_g = dcmplx(0.0d0,0.0d0)
@@ -318,13 +310,12 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
                 call fft6(sigma_g, sigma, 1)
             endif
             if (iq.eq.1) sigma(:,:) = dcmplx(0.00, 0.00)
-               CALL sigma_c_serial(ik0, ikq, green, sigma, iw0)
-               CALL write_sigma(sigma(1,1), iw0)
+            CALL sigma_c_serial(ik0, ikq, green, sigma, iw0)
+            CALL write_sigma(sigma(1,1), iw0)
         enddo
-        DEALLOCATE(sigma)
-    ENDIF !iw0.neq.0
+        deallocate(sigma)
+    endif !iw0.neq.0
 ENDDO !iq
-
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)
 if(allocated(etc))    DEALLOCATE(etc)

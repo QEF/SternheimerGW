@@ -32,7 +32,7 @@ REAL(DP)                 :: w_ryd(nwsigwin), w_ryd2(nwsigwin), wsigwin(nwsigwin)
             call pade_coeff(nwsigma, z, u, a)
             do iw = 1, nwsigwin
            !continuation to the real axis.
-               call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
+               call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), 0.5), sigma_band_con(ibnd, jbnd, iw))
             enddo
         enddo
     enddo

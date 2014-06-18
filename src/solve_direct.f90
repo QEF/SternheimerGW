@@ -293,10 +293,17 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
 
            dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
+
+           do ibnd=1, nbnd 
+              if (niters(ibnd).ge.maxter_green) then
+                  dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
+              endif
+           enddo
         
            do iw = 1, nfs
               do ibnd=1, nbnd 
                if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
+!               if (niters(ibnd).ge.maxter_green) then
                    write(1000+mpime,'("dpsi is NAN")')
                    dpsi(:,ibnd,iw) = dcmplx(0.0d0,0.0d0)
                endif

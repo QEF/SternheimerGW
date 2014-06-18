@@ -37,14 +37,10 @@ integer  :: p, N, i
        !We zero the weight of the pole and place the pole way out
        !on the real axis to avoid numerical instability.
        !although this isn't really that far out....
-       !   a(1) = 20.0
-       !   a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
            a(1) = 10.0
            a(2) = -u(1)*a(1)**2 
    else if(real(u(1)-u(2)).eq.(0.0d0)) then 
     !case for wings having been zerod
-!          a(1) = 20.0
-!          a(2) = -((u(1)*a(1))/DCMPLX(2.0d0,0.0d0))
            a(1) = 10.0
            a(2) = -u(1)*a(1)**2 
    else
