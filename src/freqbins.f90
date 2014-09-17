@@ -10,7 +10,7 @@ SUBROUTINE freqbins()
   ! the freq. dependence of the GF is inexpensive, so we use the same spacing
   ! NB: I assume wcoulmax>0, wsigmamin=<0, wsigmamax>0 and zero of energy at the Fermi level
   ! TODO HL: should set two frequency windows one fine grid for the range around the fermi level
-  ! say  ef + 60 eV  down to the lowest pseudo state included. and a second 
+  ! say  ef +/- 60 eV  down to the lowest pseudo state included! and a second 
   ! course window for everything outside this range. 
  
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
@@ -20,7 +20,7 @@ SUBROUTINE freqbins()
 
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
-  USE control_gw, ONLY : eta
+  USE control_gw, ONLY : eta, godbyneeds, padecont
            
 
   IMPLICIT NONE 
@@ -122,5 +122,15 @@ SUBROUTINE freqbins()
   ENDDO
   WRITE(6,'("nwgreen:")')
   write(6,*) nwgreen
+
+  Write(6, '("Dynamic Screening Model:")')
+  IF(godbyneeds) then
+      WRITE(6,('("Godby Needs Plasmon-Pole")'))
+  else if (padecont) then
+      WRITE(6,('("Analytic Continuation")'))
+  else if (.not.padecont.and..not.godbyneeds) then
+      WRITE(6,'("No screening model chosen!")')
+  ENDIF
+
 
 END SUBROUTINE freqbins

@@ -294,11 +294,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
            dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
 
-           do ibnd=1, nbnd 
-              if (niters(ibnd).ge.maxter_green) then
-                  dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
-              endif
-           enddo
+           !do ibnd=1, nbnd 
+           !   if (niters(ibnd).ge.maxter_green) then
+           !       dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
+           !   endif
+           !enddo
         
            do iw = 1, nfs
               do ibnd=1, nbnd 

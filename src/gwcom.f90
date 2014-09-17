@@ -387,7 +387,7 @@ MODULE freq_gw
   SAVE
   ! ... the variables for computing frequency dependent dielectric constant
   LOGICAL :: fpol ! if .TRUE. dynamic dielectric constant is computed
-  INTEGER, PARAMETER :: nfsmax=60  ! # of maximum frequencies
+  INTEGER, PARAMETER :: nfsmax=200  ! # of maximum frequencies
   INTEGER :: nfs                   ! # of frequencies
   !REAL (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
   COMPLEX (KIND=DP) :: fiu(nfsmax)    ! values  of frequency

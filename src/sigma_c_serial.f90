@@ -105,9 +105,7 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
    ALLOCATE ( gmapsym  (ngm, nrot)    )
    ALLOCATE ( eigv     (ngm, nrot)    )
    ALLOCATE ( z(nfs), a(nfs), u(nfs)  )
-
    w_ryd(:) = wcoul(:)/RYTOEV
-
 !   WRITE(6," ")
 !   WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk(ipol, ik0), ipol=1,3)
 !   WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') ngmsco, nwsigma
@@ -162,11 +160,11 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
 
    if(mpime.eq.1) then
        write(6,'("",i4)')  
-!       write(1000+mpime, *)  
-!       write(1000+mpime, '("xq_IBK point")')
-!       write(1000+mpime, '(3f11.7)') xq_ibk
-!       write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-!       write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+!      write(1000+mpime, *)  
+!      write(1000+mpime, '("xq_IBK point")')
+!      write(1000+mpime, '(3f11.7)') xq_ibk
+!      write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
+!      write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
    endif
 
 !Dielectric Function should be written to file at this point
@@ -308,11 +306,11 @@ endif
               enddo
               call pade_coeff ( nfs, z, u, a)
 !     Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
-             do iw = 1, nfs 
-                scrcoul_g_R (ig, igp, iw) = a(iw)
-             enddo
+              do iw = 1, nfs 
+                 scrcoul_g_R (ig, igp, iw) = a(iw)
+              enddo
            enddo !enddo on ig
-        enddo  !enddo on igp
+          enddo  !enddo on igp
         else if(.not.padecont.and..not.godbyneeds) then
                  WRITE(6,'("No screening model chosen!")')
         endif
@@ -362,23 +360,21 @@ endif
         scrcoul(:,:) = czero
         call fft6(scrcoul_pade_g(1,1), scrcoul(1,1), 1)
 
-!Now have W(r,r';omega')
-!simpson quadrature: int_w1^wN f(w)dw = deltaw*
-![ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd]
         if(lgamma) then
             iq = ikq
         else
             iq = ikq/2
         endif
 
+!Now have W(r,r';omega')
+!simpson quadrature: int_w1^wN f(w)dw = deltaw*
+![ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd]
         cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-
         if ( iw/2*2.eq.iw ) then
             cprefac = cprefac * 4.d0/3.d0
         else
             cprefac = cprefac * 2.d0/3.d0
         endif
-
 !Presumably the fxn should be zero at the cutoff but might as well be consistent...
         if (iw.eq.1) then
              cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
@@ -389,6 +385,8 @@ endif
         iw0mw = ind_w0mw (iw0,iw)
         iw0pw = ind_w0pw (iw0,iw)
 
+!Now calculate G(r,r';omega-omega')W(omega')
+       !rec0 = (iw0pw-1) * 1 * nksq + (iq-1) + 1
         rec0 = (iw0mw-1) + 1
 
         if (.not.do_diag_g) then
@@ -403,10 +401,9 @@ endif
 
         greenfr(:,:)  = czero
         call fft6(greenf_g(1,1), greenfr(1,1), 1)
+        sigma (:,:) = sigma (:,:) + cprefac*greenfr(:,:)*scrcoul(:,:)
 
-        sigma (:,:) = sigma (:,:) + cprefac * greenfr(:,:)*scrcoul(:,:)
-
-!Now have G(r,r';omega-omega')
+!Now calculate G(r,r';omega+omega')W(omega')
         rec0 = (iw0pw-1) + 1
 
         if (.not.do_diag_g) then
@@ -420,8 +417,8 @@ endif
         endif
 
         greenfr(:,:)  = czero
-        call fft6(greenf_g(1,1), greenfr(1,1),1)
-        sigma (:,:) = sigma (:,:) + cprefac * greenfr(:,:)*scrcoul(:,:)
+        call fft6(greenf_g(1,1), greenfr(1,1), 1)
+        sigma (:,:) = sigma (:,:) + cprefac*greenfr(:,:)*scrcoul(:,:)
     enddo
 
     DEALLOCATE ( gmapsym          )

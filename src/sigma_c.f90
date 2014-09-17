@@ -231,7 +231,8 @@ DO iq = iqstart, iqstop
    write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
    write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
 
-!Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
+!Need a loop to find all plane waves below ecutsco when 
+!igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
 !Also since we are in parallel here I might have to use the gk_sort
@@ -541,10 +542,10 @@ ENDIF
     CALL mp_barrier(inter_pool_comm)
 #endif __PARA
 
-       print*,"output"
-       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
-       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
-       print*,""
+!       print*,"output"
+!       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
+!       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
+!       print*,""
 
 
 IF (ionode) then

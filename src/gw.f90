@@ -34,11 +34,11 @@ PROGRAM gw
   USE parallel_include,   ONLY: mpi_comm_world 
 
   USE path_io_routines,   ONLY : io_path_start
-  USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
+  USE control_gw,         ONLY : done_bands, reduce_io, recover, tmp_dir_gw,&
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
-                               do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel,&
-                               do_q0_only, multishift, do_sigma_extra, solve_direct, tinvert, lrpa,&
-                               do_serial, do_epsil, do_imag
+                               do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green,&
+                               do_sigma_matel, do_q0_only, multishift, do_sigma_extra,& 
+                               solve_direct, tinvert, lrpa, do_serial, do_epsil, do_imag
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -156,12 +156,17 @@ IF (ionode) THEN
        iungreen = 31
        lrgrn  = 2 * ngmgrn * ngmgrn
        CALL diropn (iungreen, 'green', lrgrn, exst)
+
 !   Sigma file
        iunsigma = 32
-!      lrsigma = 2 * ngmsco * ngmsco * nwsigma
-!HRF:
-       lrsigma = 2 * ngmsco * ngmsco 
+       if(do_serial) then
+         lrsigma = 2 * ngmsco * ngmsco 
+       else
+         lrsigma = 2 * ngmsco * ngmsco * nwsigma
+       endif
+
        CALL diropn(iunsigma, 'sigma', lrsigma, exst)
+
 !   Should sigma_ex need to be written to file:
        iunsex = 33
        lrsex = 2 * ngmsex * ngmsex
@@ -262,10 +267,10 @@ ENDIF
 ! Generates small group of k and then forms IBZ_{k}.
        CALL run_pwscf_green(do_band)
        CALL initialize_gw()
+
 ! CALCULATE G(r,r'; w) 
 ! WRITE(stdout, '(/5x, "GREEN LINEAR SYSTEM SOLVER")')
        if(do_green) write(6,'("Do green_linsys")')
-
        if(do_green.and.(.not.multishift)) then
             write(6,'("Green Not-MultiShift, Serial sigma_C", i4)') ik
             CALL green_linsys(ik)

@@ -99,7 +99,6 @@ SUBROUTINE green_linsys_serial (ik0)
 #define DIRECT_IO_FACTOR 8 
     ci = (0.0d0, 1.0d0)
 
-
 !Convert freq array generated in freqbins into rydbergs.
     w_ryd(:) = wgreen(:)/RYTOEV
 
@@ -268,6 +267,7 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
      enddo !ig
 
     deallocate(gr_A_shift)
+
 #ifdef __PARA
 !upper limit on mp_barrier communicate?
     CALL mp_barrier(inter_pool_comm)
@@ -299,8 +299,9 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
 #ifdef __PARA
       endif
 #endif
-
+    CALL mp_barrier(inter_pool_comm)
     if(iwstop-iwstart+1.ne.0) then
+        write(1000+mpime,*) mpime, iwstop, iwstart
         allocate(sigma(nrsco,nrsco))
         do iw0 = iwstart, iwstop
             if ((iq.gt.1)) then

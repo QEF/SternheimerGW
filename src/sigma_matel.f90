@@ -10,7 +10,7 @@ SUBROUTINE sigma_matel (ik0)
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
-  USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag
+  USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : ngmsig, nbnd_sig, sigma_g_ex, ngmsco, ngmsex
   USE disp,                 ONLY : xk_kpoints
@@ -37,7 +37,7 @@ REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a
                                et_qp_tr, z_tr, z(nbnd_sig)
 REAL(DP)                  ::   one
 COMPLEX(DP)               ::   czero, temp
-COMPLEX(DP)               ::   aux(ngmsex), psic(nrxx), vpsi(ngm),auxsco(ngmsco)!, auxr(nrxxs)
+COMPLEX(DP)               ::   aux(ngmsex), psic(nrxx), vpsi(ngm),auxsco(ngmsco)
 COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
 LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
@@ -224,23 +224,28 @@ IF (ionode) THEN
  enddo
 
  sigma = dcmplx(0.0d0, 0.0d0)
- do iw = 1, nwsigma
-     CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
- enddo
+
+ if(do_serial) then
+   do iw = 1, nwsigma
+       CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
+   enddo
+ else
+   CALL davcio (sigma, lrsigma, iunsigma, 1, -1)
+ endif
 
   sigma_band_c (:,:,:) = czero
   WRITE(6,*) 
   WRITE(6,'("Number of G vectors for sigma_corr, npwq, nbnd_sig", 3i8)') counter, npwq, nbnd_sig
   WRITE(6,*) 
-   do ibnd = 1, nbnd_sig
+  do ibnd = 1, nbnd_sig
     evc_tmp_i(:) = czero
     do jbnd = 1, nbnd_sig
        evc_tmp_j(:) = czero
        do iw = 1, nwsigma
-        do ig = 1, counter
-              evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
-        enddo
-       do ig = 1, ngmsco
+          do ig = 1, counter
+             evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
+          enddo
+          do ig = 1, ngmsco
              do igp = 1, counter
                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
              enddo
@@ -249,11 +254,12 @@ IF (ionode) THEN
              enddo
             sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
             (evc_tmp_i(ig))*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
+          enddo
        enddo
     enddo
-   enddo
   enddo
-  DEALLOCATE (sigma) 
+  deallocate (sigma) 
+
   Write(6,'("Finished Sigma_c")')
 
   if (do_imag) then 
