@@ -217,7 +217,7 @@ DO iq = iqstart, iqstop
    call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
    if(lgamma) npwq=npw 
    write(6, *)  
-!  write(6, '("xk point")') 
+!  write(6, '("xk point")')
 !  write(6, '(3f11.7)') xk_kpoints(:,ik0)
    write(6, '("xq_IBK point")')
    write(6, '(3f11.7)') xq_ibk
@@ -337,7 +337,6 @@ ENDDO!nfs
 endif
 
 !zeroing wings of W again!
-
     if(iq.eq.1) then
       do iw = 1, nfs
        do ig = 2, ngmpol

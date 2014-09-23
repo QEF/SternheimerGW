@@ -276,11 +276,12 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                                   npol, niters, alphabeta)
 
-           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", i4," ibnd", i4, &
-               &               "solve_linter: root not converged ", e10.3)')  &
-               &                ik , ibnd, anorm
-           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
+ !          if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint ", i4," ibnd ", i4, &
+ !              &              "root not converged ", e10.5)')  &
+ !              &                ik , ibnd, anorm
+ !          if (mod(ik,10).eq.0) WRITE(1000+mpime, '(5x,"kpoint", i4, e10.3, 10i4)') ik, anorm, niters
 
+           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
 
 !          dpsi = dpsi^{+}
            dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
@@ -294,11 +295,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
            dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
 
-           !do ibnd=1, nbnd 
-           !   if (niters(ibnd).ge.maxter_green) then
-           !       dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
-           !   endif
-           !enddo
+           do ibnd=1, nbnd 
+              if (niters(ibnd).ge.maxter_green) then
+                  dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
+              endif
+           enddo
         
            do iw = 1, nfs
               do ibnd=1, nbnd 

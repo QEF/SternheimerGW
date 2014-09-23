@@ -25,7 +25,7 @@ subroutine bcast_gw_input ( )
                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                          coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
-                         do_imag
+                         do_imag, do_pade_coul
  
   USE gamma_gamma, ONLY : asr
   USE disp, ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
@@ -123,6 +123,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (do_diag_w, ionode_id)
   call mp_bcast (do_diag_g, ionode_id)
   call mp_bcast (do_imag, ionode_id)
+  call mp_bcast (do_pade_coul, ionode_id)
 
 !Frequency grid
   call mp_bcast (wsigmamin, ionode_id)

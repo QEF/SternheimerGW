@@ -38,7 +38,7 @@ PROGRAM gw
                                ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                                do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green,&
                                do_sigma_matel, do_q0_only, multishift, do_sigma_extra,& 
-                               solve_direct, tinvert, lrpa, do_serial, do_epsil, do_imag
+                               solve_direct, tinvert, lrpa, do_serial, do_epsil, do_imag, do_pade_coul
 
   USE input_parameters, ONLY : pseudo_dir
   USE io_files,         ONLY : prefix, tmp_dir
@@ -177,6 +177,15 @@ IF (ionode) THEN
        CALL diropn(iunsigext, 'sig_ext', lrsigext, exst)
 ENDIF
 
+
+IF(do_pade_coul) THEN
+    write(6, *)
+    write(6,'(4x,"Analytic Continuation of Epsilon")')
+    if(ionode) CALL pade_eps()
+    call mp_barrier(inter_pool_comm)
+    GOTO 126
+ENDIF
+
 IF(do_coulomb) THEN
      DO iq = w_of_q_start, nqs
         scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
@@ -184,7 +193,6 @@ IF(do_coulomb) THEN
         CALL prepare_q(do_band, do_iq, setup_pw, iq)
         CALL run_pwscf(do_band)
         CALL initialize_gw()
-
 
 !Determine the unique G vectors in the small group of q if symmetry is being used.
 !If not then all the vectors up to ngmpol (correlation cutoff) are treated as unique and calculated.
@@ -244,7 +252,7 @@ IF(do_coulomb) THEN
        CALL mp_barrier(inter_pool_comm)
 
        if(do_q0_only) GOTO 124
-       if(do_epsil) GOTO 126
+       if(do_epsil.and.(iq.eq.nqs)) GOTO 126
    END DO
    WRITE(stdout, '("Finished Calculating Screened Coulomb")') 
 ENDIF

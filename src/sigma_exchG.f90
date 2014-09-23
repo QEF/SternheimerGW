@@ -132,11 +132,6 @@ DO iq = 1, nksq
       endif
    enddo
 !EXX
-!   write(6,*) nbnd_occ(iq)
-!   write(6,*) size(psi_ij,1), size(evq,1), size(psi_ij,2), size(evq,2)
-!   write(6,*) size(nls,1), size(nl,1), size(igkq,1), npwq, npwx
-!   write(6,*) size(dpsic,1), size(psi,1)
-!   write(6,*) omega, sqrt(omega), alat
 !EXX debug
    do vbnd = 1, nbnd_occ(iq)
   !do vbnd = 1, 1 

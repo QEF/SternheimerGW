@@ -39,7 +39,7 @@ SUBROUTINE gwq_readin()
                             do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil, do_serial, &
-                            do_diag_g, do_diag_w, do_imag
+                            do_diag_g, do_diag_w, do_imag, do_pade_coul
   USE save_gw,       ONLY : tmp_dir_save
   USE gamma_gamma,   ONLY : asr
   USE qpoint,        ONLY : nksq, xq
@@ -101,7 +101,7 @@ SUBROUTINE gwq_readin()
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag
+                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul
 
   ! HL commented these vars in Namelist: eth_rps, eth_ns, lraman, elop, dek 
   ! tr2_ph       : convergence threshold
@@ -216,6 +216,7 @@ SUBROUTINE gwq_readin()
   do_diag_g       = .FALSE.
   do_diag_w       = .FALSE.
   do_imag         = .FALSE.
+  do_pade_coul    = .FALSE.
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   ecutsig      = 5.0

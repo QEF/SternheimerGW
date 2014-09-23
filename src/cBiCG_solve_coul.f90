@@ -14,10 +14,11 @@ SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
 USE kinds,       ONLY: DP
 USE mp_global,   ONLY: intra_pool_comm
 USE mp,          ONLY: mp_sum
+USE gwsigma,     ONLY: ngmgrn, ecutsco, nrsco, ngmsco, ngmsig
 USE control_gw,  ONLY: maxter_green
 USE units_gw,    ONLY: iunresid, lrresid, iunalphabeta, lralphabeta
-USE mp_global,  ONLY: inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                        nproc_pool, nproc, me_pool, my_pool_id, npool
+USE mp_global,   ONLY: inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
+                       nproc_pool, nproc, me_pool, my_pool_id, npool
 
 implicit none
 
@@ -163,6 +164,8 @@ external cg_psi      ! input: the routine computing cg_psi
         if (conv (ibnd).eq.0) then
             lbnd = lbnd+1
             rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
+            !truncated conv_params
+            !rho(lbnd) = abs(ZDOTC (ngmsco, g(1,ibnd), 1, g(1,ibnd), 1))
         endif
      enddo
 

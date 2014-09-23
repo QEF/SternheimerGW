@@ -105,7 +105,8 @@ sigma_c_serial_im.o\
 green_linsys_serial_im.o\
 print_matel.o\
 print_matel_im.o\
-sigma_pade.o
+sigma_pade.o\
+pade_eps.o
 
 
 

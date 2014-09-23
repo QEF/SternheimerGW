@@ -375,7 +375,8 @@ MODULE control_gw
              do_diag_w,&
              do_diag_g,&
              do_epsil,& !in case you want to set xq point
-             do_imag    !from input file for epsilon
+             do_imag,&    !from input file for epsilon
+             do_pade_coul
 
 END MODULE control_gw
 !
@@ -387,7 +388,7 @@ MODULE freq_gw
   SAVE
   ! ... the variables for computing frequency dependent dielectric constant
   LOGICAL :: fpol ! if .TRUE. dynamic dielectric constant is computed
-  INTEGER, PARAMETER :: nfsmax=200  ! # of maximum frequencies
+  INTEGER, PARAMETER :: nfsmax=350  ! # of maximum frequencies
   INTEGER :: nfs                   ! # of frequencies
   !REAL (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
   COMPLEX (KIND=DP) :: fiu(nfsmax)    ! values  of frequency

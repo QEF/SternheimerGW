@@ -10,7 +10,7 @@ SUBROUTINE sigma_matel (ik0)
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
-  USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial
+  USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : ngmsig, nbnd_sig, sigma_g_ex, ngmsco, ngmsex
   USE disp,                 ONLY : xk_kpoints
@@ -166,6 +166,8 @@ IF (ionode) THEN
 !setting these arrays to dim ngmsex lets us calculate all matrix elements with sigma as 
 !a vector^{T}*matrix*vector product.
 
+if(do_sigma_exxG) GOTO 143
+
  ALLOCATE (sigma_g_ex (ngmsex, ngmsex))
  ALLOCATE (evc_tmp_i  (ngmsex))
  ALLOCATE (evc_tmp_j  (ngmsex))
@@ -203,6 +205,8 @@ IF (ionode) THEN
  write(stdout,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
  write(stdout,*)
  write(stdout,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
+
+143 CONTINUE
 
 !MATRIX ELEMENTS OF SIGMA_C:
  WRITE(6,*) 

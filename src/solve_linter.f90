@@ -117,7 +117,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! change of rho / scf potential (output)
   ! change of scf potential (output)
   complex(DP), allocatable :: ldos (:,:), ldoss (:,:), mixin(:), mixout(:), &
-      dbecsum (:,:,:), dbecsum_nc(:,:,:,:,:), aux1 (:,:)
+      dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
 
@@ -183,7 +183,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !HLallocate (hpsi(npwx*npol, 4)) ! Test array for whether linear system is being properly solved
   call start_clock ('solve_linter')
 
-  !HL allocate (dvscfin ( nrxx , nspin_mag , npe))
   allocate (dvscfout ( nrxx , nfs))    
   allocate (drhoscfh ( nrxx , nfs))    
   allocate (dvscfin  ( nrxx , nfs))    
@@ -191,7 +190,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))    
 
   if (doublegrid) then
-  !HL allocate (dvscfins ( nrxxs , nspin_mag , npe))
      allocate (dvscfins ( nrxxs , nfs))    
   else
      dvscfins => dvscfin
@@ -200,7 +198,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 !Complex eigenvalues
 
-  IF (noncolin) allocate (dbecsum_nc (nhm,nhm, nat , nspin, npe))
+  IF (noncolin) allocate (dbecsum_nc (nhm, nhm, nat , nspin))
   allocate (aux1 ( nrxxs, npol))    
   allocate (h_diag ( npwx*npol, nbnd))    
 
@@ -416,7 +414,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                 call zcopy (nspin_mag*nrxx, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
         endif
 
-        call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
+        call addusddens (drhoscfh(1,iw), dbecsum, 0)
 
         call zcopy (nrxx*nspin_mag, drhoscfh(1,iw), 1, dvscfout(1,iw),1)
 

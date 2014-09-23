@@ -21,7 +21,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE lsda_mod,   ONLY : nspin
   USE io_global,  ONLY : stdout, ionode
   USE uspp,       ONLY: okvan
-  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont, solve_direct
+  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont, solve_direct, do_epsil
   USE partial,    ONLY : done_irr, comp_irr
   USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
@@ -93,6 +93,7 @@ DO ig = igstart, igstop
                endif
             enddo
          enddo !iw
+      if(do_epsil) GOTO 545
       else
         do iw = 1, nfs
            drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
@@ -109,6 +110,8 @@ DO ig = igstart, igstop
         enddo
       endif
 ENDDO 
+
+545 CONTINUE
 
 tcpu = get_clock ('GW')
 DEALLOCATE (drhoscfs)
