@@ -33,13 +33,13 @@ integer  :: p, N, i
 !(which would not effect the real part of the selfenergy anyway...
 !a(1) = \tilde(\omega) a(2) = R
 
-   if(real(u(2)/(u(1)-u(2))).lt.(0.0d0)) then
+   if(real(u(1)-u(2)).eq.(0.0d0)) then 
        !We zero the weight of the pole and place the pole way out
        !on the real axis to avoid numerical instability.
        !although this isn't really that far out....
            a(1) = 10.0
            a(2) = -u(1)*a(1)**2 
-   else if(real(u(1)-u(2)).eq.(0.0d0)) then 
+   else if(real(u(2)/(u(1)-u(2))).lt.(0.0d0)) then
     !case for wings having been zerod
            a(1) = 10.0
            a(2) = -u(1)*a(1)**2 

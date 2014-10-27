@@ -36,6 +36,7 @@ SUBROUTINE green_linsys_shift (ik0)
   USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
                                    nproc_pool, nproc, me_pool, my_pool_id, npool
   USE mp,                   ONLY: mp_barrier, mp_bcast, mp_sum
+  USE, INTRINSIC :: ieee_arithmetic
 
   IMPLICIT NONE 
 
@@ -207,6 +208,8 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
              lter = 0
              etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
              cw = CMPLX( 0, 0, kind=DP)
+             conv_root = .true.
+             anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
              WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
@@ -218,10 +221,25 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
              !if(.not.conv_root) write(600+mpime, '("root not converged.")')
              !if(.not.conv_root) gr_A(:,:) = dcmplx(0.0d0,0.0d0) 
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
+             if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
+             if(.not.conv_root) write(1000+mpime, '("green not converged")')
+
+             do iw = 1, nwgreen
+                do igp = 1, counter
+                   if( ieee_is_nan(real(gr_A_shift(igkq_ig(igp),iw))).or.ieee_is_nan(aimag(gr_A_shift(igkq_ig(igp),iw)))) then
+                       gr_A_shift (igkq_ig(igp), iw) = (0.0d0, 0.0d0)
+                       write(1000+mpime, '("green nan")')
+                   endif
+                enddo
+             enddo
+
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
                                                             gr_A_shift(igkq_ig(igp),iw)
+!Full Left-Handed Green's fxn
+!                   green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
+!                                                            conjg(gr_A_shift(igkq_ig(igp),iw))
                 enddo
              enddo
          gveccount = gveccount + 1
@@ -231,11 +249,15 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
            do igp = 1, counter
 !should be nbnd_occ:
             do ibnd = 1, nbnd
-              x = et(ibnd, ikq) - w_ryd(iw)
-              dirac = eta / pi / (x**2.d0 + eta**2.d0)
-              green(igkq_tmp(ig), igkq_tmp(igp), iw) =  green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
-                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))   * &
-                                                        (evq(igkq_ig(igp), ibnd)) * dirac
+               x = et(ibnd, ikq) - w_ryd(iw)
+               dirac = eta / pi / (x**2.d0 + eta**2.d0)
+              ! green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
+              !                                          tpi*ci*conjg(evq(igkq_ig(ig), ibnd))    * &
+              !                                          evq(igkq_ig(igp), ibnd) * dirac
+!@ HL conjg G
+              green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) - &
+                                                       tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
+                                                       evq(igkq_ig(igp), ibnd)  * dirac
             enddo 
            enddo!igp
          enddo!iw
@@ -252,12 +274,10 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
 #endif
 
 !do sigma_c
-
     do iw = 1, nwgreen
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
        CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)
     enddo
-
 #ifdef __PARA
     endif
     CALL mp_barrier(inter_pool_comm)

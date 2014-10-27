@@ -58,8 +58,6 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
          tmp1 = g(p-1,p-1)/g(p-1,i)
          tmp2 = g(p-1,i)/g(p-1,i)
          g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
-        !Helps stability.
-        !if ( abs ( g(p-1,p-1) - g(p-1,i) ) .lt. 1d-10 ) g (p,i) = 0.d0
       enddo
     endif
     a(p) = g (p,p)
@@ -67,11 +65,9 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
     ar = real(a(p))
     ai = aimag(a(p))
     if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-  !     write(1000+mpime,*) (z(i),i=1,N)
+       write(1000+mpime,*) (z(i),i=1,N)
   !     write(1000+mpime,*) (u(i),i=1,N)
-  !    write(1000+mpime,*) (a(i),i=1,N)
-  !if it seems weird... it is
-  !     STOP
+       a(:) = (0.0d0, 0.0d0)
     endif
     !
   enddo

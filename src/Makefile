@@ -109,9 +109,6 @@ sigma_pade.o\
 pade_eps.o
 
 
-
-
-
 HOME =/home/lambert/espresso-4.2.1
 PWOBJS =$(HOME)/PW/libpw.a
 EEOBJS=$(HOME)/EE/libee.a

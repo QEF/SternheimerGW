@@ -226,41 +226,10 @@ ENDDO ! on q
     ALLOCATE ( sigma_g_ex  (ngmsex, ngmsex) ) 
     sigma_g_ex(:,:) = (0.0d0,0.0d0)
 
-!take matrix element here:
-!The results did not differ at all from taking matrix elements in G space for silicon at Gamma. 
-!Still useful to have for later purposes.(26 lines)
-!if (nksq.gt.1) rewind (unit = iunigk)
-!CALL davcio (evq, lrwfc, iuwfc, 1, -1)
-!     if (nksq.gt.1) then
-!          read (iunigk, err = 100, iostat = ios) npw, igk
-!     endif
-!     if (lgamma)  npwq = npw
-!do ibnd = 1, nbnd
-!   exch_element = DCMPLX(0.0d0, 0.0d0)
-!   aux = czero
-!   dvoxel = (omega/nrsex)**2
-!   do ig = 1, npwq
-!      if((igkq(ig).le.ngmsex).and.((igkq(ig)).gt.0)) then
-!          aux(nlsex(ig)) = evq(igkq(ig), ibnd)  
-!      endif
-!   enddo
-!   call cfft3d (aux, nr1sex, nr2sex, nr3sex, nr1sex, nr2sex, nr3sex, +1)
-!   aux = (aux/sqrt(omega))
-!   do irp = 1, nrsex
-!      do ir = 1, nrsex
-!         exch_element = exch_element + (conjg(aux(ir))*sigma_ex(ir,irp)*aux(irp))*dvoxel
-!      enddo
-!   enddo
-!   write (6, '("Exchange Element:")')
-!   write (6,*) exch_element*RYTOEV
-!   write (6,*) Omega
-!enddo
-!real space exchange element.
-
 !WRITE(6, '("FFT_SIGMA")')
     CALL sigma_r2g_ex(sigma_ex, sigma_g_ex)
 !Storing full sigma_ex operator in G  space...
-    !CALL davcio(sigma_g_ex, lrsex, iunsex, 1, 1)
+!   CALL davcio(sigma_g_ex, lrsex, iunsex, 1, 1)
     CALL davcio(sigma_g_ex, lrsex, iunsex, ik0, 1)
     CALL stop_clock('sigma_exch')
 

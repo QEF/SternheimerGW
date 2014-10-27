@@ -56,6 +56,7 @@ PROGRAM gw
   USE gvect,            ONLY : nl, g
   USE kinds,            ONLY : DP
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
+  USE, INTRINSIC :: ieee_arithmetic
 
   
   IMPLICIT NONE

@@ -191,7 +191,7 @@ if(do_sigma_exxG) GOTO 143
             aux(igp) = sigma_g_ex (igp, ig)
         enddo
            sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
-           evc_tmp_i (ig) * ZDOTC(ngmsex, evc_tmp_j (1:ngmsex), 1, aux, 1)
+           ZDOTC(ngmsex, evc_tmp_j (1:ngmsex), 1, aux,1)*evc_tmp_i(ig)
       enddo
   enddo
  enddo
@@ -254,10 +254,16 @@ if(do_sigma_exxG) GOTO 143
                 evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
              enddo
              do igp = 1, ngmsco
+!               auxsco(igp) = sigma (igp, ig, iw)
+!@ conjg
                auxsco(igp) = sigma (ig, igp, iw)
              enddo
+!            sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
+!            ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco,1)*evc_tmp_i(ig)
+!LH Green's function
+!@ conjg
             sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-            (evc_tmp_i(ig))*ZDOTC(ngmsco, evc_tmp_j (1:ngmsco), 1, auxsco, 1)
+            conjg(evc_tmp_i(ig))*ZDOTC(ngmsco, conjg(evc_tmp_j (1:ngmsco)), 1, auxsco, 1)
           enddo
        enddo
     enddo

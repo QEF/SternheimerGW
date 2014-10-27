@@ -316,13 +316,13 @@ DO iw = 1, nfs
           enddo
        else
 !should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
-             write(6,'("Taking Limit.")')
-             write(6,*) (rcut)
-             write(6,*) (fpi*e2*(rcut**2))/2.0d0
-             write(6,*) ig, iw
-             write(6,*) g(:, ig)
-             write(6,*) xq_ibk(:)
-             write(6,*) qg2
+!             write(6,'("Taking Limit.")')
+!             write(6,*) (rcut)
+!             write(6,*) (fpi*e2*(rcut**2))/2.0d0
+!             write(6,*) ig, iw
+!             write(6,*) g(:, ig)
+!             write(6,*) xq_ibk(:)
+!             write(6,*) qg2
 !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
 !we enforce that here:
              if(iw.eq.1) then
@@ -447,12 +447,17 @@ endif
                aux(nlsco(ig)) = conjg(scrcoul(ig,irp))
            enddo
            call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
-           scrcoul(1:nrsco,irp) = conjg ( aux )
+!@         scrcoul(1:nrsco,irp) = conjg ( aux )
+!@conjg sigma so matrix elements are correct.
+           scrcoul(1:nrsco,irp) = aux 
         enddo
 !Now have W(r,r';omega')
        ! simpson quadrature: int_w1^wN f(w)dw = deltaw * 
        ! [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
-         cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
+!        cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
+!@
+         cprefac = (deltaw/RYTOEV) * wq(iq) * (0.0d0, -1.0d0)/ tpi
+
          if ( iw/2*2.eq.iw ) then
             cprefac = cprefac * 4.d0/3.d0
          else
@@ -486,6 +491,7 @@ endif
 !additionally this means what I've actually calculated in green linsys is G = \psi_k^*(G)\psi_k(G')
 !instead of \psi_{k}(G)\psi_{k}^*(G'), in Si inversion symmetry means:  
 !G = \psi_{-k}(-G)\psi^*_-k(-G') 
+!WHAT IF WE DON'T HAVE INVERSION SYMMETRY?
             do irp = 1, nrsco
                aux = czero
                     do ig = 1, ngmgrn
@@ -520,7 +526,6 @@ endif
                call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, +1)
                greenfr(1:nrsco,irp) = conjg ( aux )
             enddo
-!Should do decomposition here: |<\PHI(r-r')|i\int G(r,r';w-wp)W(r,r';wp) dwp|\PHI(r-r')>| = G(r,r';\omega)W(r,r';\omega)
             sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
@@ -540,11 +545,6 @@ ENDIF
     CALL mp_sum(sigma, inter_pool_comm)
     CALL mp_barrier(inter_pool_comm)
 #endif __PARA
-
-!       print*,"output"
-!       write(6,'(5f12.7)') real(sigma(1:5,1:5, 1))
-!       write(6,'(1f12.7)') sum(real(sigma(1:5,1:5, 1)))
-!       print*,""
 
 
 IF (ionode) then

@@ -242,7 +242,9 @@ WRITE(6, '(4x,"Mem for green: ", f9.3, " Gb.")'), ((float(ngmgrn)**2)*float(nwgr
 !do iw1= 1*slice*(nwgreen/nslices), nwgreen/nslices
 !do iw1=1, nwgreen:
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
+
              if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
+
              do iw = 1, nwgreen
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
