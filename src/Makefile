@@ -1,153 +1,135 @@
-# x61
-#F90 = ifort -O3 
-#F90FLAGS = -g -traceback -fp-stack-check -check all -fpe0 -warn all
-#F90FLAGS = -g -traceback -fp-stack-check -check all -fpe0
-#LDFLAGS = -L/users2/lambert/espresso-4.2.1/install -lmkl_em64t_nothread -L/users2/lambert/libs/fftw-2.1.5/fftw/.libs -lfftw #problem in coulomb not converging... possibly mkl related?
-#LDFLAGS = -L/users2/lambert/libs -lblas -llapack -lfftw #switching to personal libraries for older QE
-#CPP = cpp 
-#CPPFLAGS = -P -traditional
+# Makefile for GWTC from Makefile for PH. Need to strip out everything related to dynamical matrices and the like my ions don't move.
 
-# Kittel
-F90 = mpif90
-LDFLAGS = -L/home/lambert/espresso-4.2.1/install -L/opt/intel/Compiler/11.0/083/mkl/lib/em64t -lmkl_em64t_nothread -L/home/lambert/libs/fftw-2.1.5/fftw/.libs -lfftw
-CPP = cpp
-CPPFLAGS = -P -traditional -D__PARA -D__MPI -D__LAM -D__LINUX64
+include make.sys
 
+# location of needed modules
+MODFLAGS= $(MOD_FLAG)/iotk/src $(MOD_FLAG)/Modules \
+          $(MOD_FLAG)/EE $(MOD_FLAG)/PW $(MOD_FLAG).
 
-# hbar
+#F90FLAGS = #-g #-traceback -fp-stack-check -check all -fpe0
 
-#F90 = mpif90 
-#LDFLAGS = -llapack -lblas -L/home/giustino/lib -lfftw 
-#CPP = cpp
-#CPPFLAGS = -P -traditional -D__PARA -D__MPI -D__LAM -D__LINUX64
-
-# slater
-#
-# if the -C -ansi options are not used then the concatenation
-# operator // is taken as a comment and what follows is discarded...
-# 
-# slater has ifort 9.0
-
-#F90 = mpif90 
-#F90FLAGS = -assume byterecl
-#LDFLAGS = -llapack  -lblas -L/home/giustino/code/fftw-2.1.5/lib -lfftw
-#CPP = cpp -C -ansi
-#CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
-
-# redqueen
-
-#F90 = mpif90
-#F90FLAGS = -O3 
-#LDFLAGS = -lmkl -lmkl_lapack -lguide -lpthread \
-#          -L/export/home/fgiustino/giustino/redqueen/code/fftw-2.1.5/lib -lfftw
-#CPP = cpp -C -ansi
-#CPPFLAGS = -D__PARA -D__MPI 
-
-# hal
-#
-# -assume byterecl tells the compiler that recl in direct IO is in bytes
-# (otherwise the default is 4 bytes words)
-
-#F90 = mpif90
-#F90FLAGS = -O3 -assume byterecl
-#LDFLAGS = -lmkl -lmkl_lapack -lguide -lpthread \
-#          -L/export/home/fgiustino/giustino/hal/code/fftw-2.1.5/lib -lfftw
-#CPP = cpp -C -ansi
-#CPPFLAGS = -D__PARA -D__MPI
-
-
-# pople (ifort 11)
-#
-# -i-static -openmp are needed when using MKL libs for ifort>9
-# (from Espresso)
-#
-# at this time the code blows up - need to fix something in the libraries
-
-#F90 = mpif90
-#LDFLAGS = -i-static -openmp -lmkl_em64t -L/home/giustino/code/fftw-2.1.5/lib -lfftw
-#CPP = cpp 
-#CPPFLAGS = -D__PARA -D__MPI -D__LINUX64
-
-
-#########################################################################
-
-
-MODULES = \
-parameters.o \
-modules.o 
-
-PARA = \
-parallel_include.o \
-mp_global.o \
-mp.o \
-io_global.o \
-para.o \
-startup.o \
-init_pool.o 
-
-OBJS = \
-allowed.o \
-date_and_tim.o \
-cg_psi.o \
-ch_psi_all.o \
-ch_psi_all_eta.o \
-clocks.o \
+GWOBJS = \
+gw.o \
+gwcom.o \
+allocate_gwq.o \
+gwq_recover.o \
+gw_restart.o \
+gwq_summary.o \
+run_pwscf.o \
+set_defaults_pw.o \
+solve_linter.o \
 coulomb.o \
-coulomb_q0G0.o \
+save_gw_input.o \
+write_rec.o \
+prepare_q.o \
+q_points.o \
+print_clock_gw.o \
+gwq_readin.o \
+initialize_gw.o \
+check_initial_status.o \
+bcast_gw_input.o \
+stop_gw.o \
+close_gwq.o \
+gw_restart.o \
+check_restart_recover.o \
+clean_pw_gw.o \
+gwq_setup.o \
+openfilq.o \
+gwq_init.o \
+deallocate_gwq.o \
+setlocq.o \
+compute_vsgga.o \
+smallgq.o \
+sgam_gw.o \
+davcio_drho.o \
+apply_dpot.o \
+cft_wave.o \
+orthogonalize.o \
+ch_psi_all.o \
 cgsolve_all.o \
-bcgsolve_all.o \
-bcgsolve_all_fixed.o \
-eigenstates.o \
-eigenstates2.o \
-eigenstates_all.o \
-error.o \
-fft6_g2r.o \
-refold.o \
-rs.o \
-gwhs.o \
-ggen.o \
-ggens.o \
-h_psi.o \
-h_psi_c.o \
-fftw.o \
-hpsort_eps.o \
-cgdiag.o \
-ktokpmq.o \
-pade.o \
-solve_linter_dyn.o \
-green_linsys.o \
-scnds.o \
-solve_linter_dyn_nonSCF.o \
-set_ndnmbr.o \
-sigma_matel.o \
-mix_pot.o \
-cryst_to_car.o \
-ccgdiagg.o 
+incdrhoscf.o \
+incdrhoscf_w.o \
+incdrhoscf_nc.o \
+dv_of_drho.o\
+h_psiq.o \
+dgradcorr.o \
+setqmod.o \
+dvqpsi_us.o\
+addusddens.o\
+addusdbec.o\
+set_drhoc.o\
+cBiCG_solve.o\
+cBiCG_solve_fix.o\
+cBiCG_solve_green.o\
+cBiCG_solve_coul.o\
+cch_psi_all_fix.o\
+cch_psi_all_green.o\
+cg_psi.o\
+green_linsys.o\
+green_linsys_shift.o\
+green_linsys_serial.o\
+green_multishift.o\
+pade.o\
+freqbins.o\
+refold.o\
+ktokpmq.o\
+prepare_kmq.o\
+sigma_r2g_sco.o\
+sigma_r2g_ex.o\
+sig_fft_g.o\
+sigma_exch.o\
+sigma_exchG.o\
+sigma_c.o\
+sigma_c_serial.o\
+sigma_matel.o\
+setup_nscf_green.o\
+run_pwscf_green.o\
+find_q_ibz.o\
+gmap_sym.o\
+stern_symm.o\
+unfold_w.o\
+mix_pot_c.o\
+mix_pot_real.o\
+godby_needs.o\
+sigma_extra.o\
+bicgstabl.o\
+solve_direct.o\
+invert_epsilon.o\
+mod_diel.o\
+coul_multishift.o\
+truncate_2D.o\
+fft6.o\
+write_sigma.o\
+green_multishift_im.o\
+sigma_c_serial_im.o\
+green_linsys_serial_im.o\
+print_matel.o\
+print_matel_im.o\
+sigma_pade.o\
+pade_eps.o
 
-.SUFFIXES : .o .f .f90 
 
-.f90.o:
-	$(CPP) $(CPPFLAGS) $< -o $*.F90 
-	$(F90) $(F90FLAGS) -c $*.F90 -o $*.o
+HOME =/home/lambert/espresso-4.2.1
+PWOBJS =$(HOME)/PW/libpw.a
+EEOBJS=$(HOME)/EE/libee.a
+QEMODS =$(HOME)/Modules/libqemod.a
 
-.f.o:
-	$(F90) -c $<
+gw.x : gw.o libgw.a $(PWOBJS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o gw.x gw.o libgw.a \
+		 $(PWOBJS) $(EEOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
+	- ( cd ../bin ; ln -fs ../src/gw.x . )
 
-#
-# serial
-#
+q2r.x : q2r.o rigid.o $(PWOBJS)  $(MODULES) $(EEMODS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ q2r.o rigid.o \
+		 $(PWOBJS) $(EEOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
+	- ( cd ../bin ; ln -fs ../src/$@ . )
 
-#gwhs.x : $(MODULES) $(OBJS)
-#	$(F90) -o gwhs.x $(MODULES) $(OBJS) $(LDFLAGS) 
-#	- ( cd ../bin ; ln -fs ../src/gwhs.x . )
+libgw.a : $(GWOBJS)
+	$(AR) $(ARFLAGS) $@ $?
+	$(RANLIB) $@
 
-#
-# parallel
-#
+clean :
+	- rm *.x *.o *.a *.mod
 
-gwhs.x : $(MODULES) $(PARA) $(OBJS)
-	$(F90) -o gwhs.x $(MODULES) $(PARA) $(OBJS) $(LDFLAGS) 
-	- ( cd ../bin ; ln -fs ../src/gwhs.x . )
+include make.depend
 
-clean: 
-	rm *.o *.mod *.x *.F90

@@ -1,25 +1,42 @@
-  !
-  !-----------------------------------------------------------------------
-  subroutine ch_psi_all ( h, ah, e, ik, nb, g2kin, vr, evq)
+!
+! Copyright (C) 2001-2007 Quantum ESPRESSO group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
+!-----------------------------------------------------------------------
+subroutine ch_psi_all (n, h, ah, e, ik, m)
   !-----------------------------------------------------------------------
   !
   ! This routine applies the operator ( H - \epsilon S + alpha_pv P_v)
   ! to a vector h. The result is given in Ah.
   !
-  !-----------------------------------------------------------------------
-  !
-  use parameters
-  use gspace
-  use constants
+
+  USE kinds,   ONLY : DP
+  USE wvfct,   ONLY : npwx, nbnd
+  USE becmod,  ONLY : bec_type, becp, calbec
+  USE uspp,    ONLY : nkb, vkb
+  USE noncollin_module, ONLY : noncolin, npol
+
+  USE control_gw, ONLY : alpha_pv, nbnd_occ
+  USE eqv,        ONLY : evq
+  USE qpoint,     ONLY : ikqs
+
+  USE mp_global, ONLY: intra_pool_comm
+  USE mp,        ONLY: mp_sum
+
   implicit none
-  !
-  integer :: ik, nb
+
+  integer :: n, m, ik
   ! input: the dimension of h
   ! input: the number of bands
   ! input: the k point
-  real(kind=DP) :: e (nb)
+
+  real(DP) :: e (m)
   ! input: the eigenvalue
-  complex(kind=DP) :: h (ngm, nb), ah (ngm, nb)
+
+  complex(DP) :: h (npwx*npol, m), ah (npwx*npol, m)
   ! input: the vector
   ! output: the operator applied to the vector
   !
@@ -29,49 +46,91 @@
   ! counter on bands
   ! the point k+q
   ! counter on G vetors
-  complex(kind=DP) :: ps (nb,nb)
+
+  complex(DP), allocatable :: ps (:,:), hpsi (:,:), spsi (:,:)
   ! scalar products
-  complex(kind=DP), allocatable :: hpsi (:,:)
   ! the product of the Hamiltonian and h
-  complex(kind=DP) :: vr(nr)
-  real(kind=DP) :: g2kin(ngm)
-  complex(kind=DP) :: evq (ngm, nbnd_occ)
-  !
-  allocate ( hpsi( ngm , nb) )    
-  hpsi = czero
+  ! the product of the S matrix and h
+
+  call start_clock ('ch_psi')
+  allocate (ps  ( nbnd , m))    
+  allocate (hpsi( npwx*npol , m))    
+  allocate (spsi( npwx*npol , m))    
+  hpsi (:,:) = (0.d0, 0.d0)
+  spsi (:,:) = (0.d0, 0.d0)
   !
   !   compute the product of the hamiltonian with the h vector
   !
-  do ibnd = 1, nb
-    call h_psi_c ( h(:,ibnd), hpsi(:,ibnd), g2kin, vr)
-  enddo
+  call h_psiq (npwx, n, m, h, hpsi, spsi)
+
+  call start_clock ('last')
   !
   !   then we compute the operator H-epsilon S
   !
-  do ibnd = 1, nb
-     do ig = 1, ngm
-        ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * h (ig, ibnd)
+  ah=(0.d0,0.d0)
+  do ibnd = 1, m
+     do ig = 1, n
+        ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * spsi (ig, ibnd)
      enddo
   enddo
+  IF (noncolin) THEN
+     do ibnd = 1, m
+        do ig = 1, n
+           ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd)
+        end do
+     end do
+  END IF
   !
   !   Here we compute the projector in the valence band
-  !  
-  ! important: don't forget dcmplx and czero in the second call 
   !
-  call ZGEMM ('C', 'N', nb , nb, ngm, (1.d0, 0.d0) , evq, &
-       ngm, h, ngm, czero , ps, nb)
-  call ZGEMM ('N', 'N', ngm, nb, nb, dcmplx(alpha_pv,0.d0), evq, &
-       ngm, ps, nb, czero, hpsi, ngm)   
+  ikq = ikqs(ik)
+  ps (:,:) = (0.d0, 0.d0)
+
+  IF (noncolin) THEN
+     call zgemm ('C', 'N', nbnd_occ (ikq) , m, npwx*npol, (1.d0, 0.d0) , evq, &
+       npwx*npol, spsi, npwx*npol, (0.d0, 0.d0) , ps, nbnd)
+  ELSE
+     call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
+       npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
+  ENDIF
+  ps (:,:) = ps(:,:) * alpha_pv
+
+!hl ps intrapool
+!#ifdef __PARA
+! call mp_sum ( ps, intra_pool_comm )
+!#endif
+
+  hpsi (:,:) = (0.d0, 0.d0)
+  IF (noncolin) THEN
+     call zgemm ('N', 'N', npwx*npol, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+          npwx*npol, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx*npol)
+  ELSE
+     call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+          npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
+  END IF
+  spsi(:,:) = hpsi(:,:)
   !
-  do ibnd = 1, nb 
-     do ig = 1, ngm
-        ah (ig, ibnd) = ah (ig, ibnd) + hpsi (ig, ibnd)
+  !    And apply S again
+  !
+  call calbec (n, vkb, hpsi, becp, m)
+  call s_psi (npwx, n, m, hpsi, spsi)
+  do ibnd = 1, m
+     do ig = 1, n
+        ah (ig, ibnd) = ah (ig, ibnd) + spsi (ig, ibnd)
      enddo
   enddo
-  !
+  IF (noncolin) THEN
+     do ibnd = 1, m
+        do ig = 1, n
+           ah (ig+npwx, ibnd) = ah (ig+npwx, ibnd) + spsi (ig+npwx, ibnd)
+        enddo
+     enddo
+  END IF
+
+  deallocate (spsi)
   deallocate (hpsi)
-  !
+  deallocate (ps)
+  call stop_clock ('last')
+  call stop_clock ('ch_psi')
   return
-  end subroutine ch_psi_all
-  !-----------------------------------------------------------------------
-  !
+end subroutine ch_psi_all

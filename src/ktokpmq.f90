@@ -7,12 +7,14 @@
   !   of the corresponding (k + sign*q) point
   !
   !--------------------------------------------------------
-  !
-  use parameters
-  use constants
-  use gspace
-  use kspace
+
+  USE kinds,         ONLY : DP
+  USE constants,     ONLY :  eps8
+  USE disp,          ONLY : nq1, nq2, nq3, nqs
+  USE cell_base,     ONLY : at
+
   implicit none
+
   !
   real(kind=DP) :: xk0 (3), xq0 (3)
   ! input: coordinates of k points and q points
@@ -21,15 +23,15 @@
   ! output: in the parallel case, the pool hosting the k+-q point    
   ! output: the index of k+sign*q
   ! output: the absolute index of k+sign*q (in the full k grid)
-  !
   ! work variables
   !
+
   real(kind=DP) :: xxk (3), xxq (3)
   integer :: nkl, nkbl, nkr, iks, ik, i, j, k, n, jpool
   real(kind=DP) :: xx, yy, zz
   logical :: in_the_list
   !
-  if (abs(sign).ne.1) call error ('ktokpmq','sign must be +1 or -1',1)
+  !if (abs(sign).ne.1) call error ('ktokpmq','sign must be +1 or -1',1)
   !
   ! bring k and q in crystal coordinates
   !
@@ -43,22 +45,25 @@
   xx = xxk(1)*nq1
   yy = xxk(2)*nq2
   zz = xxk(3)*nq3
-  in_the_list = abs(xx-nint(xx)).le.eps .and. &
-                abs(yy-nint(yy)).le.eps .and. &
-                abs(zz-nint(zz)).le.eps
-  if (.not.in_the_list) call error ('ktokpmq','is this a uniform k-mesh?',1)
-  !
-  !  now add the phonon wavevector and check that k+q falls again on the k grid
-  !
+
+! HL switching from eps = ^-10 to ^-8.
+
+  in_the_list = abs(xx-nint(xx)).le.eps8 .and. &
+                abs(yy-nint(yy)).le.eps8 .and. &
+                abs(zz-nint(zz)).le.eps8
+ ! if (.not.in_the_list) call error ('ktokpmq','is this a uniform k-mesh?',1)
+ 
+ ! HL: now add the coulomb perturbing wavevector and check that k+q falls again on the k grid.
+ 
   xxk = xxk + float(sign) * xxq
-  !
+ !
   xx = xxk(1)*nq1
   yy = xxk(2)*nq2
   zz = xxk(3)*nq3
-  in_the_list = abs(xx-nint(xx)).le.eps .and. &
-                abs(yy-nint(yy)).le.eps .and. &
-                abs(zz-nint(zz)).le.eps
-  if (.not.in_the_list) call error ('ktokpmq','k+q does not fall on k-grid',1)
+  in_the_list = abs(xx-nint(xx)).le.eps8 .and. &
+                abs(yy-nint(yy)).le.eps8 .and. &
+                abs(zz-nint(zz)).le.eps8
+! if (.not.in_the_list) call error ('ktokpmq','k+q does not fall on k-grid',1)
   !
   !  find the index of this k+q in the k-grid
   !
@@ -68,8 +73,6 @@
   n = i*nq2*nq3 + j*nq3 + k + 1
   !
   nkq = n
-  !
   !  now n represents the index of k+sign*q in the original k grid.
-  !
   end subroutine ktokpmq
   !--------------------------------------------------------

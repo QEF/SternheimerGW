@@ -14,8 +14,8 @@ subroutine cg_psi (lda, n, m, psi, h_diag)
   !    The preconditioning is diagonal in reciprocal space
   !
   !
-  use parameters, only : DP !@FG
-! USE kinds, only : DP
+  USE kinds, only : DP
+  USE noncollin_module, only : noncolin, npol
   implicit none
 
   integer :: lda, n, m
@@ -23,10 +23,11 @@ subroutine cg_psi (lda, n, m, psi, h_diag)
   ! input: the real dimension of the vector
   ! input: the number of vectors
 
-  complex(kind=DP) :: psi (lda, m)
+  complex(DP) :: psi (lda*npol, m)
   ! inp/out: the vector to be preconditioned
 
-  real(kind=DP) :: h_diag (lda, m)
+  real(DP) :: h_diag (lda*npol, m)
+  !COMPLEX(DP) :: h_diag (lda*npol, m)
   ! input: the preconditioning vector
 
   integer :: k, i
@@ -38,5 +39,12 @@ subroutine cg_psi (lda, n, m, psi, h_diag)
         psi (i, k) = psi (i, k) * h_diag (i, k)
      enddo
   enddo
+  IF (noncolin) THEN
+     do k = 1, m
+        do i = 1, n
+           psi (i+lda, k) = psi (i+lda, k) * h_diag (i+lda, k)
+        enddo
+     enddo
+  END IF
   return
 end subroutine cg_psi

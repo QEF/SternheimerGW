@@ -1,10 +1,15 @@
-  !
-  !-----------------------------------------------------------------------
-!@  subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
-!@     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd)
-  subroutine cgsolve_all (h_psi, e, d0psi, dpsi, h_diag, &
-     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, g2kin, vr, evq)
-  !-----------------------------------------------------------------------
+!
+! Copyright (C) 2001-2004 PWSCF group
+! This file is distributed under the terms of the
+! GNU General Public License. See the file `License'
+! in the root directory of the present distribution,
+! or http://www.gnu.org/copyleft/gpl.txt .
+!
+!
+!----------------------------------------------------------------------
+subroutine cgsolve_all (h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
+     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol)
+  !----------------------------------------------------------------------
   !
   !     iterative solution of the linear system:
   !
@@ -50,18 +55,11 @@
   !   revised (extensively)       6 Apr 1997 by A. Dal Corso & F. Mauri
   !   revised (to reduce memory) 29 May 2004 by S. de Gironcoli
   !
-!@#include "f_defs.h"
-!@  USE kinds, only : DP
-  use parameters, only : DP, nbnd_occ
-  use gspace, only : nr, ngm
-!@
+  USE kinds, only : DP
+  USE mp_global, ONLY: intra_pool_comm, mpime
+  USE mp,        ONLY: mp_sum
+
   implicit none
-!@
-  integer :: i
-  complex(DP) :: vr(nr)
-  real(DP) :: g2kin (ngm)
-  complex(kind=DP) :: evq (ngm, nbnd_occ)
-!@
   !
   !   first the I/O variables
   !
@@ -69,92 +67,104 @@
              ndim, & ! input: the actual dimension of the vectors
              kter, & ! output: counter on iterations
              nbnd, & ! input: the number of bands
+             npol, & ! input: number of components of the wavefunctions
              ik      ! input: the k point
 
-  real(kind=DP) :: &
+  real(DP) :: &
              e(nbnd), & ! input: the actual eigenvalue
              anorm,   & ! output: the norm of the error in the solution
-             h_diag(ndmx,nbnd), & ! input: an estimate of ( H - \epsilon )
+             h_diag(ndmx*npol,nbnd), & ! input: an estimate of ( H - \epsilon )
              ethr       ! input: the required precision
 
-  complex(kind=DP) :: &
-             dpsi (ndmx, nbnd), & ! output: the solution of the linear syst
-             d0psi (ndmx, nbnd)   ! input: the known term
+  complex(DP) :: &
+             dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
+             d0psi (ndmx*npol, nbnd)   ! input: the known term
 
   logical :: conv_root ! output: if true the root is converged
-  external h_psi, &    ! input: the routine computing h_psi
-           cg_psi      ! input: the routine computing cg_psi
+  external h_psi       ! input: the routine computing h_psi
+  external cg_psi      ! input: the routine computing cg_psi
   !
   !  here the local variables
   !
-  integer, parameter :: maxter = 200
+  integer, parameter :: maxter = 220
   ! the maximum number of iterations
   integer :: iter, ibnd, lbnd
   ! counters on iteration, bands
   integer , allocatable :: conv (:)
   ! if 1 the root is converged
 
-  complex(kind=DP), allocatable :: g (:,:), t (:,:), h (:,:), hold (:,:)
+  complex(DP), allocatable :: g (:,:), t (:,:), h (:,:), hold (:,:)
   !  the gradient of psi
   !  the preconditioned gradient
   !  the delta gradient
   !  the conjugate gradient
   !  work space
-  complex(kind=DP) ::  dcgamma, dclambda, ZDOTC
+  complex(DP) ::  dcgamma, dclambda
   !  the ratio between rho
   !  step length
+  complex(DP), external :: zdotc 
   !  the scalar product
-  real(kind=DP), allocatable :: rho (:), rhoold (:), eu (:), a(:), c(:)
+  real(DP), allocatable :: rho (:), rhoold (:), eu (:), a(:), c(:)
   ! the residue
   ! auxiliary for h_diag
-  real(kind=DP) :: kter_eff
+  real(DP) :: kter_eff
   ! account the number of iterations with b
   ! coefficient of quadratic form
   !
-!@  call start_clock ('cgsolve')
-  allocate ( g(ndmx,nbnd), t(ndmx,nbnd), h(ndmx,nbnd), hold(ndmx ,nbnd) )    
+  call start_clock ('cgsolve')
+  allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
+             hold(ndmx*npol ,nbnd) )    
   allocate (a(nbnd), c(nbnd))    
   allocate (conv ( nbnd))    
   allocate (rho(nbnd),rhoold(nbnd))    
   allocate (eu (  nbnd))    
-  !      WRITE( stdout,*) g,t,h,hold
+
+
+  !WRITE(6,*) g,t,h,hold
 
   kter_eff = 0.d0
   do ibnd = 1, nbnd
      conv (ibnd) = 0
   enddo
+  g=(0.d0,0.d0)
+  t=(0.d0,0.d0)
+  h=(0.d0,0.d0)
+  hold=(0.d0,0.d0)
   do iter = 1, maxter
      !
      !    compute the gradient. can reuse information from previous step
      !
      if (iter == 1) then
-!@        call h_psi (ndim, dpsi, g, e, ik, nbnd)
-        call h_psi ( dpsi, g, e, ik, nbnd, g2kin, vr, evq)
+        call h_psi (ndim, dpsi, g, e, ik, nbnd)
         do ibnd = 1, nbnd
-           call ZAXPY (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
+           call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
         enddo
+        IF (npol==2) THEN
+           do ibnd = 1, nbnd
+              call zaxpy (ndim, (-1.d0,0.d0), d0psi(ndmx+1,ibnd), 1, &
+                                              g(ndmx+1,ibnd), 1)
+           enddo
+        END IF
      endif
+
      !
      !    compute preconditioned residual vector and convergence check
      !
+
      lbnd = 0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
            lbnd = lbnd+1
-           call ZCOPY (ndim, g (1, ibnd), 1, h (1, ibnd), 1)
-
-!@         call cg_psi(ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd) )
-           do i = 1, ndim
-             h (i, ibnd) = h (i, ibnd) * h_diag (i, ibnd)
-           enddo
-!@
-           rho(lbnd) = ZDOTC (ndim, h(1,ibnd), 1, g(1,ibnd), 1)
+           call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
+           call cg_psi(ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd) )
+           rho(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, g(1,ibnd), 1)
         endif
      enddo
-     kter_eff = kter_eff + float (lbnd) / float (nbnd)
-!@#ifdef __PARA
-!@     call reduce (lbnd, rho )
-!@#endif
+     kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
+
+!#ifdef __PARA
+!     call mp_sum(  rho(1:lbnd) , intra_pool_comm )
+!#endif
      do ibnd = nbnd, 1, -1
         if (conv(ibnd).eq.0) then
            rho(ibnd)=rho(lbnd)
@@ -175,64 +185,50 @@
      lbnd = 0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
-!
 !          change sign to h 
-!
-           call DSCAL (2 * ndim, - 1.d0, h (1, ibnd), 1)
+           call dscal (2 * ndmx * npol, - 1.d0, h (1, ibnd), 1)
            if (iter.ne.1) then
               dcgamma = rho (ibnd) / rhoold (ibnd)
-              call ZAXPY (ndim, dcgamma, hold (1, ibnd), 1, h (1, ibnd), 1)
+              call zaxpy (ndmx*npol, dcgamma, hold (1, ibnd), 1, h (1, ibnd), 1)
            endif
-
-!
 ! here hold is used as auxiliary vector in order to efficiently compute t = A*h
 ! it is later set to the current (becoming old) value of h 
-!
            lbnd = lbnd+1
-           call ZCOPY (ndim, h (1, ibnd), 1, hold (1, lbnd), 1)
+           call zcopy (ndmx*npol, h (1, ibnd), 1, hold (1, lbnd), 1)
            eu (lbnd) = e (ibnd)
         endif
      enddo
-     !
-     !        compute t = A*h
-     !
-!@@@
-!@     call h_psi (ndim, hold, t, eu, ik, lbnd)
-     call h_psi ( hold, t, eu, ik, lbnd, g2kin, vr, evq)
-!@@@
-     !
-     !        compute the coefficients a and c for the line minimization
-     !        compute step length lambda
+!    compute t = A*h
+     call h_psi (ndim, hold, t, eu, ik, lbnd)
+!    compute the coefficients a and c for the line minimization
+!    compute step length lambda
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
            lbnd=lbnd+1
-           a(lbnd) = ZDOTC (ndim, h(1,ibnd), 1, g(1,ibnd), 1)
-           c(lbnd) = ZDOTC (ndim, h(1,ibnd), 1, t(1,lbnd), 1)
+           a(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, g(1,ibnd), 1)
+           c(lbnd) = zdotc (ndmx*npol, h(1,ibnd), 1, t(1,lbnd), 1)
         end if
      end do
-!@#ifdef __PARA
-!@     call reduce (lbnd, a)
-!@     call reduce (lbnd, c)
-!@#endif
+
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
            lbnd=lbnd+1
-           dclambda = DCMPLX ( - a(lbnd) / c(lbnd), 0.d0)
+           dclambda = CMPLX( - a(lbnd) / c(lbnd), 0.d0,kind=DP)
            !
            !    move to new position
            !
-           call ZAXPY (ndim, dclambda, h(1,ibnd), 1, dpsi(1,ibnd), 1)
+           call zaxpy (ndmx*npol, dclambda, h(1,ibnd), 1, dpsi(1,ibnd), 1)
            !
            !    update to get the gradient
            !
            !g=g+lam
-           call ZAXPY (ndim, dclambda, t(1,lbnd), 1, g(1,ibnd), 1)
+           call zaxpy (ndmx*npol, dclambda, t(1,lbnd), 1, g(1,ibnd), 1)
            !
            !    save current (now old) h and rho for later use
            ! 
-           call ZCOPY (ndim, h(1,ibnd), 1, hold(1,ibnd), 1)
+           call zcopy (ndmx*npol, h(1,ibnd), 1, hold(1,ibnd), 1)
            rhoold (ibnd) = rho (ibnd)
         endif
      enddo
@@ -245,8 +241,6 @@
   deallocate (a,c)
   deallocate (g, t, h, hold)
 
-!@  call stop_clock ('cgsolve')
-  !
+  call stop_clock ('cgsolve')
   return
-  end subroutine cgsolve_all
-  !
+end subroutine cgsolve_all

@@ -33,7 +33,7 @@
   !
   !   rp  = r preconditioned [ inv(M) * r ]
   !   rt  = r tilda
-  !   rtp = r tidla preconditioned [ inv(M) * rt ]
+  !   rtp = r tilda preconditioned [ inv(M) * rt ]
   !
   !-----------------------------------------------------------------------
   !
@@ -77,7 +77,7 @@
   complex(kind=DP), allocatable :: aux1 (:,:), aux2 (:,:)
   complex(kind=DP) :: a, c, beta, alpha, ZDOTC
   logical :: conv (nbnd), conv_all
-  !
+!
 !  ! timing setup
 !  ! 
 !  integer :: time_array(8), isteptime

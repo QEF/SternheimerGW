@@ -1,0 +1,35 @@
+Structure of the input data:
+===============================================================================
+&inputgw
+...
+/
+
+Frequencies
+...
+/
+
+K_points
+...
+/
+
+
+K_Points
+========================================================================
+Line of input:
+      nqs
+      xq(1)  xq(2)  xq(3)
+   DESCRIPTION OF ITEMS:
+      +--------------------------------------------------------------------
+      Variable :      nqs
+      Type:           INTEGER
+      Description:    number of q points 
+
+      Variables:      xq(1)  xq(2)  xq(3)
+
+      Type:           REAL
+      Description:    The electric field wavevectors, or the point at which
+                      Sigma_{q} is calculated in units of 2pi/a0
+                      (a0 = lattice parameter).
+      +--------------------------------------------------------------------
+===End of line-of-input=================================================
+
