@@ -511,81 +511,10 @@ MODULE disp
 
 END MODULE disp
 
-MODULE coulomb_app
-CONTAINS
-SUBROUTINE spheric_coulomb(ngmpol, nfs, diel_matrix, xq_coul)
-  USE kinds,         ONLY : DP
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE cell_base,     ONLY : alat, tpiba2, omega
-  USE gvect,         ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
-  USE disp,          ONLY : nqs, nq1, nq2, nq3
-  IMPLICIT NONE
-!SUBROUTINE SPHERIC CUT  COULOMB POTENTIAL Appliead to v_q.
-!Spencer/Alavi truncation of the bare coulomb interaction
-![PRB 77,193110 (2008)]
-  LOGICAL     :: limq
-  REAL(DP)    :: xq_coul(3)
-  REAL(DP)    :: qg, rcut, spal
-  INTEGER     :: ig, igp, iw, ngmpol, nfs
-  INTEGER     :: unf_recl, recl, ios
-  COMPLEX(DP), INTENT(INOUT) :: diel_matrix(ngmpol,ngmpol,nfs) 
-  !COMPLEX(DP) :: diel_matrix(:,:,:) 
-  REAL(DP)    :: qg2, qg2coul
-
-
-rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-
-DO iw = 1, nfs
-   DO ig = 1, ngmpol
-       qg2 = (g(1,ig) + xq_coul(1))**2 + (g(2,ig) + xq_coul(2))**2 + (g(3,ig) + xq_coul(3))**2
-       !if(qg2.lt.eps8) limq =.true.
-       limq = (qg2.lt.eps8) 
-       IF(.not.limq) then
-           DO igp = 1, ngmpol
-              diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-           ENDDO
-       ELSE 
-           if(ig.ne.1) then
-              DO igp = 1, ngmpol
-                 diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-              ENDDO
-           endif
-       ENDIF
-
-       qg = sqrt(qg2)
-       spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-
-!Normal case using truncated coulomb potential.
-       if(.not.limq) then
-          do igp = 1, ngmpol
-              diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx(spal, 0.0d0)
-          enddo
-       else
-!should only occur case iq->0, ig = 0 use vcut (q(0) = (4pi*e2*Rcut^{2})/2
-             write(6,'("Taking Limit.")')
-             write(6,*) (fpi*e2*(rcut**2))/2.0d0
-             write(6,*) ig, iw
-             write(6,*) g(:, ig)
-             !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
-             !we enforce that here:
-         if(iw.eq.1) then
-            diel_matrix(ig, igp, iw) = real(diel_matrix(ig,igp,iw))
-         endif
-         do igp = 1, ngmpol
-            diel_matrix(ig, igp, iw) = diel_matrix(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-         enddo
-       endif
-   ENDDO !ig
-ENDDO!iw
-END SUBROUTINE
-END MODULE coulomb_app
-
 MODULE gwsigma
   USE kinds,       ONLY : DP
   USE cell_base,   ONLY : omega, alat
   USE qpoint,      ONLY : xq, igkq
-  
-  PUBLIC :: fft6_g2r
   
   SAVE
 
@@ -619,69 +548,6 @@ MODULE gwsigma
   INTEGER :: nr1sco, nr2sco, nr3sco, nrsco
   INTEGER :: nr1sex, nr2sex, nr3sex, nrsex
 
-  CONTAINS
-
-  SUBROUTINE fft6_g2r(ngmtmp, nrtmp, nltmp, f_g, f_r, corx)
-   USE qpoint,  ONLY :  npwq, igkq 
-
-   IMPLICIT NONE
-   INTEGER                          ::  ios
-   INTEGER                          ::  ig, igp, ir, irp
-   COMPLEX(DP)                      ::  czero
-
-  ! corx: correlation or exchange grid
-  ! gorc: green's function (transforms igkq), or coulomb
-
-   INTEGER, INTENT(IN) ::  corx
-   INTEGER             ::  nr1tmp, nr2tmp, nr3tmp, nrtmp, ngmtmp, ngmtmp1
-   COMPLEX(DP)         :: f_g (ngmtmp, ngmtmp)
-   COMPLEX(DP)         :: f_r (nrtmp,nrtmp)
-   COMPLEX(DP)         :: aux (nrtmp)
-   INTEGER             :: nltmp(:)
-
-     if (corx.eq.1) then
-       nr1tmp = nr1sco
-       nr2tmp = nr2sco
-       nr3tmp = nr3sco
-     else if (corx.eq.2) then 
-       nr1tmp = nr1sex
-       nr2tmp = nr2sex
-       nr3tmp = nr3sex
-     else
-        WRITE(6,'("error fft6_g2r_coulomb what to do?")')
-        STOP
-     endif
-
-  ! if ngmsex exceeds npwq we are going beyond the highest G-vector describing the wavefunction. 
-     czero = (0.0d0, 0.0d0)
-     f_r(:,:) = czero
-     do ig = 1, ngmtmp
-        aux(:) = czero
-        WRITE(6,'("FFT G-prime")')
-        do igp = 1, ngmtmp
-           aux(nltmp(igp)) = f_g(ig,igp)
-        enddo
-        WRITE(6,*)nr1tmp, nr2tmp, nr3tmp, nrtmp
-        call cft3s (aux, nr1tmp, nr2tmp, nr3tmp, nr1tmp, nr2tmp, nr3tmp, +1)
-        do irp = 1, nrtmp
-           f_r(ig, irp) = aux(irp) / omega
-        enddo
-     enddo
-
-  ! the conjg/conjg is to calculate sum_G f(G) exp(-iGr)
-  ! following the convention set in the paper
-  ! [because the standard transform is sum_G f(G) exp(iGr) ]
-     WRITE(6,'("FFT G")')
-     do irp = 1, nrtmp
-        aux = czero
-        do ig = 1, ngmtmp
-           aux(nltmp(ig)) = conjg( f_r(ig,irp) )
-        enddo
-        call cft3s (aux, nr1tmp, nr2tmp, nr3tmp, nr1tmp, nr2tmp, nr3tmp, +1)
-        f_r(1:nrtmp,irp) = conjg ( aux )
-     enddo
-
- END SUBROUTINE fft6_g2r
 END MODULE gwsigma
 
 
