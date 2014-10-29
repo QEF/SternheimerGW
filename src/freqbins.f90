@@ -17,7 +17,7 @@ SUBROUTINE freqbins()
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
                          wgreenmax, fiu, nfs, greenzero
-
+  USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
   USE control_gw, ONLY : eta, godbyneeds, padecont
@@ -109,28 +109,25 @@ SUBROUTINE freqbins()
     enddo
   enddo
    
- !Print out Frequencies on Imaginary Axis for reference...
-  WRITE(6,'("wcoulmax:")')
-  write(6,*) wcoulmax
-  WRITE(6,'("eta")')
-  WRITE(6,'(1f10.4 )') eta
-  WRITE(6,'("wsigmamin, wsigmamax, deltaw:")')
-  WRITE(6,'(3f10.4 )') wsigmamin, wsigmamax, deltaw 
-  WRITE(6,'(//5x, "Imag. Frequencies: ")')
-  DO i = 1, nfs
-       WRITE(6,'(i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
-  ENDDO
-  WRITE(6,'("nwgreen:")')
-  write(6,*) nwgreen
+!Print out Frequencies on Imaginary Axis for reference.
+  WRITE(stdout, '(//5x,"Frequency Grids (eV):")')
+  WRITE(stdout, '(/5x, "wsigmamin, wsigmamax, deltaw")')
+  WRITE(stdout, '(4x, 3f10.4 )') wsigmamin, wsigmamax, deltaw 
+  WRITE(stdout, '(5x, "wcoulmax:", 1f10.4)'), wcoulmax
+  WRITE(stdout, '(/5x, "nwgreen:", i5)'), nwgreen
 
-  Write(6, '("Dynamic Screening Model:")')
+  WRITE(stdout,'(//5x, "Dynamic Screening Model:")')
   IF(godbyneeds) then
-      WRITE(6,('("Godby Needs Plasmon-Pole")'))
+      WRITE(stdout, '(6x, "Godby Needs Plasmon-Pole")')
   else if (padecont) then
-      WRITE(6,('("Analytic Continuation")'))
+      WRITE(stdout, '(6x, "Analytic Continuation")')
   else if (.not.padecont.and..not.godbyneeds) then
-      WRITE(6,'("No screening model chosen!")')
+      WRITE(stdout, '(6x, "No screening model chosen!")')
   ENDIF
-
+  WRITE(stdout, '(7x, "Imag. Frequencies: ")')
+  DO i = 1, nfs
+       WRITE(stdout,'(8x, i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
+  ENDDO
+  WRITE(stdout, '(5x, "eta", 1f10.4)'), eta
 
 END SUBROUTINE freqbins

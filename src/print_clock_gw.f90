@@ -26,38 +26,21 @@ subroutine print_clock_gw
   call print_clock ('init_vloc')
   call print_clock ('init_us_1')
   call print_clock ('init_us_2')
-  call print_clock ('newd')
   call print_clock ('dvanqq')
   call print_clock ('drho')
 
-  if(trans) then 
-     WRITE( stdout, * )
-     WRITE( stdout,  * ) ' DYNAMICAL MATRIX:'
-     call print_clock ('dynmat0')
-     call print_clock ('gwqscf')
-     WRITE( stdout, * )
-     call print_clock ('gwqscf')
-     call print_clock ('solve_linter')
-     call print_clock ('drhodv')
-  endif
-
   WRITE( stdout,  * ) ' G, W and sigma: '
-
   call print_clock ('coulomb')
   call print_clock ('greenlinsys')
   call print_clock ('sigmac')
   call print_clock ('sigma_exch')
-
   WRITE( stdout, * )
-  call print_clock ('d2ionq')
   WRITE( stdout, * )
   call print_clock ('gwqscf')
   call print_clock ('solve_linter')
   WRITE( stdout, * )
-  call print_clock ('solve_linter')
   call print_clock ('dvqpsi_us')
   call print_clock ('ortho')
-  call print_clock ('cgsolve')
   call print_clock ('incdrhoscf')
   call print_clock ('vpsifft')
   call print_clock ('dv_of_drho')
@@ -73,7 +56,6 @@ subroutine print_clock_gw
   WRITE( stdout, * )
   call print_clock ('cgsolve')
   call print_clock ('cbcgsolve')
-  call print_clock ('ch_psi')
   WRITE( stdout, * )
   call print_clock ('ch_psi')
   call print_clock ('first')
@@ -81,7 +63,6 @@ subroutine print_clock_gw
 
   call print_clock ('last')
   WRITE( stdout, * )
-  call print_clock ('h_psiq')
   call print_clock ('firstfft')
   call print_clock ('product')
   call print_clock ('secondfft')
@@ -93,8 +74,6 @@ subroutine print_clock_gw
   call print_clock ('addusdbec')
   WRITE( stdout, * )
   call print_clock ('drhodvus')
-
-  call print_clock ('addusddort')
   WRITE( stdout, * )
   WRITE( stdout,  * ) '     General routines'
   call print_clock ('calbec')

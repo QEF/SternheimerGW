@@ -22,8 +22,7 @@ MODULE save_gw
   !
   PRIVATE
   !
-  PUBLIC :: save_gw_input_variables, restore_gw_input_variables, &
-            clean_input_variables
+  PUBLIC :: restore_gw_input_variables, clean_input_variables
   !
   INTEGER, PRIVATE :: nat_todo_save, nrapp_save
   INTEGER, ALLOCATABLE, PRIVATE :: list_save(:), atomo_save(:) 
@@ -31,26 +30,6 @@ MODULE save_gw
   !
   !
   CONTAINS
-    !
-    !------------------------------------------------------------------------
-    SUBROUTINE save_gw_input_variables()
-      !------------------------------------------------------------------------
-      !
-      USE ions_base,  ONLY : nat
-      USE partial,    ONLY : list, atomo, nat_todo, nrapp
-      !
-      IMPLICIT NONE
-      !
-      ALLOCATE(list_save(3*nat))
-      ALLOCATE(atomo_save(nat))
-      nat_todo_save=nat_todo
-      nrapp_save=nrapp
-      !HL
-      !if(allocated(list_save)) list_save = list
-      !if(allocated(atomo_save)) = atomo
-
-      RETURN
-    END SUBROUTINE save_gw_input_variables
     !
     SUBROUTINE restore_gw_input_variables(  )
       !------------------------------------------------------------------------
@@ -72,10 +51,6 @@ MODULE save_gw
 
     SUBROUTINE clean_input_variables()
     IMPLICIT NONE
-    !HL causing seg faults..
-    if(allocated(list_save)) DEALLOCATE(list_save)
-    if(allocated(atomo_save)) DEALLOCATE(atomo_save)    
-
     RETURN
     END SUBROUTINE clean_input_variables
     !

@@ -13,14 +13,18 @@ gw.o \
 gwcom.o \
 save_gw_input.o \
 bcast_gw_input.o \
-gwq_readin.o
-
+gwq_readin.o\
+save_gw_input.o\
+q_points.o\
+check_initial_status.o\
+freqbins.o\
+print_clock_gw.o\
+close_gwq.o\
+stop_gw.o
 
 PWOBJS = ../../PW/src/libpw.a
 QEMODS = ../../Modules/libqemod.a
-
 LIBOBJS	= ../../flib/ptools.a ../../flib/flib.a ../../clib/clib.a ../../iotk/src/libiotk.a
-
 TLDEPS= bindir mods libs pw-lib
 
 all : libgw.a gw.x

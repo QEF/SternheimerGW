@@ -17,7 +17,7 @@ SUBROUTINE sigma_c_serial(ik0, ikq, green, sigma, iw0)
                             deltaw, wcoulmax, ind_w0mw, ind_w0pw
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE gwsigma,       ONLY : ngmsco, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
+  USE gwsigma,       ONLY : ngmsco, nrsco, nlsco, ecutsco, ngmsig,&
                             nr1sco, nr2sco, nr3sco, ngmgrn, ngmpol
   USE gvect,         ONLY : g, ngm, ecutwfc, nl
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at

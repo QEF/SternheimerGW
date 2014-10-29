@@ -13,6 +13,9 @@ SUBROUTINE stop_gw( flag )
   !
   USE kinds, ONLY : DP
   USE mp_global, ONLY : mp_global_end
+! Need to check what is closed in destroy_status_run:
+! USE save_gw,         ONLY : clean_input_variables
+  USE environment,     ONLY : environment_end
   !
   IMPLICIT NONE
   !
@@ -21,8 +24,12 @@ SUBROUTINE stop_gw( flag )
   !
   CALL print_clock_gw()
   !
-  CALL mp_global_end()
   !
+  CALL environment_end('SGW')
+  !FOR images parallelism
+  !CALL collect_grid_files()
+  !
+  CALL mp_global_end()
   !
   IF ( flag ) THEN
      !
@@ -40,7 +47,9 @@ SUBROUTINE stop_smoothly_gw(flag)
 IMPLICIT NONE
 LOGICAL, INTENT(IN) :: flag
 
-CALL collect_grid_files()
+
+!images:
+!CALL collect_grid_files()
 
 CALL close_gwq(.FALSE.)
 

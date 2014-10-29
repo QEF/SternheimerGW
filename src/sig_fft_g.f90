@@ -14,11 +14,6 @@
   ! space grid for Sigma_Correlation, and Sigma_exchange. The exchange cutoff of the self-energy
   ! needs to be high enough that the wave function*barecoulomb product doesn't get brutalized. 
 
-  ! this switch is necessary for the time being. Alternatively I could define this routine as 
-  ! being contained in the gw_sigma module, and then I could directly pass the arrays from main
-  ! to the sub routine to be allocated and populated. 
-
-
   USE kinds,            ONLY : DP
   USE constants,        ONLY : tpi
   USE gvect,            ONLY : gcutm, ecutwfc, dual, nr1, nr2, nr3, ngm, g, igtongl, gl, nl

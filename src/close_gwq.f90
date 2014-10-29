@@ -15,68 +15,60 @@ SUBROUTINE close_gwq( flag )
   !
   USE io_files,      ONLY : iunigk
   USE control_flags, ONLY : twfcollect
-  USE mp_global,     ONLY : me_pool
+  USE paw_variables, ONLY : okpaw
   USE io_global,     ONLY : ionode, stdout
+  USE buffers,       ONLY : close_buffer
   USE uspp,          ONLY : okvan
   USE units_gw,      ONLY : iuwfc, iudwf, iubar, iudrhous, iuebar, iudrho, &
-                            iudvscf, iucom, iudvkb3, iudwfp, iudwfm
-  USE control_gw,    ONLY : zue, epsil
-  USE recover_mod,   ONLY : clean_recover
+                            iudvscf
   USE output,        ONLY : fildrho, fildvscf
-  ! 
+  !
   IMPLICIT NONE
   !
   LOGICAL :: flag
-  LOGICAL :: exst
+  LOGICAL :: exst, opnd
   !
+  !HLF:
+  !IF (only_wfc) RETURN
   !
   IF ( twfcollect ) THEN
      !
-     CLOSE( UNIT = iuwfc, STATUS = 'DELETE' )
+     CALL close_buffer(iuwfc,'delete')
      !
   ELSE
      !
-     CLOSE( UNIT = iuwfc, STATUS = 'KEEP' )
+     CALL close_buffer(iuwfc,'keep')
      !
   END IF
   !
   IF (flag) THEN
-    CLOSE( UNIT = iudwf, STATUS = 'DELETE' )
-    CLOSE( UNIT = iudwfp, STATUS = 'DELETE' )
-    CLOSE( UNIT = iudwfm, STATUS = 'DELETE' )
-    CLOSE( UNIT = iubar, STATUS = 'DELETE' )
+     CALL close_buffer(iudwf,'delete')
+     CALL close_buffer(iubar,'delete')
      !
-     IF ( okvan ) CLOSE( UNIT = iudrhous, STATUS = 'DELETE' )
+     IF ( okvan ) CALL close_buffer(iudrhous,'delete')
      !
-     IF ( epsil .OR. zue ) THEN
-        CLOSE( UNIT = iuebar, STATUS = 'DELETE' )
-        IF (okvan) CLOSE( UNIT = iucom, STATUS = 'DELETE' )
-        IF (okvan) CLOSE( UNIT = iudvkb3, STATUS = 'DELETE' )
-     ENDIF
   ELSE
-     CLOSE( UNIT = iudwf, STATUS = 'KEEP' )
-     CLOSE( UNIT = iudwfm, STATUS = 'KEEP' )
-     CLOSE( UNIT = iudwfp, STATUS = 'KEEP' )
-     CLOSE( UNIT = iubar, STATUS = 'KEEP' )
+     CALL close_buffer(iudwf,'keep')
+     CALL close_buffer(iubar,'keep')
      !
-     IF ( okvan ) CLOSE( UNIT = iudrhous, STATUS = 'KEEP' )
+     IF ( okvan ) CALL close_buffer(iudrhous,'keep')
      !
-     IF ( epsil .OR. zue ) THEN
-        CLOSE( UNIT = iuebar, STATUS = 'KEEP' )
-        IF (okvan) CLOSE( UNIT = iucom, STATUS = 'KEEP' )
-        IF (okvan) CLOSE( UNIT = iudvkb3, STATUS = 'KEEP' )
-     ENDIF
   ENDIF
   !
-  IF ( ionode .AND. &
-       fildrho /= ' ') CLOSE( UNIT = iudrho, STATUS = 'KEEP' )
-  !
-  IF ( flag ) CALL clean_recover()
-  !
-  IF ( fildvscf /= ' ' ) CLOSE( UNIT = iudvscf, STATUS = 'KEEP' )
+  IF ( ionode .AND. fildrho /= ' ') THEN
+     INQUIRE( UNIT=iudrho, OPENED=opnd ) 
+     IF (opnd) CLOSE( UNIT = iudrho, STATUS = 'KEEP' )
+  ENDIF
   !
   !
-  CLOSE( UNIT = iunigk, STATUS = 'DELETE' )
+  IF ( fildvscf /= ' ' ) THEN
+     INQUIRE( UNIT=iudvscf, OPENED=opnd ) 
+     IF (opnd) CLOSE( UNIT = iudvscf, STATUS = 'KEEP' )
+  ENDIF
+  !
+  !
+  INQUIRE( UNIT=iunigk, OPENED=opnd ) 
+  IF (opnd) CLOSE( UNIT = iunigk, STATUS = 'DELETE' )
   !
   RETURN
   !
