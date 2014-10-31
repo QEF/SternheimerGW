@@ -9,15 +9,16 @@ MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
 IFLAGS=
 
 GWOBJS = \
-gw.o \
-gwcom.o \
-save_gw_input.o \
-bcast_gw_input.o \
+gw.o\
+gwcom.o\
+save_gw_input.o\
+bcast_gw_input.o\
 gwq_readin.o\
 save_gw_input.o\
 q_points.o\
 check_initial_status.o\
 freqbins.o\
+sigma_grids.o\
 print_clock_gw.o\
 close_gwq.o\
 stop_gw.o

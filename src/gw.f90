@@ -29,10 +29,7 @@ PROGRAM gw
 
   CALL freqbins()
 
-!FFT grids
-!  CALL clean_pw( .FALSE. )
-!  CALL allocate_fft()
-!  CALL ggen()
+  CALL sigma_grids()
 
 !  if(do_sigma_exx)   CALL sigma_exch(ik)
 !  if(do_sigma_matel) CALL sigma_matel(ik)

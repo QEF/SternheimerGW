@@ -515,39 +515,37 @@ MODULE gwsigma
   USE kinds,       ONLY : DP
   USE cell_base,   ONLY : omega, alat
   USE qpoint,      ONLY : xq, igkq
-  
+  USE fft_custom,  ONLY : fft_cus, set_custom_grid, ggent, gvec_init
+
   SAVE
 
-  COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
-  COMPLEX (DP), ALLOCATABLE :: green(:,:)
+  TYPE(fft_cus) sigma_x_st   ! Grid for \Sigma^{x} -> real space
+  TYPE(fft_cus) sigma_c_st   ! Grid for real space -> restricted G space
 
 ! HL self energy is a huge quantity!
+  COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
+  COMPLEX (DP), ALLOCATABLE :: green(:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma_ex(:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma_g_ex(:,:)
-
   COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
-
-  INTEGER, ALLOCATABLE ::         nlsig(:)
-  INTEGER, TARGET, ALLOCATABLE :: nlsex(:)
-  INTEGER, TARGET, ALLOCATABLE :: nlsco(:)
-  
+  INTEGER  :: nbnd_sig
 ! Cutoff for the sigma + exchange/correlation.
   REAL(DP) :: ecutsig
   REAL(DP) :: ecutpol
   REAL(DP) :: ecutgrn
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
-
+  INTEGER, ALLOCATABLE ::         nlsig(:)
+  INTEGER, TARGET, ALLOCATABLE :: nlsex(:)
+  INTEGER, TARGET, ALLOCATABLE :: nlsco(:)
+!OLD FFT ROUTINES
+!Real space mesh for description of self-energy.
   REAL(DP) :: gcutmsig
-  INTEGER  :: nbnd_sig
   INTEGER  :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
-
-! Real space mesh for description of self-energy.
   INTEGER :: nr1sig, nr2sig, nr3sig, nrsig
   INTEGER :: nr1sco, nr2sco, nr3sco, nrsco
   INTEGER :: nr1sex, nr2sex, nr3sex, nrsex
-
 END MODULE gwsigma
 
 

@@ -69,23 +69,19 @@
   do while (.not.allowed(nr3tmp))
     nr3tmp = nr3tmp + 1
   enddo
-
-  !Loop over all g vectors in (order of size) and test that |G|.le.ngmtmp.
-  !igtongl should only be defined when init_run is called in pwscf.
-  !this determines cut off of G, W:
-
+ !Loop over all g vectors in (order of size) and test that |G|.le.ngmtmp.
+ !igtongl should only be defined when init_run is called in pwscf.
+ !this determines cut off of G, W:
  !cutoff for W(G,G'): 
   gcuttmpgw = ecutpol/tpiba2
   do ng = 1, ngm
     if ( gl( igtongl (ng) ) .le. gcuttmpgw ) ngmtmpw = ng
   enddo
-
  !cutoff for G(G,G'): 
   gcuttmpgw = ecutgrn/tpiba2
   do ng = 1, ngm
     if ( gl( igtongl (ng) ) .le. gcuttmpgw ) ngmtmpg = ng
   enddo
-
  !this determines cut off of \Sigma and hence the FFT grid:
   do ng = 1, ngm
     if ( gl( igtongl (ng) ) .le. gcuttmp ) ngmtmp = ng
@@ -96,7 +92,6 @@
      call mp_global_end()
      STOP
   endif
-
  !Choose whether it is Exch or Corr grid we are generating.
   ALLOCATE (nltmp(ngmtmp))
   if(corx.eq.1) then
