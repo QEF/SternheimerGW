@@ -14,8 +14,6 @@ SUBROUTINE initialize_gw()
   USE klist,  ONLY : nks
   USE qpoint, ONLY : nksq, ikks, ikqs
   USE control_gw, ONLY : lgamma
-  USE gw_restart, ONLY : gw_writefile
-  !
 
   IMPLICIT NONE
   INTEGER :: ik
@@ -42,13 +40,6 @@ SUBROUTINE initialize_gw()
       ENDDO
       !
    END IF
-
-  !
-  !
-  !  Save again the status of the run because now the bands have been
-  !  calculated
-  !
-  CALL gw_writefile('init',0)
   !
   !Allocate the gw variables
   !
@@ -60,27 +51,22 @@ SUBROUTINE initialize_gw()
   !
   !Recover the status if available
   !
-  CALL gwq_recover()
+  !CALL gwq_recover()
   !
   !Output summary of the main variables of the gw code
-  !
   !HL want to cutdown on ouput for now  
   !CALL gwq_summary()
-  
-  ! Open Relevant GW files
-  ! Moving the coulomb etc to beginning of programme.
-
+  !Open Relevant GW files
+  !Moving the coulomb etc to beginning of programme.
   CALL openfilq()
-  
-  !  Initialize all quantities which do not depend on the 
-  !  linear response to the perturbation
-  !  All necessary quantities to describe the local and nonlocal 
-  !  pseudopotential in the GW program.
+  !Initialize all quantities which do not depend on the 
+  !linear response to the perturbation
+  !All necessary quantities to describe the local and nonlocal 
+  !pseudopotential in the GW program.
   !
   CALL gwq_init()
   !
   CALL print_clock( 'GW' )
   !
   RETURN
-  
 END SUBROUTINE initialize_gw

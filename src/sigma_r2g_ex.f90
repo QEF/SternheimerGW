@@ -29,29 +29,21 @@ SUBROUTINE sigma_r2g_ex(sigma, sigma_g)
         do irp = 1, nrsex
           aux(irp) = sigma(ir,irp)
         enddo
-
-      ! call cft3s (aux, nr1sex, nr2sex, nr3sex, nr1sex, nr2sex, nr3sex, -1)
         call cfft3d (aux, nr1sex, nr2sex, nr3sex, nr1sex, nr2sex, nr3sex, -1)
-
         do igp = 1, ngmsex
            sigma (ir,igp) = aux( nlsex(igp))
         enddo
       enddo
-
       do igp = 1, ngmsex
         aux = czero
         do ir = 1, nrsex
           aux(ir) = conjg ( sigma(ir,igp) )
         enddo
-
-       !call cft3s (aux, nr1sex, nr2sex, nr3sex, nr1sex, nr2sex, nr3sex, -1)
         call cfft3d (aux, nr1sex, nr2sex, nr3sex, nr1sex, nr2sex, nr3sex, -1)
-
         do ig = 1, ngmsex
            sigma (ig,igp) = conjg ( aux( nlsex( ig )) ) * omega
         enddo
       enddo
-
      do ig = ngmsex + 1, nrsex
         do igp = ngmsex + 1, nrsex
            sigma (ig,igp) = (0.0d0, 0.0d0)

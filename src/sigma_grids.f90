@@ -16,7 +16,7 @@ SUBROUTINE sigma_grids()
   USE fft_types,        ONLY : fft_dlay_descriptor, fft_dlay_allocate, &
                                fft_dlay_set, fft_dlay_scalar
   USE io_global,        ONLY :  stdout, ionode, ionode_id
-  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st
+  USE gwsigma,          ONLY : sigma_x_st, sigma_c_st
   USE gwsigma,          ONLY : ecutsex, ecutsco
 
   IMPLICIT NONE

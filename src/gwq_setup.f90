@@ -53,7 +53,7 @@
   !
 
   USE kinds,         ONLY : DP
-  USE ions_base,     ONLY : tau, nat, ntyp => nsp, ityp, pmass
+  USE ions_base,     ONLY : tau, nat, ntyp => nsp, ityp
   USE cell_base,     ONLY : at, bg  
   USE io_global,     ONLY : stdout
   USE ener,          ONLY : Ef
@@ -61,18 +61,16 @@
   USE ktetra,        ONLY : ltetra, tetra
   USE lsda_mod,      ONLY : nspin, lsda, starting_magnetization
   USE scf,           ONLY : v, vrs, vltot, rho, rho_core, kedtau
-  USE gvect,         ONLY : nrxx, ngm
-  USE gsmooth,       ONLY : doublegrid
+  USE fft_base,      ONLY : dfftp
+  USE gvect,         ONLY : ngm
+  USE gvecs,       ONLY : doublegrid
   USE symm_base,     ONLY : nrot, nsym, s, ftau, irt, t_rev, time_reversal, &
-                            sname, sr, invs, inverse_s, copy_sym
+                            sr, invs, inverse_s
   USE uspp_param,    ONLY : upf
   USE spin_orb,      ONLY : domag
   USE constants,     ONLY : degspin, pi
-  USE noncollin_module, ONLY : noncolin, m_loc, angle1, angle2, ux, nspin_mag
-  USE wvfct,         ONLY : nbnd, et
-  USE rap_point_group,      ONLY : code_group, nclass, nelem, elem, which_irr,&
-                                  char_mat, name_rap, gname, name_class, ir_ram
-  USE rap_point_group_is,   ONLY : code_group_is, gname_is
+  USE noncollin_module,   ONLY : noncolin, m_loc, angle1, angle2, ux, nspin_mag
+  USE wvfct,              ONLY : nbnd, et
   USE nlcc_gw,       ONLY : drc, nlcc_any
   USE eqv,           ONLY : dmuxc
   USE control_gw,    ONLY : rec_code, lgamma_gamma, search_sym, start_irr, &
@@ -91,16 +89,12 @@
                             done_irr
   USE gamma_gamma,   ONLY : has_equivalent, asr, nasr, n_diff_sites, &
                             equiv_atoms, n_equiv_atoms, with_symmetry
-  USE gw_restart,    ONLY : gw_writefile, gw_readfile
   USE control_flags, ONLY : iverbosity, modenum, noinv
   USE disp,          ONLY : comp_irr_iq
   USE funct,         ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient
-
-! USE ramanm,        ONLY : lraman, elop, ramtns, eloptns, done_lraman, &
-!                           done_elop
-
   USE mp,            ONLY : mp_max, mp_min
-  USE mp_global,     ONLY : inter_pool_comm, nimage
+  USE mp_pools,      ONLY : inter_pool_comm, npool
+
 
   implicit none
 
@@ -130,40 +124,37 @@
   !
   ! 1) Computes the total local potential (external+scf) on the smooth grid
   !
-
-  call set_vrs (vrs, vltot, v%of_r, kedtau, v%kin_r, nrxx, nspin, doublegrid)
-
+  call set_vrs (vrs, vltot, v%of_r, kedtau, v%kin_r, dfftp%nnr, nspin, doublegrid)
   !
   ! 2) Set non linear core correction variables.
   !
-
   nlcc_any = ANY ( upf(1:ntyp)%nlcc )
   if (nlcc_any) allocate (drc( ngm, ntyp))    
+
   !
   !  3) If necessary calculate the local magnetization. This information is
   !      needed in find_sym
   !
-  IF (.not.ALLOCATED(m_loc)) ALLOCATE( m_loc( 3, nat ) )
-  IF (noncolin.and.domag) THEN
-     DO na = 1, nat
-        !
-        m_loc(1,na) = starting_magnetization(ityp(na)) * &
-                      SIN( angle1(ityp(na)) ) * COS( angle2(ityp(na)) )
-        m_loc(2,na) = starting_magnetization(ityp(na)) * &
-                      SIN( angle1(ityp(na)) ) * SIN( angle2(ityp(na)) )
-        m_loc(3,na) = starting_magnetization(ityp(na)) * &
-                      COS( angle1(ityp(na)) )
-     END DO
-     ux=0.0_DP
-     if (dft_is_gradient()) call compute_ux(m_loc,ux,nat)
-  ENDIF
-
+  !IF (.not.ALLOCATED(m_loc)) ALLOCATE( m_loc( 3, nat ) )
+  !IF (noncolin.and.domag) THEN
+  !   DO na = 1, nat
+  !      !
+  !      m_loc(1,na) = starting_magnetization(ityp(na)) * &
+  !                    SIN( angle1(ityp(na)) ) * COS( angle2(ityp(na)) )
+  !      m_loc(2,na) = starting_magnetization(ityp(na)) * &
+  !                    SIN( angle1(ityp(na)) ) * SIN( angle2(ityp(na)) )
+  !      m_loc(3,na) = starting_magnetization(ityp(na)) * &
+  !                    COS( angle1(ityp(na)) )
+  !   END DO
+  !   ux=0.0_DP
+  !   if (dft_is_gradient()) call compute_ux(m_loc,ux,nat)
+  !ENDIF
   !
   ! 3) Computes the derivative of the xc potential
   !
   dmuxc(:,:,:) = 0.d0
   if (lsda) then
-     do ir = 1, nrxx
+     do ir = 1, dfftp%nnr
         rhoup = rho%of_r (ir, 1) + 0.5d0 * rho_core (ir)
         rhodw = rho%of_r (ir, 2) + 0.5d0 * rho_core (ir)
         call dmxc_spin (rhoup, rhodw, dmuxc(ir,1,1), dmuxc(ir,2,1), &
@@ -171,7 +162,7 @@
      enddo
   else
      IF (noncolin.and.domag) THEN
-        do ir = 1, nrxx
+        do ir = 1, dfftp%nnr
            rhotot = rho%of_r (ir, 1) + rho_core (ir)
            call dmxc_nc (rhotot, rho%of_r(ir,2), rho%of_r(ir,3), rho%of_r(ir,4), auxdmuxc)
            DO is=1,nspin_mag
@@ -181,7 +172,7 @@
            END DO
         enddo
      ELSE
-        do ir = 1, nrxx
+        do ir = 1, dfftp%nnr
            rhotot = rho%of_r (ir, 1) + rho_core (ir)
            if (rhotot.gt.1.d-30) dmuxc (ir, 1, 1) = dmxc (rhotot)
            if (rhotot.lt. - 1.d-30) dmuxc (ir, 1, 1) = - dmxc ( - rhotot)
@@ -191,14 +182,10 @@
 
   ! 3.1) Setup all gradient correction stuff
   ! call setup_dgc
-
   ! 4) Computes the inverse of each matrix of the crystal symmetry group
-
   !HL-
    call inverse_s ( )
-
   ! 5) Computes the number of occupied bands for each k point
-
   if (lgauss) then
      !
      ! discard conduction bands such that w0gauss(x,n) < small
@@ -238,8 +225,6 @@
      else
         do ik = 1, nks
            nbnd_occ (ik) = nint (nelec) / degspin
-!HL writing out band numbers... why all four?
-!           write(6,*) nbnd_occ(ik)
         enddo
      endif
   endif
@@ -252,8 +237,6 @@
         emin = min (emin, et (ibnd, ik) )
      enddo
   enddo
-
-!@10TION@10TION
 #ifdef __PARA
   ! find the minimum across pools
   call mp_min( emin, inter_pool_comm )
@@ -282,23 +265,11 @@
   magnetic_sym = noncolin .AND. domag
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
 
-  !  set the alpha_mix parameter
+  !set the alpha_mix parameter
   !HL probably want restart functionality here.
-  
   do it = 2, niter_gw
      if (alpha_mix (it) .eq.0.d0) alpha_mix (it) = alpha_mix (it - 1)
   enddo
-
-!HL always reduce_io...
-  !if (reduce_io) then
-     flmixdpot = ' '
-  !else
-  !   flmixdpot = 'mixd'
-  !endif
-
-  where_rec='gwq_setup.'
-  rec_code=-40
-  CALL gw_writefile('data',0)
 
   CALL stop_clock ('gwq_setup')
   RETURN

@@ -525,8 +525,6 @@ MODULE gwsigma
 ! HL self energy is a huge quantity!
   COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
   COMPLEX (DP), ALLOCATABLE :: green(:,:)
-  COMPLEX (DP), ALLOCATABLE :: sigma_ex(:,:)
-  COMPLEX (DP), ALLOCATABLE :: sigma_g_ex(:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
   INTEGER  :: nbnd_sig

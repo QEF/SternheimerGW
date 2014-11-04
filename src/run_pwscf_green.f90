@@ -14,7 +14,7 @@ SUBROUTINE run_pwscf_green(do_band)
 !
   USE control_flags,   ONLY : conv_ions, twfcollect
   USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
-  USE io_files,        ONLY : prefix, tmp_dir
+  USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn
   USE lsda_mod,        ONLY : nspin
   USE input_parameters,ONLY : pseudo_dir
   USE control_flags,   ONLY : restart
@@ -22,9 +22,7 @@ SUBROUTINE run_pwscf_green(do_band)
   USE control_gw,      ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                               ext_restart, bands_computed
   USE save_gw,         ONLY : tmp_dir_save
-  USE control_flags,   ONLY: iprint
-  USE gvect,           ONlY: ecutwfc
-  USE gwsigma,         ONLY: ecutsco, ecutsex
+  USE control_flags,   ONLY : iprint
   !
   IMPLICIT NONE
   !
@@ -55,11 +53,7 @@ SUBROUTINE run_pwscf_green(do_band)
   restart = ext_restart
   pseudo_dir= TRIM( tmp_dir_save ) // TRIM( prefix ) // '.save'
 
-! write(6,*) pseudo_dir
-
-  CALL restart_from_file()
   conv_ions=.true.
-
  !Generate all eigenvectors in IBZ_{k}.
   CALL setup_nscf_green (xq)
 

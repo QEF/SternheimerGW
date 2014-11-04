@@ -12,24 +12,19 @@ SUBROUTINE openfilq()
 ! ... calculation.
  
   USE kinds,          ONLY : DP
-  USE control_flags, ONLY : modenum
+  USE control_flags,  ONLY : io_level, modenum
   USE units_gw,       ONLY : iuwfc, iudwf, iubar, iucom, iudvkb3, &
                              iudrhous, iuebar, iudrho, iudyn, iudvscf, &
                              lrwfc, lrdwf, lrbar, lrcom, lrdvkb3, lrcoul, &
                              lrdrhous, lrebar, lrdrho, iudwfm, iudwfp, iuncoul, lrgrn, iungreen
-  USE io_files,       ONLY : tmp_dir
+  USE io_files,       ONLY : tmp_dir, diropn, seqopn
   USE freq_gw,        ONLY : nfs, nwgreen
-  USE gsmooth,        ONLY : ngms
-
-!HL  USE control_ph,     ONLY : epsil, zue, ext_recover, trans, elph, lgamma, &
-!                               tmp_dir_ph, start_irr, last_irr
-
   USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw
   USE save_gw,        ONLY : tmp_dir_save
   USE qpoint,         ONLY : nksq
   USE output,         ONLY : fildyn, fildvscf
   USE wvfct,          ONLY : nbnd, npwx
-  USE gvect,          ONLY : nrx1, nrx2, nrx3, nrxx
+  USE fft_base,       ONLY : dfftp, dffts
   USE lsda_mod,       ONLY : nspin
   USE uspp,           ONLY : nkb, okvan
   USE io_files,       ONLY : prefix, iunigk
@@ -37,6 +32,7 @@ SUBROUTINE openfilq()
   USE control_flags,  ONLY : twfcollect
   USE mp_global,      ONLY : me_pool
   USE io_global,      ONLY : ionode
+  USE buffers,         ONLY : open_buffer
   !
   IMPLICIT NONE
   !
@@ -44,7 +40,7 @@ SUBROUTINE openfilq()
   ! integer variable for I/O control
   CHARACTER (len=256) :: filint
   ! the name of the file
-  LOGICAL :: exst
+  LOGICAL :: exst, exst_mem
   ! logical variable to check file existe
   !
   REAL(DP) :: edum(1,1), wdum(1,1)
@@ -58,14 +54,9 @@ SUBROUTINE openfilq()
  
   tmp_dir=tmp_dir_gw
 
-  !IF (lgamma.AND.modenum==0) tmp_dir=tmp_dir_save
-   write(6,*) tmp_dir
-
   iuwfc = 20
-  lrwfc = 2 * nbnd * npwx * npol
-
-  CALL diropn (iuwfc, 'wfc', lrwfc, exst)
-
+  lrwfc = nbnd * npwx * npol
+  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir)
   IF (.NOT.exst) THEN
      CALL errore ('openfilq', 'file '//trim(prefix)//'.wfc not found', 1)
   END IF
@@ -78,8 +69,11 @@ SUBROUTINE openfilq()
   !
 
   iubar = 21
-  lrbar = 2 * nbnd * npwx * npol
-  CALL diropn (iubar, 'bar', lrbar, exst)
+!  lrbar = 2 * nbnd * npwx * npol
+!  CALL diropn (iubar, 'bar', lrbar, exst)
+  lrbar = nbnd * npwx * npol
+  CALL open_buffer (iubar, 'bar', lrbar, io_level, exst_mem, exst, tmp_dir)
+
   IF (ext_recover.AND..NOT.exst) &
      CALL errore ('openfilq','file '//trim(prefix)//'.bar not found', 1)
 
@@ -87,17 +81,22 @@ SUBROUTINE openfilq()
   !    The file with the solution delta psi
   !
   iudwf = 22
-  lrdwf = 2 * nbnd * npwx * npol
-  CALL diropn (iudwf, 'dwf', lrdwf, exst)
+  lrdwf =  nbnd * npwx * npol
+  CALL open_buffer (iudwf, 'dwf', lrdwf, io_level, exst_mem, exst, tmp_dir)
+!  lrdwf = 2 * nbnd * npwx * npol
+!  CALL diropn (iudwf, 'dwf', lrdwf, exst)
   IF (ext_recover.AND..NOT.exst) &
      CALL errore ('openfilq','file '//trim(prefix)//'.dwf not found', 1)
   !
   !   open a file with the static change of the charge
   !
   IF (okvan) THEN
+     !iudrhous = 25
+     !lrdrhous = 2 * nrxx * nspin_mag
+     !CALL diropn (iudrhous, 'prd', lrdrhous, exst)
      iudrhous = 25
-     lrdrhous = 2 * nrxx * nspin_mag
-     CALL diropn (iudrhous, 'prd', lrdrhous, exst)
+     lrdrhous =  dfftp%nnr * nspin_mag
+     CALL open_buffer (iudrhous, 'prd', lrdrhous, io_level, exst_mem, exst,tmp_dir)
      IF (ext_recover.AND..NOT.exst) &
         CALL errore ('openfilq','file '//trim(prefix)//'.prd not found', 1)
   ENDIF
@@ -106,7 +105,7 @@ SUBROUTINE openfilq()
   !  and solve_linter). Used for third-order calculations.
   !
   iudrho = 23
-  lrdrho = 2 * nrx1 * nrx2 * nrx3 * nspin_mag
+  lrdrho = 2 * dfftp%nr1x * dfftp%nr2x * dfftp%nr3x * nspin_mag
   !
   !
   !   Here the sequential files
@@ -119,16 +118,7 @@ SUBROUTINE openfilq()
 !HL write files for \Delta\psi^{\pm}
   iudwfm = 29 
   iudwfp = 30
-  CALL diropn (iudwfp, 'dwfp', lrdwf, exst)
-  CALL diropn (iudwfm, 'dwfm', lrdwf, exst)
-
-400 IF (fildvscf.NE.' ') THEN
-     iudvscf = 27
-     IF ( me_pool == 0 ) THEN
-        CALL diropn (iudvscf, fildvscf, lrdrho, exst)
-     END IF
-  END IF
-  !
+  CALL open_buffer (iudwfp, 'dwpf', lrwfc, io_level, exst_mem, exst, tmp_dir)
+  CALL open_buffer (iudwfm, 'dwfm', lrwfc, io_level, exst_mem, exst, tmp_dir)
   RETURN
-  !
 END SUBROUTINE openfilq
