@@ -48,45 +48,21 @@ SUBROUTINE run_pwscf(do_band)
   !From now on, work only on the _gw virtual directory
   !Somehow this statement got deleted.
 
+  wfc_dir=tmp_dir_gw
   tmp_dir=tmp_dir_gw
-
-!  write(6,*)tmp_dir_gw
 
   ! ... Setting the values for the nscf run
 
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'
-
-
   restart = ext_restart
-  pseudo_dir= TRIM( tmp_dir_save ) // TRIM( prefix ) // '.save'
-
-!  write(6,*) pseudo_dir
 
   CALL restart_from_file()
   conv_ions=.true.
 !
   CALL setup_nscf (xq)
-
-! IN PW- MODIFIED FOR PARALLEL RUN.
   CALL init_run()
-
-!  WRITE(400,'("Symmetry Matrices in Crystal Axis")')
-!  do isym = 1, nsym
-!      WRITE(400,'(3i4)') s(:,:,isym) 
-!      WRITE(400,*)
-!  enddo
-!  WRITE(400,*)
-!  do isym = 1, nsym
-!      WRITE(400,'(3i4)') s(:,:,invs(isym)) 
-!      WRITE(400,*)
-!  enddo
-!  write(400,'(1f12.7)') tpiba
-!  do ig = 1, ngmpol
-!     write(400,'(3f12.7)') g(1,ig), g(2,ig), g(3,ig)
-!  enddo
-!  STOP
 
   IF (do_band) write(6,'("Calling PW electrons")')
   IF (do_band) CALL electrons()

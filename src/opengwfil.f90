@@ -11,6 +11,9 @@ SUBROUTINE opengwfil()
 IMPLICIT  NONE
   LOGICAL :: exst
 
+  
+    print*, tmp_dir
+
     iuncoul = 28
     lrcoul = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt * nfs
     CALL diropn (iuncoul, 'coul', lrcoul, exst)

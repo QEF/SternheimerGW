@@ -35,15 +35,11 @@
   !
   ! a(1:N) - coefficients of the continued fraction
   !-----------------------------------------------------------
-
-USE kinds,         ONLY : DP
-USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
-                          nproc_pool, me_pool, my_pool_id, nproc
+  USE kinds,         ONLY : DP
   implicit none
   integer :: N
   complex(DP) :: z(N), u(N)
   complex(DP) :: g(N,N), a(N)
-  ! g(p,i) = g_p (z_i) in the notation of Vidberg and Serene
   integer :: i, j, p
   real(DP) :: ar, ai
   complex(DP) :: tmp1, tmp2
@@ -65,18 +61,14 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
     ar = real(a(p))
     ai = aimag(a(p))
     if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-       write(1000+mpime,*) (z(i),i=1,N)
-  !     write(1000+mpime,*) (u(i),i=1,N)
-       a(:) = (0.0d0, 0.0d0)
+          a(:) = (0.0d0, 0.0d0)
     endif
     !
   enddo
   !
   end subroutine pade_coeff
 
-  !
   !-----------------------------------------------------------
-  !subroutine pade_eval ( N, z, a, w, padapp)
   subroutine pade_eval ( N, z, a, w, padapp)
   !-----------------------------------------------------------
   ! N-point Pade' approximant - evaluate the Pade' approximant
@@ -99,10 +91,7 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
   ! padapp - value of the approximant at the point w
   !-----------------------------------------------------------
   !
-
   USE kinds,         ONLY : DP
-  USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
-                            nproc_pool, me_pool, my_pool_id, nproc
   implicit none
   integer :: N
   complex(DP) :: a(N), z(N), acap(0:N), bcap(0:N)
@@ -126,7 +115,6 @@ USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
   ar = real(padapp)
   ai = aimag(padapp)
   if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-    !write(1000+mpime,*) padapp 
     padapp = (0.0d0,0.0d0)
   endif
   !

@@ -6,27 +6,35 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE run_pwscf_green(do_band)
+SUBROUTINE run_pwscf_green(do_band, ik)
 !-----------------------------------------------------------------------
 !
 ! This is the driver for when gw calls pwscf.
 !
 !
+  USE kinds,              ONLY : DP
   USE control_flags,   ONLY : conv_ions, twfcollect
   USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
   USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn
   USE lsda_mod,        ONLY : nspin
   USE input_parameters,ONLY : pseudo_dir
   USE control_flags,   ONLY : restart
+  USE fft_base,        ONLY : dffts
   USE qpoint,          ONLY : xq
   USE control_gw,      ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
-                              ext_restart, bands_computed
+                              ext_restart, bands_computed, lgamma
   USE save_gw,         ONLY : tmp_dir_save
   USE control_flags,   ONLY : iprint
+  USE mp_bands,        ONLY : ntask_groups
+  USE disp,            ONLY : xk_kpoints
+  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
+  USE wvfct,           ONLY : nbnd
   !
   IMPLICIT NONE
   !
   CHARACTER(LEN=256) :: dirname, file_base_in, file_base_out
+  !
+  INTEGER   :: ik
   !
   LOGICAL, INTENT(IN) :: do_band
   !
@@ -36,52 +44,41 @@ SUBROUTINE run_pwscf_green(do_band)
   !
   CALL clean_pw( .FALSE. )
   !
-  CALL close_files()
+  CALL close_files( .true. )
   !
-
   !From now on, work only on the _gw virtual directory
-  !Somehow this statement got deleted.
-
+  wfc_dir=tmp_dir_gw
   tmp_dir=tmp_dir_gw
-
-  ! write(6,*)tmp_dir_gw
-  ! ... Setting the values for the nscf run
-
+  !
+  xq(:) = xk_kpoints(:, ik)
+  lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
+! ... Setting the values for the nscf run
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'
   restart = ext_restart
-  pseudo_dir= TRIM( tmp_dir_save ) // TRIM( prefix ) // '.save'
-
   conv_ions=.true.
- !Generate all eigenvectors in IBZ_{k}.
+!Generate all eigenvectors in IBZ_{k}.
   CALL setup_nscf_green (xq)
-
   CALL init_run()
-
-  IF (do_band) write(6,'("Calling PW electrons")')
-  IF (do_band) CALL electrons()
-  IF (do_band) write(6,'("Finished PW electrons")')
-
-  IF (.NOT.reduce_io.and.do_band) THEN
-     twfcollect=.FALSE. 
-     CALL punch( 'all' )
-     done_bands=.TRUE.
-  ENDIF
-
+  IF (do_band) CALL non_scf ( )
+  !
+  !
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
-
-
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
-
   ext_restart=.FALSE.
-
-  CALL close_files()
-
+  !
+  CALL close_files(.true.)
+  !
   bands_computed=.TRUE.
-
-
+  !
+  !  PWscf has run with task groups if available, but in the phonon 
+  !  they are not used, apart in particular points, where they are
+  !  activated.
+  !
+  IF (ntask_groups > 1) dffts%have_task_groups=.FALSE.
+  !
   CALL stop_clock( 'PWSCF' )
-
+  !
   RETURN
 END SUBROUTINE run_pwscf_green

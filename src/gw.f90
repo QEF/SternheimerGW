@@ -6,7 +6,9 @@ PROGRAM gw
   USE mp_global,       ONLY : mp_startup
   USE environment,     ONLY : environment_start
   USE check_stop,      ONLY : check_stop_init
-  USE control_gw,      ONLY : do_sigma_exx
+  USE control_gw,      ONLY : do_sigma_exx, do_sigma_matel
+  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
+  USE wvfct,           ONLY : nbnd
 
   IMPLICIT NONE
   INTEGER :: iq, ik, ierr
@@ -20,27 +22,25 @@ PROGRAM gw
   CALL mp_startup ( start_images=.true. )
   CALL environment_start ( code )
 
+!Initialize GW calculation, Read Ground state information.
   CALL gwq_readin()
-
   CALL check_stop_init()
-
   CALL check_initial_status(auxdyn)
 
+!Initialize frequency grids, FFT grids for correlation
+!and exchange operators, open relevant GW-files.
   CALL freqbins()
-
   CALL sigma_grids()
-
   CALL opengwfil()
 
-  ik=1
   do_iq=.TRUE.
   setup_pw = .TRUE.
   do_band  = .TRUE.
-! Generates small group of k and then forms IBZ_{k}.
-  CALL run_pwscf_green(do_band)
+  nbnd = nbnd_sig
+  ik=1
+  CALL run_pwscf_green(do_band,ik)
   CALL initialize_gw()
   if(do_sigma_exx)   CALL sigma_exch(ik)
-! if(do_sigma_matel) CALL sigma_matel(ik)
-
+  if(do_sigma_matel) CALL sigma_matel(ik)
   CALL stop_gw( .TRUE. )
 END PROGRAM gw

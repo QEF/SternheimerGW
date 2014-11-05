@@ -376,7 +376,8 @@ MODULE control_gw
              do_diag_g,&
              do_epsil,& !in case you want to set xq point
              do_imag,&    !from input file for epsilon
-             do_pade_coul
+             do_pade_coul,&
+             newgrid=.FALSE.
 
 END MODULE control_gw
 !

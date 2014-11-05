@@ -1,7 +1,5 @@
 SUBROUTINE sigma_exch(ik0)
   USE kinds,         ONLY : DP
-  USE ions_base,     ONLY : nat
-  USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE control_gw,    ONLY : eta
@@ -66,33 +64,25 @@ IMPLICIT NONE
   else
      ikq = 2*ik0
   endif
-
-  WRITE(6," ")
-  WRITE(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
-  WRITE(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk(ipol, ikq), ipol=1,3)
-  WRITE(6," ")
-
+  write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
-
   DO iq = 1, nksq
-     WRITE(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
-!odd numbers xk
+     write(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
      if (lgamma) then
         ikq = iq
      else
-!even k + q 
         ikq = 2*iq
      endif
      call get_buffer (evq, lrwfc, iuwfc, ikq)
      if (nksq.gt.1) then
           read (iunigk, err = 100, iostat = ios) npw, igk
-100       CALL errore ('green_linsys', 'reading igk', abs (ios) )
+100       CALL errore ('sigma_exch', 'reading igk', abs (ios) )
      endif
      if (lgamma)  npwq = npw
      if (.not.lgamma.and.nksq.gt.1) then
            read (iunigk, err = 200, iostat = ios) npwq, igkq
-200        call errore ('green_linsys', 'reading igkq', abs (ios) )
+200        call errore ('sigma_exch', 'reading igkq', abs (ios) )
      endif
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
@@ -107,8 +97,7 @@ IMPLICIT NONE
            igkq_ig  (counter) = ig
         endif
      enddo
-
-     ALLOCATE ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
+     allocate ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
 !    psi_{k+q}(r)psi^{*}_{k+q}(r')
      greenf_na = (0.0d0, 0.0d0)
      do ig = 1, counter

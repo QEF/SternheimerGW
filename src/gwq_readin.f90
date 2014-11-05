@@ -21,8 +21,10 @@ SUBROUTINE gwq_readin()
   USE constants,     ONLY : RYTOEV
   USE ions_base,     ONLY : nat, ntyp => nsp
   USE io_global,     ONLY : ionode_id
+  USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
   USE mp,            ONLY : mp_bcast
   USE mp_world,      ONLY : world_comm
+  USE start_k,       ONLY : reset_grid, nks_start
   USE input_parameters, ONLY : max_seconds
   USE ions_base,     ONLY : amass, atm
   USE klist,         ONLY : xk, nks, nkstot, lgauss, two_fermi_energies
@@ -39,7 +41,7 @@ SUBROUTINE gwq_readin()
                             do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil, do_serial, &
-                            do_diag_g, do_diag_w, do_imag, do_pade_coul
+                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
@@ -85,6 +87,7 @@ SUBROUTINE gwq_readin()
   INTEGER, EXTERNAL  :: atomic_number
   REAL(DP), EXTERNAL :: atom_weight
   LOGICAL, EXTERNAL  :: imatches
+  LOGICAL :: exst, parallelfs
   REAL(DP)           :: ar, ai
   !
   NAMELIST / INPUTGW / tr2_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
@@ -100,7 +103,7 @@ SUBROUTINE gwq_readin()
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul
+                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -396,32 +399,17 @@ SUBROUTINE gwq_readin()
   amass_input(:)= amass(:)
   !
   tmp_dir_save=tmp_dir
-  tmp_dir_gw= TRIM (tmp_dir) // '_gw' // int_to_char(my_image_id)
+  tmp_dir_gw= TRIM (tmp_dir) //'_gw'//trim(int_to_char(my_image_id))//'/'
+  CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
   ext_restart=.FALSE.
   ext_recover=.FALSE.
   recover=.false.
 
-  IF (recover) THEN
-     CALL gw_readfile('init',ierr)
-     IF (ierr /= 0 ) THEN
-        recover=.FALSE.
-        goto 1001
-     ENDIF
-     tmp_dir=tmp_dir_gw
-     CALL check_restart_recover(ext_recover, ext_restart)
-     tmp_dir=tmp_dir_save
-     IF (ldisp) lgamma = (current_iq==1)
-!
-!  If there is a restart or a recover file gw.x has saved its own data-file 
-!  and we read the initial information from that file
-!
-     IF ((ext_recover.OR.ext_restart).AND..NOT.lgamma) &
-                                                      tmp_dir=tmp_dir_gw
-     u_from_file=.true.
-  ENDIF
 1001 continue
 
   CALL read_file ( )
+
+  newgrid = reset_grid (nk1, nk2, nk3, k1, k2, k3)
 
   tmp_dir=tmp_dir_save
   !

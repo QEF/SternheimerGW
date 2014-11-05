@@ -3,7 +3,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   USE io_global,            ONLY : stdout, ionode_id, ionode
   USE io_files,             ONLY : prefix, iunigk
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE gwsigma,              ONLY : ngmsig, nbnd_sig, sigma_g_ex, ngmsco, ngmsex
+  USE gwsigma,              ONLY : ngmsig, nbnd_sig
   USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma
   USE control_gw,           ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
                                    do_diag_g, do_diag_w, trunc_2d

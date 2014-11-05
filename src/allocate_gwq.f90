@@ -55,8 +55,8 @@ subroutine allocate_gwq
  !
  !q!=0 : evq, igkq are allocated and calculated at point k+q
  !
-  allocate (evq ( npwx*npol , nbnd))    
-  allocate (igkq ( npwx))    
+    allocate (evq ( npwx*npol , nbnd))    
+    allocate (igkq ( npwx))    
   endif
 
   allocate (dvpsi ( npwx*npol , nbnd))    

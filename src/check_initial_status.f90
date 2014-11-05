@@ -53,57 +53,10 @@ SUBROUTINE check_initial_status(auxdyn)
   ! If this not a recover run, we generate the q mesh. Otherwise at this
   ! point the code has read the q mesh from the files contained in 
   ! prefix.phsave
+  call q_points()
   !
-  IF (.NOT.recover) THEN
-     !
-     ! recover file not found or not looked for
-     !
-     current_iq=1
-     IF (ldisp) THEN
-        !
-        ! ... Calculate the q-points for the dispersion
-        !
-        CALL q_points()
-        !
-     ELSE
-        !
-        nqs = 1
-        last_q = 1
-        ALLOCATE(x_q(3,1))
-        x_q(:,1)=xq(:)
-        !
-     END IF
-  ENDIF
-  !  Create a new directory where the gw variables are saved and copy
-  !  the charge density there.
-     CALL write_rho( rho, nspin )
-  !  The following commands deal with the flag lqdir=.true. In this case
-  !  each q point works on a different directory. We create the directories
-  !  if they do not exist and copy the self consistent charge density
-  !  there.
+  ! this is the standard treatment
+  CALL write_rho( rho, nspin )
   !
-  !DO iq = 1,nqs
-  !   IF (.NOT.comp_iq(iq)) CYCLE
-  !   lgamma = lgamma_iq(iq) 
-  !   !
-     ! ... each q /= gamma works on a different directory. We create them
-     ! here and copy the charge density inside
-     !
-  !   IF ((.NOT.lgamma.OR. newgrid).AND.lqdir) THEN
-  !      tmp_dir_phq= TRIM (tmp_dir_ph) //TRIM(prefix)//&
-  !                        & '.q_' // TRIM(int_to_char(iq))//'/'
-  !      filename=TRIM(tmp_dir_phq)//TRIM(prefix)//'.save/charge-density.dat'
-  !      IF (ionode) inquire (file =TRIM(filename), exist = exst)
-        !
-  !      CALL mp_bcast( exst, ionode_id, intra_image_comm )
-        !
-  !      IF (.NOT. exst) THEN
-  !         CALL create_directory( tmp_dir_phq )
-  !         tmp_dir=tmp_dir_gwq
-  !         CALL write_rho( rho, nspin )
-  !         tmp_dir=tmp_dir_save
-  !      ENDIF
-  !   ENDIF
-  !ENDDO
   RETURN
   END SUBROUTINE check_initial_status

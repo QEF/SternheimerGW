@@ -52,6 +52,7 @@ SUBROUTINE setup_nscf_green(xq)
   USE uspp_param,         ONLY : n_atom_wfc
   USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &
                                  time_reversal, copy_sym, inverse_s, s_axis_to_cart
+  USE control_gw,         ONLY : newgrid, lgamma
 
   !
   IMPLICIT NONE
@@ -74,14 +75,14 @@ SUBROUTINE setup_nscf_green(xq)
   david = 4
   nbndx = david*nbnd
   max_cg_iter=20
-  natomwfc = n_atom_wfc( nat, ityp )
+  natomwfc = n_atom_wfc( nat, ityp, noncolin )
 
   !
-#ifdef __PARA
-  IF ( use_para_diag )  CALL check_para_diag( nbnd )
-#else
+!#ifdef __PARA
+!  IF ( use_para_diag )  CALL check_para_diag( nbnd )
+!#else
   use_para_diag = .FALSE.
-#endif
+!#endif
 
   ! ... Symmetry and k-point section
   ! ... time_reversal = use q=>-q symmetry for k-point generation
@@ -105,10 +106,28 @@ SUBROUTINE setup_nscf_green(xq)
     call s_axis_to_cart () 
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
   ! ... lattice, with the full point symmetry of the lattice.
+  print*, nkstot, nks, nks_start
 
-    nkstot = nks_start
-    xk(:,1:nkstot) = xk_start(:,1:nkstot)
-    wk(1:nkstot)   = wk_start(1:nkstot)
+!HL
+  if( nks_start > 0 .AND. .NOT. newgrid ) then
+     !
+     !  In this case I keep the same points of the Charge density
+     !  calculations
+     !
+     nkstot = nks_start
+     xk(:,1:nkstot) = xk_start(:,1:nkstot)
+     wk(1:nkstot)   = wk_start(1:nkstot)
+  else
+     !
+     ! In this case I generate a new set of k-points
+     !
+     ! In the case of electron-phonon matrix element with
+     ! wannier functions the k-points should not be reduced
+     !
+!     skip_equivalence = .false.
+     CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
+                      bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
+  endif
 
   ! ... If some symmetries of the lattice no longer apply for this kpoint
   ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
@@ -160,8 +179,7 @@ SUBROUTINE setup_nscf_green(xq)
   !
   ! ... set the granularity for k-point distribution
   !
-  IF ( ABS( xq(1) ) < eps8 .AND. ABS( xq(2) ) < eps8 .AND. &
-       ABS( xq(3) ) < eps8 ) THEN
+  IF (lgamma) THEN
   !
        kunit = 1
   !

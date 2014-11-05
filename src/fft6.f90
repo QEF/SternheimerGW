@@ -3,7 +3,7 @@ subroutine fft6(f_g, f_r, fc, conv)
   USE cell_base,      ONLY : tpiba2, tpiba, omega, alat, at
   USE fft_base,       ONLY : dffts
   USE fft_interfaces, ONLY : invfft, fwfft
-  USE fft_custom,       ONLY : fft_cus, set_custom_grid, ggent, gvec_init
+  USE fft_custom,     ONLY : fft_cus, set_custom_grid, ggent, gvec_init
 
 IMPLICIT NONE
 

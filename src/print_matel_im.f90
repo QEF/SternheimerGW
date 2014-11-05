@@ -1,7 +1,7 @@
 subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma) 
 
   USE kinds,                ONLY : DP
-  USE gwsigma,              ONLY : ngmsig, nbnd_sig, sigma_g_ex, ngmsco, ngmsex
+  USE gwsigma,              ONLY : ngmsig, nbnd_sig
   USE io_global,            ONLY : stdout, ionode_id, ionode
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi

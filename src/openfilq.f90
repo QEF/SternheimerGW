@@ -17,9 +17,9 @@ SUBROUTINE openfilq()
                              iudrhous, iuebar, iudrho, iudyn, iudvscf, &
                              lrwfc, lrdwf, lrbar, lrcom, lrdvkb3, lrcoul, &
                              lrdrhous, lrebar, lrdrho, iudwfm, iudwfp, iuncoul, lrgrn, iungreen
-  USE io_files,       ONLY : tmp_dir, diropn, seqopn
+  USE io_files,       ONLY : tmp_dir, diropn, seqopn, wfc_dir
   USE freq_gw,        ONLY : nfs, nwgreen
-  USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw
+  USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw, lgamma
   USE save_gw,        ONLY : tmp_dir_save
   USE qpoint,         ONLY : nksq
   USE output,         ONLY : fildyn, fildvscf
@@ -33,6 +33,8 @@ SUBROUTINE openfilq()
   USE mp_global,      ONLY : me_pool
   USE io_global,      ONLY : ionode
   USE buffers,         ONLY : open_buffer
+  USE input_parameters,ONLY : nk1, nk2, nk3
+
   !
   IMPLICIT NONE
   !
@@ -51,23 +53,23 @@ SUBROUTINE openfilq()
   !     There are six direct access files to be opened in the tmp area
   !     The file with the wavefunctions. In the lgamma case reads those
   !     written by pw.x. In the other cases those calculated by gw.x
- 
+  print*, tmp_dir, tmp_dir_gw, wfc_dir, tmp_dir_save
   tmp_dir=tmp_dir_gw
 
   iuwfc = 20
   lrwfc = nbnd * npwx * npol
-  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir)
+  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_gw)
   IF (.NOT.exst) THEN
      CALL errore ('openfilq', 'file '//trim(prefix)//'.wfc not found', 1)
   END IF
   !
   ! From now on all files are written with the _gw prefix
   !
+  !
   tmp_dir=tmp_dir_gw
   !
   !    The file with deltaV_{bare} * psi
   !
-
   iubar = 21
 !  lrbar = 2 * nbnd * npwx * npol
 !  CALL diropn (iubar, 'bar', lrbar, exst)

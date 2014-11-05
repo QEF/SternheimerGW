@@ -25,10 +25,16 @@ initialize_gw.o\
 allocate_gwq.o\
 openfilq.o\
 gwq_setup.o\
+prepare_q.o\
 gwq_init.o\
 setup_nscf_green.o\
 run_pwscf_green.o\
+pade.o\
 sigma_exch.o\
+sigma_matel.o\
+print_matel.o\
+print_matel_im.o\
+sigma_pade.o\
 print_clock_gw.o\
 close_gwq.o\
 stop_gw.o
