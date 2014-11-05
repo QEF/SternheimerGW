@@ -144,10 +144,7 @@ IMPLICIT NONE
   ALLOCATE (evc_tmp_j  (sigma_x_st%ngmt))
   sigma_g_ex(:,:) = (0.0d0, 0.0d0)
 
-  ierr = buiol_check_unit(iunsex)
-  print*, "iunsigma_x", ierr
   CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
-  print*, sigma_g_ex(1:5,1:5)
 
   sigma_band_ex (:, :) = czero
   do ibnd = 1, nbnd_sig

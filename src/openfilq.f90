@@ -58,7 +58,7 @@ SUBROUTINE openfilq()
 
   iuwfc = 20
   lrwfc = nbnd * npwx * npol
-  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_gw)
+  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_save)
   IF (.NOT.exst) THEN
      CALL errore ('openfilq', 'file '//trim(prefix)//'.wfc not found', 1)
   END IF
@@ -71,14 +71,11 @@ SUBROUTINE openfilq()
   !    The file with deltaV_{bare} * psi
   !
   iubar = 21
-!  lrbar = 2 * nbnd * npwx * npol
-!  CALL diropn (iubar, 'bar', lrbar, exst)
   lrbar = nbnd * npwx * npol
   CALL open_buffer (iubar, 'bar', lrbar, io_level, exst_mem, exst, tmp_dir)
 
   IF (ext_recover.AND..NOT.exst) &
      CALL errore ('openfilq','file '//trim(prefix)//'.bar not found', 1)
-
   !
   !    The file with the solution delta psi
   !

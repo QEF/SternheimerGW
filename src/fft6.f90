@@ -61,6 +61,9 @@ else if (conv.eq.-1) then
          f_r(ig, igp) = conjg ( aux( fc%nlt( ig )) ) * omega
       enddo
     enddo
+
+    f_g(1:fc%ngmt, 1:fc%ngmt) = f_r(1:fc%ngmt,1:fc%ngmt)
+
 else 
     call errore (' FFT routines',' Wrong switch',1)
 end if

@@ -54,6 +54,7 @@ IMPLICIT NONE
   do iq = 1, nksq
      if(lgamma) then
         wq(iq) = 0.5d0*wk(iq)
+        print*, wq(iq)
      else
         wq(iq) = 0.5d0*wk(2*iq-1) 
      endif
@@ -142,6 +143,7 @@ IMPLICIT NONE
      DEALLOCATE(barcoulr)
      DEALLOCATE(greenf_nar)
    ENDDO
+
    ALLOCATE ( sigma_g_ex  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
    sigma_g_ex(:,:) = (0.0d0,0.0d0)
    call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)

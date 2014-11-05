@@ -52,17 +52,18 @@ SUBROUTINE run_pwscf_green(do_band, ik)
   !
   xq(:) = xk_kpoints(:, ik)
   lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
-! ... Setting the values for the nscf run
+  !...Setting the values for the nscf run
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'
   restart = ext_restart
   conv_ions=.true.
-!Generate all eigenvectors in IBZ_{k}.
+  !Generate all eigenvectors in IBZ_{k}.
   CALL setup_nscf_green (xq)
   CALL init_run()
   IF (do_band) CALL non_scf ( )
   !
+  CALL punch( 'all' )
   !
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )

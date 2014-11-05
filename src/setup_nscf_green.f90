@@ -70,13 +70,11 @@ SUBROUTINE setup_nscf_green(xq)
   !
   ! ... variables for iterative diagonalization (Davidson is assumed)
   !
-
   isolve = 0
   david = 4
   nbndx = david*nbnd
   max_cg_iter=20
   natomwfc = n_atom_wfc( nat, ityp, noncolin )
-
   !
 !#ifdef __PARA
 !  IF ( use_para_diag )  CALL check_para_diag( nbnd )
