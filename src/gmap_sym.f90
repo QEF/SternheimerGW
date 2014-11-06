@@ -28,10 +28,11 @@
   USE kinds,         ONLY: DP
   USE io_global,     ONLY : stdout
   USE control_flags, ONLY : iverbosity
-  USE gvect,         ONLY : ig1, ig2, ig3, ngm, &
-                            nr1, nr2, nr3, g
+  USE fft_base,  ONLY: dfftp
+  !USE gvect,         ONLY : ig1, ig2, ig3, ngm, g
+  USE gvect,         ONLY : mill, ngm, g
   USE cell_base,     ONLY : at, bg
-  USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool
+  USE mp_world,     ONLY : mpime
 
 #ifdef __PARA
   USE mp_global,    ONLY : my_pool_id
@@ -77,15 +78,15 @@
       !
       !  the rotated G-vector
       !
-      i = s (1, 1, isym) * ig1 (ig) + s (1, 2, isym) * ig2(ig) + s (1, 3, isym) * ig3(ig)
-      j = s (2, 1, isym) * ig1 (ig) + s (2, 2, isym) * ig2(ig) + s (2, 3, isym) * ig3(ig)
-      k = s (3, 1, isym) * ig1 (ig) + s (3, 2, isym) * ig2(ig) + s (3, 3, isym) * ig3(ig)
+      i = s (1, 1, isym) * mill(1,ig) + s (1, 2, isym) * mill(2,ig) + s (1, 3, isym) * mill(3,ig)
+      j = s (2, 1, isym) * mill(1,ig) + s (2, 2, isym) * mill(2,ig) + s (2, 3, isym) * mill(3,ig)
+      k = s (3, 1, isym) * mill(1,ig) + s (3, 2, isym) * mill(2,ig) + s (3, 3, isym) * mill(3,ig)
       !
       jg = 0
       tfound = .false.
       DO while ((.not.tfound).and.(jg.lt.ngm))
         jg = jg + 1
-        tfound = (i.eq.ig1(jg)) .and. (j.eq.ig2(jg)) .and. (k.eq.ig3(jg))
+        tfound = (i.eq.mill(1,jg)) .and. (j.eq.mill(2,jg)) .and. (k.eq.mill(3,jg))
       ENDDO
       !
       IF (tfound) THEN
@@ -104,9 +105,9 @@
         ! fractional traslation in crystal coord is ftau/nr*
         ! for cart/crys transform of the G-vecctors have a look at the bottom
         !
-        rdotk = float( ig1 (ig) * ftau (1, isym) ) / float (nr1) &
-              + float( ig2 (ig) * ftau (2, isym) ) / float (nr2) &
-              + float( ig3 (ig) * ftau (3, isym) ) / float (nr3)
+        rdotk = float( mill(1,ig) * ftau (1, isym) ) / float (dfftp%nr1) &
+              + float( mill(2,ig) * ftau (2, isym) ) / float (dfftp%nr2) &
+              + float( mill(3,ig) * ftau (3, isym) ) / float (dfftp%nr3)
 
         !     ft(:)    = at(:,1)*ftau(1,ns)/nr1 + &
         !                at(:,2)*ftau(2,ns)/nr2 + &

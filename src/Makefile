@@ -26,6 +26,9 @@ allocate_gwq.o\
 openfilq.o\
 gwq_setup.o\
 prepare_q.o\
+do_stern.o\
+stern_symm.o\
+gmap_sym.o\
 gwq_init.o\
 set_defaults_pw.o\
 run_nscf.o\

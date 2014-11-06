@@ -6,12 +6,13 @@ SUBROUTINE stern_symm()
 
 USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
-USE gwsigma,       ONLY : sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmpol
+USE gwsigma,       ONLY : sigma_c_st
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
-USE gvect,         ONLY : g, ngm, ecutwfc, nl
-USE modes,         ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
+USE gvect,         ONLY : g, ngm
+USE modes,         ONLY : nsymq, invsymq 
 
 IMPLICIT NONE
+
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
 INTEGER      :: isym
 INTEGER      :: gmapsym(ngm,48)
@@ -41,7 +42,7 @@ write(6,'("Number of symmops in Small G_q: ", i4)'), nsymq
 ngmunique = 1
 ig_unique(1) = 1
 
-DO ig = 2, ngmpol
+DO ig = 2, sigma_c_st%ngmt
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
    DO isym = 1, nsymq
@@ -63,6 +64,6 @@ DO ig = 2, ngmpol
    ENDIF
 
 ENDDO
-write(6,'("ngmpol and ngmunique", i4, i4)'), ngmpol, ngmunique
+write(6,'("ngmpol and ngmunique", i4, i4)'), sigma_c_st%ngmt, ngmunique
 
 END SUBROUTINE stern_symm
