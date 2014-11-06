@@ -25,15 +25,15 @@ SUBROUTINE openfilq()
   USE output,         ONLY : fildyn, fildvscf
   USE wvfct,          ONLY : nbnd, npwx
   USE fft_base,       ONLY : dfftp, dffts
-  USE lsda_mod,       ONLY : nspin
-  USE uspp,           ONLY : nkb, okvan
-  USE io_files,       ONLY : prefix, iunigk
+  USE lsda_mod,         ONLY : nspin
+  USE uspp,             ONLY : nkb, okvan
+  USE io_files,         ONLY : prefix, iunigk
   USE noncollin_module, ONLY : npol, nspin_mag
-  USE control_flags,  ONLY : twfcollect
-  USE mp_global,      ONLY : me_pool
-  USE io_global,      ONLY : ionode
-  USE buffers,         ONLY : open_buffer
-  USE input_parameters,ONLY : nk1, nk2, nk3
+  USE control_flags,    ONLY : twfcollect, io_level
+  USE mp_global,        ONLY : me_pool
+  USE io_global,        ONLY : ionode
+  USE buffers,          ONLY : open_buffer
+  USE input_parameters, ONLY : nk1, nk2, nk3
 
   !
   IMPLICIT NONE
@@ -53,12 +53,10 @@ SUBROUTINE openfilq()
   !     There are six direct access files to be opened in the tmp area
   !     The file with the wavefunctions. In the lgamma case reads those
   !     written by pw.x. In the other cases those calculated by gw.x
-  print*, tmp_dir, tmp_dir_gw, wfc_dir, tmp_dir_save
   tmp_dir=tmp_dir_gw
-
   iuwfc = 20
   lrwfc = nbnd * npwx * npol
-  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_save)
+  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_gw)
   IF (.NOT.exst) THEN
      CALL errore ('openfilq', 'file '//trim(prefix)//'.wfc not found', 1)
   END IF
@@ -82,8 +80,6 @@ SUBROUTINE openfilq()
   iudwf = 22
   lrdwf =  nbnd * npwx * npol
   CALL open_buffer (iudwf, 'dwf', lrdwf, io_level, exst_mem, exst, tmp_dir)
-!  lrdwf = 2 * nbnd * npwx * npol
-!  CALL diropn (iudwf, 'dwf', lrdwf, exst)
   IF (ext_recover.AND..NOT.exst) &
      CALL errore ('openfilq','file '//trim(prefix)//'.dwf not found', 1)
   !

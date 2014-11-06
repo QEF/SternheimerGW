@@ -36,9 +36,8 @@ PROGRAM gw
   do_iq=.TRUE.
   setup_pw = .TRUE.
   do_band  = .TRUE.
-  nbnd = nbnd_sig
   ik=1
-  CALL run_pwscf_green(do_band,ik)
+  CALL run_nscf(do_band, ik)
   CALL initialize_gw()
   if(do_sigma_exx)   CALL sigma_exch(ik)
   if(do_sigma_matel) CALL sigma_matel(ik)

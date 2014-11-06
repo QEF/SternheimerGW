@@ -7,12 +7,13 @@
 !
 !----------------------------------------------------------------------------
 
-SUBROUTINE setup_nscf (xq)
+SUBROUTINE setup_nscf_green(xq)
 
   !----------------------------------------------------------------------------
   !
   ! ... This routine initializes variables for the non-scf calculations at k 
   ! ... and k+q required by the linear response calculation at finite q.
+
   ! I think I can just use the monkhorst pack generated q-mesh to do a run.
   ! This approach means doing an nscf step for each of the unique q-points to generate
   ! the full k, k+q grid with all the weights and nice symmetry reduction properties built in.
@@ -27,144 +28,113 @@ SUBROUTINE setup_nscf (xq)
   ! ... Misc. data needed for running the non-scf calculation
 
   USE kinds,              ONLY : DP
-  USE constants,          ONLY : eps8
   USE parameters,         ONLY : npk
   USE io_global,          ONLY : stdout
-  USE constants,          ONLY : pi, degspin
-  USE cell_base,          ONLY : at, bg, alat, tpiba, tpiba2, ibrav, omega
-  USE ions_base,          ONLY : nat, tau, ntyp => nsp, ityp, zv
-  USE force_mod,          ONLY : force
+  USE constants,          ONLY : pi, degspin, eps8
+  USE cell_base,          ONLY : at, bg
+  USE ions_base,          ONLY : nat, tau, ityp, zv
   USE basis,              ONLY : natomwfc
-  USE gvect,              ONLY : nr1, nr2, nr3
   USE klist,              ONLY : xk, wk, nks, nelec, degauss, lgauss, &
                                  nkstot, qnorm
   USE lsda_mod,           ONLY : lsda, nspin, current_spin, isk, &
                                  starting_magnetization
-  USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &
-                                 time_reversal, sname, d1, d2, d3, &
-                                 copy_sym, s_axis_to_cart
   USE wvfct,              ONLY : nbnd, nbndx
   USE control_flags,      ONLY : ethr, isolve, david, &
-                                 noinv, modenum, use_para_diag
-  USE mp_global,          ONLY : kunit
+                                 noinv, modenum, use_para_diag, max_cg_iter
+  USE mp_pools,           ONLY : kunit
   USE spin_orb,           ONLY : domag
   USE noncollin_module,   ONLY : noncolin
-  USE start_k,            ONLY : nks_start, xk_start, wk_start
+  USE start_k,            ONLY : nks_start, xk_start, wk_start, nk1, nk2, nk3,&
+                                 k1, k2, k3
   USE paw_variables,      ONLY : okpaw
-  USE modes,              ONLY : nsymq, invsymq !, gi, gimq, irgq, irotmq, minus_q
+  USE modes,              ONLY : nsymq, invsymq
   USE disp,               ONLY : xk_kpoints
+  USE uspp_param,         ONLY : n_atom_wfc
+  USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &
+                                 time_reversal, copy_sym, inverse_s, s_axis_to_cart
+  USE control_gw,         ONLY : newgrid, lgamma
+
   !
   IMPLICIT NONE
   !
   REAL (DP), INTENT(IN) :: xq(3)
   !
-  REAL (DP), ALLOCATABLE :: rtau (:,:,:)
   LOGICAL  :: minus_q, magnetic_sym, sym(48)
   !
-  INTEGER, EXTERNAL :: n_atom_wfc
   INTEGER   :: ik
   !
-  IF ( .NOT. ALLOCATED( force ) ) ALLOCATE( force( 3, nat ) )
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
   !
-  !ethr= 1.0D-9 / nelec
-  !HL might speed things up a bit
-   ethr= 1.0D-8
+  ethr= 1.0D-9 / nelec
   !
   ! ... variables for iterative diagonalization (Davidson is assumed)
   !
-
   isolve = 0
   david = 4
   nbndx = david*nbnd
-  natomwfc = n_atom_wfc( nat, ityp )
-
+  max_cg_iter=20
+  natomwfc = n_atom_wfc( nat, ityp, noncolin )
   !
 #ifdef __PARA
-  IF ( use_para_diag )  CALL check_para_diag( nelec )
+  IF ( use_para_diag )  CALL check_para_diag( nbnd )
 #else
   use_para_diag = .FALSE.
 #endif
 
   ! ... Symmetry and k-point section
   ! ... time_reversal = use q=>-q symmetry for k-point generation
-  !HL time_reversal 
+
   magnetic_sym = noncolin .AND. domag 
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
   sym(1:nsym)=.true.
-!Hack for turning off minus_q=.true.
-!  write(6,'("MODE NUMBER!")')
-!  write(6,*) modenum
-!  HL turns off minus_q = .true.
-!  modenum = 0
-!  write(6,'("MODE NUMBER!")')
-!  write(6,*) modenum
-! ... smallg_q flags to false the  symmetry operations of the crystal
-! ... that are not symmetry operations of the small group of q.
-!@10TION HL-symmfix.
-! minus_q=.false.
-! HL this condition enforces that Sq = q exactly! none of this q -> -q + G none-sense. 
-! modenum = -3
-!!!!from __future__ 
-  ! ... smallg_q flags in symmetry operations of the crystal
-  ! ... that are not symmetry operations of the small group of q
-  !
-  !CALL set_small_group_of_q(nsymq,invsymq,minus_q)
-!!!!!!!
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
-
   IF ( .not. time_reversal ) minus_q = .false.
-
-  ! ... for single-mode calculation: find symmetry operations
-  ! ... that leave the chosen mode unchanged. Note that array irt 
-  ! ... must be available: it is allocated and read from xml file 
-!HL Commenting Phonon specific symmetrization routine:
-!# if 0
-! if (modenum /= 0) then
-! allocate(rtau (3, 48, nat))
-!  call sgam_ph (at, bg, nsym, s, irt, tau, rtau, nat, sym)
-!  call mode_group (modenum, xq, at, bg, nat, nrot, s, irt, &
-!                      minus_q, rtau, sym)
-!  deallocate (rtau)
-!# endif
-
-  !
   ! Here we re-order all rotations in such a way that true sym.ops.
   ! are the first nsymq; rotations that are not sym.ops. follow
-  !
-
-  nsymq = copy_sym ( nsym, sym )
-
-  !
+   nsymq = copy_sym ( nsym, sym )
+   call inverse_s ( )
   ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
-  !
-
-  invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
-
-  !  Since the order of the s matrices is changed we need to recalculate:
-
-  call s_axis_to_cart () 
-
-  !
+    invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
+    if (invsymq)      WRITE(6,'("SYSTEM HAS INVERSION SYMMETRY")')
+    if (.not.invsymq) WRITE(6,'("SYSTEM DOES NOT HAVE INVERSION")')
+  ! Since the order of the s matrices is changed we need to recalculate:
+    call s_axis_to_cart () 
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
   ! ... lattice, with the full point symmetry of the lattice.
-  !
-  nkstot = nks_start
-  xk(:,1:nkstot) = xk_start(:,1:nkstot)
-  wk(1:nkstot)   = wk_start(1:nkstot)
-  ! ... If some symmetries of the lattice no longer apply for this particular perturbation
-  ! ... "irreducible_BZ" computes generates the missing k-points with the reduced number of.
+  if( nks_start > 0 .AND. .NOT. newgrid ) then
+     !
+     !  In this case I keep the same points of the Charge density
+     !  calculations
+     !
+     nkstot = nks_start
+     xk(:,1:nkstot) = xk_start(:,1:nkstot)
+     wk(1:nkstot)   = wk_start(1:nkstot)
+  else
+     !
+     ! In this case I generate a new set of k-points
+     !
+     ! In the case of electron-phonon matrix element with
+     ! wannier functions the k-points should not be reduced
+     !
+!     skip_equivalence = .false.
+     CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
+                      bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
+  endif
+
+  ! ... If some symmetries of the lattice no longer apply for this kpoint
+  ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
   ! ... symmetry operations. 
+
   CALL irreducible_BZ (nrot, s, nsymq, minus_q, at, bg, npk, nkstot, xk, wk, &
                        t_rev)
-  !
-  ! ... add k+q to the list of k
-  !
+
+  !wk(contains weights 
   CALL set_kplusq( xk, wk, xq, nkstot, npk )
   !
+
   IF ( lsda ) THEN
      !
      ! ... LSDA case: two different spin polarizations,
@@ -204,37 +174,18 @@ SUBROUTINE setup_nscf (xq)
   !
   ! ... set the granularity for k-point distribution
   !
-  IF ( ABS( xq(1) ) < eps8 .AND. ABS( xq(2) ) < eps8 .AND. &
-       ABS( xq(3) ) < eps8 ) THEN
-     !
-     kunit = 1
-     !
+  IF (lgamma) THEN
+  !
+       kunit = 1
+  !
   ELSE
-     !
+  !
      kunit = 2
-     !
+  !
   ENDIF
   !
-  ! ...distribute k-points (and their weights and spin indices)
+   CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
   !
-  ! CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
-  !
-  ! HL @10TION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! distribute k-points (and their weights and spin indices)
-  ! Actually this causes problems with the calls to PW... so I think I still need to use
-  ! Divide et impera ... an alternate scheme is this use n processors. leave npool as 1 
-  ! and then have a separate variable for the G vectors.   
-  ! Up to here each  processor has a full slice of kpoints.
-  ! CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
-  ! HL 
-  ! After divide et impera xk on each processor has as its first entries it's 
-  ! unique slice of k-points 1-2, 3-4, etc.
-  ! if I turned off divide et impera each xk list would be unperturbed...  
-  ! Should mimic no parallelisation across k-points. 
-    nks = nkstot
-  ! DO i = 1, nkstot
-  !    WRITE(1000+mpime, '(4f13.9)') xk(:,i), wk(i) 
-  ! ENDDO
 #else
   !
   nks = nkstot
@@ -243,4 +194,106 @@ SUBROUTINE setup_nscf (xq)
   !
   RETURN
   !
-END SUBROUTINE setup_nscf
+END SUBROUTINE setup_nscf_green
+
+!
+!-----------------------------------------------------------------------
+subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
+  !-----------------------------------------------------------------------
+  !
+  ! This routine selects, among the symmetry matrices of the point group
+  ! of a crystal, the symmetry operations which leave q unchanged.
+  ! Furthermore it checks if one of the above matrices send q --> -q+G.
+  ! In this case minus_q is set true.
+  !
+  !  input-output variables
+  !
+  USE kinds, ONLY : DP
+  implicit none
+
+  real(DP), parameter :: accep = 1.e-5_dp
+
+  real(DP), intent(in) :: bg (3, 3), at (3, 3), xq (3)
+  ! input: the reciprocal lattice vectors
+  ! input: the direct lattice vectors
+  ! input: the q point of the crystal
+
+  integer, intent(in) :: s (3, 3, 48), nrot, ftau (3, 48), modenum
+  ! input: the symmetry matrices
+  ! input: number of symmetry operations
+  ! input: fft grid dimension (units for ftau)
+  ! input: fractionary translation of each symmetr
+  ! input: main switch of the program, used for
+  !        q<>0 to restrict the small group of q
+  !        to operation such that Sq=q (exactly,
+  !        without G vectors) when iswitch = -3.
+  logical, intent(inout) :: sym (48), minus_q
+  ! input-output: .true. if symm. op. S q = q + G
+  ! output: .true. if there is an op. sym.: S q = - q + G
+  !
+  !  local variables
+  !
+
+  real(DP) :: aq (3), raq (3), zero (3)
+  ! q vector in crystal basis
+  ! the rotated of the q vector
+  ! the zero vector
+
+  integer :: irot, ipol, jpol
+  ! counter on symmetry op.
+  ! counter on polarizations
+  ! counter on polarizations
+
+  logical :: eqvect
+  ! logical function, check if two vectors are equa
+  !
+  ! return immediately (with minus_q=.true.) if xq=(0,0,0)
+  !
+  minus_q = .true.
+  if ( (xq (1) == 0.d0) .and. (xq (2) == 0.d0) .and. (xq (3) == 0.d0) ) &
+       return
+  !
+  !   Set to zero some variables
+  !
+  minus_q = .false.
+  zero(:) = 0.d0
+  !
+  !   Transform xq to the crystal basis
+  !
+  aq = xq
+  call cryst_to_cart (1, aq, at, - 1)
+  !
+  !   Test all symmetries to see if this operation send Sq in q+G or in -q+G
+  !
+  do irot = 1, nrot
+     if (.not.sym (irot) ) goto 100
+     raq(:) = 0.d0
+     do ipol = 1, 3
+        do jpol = 1, 3
+           raq(ipol) = raq(ipol) + DBLE( s(ipol,jpol,irot) ) * aq( jpol)
+        enddo
+     enddo
+     sym (irot) = eqvect (raq, aq, zero, accep)
+     !
+     !  if "iswitch.le.-3" (modenum.ne.0) S must be such that Sq=q exactly !
+     !
+     if (modenum.ne.0 .and. sym(irot) ) then
+        do ipol = 1, 3
+           sym(irot) = sym(irot) .and. (abs(raq(ipol)-aq(ipol)) < 1.0d-5)
+        enddo
+     endif
+!     if (.not.minus_q) then
+     if (sym(irot).and..not.minus_q) then
+        raq = - raq
+        minus_q = eqvect (raq, aq, zero, accep)
+     endif
+100  continue
+  enddo
+  !
+  !  if "iswitch.le.-3" (modenum.ne.0) time reversal symmetry is not included !
+  !
+  if (modenum.ne.0) minus_q = .false.
+  !
+  return
+end subroutine smallg_q
+

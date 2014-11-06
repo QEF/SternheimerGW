@@ -408,15 +408,8 @@ SUBROUTINE gwq_readin()
 1001 continue
 
   CALL read_file ( )
-
   newgrid = reset_grid (nk1, nk2, nk3, k1, k2, k3)
-
   tmp_dir=tmp_dir_save
-  !
-  IF (modenum > 3*nat) CALL errore ('gwq_readin', ' Wrong modenum ', 2)
-
-  IF (gamma_only) CALL errore('gwq_readin',&
-     'cannot start from pw.x data file using Gamma-point tricks',1)
 
   IF (nproc_image /= nproc_image_file .and. .not. twfcollect)  &
      CALL errore('gwq_readin',&
@@ -425,11 +418,6 @@ SUBROUTINE gwq_readin()
   IF (nproc_pool /= nproc_pool_file .and. .not. twfcollect)  &
      CALL errore('gwq_readin',&
      'pw.x run with a different number of pools. Use wf_collect=.true.',1)
-
-  IF (start_irr < 0 ) CALL errore('gwq_readin', 'wrong start_irr',1)
-  !
-  IF (start_q <= 0 ) CALL errore('gwq_readin', 'wrong start_q',1)
-  !
   !
   ! If a band structure calculation needs to be done do not open a file 
   ! for k point
@@ -455,9 +443,6 @@ SUBROUTINE gwq_readin()
         nksq = nks / 2
      ENDIF
   ENDIF
-
-  IF ( nat_todo < 0 .OR. nat_todo > nat ) &
-     CALL errore ('gwq_readin', 'nat_todo is wrong', 1)
   IF (nat_todo.NE.0) THEN
      IF (meta_ionode) &
      READ (5, *, iostat = ios) (atomo (na), na = 1, &
@@ -475,7 +460,6 @@ SUBROUTINE gwq_readin()
      CALL errore ('gwq_readin', 'reading list', ABS (ios) )
      CALL mp_bcast(list, meta_ionode_id, world_comm )
   ENDIF
-  
   IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
       CALL errore('phq_readin','nq1, nq2, and nq3 must be greater than 0',1)
   RETURN

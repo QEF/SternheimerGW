@@ -27,8 +27,8 @@ openfilq.o\
 gwq_setup.o\
 prepare_q.o\
 gwq_init.o\
-setup_nscf_green.o\
-run_pwscf_green.o\
+set_defaults_pw.o\
+run_nscf.o\
 pade.o\
 sigma_exch.o\
 sigma_matel.o\
