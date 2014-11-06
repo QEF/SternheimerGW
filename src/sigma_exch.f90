@@ -2,7 +2,7 @@ SUBROUTINE sigma_exch(ik0)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,    ONLY : eta
+  USE control_gw,    ONLY : eta, nbnd_occ
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -66,6 +66,9 @@ IMPLICIT NONE
      ikq = 2*ik0
   endif
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
+  write(6,'(4x,"Occupied bands at Gamma",i3)') nbnd_occ(ik0)
+
+
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   DO iq = 1, nksq
@@ -103,7 +106,7 @@ IMPLICIT NONE
      greenf_na = (0.0d0, 0.0d0)
      do ig = 1, counter
        do igp = 1, counter
-         do ibnd = 1, nbnd
+         do ibnd = 1, nbnd_occ(ikq)
             greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
                                             tpi * (0.0d0, 1.0d0) * (evq(igkq_ig(ig),ibnd))* &
                                             conjg((evq(igkq_ig(igp), ibnd)))
