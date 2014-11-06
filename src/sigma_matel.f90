@@ -144,28 +144,33 @@ IMPLICIT NONE
   ALLOCATE (evc_tmp_j  (sigma_x_st%ngmt))
   sigma_g_ex(:,:) = (0.0d0, 0.0d0)
 
-  CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
-
-  sigma_band_ex (:, :) = czero
-  do ibnd = 1, nbnd_sig
-      evc_tmp_i(:) = czero
-    do jbnd = 1, nbnd_sig
-      evc_tmp_j(:) = czero
-      do ig = 1, counter
-         evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-      enddo
-      do ig = 1, sigma_x_st%ngmt
-         do igp = 1, counter
-            evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-         enddo
-         do igp = 1, sigma_x_st%ngmt
-            aux(igp) = sigma_g_ex (igp, ig)
-         enddo
-           sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
-           ZDOTC(sigma_x_st%ngmt, evc_tmp_j (1:sigma_x_st%ngmt), 1, aux,1)*evc_tmp_i(ig)
+!CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
+  ios = 0 
+  READ( UNIT = iunsex, REC = 1, IOSTAT = ios ) sigma_g_ex
+  if(ios /= 0) then
+     print*, "Couldn't read Sigma_X file. Have you calculated it?", ios
+  else
+    sigma_band_ex (:, :) = czero
+    do ibnd = 1, nbnd_sig
+        evc_tmp_i(:) = czero
+      do jbnd = 1, nbnd_sig
+        evc_tmp_j(:) = czero
+        do ig = 1, counter
+           evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
+        enddo
+        do ig = 1, sigma_x_st%ngmt
+           do igp = 1, counter
+              evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
+           enddo
+           do igp = 1, sigma_x_st%ngmt
+              aux(igp) = sigma_g_ex (igp, ig)
+           enddo
+             sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
+             ZDOTC(sigma_x_st%ngmt, evc_tmp_j (1:sigma_x_st%ngmt), 1, aux,1)*evc_tmp_i(ig)
+        enddo
       enddo
     enddo
-  enddo
+  endif
 
   WRITE(6,*) 
   write(stdout,'(4x,"Sigma_ex (eV)")')
@@ -207,9 +212,10 @@ IMPLICIT NONE
         CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
      enddo
   else
-     READ( UNIT = iunsigma, REC = lrsigma, IOSTAT = ios ) sigma
+     READ( UNIT = iunsigma, REC = 1, IOSTAT = ios ) sigma
      if(ios /= 0) then
         print*, "Couldn't read Sigma_C file. Have you calculated it?"
+        sigma_band_c (:,:,:) = czero
      else
         sigma_band_c (:,:,:) = czero
         do ibnd = 1, nbnd_sig

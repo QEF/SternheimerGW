@@ -54,7 +54,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
   USE output,               ONLY : fildrho, fildvscf
   USE gwus,                 ONLY : int3_paw, becsumort
-! USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec, dpsim, dpsip
   USE eqv,                  ONLY : dvpsi, evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE modes,                ONLY : npertx, npert, u, t, irotmq, tmq, &
@@ -327,13 +326,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
         call zcopy (nrxx*nspin_mag, drhoscfh(1,iw),1, dvscfout(1,iw),1)
      enddo
-
 ! SGW: here we enforce zero average variation of the charge density
 ! if the bare perturbation does not have a constant term
 ! (otherwise the numerical error, coupled with a small denominator
 ! in the coulomb term, gives rise to a spurious dvscf response)
 ! One wing of the dielectric matrix is particularly badly behaved 
-
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0) / float(nrxxs)
      do iw = 1, nfs 
          if (meandvb.lt.1.d-8) then 
@@ -342,16 +339,14 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
              call cft3 (dvscfout(:,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, 1)
          endif
     enddo
-
     do iw = 1, nfs
        call dv_of_drho (1, dvscfout(1,iw), .true.)
     enddo
-
-     averlt = DBLE (ltaver) / lintercall
-     tcpu = get_clock ('GW')
-     dr2 = dr2 / DBLE(npe)
-     CALL flush_unit( stdout )
-     rec_code=10
+    averlt = DBLE (ltaver) / lintercall
+    tcpu = get_clock ('GW')
+    dr2 = dr2 / DBLE(npe)
+    CALL flush_unit( stdout )
+    rec_code=10
   enddo !loop on kter (iterations)
 
 !   after this point drhoscf is dv_hartree(RPA)
