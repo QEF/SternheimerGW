@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE run_pwscf_green(do_band, ik)
+SUBROUTINE run_nscf(do_band, do_matel, ik)
 !-----------------------------------------------------------------------
 !
 ! This is the driver for when gw calls pwscf.
@@ -16,17 +16,20 @@ SUBROUTINE run_pwscf_green(do_band, ik)
   USE control_flags,   ONLY : conv_ions, twfcollect
   USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
   USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn
+  USE io_global,      ONLY : stdout
   USE lsda_mod,        ONLY : nspin
   USE input_parameters,ONLY : pseudo_dir
   USE control_flags,   ONLY : restart
   USE fft_base,        ONLY : dffts
   USE qpoint,          ONLY : xq
+  USE check_stop,      ONLY : check_stop_now
   USE control_gw,      ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                               ext_restart, bands_computed, lgamma
   USE save_gw,         ONLY : tmp_dir_save
-  USE control_flags,   ONLY : iprint
+  USE control_flags,   ONLY : iprint, io_level
   USE mp_bands,        ONLY : ntask_groups
   USE disp,            ONLY : xk_kpoints
+  USE klist,           ONLY : xk, wk, nks, nkstot
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE wvfct,           ONLY : nbnd
   !
@@ -36,7 +39,7 @@ SUBROUTINE run_pwscf_green(do_band, ik)
   !
   INTEGER   :: ik
   !
-  LOGICAL, INTENT(IN) :: do_band
+  LOGICAL, INTENT(IN) :: do_band, do_matel
   !
   LOGICAL :: exst
   !
@@ -46,24 +49,44 @@ SUBROUTINE run_pwscf_green(do_band, ik)
   !
   CALL close_files( .true. )
   !
+  if(do_matel) xq(:) = xk_kpoints(:, ik)
+
+  lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
   !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw
   tmp_dir=tmp_dir_gw
   !
-  xq(:) = xk_kpoints(:, ik)
-  lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
   !...Setting the values for the nscf run
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'
   restart = ext_restart
   conv_ions=.true.
-  !Generate all eigenvectors in IBZ_{k}.
+! Generate all eigenvectors in IBZ_{k}.
+  if(do_matel) nbnd = nbnd_sig
   CALL setup_nscf_green (xq)
   CALL init_run()
-  IF (do_band) CALL non_scf ( )
   !
-  CALL punch( 'all' )
+  WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
+  !
+  IF (do_band) CALL non_scf ( )
+
+  IF ( check_stop_now() ) THEN
+!
+!  In this case the code stops inside the band calculation. Save the
+!  files and stop the pwscf run
+!
+     CALL punch( 'config' )
+     CALL stop_run( -1 )
+     CALL do_stop( 1 )
+  ENDIF
+
+  IF (.NOT.reduce_io.and.do_band) THEN
+!  If only_wfc flag is true, we use the same twfcollect as in the pw.x
+!  calculation.
+     twfcollect=.FALSE.
+     CALL punch( 'all' )
+  ENDIF
   !
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
@@ -82,4 +105,4 @@ SUBROUTINE run_pwscf_green(do_band, ik)
   CALL stop_clock( 'PWSCF' )
   !
   RETURN
-END SUBROUTINE run_pwscf_green
+END SUBROUTINE run_nscf

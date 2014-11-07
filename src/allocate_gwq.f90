@@ -33,7 +33,6 @@ subroutine allocate_gwq
   USE eqv,           ONLY : dpsi, evq, vlocq, dmuxc, dvpsi, eprec, dvbare, dpsim, dpsip
   USE units_gw,      ONLY : this_pcxpsi_is_on_file, this_dvkb3_is_on_file
   USE control_gw,    ONLY : lgamma  
-  !USE gsmooth,      ONLY : nrxxs 
   USE fft_base,      ONLY : dfftp
   USE disp,          ONLY : gmap, eval_occ
 

@@ -4,8 +4,6 @@ SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, f
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
    USE freq_gw,     ONLY : fpol, fiu, nwgreen, wgreen
    USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
-   USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                           nproc_pool, nproc, me_pool, my_pool_id, npool
    USE control_gw,  ONLY : eta, tr2_green, maxter_green
 
 IMPLICIT NONE

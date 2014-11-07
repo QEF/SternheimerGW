@@ -26,7 +26,9 @@ USE qpoint, ONLY : npwq
 USE control_gw,  ONLY : alpha_pv, nbnd_occ
 USE becmod,      ONLY : bec_type, becp, calbec
 USE uspp,        ONLY : vkb, okvan
-USE mp_global,   ONLY : intra_pool_comm
+!USE mp_global,   ONLY : intra_pool_comm
+!USE mp,          ONLY : mp_sum
+USE mp_bands,    ONLY : intra_bgrp_comm
 USE mp,          ONLY : mp_sum
 
 !
@@ -108,6 +110,10 @@ END IF
 !
 ! dpsi is used as work space to store S|evc>
 !
+
+!HL NEWPARA
+call mp_sum(ps(:,1:nbnd_eff),intra_bgrp_comm)
+
 IF (okvan) CALL calbec ( npwq, vkb, evq, becp, nbnd_eff)
 CALL s_psi (npwx, npwq, nbnd_eff, evq, dpsi)
 !

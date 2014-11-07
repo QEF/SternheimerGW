@@ -32,6 +32,16 @@ gmap_sym.o\
 gwq_init.o\
 set_defaults_pw.o\
 run_nscf.o\
+coulomb.o\
+solve_direct.o\
+coul_multishift.o\
+cBiCG_solve_coul.o\
+orthogonalize.o\
+cg_psi.o\
+ch_psi_all.o\
+h_psiq.o\
+dv_of_drho.o\
+dvqpsi_us.o\
 clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\

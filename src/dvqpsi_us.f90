@@ -7,7 +7,7 @@
 !
 !
 !----------------------------------------------------------------------
-subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
+subroutine dvqpsi_us (dvbarein, ik, addnlcc)
 !----------------------------------------------------------------------
 
   !
@@ -17,10 +17,6 @@ subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
   USE kinds, only : DP
   USE ions_base, ONLY : nat, ityp
   USE cell_base, ONLY : tpiba
-  USE gvect,     ONLY : nrxx, eigts1, eigts2, eigts3, ig1,ig2,ig3, g, nl, &
-                        ngm, nr1,nr2,nr3,nrx1,nrx2,nrx3
-  USE gsmooth,   ONLY : nrxxs, ngms, doublegrid, nls, &
-                        nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s
   USE lsda_mod,  ONLY : lsda, isk
   USE noncollin_module, ONLY : npol
   use uspp_param,ONLY : upf
@@ -30,23 +26,21 @@ subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
   USE eqv,        ONLY : dvpsi, dmuxc, vlocq
   USE qpoint,     ONLY : npwq, igkq, xq, eigqts, ikks
 
+  USE gvect,      ONLY : ngm, g, nl
+  USE gvecs,      ONLY : nls, doublegrid
+  USE fft_base,   ONLY : dfftp, dffts
+  USE fft_interfaces, ONLY : invfft, fwfft
+
   implicit none
   !
   !   The dummy variables
-  !
-
   integer :: ik, igpert
   ! input: the k point
   ! counter for G-vector for plane wave perturbation  
-
-  complex(DP) :: uact (3 * nat)
-  ! input: the pattern of displacements
-
   logical :: addnlcc
   !
   !   And the local variables
   !
-
   integer :: na, mu, ikk, ig, nt, ibnd, ir, is, ip
   ! counter on atoms
   ! counter on modes
@@ -55,28 +49,27 @@ subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
   ! the type of atom
   ! counter on bands
   ! counter on real mesh
-
-  complex(DP) :: gtau, gu, fact, u1, u2, u3, gu0
+  !
   complex(DP) , allocatable, target :: aux (:)
   complex(DP) , allocatable :: aux1 (:), aux2 (:)
   complex(DP) , pointer :: auxs (:)
 
-  complex(DP) dvbarein(nrxxs)
+  complex(DP) dvbarein(dffts%nnr)
 
   ! work space
 
   call start_clock ('dvqpsi_us')
   if (nlcc_any.and.addnlcc) then
-     allocate (aux( nrxx))    
+     allocate (aux( dfftp%nnr))    
      if (doublegrid) then
-        allocate (auxs( nrxxs))    
+        allocate (auxs( dffts%nnr))    
      else
         auxs => aux
      endif
   endif
 
-  allocate (aux1( nrxxs))    
-  allocate (aux2( nrxxs))    
+  allocate (aux1( dffts%nnr))    
+  allocate (aux2( dffts%nnr))    
   !
   !    We start by computing the contribution of the local potential.
   !    The computation of the derivative of the local potential is done in
@@ -107,12 +100,13 @@ subroutine dvqpsi_us (dvbarein, ik, uact, addnlcc)
         !
         !  This wavefunction is transformed into real space
         !
-        call cft3s (aux2, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
-        do ir = 1, nrxxs
+        !call cft3s (aux2, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
+        CALL invfft('Smooth', aux2, dffts)
+        do ir = 1, dffts%nnr
            aux2 (ir) = aux2 (ir) * aux1 (ir)
         enddo
-
-        call cft3s (aux2, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, - 2)
+        !call cft3s (aux2, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, - 2)
+        CALL fwfft('Smooth', aux2, dffts)
 
         if (ip==1) then
            do ig = 1, npwq

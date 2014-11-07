@@ -1,6 +1,5 @@
 SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
            ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, niters, alphabeta)
-
 !-----------------------------------------------------------------------
 !
 !   Iterative solution of the linear system:
@@ -10,65 +9,36 @@ SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
 !
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
-
 USE kinds,       ONLY: DP
-USE mp_global,   ONLY: intra_pool_comm
-USE mp,          ONLY: mp_sum
 USE gwsigma,     ONLY: ngmgrn, ecutsco, nrsco, ngmsco, ngmsig
 USE control_gw,  ONLY: maxter_green
 USE units_gw,    ONLY: iunresid, lrresid, iunalphabeta, lralphabeta
-USE mp_global,   ONLY: inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                       nproc_pool, nproc, me_pool, my_pool_id, npool
 
-implicit none
-
+IMPLICIT NONE
+!
 ! first I/O variables
+!
+  integer ::   ndmx,  & ! input: the maximum dimension of the vectors
+               ndim,  & ! input: the actual dimension of the vectors
+               kter,  & ! output: counter on iterations
+               nbnd,  & ! input: the number of bands
+               npol,  & ! input: number of components of the wavefunctions
+               ik,    & ! input: the k point
+               nrec   ! for composite rec numbers
 
-integer ::   ndmx,  & ! input: the maximum dimension of the vectors
-             ndim,  & ! input: the actual dimension of the vectors
-             kter,  & ! output: counter on iterations
-             nbnd,  & ! input: the number of bands
-             npol,  & ! input: number of components of the wavefunctions
-             ik,    & ! input: the k point
-             nrec   ! for composite rec numbers
-
-integer :: niters(nbnd)
-
-real(DP) :: &
-             anorm,   &        ! output: the norm of the error in the solution
-             ethr,    &        ! input: the required precision
-             h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
-
-
+  integer :: niters(nbnd)
+  real(DP) :: anorm,   &        ! output: the norm of the error in the solution
+              ethr,    &        ! input: the required precision
+              h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
 !Frommer paper defines beta as \frac{\rho_{k}}{\rho_{k-1}}
-COMPLEX(DP)    :: beta_old 
-
-complex(DP) :: &
-                  dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
-                  d0psi (ndmx*npol, nbnd)   ! input: the known term
-COMPLEX(DP)    :: alphabeta(2, nbnd, maxter_green+1)
-COMPLEX(DP)    :: dpsic(ndmx, nbnd, maxter_green+1)
-
-!complex(DP) :: &
-!             dpsi (:,:), & ! output: the solution of the linear syst
-!             d0psi (:,:)   ! input: the known term
-!COMPLEX(DP)    :: alphabeta(:, :, :)
-!COMPLEX(DP)    :: dpsic(:,:,:)
-
-logical :: conv_root ! output: if true the root is converged
-
-external h_psi       ! input: the routine computing h_psi
-
-external cg_psi      ! input: the routine computing cg_psi
-
-!
-!  here the local variables
-!
-
-!HL upping iterations to get convergence with green_linsys?
-
-  !integer, parameter :: maxter = 200
-  !integer, parameter :: maxter = 600
+  COMPLEX(DP)    :: beta_old 
+  complex(DP)    :: dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
+                    d0psi (ndmx*npol, nbnd)   ! input: the known term
+  COMPLEX(DP)    :: alphabeta(2, nbnd, maxter_green+1)
+  COMPLEX(DP)    :: dpsic(ndmx, nbnd, maxter_green+1)
+  logical :: conv_root ! output: if true the root is converged
+  external h_psi       ! input: the routine computing h_psi
+  external cg_psi      ! input: the routine computing cg_psi
   !the maximum number of iterations
   integer :: iter, ibnd, lbnd
   ! counters on iteration, bands
@@ -88,21 +58,12 @@ external cg_psi      ! input: the routine computing cg_psi
   complex(DP), allocatable :: gt (:,:), tt (:,:), ht (:,:), htold (:,:)
   complex(DP), allocatable :: gp (:,:), gtp (:,:)
   complex(DP) ::  dcgamma, dclambda, alpha, beta
-  !  the ratio between rho
-  !  step length
   complex(DP), external :: zdotc
-  !HL (eigenvalue + iw) 
-
   complex(DP) :: e(nbnd), eu(nbnd)
-
- !the scalar product
+  !the scalar product
   real(DP), allocatable :: rho (:), a(:), c(:)
-  ! the residue
-  ! auxiliary for h_diag
   real(DP) :: kter_eff
-  ! account the number of iterations with b
-  ! coefficient of quadratic form
-  !
+
   call start_clock ('cgsolve')
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
              hold(ndmx*npol ,nbnd) )
@@ -112,7 +73,6 @@ external cg_psi      ! input: the routine computing cg_psi
   allocate (a(nbnd), c(nbnd))
   allocate (conv ( nbnd))
   allocate (rho(nbnd))
-
 
   kter_eff = 0.d0
   

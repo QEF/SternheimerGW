@@ -9,13 +9,11 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 ! This subroutine is the main driver of the COULOMB self consistent cycle
 ! which calculates the dielectric matrix by generating the density response
 ! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
-!The dielectric matrix is given by:
-!eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
+! The dielectric matrix is given by:
+! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
 
   USE kinds,      ONLY : DP
   USE ions_base,  ONLY : nat
-  USE gvect,      ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
-  USE gsmooth,    ONLY : nrxxs, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, nls, ngms, doublegrid
   USE constants,  ONLY : e2, fpi, RYTOEV, pi, eps8
   USE cell_base,  ONLY : alat, tpiba2, omega
   USE lsda_mod,   ONLY : nspin
@@ -28,23 +26,22 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE eqv,        ONLY : drhoscfs, dvbare
   USE paw_variables,    ONLY : okpaw
   USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE recover_mod, ONLY : write_rec
-  USE gwsigma,     ONLY : ngmpol
+  USE gwsigma,     ONLY : sigma_c_st
   USE qpoint,      ONLY : xq
   USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
   USE units_gw,    ONLY : iuncoul, lrcoul
   USE disp,        ONLY : nqs, nq1, nq2, nq3
-
-! PARALLEL STUFF
-  USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
-  USE mp,          ONLY : mp_barrier, mp_bcast, mp_sum
- 
  !Symmetry Stuff
-  USE gwsymm,    ONLY : ig_unique, ngmunique
+  USE gwsymm,      ONLY : ig_unique, ngmunique
+ !FFTS 
+  USE gvect,      ONLY : ngm, g, nl
+  USE gvecs,      ONLY : nls
+  USE fft_base,   ONLY : dfftp, dffts
+  USE fft_interfaces, ONLY : invfft, fwfft
 
   IMPLICIT NONE
-  REAL(DP) :: tcpu, get_clock
 
+  REAL(DP) :: tcpu, get_clock
 ! timing variables
   REAL(DP) :: qg2, qg2coul
   INTEGER :: ig, igp, iw, npe, irr, icounter
@@ -57,7 +54,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   INTEGER :: iq, screening 
   LOGICAL :: exst
 !again should decide if this should be allocated globally. 
-  COMPLEX(DP) :: scrcoul(ngmpol, ngmpol, nfs, 1)
+  COMPLEX(DP) :: scrcoul(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, 1)
 !modeps and spencer-alavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
@@ -65,8 +62,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   EXTERNAL get_clock
   CALL start_clock ('coulomb')
 
-ALLOCATE (drhoscfs(nrxx, nfs))    
-
+ALLOCATE (drhoscfs(dfftp%nnr, nfs))    
 irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
@@ -77,37 +73,37 @@ DO ig = igstart, igstop
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
          dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-         call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +1)
+         CALL invfft('Smooth', dvbare, dffts)
          CALL solve_lindir (dvbare, drhoscfs)
-         call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s,  -1)
+         CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
-            call cft3  (drhoscfs(:,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
+            CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nls(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
-            do igp = 1, ngmpol
+            do igp = 1, sigma_c_st%ngmt
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
                   scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
                else
-!diagonal elements \delta(G,G') + drho(G,G').
+!diagonal elements eps(\G,\G') = \delta(G,G') - drho(G,G').
                   scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw) + dvbare(nls(ig_unique(ig)))
                endif
             enddo
          enddo !iw
       if(do_epsil) GOTO 545
       else
-        do iw = 1, nfs
-           drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
-           dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-           dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-           call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, +1)
-           CALL solve_linter (dvbare, iw, drhoscfs)
-           call cft3s (dvbare, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s,  -1)
-           call cft3  (drhoscfs(1,iw), nr1, nr2, nr3, nrx1, nrx2, nrx3, -1)
-           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
-           do igp = 1, ngmpol
-              scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
-           enddo
-        enddo
+      !  do iw = 1, nfs
+      !     drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+      !     dvbare(:)     = dcmplx(0.0d0, 0.0d0)
+      !     dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
+      !     CALL invfft('Smooth', dvbare, dffts)
+      !     CALL solve_linter (dvbare, iw, drhoscfs)
+      !     CALL fwfft('Smooth', dvbare, dffts)
+      !     CALL fwfft('Dense', drhoscfs(1,iw), dfftp)
+      !     WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
+      !     do igp = 1, sigma_c_st%ngmt
+      !        scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
+      !     enddo
+      !  enddo
       endif
 ENDDO 
 

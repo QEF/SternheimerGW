@@ -6,25 +6,22 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-subroutine ch_psi_all (n, h, ah, e, ik, m)
+subroutine ch_psi_all (n, h, ah, e, cw, ik, m)
   !-----------------------------------------------------------------------
   !
   ! This routine applies the operator ( H - \epsilon S + alpha_pv P_v)
   ! to a vector h. The result is given in Ah.
   !
-
-  USE kinds,   ONLY : DP
-  USE wvfct,   ONLY : npwx, nbnd
-  USE becmod,  ONLY : bec_type, becp, calbec
-  USE uspp,    ONLY : nkb, vkb
-  USE noncollin_module, ONLY : noncolin, npol
-
+  USE kinds, only : DP
+  USE becmod, ONLY : becp, calbec
+  USE uspp, ONLY: nkb, vkb
+  USE wvfct, ONLY : npwx, nbnd
   USE control_gw, ONLY : alpha_pv, nbnd_occ
-  USE eqv,        ONLY : evq
-  USE qpoint,     ONLY : ikqs
-
-  USE mp_global, ONLY: intra_pool_comm
-  USE mp,        ONLY: mp_sum
+  USE eqv,  ONLY : evq
+  USE qpoint, ONLY : ikqs
+  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups
+  USE mp,                   ONLY : mp_sum
 
   implicit none
 
@@ -33,29 +30,30 @@ subroutine ch_psi_all (n, h, ah, e, ik, m)
   ! input: the number of bands
   ! input: the k point
 
-  real(DP) :: e (m)
-  ! input: the eigenvalue
+  complex(kind=DP) :: e (m), cw
 
-  complex(DP) :: h (npwx*npol, m), ah (npwx*npol, m)
-  ! input: the vector
-  ! output: the operator applied to the vector
-  !
-  !   local variables
+  ! input: the eigenvalue + iw
+  ! HL or just w + i eta for green linear system
+
+  complex(kind=DP) :: h (npwx, m), ah (npwx, m)
+  !  input: the vector
+  !  output: the operator applied to the vector
+  !  local variables
   !
   integer :: ibnd, ikq, ig
   ! counter on bands
   ! the point k+q
   ! counter on G vetors
 
-  complex(DP), allocatable :: ps (:,:), hpsi (:,:), spsi (:,:)
+  complex(kind=DP), allocatable :: ps (:,:), hpsi (:,:), spsi (:,:)
   ! scalar products
   ! the product of the Hamiltonian and h
   ! the product of the S matrix and h
 
   call start_clock ('ch_psi')
   allocate (ps  ( nbnd , m))    
-  allocate (hpsi( npwx*npol , m))    
-  allocate (spsi( npwx*npol , m))    
+  allocate (hpsi( npwx , m))    
+  allocate (spsi( npwx , m))    
   hpsi (:,:) = (0.d0, 0.d0)
   spsi (:,:) = (0.d0, 0.d0)
   !
@@ -67,51 +65,36 @@ subroutine ch_psi_all (n, h, ah, e, ik, m)
   !
   !   then we compute the operator H-epsilon S
   !
-  ah=(0.d0,0.d0)
+  ah =(0.0d0, 0.0d0)
   do ibnd = 1, m
      do ig = 1, n
-        ah (ig, ibnd) = hpsi (ig, ibnd) - e (ibnd) * spsi (ig, ibnd)
+        ah (ig, ibnd)= hpsi(ig, ibnd) - (e(ibnd) + cw)*spsi(ig, ibnd)
      enddo
   enddo
+
   IF (noncolin) THEN
      do ibnd = 1, m
         do ig = 1, n
-           ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd)
+           ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd) - (e(ibnd) + cw)*spsi(ig+npwx,ibnd)
         end do
      end do
   END IF
-  !
-  !   Here we compute the projector in the valence band
-  !
+!
+!   Here we compute the projector in the valence band
+!
   ikq = ikqs(ik)
   ps (:,:) = (0.d0, 0.d0)
 
-  IF (noncolin) THEN
-     call zgemm ('C', 'N', nbnd_occ (ikq) , m, npwx*npol, (1.d0, 0.d0) , evq, &
-       npwx*npol, spsi, npwx*npol, (0.d0, 0.d0) , ps, nbnd)
-  ELSE
-     call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
+  call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
        npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
-  ENDIF
-  ps (:,:) = ps(:,:) * alpha_pv
-
-!hl ps intrapool
-!#ifdef __PARA
-! call mp_sum ( ps, intra_pool_comm )
-!#endif
+!HL need to remember the projector should be double complex
+  ps (:,:) = ps(:,:) * dcmplx(alpha_pv, 0.0d0)
 
   hpsi (:,:) = (0.d0, 0.d0)
-  IF (noncolin) THEN
-     call zgemm ('N', 'N', npwx*npol, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
-          npwx*npol, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx*npol)
-  ELSE
-     call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
-          npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
-  END IF
+  call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+       npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
   spsi(:,:) = hpsi(:,:)
-  !
-  !    And apply S again
-  !
+!And apply S again
   call calbec (n, vkb, hpsi, becp, m)
   call s_psi (npwx, n, m, hpsi, spsi)
   do ibnd = 1, m
@@ -125,7 +108,7 @@ subroutine ch_psi_all (n, h, ah, e, ik, m)
            ah (ig+npwx, ibnd) = ah (ig+npwx, ibnd) + spsi (ig+npwx, ibnd)
         enddo
      enddo
-  END IF
+  ENDIF
 
   deallocate (spsi)
   deallocate (hpsi)
