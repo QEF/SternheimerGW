@@ -16,8 +16,7 @@ SUBROUTINE clean_pw_gw(iq)
   !
   USE kinds,           ONLY : DP
   USE control_flags,   ONLY : twfcollect
-  USE modes,           ONLY : nirr
-  USE partial,         ONLY : done_irr
+  USE modes,           ONLY : nsymq
   USE disp,            ONLY : done_iq
   USE control_gw,      ONLY : done_bands, rec_code_read
   USE save_gw,         ONLY : restore_gw_input_variables
@@ -29,26 +28,20 @@ SUBROUTINE clean_pw_gw(iq)
   INTEGER :: irr
   !
   done_bands=.FALSE.
-  done_iq(iq)=1
-  DO irr=1,nirr
-     IF (done_irr(irr)==0) done_iq(iq)=0
-  ENDDO
 
   twfcollect=.FALSE. 
 
   CALL clean_pw( .FALSE. )
-! CALL clean_pw( .TRUE. )
 
   CALL deallocate_gwq()
-  rec_code_read=-1000
+  nsymq = 0
   !
   ! ... Close the files
   !
   CALL close_gwq( .TRUE. )
   !
-  !HL not sure this is necessary
-  !all stems from partial module which should probably be trashed... 
-  !CALL restore_gw_input_variables()
+  !CALL restore_ph_input_variables()
+  !  tmp_dir=tmp_dir_save
   !
 RETURN
 END SUBROUTINE clean_pw_gw

@@ -32,6 +32,8 @@ gmap_sym.o\
 gwq_init.o\
 set_defaults_pw.o\
 run_nscf.o\
+clean_pw_gw.o\
+deallocate_gwq.o\
 pade.o\
 sigma_exch.o\
 sigma_matel.o\

@@ -40,10 +40,8 @@ PROGRAM gw
   setup_pw = .TRUE.
   do_band  = .TRUE.
   do_matel = .TRUE.
-
   CALL run_nscf(do_band, do_matel, ik)
   CALL initialize_gw()
-
   if(do_sigma_exx)   CALL sigma_exch(ik)
   if(do_sigma_matel) CALL sigma_matel(ik)
 

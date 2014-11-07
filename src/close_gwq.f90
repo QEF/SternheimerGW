@@ -19,7 +19,7 @@ SUBROUTINE close_gwq( flag )
   USE io_global,     ONLY : ionode, stdout
   USE buffers,       ONLY : close_buffer
   USE uspp,          ONLY : okvan
-  USE units_gw,      ONLY : iuwfc, iudwf, iubar, iudrhous, iuebar, iudrho, &
+  USE units_gw,      ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iuebar, iudrho, &
                             iudvscf
   USE output,        ONLY : fildrho, fildvscf
   !
@@ -42,14 +42,18 @@ SUBROUTINE close_gwq( flag )
   END IF
   !
   IF (flag) THEN
-     CALL close_buffer(iudwf,'delete')
-     CALL close_buffer(iubar,'delete')
+     CALL close_buffer(iudwf,  'delete')
+     CALL close_buffer(iudwfp, 'delete')
+     CALL close_buffer(iudwfm, 'delete')
+     CALL close_buffer(iubar,  'delete')
      !
      IF ( okvan ) CALL close_buffer(iudrhous,'delete')
      !
   ELSE
-     CALL close_buffer(iudwf,'keep')
-     CALL close_buffer(iubar,'keep')
+     CALL close_buffer(iudwf,  'keep')
+     CALL close_buffer(iudwfp, 'keep')
+     CALL close_buffer(iudwfm, 'keep')
+     CALL close_buffer(iubar,  'keep')
      !
      IF ( okvan ) CALL close_buffer(iudrhous,'keep')
      !

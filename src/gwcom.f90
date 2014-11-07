@@ -208,33 +208,8 @@ MODULE gwus
        alphasum(:,:,:,:),   &! nhm*(nhm+1)/2,3,nat,nspin)
                              ! used to compute modes
        dpqq(:,:,:,:)         ! (nhm, nhm, 3, ntyp) 
-  ! alphasum contains \sum_i <psi_i| d/du (|\beta_n><beta_m|) | psi_i> + (m-n)
-  ! dipole moment of each Q 
-  COMPLEX (DP), ALLOCATABLE :: &
-       int1(:,:,:,:,:),     &! nhm, nhm, 3, nat, nspin),&
-       int2(:,:,:,:,:),     &! nhm, nhm, 3,nat, nat),&
-       int3(:,:,:,:,:),     &! nhm, nhm, npert, nat, nspin),&
-       int3_paw(:,:,:,:,:), &! nhm, nhm, npert, nat, nspin),&
-       int4(:,:,:,:,:),     &! nhm*(nhm+1)/2, 3, 3, nat, nspin),&
-       int5(:,:,:,:,:),     &! nhm*(nhm+1)/2, 3, 3, nat, nat),&
-       int1_nc(:,:,:,:,:),     &! nhm, nhm, 3, nat, nspin),&
-       int2_so(:,:,:,:,:,:),   &! nhm, nhm, 3, nat,nat,nspin),&
-       int3_nc(:,:,:,:,:),     &! nhm, nhm, npert, nat, nspin),&
-       int4_nc(:,:,:,:,:,:),   &! nhm, nhm, 3, 3, nat, nspin),&
-       int5_so(:,:,:,:,:,:,:), &! nhm*(nhm+1)/2, 3, 3, nat, nat, nspin),&
-!
-!  These variables contains the five integrals defined in PRB 64, 35118 (2001)
-!  int1 -> \int V_eff d/du (Q) d^3r
-!  int2 -> \int d/du (V_loc) Q d^3r
-!  int3 -> \int d\du (V_Hxc) Q d^3r
-!  int4 -> \int V_eff d^2/dudu (Q) d^3r
-!  int5 -> \int d/du (V_loc) d/du (Q) d^3r
-!  int3_paw contains d/du (D^1-\tilde D^1) 
-! 
-       becsum_nc(:,:,:,:),     &! nhm*(nhm+1)/2,nat,npol,npol)
-       becsumort(:,:,:,:),     &! nhm*(nhm+1)/2,nat,nspin,3*nat)
-       alphasum_nc(:,:,:,:,:), &! nhm*(nhm+1)/2,3,nat,npol,npol)
-       dpqq_so(:,:,:,:,:)       ! nhm, nhm, nspin, 3, ntyp 
+! alphasum contains \sum_i <psi_i| d/du (|\beta_n><beta_m|) | psi_i> + (m-n)
+! dipole moment of each Q 
 !
 !  becsum contains \sum_i <\psi_i | \beta_n><\beta_m| \psi_i > + (m-n)
 !  besumort contains alphasum+\sum_i <\psi_i | \beta_n><\beta_m| \delta \psi_i >
