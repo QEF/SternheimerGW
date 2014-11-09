@@ -3,11 +3,13 @@ subroutine truncate_2D(scrcoul, xqloc, opt)
   USE kinds,         ONLY : DP
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE gvect,         ONLY : nrxx, nr1, nr2, nr3, nrx1, nrx2, nrx3, &
-                            nl, ngm, g, nlm
+  !USE gvect,         ONLY : nrxx, nr1, nr2, nr3, nrx1, nrx2, nrx3, &
+  !                          nl, ngm, g, nlm
+  !USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
+  !                          nr1sco, nr2sco, nr3sco, ngmgrn, sigma_c_St%ngmt
+  USE gvect,         ONLY : g, ngm, nl
   USE qpoint,        ONLY : xqloc, npwq, igkq, nksq, ikks, ikqs
-  USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
-                            nr1sco, nr2sco, nr3sco, ngmgrn, ngmpol
+  USE gwsigma,       ONLY : sigma_c_st
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE noncollin_module, ONLY : nspin_lsda, nspin_mag, nspin_gga
@@ -22,7 +24,7 @@ IMPLICIT NONE
   REAL(DP) :: dv_rho(1)
   INTEGER   :: is
   REAL(DP)  :: at1(3,3)
-  COMPLEX(DP)  :: scrcoul(ngmpol, ngmpol, nfs)
+  COMPLEX(DP)  :: scrcoul(sigma_c_St%ngmt, sigma_c_St%ngmt, nfs)
 !2D screening.
 !Choose zcut to be 1/2*L_{z}.
 
@@ -48,11 +50,11 @@ IF(opt.eq.1) then
            ENDDO
 ELSE IF (opt.eq.2) then
       DO iw = 1, nfs
-        DO ig = 1, ngmpol
+        DO ig = 1, sigma_c_St%ngmt
                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
                 limq = (qg2.lt.eps8) 
           IF(.not.limq) then
-           do igp = 1, ngmpol
+           do igp = 1, sigma_c_St%ngmt
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
                  qz   = (g(3,ig)+xqloc(3))
                  spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
@@ -62,7 +64,7 @@ ELSE IF (opt.eq.2) then
           ELSE  
 !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
 !we enforce that here:
-           do igp = 1, ngmpol
+           do igp = 1, sigma_c_St%ngmt
               scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
            enddo
           ENDIF

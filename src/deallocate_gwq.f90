@@ -25,6 +25,7 @@ subroutine deallocate_gwq
   USE control_gw,            ONLY : lgamma
   USE gwsigma,               ONLY: scrcoul, green
   USE eqv,                   ONLY: dpsim, dpsip, dvbare
+  USE gwus,                  ONLY : becp1
 
   IMPLICIT NONE
   INTEGER :: ik, ipol
@@ -43,5 +44,15 @@ subroutine deallocate_gwq
   if(allocated(dvbare)) deallocate(dvbare)
   if(allocated(this_dvkb3_is_on_file)) deallocate (this_dvkb3_is_on_file)    
   if(allocated(this_pcxpsi_is_on_file)) deallocate (this_pcxpsi_is_on_file)
+
+  if(allocated(becp1))  then
+     do ik=1,size(becp1)
+        call deallocate_bec_type ( becp1(ik) )
+     end do
+     deallocate(becp1)
+  end if
+  call deallocate_bec_type ( becp )
+
+
   return
 end subroutine deallocate_gwq

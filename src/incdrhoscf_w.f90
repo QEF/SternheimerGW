@@ -17,12 +17,18 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
   USE kinds, only : DP
   USE cell_base, ONLY : omega
   USE ions_base, ONLY : nat
-  USE gsmooth,   ONLY : nrxxs, nls, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s
   USE wvfct,     ONLY : npw, igk, npwx, nbnd
   USE uspp_param,ONLY: nhm
   USE wavefunctions_module,  ONLY: evc
   USE qpoint,    ONLY : npwq, igkq, ikks
   USE control_gw, ONLY : nbnd_occ
+  !USE gsmooth,   ONLY : dffts%nnr, nls, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s
+  USE gvecs,     ONLY : nls
+  USE fft_base,  ONLY : dfftp, dffts
+  USE fft_interfaces, ONLY : invfft
+  USE mp_bands,   ONLY : me_bgrp, inter_bgrp_comm, ntask_groups
+  USE mp, ONLY : mp_sum
+
 
   implicit none
 
@@ -31,13 +37,11 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
 
   real(DP) :: weight
   ! input: the weight of the k point
-  complex(DP) :: drhoscf (nrxxs), dbecsum (nhm*(nhm+1)/2,nat)
+  complex(DP) :: drhoscf (dffts%nnr), dbecsum (nhm*(nhm+1)/2,nat)
   complex(DP) :: dpsi(npwx, nbnd) 
   ! output: the change of the charge densit
   ! inp/out: the accumulated dbec
-  !
-  !   here the local variable
-  !
+  ! here the local variable
 
   real(DP) :: wgt
   ! the effective weight of the k point
@@ -50,8 +54,8 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
   ! counters
 
   call start_clock ('incdrhoscf')
-  allocate (dpsic(  nrxxs))    
-  allocate (psi  (  nrxxs))    
+  allocate (dpsic(  dffts%nnr))    
+  allocate (psi  (  dffts%nnr))    
   wgt = 2.d0 * weight / omega
  !HLTIL
  !wgt = weight / omega
@@ -67,20 +71,23 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
         psi (nls (igk (ig) ) ) = evc (ig, ibnd)
      enddo
 
-     call cft3s (psi, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
+     !call cft3s (psi, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
+     CALL invfft('Wave', psi, dffts)
 
      dpsic(:) = (0.d0, 0.d0)
      do ig = 1, npwq
         dpsic (nls (igkq (ig) ) ) = dpsi (ig, ibnd)
      enddo
 
-     call cft3s (dpsic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
-     do ir = 1, nrxxs
+     !call cft3s (dpsic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
+     CALL invfft('Wave', dpsic, dffts)  
+  
+     do ir = 1, dffts%nnr
         drhoscf (ir) = drhoscf (ir) + wgt * (CONJG(psi (ir) ) * dpsic (ir))
      enddo
   enddo
-! HL adds B15 of DalCorso.
-  call addusdbec (ik, weight, dpsi, dbecsum)   
+! HL adds B15 of DalCorso. REQUIRED FOR ULTRASOFT
+!  call addusdbec (ik, weight, dpsi, dbecsum)   
   deallocate (psi)
   deallocate (dpsic)
 

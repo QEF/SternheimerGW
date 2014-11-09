@@ -34,6 +34,9 @@ set_defaults_pw.o\
 run_nscf.o\
 coulomb.o\
 solve_direct.o\
+incdrhoscf_w.o\
+dgradcorr.o\
+truncate_2D.o\
 coul_multishift.o\
 cBiCG_solve_coul.o\
 orthogonalize.o\

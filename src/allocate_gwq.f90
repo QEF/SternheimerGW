@@ -36,8 +36,8 @@ subroutine allocate_gwq
   USE fft_base,      ONLY : dfftp
   USE disp,          ONLY : gmap, eval_occ
 
+  IMPLICIT NONE
 
-  implicit none
   INTEGER :: ik, ipol
   !
   !   FOR LGAMMA
@@ -61,6 +61,12 @@ subroutine allocate_gwq
   allocate (eigqts ( nat))
   allocate (dmuxc (dfftp%nnr , nspin_mag , nspin_mag))    
   allocate (dvbare(dfftp%nnr))    
+
+  ALLOCATE (becp1(nksq))
+  DO ik=1,nksq
+     call allocate_bec_type ( nkb, nbnd, becp1(ik) )
+  END DO
+  CALL allocate_bec_type ( nkb, nbnd, becp )
 
   return
 end subroutine allocate_gwq

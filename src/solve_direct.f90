@@ -256,7 +256,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
              etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
-
              call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
                                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                                   npol, niters, alphabeta)
@@ -266,7 +265,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
  !              &                ik , ibnd, anorm
  !          if (mod(ik,10).eq.0) WRITE(1000+mpime, '(5x,"kpoint", i4, e10.3, 10i4)') ik, anorm, niters
 
-           if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
+           !if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
 
 !          dpsi = dpsi^{+}
            dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
@@ -279,6 +278,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
            call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
 
            dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
+          
 
            do ibnd=1, nbnd 
               if (niters(ibnd).ge.maxter_green) then
@@ -294,6 +294,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                endif
               enddo
            enddo
+  
 
            ltaver = ltaver + lter
            lintercall = lintercall + 1
@@ -306,8 +307,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
            enddo
      enddo !kpoints
 
-
-!!!!!!!NEED THIS FOR ULTRASOFT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      do iw = 1, nfs
+        call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
+      enddo
+!!!!!!!NEED THIS FOR ULTRASOFT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     do iw = 1, nfs
 !        call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
 !        call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
