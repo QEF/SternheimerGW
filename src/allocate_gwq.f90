@@ -26,7 +26,6 @@ subroutine allocate_gwq
   USE paw_variables,  ONLY : okpaw
   USE uspp_param,     ONLY : nhm
   USE freq_gw,        ONLY : fpol, fiu, nfs, nfsmax
-  USE gwsigma,        ONLY : scrcoul, green, sigma
   USE ions_base,      ONLY : nat, ntyp => nsp
   USE gwus,          ONLY : becp1
   USE qpoint,        ONLY : nksq, eigqts, igkq

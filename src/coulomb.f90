@@ -78,7 +78,6 @@ DO ig = igstart, igstop
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
-            print*, sum(drhoscfs(:,iw))
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nls(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
             do igp = 1, sigma_c_st%ngmt
                if(igp.ne.ig_unique(ig)) then

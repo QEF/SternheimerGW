@@ -2,25 +2,25 @@ SUBROUTINE unfold_w(scrcoul_g_in, iq)
 USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsymm,        ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
-USE gvect,         ONLY : g, ngm, ecutwfc, nl
+USE gvect,         ONLY : g, ngm, nl
 USE modes,         ONLY : nsymq, invsymq 
-USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmpol
 USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
 USE control_gw,    ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont
 USE qpoint,        ONLY : xq
 USE cell_base,     ONLY : at
+USE gwsigma,      ONLY : sigma_c_st
 
 IMPLICIT NONE
 
-COMPLEX(DP)  :: scrcoul_g_in(ngmpol, ngmpol, nfs, 1)
-COMPLEX(DP)  :: scrcoul_g_tmp(ngmpol, nfs)
+COMPLEX(DP)  :: scrcoul_g_in(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, 1)
+COMPLEX(DP)  :: scrcoul_g_tmp(sigma_c_st%ngmt, nfs)
 COMPLEX(DP)  :: phase
 
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
 !counter
 INTEGER      :: isym, iwim, iq, iw
 INTEGER      :: done, ngmdone
-INTEGER      :: ngmdonelist(ngmpol)
+INTEGER      :: ngmdonelist(sigma_c_st%ngmt)
 INTEGER      :: gmapsym(ngm,48)
 COMPLEX(DP)  :: eigv(ngm,48)
 LOGICAL      :: not_unique
@@ -32,13 +32,13 @@ REAL(DP)     :: xq_loc(3)
 
 gmapsym(:,:) = 0
 CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
-do isym = 1, nsymq
-   WRITE(6,'(3i4)') s(:,:,isym) 
-   WRITE(6,*)
-   WRITE(6,'(3i4)') s(:,:,invs(isym)) 
-   WRITE(6,*)
-   WRITE(6,*)
-enddo
+!do isym = 1, nsymq
+!   WRITE(6,'(3i4)') s(:,:,isym) 
+!   WRITE(6,*)
+!   WRITE(6,'(3i4)') s(:,:,invs(isym)) 
+!   WRITE(6,*)
+!   WRITE(6,*)
+!enddo
 !Cases where no unfolding needs to be done:
 if(.not.use_symm)GOTO 126
 if(nsymq.eq.1)GOTO 126
@@ -71,7 +71,7 @@ IF(modielec) then
          ENDDO
       ENDDO
 ELSE
-    DO ig = 1, ngmpol
+    DO ig = 1, sigma_c_st%ngmt
         DO done = 1, ngmdone
            if (ig.eq.ngmdonelist(done)) then
 !               write(6,'("Cycling: unique or already unfolded.")') 
@@ -83,13 +83,13 @@ ELSE
         ngmdonelist(ngmdone) = ig
 !and unfold it with the correct correspondence ig has sym_friend(ig) where R^{-1} ig = ig_unique:
         DO iwim = 1, nfs
-            DO igp = 1, ngmpol
+            DO igp = 1, sigma_c_st%ngmt
                scrcoul_g_tmp(igp,iwim) = scrcoul_g_in(sym_friend(ig), igp, iwim, 1)
             ENDDO
         ENDDO
 !the relationship R between ig and sym_friend(ig) is given by sym_ig.
         DO iwim = 1, nfs
-            DO igp = 1, ngmpol
+            DO igp = 1, sigma_c_st%ngmt
             !For symmetry operations with fraction translations we need to include:
             !the \tau_{r} part which applies to the original G, G' rotation on R
             !e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))
@@ -102,34 +102,4 @@ ELSE
 ENDIF
 
 126 CONTINUE
-!Zero wings of W:
-!IF(iq.eq.1) then
-!  Write(6, '("Zeroing Wings of W.")')
-!  if(godbyneeds) then
-!     do igp = 2, ngmpol
-!        scrcoul_g_in(1,igp,1,1) = ( 0.0d0, 0.0d0)
-!        scrcoul_g_in(1,igp,2,1) = ( 0.0d0, 0.0d0)
-!     enddo
-!     do igp = 2, ngmpol
-!        scrcoul_g_in(igp,1,1,1) = ( 0.0d0, 0.0d0)
-!        scrcoul_g_in(igp,1,2,1) = ( 0.0d0, 0.0d0)
-!     enddo
-!  endif
-!How to zero for pade continuation?
-!  if(padecont) then
-!     do igp = 2, ngmpol
-!        do iwim = 1, nfs
-!          scrcoul_g_in(1,igp,iwim,1) = (0.0d0, 0.0d0)
-!          scrcoul_g_in(igp,1,iwim,1) = (0.0d0, 0.0d0)
-!        enddo
-!     enddo
-!  endif
-!ENDIF
-!do iw = 1, nfs
-!   write(6,*)
-!   do ig = 1, 14
-!      write(6,'(14f14.7)') real(scrcoul_g_in(ig,1:14,iw,1))
-!   enddo
-!   write(6,*)
-!enddo
 END SUBROUTINE unfold_w

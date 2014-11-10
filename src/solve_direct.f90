@@ -51,18 +51,14 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE eqv,                  ONLY : dvpsi, evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE modes,                ONLY : irotmq, tmq, minus_q, irgq, nsymq, rtau 
- !USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm,  mp_global_end,&
- !                                 intra_image_comm
-  USE mp,                   ONLY : mp_sum, mp_barrier
-  USE mp_world,        ONLY : mpime
-  USE mp_world,        ONLY : mpime
-!  
   USE freq_gw,         ONLY : fpol, fiu, nfs, nfsmax
   USE gvect,           ONLY : ngm, g, nl
   USE gvecs,           ONLY : nls
   USE fft_base,        ONLY : dfftp, dffts
   USE fft_interfaces,  ONLY : invfft, fwfft
   USE buffers,         ONLY : get_buffer
+  USE mp,              ONLY : mp_sum, mp_barrier
+  USE mp_world,        ONLY : mpime
 
   implicit none
   !

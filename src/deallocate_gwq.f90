@@ -23,7 +23,6 @@ subroutine deallocate_gwq
   USE nlcc_gw,               ONLY : drc
   USE units_gw,              ONLY : this_dvkb3_is_on_file, this_pcxpsi_is_on_file
   USE control_gw,            ONLY : lgamma
-  USE gwsigma,               ONLY: scrcoul, green
   USE eqv,                   ONLY: dpsim, dpsip, dvbare
   USE gwus,                  ONLY : becp1
 

@@ -1,6 +1,6 @@
 SUBROUTINE godby_needs_coeffs (N, z, u, a)
 USE kinds,                     ONLY : DP
-USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime
+USE mp_world,   ONLY : mpime
 USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps4, pi, eps8
 
 IMPLICIT NONE
@@ -57,7 +57,6 @@ integer  :: p, N, i
         ar = real(a(p))
         ai = aimag(a(p))
         if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-           write(1000+mpime,'("padenan")')
            write(1000+mpime,'(2f12.7)') (z(i),i=1,N)
            write(1000+mpime,'(2f12.7)') (u(i),i=1,N)
            write(1000+mpime,'(2f12.7)') (a(i),i=1,N)

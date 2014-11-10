@@ -16,8 +16,6 @@ USE mp_global,   ONLY: intra_pool_comm
 USE mp,          ONLY: mp_sum
 USE control_gw,  ONLY: maxter_green
 USE units_gw,    ONLY: iunresid, lrresid, iunalphabeta, lralphabeta
-USE mp_global,  ONLY: inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                        nproc_pool, nproc, me_pool, my_pool_id, npool
 
 implicit none
 
@@ -132,10 +130,6 @@ external cg_psi      ! input: the routine computing cg_psi
         do ibnd = 1, nbnd
 !initial residual should be r = b
            call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
-           !if (mpime.eq.0) then
-               !write(503,*)iter
-               !write(503,*)d0psi
-           !endif
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
            gt(:,ibnd) = dconjg ( g(:,ibnd) )

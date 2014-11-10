@@ -23,8 +23,6 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
   USE symm_base,     ONLY : t_rev, irt, ftau, nrot, nsym, &
                             time_reversal, sname, d1, d2, d3, &
                             copy_sym, s_axis_to_cart
-  USE mp_global,     ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, npool, &
-                            nproc_pool, me_pool, my_pool_id, nproc
 
   IMPLICIT NONE
 
@@ -45,7 +43,6 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
   INTEGER                 :: s(3,3,48), invs(48), ism1
   INTEGER                 :: i, j, k, invsym
   REAL(DP), PARAMETER     :: eps=1.0d-5
-
 
   !xq_ibk_locr is the symmetry rotated xq_ibk. 
   !x_q_loc is the q point in the IBZ in crystal co-ordinates.
@@ -71,15 +68,12 @@ DO iq = 1, nqs
   !Symmfix
    x_q_loc(:) = -x_q(:,iq)
    CALL cryst_to_cart(1, x_q_loc(:), at, -1)
-!  write(1000+mpime, *) 
-!  write(1000+mpime, '(3f11.7)') x_q_loc(:)
    DO isym = 1, nsym
       ism1 = invs(isym)
       xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
       xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
       xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
 
-!      write(1000+mpime, '(3f11.7)') xq_ibk_locr(:)
  
       found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
                  (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
@@ -89,7 +83,6 @@ DO iq = 1, nqs
 END DO
 
 if (.not.found_q) then 
-   write(1000+mpime,'("q_point not found in IBZ using time reversal.")')
    inv_q =.true.
    DO iq = 1, nqs
 !Transform xq into cartesian co-ordinates. 

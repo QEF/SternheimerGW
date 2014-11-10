@@ -62,7 +62,6 @@ IMPLICIT NONE
   w_ryd = wsigma/RYTOEV
   nbnd = nbnd_sig 
 
-  print*, lgamma
   if (lgamma) then
       ikq = ik0
   else
@@ -203,10 +202,6 @@ IMPLICIT NONE
   enddo
 
   sigma = dcmplx(0.0d0, 0.0d0)
-
-  ierr = buiol_check_unit(iunsigma)
-  print*, "iunsigma", ierr
-
   if(do_serial) then
      do iw = 1, nwsigma
         CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)

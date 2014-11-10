@@ -10,7 +10,6 @@ SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 USE kinds,       ONLY: DP
-USE gwsigma,     ONLY: ngmgrn, ecutsco, nrsco, ngmsco, ngmsig
 USE control_gw,  ONLY: maxter_green
 USE units_gw,    ONLY: iunresid, lrresid, iunalphabeta, lralphabeta
 

@@ -1,7 +1,7 @@
 SUBROUTINE mod_diel(ig, xq_ibk, w, inveps, screening)
   USE kinds,      ONLY : DP
   USE constants,  ONLY : e2, fpi, RYTOEV, pi, eps8
-  USE gvect,      ONLY : ngm, nrxx, g, nr1, nr2, nr3, nrx1, nrx2, nrx3, nl
+  USE gvect,      ONLY : ngm, g
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
 
 IMPLICIT NONE
@@ -10,15 +10,12 @@ IMPLICIT NONE
   COMPLEX(DP) :: w, inveps
   REAL(DP)    :: wwp, eps0, q0, wwq, fac, z, xq(3)
   REAL(DP)    :: wwpi2, wwpj2, qxy, meff, invepsqg
-
   REAL(DP)    :: rhoi, rhoj , wwqi, wwji
   REAL(DP)    :: wwqi2, wwqj2, wwji2, wwq2
   REAL(DP)    :: A, B, wwmi2, wwpl2 
   REAL(DP)    :: epsq, polq
   REAL(DP)    :: qg, qg2, kf2, kf, alpha
   REAL(DP)    :: expqxy, d, x 
-
-
   INTEGER     :: screening, ig
 !Screening selects from one of the following model dielectric functions.
 !in all cases the dielectric function is diagonal in G space so we include no

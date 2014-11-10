@@ -9,16 +9,11 @@ SUBROUTINE green_linsys_shift (ik0)
   USE cell_base,            ONLY : tpiba2
   USE ener,                 ONLY : ef
   USE klist,                ONLY : xk, wk, nkstot
-  USE gvect,                ONLY : nrxx, g, nl, ngm, ecutwfc
-  USE gsmooth,              ONLY : doublegrid, nrxxs, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, ngms
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf, nhm, nh
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
-  USE paw_variables,        ONLY : okpaw
-  USE paw_onecenter,        ONLY : paw_dpotential, paw_dusymmetrize, &
-                                   paw_dumqsymmetrize
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
@@ -28,14 +23,20 @@ SUBROUTINE green_linsys_shift (ik0)
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE recover_mod,          ONLY : read_rec, write_rec
-  USE mp,                   ONLY : mp_sum
   USE disp,                 ONLY : nqs
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen, deltaw
-  USE gwsigma,              ONLY : ngmgrn, ecutsco
-  USE mp_global,            ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                                   nproc_pool, nproc, me_pool, my_pool_id, npool
-  USE mp,                   ONLY: mp_barrier, mp_bcast, mp_sum
+  USE gwsigma,              ONLY : sigma_c_st
+  USE gvect,         ONLY : g
+  USE mp,            ONLY : mp_sum, mp_barrier
+  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
+                            me_image, nproc_image
+  USE mp_global,     ONLY : nproc_pool_file, &
+                            nproc_bgrp_file, nproc_image_file
+  USE mp_pools,      ONLY : nproc_pool, npool, inter_pool_comm, my_pool_id
+  USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
+  USE mp_world,      ONLY : nproc, mpime
+
+
   USE, INTRINSIC :: ieee_arithmetic
 
   IMPLICIT NONE 
@@ -46,7 +47,7 @@ SUBROUTINE green_linsys_shift (ik0)
   !should be freq blocks...
   COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
-  COMPLEX(DP) :: gr(npwx, 1), ci, cw, green(ngmgrn, ngmgrn, nwgreen)
+  COMPLEX(DP) :: gr(npwx, 1), ci, cw, green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
@@ -54,7 +55,6 @@ SUBROUTINE green_linsys_shift (ik0)
   REAL(DP) :: dirac, x, delta, support
   real(DP) :: k0mq(3) 
   real(DP) :: w_ryd(nwgreen)
-  external cg_psi, cch_psi_all_fix, cch_psi_all_green
   INTEGER, ALLOCATABLE      :: niters(:)
   REAL(DP) , allocatable :: h_diag (:,:)
   REAL(DP)               :: eprec_gamma
@@ -78,7 +78,7 @@ SUBROUTINE green_linsys_shift (ik0)
              mode          ! mode index
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-    REAL(DP) :: tr_cgsolve = 1.0d-6
+    REAL(DP) :: tr_cgsolve = 1.0d-4
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
@@ -89,9 +89,10 @@ SUBROUTINE green_linsys_shift (ik0)
 
 !tmp number of blocks
     INTEGER :: nblocks, block
+    external cg_psi, ch_psi_all_green
 
      allocate  (h_diag (npwx, 1))
-     allocate  (etc(nbnd, nkstot))
+     allocate  (etc(nbnd_occ(ik0), nkstot))
 
     ci = (0.0d0, 1.0d0)
     nblocks = 1
@@ -134,7 +135,7 @@ do iq = 1, nksq
       igkq_ig(:)  = 0 
 
       do ig = 1, npwx
-         if((igkq(ig).le.ngmgrn).and.((igkq(ig)).gt.0)) then
+         if((igkq(ig).le.sigma_c_st%ngmt).and.((igkq(ig)).gt.0)) then
              counter = counter + 1
             !index in total G grid.
              igkq_tmp (counter) = igkq(ig)
@@ -185,12 +186,10 @@ do iq = 1, nksq
                         (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
                         (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
        enddo
-
-WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
-
-     green  = (0.0d0, 0.0d0)
-     h_diag = 0.d0
+       WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
+       WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
+       green  = (0.0d0, 0.0d0)
+       h_diag = 0.d0
 
 !No preconditioning with multishift
      do ig = 1, npwx
@@ -211,19 +210,14 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
              conv_root = .true.
              anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
-             WRITE(6,'("Starting BiCG")')
              if (block.eq.1) then
-                 call cbcg_solve_green(cch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
+                 call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,  &
                                        npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                        cw, niters(gveccount))
              endif
-
-             !if(.not.conv_root) write(600+mpime, '("root not converged.")')
-             !if(.not.conv_root) gr_A(:,:) = dcmplx(0.0d0,0.0d0) 
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
-             if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
-             if(.not.conv_root) write(1000+mpime, '("green not converged")')
-
+             !if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
+             !if(.not.conv_root) write(1000+mpime, '("green not converged")')
              do iw = 1, nwgreen
                 do igp = 1, counter
                    if( ieee_is_nan(real(gr_A_shift(igkq_ig(igp),iw))).or.ieee_is_nan(aimag(gr_A_shift(igkq_ig(igp),iw)))) then
@@ -248,16 +242,16 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
          do iw = 1, nwgreen
            do igp = 1, counter
 !should be nbnd_occ:
-            do ibnd = 1, nbnd
+            do ibnd = 1, nbnd_occ(ikq)
                x = et(ibnd, ikq) - w_ryd(iw)
                dirac = eta / pi / (x**2.d0 + eta**2.d0)
-              ! green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
-              !                                          tpi*ci*conjg(evq(igkq_ig(ig), ibnd))    * &
-              !                                          evq(igkq_ig(igp), ibnd) * dirac
+               green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
+                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))    * &
+                                                        evq(igkq_ig(igp), ibnd) * dirac
 !@ HL conjg G
-              green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) - &
-                                                       tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
-                                                       evq(igkq_ig(igp), ibnd)  * dirac
+!              green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) - &
+!                                                       tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
+!                                                       evq(igkq_ig(igp), ibnd)  * dirac
             enddo 
            enddo!igp
          enddo!iw
@@ -272,8 +266,6 @@ WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
     CALL mp_barrier(inter_pool_comm)
     if(ionode) then
 #endif
-
-!do sigma_c
     do iw = 1, nwgreen
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
        CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)

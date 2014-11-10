@@ -4,8 +4,6 @@ SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
    USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
    USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
-   USE mp_global,   ONLY : inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                           nproc_pool, nproc, me_pool, my_pool_id, npool
    USE control_gw,  ONLY : eta, tr2_green
 
 IMPLICIT NONE
@@ -68,11 +66,12 @@ REAL(DP) :: anorm(nwgreen)
 !with rhs as delta <rt,r> is always one on the first iteration.
          do iw = 1, nfreq
 !-alpha because we are solve (H-w^{+}):
-!            pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), eta))*pi_coeff(iw) - &
+            pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), eta))*pi_coeff(iw) - &
+                              ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
 ! Conjugation so we can take sensible matrix elements
 ! @
-            pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), -1.0d0*eta))*pi_coeff(iw) - &
-                              ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
+!            pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), -1.0d0*eta))*pi_coeff(iw) - &
+!                              ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
             alpha_sig(iw)    = (pi_coeff(iw)/pi_coeff_new(iw))*alpha
 ! x_sig = x_sig + alpha_sig*u_sig

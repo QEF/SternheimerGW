@@ -1,5 +1,5 @@
 SUBROUTINE do_stern()
-  USE io_global,  ONLY : stdout
+  USE io_global,  ONLY : stdout, ionode_id
   USE kinds,      ONLY : DP
   USE disp,       ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start
   USE gwsigma,    ONLY : sigma_c_st
@@ -8,11 +8,12 @@ SUBROUTINE do_stern()
                           ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
                           do_q0_only, solve_direct, tinvert, lrpa, do_epsil
   USE freq_gw,    ONLY : nfs
+  USE units_gw,   ONLY : lrcoul, iuncoul
 
 
 IMPLICIT NONE
 
-  INTEGER :: iq, ik, ig, igstart, igstop
+  INTEGER :: iq, ik, ig, igstart, igstop, ios
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
   LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel
 
@@ -44,18 +45,20 @@ IMPLICIT NONE
          ig_unique(ig) = ig
       ENDDO
     ENDIF
-!
 !Need to distribute G vectors according to a sensible algorithm based
 !on images which maintains, pool, and plane wave parallelism!
 !      CALL distribute_pert()
-!
        igstart = 1
        igstop = ngmunique
-       print*, "iq, igstart, igstop"
-       print*, iq, igstart, igstop
+       PRINT*, "iq, igstart, igstop"
+       PRINT*, iq, igstart, igstop
        CALL coulomb(iq, igstart, igstop, scrcoul_g)
-!       CALL mp_sum ( scrcoul_g, inter_pool_comm )
-100  CALL clean_pw_gw(iq)
+       !IF (ionode_id) THEN
+       CALL unfold_w(scrcoul_g,iq)
+       IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
+       CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+       !ENDIF
+       CALL clean_pw_gw(iq)
     if(do_q0_only) GOTO 124
     if(do_epsil.and.(iq.eq.nqs)) GOTO 126
   ENDDO
@@ -67,10 +70,5 @@ WRITE(stdout, '("Finished Calculating Screened Coulomb")')
    DEALLOCATE( sym_ig )
    DEALLOCATE( sym_friend )
 !Write W_{q}(G,G';iw) to file:
-!       IF (ionode) THEN
-!           CALL unfold_w(scrcoul_g,iq)
 !If solve direct now need to invert epsilon:
-!           IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
-!           CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
-!       ENDIF
 END SUBROUTINE do_stern

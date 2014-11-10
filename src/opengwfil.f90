@@ -42,4 +42,5 @@ IMPLICIT  NONE
        iunalphabeta = 35
        lralphabeta  = 4
     endif
+
 END SUBROUTINE opengwfil

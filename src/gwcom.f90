@@ -499,10 +499,6 @@ MODULE gwsigma
   TYPE(fft_cus) sigma_c_st   ! Grid for real space -> restricted G space
 
 ! HL self energy is a huge quantity!
-  COMPLEX (DP), ALLOCATABLE :: scrcoul(:,:,:,:)
-  COMPLEX (DP), ALLOCATABLE :: green(:,:)
-  COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
-  COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
   INTEGER  :: nbnd_sig
 ! Cutoff for the sigma + exchange/correlation.
   REAL(DP) :: ecutsig
@@ -510,16 +506,10 @@ MODULE gwsigma
   REAL(DP) :: ecutgrn
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
-  INTEGER, ALLOCATABLE ::         nlsig(:)
-  INTEGER, TARGET, ALLOCATABLE :: nlsex(:)
-  INTEGER, TARGET, ALLOCATABLE :: nlsco(:)
 !OLD FFT ROUTINES
 !Real space mesh for description of self-energy.
   REAL(DP) :: gcutmsig
   INTEGER  :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
-  INTEGER :: nr1sig, nr2sig, nr3sig, nrsig
-  INTEGER :: nr1sco, nr2sco, nr3sco, nrsco
-  INTEGER :: nr1sex, nr2sex, nr3sex, nrsex
 END MODULE gwsigma
 
 

@@ -45,6 +45,16 @@ ch_psi_all.o\
 h_psiq.o\
 dv_of_drho.o\
 dvqpsi_us.o\
+unfold_w.o\
+invert_epsilon.o\
+green_linsys_shift.o\
+cBiCG_solve_green.o\
+green_multishift.o\
+ch_psi_all_green.o\
+sigma_c.o\
+find_q_ibz.o\
+godby_needs.o\
+mod_diel.o\
 clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
