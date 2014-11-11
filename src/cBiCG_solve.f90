@@ -12,8 +12,6 @@ SUBROUTINE cbcg_solve(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   real scalar, x and b are complex vectors
 
 USE kinds,       ONLY: DP
-USE mp_global,   ONLY: intra_pool_comm, mpime
-USE mp,          ONLY: mp_sum
 USE control_gw,  ONLY: maxter_green
 
 implicit none
@@ -38,7 +36,8 @@ real(DP) :: &
 
   complex(DP) :: &
              dpsi    (ndmx*npol, nbnd), & ! output: the solution of the linear syst
-             d0psi   (ndmx*npol, nbnd) ! input: the known term
+             d0psi   (ndmx*npol, nbnd)    ! input: the known term
+!             dpsitil (ndmx*npol, nbnd)   ! output: the conjugate solution!
 
   logical :: conv_root ! output: if true the root is converged
 
@@ -89,9 +88,6 @@ real(DP) :: &
   real(DP) :: kter_eff
   ! account the number of iterations with b
   ! coefficient of quadratic form
-  !
-  
-
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
              hold(ndmx*npol ,nbnd) )
   allocate ( gt(ndmx*npol,nbnd), tt(ndmx*npol,nbnd), ht(ndmx*npol,nbnd), &
@@ -100,10 +96,9 @@ real(DP) :: &
   allocate (a(nbnd), c(nbnd))
   allocate (conv ( nbnd))
   allocate (rho(nbnd))
-
- ! WRITE(6,*) g,t,h,hold
- ! Initialize
-
+ !WRITE(6,*) g,t,h,hold
+ !Initialize
+  eu(:) = dcmplx(0.0d0,0.0d0)
   kter_eff = 0.d0
 
   do ibnd = 1, nbnd
@@ -154,6 +149,8 @@ real(DP) :: &
         if (conv (ibnd).eq.0) then
             lbnd = lbnd+1
             rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
+!           trick where we truncate early.
+!           rho(lbnd) = abs(ZDOTC (ngmpol, g(1,ibnd), 1, g(1,ibnd), 1))
         endif
      enddo
 
@@ -182,9 +179,6 @@ real(DP) :: &
             lbnd = lbnd + 1
             call zcopy(ndmx*npol, h(1,ibnd),  1, hold(1,  lbnd), 1)
             call zcopy(ndmx*npol, ht(1,ibnd), 1, htold(1, lbnd), 1)
-! No Copy
-!            call zcopy(ndmx*npol, gp(1,ibnd),  1, hold(1,  lbnd), 1)
-!            call zcopy(ndmx*npol, gtp(1,ibnd), 1, htold(1, lbnd), 1)
             eu(lbnd) = e(ibnd)
         endif
     enddo
@@ -200,10 +194,7 @@ real(DP) :: &
            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
            if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd) )
            a(lbnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
-!Extra Copy
-          c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
-!No Copy
-!           c(lbnd) = ZDOTC (ndim, gtp(1,ibnd), 1, t (1,lbnd), 1)
+           c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
        endif
     enddo
 
@@ -216,6 +207,7 @@ real(DP) :: &
            call ZAXPY (ndmx*npol,  alpha,        h(1,ibnd), 1, dpsi(1,ibnd), 1)
 !HLTIL
 ! xt  = xt  + conjg(alpha) * pt
+!           call ZAXPY (ndmx*npol,  dconjg(alpha), ht(1,ibnd), 1, dpsitil(1,ibnd), 1)
 
 ! r  = r  - alpha        * q
 ! rt = rt - conjg(alpha) * qt
@@ -234,19 +226,14 @@ real(DP) :: &
 ! pold  = p
 ! ptold = pt
 !Extra Copy
-         call ZCOPY (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
-         call ZCOPY (ndmx*npol, ht (1, ibnd), 1, htold (1, ibnd), 1)
+           call ZCOPY (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
+           call ZCOPY (ndmx*npol, ht (1, ibnd), 1, htold (1, ibnd), 1)
 ! p  = rp  +       beta  * pold
 ! pt = rtp + conjg(beta) * ptold
-         call ZCOPY (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
-         call ZCOPY (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
-         call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
-         call ZAXPY (ndmx*npol, dconjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
-!No Copy
-! p  = rp  +       beta  * pold
-! pt = rtp + conjg(beta) * ptold
-!        call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, gp  (1,ibnd), 1)
-!        call ZAXPY (ndmx*npol, conjg(beta), htold (1,ibnd), 1, gtp (1,ibnd), 1)
+           call ZCOPY (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
+           call ZCOPY (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
+           call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
+           call ZAXPY (ndmx*npol, dconjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
         endif
      enddo
   enddo
@@ -262,3 +249,4 @@ real(DP) :: &
   call stop_clock ('cbcgsolve')
   return
 END SUBROUTINE cbcg_solve
+ 

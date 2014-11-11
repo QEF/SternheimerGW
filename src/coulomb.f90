@@ -91,19 +91,19 @@ DO ig = igstart, igstop
          enddo !iw
       if(do_epsil) GOTO 545
       else
-      !  do iw = 1, nfs
-      !     drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
-      !     dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-      !     dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-      !     CALL invfft('Smooth', dvbare, dffts)
-      !     CALL solve_linter (dvbare, iw, drhoscfs)
-      !     CALL fwfft('Smooth', dvbare, dffts)
-      !     CALL fwfft('Dense', drhoscfs(1,iw), dfftp)
-      !     WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
-      !     do igp = 1, sigma_c_st%ngmt
-      !        scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
-      !     enddo
-      !  enddo
+        do iw = 1, nfs
+           drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+           dvbare(:)     = dcmplx(0.0d0, 0.0d0)
+           dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
+           CALL invfft('Smooth', dvbare, dffts)
+           CALL solve_linter (dvbare, iw, drhoscfs)
+           CALL fwfft('Smooth', dvbare, dffts)
+           CALL fwfft('Dense', drhoscfs(:,iw), dfftp)
+           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
+           do igp = 1, sigma_c_st%ngmt
+              scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
+           enddo
+        enddo
       endif
 ENDDO 
 

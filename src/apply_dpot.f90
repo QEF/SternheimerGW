@@ -13,40 +13,22 @@ SUBROUTINE apply_dpot(aux1, dvscfins, current_spin)
 USE kinds, ONLY : DP
 USE noncollin_module, ONLY : noncolin, npol, nspin_mag
 USE spin_orb, ONLY : domag
-USE gsmooth, ONLY : nrxxs 
+!USE gsmooth, ONLY : dffts%nnr 
+USE fft_base, ONLY : dffts
 ! USE gvect, ONLY : nrxx
 
 IMPLICIT NONE
-COMPLEX(DP), INTENT(IN) :: dvscfins(nrxxs,nspin_mag)
-!COMPLEX(DP), INTENT(IN) :: dvbare(nrxxs)
-COMPLEX(DP), INTENT(INOUT) :: aux1(nrxxs,npol)
+COMPLEX(DP), INTENT(IN) :: dvscfins(dffts%nnr,nspin_mag)
+!COMPLEX(DP), INTENT(IN) :: dvbare(dffts%nnr)
+COMPLEX(DP), INTENT(INOUT) :: aux1(dffts%nnr,npol)
 INTEGER, INTENT(IN) :: current_spin
 
 COMPLEX(DP) :: sup, sdwn
 INTEGER :: ir
 
-IF (noncolin) THEN
-   IF (domag) then
-      DO ir = 1, nrxxs
-         sup=aux1(ir,1)*(dvscfins(ir,1)+dvscfins(ir,4))+ &
-             aux1(ir,2)*(dvscfins(ir,2)-(0.d0,1.d0)*dvscfins(ir,3))
-         sdwn=aux1(ir,2)*(dvscfins(ir,1)-dvscfins(ir,4)) + &
-              aux1(ir,1)*(dvscfins(ir,2)+(0.d0,1.d0)*dvscfins(ir,3))
-         aux1(ir,1)=sup
-         aux1(ir,2)=sdwn
-      ENDDO
-   ELSE
-      DO ir = 1, nrxxs
-         aux1(ir,:)=aux1(ir,:)*dvscfins(ir,1)
-      ENDDO
-   ENDIF
-ELSE
-  DO ir = 1, nrxxs
-      aux1(ir,1)=aux1(ir,1)*dvscfins(ir,current_spin)
-      !aux1(ir,1)=aux1(ir,1)*dvbare(ir)
-      !WRITE(6, '("dvpot = ", 3f7.3)' ) aux1(ir,1)
-  ENDDO
-ENDIF
+DO ir = 1, dffts%nnr
+   aux1(ir,1)=aux1(ir,1)*dvscfins(ir,current_spin)
+ENDDO
 
 RETURN
 END SUBROUTINE apply_dpot
