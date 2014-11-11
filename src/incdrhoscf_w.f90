@@ -71,7 +71,6 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
         psi (nls (igk (ig) ) ) = evc (ig, ibnd)
      enddo
 
-     !call cft3s (psi, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
      CALL invfft('Wave', psi, dffts)
 
      dpsic(:) = (0.d0, 0.d0)
@@ -79,7 +78,6 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
         dpsic (nls (igkq (ig) ) ) = dpsi (ig, ibnd)
      enddo
 
-     !call cft3s (dpsic, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
      CALL invfft('Wave', dpsic, dffts)  
   
      do ir = 1, dffts%nnr

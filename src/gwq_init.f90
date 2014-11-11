@@ -122,7 +122,6 @@ SUBROUTINE gwq_init()
      !
      ! ... read the wavefunctions at k+1
      !
-     print*,  nbnd, ikq
      CALL get_buffer( evq, lrwfc, iuwfc, ikq )
      !
      do ig = 1, npwq

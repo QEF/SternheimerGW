@@ -231,9 +231,6 @@ do iq = 1, nksq
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
                                                             gr_A_shift(igkq_ig(igp),iw)
-!Full Left-Handed Green's fxn
-!                   green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-!                                                            conjg(gr_A_shift(igkq_ig(igp),iw))
                 enddo
              enddo
          gveccount = gveccount + 1
@@ -246,34 +243,30 @@ do iq = 1, nksq
                x = et(ibnd, ikq) - w_ryd(iw)
                dirac = eta / pi / (x**2.d0 + eta**2.d0)
                green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) + &
-                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))    * &
+                                                        tpi*ci*conjg(evq(igkq_ig(ig), ibnd))   * &
                                                         evq(igkq_ig(igp), ibnd) * dirac
-!@ HL conjg G
-!              green(igkq_tmp(ig), igkq_tmp(igp), iw) = green(igkq_tmp(ig), igkq_tmp(igp), iw) - &
-!                                                       tpi*ci*conjg(evq(igkq_ig(ig), ibnd)) * &
-!                                                       evq(igkq_ig(igp), ibnd)  * dirac
             enddo 
            enddo!igp
          enddo!iw
        enddo !blocks
      enddo !ig
 
-#ifdef __PARA
+!#ifdef __PARA
 !upper limit on mp_barrier communicate?
-    CALL mp_barrier(inter_pool_comm)
+!    CALL mp_barrier(inter_pool_comm)
 !Collect all elements of green's matrix from different processors.
-    CALL mp_sum (green, inter_pool_comm )
-    CALL mp_barrier(inter_pool_comm)
-    if(ionode) then
-#endif
+!    CALL mp_sum (green, inter_pool_comm )
+!    CALL mp_barrier(inter_pool_comm)
+!    if(ionode) then
+!#endif
     do iw = 1, nwgreen
        rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
        CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)
     enddo
-#ifdef __PARA
-    endif
-    CALL mp_barrier(inter_pool_comm)
-#endif
+!#ifdef __PARA
+!    endif
+!    CALL mp_barrier(inter_pool_comm)
+!#endif
 ENDDO !iq
 
 if(allocated(niters)) DEALLOCATE(niters)

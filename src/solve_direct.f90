@@ -65,7 +65,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   ! counter on frequencies.
   !
   integer :: iw, allocatestatus
-  integer :: irr, imode0, npe
+  integer :: irr
   !
   ! input: the irreducible representation
   ! input: the number of perturbation
@@ -101,13 +101,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                               dbecsum (:,:,:), dbecsum_nc(:,:,:,:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
-
-
-  ! ldos : local density of states af Ef
-  ! ldoss: as above, without augmentation charges
-  ! dbecsum: the derivative of becsum
-  ! becsum1 PAW array.
-  REAL(DP), allocatable :: becsum1(:,:,:)
 
   !For approx, mixing scheme.
   real(kind=DP) :: DZNRM2
@@ -157,8 +150,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   IF (rec_code_read > 20 ) RETURN
 
   !HL- Allocate arrays for dV_scf (need to alter these from (dfftp%nnr, nspin_mag, npe) to just (dfftp%nnr, nspin_mag).
-  npe    = 1
-  imode0 = 1
   irr    = 1
   ipert  = 1
   lter   = 0
@@ -212,11 +203,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
        !Reads unperturbed wavefuctions psi(k) and psi(k+q)
         if (nksq.gt.1) then
            if (lgamma) then
-           !   call davcio (evc, lrwfc, iuwfc, ikk, - 1)
               call get_buffer (evc, lrwfc, iuwfc, ikk)
            else
-           !   call davcio (evc, lrwfc, iuwfc, ikk, - 1)
-           !   call davcio (evq, lrwfc, iuwfc, ikq, - 1)
               call get_buffer (evc, lrwfc, iuwfc, ikk)
               call get_buffer (evq, lrwfc, iuwfc, ikq)
            endif
@@ -255,13 +243,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
              call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
                                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                                   npol, niters, alphabeta)
-
- !          if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint ", i4," ibnd ", i4, &
- !              &              "root not converged ", e10.5)')  &
- !              &                ik , ibnd, anorm
- !          if (mod(ik,10).eq.0) WRITE(1000+mpime, '(5x,"kpoint", i4, e10.3, 10i4)') ik, anorm, niters
-
-           !if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
 
 !          dpsi = dpsi^{+}
            dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
@@ -333,7 +314,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     enddo
     averlt = DBLE (ltaver) / lintercall
     tcpu = get_clock ('GW')
-    dr2 = dr2 / DBLE(npe)
     CALL flush_unit( stdout )
     rec_code=10
   enddo !loop on kter (iterations)

@@ -88,12 +88,17 @@ SUBROUTINE setup_nscf_green(xq)
   magnetic_sym = noncolin .AND. domag 
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
   sym(1:nsym)=.true.
+  minus_q=.false.
+
   call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
   IF ( .not. time_reversal ) minus_q = .false.
   ! Here we re-order all rotations in such a way that true sym.ops.
   ! are the first nsymq; rotations that are not sym.ops. follow
    nsymq = copy_sym ( nsym, sym )
+
+   print*, "xq", xq, nsymq
    call inverse_s ( )
+
   ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
@@ -128,8 +133,8 @@ SUBROUTINE setup_nscf_green(xq)
   ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
   ! ... symmetry operations. 
 
-  CALL irreducible_BZ (nrot, s, nsymq, minus_q, at, bg, npk, nkstot, xk, wk, &
-                       t_rev)
+  CALL irreducible_BZ (nrot, s, nsymq, minus_q, magnetic_sym, &
+                       at, bg, npk, nkstot, xk, wk, t_rev)
 
   !wk(contains weights 
   CALL set_kplusq( xk, wk, xq, nkstot, npk )
