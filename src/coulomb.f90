@@ -38,6 +38,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE gvecs,      ONLY : nls
   USE fft_base,   ONLY : dfftp, dffts
   USE fft_interfaces, ONLY : invfft, fwfft
+  USE klist,      ONLY : lgauss
 
   IMPLICIT NONE
 
@@ -91,6 +92,10 @@ DO ig = igstart, igstop
          enddo !iw
       if(do_epsil) GOTO 545
       else
+        if(qg2.lt.0.001.AND.lgauss) then 
+          PRINT*, "Not calculating static electric field applied to metal, cycling coulomb"
+          CYCLE
+        endif
         do iw = 1, nfs
            drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
            dvbare(:)     = dcmplx(0.0d0, 0.0d0)

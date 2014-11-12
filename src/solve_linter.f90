@@ -59,11 +59,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE modes,                ONLY : npertx, npert, u, t, irotmq, tmq, &
                                    minus_q, irgq, nsymq, rtau 
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
-  USE mp,              ONLY : mp_sum, mp_barrier
+  USE mp,                   ONLY : mp_sum, mp_barrier
   USE buffers,              ONLY : save_buffer, get_buffer
-  USE mp_pools,        ONLY : inter_pool_comm
-  USE mp_bands,        ONLY : intra_bgrp_comm, ntask_groups, me_bgrp
-  USE mp_world,        ONLY : mpime
+  USE mp_pools,             ONLY : inter_pool_comm
+  USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups, me_bgrp
+  USE mp_world,             ONLY : mpime
   USE gvect,           ONLY : ngm, g, nl
   USE gvecs,           ONLY : nls, doublegrid
   USE fft_base,        ONLY : dfftp, dffts
@@ -365,7 +365,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
             call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
      endif
 
-     call mp_sum ( dvscfout, inter_pool_comm )
+!     call mp_sum ( dvscfout, inter_pool_comm )
 !    if (.not.lgamma_gamma) then
 !         call psyme (dvscfout)
 !         IF ( noncolin.and.domag ) CALL psym_dmage(dvscfout)
@@ -414,7 +414,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 #else
      averlt = DBLE (ltaver) / lintercall
 #endif
-     tcpu = get_clock ('GW')
+     tcpu = get_clock ('SGW')
      dr2 = dr2 
      CALL flush_unit( stdout )
      rec_code=10
@@ -423,10 +423,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 155 iter0=0
 
-!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!         "secs av.it.:",f5.1)') iter, tcpu, averlt
-!   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
-!          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
+   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+         "secs av.it.:",f5.1)') iter, tcpu, averlt
+   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
+          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
 !   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 

@@ -9,7 +9,7 @@ SUBROUTINE do_stern()
                           do_q0_only, solve_direct, tinvert, lrpa, do_epsil
   USE freq_gw,    ONLY : nfs
   USE units_gw,   ONLY : lrcoul, iuncoul
-
+  USE klist,      ONLY : lgauss
 
 IMPLICIT NONE
 
@@ -26,6 +26,9 @@ IMPLICIT NONE
   setup_pw = .TRUE.
   do_band  = .TRUE.
   do_matel = .TRUE.
+
+
+  IF(lgauss) print*, 'SYSTEM IS METALLIC'
 
   DO iq = w_of_q_start, nqs
     scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
