@@ -57,6 +57,7 @@ unfold_w.o\
 invert_epsilon.o\
 green_linsys_shift.o\
 cBiCG_solve_green.o\
+h_psi_all.o\
 green_multishift.o\
 ch_psi_all_green.o\
 sigma_c.o\

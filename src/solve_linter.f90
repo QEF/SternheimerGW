@@ -159,7 +159,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
  
-  external ch_psi_all, cg_psi, cch_psi_all_fix
+  external ch_psi_all, cg_psi, h_psi_all
   COMPLEX(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
 
   allocate (dpsi(npwx*npol, nbnd))
@@ -276,7 +276,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               call start_clock ('vpsifft')
               do ibnd = 1, nbnd_occ (ikk)
                  call cft_wave (evc (1, ibnd), aux1, +1)
-                 call apply_dpot(dffts%nnr,aux1, dvscfins(1,iw), current_spin)
+                 call apply_dpot(aux1, dvscfins(1,iw), current_spin)
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
               call stop_clock ('vpsifft')
@@ -324,7 +324,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        conv_root = .true.
 
        IF (iw.eq.1) THEN
-               CALL cgsolve_all (ch_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+               CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                dpsim(:,:) = dpsip(:,:)
                dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
@@ -350,9 +350,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          ! perturbation. It is called at the end of the computation of the
          ! change of the wavefunction for a given k point.
            weight = wk (ikk)
-           call incdrhoscf (drhoscf(1,iw) , weight, ik, dbecsum(1,1,current_spin))
+           call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
+                              dbecsum(1,1,current_spin), dpsi(1,1))
      enddo 
-     call mp_sum ( dbecsum, intra_bgrp_comm )
+
+!HLPARA
+!     call mp_sum ( dbecsum, intra_bgrp_comm )
 
      if (doublegrid) then
          do is = 1, nspin_mag
@@ -368,16 +371,25 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !         IF ( noncolin.and.domag ) CALL psym_dmage(dvscfout)
 !    endif
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw), 1, dvscfout(1,iw),1)
+
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
+
      if (meandvb.lt.1.d-8) then 
          CALL fwfft ('Dense', dvscfout(:,iw), dfftp)
          dvscfout ( nl(1), current_spin ) = (0.d0, 0.0d0)
          CALL invfft ('Dense', dvscfout(:,iw), dfftp)
      endif
+
+!    call mp_sum ( drhoscf, inter_pool_comm )
+!    call mp_sum ( drhoscfh, inter_pool_comm )
+
+! for q->0 the Fermi level can shift.
+! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)
+
      call dv_of_drho (1, dvscfout(1,iw), .true.)
+
      if (iw.eq.1) then
 !Density reponse in real space should be real at zero freq no matter what!
-        dvscfout(:,iw) = dcmplx(real(dvscfout(:,iw)), 0.0d0)
 !just using standard broyden for the zero freq. case.
         call mix_potential(2*dfftp%nnr*nspin_mag, dvscfout(1,iw), dvscfin(1,iw), alpha_mix(kter), &
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
@@ -403,14 +415,23 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      averlt = DBLE (ltaver) / lintercall
 #endif
      tcpu = get_clock ('GW')
-     dr2 = dr2 / DBLE(npe)
+     dr2 = dr2 
      CALL flush_unit( stdout )
      rec_code=10
      if (convt) goto 155
   enddo !loop on kter (iterations)
 
 155 iter0=0
+
+!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!         "secs av.it.:",f5.1)') iter, tcpu, averlt
+!   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
+!          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
+!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+
   drhoscf(:,iw) = dvscfin(:,iw)
+
   if (convt) then
    if (fildvscf.ne.' ') then
        write(6, '("fildvscf")') 
