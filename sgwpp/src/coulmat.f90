@@ -403,37 +403,36 @@ do iq = 1, nks
       ikp = nkp
       xkp(:) = xk(:,ik)-xq(:)
 !read in wavefunctions at k: 
-     psink(:,:)   = (0.0d0,0.0d0)
-     psinpkp(:,:) = (0.0d0,0.0d0)
+      psink(:,:)   = (0.0d0,0.0d0)
+      psinpkp(:,:) = (0.0d0,0.0d0)
 
-     CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-     CALL davcio (evc, 2*nwordwfc, iunwfc, ik, -1 )
+      CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+      CALL davcio (evc, 2*nwordwfc, iunwfc, ik, -1 )
 !HL SHOULD ONLY STORE BANDS AROUND FERMI LEVEL
-     psink(nls(igk(1:npw)), :) = evc(1:npw,:)
+      psink(nls(igk(1:npw)), :) = evc(1:npw,:)
 !read in wavefunctions at k' = k-q: 
-     CALL gk_sort (xkp(1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-     CALL davcio (evc, 2*nwordwfc, iunwfc, ikp, -1 )
-     psinpkp(nls(igk(1:npw)),:) = evc(1:npw,:)
-
+      CALL gk_sort (xkp(1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+      CALL davcio (evc, 2*nwordwfc, iunwfc, ikp, -1 )
+      psinpkp(nls(igk(1:npw)),:) = evc(1:npw,:)
 !LOOP over bands calculated f functions etc.
-     do ibnd = nbndmin, nbnd
-        CALL invfft ('Wave', psink(:,ibnd), dffts)
-        do jbnd = nbndmin, nbnd
+      do ibnd = nbndmin, nbnd
+         CALL invfft ('Wave', psink(:,ibnd), dffts)
+         do jbnd = nbndmin, nbnd
 !calculate f_{nk,npkp}(\G)
-          psi_temp = (0.0d0, 0.0d0)
-          psi_temp = psinpkp(:,jbnd)
-          CALL invfft ('Wave', psi_temp(:), dffts)
-          fnknpkp = (0.0d0,0.0d0)
-          do ir = 1, dffts%nnr  
-             fnknpkp(ir) = fnknpkp(ir) +  conjg(psi_temp(ir))*psink(ir,ibnd)
-          enddo
-          CALL fwfft ('Wave', fnknpkp(:), dffts)
-          do ig = 1, ngcoul 
+            psi_temp = (0.0d0, 0.0d0)
+            psi_temp = psinpkp(:,jbnd)
+            CALL invfft ('Wave', psi_temp(:), dffts)
+            fnknpkp = (0.0d0,0.0d0)
+            do ir = 1, dffts%nnr  
+               fnknpkp(ir) = fnknpkp(ir) +  conjg(psi_temp(ir))*psink(ir,ibnd)
+            enddo
+            CALL fwfft ('Wave', fnknpkp(:), dffts)
+            do ig = 1, ngcoul 
 !nolocal fields do igp = 1, ngcoul
-                  vcnknpkp(ik, ikp, ibnd, jbnd) = vcnknpkp(ik, ikp, ibnd, jbnd) + &
-                                                  conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))
+               vcnknpkp(ik, ikp, ibnd, jbnd) = vcnknpkp(ik, ikp, ibnd, jbnd) + &
+                                               conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))
 !               enddo
-          enddo
+            enddo
         enddo
      enddo!ibnd
    enddo
@@ -524,15 +523,13 @@ IMPLICIT NONE
     enddo
    enddo
   enddo
-!
 !CALL mp_sum(mu, inter_pool_comm)
 !for aluminum we take debye temperature is 428 K convert to rydberg.
   debye_e = 0.036
 !Factors not included when we calculate V^{c}_{nkn'k'}.
   mu = mu/omega/nqs
   print*, "\mu", mu
-  print*, "\mu^{*}", mu/(1+mu*log((11.22/RYTOEV)/debye_e))
-
+  print*, "\mu^{*}", mu/(1+mu*log((12.43/RYTOEV)/debye_e))
 END SUBROUTINE fsaverage
 
 REAL(DP) FUNCTION lind_eps(qg2)
@@ -543,7 +540,7 @@ REAL(DP) FUNCTION lind_eps(qg2)
 !qtf tommy fermi wave vector for Al... (according to my calculations)
 
   x = qg2/(2*kf)
-  lind_eps = 1.0d0 + (qtf)**2.0/(2.0*x**2)*(1.0d0+(1.0d0/(2.0*x))*(1-x**2)*log(abs((1+x)/(1-x))))
+  lind_eps = 1.0d0 + (qtf)**2.0/(2.0*qg2**2)*(1.0d0+(1.0d0/(2.0*x))*(1-x**2)*log(abs((1+x)/(1-x))))
   !lind_eps = 1.0d0 
   RETURN
 END FUNCTION
