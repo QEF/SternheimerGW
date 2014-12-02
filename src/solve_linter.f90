@@ -291,8 +291,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
         !
            if (where_rec=='solve_lint'.or.iter > 1) then
-              call get_buffer( dpsip, lrdwf, iudwf, ik)
-              call get_buffer( dpsim, lrdwf, iudwf, ik)
+              call get_buffer( dpsip, lrdwf, iudwfp, ik)
+              call get_buffer( dpsim, lrdwf, iudwfm, ik)
 
              !  dpsi(:,:)  = (0.d0, 0.d0) 
              !  dpsim(:,:) = (0.d0, 0.d0) 
@@ -345,8 +345,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            nrec1 =  ik
          ! calculates dvscf, sum over k => dvscf_q_ipert
          ! incdrhoscf:  This routine computes the change of the charge density due to the
-           call save_buffer (dpsim, lrdwf, iudwf, ik)
-           call save_buffer (dpsip, lrdwf, iudwf, ik)
+           call save_buffer (dpsim, lrdwf, iudwfp, ik)
+           call save_buffer (dpsip, lrdwf, iudwfm, ik)
          ! perturbation. It is called at the end of the computation of the
          ! change of the wavefunction for a given k point.
            weight = wk (ikk)
