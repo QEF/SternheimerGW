@@ -13,7 +13,7 @@ SUBROUTINE do_stern()
 
 IMPLICIT NONE
 
-  INTEGER :: iq, ik, ig, igstart, igstop, ios
+  INTEGER :: iq, ik, ig, igstart, igstop, ios, iq1, iq2
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
   LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel
 
@@ -30,7 +30,17 @@ IMPLICIT NONE
 
   IF(lgauss) print*, 'SYSTEM IS METALLIC'
 
-  DO iq = w_of_q_start, nqs
+  if(.not.do_epsil) then
+      iq1 = w_of_q_start
+      iq2 = nqs
+  else
+  ! In case we want to trace a line through the brillouin zone
+  ! or get the screening for a particular grid.
+      iq1 = 1
+      iq2 = num_k_pts
+  endif
+    
+   DO iq = iq1, iq2
     scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
     CALL prepare_q(do_band, do_iq, setup_pw, iq)
     do_matel = .FALSE.
@@ -62,10 +72,8 @@ IMPLICIT NONE
        CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
        !ENDIF
        CALL clean_pw_gw(iq)
-    if(do_q0_only) GOTO 124
-    if(do_epsil.and.(iq.eq.nqs)) GOTO 126
+      !if(do_epsil.and.(iq.eq.nqs)) GOTO 126
   ENDDO
-124 CONTINUE
 126 CONTINUE
 WRITE(stdout, '("Finished Calculating Screened Coulomb")')
    DEALLOCATE( scrcoul_g )

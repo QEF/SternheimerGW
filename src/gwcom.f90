@@ -480,7 +480,7 @@ MODULE disp
  ! if true specifies the k-points we want to look 
  ! at in the brillouin zone specified by user in punch card.  
    LOGICAL  :: kpoints 
-   REAL(DP) :: xk_kpoints(3,10)
+   REAL(DP) :: xk_kpoints(3, 2000)
    INTEGER  :: num_k_pts
    INTEGER  :: w_of_q_start
   

@@ -11,15 +11,15 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 ! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
 ! The dielectric matrix is given by:
 ! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
-
   USE kinds,      ONLY : DP
   USE ions_base,  ONLY : nat
   USE constants,  ONLY : e2, fpi, RYTOEV, pi, eps8
   USE cell_base,  ONLY : alat, tpiba2, omega
   USE lsda_mod,   ONLY : nspin
   USE io_global,  ONLY : stdout, ionode
-  USE uspp,       ONLY: okvan
-  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont, solve_direct, do_epsil
+  USE uspp,       ONLY : okvan
+  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
+                         solve_direct, do_epsil, do_q0_only
   USE partial,    ONLY : done_irr, comp_irr
   USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
@@ -69,6 +69,7 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
 DO ig = igstart, igstop
+      if (do_q0_only.and.ig.gt.1) CYCLE
       qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
       if(solve_direct) then
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
@@ -94,6 +95,7 @@ DO ig = igstart, igstop
       else
         if(qg2.lt.0.001.AND.lgauss) then 
           PRINT*, "Not calculating static electric field applied to metal, cycling coulomb"
+          WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
           CYCLE
         endif
         do iw = 1, nfs

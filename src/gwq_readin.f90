@@ -373,7 +373,7 @@ SUBROUTINE gwq_readin()
      CALL mp_bcast(ios, meta_ionode_id, world_comm )
      CALL errore ('pwq_readin', 'reading number of kpoints', ABS(ios) )
      CALL mp_bcast(num_k_pts, meta_ionode_id, world_comm )
-     if (num_k_pts > 10) call errore('phq_readin','Too many k-points',1) 
+     if (num_k_pts > 2000) call errore('phq_readin','Too many k-points',1) 
      if (num_k_pts < 1) call errore('phq_readin','Too few kpoints',1) 
      IF (meta_ionode) THEN
         IF ( TRIM(card)=='K_POINTS'.OR. &

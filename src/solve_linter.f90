@@ -388,6 +388,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      call dv_of_drho (1, dvscfout(1,iw), .true.)
 
+     nmix_gw = 5
+
      if (iw.eq.1) then
 !Density reponse in real space should be real at zero freq no matter what!
 !just using standard broyden for the zero freq. case.

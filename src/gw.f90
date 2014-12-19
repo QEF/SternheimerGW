@@ -33,6 +33,7 @@ PROGRAM gw
   CALL freqbins()
   CALL sigma_grids()
   CALL opengwfil()
+!Calculation W
   IF(do_coulomb) CALL do_stern()
   do_iq=.TRUE.
   setup_pw = .TRUE.
@@ -41,6 +42,7 @@ PROGRAM gw
   ik=1
   CALL run_nscf(do_band, do_matel, ik)
   CALL initialize_gw()
+!Calculation G
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
   IF(do_green)   CALL green_linsys_shift(ik)

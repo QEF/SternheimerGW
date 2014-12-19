@@ -72,15 +72,16 @@
   !data w0 / 0.01d0 /, w / maxter * 1.d0 /
 !HL Hard coding the number of iterations
   data w0 /0.01d0/, w/maxter*1.d0/
-  !
- 
   !if(mpime.eq.0) write(6,*)w
-
   do n = 1, ndim
      vout (n) = vout (n) - vin (n)
   enddo
   dr2 = DZNRM2 (ndim, vout, 1) **2
   ndimtot = ndim
+
+  !call mp_sum (dr2, intra_bgrp_comm)
+  !call mp_sum (ndimtot, intra_bgrp_comm)
+
   dr2 = (sqrt (dr2) / ndimtot) **2
   !
   conv = dr2.lt.tr2

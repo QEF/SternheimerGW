@@ -115,7 +115,9 @@ SUBROUTINE setup_nscf_green(xq)
      !  calculations
      !
      nkstot = nks_start
-     xk(:,1:nkstot) = xk_start(:,1:nkstot)
+     !xk(:,1:nkstot) = xk_start(:,1:nkstot)
+  !@ 
+     xk(:,1:nkstot) = -xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)
   else
      !
