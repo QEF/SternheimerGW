@@ -115,6 +115,7 @@ SUBROUTINE freqbins()
   WRITE(stdout, '(4x, 3f10.4 )') wsigmamin, wsigmamax, deltaw 
   WRITE(stdout, '(5x, "wcoulmax:", 1f10.4)'), wcoulmax
   WRITE(stdout, '(/5x, "nwgreen:", i5)'), nwgreen
+  WRITE(stdout, '(/5x, "nwcoul:", i5)'), nwcoul
 
   WRITE(stdout,'(//5x, "Dynamic Screening Model:")')
   IF(godbyneeds) then

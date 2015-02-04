@@ -37,11 +37,12 @@ IMPLICIT NONE
 
    counter = 0
 
-   eta = 0.007
+   !eta = 0.02
+   eta = 0.01
 
    wcoulmin   =   0.00
-   wcoulmax   = 100.00
-   deltaws    =   0.2
+   wcoulmax   = 25.00
+   deltaws    =   0.007
    nwcoul  = 1 + ceiling((wcoulmax - wcoulmin)/deltaws)
 
    allocate (wcoul(nwcoul))
@@ -51,17 +52,21 @@ IMPLICIT NONE
       wcoul(iw) = wcoulmin + (wcoulmax-wcoulmin)/float(nwcoul-1)*float(iw-1)
    enddo
    w_ryd = wcoul/RYTOEV
-   do iqrec = 1,6,3
+  
+   !Temporary nfs=73
+   nfs = 101
 
+    do iqrec = 1,7
+   !do iqrec = 1,1
       scrcoul_g(:,:,:)   = (0.0d0, 0.0d0)
       scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
       CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
-    do ig    = 1,8,4
-!     do igp   = 1,8,4
+    do ig    = 1, 5 
+  !   do igp   = 1,8,4
       igp   = ig
      write(6,'("All good so far.")')
-!    write(6, '("#iq ", 3f12.7, "ig ", 3f12.7, "igp ", 3f12.7)') x_q(1:3,iqrec), g(1:3,ig), g(1:3,igp)
-!    write(200+counter, '("#iq ", 3f12.7, "ig ", 3f12.7, "igp ", 3f12.7)') x_q(1:3,iqrec), g(1:3,ig), g(1:3,igp)
+ !   write(6, '("#iq ", 3f12.7, "ig ", 3f12.7)') x_q(1:3,iqrec), g(1,1)
+ !   write(200+counter, '("#iq ", 3f12.7, "ig ", 3f12.7, "igp ", 3f12.7)') x_q(1:3,iqrec), g(1:3,ig), g(1:3,igp)
         do iw = 1, nfs
            z(iw) = fiu(iw)
            u(iw) = scrcoul_g(ig, igp, iw)
@@ -73,7 +78,7 @@ IMPLICIT NONE
         enddo
         write(6,'("All good so far.")')
         call pade_coeff ( nfs, z, u, a)
-!    write(100+counter,'("#iq", 3f12.7, "ig", 3f12.7, "igp", 3f12.7)') x_q(1:3,iqrec), g(1:3,ig), g(1:3,igp)
+        write(100+counter,'("#iq", 3f12.7, "ig", 3f12.7, "igp", 3f12.7)') x_q(1:3,iqrec), g(1:3,ig), g(1:3,igp)
         do iw = 1, nwcoul
            call pade_eval (nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
            if (ig.eq.igp) then
@@ -83,7 +88,7 @@ IMPLICIT NONE
            endif
         enddo
         counter=counter+1
-!!     end do!igp
+!     end do!igp
     end do!ig
    end do!iqrec
 end subroutine pade_eps

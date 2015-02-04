@@ -62,7 +62,7 @@ SUBROUTINE gwq_readin()
   USE paw_variables, ONLY : okpaw
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
                             greenzero
-  USE gwsigma,       ONLY : ecutsig, nbnd_sig, ecutsex, ecutsco, ecutpol, ecutgrn
+  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco
   USE gwsymm,        ONLY : use_symm
   !
   !
@@ -96,12 +96,12 @@ SUBROUTINE gwq_readin()
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, fpol, lrpa, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, ecutsig, nbnd_sig, eta, kpoints,&
+                       start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
-                       padecont, cohsex, ecutpol, ecutgrn, multishift, plasmon, do_sigma_extra,&
+                       padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3
 
@@ -204,15 +204,11 @@ SUBROUTINE gwq_readin()
   do_pade_coul    = .FALSE.
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
-  ecutsig      = 5.0
   plasmon      = 17.0d0
   greenzero    = 0.0d0 
- 
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
-  ecutgrn      = ecutsig
-  ecutpol      = ecutsig
-  ecutsco      = ecutgrn
+  ecutsco      = 5.0
   ecutsex      = 5.0
   nbnd_sig     = 8
 

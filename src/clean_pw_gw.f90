@@ -40,8 +40,6 @@ SUBROUTINE clean_pw_gw(iq)
   !
   CALL close_gwq( .TRUE. )
   !
-  !CALL restore_ph_input_variables()
-  !  tmp_dir=tmp_dir_save
   !
 RETURN
 END SUBROUTINE clean_pw_gw

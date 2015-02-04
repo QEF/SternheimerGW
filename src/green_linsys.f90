@@ -123,10 +123,7 @@ DO iq = w_green_start, nksq
 !when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
-!need to loop over...
-!This is a hack version of gk_sort... is there something wrong with the logic here...
-!ngmsig is just the number of G vectors, really I should be packing an array sorted up to
-!ecutsig ... I have literally been stuck on this for years... 
+
       counter = 0
       igkq_tmp(:) = 0
       igkq_ig(:)  = 0 

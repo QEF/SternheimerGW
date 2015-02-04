@@ -501,9 +501,6 @@ MODULE gwsigma
 ! HL self energy is a huge quantity!
   INTEGER  :: nbnd_sig
 ! Cutoff for the sigma + exchange/correlation.
-  REAL(DP) :: ecutsig
-  REAL(DP) :: ecutpol
-  REAL(DP) :: ecutgrn
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
 !OLD FFT ROUTINES

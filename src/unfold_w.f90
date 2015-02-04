@@ -46,8 +46,6 @@ if(nsymq.eq.1)GOTO 126
 !stack ngmdone list with vectors that aren't unique:
    xq_loc = xq
    CALL cryst_to_cart(1, xq_loc(:), at, -1)
-   write(6,*) xq_loc
-
 ngmdonelist(:) = 0
 ngmdone = 0
 do ig = 1, ngmunique

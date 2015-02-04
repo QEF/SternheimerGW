@@ -28,14 +28,14 @@ IMPLICIT NONE
   do_matel = .TRUE.
 
 
-  IF(lgauss) print*, 'SYSTEM IS METALLIC'
+  IF(lgauss) WRITE(stdout, '(//5x,"SYSTEM IS METALLIC")')
 
   if(.not.do_epsil) then
       iq1 = w_of_q_start
       iq2 = nqs
   else
   ! In case we want to trace a line through the brillouin zone
-  ! or get the screening for a particular grid.
+  ! or get the screening for a particular grid q points (i.e. coulomb matel).
       iq1 = 1
       iq2 = num_k_pts
   endif

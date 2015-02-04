@@ -96,15 +96,14 @@ SUBROUTINE setup_nscf_green(xq)
   ! are the first nsymq; rotations that are not sym.ops. follow
    nsymq = copy_sym ( nsym, sym )
 
-   print*, "xq", xq, nsymq
    call inverse_s ( )
 
   ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
-    if (invsymq)      WRITE(6,'("SYSTEM HAS INVERSION SYMMETRY")')
-    if (.not.invsymq) WRITE(6,'("SYSTEM DOES NOT HAVE INVERSION")')
+    if (invsymq)      WRITE(6,'("qpoint does not have inversion symmetry")')
+    if (.not.invsymq) WRITE(6,'("qpoint does not have inversion symmetry")')
   ! Since the order of the s matrices is changed we need to recalculate:
     call s_axis_to_cart () 
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais

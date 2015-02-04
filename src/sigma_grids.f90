@@ -46,6 +46,7 @@ SUBROUTINE sigma_grids()
         gkcut = MAX (gkcut, SQRT ( SUM(xk (1:3, kpoint)**2) ) )
      ENDDO
   ENDIF
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!! EXCHANGE GRID !!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -70,10 +71,12 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, 3i4)') sigma_x_st%nr1t, sigma_x_st%nr2t, sigma_x_st%nr3t
   WRITE(stdout, '(5x, "G-Vects Exx:")')
   WRITE(stdout, '(5x, f10.7, i4)') sigma_x_st%ecutt, sigma_x_st%ngmt
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!! CORRELATION GRID !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sigma_c_st%ecutt  = ecutsco
+  sigma_c_st%ecutt   = ecutsco
   sigma_c_st%gcutmt  = ecutsco/tpiba2
   gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
 !Generate auxilliary exchange grid.
@@ -83,7 +86,7 @@ SUBROUTINE sigma_grids()
   enddo
   CALL set_custom_grid(sigma_c_st)
   CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
-  CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_x_st%gcutmt, &
+  CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_c_st%gcutmt, &
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
   CALL gvec_init(sigma_c_st, sigma_c_st%ngmt, inter_pool_comm)
