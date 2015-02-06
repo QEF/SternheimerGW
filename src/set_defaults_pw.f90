@@ -102,8 +102,8 @@ SUBROUTINE setup_nscf_green(xq)
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
-    if (invsymq)      WRITE(6,'("qpoint does not have inversion symmetry")')
-    if (.not.invsymq) WRITE(6,'("qpoint does not have inversion symmetry")')
+    if (invsymq)      WRITE(6,'(\5x, "qpoint does not have inversion symmetry")')
+    if (.not.invsymq) WRITE(6,'(\5x, "qpoint does not have inversion symmetry")')
   ! Since the order of the s matrices is changed we need to recalculate:
     call s_axis_to_cart () 
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais

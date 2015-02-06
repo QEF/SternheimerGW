@@ -380,8 +380,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          CALL invfft ('Dense', dvscfout(:,iw), dfftp)
      endif
 
-!    call mp_sum ( drhoscf, inter_pool_comm )
-!    call mp_sum ( drhoscfh, inter_pool_comm )
+     call mp_sum ( drhoscf, inter_pool_comm )
+     call mp_sum ( drhoscfh, inter_pool_comm )
+!     IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
+
 
 ! for q->0 the Fermi level can shift.
 ! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)

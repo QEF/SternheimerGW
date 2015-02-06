@@ -62,7 +62,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   starting_wfc      = 'atomic'
   restart = ext_restart
   conv_ions=.true.
-! Generate all eigenvectors in IBZ_{k}.
+! Generate all eigenvectors in IBZ_{k} for Green's function or IBZ_{q} otherwise.
   if(do_matel) nbnd = nbnd_sig
   CALL setup_nscf_green (xq)
   CALL init_run()
@@ -70,17 +70,6 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
   !
   IF (do_band) CALL non_scf ( )
-
-  IF ( check_stop_now() ) THEN
-!
-!  In this case the code stops inside the band calculation. Save the
-!  files and stop the pwscf run
-!
-     CALL punch( 'config' )
-     CALL stop_run( -1 )
-     CALL do_stop( 1 )
-  ENDIF
-
   IF (.NOT.reduce_io.and.do_band) THEN
 !  If only_wfc flag is true, we use the same twfcollect as in the pw.x
 !  calculation.

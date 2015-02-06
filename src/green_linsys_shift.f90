@@ -18,7 +18,7 @@ SUBROUTINE green_linsys_shift (ik0)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta, tr2_green
+                                   ext_recover, eta, tr2_green, maxter_green
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
@@ -216,8 +216,13 @@ do iq = 1, nksq
                                        cw, niters(gveccount))
              endif
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
-             !if(.not.conv_root) gr_A_shift = (0.0d0, 0.0d0)
-             !if(.not.conv_root) write(1000+mpime, '("green not converged")')
+
+             if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", 10i4, i4)') niters, ig
+             if (niters(gveccount).ge.maxter_green) then
+                 if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
+                 gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
+             endif
+
              do iw = 1, nwgreen
                 do igp = 1, counter
                    if( ieee_is_nan(real(gr_A_shift(igkq_ig(igp),iw))).or.ieee_is_nan(aimag(gr_A_shift(igkq_ig(igp),iw)))) then

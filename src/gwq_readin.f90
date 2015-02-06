@@ -258,11 +258,6 @@ SUBROUTINE gwq_readin()
 
   CALL bcast_gw_input ( ) 
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
-
-
-! write(6,'("broadcast.")')
-! HL FINE
-
   !
   ! ... Check all namelist variables
   !
@@ -277,8 +272,6 @@ SUBROUTINE gwq_readin()
      IF (alpha_mix (iter) .LT.0.D0.OR.alpha_mix (iter) .GT.1.D0) CALL &
           errore ('gwq_readin', ' Wrong alpha_mix ', iter)
   ENDDO
-!  write(6,'("alphamix.")')
-
   IF (niter_gw.LT.1.OR.niter_gw.GT.maxter) CALL errore ('gwq_readin', &
        ' Wrong niter_gw ', 1)
   IF (nmix_gw.LT.1.OR.nmix_gw.GT.5) CALL errore ('gwq_readin', ' Wrong &
@@ -341,20 +334,12 @@ SUBROUTINE gwq_readin()
      CALL mp_bcast(ios, meta_ionode_id, world_comm)
      CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
      CALL mp_bcast(fiu, meta_ionode_id, world_comm )
-!     write(1000+mpime,*) fiu(:)
-
   ELSE
       nfs=0
      !fiu=0.0_DP
       fiu=DCMPLX(0.0d0, 0.d0)
       CALL mp_bcast(fiu, meta_ionode_id, world_comm )
   END IF
-!  write(6,'("freq read.")')
-! Reading in kpoints specified by user.
-! Note max number of k-points is 10. 
-! Why? Because that's the number I picked. 
-! If k-points option is not specified it defaults to Gamma. 
-
  IF (kpoints) then
      num_k_pts = 0
      IF (meta_ionode) THEN

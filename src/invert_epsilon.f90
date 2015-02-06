@@ -33,7 +33,8 @@ do iw = 1, nfs
 enddo
 
 write(6,*)
-write(6,'("Done epsilon inversion.")') 
+write(6,'(5x, "Done epsilon inversion.")') 
+write(6,'(5x, "")') 
 
 if(iq.eq.1) then
 do iw = 1, nfs

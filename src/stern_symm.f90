@@ -10,6 +10,7 @@ USE gwsigma,       ONLY : sigma_c_st
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm
 USE modes,         ONLY : nsymq, invsymq 
+USE control_gw,       ONLY : loqua
 
 IMPLICIT NONE
 
@@ -28,17 +29,20 @@ sym_friend(:) = 0
 CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
 ngmunique = 0
-do isym = 1, nsymq
+
+if(loqua) then
+  do isym = 1, nsymq
    WRITE(6,'(3i4)') s(:,:,isym)
    WRITE(6,*)
    WRITE(6,'(3i4)') s(:,:,invs(isym))
    WRITE(6,*)
    WRITE(6,*)
-enddo
+  enddo
+endif
 
 
 !Find number of unique vectors:
-write(6,'("Number of symmops in Small G_q: ", i4)'), nsymq
+
 ngmunique = 1
 ig_unique(1) = 1
 
@@ -64,6 +68,6 @@ DO ig = 2, sigma_c_st%ngmt
    ENDIF
 
 ENDDO
-write(6,'("ngmpol and ngmunique", i4, i4)'), sigma_c_st%ngmt, ngmunique
-
+write(6,'(/5x, "Number of symmops in Small G_q: ", i4)'), nsymq
+write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)'), sigma_c_st%ngmt, ngmunique
 END SUBROUTINE stern_symm

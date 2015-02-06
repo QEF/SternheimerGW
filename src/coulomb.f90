@@ -78,6 +78,7 @@ DO ig = igstart, igstop
          CALL invfft('Smooth', dvbare, dffts)
          CALL solve_lindir (dvbare, drhoscfs)
          CALL fwfft('Smooth', dvbare, dffts)
+         write(6,*)
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nls(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))

@@ -31,7 +31,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE constants,            ONLY : degspin
   USE cell_base,            ONLY : tpiba2,at,bg
   USE ener,                 ONLY : ef
-  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot
+  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot, nks
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE spin_orb,             ONLY : domag
   USE wvfct,                ONLY : nbnd, npw, npwx, igk,g2kin,  et
@@ -59,6 +59,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE buffers,         ONLY : get_buffer
   USE mp,              ONLY : mp_sum, mp_barrier
   USE mp_world,        ONLY : mpime
+  USE mp_pools,             ONLY : inter_pool_comm
 
   implicit none
   !
@@ -93,7 +94,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   ! dos_ef: density of states at Ef
   real(DP), external :: w0gauss, wgauss
   ! change of the scf potential (smooth part only)
-  complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
+  complex(DP), allocatable  ::  dvscfout (:,:)
+! complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
 
   ! change of rho / scf potential (output)
   ! change of scf potential (output)
@@ -157,7 +159,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
   call start_clock ('solve_linter')
   allocate (dvscfout ( dfftp%nnr , nfs))    
-  allocate (drhoscfh ( dfftp%nnr , nfs))    
+!  allocate (drhoscfh ( dfftp%nnr , nfs))    
   allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))    
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
@@ -173,7 +175,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
      lintercall = 0
      drhoscf(:,:)   = (0.d0, 0.d0)
-     drhoscfh(:,:)  = (0.d0, 0.d0)
+!     drhoscfh(:,:)  = (0.d0, 0.d0)
      dbecsum(:,:,:) = (0.d0, 0.d0)
 
      if (nksq.gt.1) rewind (unit = iunigk)
@@ -228,66 +230,75 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
 ! Apply -P_c^+.
 ! -P_c^ = - (1-P_v^):
-             CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
-             dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
-             dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
-             dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
-             alphabeta(:,:,:) =  dcmplx(0.d0, 0.d0)
-             niters(:)        = 0  
+        CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
+        dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
+        dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
+        dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
+        alphabeta(:,:,:) =  dcmplx(0.d0, 0.d0)
+        niters(:)        = 0  
 
-             thresh    = tr2_gw
-             conv_root = .true.
+        thresh    = tr2_gw
+        conv_root = .true.
 
-             etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
+        etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
-             call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
-                                  npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
-                                  npol, niters, alphabeta)
+        call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
+                             npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
+                             npol, niters, alphabeta)
 
-!          dpsi = dpsi^{+}
-           dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
-           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+        if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
 
-           dpsi(:,:,:)    = dpsit(:,:,:)
-!          dpsi = dpsi^{+} + dpsi^{-}
+!       dpsi = dpsi^{+}
+        dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
 
-           dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-           call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
+        dpsi(:,:,:)    = dpsit(:,:,:)
+!       dpsi = dpsi^{+} + dpsi^{-}
 
-           dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
-          
+        dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
 
-           do ibnd=1, nbnd 
-              if (niters(ibnd).ge.maxter_green) then
-                  dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
-              endif
-           enddo
+        dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
         
-           do iw = 1, nfs
-              do ibnd=1, nbnd 
-               if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
-                   write(1000+mpime,'("dpsi is NAN")')
-                   dpsi(:,ibnd,iw) = dcmplx(0.0d0,0.0d0)
-               endif
-              enddo
+
+        do ibnd=1, nbnd 
+           if (niters(ibnd).ge.maxter_green) then
+               dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
+           endif
+        enddo
+        
+        do iw = 1, nfs
+           do ibnd=1, nbnd 
+            if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
+                write(1000+mpime,'("dpsi is NAN")')
+                dpsi(:,ibnd,iw) = dcmplx(0.0d0,0.0d0)
+            endif
            enddo
+        enddo
   
 
-           ltaver = ltaver + lter
-           lintercall = lintercall + 1
-           nrec1 =  ik
-           weight = wk (ikk)
-
-           do iw = 1 , nfs
-                 call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
-                                    dbecsum(1,1,current_spin), dpsi(:,:,iw))
-           enddo
+        ltaver = ltaver + lter
+        lintercall = lintercall + 1
+        nrec1 =  ik
+        weight = wk (ikk)
+        do iw = 1 , nfs
+              call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
+                                 dbecsum(1,1,current_spin), dpsi(:,:,iw))
+        enddo
      enddo !kpoints
+!HLPARA
+!     WRITE(1000+mpime, '(5x,"Communication for kpoints")') 
+!     WRITE(1000+mpime, '(5x,"nks", i4, "nksq", i4)') nks, nksq
+     do iw = 1, nfs
+!         call mp_sum ( dvscfout(:,iw), inter_pool_comm )
+         call mp_sum ( drhoscf(:,iw), inter_pool_comm )
+     enddo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
       enddo
+
 !!!!!!!NEED THIS FOR ULTRASOFT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     do iw = 1, nfs
 !        call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
@@ -299,19 +310,26 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! SGW: here we enforce zero average variation of the charge density
 ! if the bare perturbation does not have a constant term
 ! (otherwise the numerical error, coupled with a small denominator
-! in the coulomb term, gives rise to a spurious dvscf response)
+! in the Coulomb term, gives rise to a spurious dvscf response)
 ! One wing of the dielectric matrix is particularly badly behaved 
-     meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0) / float(dffts%nnr)
-     do iw = 1, nfs 
-         if (meandvb.lt.1.d-8) then 
+    meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0) / float(dffts%nnr)
+    do iw = 1, nfs 
+          if (meandvb.lt.1.d-8) then 
              CALL fwfft  ('Dense', dvscfout(:,iw), dfftp)
              dvscfout  (nl(1), iw) = dcmplx(0.d0, 0.0d0)
              CALL invfft ('Dense', dvscfout(:,iw), dfftp)
-         endif
+          endif
     enddo
+    !
+    !   After the loop over the perturbations we have the linear change
+    !   in the charge density for each mode of this representation.
+    !   Here we symmetrize them ...
+    !
     do iw = 1, nfs
        call dv_of_drho (1, dvscfout(1,iw), .true.)
     enddo
+
+
     averlt = DBLE (ltaver) / lintercall
     tcpu = get_clock ('GW')
     CALL flush_unit( stdout )
@@ -330,7 +348,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
   deallocate (h_diag)
   deallocate (dvscfout)
-  deallocate (drhoscfh)
+!  deallocate (drhoscfh)
   deallocate (dbecsum)
 
   call stop_clock ('solve_linter')

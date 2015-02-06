@@ -25,12 +25,17 @@ SUBROUTINE sigma_grids()
   INTEGER :: ik, ngm_, ngs_, ngw_ , nogrp, kpoint
   REAL (DP) :: gkcut
   INTEGER :: me, nproc, inter_comm, intra_comm, root
+
+
+!Define COMMUNICATORS here we're using the band group (bgrp) comm
+!this is a sub division of the pools. 
   me = me_bgrp
   nproc = nproc_bgrp
   inter_comm = inter_bgrp_comm
   intra_comm = intra_bgrp_comm
   root = root_bgrp
   nogrp = ntask_groups
+
   IF (nks == 0) THEN
      !
      ! if k-points are automatically generated (which happens later)
@@ -63,7 +68,7 @@ SUBROUTINE sigma_grids()
   CALL pstickset_custom( gamma_only, bg, sigma_x_st%gcutmt, gkcut, sigma_x_st%gcutmt, &
                   dfftp, sigma_x_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
-  CALL gvec_init(sigma_x_st, sigma_x_st%ngmt, inter_pool_comm)
+  CALL gvec_init(sigma_x_st, sigma_x_st%ngmt, intra_comm)
   sigma_x_st%initalized = .true.
   CALL ggent(sigma_x_st)
   WRITE(stdout, '(//5x,"Exchange Grid:")')
@@ -71,15 +76,13 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, 3i4)') sigma_x_st%nr1t, sigma_x_st%nr2t, sigma_x_st%nr3t
   WRITE(stdout, '(5x, "G-Vects Exx:")')
   WRITE(stdout, '(5x, f10.7, i4)') sigma_x_st%ecutt, sigma_x_st%ngmt
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!! CORRELATION GRID !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sigma_c_st%ecutt   = ecutsco
   sigma_c_st%gcutmt  = ecutsco/tpiba2
   gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
-!Generate auxilliary exchange grid.
+!Generate auxilliary correlation grid.
   do ng = 1, ngm
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt_g = ng
@@ -89,7 +92,7 @@ SUBROUTINE sigma_grids()
   CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_c_st%gcutmt, &
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
-  CALL gvec_init(sigma_c_st, sigma_c_st%ngmt, inter_pool_comm)
+  CALL gvec_init(sigma_c_st, sigma_c_st%ngmt, intra_comm)
   sigma_c_st%initalized = .true.
   CALL ggent(sigma_c_st)
   WRITE(stdout, '(//5x,"Correlation Grid:")')

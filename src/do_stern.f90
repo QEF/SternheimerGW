@@ -27,7 +27,6 @@ IMPLICIT NONE
   do_band  = .TRUE.
   do_matel = .TRUE.
 
-
   IF(lgauss) WRITE(stdout, '(//5x,"SYSTEM IS METALLIC")')
 
   if(.not.do_epsil) then
@@ -49,7 +48,7 @@ IMPLICIT NONE
 
     IF(use_symm) THEN
       WRITE(6,'("")')
-      WRITE(6,'("SYMMETRIZING COULOMB Perturbations")')
+      WRITE(6,'(5x, "SYMMETRIZING COULOMB Perturbations")')
       WRITE(6,'("")')
       CALL stern_symm()
     ELSE
@@ -63,8 +62,7 @@ IMPLICIT NONE
 !      CALL distribute_pert()
        igstart = 1
        igstop = ngmunique
-       PRINT*, "iq, igstart, igstop"
-       PRINT*, iq, igstart, igstop
+       WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)')iq, igstart, igstop
        CALL coulomb(iq, igstart, igstop, scrcoul_g)
        !IF (ionode_id) THEN
        CALL unfold_w(scrcoul_g,iq)
