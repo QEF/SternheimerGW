@@ -10,6 +10,8 @@ SGWPPOBJS = \
 coulmat.o \
 ktokpmq.o \
 openfil_pp.o\
+coulmatsym.o\
+find_qg_ibz.o\
 dosg.o\
 stop_pp.o
 
@@ -18,7 +20,7 @@ QEOBJS = ../../../Modules/libqemod.a
 
 MODULES = $(PWOBJS) $(QEOBJS)
 
-LIBOBJS = ../../../flib/ptools.a ../../../flib/flib.a ../../../clib/clib.a ../../../iotk/src/libiotk.a
+LIBOBJS = ../../../flib/ptools.a ../../../flib/flib.a ../../../clib/clib.a ../../../iotk/src/libiotk.a ../../src/libgw.a
 
 all: coulmat.x
 

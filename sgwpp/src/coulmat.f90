@@ -1,122 +1,3 @@
-! Copyright (C) 2004-2009 Andrea Benassi and Quantum ESPRESSO group
-! This file is distributed under the terms of the
-! GNU General Public License. See the file `License'
-! in the root directory of the present distribution,
-! or http://www.gnu.org/copyleft/gpl.txt .
-!------------------------------
- MODULE grid_module
-!------------------------------
-  USE kinds,        ONLY : DP
-  IMPLICIT NONE
-  PRIVATE
-  !
-  ! general purpose vars
-  !
-  REAL(DP), ALLOCATABLE  :: focc(:,:), wgrid(:)
-  REAL(DP)               :: alpha
-  !
-  !
-  PUBLIC :: grid_build, grid_destroy
-  PUBLIC :: focc, wgrid, alpha
-  !
-CONTAINS
-
-!---------------------------------------------
-  SUBROUTINE grid_build(nw, wmax, wmin)
-  !-------------------------------------------
-  !
-  USE kinds,     ONLY : DP
-  USE wvfct,     ONLY : nbnd, wg
-  USE klist,     ONLY : nks, wk, nelec
-  USE lsda_mod,  ONLY : nspin
-  USE uspp,      ONLY : okvan
-  !
-  IMPLICIT NONE
-  !
-  ! input vars
-  INTEGER,  INTENT(in) :: nw
-  REAL(DP), INTENT(in) :: wmax ,wmin
-  !
-  ! local vars
-  INTEGER         :: iw,ik,i,ierr
-
-  !
-  ! check on the number of bands: we need to include empty bands in order to allow
-  ! to write the transitions
-  !
-  IF ( REAL(nbnd, DP)  <= nelec / 2.0_DP ) CALL errore('epsilon', 'bad band number', 1)
-
-  !
-  ! spin is not implemented
-  !
-  IF( nspin > 2 ) CALL errore('grid_build','Non collinear spin  calculation not implemented',1)
-
-  !
-  ! USPP are not implemented (dipole matrix elements are not trivial at all)
-  !
-  IF ( okvan ) CALL errore('grid_build','USPP are not implemented',1)
-
-  ALLOCATE ( focc( nbnd, nks), STAT=ierr )
-  IF (ierr/=0) CALL errore('grid_build','allocating focc', abs(ierr))
-  !
-  ALLOCATE( wgrid( nw ), STAT=ierr )
-  IF (ierr/=0) CALL errore('grid_build','allocating wgrid', abs(ierr))
-
-  !
-  ! check on k point weights, no symmetry operations are allowed
-  !
-  DO ik = 2, nks
-     !
-     IF ( abs( wk(1) - wk(ik) ) > 1.0d-8 ) &
-        CALL errore('grid_build','non unifrom kpt grid', ik )
-     !
-  ENDDO
-  !
-  ! occupation numbers, to be normalized differently
-  ! whether we are spin resolved or not
-  !
-  IF(nspin==1) THEN
-    DO ik = 1,nks
-    DO i  = 1,nbnd
-         focc(i,ik)= wg(i, ik ) * 2.0_DP / wk( ik )
-    ENDDO
-    ENDDO
-  ELSEIF(nspin==2) THEN
-    DO ik = 1,nks
-    DO i  = 1,nbnd
-         focc(i,ik)= wg(i, ik ) * 1.0_DP / wk( ik )
-    ENDDO
-    ENDDO
-  ENDIF
-  !
-  ! set the energy grid
-  !
-  alpha = (wmax - wmin) / REAL(nw-1, KIND=DP)
-  !
-  DO iw = 1, nw
-      wgrid(iw) = wmin + (iw-1) * alpha
-  ENDDO
-  !
-END SUBROUTINE grid_build
-!
-!
-!----------------------------------
-  SUBROUTINE grid_destroy
-  !----------------------------------
-  IMPLICIT NONE
-  INTEGER :: ierr
-  !
-  IF ( allocated( focc) ) THEN
-      !
-      DEALLOCATE ( focc, wgrid, STAT=ierr)
-      CALL errore('grid_destroy','deallocating grid stuff',abs(ierr))
-      !
-  ENDIF
-  !
-END SUBROUTINE grid_destroy
-
-END MODULE
-
 MODULE units_coulmat
   ! ... the units of the files and the record lengths
   SAVE
@@ -137,7 +18,6 @@ MODULE control_coulmat
   INTEGER  :: nbndmin, nbndmax, ngcoul
   REAL(DP) :: degaussfs, debye_e
 END MODULE control_coulmat
-
 !------------------------------
 PROGRAM mustar
 !------------------------------
@@ -327,7 +207,8 @@ PROGRAM mustar
   !Calculate Coulomb matrix elements stored in struct vcnknpkp
   IF(do_coulmat) THEN
     IF (ionode) WRITE( stdout, "( 5x, 'Calculating Coulomb Matrix Elements' ) " )
-        CALL coulmats(vcnknpkp)
+        !CALL coulmats(vcnknpkp)
+        CALL coulmatsym()
   ENDIF
 
   !Perform Fermi surface averaging of matrix elements in vcnknpkp
@@ -430,10 +311,8 @@ do iq = 1, nks
 !read in wavefunctions at k: 
       psink(:,:)   = (0.0d0,0.0d0)
       psinpkp(:,:) = (0.0d0,0.0d0)
-
       CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
       CALL davcio (evc, 2*nwordwfc, iunwfc, ik, -1 )
-
 !HL SHOULD ONLY STORE BANDS AROUND FERMI LEVEL
       psink(nls(igk(1:npw)), :) = evc(1:npw,:)
 
@@ -556,13 +435,13 @@ IMPLICIT NONE
 
 END SUBROUTINE fsaverage
 
-REAL(DP) FUNCTION lind_eps(qg2)
-  USE kinds,       ONLY : DP
-  USE dielectric,  ONLY : qtf, kf
-  IMPLICIT NONE
-  REAL(DP) :: qg2, x
-  x = qg2/(2*kf)
-  lind_eps = 1.0d0 + (qtf)**2.0/(2.0*qg2**2)*(1.0d0+(1.0d0/(2.0*x))*(1-x**2)*log(abs((1+x)/(1-x))))
-  RETURN
-END FUNCTION
+!REAL(DP) FUNCTION lind_eps(qg2)
+!  USE kinds,       ONLY : DP
+!  USE dielectric,  ONLY : qtf, kf
+!  IMPLICIT NONE
+!  REAL(DP) :: qg2, x
+!  x = qg2/(2*kf)
+!  lind_eps = 1.0d0 + (qtf)**2.0/(2.0*qg2**2)*(1.0d0+(1.0d0/(2.0*x))*(1-x**2)*log(abs((1+x)/(1-x))))
+!  RETURN
+!END FUNCTION
 
