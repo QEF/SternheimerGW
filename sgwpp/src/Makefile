@@ -12,6 +12,7 @@ ktokpmq.o \
 openfil_pp.o\
 coulmatsym.o\
 find_qg_ibz.o\
+rotate.o\
 dosg.o\
 stop_pp.o
 
