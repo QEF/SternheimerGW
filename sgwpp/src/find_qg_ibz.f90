@@ -1,9 +1,8 @@
-SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
+SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
 ! Routine finds which symmetry operation folds xq to the required qpoint, xq_req.
 ! While it is true we can use the full symmetry group of the crystal for W
 ! regardless of still need to use only valid symops 
-
-!For crystals without inversion symmetry we pray for a symmetry operations  Sq -> -q +G
+! For crystals without inversion symmetry we pray for a symmetry operations  Sq -> -q +G
 
   USE kinds,         ONLY : DP
   USE cell_base,     ONLY : at, bg
@@ -40,6 +39,8 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
  !dummy variable for routine to find Sq = -q + G
 
   INTEGER,  INTENT(OUT)   :: iq, isym
+  INTEGER,  INTENT(INOUT) :: nig0
+ !integer of plane wave that lets us map \psi_{k-\q} to \psi_{\k-\q+G_0\in IBZ} 
   INTEGER                 :: s(3,3,48), invs(48), ism1
   INTEGER                 :: i, j, k, invsym, ig
   REAL(DP)                :: g_loc(3)
@@ -75,10 +76,11 @@ IF (.not.found_q) then
            xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
            xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
            xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
-           found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1) - g_loc(1)).le.eps).and. &
-                    (abs(x_q_loc(2) - xq_ibk_locr(2) - g_loc(2)).le.eps).and. & 
-                    (abs(x_q_loc(3) - xq_ibk_locr(3) - g_loc(3)).le.eps) 
+           found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1) + g_loc(1)).le.eps).and. &
+                      (abs(x_q_loc(2) - xq_ibk_locr(2) + g_loc(2)).le.eps).and. & 
+                      (abs(x_q_loc(3) - xq_ibk_locr(3) + g_loc(3)).le.eps) 
            if (found_q) then
+               nig0 = ig
                return
            endif
         END DO

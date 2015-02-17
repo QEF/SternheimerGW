@@ -7,12 +7,14 @@ MODFLAGS= $(MOD_FLAG)../../../iotk/src $(MOD_FLAG)../../../Modules \
 IFLAGS=
 
 SGWPPOBJS = \
-coulmat.o \
+mustar.o \
 ktokpmq.o \
 openfil_pp.o\
 coulmatsym.o\
 find_qg_ibz.o\
 rotate.o\
+read_file_coul.o\
+parallelize.o\
 dosg.o\
 stop_pp.o
 
@@ -29,8 +31,8 @@ libsgwppa.a : $(SGWPPOBJS)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
 
-coulmat.x : coulmat.o libsgwppa.a $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o coulmat.x coulmat.o libsgwppa.a $(MODULES) $(LIBOBJS) $(LIBS)
+coulmat.x : mustar.o libsgwppa.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o coulmat.x mustar.o libsgwppa.a $(MODULES) $(LIBOBJS) $(LIBS)
 	- ( cd ../bin ; ln -fs ../src/coulmat.x . )
 
 clean :

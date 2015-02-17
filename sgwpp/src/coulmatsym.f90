@@ -27,6 +27,9 @@ SUBROUTINE coulmatsym()
   USE gvect,                ONLY : ngm, g, nl
   USE gvecs,                ONLY : nls, nlsm
   USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul
+  USE mp,        ONLY : mp_bcast, mp_sum
+  USE mp_world,  ONLY : world_comm, mpime
+  USE buffers,         ONLY : get_buffer
 
 IMPLICIT NONE
 
@@ -38,6 +41,7 @@ IMPLICIT NONE
   REAL(DP)    :: qg2, xq(3), xkp(3)
   real(kind=DP), external :: efermig, dos_ef, w0gauss, wgauss
   COMPLEX(DP) :: psink(dffts%nnr,nbnd), psinpkp(dffts%nnr,nbnd), psi_temp(dffts%nnr), fnknpkp(dffts%nnr)
+  COMPLEX(DP) :: pwg0(dffts%nnr)
   INTEGER     :: ik, ikp, ibnd, jbnd, ig, igp, isymop, isym
   INTEGER     :: iq
   INTEGER     :: nkp, nkp_abs, ipool
@@ -52,7 +56,8 @@ IMPLICIT NONE
   INTEGER, ALLOCATABLE  :: gmapsym(:,:)
   COMPLEX(DP), ALLOCATABLE  ::  eigv(:,:)
   COMPLEX(DP), ALLOCATABLE :: vc(:,:)
-  INTEGER :: ir
+  INTEGER :: ir, niG0
+  INTEGER :: nqstart, nqstop
 
   ALLOCATE ( gmapsym  (ngm, nrot)   )
   ALLOCATE ( eigv     (ngm, nrot)   )
@@ -80,56 +85,81 @@ IMPLICIT NONE
   En      = ef
   nqs     = nks
   mu = 0.0d0
+
 !Loop over IBZ on kpoints:
-  print*, xk(:,1:nks)
-  print*, wk(1:nks)
-  do iq = 1, nks
-   print*, 'iq ', iq
-   do isymop = 1, nsym
-    do ik = 1, nks
+  !print*, xk(:,1:nks)
+  !print*
+  !print*, wk(1:nks)
+  !print*
+  !print*, invs
+
+  call parallelize(nks, nqstart, nqstop)
+
+  write(1000+mpime, *) nqstart, nqstop
+  write(1000+mpime, *) iunwfc
+  write(1000+mpime, *) xk(:, 1:nks)
+  write(1000+mpime, *) wk(1:nks)
+  write(1000+mpime, *) nwordwfc
+
+ !do iq = 1, nks
+  do iq = nqstart, nqstop
+     write(1000+mpime, *) iq
+     do ik = 1, nks
 !    if (mod(ik,2).eq.0) print*, "xk:  ", ik
-!Load coulomb interaction at xq
-       vc = (0.0d0, 0.0d0)
-       call load_coul(vc, iq)
+!    Load coulomb interaction at xq
+        vc = (0.0d0, 0.0d0)
+        call load_coul(vc, iq)
 !do S = nsymops:
 !need to modify this:
 !On a gen'l grid ktokpmq should also return the symmetry operation which rotates
 !xkp to the brillouin zone. then we keep track of that symmetry else and use it
 !to invert one of kpoints in the IBZ. Keeping with the idea that we only need
 !IBZk and IBZq.
-       xq(:) = xk(:,iq)
- !     x_k' = x_k-S^-1*xq
-       CALL rotate(xq, aq, s, nsym, isymop)
- !     xkp(:) = xk(:,ik)-xq(:)
-       xkp(:) = xk(:, ik)-aq(:)
- !     print*, 'xkp'
- !     print*, xk(:,ik)
- !     print*, isymop
- !     print*, xq
- !     print*, aq
- !     print*, xkp
- !     Find symmop what gives us k'
-       inv_q=.false.
-       call find_qG_ibz(xkp, s, iqrec, isym, found_q, inv_q)
-       !print *,'iqrec', iqrec, isym
-       !print*, xk(:, iqrec)
-       ikp = iqrec
-       psink(:,:)   = (0.0d0,0.0d0)
-       psinpkp(:,:) = (0.0d0,0.0d0)
-       CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-       CALL davcio (evc, 2*nwordwfc, iunwfc, ik, -1 )
-       psink(nls(igk(1:npw)), :) = evc(1:npw,:)
-       CALL gk_sort (xkp(1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-       CALL davcio (evc, 2*nwordwfc, iunwfc, ikp, -1 )
-       psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
-       do ibnd = nbndmin, nbnd
-          CALL invfft ('Wave', psink(:,ibnd), dffts)
-          do jbnd = nbndmin, nbnd
+   psink(:,:)   = (0.0d0,0.0d0)
+   CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+   !CALL davcio (evc, 2*nwordwfc, iunwfc, ik, -1 )
+   CALL get_buffer (evc, nwordwfc, iunwfc, ik)
+   psink(nls(igk(1:npw)), :) = evc(1:npw,:)
+   do ibnd = nbndmin, nbnd
+      CALL invfft ('Wave', psink(:,ibnd), dffts)
+      do isymop = 1, nsym
+!        x_k' = x_k-S^-1*xq
+         xq(:) = xk(:,iq)
+         CALL rotate(xq, aq, s, nsym, invs(isymop))
+         xkp(:) = xk(:, ik)-aq(:)
+
+!        Find symmop what gives us k'
+         inv_q=.false.
+         call find_qG_ibz(xkp, s, iqrec, isym, nig0, found_q, inv_q)
+         ikp = iqrec
+         write(1000+mpime, *) ikp
+
+         psinpkp(:,:) = (0.0d0,0.0d0)
+         CALL gk_sort (xkp(1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+    !     CALL davcio (evc, 2*nwordwfc, iunwfc, ikp, -1 )
+         CALL get_buffer(evc, nwordwfc, iunwfc, ikp)
+         psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
+
+         if(nig0.gt.1) then
+            pwg0(:) = dcmplx(0.0d0, 0.0d0)
+            pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
+            CALL invfft('Wave', pwg0(:), dffts)
+         endif
+
+         do jbnd = nbndmin, nbnd
 !calculate f_{nk,npkp}(\G)
              psi_temp = (0.0d0, 0.0d0)
              psi_temp = psinpkp(:,jbnd)
              CALL invfft ('Wave', psi_temp(:), dffts)
              fnknpkp = (0.0d0,0.0d0)
+
+!calc psi_{\k-\q+\G}
+             if(nig0.gt.1) then
+               do ir = 1, dffts%nnr  
+                  psi_temp(ir) = psi_temp(ir)*pwg0(ir) 
+               enddo
+             endif              
+  
              do ir = 1, dffts%nnr  
                 fnknpkp(ir) = fnknpkp(ir) +  conjg(psi_temp(ir))*psink(ir,ibnd)
              enddo
@@ -152,7 +182,9 @@ IMPLICIT NONE
              else
                do ig = 1, ngcoul 
                   phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
-                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
+                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,isymop), gmapsym(ig,isymop))*fnknpkp(nls(ig))*phase
+                  !phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
+                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
                enddo
              endif
 !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -160,15 +192,17 @@ IMPLICIT NONE
 !and to get per spin we need to kill it in the wk factor.
              mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
           enddo!jbnd
+         enddo!isym
         enddo!ibnd
        enddo!ik
-      enddo!isym
      enddo!iq
-!CALL mp_sum(mu, inter_pool_comm)
+     CALL mp_sum(mu, world_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
+
   mu = mu/(omega*nsym)
   print*, nk1, nk2, nk3
   print*, omega
+  print*, nsym
   print*, "Ef", ef*rytoev, "N(0)", N0/rytoev
   print*, "debye temp Ry", debye_e
   print*, "\mu", mu
@@ -193,7 +227,7 @@ IMPLICIT NONE
   xq(:) = xk(:,iq)
   vc    = (0.0d0,0.0d0)
   if(.not.do_lind) then 
-     print*, "reading xq:  ", xq, iq
+  !   print*, "reading xq:  ", xq, iq
      CALL davcio (vc, lrcoul, iuncoul, iq, -1)
      do ig = 1, ngcoul
         vc(ig,ig) = vc(ig,ig) + 1.0d0
@@ -201,6 +235,7 @@ IMPLICIT NONE
   endif
   do ig = 1, ngcoul
      qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+     !qg2 = (g(1,ig) - xq(1))**2 + (g(2,ig) - xq(2))**2 + (g(3,ig) - xq(3))**2
      limq = (qg2.lt.eps8) 
      if (limq) cycle
      if (.not.do_lind) then
