@@ -64,11 +64,18 @@ IMPLICIT NONE
        igstop = ngmunique
        WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)')iq, igstart, igstop
        CALL coulomb(iq, igstart, igstop, scrcoul_g)
+
+!HLIM
+!       CALL mp_sum(scrcoul_g, inter_image_comm)
+
+
        !IF (ionode_id) THEN
        CALL unfold_w(scrcoul_g,iq)
        IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
        CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
        !ENDIF
+
+
        CALL clean_pw_gw(iq)
       !if(do_epsil.and.(iq.eq.nqs)) GOTO 126
   ENDDO

@@ -113,7 +113,7 @@ SUBROUTINE openfilq()
 !HL write files for \Delta\psi^{\pm}
   iudwfm = 29 
   iudwfp = 30
-  CALL open_buffer (iudwfp, 'dwpf', lrwfc, io_level, exst_mem, exst, tmp_dir)
+  CALL open_buffer (iudwfp, 'dwfp', lrwfc, io_level, exst_mem, exst, tmp_dir)
   CALL open_buffer (iudwfm, 'dwfm', lrwfc, io_level, exst_mem, exst, tmp_dir)
   RETURN
 END SUBROUTINE openfilq

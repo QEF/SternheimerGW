@@ -242,9 +242,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
          ENDIF
       ENDDO
    ENDDO
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!Generate bare coulomb:                      !!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!Generate bare coulomb:   !!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !HL using  sax cutoff
 !this should be L_{z}/2
 !rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi

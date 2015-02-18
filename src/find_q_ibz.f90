@@ -54,7 +54,6 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
   !q_{IBK} = R^{-1} xq_{IBZ}
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
-
   !Possible solution to not using symmetry
   !1) Give up, join a monastery and commit myself to a life of good deeds (simplest). 
    xq_ibk_loc(:) = xq_ibk 

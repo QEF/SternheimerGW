@@ -294,9 +294,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               call get_buffer( dpsip, lrdwf, iudwfp, ik)
               call get_buffer( dpsim, lrdwf, iudwfm, ik)
 
-             !  dpsi(:,:)  = (0.d0, 0.d0) 
-             !  dpsim(:,:) = (0.d0, 0.d0) 
-             !  dpsip(:,:) = (0.d0, 0.d0) 
              !threshold for iterative solution of the linear system
              !write(6,*)1.d-1*sqrt(dr2), 1.d-4
                thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
