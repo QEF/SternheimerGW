@@ -12,7 +12,7 @@ SUBROUTINE coulmatsym()
   USE io_global,            ONLY : ionode, stdout
   USE start_k,              ONLY : nks_start, xk_start, wk_start, &
                                    nk1, nk2, nk3, k1, k2, k3
-  USE klist,                ONLY : nks, nkstot, ngauss, degauss, xk, wk
+  USE klist,                ONLY : nks, nkstot, ngauss, degauss, xk, wk, nelec
   USE wavefunctions_module, ONLY : evc 
   USE wvfct,                ONLY : nbnd, et, npw, igk, npwx,  g2kin, ecutwfc
   USE lsda_mod,             ONLY : nspin
@@ -27,9 +27,12 @@ SUBROUTINE coulmatsym()
   USE gvect,                ONLY : ngm, g, nl
   USE gvecs,                ONLY : nls, nlsm
   USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul
-  USE mp,        ONLY : mp_bcast, mp_sum
-  USE mp_world,  ONLY : world_comm, mpime
-  USE buffers,         ONLY : get_buffer
+  USE mp,               ONLY : mp_bcast, mp_sum
+  USE mp_world,         ONLY : world_comm, mpime
+  USE mp_pools,         ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
+  USE buffers,          ONLY : get_buffer
+  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
+                               my_image_id, nimage, root_image
 
 IMPLICIT NONE
 
@@ -58,6 +61,7 @@ IMPLICIT NONE
   COMPLEX(DP), ALLOCATABLE :: vc(:,:)
   INTEGER :: ir, niG0
   INTEGER :: nqstart, nqstop
+  REAL(DP) :: ehomo, elomo, bandwidth
 
   ALLOCATE ( gmapsym  (ngm, nrot)   )
   ALLOCATE ( eigv     (ngm, nrot)   )
@@ -82,26 +86,29 @@ IMPLICIT NONE
   else
      degaussw0 = degaussfs
   endif
+
   En      = ef
   nqs     = nks
   mu = 0.0d0
-
-!Loop over IBZ on kpoints:
+  !Loop over IBZ on kpoints:
   !print*, xk(:,1:nks)
   !print*
   !print*, wk(1:nks)
   !print*
   !print*, invs
-
   call parallelize(nks, nqstart, nqstop)
-
   write(1000+mpime, *) nqstart, nqstop
-  write(1000+mpime, *) iunwfc
   write(1000+mpime, *) xk(:, 1:nks)
   write(1000+mpime, *) wk(1:nks)
-  write(1000+mpime, *) nwordwfc
+!Again only non-collinear case
+  ibnd = NINT( nelec ) / 2
+  ehomo = MAXVAL( et(ibnd,  1:nkstot) )
+  elomo = MINVAL( et(:,  1:nkstot))
+  bandwidth = ehomo - elomo
+  print*, "Bandwidth: ", bandwidth*rytoev
+  bandwidth = ef - elomo
+  print*, "Ef Bandwidth: ", bandwidth*rytoev
 
- !do iq = 1, nks
   do iq = nqstart, nqstop
      write(1000+mpime, *) iq
      do ik = 1, nks
@@ -117,7 +124,6 @@ IMPLICIT NONE
 !IBZk and IBZq.
    psink(:,:)   = (0.0d0,0.0d0)
    CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-   !CALL davcio (evc, 2*nwordwfc, iunwfc, ik, -1 )
    CALL get_buffer (evc, nwordwfc, iunwfc, ik)
    psink(nls(igk(1:npw)), :) = evc(1:npw,:)
    do ibnd = nbndmin, nbnd
@@ -127,39 +133,32 @@ IMPLICIT NONE
          xq(:) = xk(:,iq)
          CALL rotate(xq, aq, s, nsym, invs(isymop))
          xkp(:) = xk(:, ik)-aq(:)
-
 !        Find symmop what gives us k'
          inv_q=.false.
          call find_qG_ibz(xkp, s, iqrec, isym, nig0, found_q, inv_q)
+         if(iqrec.gt.nks) call errore('coulmatsym','COULD NOT MAP k+q to IBZ',1)
          ikp = iqrec
-         write(1000+mpime, *) ikp
-
          psinpkp(:,:) = (0.0d0,0.0d0)
          CALL gk_sort (xkp(1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-    !     CALL davcio (evc, 2*nwordwfc, iunwfc, ikp, -1 )
          CALL get_buffer(evc, nwordwfc, iunwfc, ikp)
          psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
-
          if(nig0.gt.1) then
             pwg0(:) = dcmplx(0.0d0, 0.0d0)
             pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
             CALL invfft('Wave', pwg0(:), dffts)
          endif
-
          do jbnd = nbndmin, nbnd
 !calculate f_{nk,npkp}(\G)
              psi_temp = (0.0d0, 0.0d0)
              psi_temp = psinpkp(:,jbnd)
              CALL invfft ('Wave', psi_temp(:), dffts)
              fnknpkp = (0.0d0,0.0d0)
-
 !calc psi_{\k-\q+\G}
              if(nig0.gt.1) then
                do ir = 1, dffts%nnr  
                   psi_temp(ir) = psi_temp(ir)*pwg0(ir) 
                enddo
              endif              
-  
              do ir = 1, dffts%nnr  
                 fnknpkp(ir) = fnknpkp(ir) +  conjg(psi_temp(ir))*psink(ir,ibnd)
              enddo
@@ -175,16 +174,16 @@ IMPLICIT NONE
              if(.not.do_lind) then
                do ig = 1, ngcoul 
                   do igp = 1, ngcoul
-                     phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
-                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)) ,gmapsym(igp,invs(isymop)))*fnknpkp(nls(ig))*phase
+                     phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
+                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(igp,invs(isymop)))*fnknpkp(nls(ig))*phase
                   enddo
                enddo
              else
                do ig = 1, ngcoul 
-                  phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
-                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,isymop), gmapsym(ig,isymop))*fnknpkp(nls(ig))*phase
-                  !phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
-                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
+                  !phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
+                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,isymop), gmapsym(ig,isymop))*fnknpkp(nls(ig))*phase
+                  phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
+                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
                enddo
              endif
 !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -196,17 +195,18 @@ IMPLICIT NONE
         enddo!ibnd
        enddo!ik
      enddo!iq
-     CALL mp_sum(mu, world_comm)!reduce over q points
+ write(1000+mpime, *) mu
+ CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
-
-  mu = mu/(omega*nsym)
-  print*, nk1, nk2, nk3
-  print*, omega
-  print*, nsym
-  print*, "Ef", ef*rytoev, "N(0)", N0/rytoev
-  print*, "debye temp Ry", debye_e
-  print*, "\mu", mu
-  print*, "\mu^{*}", mu/(1+mu*log((ef)/debye_e))
+ mu = mu/(omega*nsym)
+ print*, nk1, nk2, nk3
+ print*, omega
+ print*, nsym
+ print*, "Ef", ef*rytoev, "N(0)", N0/rytoev
+ print*, "debye temp Ry", debye_e
+ print*, "\mu", mu
+ print*, "\mu^{*}", mu/(1+mu*log((ef)/debye_e))
+ print*, "\mu^{*}", mu/(1+mu*log((bandwidth)/debye_e))
 END SUBROUTINE coulmatsym
 
 SUBROUTINE load_coul(vc, iq)
@@ -217,13 +217,17 @@ SUBROUTINE load_coul(vc, iq)
   USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
   USE units_coulmat,        ONLY : iuncoulmat, lrcoulmat, iuncoul, lrcoul
   USE gvect,                ONLY : g
+  USE mp_world,         ONLY : world_comm, mpime
+
 IMPLICIT NONE
+
   REAL(DP)     :: lind_eps
   INTEGER      :: iq, ig, igp
   COMPLEX(DP)  :: vc(ngcoul,ngcoul)
   LOGICAL      :: limq
   REAL(DP)     :: xq(3)
   REAL(DP)     :: qg2
+
   xq(:) = xk(:,iq)
   vc    = (0.0d0,0.0d0)
   if(.not.do_lind) then 
@@ -233,9 +237,9 @@ IMPLICIT NONE
         vc(ig,ig) = vc(ig,ig) + 1.0d0
      enddo 
   endif
+
   do ig = 1, ngcoul
      qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-     !qg2 = (g(1,ig) - xq(1))**2 + (g(2,ig) - xq(2))**2 + (g(3,ig) - xq(3))**2
      limq = (qg2.lt.eps8) 
      if (limq) cycle
      if (.not.do_lind) then
@@ -253,7 +257,7 @@ REAL(DP) FUNCTION lind_eps(qg2)
   USE dielectric,  ONLY : qtf, kf
   IMPLICIT NONE
   REAL(DP) :: qg2, x
-  x = qg2/(2*kf)
-  lind_eps = 1.0d0 + (qtf)**2.0/(2.0*qg2**2)*(1.0d0+(1.0d0/(2.0*x))*(1-x**2)*log(abs((1+x)/(1-x))))
+  x = qg2/(2.0d0*kf)
+  lind_eps = 1.0d0 + (qtf)**2.0d0/(2.0d0*qg2**2)*(1.0d0+(1.0d0/(2.0d0*x))*(1.0d0-x**2)*log(abs((1.0d0+x)/(1.0d0-x))))
   RETURN
 END FUNCTION

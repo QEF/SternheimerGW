@@ -7,6 +7,7 @@ MODFLAGS= $(MOD_FLAG)../../../iotk/src $(MOD_FLAG)../../../Modules \
 IFLAGS=
 
 SGWPPOBJS = \
+pw_restart_coul.o\
 mustar.o \
 ktokpmq.o \
 openfil_pp.o\
