@@ -72,17 +72,22 @@ IMPLICIT NONE
  !dosef = dos_ef (ngaussw, degaussw0, ef0, etf, wkf, nksf, nbndsub)
  !N(Ef) in the equation for lambda is the DOS per spin
  !dosef = dosef / two
+ !CALCULATE Dos at Fermi Level gaussian:
+  if(ltetra) then
+   WRITE( stdout,'(/5x,"USING TETRAHEDRAL INTEGRATION")')
+   CALL dos_t(et,nspin,nbnd, nks,ntetra,tetra, ef, DOSofE)
+  else
   WRITE( stdout,'(/5x,"Gaussian broadening (read from input): ",&
        &        "ngauss,degauss=",i4,f12.6/)') ngauss, degauss
- !CALCULATE Dos at Fermi Level gaussian:
    CALL dos_g(et,nspin,nbnd, nks,wk,degauss,ngauss, ef, DOSofE)
+  endif
  !tetra=.true.
  !use tetrahedron method:
  !CALL dos_t(et, nspin, nbnd, nks, ntetra, tetra, ef, DOSofE)
  !want density of states per spin.
   N0 = DOSofE(1)/2.d0
   if (degaussfs.eq.0.0d0) then
-     degaussw0 = degauss
+     degaussw0 = 0.05
   else
      degaussw0 = degaussfs
   endif
@@ -194,6 +199,7 @@ IMPLICIT NONE
          enddo!isym
         enddo!ibnd
        enddo!ik
+ write(1000+mpime, *) mu
      enddo!iq
  write(1000+mpime, *) mu
  CALL mp_sum(mu, inter_image_comm)!reduce over q points
