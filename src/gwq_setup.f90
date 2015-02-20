@@ -271,6 +271,9 @@
      if (alpha_mix (it) .eq.0.d0) alpha_mix (it) = alpha_mix (it - 1)
   enddo
 
+  flmixdpot = 'mixd'
+
+
   CALL stop_clock ('gwq_setup')
   RETURN
 END SUBROUTINE gwq_setup

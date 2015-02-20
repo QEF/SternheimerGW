@@ -389,6 +389,7 @@ SUBROUTINE gwq_readin()
 1001 continue
 
   CALL read_file ( )
+
   newgrid = reset_grid (nk1, nk2, nk3, k1, k2, k3)
   tmp_dir=tmp_dir_save
 

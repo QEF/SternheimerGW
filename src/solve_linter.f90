@@ -64,6 +64,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE mp_pools,             ONLY : inter_pool_comm
   USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups, me_bgrp
   USE mp_world,             ONLY : mpime
+  USE mp_images, ONLY : intra_image_comm
   USE gvect,           ONLY : ngm, g, nl
   USE gvecs,           ONLY : nls, doublegrid
   USE fft_base,        ONLY : dfftp, dffts
@@ -200,6 +201,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
+  
   do kter = 1, niter_gw
      iter = kter + iter0
      ltaver = 0
@@ -216,10 +218,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            read (iunigk, err = 100, iostat = ios) npw, igk
 100        call errore ('solve_linter', 'reading igk', abs (ios) )
         endif
-
 ! lgamma is a q=0 computation
         if (lgamma)  npwq = npw
-
 ! k and k+q mesh defined in initialize_gw:
 !       ikks(ik) = 2 * ik - 1
 !       ikqs(ik) = 2 * ik
@@ -306,9 +306,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               dpsip(:,:)     = (0.d0, 0.d0) 
               dvscfin(:, :)  = (0.d0, 0.d0)
               dvscfout(:, :) = (0.d0, 0.d0)
-              !
-              ! starting threshold for iterative solution of the linear system
-              !
+            !
+            ! starting threshold for iterative solution of the linear system
+            !
               thresh = 1.0d-2
            endif
 
@@ -349,10 +349,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            weight = wk (ikk)
            call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
                               dbecsum(1,1,current_spin), dpsi(1,1))
-     enddo 
+     enddo !on k-points
 
-!HLPARA
-!     call mp_sum ( dbecsum, intra_bgrp_comm )
+
+     call mp_sum ( dbecsum, intra_bgrp_comm )
 
      if (doublegrid) then
          do is = 1, nspin_mag
@@ -361,14 +361,24 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      else
             call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
      endif
+     !
+     !  In the noncolinear, spin-orbit case rotate dbecsum
+     !
+!     IF (noncolin.and.okvan) CALL set_dbecsum_nc(dbecsum_nc, dbecsum, npe)
+     !
+     !    Now we compute for all perturbations the total charge and potential
+     !
+!     call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
 
-!     call mp_sum ( dvscfout, inter_pool_comm )
 !    if (.not.lgamma_gamma) then
 !         call psyme (dvscfout)
 !         IF ( noncolin.and.domag ) CALL psym_dmage(dvscfout)
 !    endif
-     call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw), 1, dvscfout(1,iw),1)
 
+     call mp_sum ( drhoscf, inter_pool_comm )
+     call mp_sum ( drhoscfh, inter_pool_comm )
+
+     call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw), 1, dvscfout(1,iw),1)
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
 
      if (meandvb.lt.1.d-8) then 
@@ -377,8 +387,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          CALL invfft ('Dense', dvscfout(:,iw), dfftp)
      endif
 
-     call mp_sum ( drhoscf, inter_pool_comm )
-     call mp_sum ( drhoscfh, inter_pool_comm )
 !     IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
 
 
@@ -387,8 +395,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      call dv_of_drho (1, dvscfout(1,iw), .true.)
 
-     nmix_gw = 5
-
+     nmix_gw = 4
      if (iw.eq.1) then
 !Density reponse in real space should be real at zero freq no matter what!
 !just using standard broyden for the zero freq. case.
@@ -399,6 +406,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                              alpha_mix(kter), dr2, tr2_gw, iter, &
                              nmix_gw, convt)
      endif
+ !if (lmetq0.and.convt) &
+ !    call ef_shift (drhoscf, ldos, ldoss, dos_ef, irr, npe, .true.)
+     CALL check_all_convt(convt)
+     if (convt) goto 155
+
 
      if (doublegrid) then
         do ipert = 1, npe
@@ -419,25 +431,20 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      dr2 = dr2 
      CALL flush_unit( stdout )
      rec_code=10
-     if (convt) goto 155
   enddo !loop on kter (iterations)
 
 155 iter0=0
 
-   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-         "secs av.it.:",f5.1)') iter, tcpu, averlt
-   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
-          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
+!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!         "secs av.it.:",f5.1)') iter, tcpu, averlt
+!   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
+!          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
 !   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
   drhoscf(:,iw) = dvscfin(:,iw)
-
-  if (convt) then
-   if (fildvscf.ne.' ') then
-       write(6, '("fildvscf")') 
-   end if
-  endif
+  
+  call mp_barrier(intra_image_comm)
  
   deallocate (h_diag)
   deallocate (aux1)
@@ -451,27 +458,31 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   call stop_clock ('solve_linter')
 END SUBROUTINE solve_linter
 
-SUBROUTINE setmixout(in1, in2, mix, dvscfout, dbecsum, ndim, flag )
-USE kinds, ONLY : DP
-USE mp_global, ONLY : intra_pool_comm
-USE mp, ONLY : mp_sum
-IMPLICIT NONE
-INTEGER :: in1, in2, flag, ndim, startb, lastb
-COMPLEX(DP) :: mix(in1+in2), dvscfout(in1), dbecsum(in2)
-
-CALL divide (in2, startb, lastb)
-ndim=lastb-startb+1
-
-IF (flag==-1) THEN
-   mix(1:in1)=dvscfout(1:in1)
-   mix(in1+1:in1+ndim)=dbecsum(startb:lastb)
-ELSE
-   dvscfout(1:in1)=mix(1:in1)
-   dbecsum=(0.0_DP,0.0_DP)
-   dbecsum(startb:lastb)=mix(in1+1:in1+ndim)
-#ifdef __PARA
-   CALL mp_sum(dbecsum, intra_pool_comm)
-#endif
-ENDIF
-END SUBROUTINE setmixout
-
+SUBROUTINE check_all_convt(convt)
+  USE mp,        ONLY : mp_sum
+  USE mp_images, ONLY : nproc_image, me_image, intra_image_comm
+  IMPLICIT NONE
+  LOGICAL,INTENT(in) :: convt
+  INTEGER,ALLOCATABLE :: convt_check(:)
+  !
+  IF(nproc_image==1) RETURN
+  !
+  ALLOCATE(convt_check(nproc_image+1))
+  !
+  convt_check = 1
+  IF(convt) convt_check(me_image+1) = 0
+  !
+  CALL mp_sum(convt_check, intra_image_comm)
+  !CALL mp_sum(ios, inter_pool_comm)
+  !CALL mp_sum(ios, intra_bgrp_comm)
+  !
+!  convt = ALL(convt_check==0)
+  IF(ANY(convt_check==0).and..not.ALL(convt_check==0) ) THEN
+    CALL errore('check_all_convt', 'Only some processors converged: '&
+               &' something is wrong with solve_linter', 1)
+  ENDIF
+  !
+  DEALLOCATE(convt_check)
+  RETURN
+  !
+END SUBROUTINE

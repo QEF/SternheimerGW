@@ -70,6 +70,7 @@ pade.o\
 sigma_exch.o\
 sigma_matel.o\
 print_matel.o\
+para_img.o\
 print_matel_im.o\
 sigma_pade.o\
 print_clock_gw.o\

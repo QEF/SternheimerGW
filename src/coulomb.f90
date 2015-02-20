@@ -32,13 +32,18 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE units_gw,    ONLY : iuncoul, lrcoul
   USE disp,        ONLY : nqs, nq1, nq2, nq3
  !Symmetry Stuff
-  USE gwsymm,      ONLY : ig_unique, ngmunique
+  USE gwsymm,          ONLY : ig_unique, ngmunique
  !FFTS 
-  USE gvect,      ONLY : ngm, g, nl
-  USE gvecs,      ONLY : nls
-  USE fft_base,   ONLY : dfftp, dffts
-  USE fft_interfaces, ONLY : invfft, fwfft
-  USE klist,      ONLY : lgauss
+  USE gvect,           ONLY : ngm, g, nl
+  USE gvecs,           ONLY : nls
+  USE fft_base,        ONLY : dfftp, dffts
+  USE fft_interfaces,  ONLY : invfft, fwfft
+  USE klist,           ONLY : lgauss
+  USE mp_world,        ONLY : mpime
+  USE mp_pools,        ONLY : me_pool, root_pool, inter_pool_comm
+  USE mp,                   ONLY : mp_sum, mp_barrier
+  USE mp_global,  ONLY : inter_image_comm, intra_image_comm, &
+                         my_image_id, nimage, root_image
 
   IMPLICIT NONE
 
@@ -68,17 +73,17 @@ irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
+WRITE(1000+mpime, '(2i4)') igstart, igstop
 DO ig = igstart, igstop
       if (do_q0_only.and.ig.gt.1) CYCLE
       qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
-      if(solve_direct) then
+      IF(solve_direct) THEN
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
          dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
          CALL invfft('Smooth', dvbare, dffts)
          CALL solve_lindir (dvbare, drhoscfs)
          CALL fwfft('Smooth', dvbare, dffts)
-         write(6,*)
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nls(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
@@ -92,8 +97,8 @@ DO ig = igstart, igstop
                endif
             enddo
          enddo !iw
-      if(do_epsil) GOTO 545
-      else
+         if(do_epsil) GOTO 545
+      ELSE
         if(qg2.lt.0.001.AND.lgauss) then 
           PRINT*, "Not calculating static electric field applied to metal, cycling coulomb"
           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
@@ -107,16 +112,16 @@ DO ig = igstart, igstop
            CALL solve_linter (dvbare, iw, drhoscfs)
            CALL fwfft('Smooth', dvbare, dffts)
            CALL fwfft('Dense', drhoscfs(:,iw), dfftp)
-           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
-           do igp = 1, sigma_c_st%ngmt
-              scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
-           enddo
+           IF(ionode) THEN
+             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
+             DO igp = 1, sigma_c_st%ngmt
+                scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
+             ENDDO
+           ENDIF
         enddo
-      endif
+      ENDIF!solve_direct/solve_linter
 ENDDO 
-
 545 CONTINUE
-
 tcpu = get_clock ('GW')
 DEALLOCATE (drhoscfs)
 CALL stop_clock ('coulomb')

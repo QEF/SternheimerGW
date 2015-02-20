@@ -22,7 +22,7 @@ SUBROUTINE green_linsys (ik0)
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
-                                   where_rec, flmixdpot, current_iq, &
+                                   where_rec, current_iq, &
                                    ext_recover, eta, tr2_green, w_green_start
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn

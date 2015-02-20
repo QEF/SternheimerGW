@@ -49,15 +49,7 @@ SUBROUTINE initialize_gw()
   !
   CALL gwq_setup()
   !
-  !Recover the status if available
-  !
-  !CALL gwq_recover()
-  !
-  !Output summary of the main variables of the gw code
-  !HL want to cutdown on ouput for now  
-  !CALL gwq_summary()
   !Open Relevant GW files
-  !Moving the coulomb etc to beginning of programme.
   CALL openfilq()
   !Initialize all quantities which do not depend on the 
   !linear response to the perturbation

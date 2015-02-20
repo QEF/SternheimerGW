@@ -1,5 +1,5 @@
 SUBROUTINE do_stern()
-  USE io_global,  ONLY : stdout, ionode_id
+  USE io_global,  ONLY : stdout, ionode_id, meta_ionode
   USE kinds,      ONLY : DP
   USE disp,       ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start
   USE gwsigma,    ONLY : sigma_c_st
@@ -10,6 +10,10 @@ SUBROUTINE do_stern()
   USE freq_gw,    ONLY : nfs
   USE units_gw,   ONLY : lrcoul, iuncoul
   USE klist,      ONLY : lgauss
+  USE mp_global,  ONLY : inter_image_comm, intra_image_comm, &
+                         my_image_id, nimage, root_image
+  USE mp,              ONLY : mp_sum, mp_barrier
+  USE mp_world,             ONLY : mpime
 
 IMPLICIT NONE
 
@@ -59,32 +63,36 @@ IMPLICIT NONE
     ENDIF
 !Need to distribute G vectors according to a sensible algorithm based
 !on images which maintains, pool, and plane wave parallelism!
-!      CALL distribute_pert()
-       igstart = 1
-       igstop = ngmunique
+       if(nimage.gt.1) then
+          CALL para_img(ngmunique, igstart, igstop)
+       else
+          igstart = 1
+          igstop = ngmunique
+       endif
        WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)')iq, igstart, igstop
        CALL coulomb(iq, igstart, igstop, scrcoul_g)
-
 !HLIM
-!       CALL mp_sum(scrcoul_g, inter_image_comm)
+       IF(nimage.gt.1) THEN
+          WRITE(1000+mpime, *) nimage
+          CALL mp_sum(scrcoul_g, inter_image_comm)
+       ENDIF
 
-
-       !IF (ionode_id) THEN
-       CALL unfold_w(scrcoul_g,iq)
-       IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
-       CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
-       !ENDIF
-
-
+!ONly the meta_image should write to rile
+       IF (meta_ionode) THEN
+         WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
+         CALL unfold_w(scrcoul_g,iq)
+         IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
+         CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+         WRITE(1000+mpime, '("FINISHED WRITING")')
+       ENDIF
+       call mp_barrier(inter_image_comm)
        CALL clean_pw_gw(iq)
       !if(do_epsil.and.(iq.eq.nqs)) GOTO 126
   ENDDO
 126 CONTINUE
-WRITE(stdout, '("Finished Calculating Screened Coulomb")')
+   WRITE(stdout, '("Finished Calculating Screened Coulomb")')
    DEALLOCATE( scrcoul_g )
    DEALLOCATE( ig_unique )
    DEALLOCATE( sym_ig )
    DEALLOCATE( sym_friend )
-!Write W_{q}(G,G';iw) to file:
-!If solve direct now need to invert epsilon:
 END SUBROUTINE do_stern

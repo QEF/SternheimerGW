@@ -17,8 +17,8 @@ SUBROUTINE green_linsys_shift (ik0)
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
-                                   where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta, tr2_green, maxter_green
+                                   where_rec, current_iq, ext_recover, &
+                                   eta, tr2_green, maxter_green
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
