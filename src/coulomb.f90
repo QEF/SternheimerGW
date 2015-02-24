@@ -100,7 +100,7 @@ DO ig = igstart, igstop
          if(do_epsil) GOTO 545
       ELSE
         if(qg2.lt.0.001.AND.lgauss) then 
-          PRINT*, "Not calculating static electric field applied to metal, cycling coulomb"
+          WRITE(6, '("Not calculating static electric field applied to metal, cycling coulomb")')
           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
           CYCLE
         endif
