@@ -1,6 +1,7 @@
 Checkout the latest version of espresso-5.1/
-
   svn checkout http://qeforge.qe-forge.org/svn/q-e/trunk/espresso ./espresso-5.1/
+  username: anonymous
+  password: 
 
 Make all:
   cd ./espresso-5.1/
