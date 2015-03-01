@@ -41,6 +41,7 @@ subroutine deallocate_gwq
   if(allocated(dpsim)) deallocate(dpsim)
   if(allocated(dpsip)) deallocate(dpsip)
   if(allocated(dvbare)) deallocate(dvbare)
+  if(allocated(drc)) deallocate(drc)
   if(allocated(this_dvkb3_is_on_file)) deallocate (this_dvkb3_is_on_file)    
   if(allocated(this_pcxpsi_is_on_file)) deallocate (this_pcxpsi_is_on_file)
 

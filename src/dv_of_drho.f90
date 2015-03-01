@@ -65,9 +65,11 @@ subroutine dv_of_drho (mode, dvscf, flag)
   if (lrpa) goto 111
   fac = 1.d0 / DBLE (nspin_lsda)
   if (nlcc_any.and.flag) then
+!extra contribution from frozen core charge:
+!     if (mode > 0) call addcore (mode, drhoc)
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) + fac * rho_core (:)
- !      dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
+        !dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
      enddo
   endif
 

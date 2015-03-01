@@ -219,12 +219,17 @@ IF(iqstop-iqstart+1.ne.0) THEN
    write(1000+mpime, '(3f11.7)') xq_ibk
    write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
    write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-!Dielectric Function should be written to file at this point
-!So we read that in, rotate it, and then apply the coulomb operator.
+
+
+!Inverse Dielectric Function is Written to file at this point
+!So we read that in, rotate it, and then apply the Coulomb operator.
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
+
    if(modielec.and.padecont) PRINT*, "WARNING: PADECONT AND MODIELEC?"
+
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
+
 !Rotate G_vectors for FFT.
 !In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
 !I have checked that here as well and it works.
@@ -261,7 +266,10 @@ IF(iqstop-iqstart+1.ne.0) THEN
          limq = (qg2.lt.eps8) 
          IF(.not.limq) THEN
              DO igp = 1, sigma_c_st%ngmt
+                                          !!!!eps^{-1}(\G,\G';\omegaa  )!!!!!   v(q+G)!!!!
                 scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+!!!!!!
+!                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(sqrt(e2*fpi)/(tpiba*qg), 0.0d0)
              ENDDO
          ENDIF
          qg = sqrt(qg2)

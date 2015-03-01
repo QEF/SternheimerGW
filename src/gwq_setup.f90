@@ -130,7 +130,6 @@
   !
   nlcc_any = ANY ( upf(1:ntyp)%nlcc )
   if (nlcc_any) allocate (drc( ngm, ntyp))    
-
   !
   !  3) If necessary calculate the local magnetization. This information is
   !      needed in find_sym
