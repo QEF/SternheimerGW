@@ -39,7 +39,7 @@ IMPLICIT NONE
   else
   ! In case we want to trace a line through the brillouin zone
   ! or get the screening for a particular grid q points (i.e. coulomb matel).
-      iq1 = 1
+      iq1 = w_of_q_start
       iq2 = num_k_pts
   endif
     
