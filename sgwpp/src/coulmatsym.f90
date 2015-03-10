@@ -95,12 +95,11 @@ IMPLICIT NONE
   En      = ef
   nqs     = nks
   mu = 0.0d0
-  !Loop over IBZ on kpoints:
-  !print*, xk(:,1:nks)
-  !print*
-  !print*, wk(1:nks)
-  !print*
-  !print*, invs
+ !Loop over IBZ on kpoints:
+ !print*, xk(:,1:nks)
+ !print*
+ !print*, wk(1:nks)
+ !print*
   call parallelize(nks, nqstart, nqstop)
   write(1000+mpime, *) nqstart, nqstop
   write(1000+mpime, *) xk(:, 1:nks)
@@ -109,10 +108,8 @@ IMPLICIT NONE
   ibnd = NINT( nelec ) / 2
   ehomo = MAXVAL( et(ibnd,  1:nkstot) )
   elomo = MINVAL( et(:,  1:nkstot))
-  bandwidth = ehomo - elomo
-  print*, "Bandwidth: ", bandwidth*rytoev
   bandwidth = ef - elomo
-  print*, "Ef Bandwidth: ", bandwidth*rytoev
+!print*, "Ef Bandwidth: ", bandwidth*rytoev
 
   do iq = nqstart, nqstop
      write(1000+mpime, *) iq
@@ -144,11 +141,12 @@ IMPLICIT NONE
          if(iqrec.gt.nks) call errore('coulmatsym','COULD NOT MAP k+q to IBZ',1)
          ikp = iqrec
          psinpkp(:,:) = (0.0d0,0.0d0)
-         CALL gk_sort (xkp(1), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+         CALL gk_sort (xk(1,iqrec), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
          CALL get_buffer(evc, nwordwfc, iunwfc, ikp)
          psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
          if(nig0.gt.1) then
             pwg0(:) = dcmplx(0.0d0, 0.0d0)
+            !pwg0(nls(gmapsym(nig0, invs(isym)))) = dcmplx(1.0d0, 0.0d0)
             pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
             CALL invfft('Wave', pwg0(:), dffts)
          endif
@@ -174,21 +172,24 @@ IMPLICIT NONE
 
              w0g1 = w0gauss ( enk / degaussw0, 0) / degaussw0
              w0g2 = w0gauss ( enpkp / degaussw0, 0) / degaussw0
+
 !Again we want per spin.
              vcnknpkp = 0.0d0
              if(.not.do_lind) then
                do ig = 1, ngcoul 
                   do igp = 1, ngcoul
-                     phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
-                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(igp,invs(isymop)))*fnknpkp(nls(ig))*phase
+                     !phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
+                     !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(igp,invs(isymop)))*fnknpkp(nls(ig))*phase
+                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,igp)*fnknpkp(nls(igp))
                   enddo
                enddo
              else
                do ig = 1, ngcoul 
+                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))
                   !phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
-                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,isymop), gmapsym(ig,isymop))*fnknpkp(nls(ig))*phase
-                  phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
-                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
+                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,isymop),gmapsym(ig,isymop))*fnknpkp(nls(ig))*phase
+                  !phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
+                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
                enddo
              endif
 !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -199,20 +200,23 @@ IMPLICIT NONE
          enddo!isym
         enddo!ibnd
        enddo!ik
- write(1000+mpime, *) mu
+       write(1000+mpime, *) mu
      enddo!iq
- write(1000+mpime, *) mu
- CALL mp_sum(mu, inter_image_comm)!reduce over q points
+   CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
- mu = mu/(omega*nsym)
- print*, nk1, nk2, nk3
- print*, omega
- print*, nsym
- print*, "Ef", ef*rytoev, "N(0)", N0/rytoev
- print*, "debye temp Ry", debye_e
- print*, "\mu", mu
- print*, "\mu^{*}", mu/(1+mu*log((ef)/debye_e))
- print*, "\mu^{*}", mu/(1+mu*log((bandwidth)/debye_e))
+   mu = mu/(omega*nsym)
+
+   write(stdout,*) nk1, nk2, nk3
+   write(stdout,*) omega
+   write(stdout,*) nsym
+
+   write(stdout, '(5X, "Ef ", f12.7, " N(0) ", f12.7)'), ef*rytoev, N0/rytoev
+   write(stdout, '(5X, "N(0) ", f12.7)'),  N0/rytoev
+   write(stdout, '(5X, "debye temp Ry", f12.7)'), debye_e
+   write(stdout, '(5X, "\mu", f12.7)'), mu
+   write(stdout, '(5X, "\mu^{*} ", f12.7)'), mu/(1+mu*log((ef)/debye_e))
+   write(stdout, '(5X, "\mu^{*}", f12.7)' ) mu/(1+mu*log((bandwidth)/debye_e))
+
 END SUBROUTINE coulmatsym
 
 SUBROUTINE load_coul(vc, iq)
