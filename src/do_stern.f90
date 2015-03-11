@@ -73,21 +73,19 @@ IMPLICIT NONE
        CALL coulomb(iq, igstart, igstop, scrcoul_g)
 !HLIM
        IF(nimage.gt.1) THEN
-          WRITE(1000+mpime, *) nimage
           CALL mp_sum(scrcoul_g, inter_image_comm)
        ENDIF
 
-!ONly the meta_image should write to rile
+!Only the meta_image should write to file
        IF (meta_ionode) THEN
-         WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
          CALL unfold_w(scrcoul_g,iq)
+         IF(solve_direct.and.tinvert) WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
          IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
          CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
-         WRITE(1000+mpime, '("FINISHED WRITING")')
        ENDIF
        call mp_barrier(inter_image_comm)
        CALL clean_pw_gw(iq)
-      !if(do_epsil.and.(iq.eq.nqs)) GOTO 126
+       if(do_q0_only) GOTO 126
   ENDDO
 126 CONTINUE
    WRITE(stdout, '("Finished Calculating Screened Coulomb")')

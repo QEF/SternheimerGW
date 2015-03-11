@@ -377,10 +377,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      call mp_sum ( drhoscf, inter_pool_comm )
      call mp_sum ( drhoscfh, inter_pool_comm )
-
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw), 1, dvscfout(1,iw),1)
-     meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
 
+     meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
      if (meandvb.lt.1.d-8) then 
          CALL fwfft ('Dense', dvscfout(:,iw), dfftp)
          dvscfout ( nl(1), current_spin ) = (0.d0, 0.0d0)

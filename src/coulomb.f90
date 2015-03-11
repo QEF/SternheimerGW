@@ -75,7 +75,7 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !g is sorted in magnitude order.
 WRITE(1000+mpime, '(2i4)') igstart, igstop
 DO ig = igstart, igstop
-      if (do_q0_only.and.ig.gt.1) CYCLE
+!      if (do_q0_only.and.ig.gt.1) CYCLE
       qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
       IF(solve_direct) THEN
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)

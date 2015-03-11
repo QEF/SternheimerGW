@@ -7,7 +7,7 @@ PROGRAM gw
   USE environment,     ONLY : environment_start
   USE check_stop,      ONLY : check_stop_init
   USE control_gw,      ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
-                              do_green, multishift, do_sigma_c
+                              do_green, multishift, do_sigma_c, do_q0_only
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,        ONLY : diropn
   USE units_gw,        ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
@@ -40,6 +40,7 @@ PROGRAM gw
   do_band  = .TRUE.
   do_matel = .TRUE.
   ik=1
+  if(do_q0_only) GOTO 127
   CALL run_nscf(do_band, do_matel, ik)
   CALL initialize_gw()
 !Calculation G
@@ -53,5 +54,6 @@ PROGRAM gw
   ENDIF
   IF(do_sigma_exx)   CALL sigma_exch(ik)
   IF(do_sigma_matel) CALL sigma_matel(ik)
+  127 CONTINUE
   CALL stop_gw( .TRUE. )
 END PROGRAM gw
