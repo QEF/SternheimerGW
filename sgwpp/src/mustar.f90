@@ -151,7 +151,6 @@ PROGRAM mustar
   CALL mp_bcast( nbndmax, ionode_id, world_comm )
   CALL mp_bcast( nshell, ionode_id, world_comm  )
   CALL mp_bcast( eta, ionode_id, world_comm     )
-  CALL mp_bcast( qtf, ionode_id, world_comm     )
   CALL mp_bcast( do_coulmat, ionode_id, world_comm  )
   CALL mp_bcast( do_fsavg,   ionode_id, world_comm  )
   CALL mp_bcast( do_lind,   ionode_id, world_comm  )
@@ -219,8 +218,10 @@ PROGRAM mustar
   CALL diropn (iuncoul, 'coul', lrcoul, exst)
  ENDIF
 
-  print *,"nk1 nk2 nk3", nk1, nk2, nk3
-  print *,"Thomas-Fermi Vector", qtf
+ WRITE(stdout, '(\5x, "nk1 nk2 nk3", 3i4)'), nk1, nk2, nk3
+ WRITE(stdout, '(\5x, "Fermi Vector", f12.7)'), kf
+ WRITE(stdout, '(\5x, "Thomas-Fermi Vector", f12.7)'), qtf
+
 !Calculate Coulomb matrix elements stored in struct vcnknpkp
   CALL start_clock( 'calculation' )
   IF(do_coulmat) THEN

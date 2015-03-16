@@ -30,14 +30,11 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
   REAL(DP)                :: xq_ibk_locr(3)
   REAL(DP), INTENT(IN)    :: xq_ibk(3)
   REAL(DP)                :: xq_ibk_loc(3)
-
   !_loc so i don't operate on arrays passed to subroutine
   !that would require rotating the vectors twice each time. 
-
   LOGICAL                 :: found_q, s_minus_q, inv_q
  !variable to acknowledge we've rotated q back the IBZ
  !dummy variable for routine to find Sq = -q + G
-
   INTEGER,  INTENT(OUT)   :: iq, isym
   INTEGER,  INTENT(INOUT) :: nig0
  !integer of plane wave that lets us map \psi_{k-\q} to \psi_{\k-\q+G_0\in IBZ} 
@@ -55,6 +52,8 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
   !q_{IBK} = R^{-1} xq_{IBZ}
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
+  !For COULMAT
+  !K_{IBZ}+G = SK'
    xq_ibk_loc(:) = xq_ibk 
   !Transform xq into cartesian co-ordinates. 
    CALL cryst_to_cart(1, xq_ibk_loc(:), at, -1)
@@ -68,7 +67,8 @@ IF (.not.found_q) then
       x_q_loc(:) = xk(:,iq)
 !HL might have to fix this:
       CALL cryst_to_cart(1, x_q_loc(:), at, -1)
-      DO ig = 1 , 27
+     !! DO ig = 1 , 27 WORKS FOR CUBIC CRYSTAL
+      DO ig = 1 , 125 !CAC6 IS very freaky c.f. FG's cuprates stuff
           g_loc = g(:,ig)
           call cryst_to_cart(1, g_loc, at, -1)
         DO isym = 1, nsym

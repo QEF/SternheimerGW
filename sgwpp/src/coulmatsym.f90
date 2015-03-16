@@ -27,12 +27,12 @@ SUBROUTINE coulmatsym()
   USE gvect,                ONLY : ngm, g, nl
   USE gvecs,                ONLY : nls, nlsm
   USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul
-  USE mp,               ONLY : mp_bcast, mp_sum
-  USE mp_world,         ONLY : world_comm, mpime
-  USE mp_pools,         ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
-  USE buffers,          ONLY : get_buffer
-  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
-                               my_image_id, nimage, root_image
+  USE mp,                   ONLY : mp_bcast, mp_sum
+  USE mp_world,             ONLY : world_comm, mpime
+  USE mp_pools,             ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
+  USE buffers,              ONLY : get_buffer
+  USE mp_global,            ONLY : inter_image_comm, intra_image_comm, &
+                                   my_image_id, nimage, root_image
 
 IMPLICIT NONE
 
@@ -63,16 +63,31 @@ IMPLICIT NONE
   INTEGER :: nqstart, nqstop
   REAL(DP) :: ehomo, elomo, bandwidth
 
-  ALLOCATE ( gmapsym  (ngm, nrot)   )
-  ALLOCATE ( eigv     (ngm, nrot)   )
-  CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
-  ALLOCATE(vc(ngcoul,ngcoul))
+  ALLOCATE ( gmapsym  (ngm, nsym)   )
+  ALLOCATE ( eigv     (ngm, nsym)   )
 
- !First calculate dosef: 
- !dosef = dos_ef (ngaussw, degaussw0, ef0, etf, wkf, nksf, nbndsub)
- !N(Ef) in the equation for lambda is the DOS per spin
- !dosef = dosef / two
- !CALCULATE Dos at Fermi Level gaussian:
+  gmapsym(:,:) = 0
+  eigv(:,:) = 0
+
+  CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+
+  ALLOCATE(vc(ngcoul,ngcoul))
+!Test phases:
+!  do isymop = 1, nsym
+!     print*, ftau(:,isymop)
+!  enddo
+!  do isymop = 1, nsym
+!    print*, "nsym", isymop, nrot
+!    do ig = 1, 50
+!      phase = eigv(ig,isymop)
+!      print*, ig, phase
+!    enddo
+!  enddo
+!  First calculate dosef: 
+!  dosef = dos_ef (ngaussw, degaussw0, ef0, etf, wkf, nksf, nbndsub)
+!  N(Ef) in the equation for lambda is the DOS per spin
+!  dosef = dosef / two
+!  CALCULATE Dos at Fermi Level gaussian:
   if(ltetra) then
    WRITE( stdout,'(/5x,"USING TETRAHEDRAL INTEGRATION")')
    CALL dos_t(et,nspin,nbnd, nks,ntetra,tetra, ef, DOSofE)
@@ -81,10 +96,10 @@ IMPLICIT NONE
        &        "ngauss,degauss=",i4,f12.6/)') ngauss, degauss
    CALL dos_g(et,nspin,nbnd, nks,wk,degauss,ngauss, ef, DOSofE)
   endif
- !tetra=.true.
- !use tetrahedron method:
- !CALL dos_t(et, nspin, nbnd, nks, ntetra, tetra, ef, DOSofE)
- !want density of states per spin.
+! tetra=.true.
+! use tetrahedron method:
+! CALL dos_t(et, nspin, nbnd, nks, ntetra, tetra, ef, DOSofE)
+! want density of states per spin.
   N0 = DOSofE(1)/2.d0
   if (degaussfs.eq.0.0d0) then
      degaussw0 = 0.05
@@ -94,23 +109,19 @@ IMPLICIT NONE
 
   En      = ef
   nqs     = nks
-  mu = 0.0d0
- !Loop over IBZ on kpoints:
- !print*, xk(:,1:nks)
- !print*
- !print*, wk(1:nks)
- !print*
+  mu      = 0.0d0
+
   call parallelize(nks, nqstart, nqstop)
+
   write(1000+mpime, *) nqstart, nqstop
   write(1000+mpime, *) xk(:, 1:nks)
   write(1000+mpime, *) wk(1:nks)
-!Again only non-collinear case
+!Again only collinear case
   ibnd = NINT( nelec ) / 2
   ehomo = MAXVAL( et(ibnd,  1:nkstot) )
   elomo = MINVAL( et(:,  1:nkstot))
   bandwidth = ef - elomo
 !print*, "Ef Bandwidth: ", bandwidth*rytoev
-
   do iq = nqstart, nqstop
      write(1000+mpime, *) iq
      do ik = 1, nks
@@ -146,7 +157,6 @@ IMPLICIT NONE
          psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
          if(nig0.gt.1) then
             pwg0(:) = dcmplx(0.0d0, 0.0d0)
-            !pwg0(nls(gmapsym(nig0, invs(isym)))) = dcmplx(1.0d0, 0.0d0)
             pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
             CALL invfft('Wave', pwg0(:), dffts)
          endif
@@ -163,7 +173,7 @@ IMPLICIT NONE
                enddo
              endif              
              do ir = 1, dffts%nnr  
-                fnknpkp(ir) = fnknpkp(ir) +  conjg(psi_temp(ir))*psink(ir,ibnd)
+                fnknpkp(ir) = fnknpkp(ir) + conjg(psi_temp(ir))*psink(ir,ibnd)
              enddo
              CALL fwfft ('Wave', fnknpkp(:), dffts)
 !Eigenvalues
@@ -172,24 +182,19 @@ IMPLICIT NONE
 
              w0g1 = w0gauss ( enk / degaussw0, 0) / degaussw0
              w0g2 = w0gauss ( enpkp / degaussw0, 0) / degaussw0
-
 !Again we want per spin.
              vcnknpkp = 0.0d0
              if(.not.do_lind) then
                do ig = 1, ngcoul 
                   do igp = 1, ngcoul
-                     !phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
-                     !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(igp,invs(isymop)))*fnknpkp(nls(ig))*phase
-                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,igp)*fnknpkp(nls(igp))
+                     phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
+                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,igp)*fnknpkp(nls(igp))*phase
                   enddo
                enddo
              else
                do ig = 1, ngcoul 
-                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))
-                  !phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
-                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,isymop),gmapsym(ig,isymop))*fnknpkp(nls(ig))*phase
-                  !phase = eigv(ig,invs(isymop))*conjg(eigv(igp,invs(isymop)))
-                  !vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(gmapsym(ig,invs(isymop)),gmapsym(ig,invs(isymop)))*fnknpkp(nls(ig))*phase
+                  phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
+                  vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))*phase
                enddo
              endif
 !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -202,14 +207,15 @@ IMPLICIT NONE
        enddo!ik
        write(1000+mpime, *) mu
      enddo!iq
-   CALL mp_sum(mu, inter_image_comm)!reduce over q points
+     CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
-   mu = mu/(omega*nsym)
+     mu = mu/(omega*nsym)
 
    write(stdout,*) nk1, nk2, nk3
    write(stdout,*) omega
    write(stdout,*) nsym
 
+   write(stdout, '(5X, "nbndmin ", i4)'), nbndmin
    write(stdout, '(5X, "Ef ", f12.7, " N(0) ", f12.7)'), ef*rytoev, N0/rytoev
    write(stdout, '(5X, "N(0) ", f12.7)'),  N0/rytoev
    write(stdout, '(5X, "debye temp Ry", f12.7)'), debye_e
