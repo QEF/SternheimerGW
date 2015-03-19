@@ -7,7 +7,7 @@
 SUBROUTINE coulmatsym()
   USE kinds,                ONLY : DP
   USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
-  USE cell_base,            ONLY : tpiba2, omega, at, alat
+  USE cell_base,            ONLY : tpiba2, omega, at, alat, bg
   USE ener,                 ONLY : ef
   USE io_global,            ONLY : ionode, stdout
   USE start_k,              ONLY : nks_start, xk_start, wk_start, &
@@ -38,7 +38,7 @@ IMPLICIT NONE
 
   COMPLEX(DP) :: vcnknpkp
   REAL(DP)    :: enk, enpkp
-  REAL(DP)    :: norm, nqs
+  REAL(DP)    :: norm
   REAL(DP)    :: En, DOSofE(2), N0, phase
   REAL(DP)    :: degaussw0, w0g1, w0g2
   REAL(DP)    :: qg2, xq(3), xkp(3)
@@ -46,7 +46,7 @@ IMPLICIT NONE
   COMPLEX(DP) :: psink(dffts%nnr,nbnd), psinpkp(dffts%nnr,nbnd), psi_temp(dffts%nnr), fnknpkp(dffts%nnr)
   COMPLEX(DP) :: pwg0(dffts%nnr)
   INTEGER     :: ik, ikp, ibnd, jbnd, ig, igp, isymop, isym
-  INTEGER     :: iq
+  INTEGER     :: iq , iq1, i
   INTEGER     :: nkp, nkp_abs, ipool
 !IO
   LOGICAL     :: exst
@@ -61,6 +61,11 @@ IMPLICIT NONE
   COMPLEX(DP), ALLOCATABLE :: vc(:,:)
   INTEGER :: ir, niG0
   INTEGER :: nqstart, nqstop
+!For Star of q.
+  REAL(DP) :: sxq(3,48), xqs(3,48)
+  INTEGER  :: imq, isq(48), nqstar, nqs
+  INTEGER  :: nsq(48)
+
   REAL(DP) :: ehomo, elomo, bandwidth
 
   ALLOCATE ( gmapsym  (ngm, nsym)   )
@@ -108,14 +113,13 @@ IMPLICIT NONE
   endif
 
   En      = ef
-  nqs     = nks
   mu      = 0.0d0
 
   call parallelize(nks, nqstart, nqstop)
 
   write(1000+mpime, *) nqstart, nqstop
-  write(1000+mpime, *) xk(:, 1:nks)
-  write(1000+mpime, *) wk(1:nks)
+  !write(1000+mpime, *) xk(:, 1:nks)
+  !write(1000+mpime, *) wk(1:nks)
 !Again only collinear case
   ibnd = NINT( nelec ) / 2
   ehomo = MAXVAL( et(ibnd,  1:nkstot) )
@@ -123,7 +127,17 @@ IMPLICIT NONE
   bandwidth = ef - elomo
 !print*, "Ef Bandwidth: ", bandwidth*rytoev
   do iq = nqstart, nqstop
-     write(1000+mpime, *) iq
+     write(1000+mpime, *) 
+     write(1000+mpime, '(5x, "iq: ", i4)') iq
+     write(1000+mpime, '(5x, "xq: ", 3f9.5)') xk(:, iq)
+!Only need sym ops in star of q the rest are just nq*Vnkn'k'
+     CALL star_q(xk(:,iq), at, bg, nsym, s, invs, nqs, sxq, isq, nsq, imq, .false. )
+  !  IF (verbosity) THEN
+     WRITE( 1000+mpime, * )
+     WRITE( 1000+mpime, '(5x,a,i4)') 'Number of q in the star = ', nqs
+     WRITE( 1000+mpime, '(5x,a)') 'List of q in the star:'
+     WRITE( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqs)
+  !ENDIF
      do ik = 1, nks
 !    if (mod(ik,2).eq.0) print*, "xk:  ", ik
 !    Load coulomb interaction at xq
@@ -135,32 +149,33 @@ IMPLICIT NONE
 !xkp to the brillouin zone. then we keep track of that symmetry else and use it
 !to invert one of kpoints in the IBZ. Keeping with the idea that we only need
 !IBZk and IBZq.
-   psink(:,:)   = (0.0d0,0.0d0)
-   CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-   CALL get_buffer (evc, nwordwfc, iunwfc, ik)
-   psink(nls(igk(1:npw)), :) = evc(1:npw,:)
-   do ibnd = nbndmin, nbnd
-      CALL invfft ('Wave', psink(:,ibnd), dffts)
-      do isymop = 1, nsym
+        psink(:,:)   = (0.0d0,0.0d0)
+        CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+        CALL get_buffer (evc, nwordwfc, iunwfc, ik)
+        psink(nls(igk(1:npw)), :) = evc(1:npw,:)
+        do ibnd = nbndmin, nbnd
+          CALL invfft ('Wave', psink(:,ibnd), dffts)
+!MODIFYING FOR STAR Q
+          do isymop = 1, nsym
 !        x_k' = x_k-S^-1*xq
-         xq(:) = xk(:,iq)
-         CALL rotate(xq, aq, s, nsym, invs(isymop))
-         xkp(:) = xk(:, ik)-aq(:)
+            xq(:) = xk(:,iq)
+            CALL rotate(xq, aq, s, nsym, invs(isymop))
+            xkp(:) = xk(:, ik)-aq(:)
 !        Find symmop what gives us k'
-         inv_q=.false.
-         call find_qG_ibz(xkp, s, iqrec, isym, nig0, found_q, inv_q)
-         if(iqrec.gt.nks) call errore('coulmatsym','COULD NOT MAP k+q to IBZ',1)
-         ikp = iqrec
-         psinpkp(:,:) = (0.0d0,0.0d0)
-         CALL gk_sort (xk(1,iqrec), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-         CALL get_buffer(evc, nwordwfc, iunwfc, ikp)
-         psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
-         if(nig0.gt.1) then
-            pwg0(:) = dcmplx(0.0d0, 0.0d0)
-            pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
-            CALL invfft('Wave', pwg0(:), dffts)
-         endif
-         do jbnd = nbndmin, nbnd
+            inv_q=.false.
+            call find_qG_ibz(xkp, s, iqrec, isym, nig0, found_q, inv_q)
+            if(iqrec.gt.nks) call errore('coulmatsym','COULD NOT MAP k+q to IBZ',1)
+            ikp = iqrec
+            psinpkp(:,:) = (0.0d0,0.0d0)
+            CALL gk_sort (xk(1,iqrec), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
+            CALL get_buffer(evc, nwordwfc, iunwfc, ikp)
+            psinpkp(nls(gmapsym(igk(1:npw), isym)),:) = evc(1:npw,:)
+            if(nig0.gt.1) then
+             pwg0(:) = dcmplx(0.0d0, 0.0d0)
+             pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
+             CALL invfft('Wave', pwg0(:), dffts)
+            endif
+            do jbnd = nbndmin, nbnd
 !calculate f_{nk,npkp}(\G)
              psi_temp = (0.0d0, 0.0d0)
              psi_temp = psinpkp(:,jbnd)
@@ -202,6 +217,7 @@ IMPLICIT NONE
 !and to get per spin we need to kill it in the wk factor.
              mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
           enddo!jbnd
+        !if (iq.eq1) write(1000_mpime,*) mu
          enddo!isym
         enddo!ibnd
        enddo!ik

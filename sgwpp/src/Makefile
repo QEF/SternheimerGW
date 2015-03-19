@@ -16,6 +16,7 @@ find_qg_ibz.o\
 rotate.o\
 read_file_coul.o\
 parallelize.o\
+star_q.o\
 dosg.o\
 stop_pp.o
 
@@ -39,4 +40,5 @@ coulmat.x : mustar.o libsgwppa.a $(MODULES) $(LIBOBJS)
 clean :
 	- /bin/rm -f *.x *.o *~ *.d *.mod *.i *.L libsgwppa.a
 
+#coulmatsym.o\
 #include make.depend
