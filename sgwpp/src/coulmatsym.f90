@@ -51,7 +51,7 @@ IMPLICIT NONE
 !IO
   LOGICAL     :: exst
 !to put in coul struct:
-  REAL(DP)    :: mu, mustar
+  REAL(DP)    :: mu, mustar, muloc
 ! SYMMMETRY
   LOGICAL     :: found_q, inv_q, minus_q
   INTEGER     :: iqrec, irotmq
@@ -138,6 +138,7 @@ IMPLICIT NONE
      WRITE( 1000+mpime, '(5x,a)') 'List of q in the star:'
      WRITE( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqs)
   !ENDIF
+     muloc = 0.0d0
      do ik = 1, nks
 !    if (mod(ik,2).eq.0) print*, "xk:  ", ik
 !    Load coulomb interaction at xq
@@ -216,12 +217,14 @@ IMPLICIT NONE
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
              mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+             muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
           enddo!jbnd
         !if (iq.eq1) write(1000_mpime,*) mu
          enddo!isym
         enddo!ibnd
        enddo!ik
-       write(1000+mpime, *) mu
+       write(1000+mpime, *) muloc 
+       write(1000+mpime, '(5x,"\mu(iq) " 2f12.7)') muloc, wk(iq)/2.0
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
@@ -232,7 +235,7 @@ IMPLICIT NONE
    write(stdout,*) nsym
 
    write(stdout, '(5X, "nbndmin ", i4)'), nbndmin
-   write(stdout, '(5X, "Ef ", f12.7, " N(0) ", f12.7)'), ef*rytoev, N0/rytoev
+   write(stdout, '(5X, "Ef ", f12.7, " bandwidth ", f12.7)'), ef*rytoev, bandwidth*rytoev
    write(stdout, '(5X, "N(0) ", f12.7)'),  N0/rytoev
    write(stdout, '(5X, "debye temp Ry", f12.7)'), debye_e
    write(stdout, '(5X, "\mu", f12.7)'), mu
