@@ -52,6 +52,7 @@ IMPLICIT NONE
   LOGICAL     :: exst
 !to put in coul struct:
   REAL(DP)    :: mu, mustar, muloc
+  REAL(DP)    :: munnp(nbnd, nbnd)
 ! SYMMMETRY
   LOGICAL     :: found_q, inv_q, minus_q
   INTEGER     :: iqrec, irotmq
@@ -68,6 +69,7 @@ IMPLICIT NONE
 
   REAL(DP) :: ehomo, elomo, bandwidth
 
+
   ALLOCATE ( gmapsym  (ngm, nsym)   )
   ALLOCATE ( eigv     (ngm, nsym)   )
 
@@ -77,17 +79,6 @@ IMPLICIT NONE
   CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
   ALLOCATE(vc(ngcoul,ngcoul))
-!Test phases:
-!  do isymop = 1, nsym
-!     print*, ftau(:,isymop)
-!  enddo
-!  do isymop = 1, nsym
-!    print*, "nsym", isymop, nrot
-!    do ig = 1, 50
-!      phase = eigv(ig,isymop)
-!      print*, ig, phase
-!    enddo
-!  enddo
 !  First calculate dosef: 
 !  dosef = dos_ef (ngaussw, degaussw0, ef0, etf, wkf, nksf, nbndsub)
 !  N(Ef) in the equation for lambda is the DOS per spin
@@ -113,7 +104,11 @@ IMPLICIT NONE
   endif
 
   En      = ef
-  mu      = 0.0d0
+
+  mu         = 0.0d0
+  munnp(:,:) = 0.0d0
+
+  write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
 
   call parallelize(nks, nqstart, nqstop)
 
@@ -217,14 +212,13 @@ IMPLICIT NONE
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
              mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+             munnp(ibnd, jbnd) = munnp(ibnd,jbnd) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
              muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
           enddo!jbnd
-        !if (iq.eq1) write(1000_mpime,*) mu
          enddo!isym
         enddo!ibnd
        enddo!ik
-       write(1000+mpime, *) muloc 
-       write(1000+mpime, '(5x,"\mu(iq) " 2f12.7)') muloc, wk(iq)/2.0
+       write(1000+mpime, '(5x,"\mu(iq) " 1f12.5)') muloc*wk(1)/2.0
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
@@ -241,6 +235,11 @@ IMPLICIT NONE
    write(stdout, '(5X, "\mu", f12.7)'), mu
    write(stdout, '(5X, "\mu^{*} ", f12.7)'), mu/(1+mu*log((ef)/debye_e))
    write(stdout, '(5X, "\mu^{*}", f12.7)' ) mu/(1+mu*log((bandwidth)/debye_e))
+
+   write(stdout, * ) 
+   write(stdout, * ) munnp(:,:)
+   write(stdout, * ) 
+   write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
 
 END SUBROUTINE coulmatsym
 

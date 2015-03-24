@@ -229,11 +229,11 @@ PROGRAM mustar
         CALL coulmatsym()
   ENDIF
 
-  !Perform Fermi surface averaging of matrix elements in vcnknpkp
-  !IF(do_fsavg) THEN
-  !  IF (ionode) WRITE( stdout, "( 5x, 'Performing Fermi Surface average' ) " )
-  !    CALL fsaverage()
-  !ENDIF
+!Perform Fermi surface averaging of matrix elements in vcnknpkp
+!IF(do_fsavg) THEN
+!  IF (ionode) WRITE( stdout, "( 5x, 'Performing Fermi Surface average' ) " )
+!    CALL fsaverage()
+!ENDIF
 
   CASE DEFAULT
       CALL errore('sgwpp','invalid CALCULATION = '//trim(calculation),1)
