@@ -193,6 +193,7 @@ IMPLICIT NONE
 
              w0g1 = w0gauss ( enk / degaussw0, 0) / degaussw0
              w0g2 = w0gauss ( enpkp / degaussw0, 0) / degaussw0
+
 !Again we want per spin.
              vcnknpkp = 0.0d0
              if(.not.do_lind) then
@@ -222,7 +223,9 @@ IMPLICIT NONE
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
+
      mu = mu/(omega*nsym)
+     munnp = munnp/(omega*nsym)
 
    write(stdout,*) nk1, nk2, nk3
    write(stdout,*) omega
