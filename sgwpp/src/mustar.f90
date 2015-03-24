@@ -22,6 +22,7 @@ END MODULE control_coulmat
 PROGRAM mustar
 !------------------------------
   !
+#  define DIRECT_IO_FACTOR 8 
   USE kinds,       ONLY : DP
   USE io_global,   ONLY : stdout, ionode, ionode_id
   USE mp,          ONLY : mp_bcast
@@ -65,6 +66,10 @@ PROGRAM mustar
   INTEGER :: ios
 
   COMPLEX(DP), ALLOCATABLE :: vcnknpkp(:,:,:,:)
+  character(len=256) :: tempfile, filename
+  INTEGER :: recl
+  integer*8 :: unf_recl
+  
 
 !---------------------------------------------
 ! program body
@@ -211,12 +216,18 @@ PROGRAM mustar
  CALL mp_bcast( lrcoul,  ionode_id, world_comm )
  CALL mp_bcast( ngcoul,  ionode_id, world_comm )
 
- IF(ionode) THEN
+! IF(ionode) THEN
 !OPEN DIRECTORY FOR COULOMB MATRIX ELEMENTS
-  CALL diropn (29, 'coulmat', lrcoulmat, exst)
+!  CALL diropn (29, 'coulmat', lrcoulmat, exst)
 !OPEN COULOMB directory
-  CALL diropn (iuncoul, 'coul', lrcoul, exst)
- ENDIF
+  !CALL diropn (iuncoul, 'coul', lrcoul, exst)
+  tempfile = trim(tmp_dir) // trim('al.coul1')
+  unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
+  open (iuncoul, file = trim(adjustl(tempfile)), iostat = ios, form = 'unformatted', &
+       status = 'unknown', access = 'direct', recl = unf_recl)
+
+  if (ios /= 0) call errore ('diropn', 'error opening '//trim(tempfile), iuncoul)
+! ENDIF
 
  WRITE(stdout, '(\5x, "nk1 nk2 nk3", 3i4)'), nk1, nk2, nk3
  WRITE(stdout, '(\5x, "Fermi Vector", f12.7)'), kf
