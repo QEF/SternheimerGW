@@ -221,7 +221,8 @@ PROGRAM mustar
 !  CALL diropn (29, 'coulmat', lrcoulmat, exst)
 !OPEN COULOMB directory
   !CALL diropn (iuncoul, 'coul', lrcoul, exst)
-  tempfile = trim(tmp_dir) // trim('al.coul1')
+  !tempfile = trim(tmp_dir) // trim('mgb2.coul1')
+  tempfile = trim(tmp_dir) // trim(prefix) // trim('.coul1')
   unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
   open (iuncoul, file = trim(adjustl(tempfile)), iostat = ios, form = 'unformatted', &
        status = 'unknown', access = 'direct', recl = unf_recl)

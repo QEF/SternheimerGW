@@ -108,6 +108,7 @@ IMPLICIT NONE
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
 
+  write(stdout, * )  nbnd
   write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
 
   call parallelize(nks, nqstart, nqstop)
@@ -220,6 +221,7 @@ IMPLICIT NONE
         enddo!ibnd
        enddo!ik
        write(1000+mpime, '(5x,"\mu(iq) " 1f12.5)') muloc*wk(1)/2.0
+       write(1000+mpime, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
@@ -242,7 +244,7 @@ IMPLICIT NONE
    write(stdout, * ) 
    write(stdout, * ) munnp(:,:)
    write(stdout, * ) 
-   write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
+   write(stdout, '(5X, 6f12.7)' ) munnp(1:nbnd,1:nbnd)
 
 END SUBROUTINE coulmatsym
 
