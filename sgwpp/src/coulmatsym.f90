@@ -224,6 +224,7 @@ IMPLICIT NONE
        write(1000+mpime, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
+     CALL mp_sum(munnp, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
 
      mu = mu/(omega*nsym)
