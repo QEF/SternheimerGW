@@ -53,6 +53,7 @@ IMPLICIT NONE
 !to put in coul struct:
   REAL(DP)    :: mu, mustar, muloc
   REAL(DP)    :: munnp(nbnd, nbnd)
+  REAL(DP)    :: kcut
 ! SYMMMETRY
   LOGICAL     :: found_q, inv_q, minus_q
   INTEGER     :: iqrec, irotmq
@@ -66,6 +67,7 @@ IMPLICIT NONE
   REAL(DP) :: sxq(3,48), xqs(3,48)
   INTEGER  :: imq, isq(48), nqstar, nqs
   INTEGER  :: nsq(48)
+  REAL(DP) :: xkp_loc(3), xk_loc(3)
 
   REAL(DP) :: ehomo, elomo, bandwidth
 
@@ -107,6 +109,8 @@ IMPLICIT NONE
 
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
+
+  kcut = 0.33333
 
   write(stdout, * )  nbnd
   write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
@@ -214,7 +218,30 @@ IMPLICIT NONE
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
              mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-             munnp(ibnd, jbnd) = munnp(ibnd,jbnd) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+        ! Need to separate the bands in k space
+        ! for MgB2 to disambiguate the bands I think we only
+        ! need to check that the k point lies within a certain distance of
+        ! the gamma point. I think we only need the first corner of the Gamma
+        ! point!
+             xk_loc(:)   = xk(:,ik)
+             xkp_loc(:)  = xk(:,ikp)
+
+             CALL cryst_to_cart(1, xk_loc(:), at, -1)
+             CALL cryst_to_cart(1, xkp_loc(:), at, -1)
+
+             if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .le. kcut ) then
+                if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).le.kcut) then
+                   munnp(1, 1) = munnp(1,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+                else
+                   munnp(1, 2) = munnp(1,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+                endif
+             else
+                if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).le.kcut) then
+                   munnp(2, 1) = munnp(2,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+                else
+                   munnp(2, 2) = munnp(2,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+                endif
+             endif
              muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
           enddo!jbnd
          enddo!isym
