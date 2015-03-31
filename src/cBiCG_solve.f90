@@ -218,8 +218,8 @@ real(DP) :: &
 ! rtp = inv(M) * rt
            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
            call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
-           if (tprec) call cg_psi (ndmx, ndmx*npol, 1, gp  (1,ibnd), h_diag(1,ibnd) )
-           if (tprec) call cg_psi (ndmx, ndmx*npol, 1, gtp (1,ibnd), h_diag(1,ibnd) )
+           if (tprec) call cg_psi (ndmx, ndmx, 1, gp  (1,ibnd), h_diag(1,ibnd) )
+           if (tprec) call cg_psi (ndmx, ndmx, 1, gtp (1,ibnd), h_diag(1,ibnd) )
 ! beta = - <qt|rp>/<pt|q>
            a(lbnd) = ZDOTC (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
            beta = - a(lbnd) / c(lbnd)

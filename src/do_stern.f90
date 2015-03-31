@@ -14,6 +14,7 @@ SUBROUTINE do_stern()
                          my_image_id, nimage, root_image
   USE mp,              ONLY : mp_sum, mp_barrier
   USE mp_world,             ONLY : mpime
+  USE noncollin_module, ONLY : noncolin, nspin_mag
 
 IMPLICIT NONE
 
@@ -21,7 +22,7 @@ IMPLICIT NONE
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
   LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel
 
-  ALLOCATE ( scrcoul_g( sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, 1))
+  ALLOCATE ( scrcoul_g( sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, nspin_mag))
   ALLOCATE ( ig_unique( sigma_c_st%ngmt) )
   ALLOCATE ( sym_ig(sigma_c_st%ngmt))
   ALLOCATE ( sym_friend(sigma_c_st%ngmt))

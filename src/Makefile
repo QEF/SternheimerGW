@@ -40,9 +40,10 @@ incdrhoscf_w.o\
 dgradcorr.o\
 truncate_2D.o\
 coul_multishift.o\
-cBiCG_solve_coul.o\
 apply_dpot.o\
-cBiCG_solve.o\
+cBiCG_solve_green.o\
+cBiCG_solve_coul.o\
+cBiCG_solve_mag.o\
 incdrhoscf.o\
 orthogonalize.o\
 cgsolve_all.o\
@@ -56,7 +57,6 @@ dvqpsi_us.o\
 unfold_w.o\
 invert_epsilon.o\
 green_linsys_shift.o\
-cBiCG_solve_green.o\
 h_psi_all.o\
 green_multishift.o\
 ch_psi_all_green.o\

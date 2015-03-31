@@ -51,7 +51,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 ! timing variables
   REAL(DP) :: qg2, qg2coul
   INTEGER :: ig, igp, iw, npe, irr, icounter
-  INTEGER :: igstart, igstop, igpert
+  INTEGER :: igstart, igstop, igpert, isp
   COMPLEX(DP), allocatable :: drhoaux (:,:) 
   COMPLEX(DP) :: padapp, w
 !HL temp variable for scrcoul to write to file.  
@@ -68,7 +68,18 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   EXTERNAL get_clock
   CALL start_clock ('coulomb')
 
-ALLOCATE (drhoscfs(dfftp%nnr, nfs))    
+if(solve_direct) then
+!
+  ALLOCATE (drhoscfs(dfftp%nnr, nfs))    
+else
+!for self-consistent solution we only consider one
+!frequency at a time. To save memory and time and lines of codes etc.
+!we use the frequency variable for multishift as the nspin_mag var.
+!to extend this to magnetic with multishift we need to add another
+!dimension to drhoscfrs
+  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag))    
+endif
+
 irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
@@ -100,25 +111,29 @@ DO ig = igstart, igstop
          if(do_epsil) GOTO 545
       ELSE
         if(qg2.lt.0.001.AND.lgauss) then 
-          WRITE(6, '("Not calculating static electric field applied to metal, cycling coulomb")')
+          write(6,'("Not calculating static electric field applied to metal, cycling coulomb")')
           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
           CYCLE
         endif
-        do iw = 1, nfs
+        DO iw = 1, nfs
            drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
            dvbare(:)     = dcmplx(0.0d0, 0.0d0)
            dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
            CALL invfft('Smooth', dvbare, dffts)
            CALL solve_linter (dvbare, iw, drhoscfs)
            CALL fwfft('Smooth', dvbare, dffts)
-           CALL fwfft('Dense', drhoscfs(:,iw), dfftp)
+           DO isp =1 , nspin_mag
+              CALL fwfft('Dense', drhoscfs(:,isp), dffts)
+           ENDDO
            IF(ionode) THEN
-             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
-             DO igp = 1, sigma_c_st%ngmt
-                scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
+             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
+             DO isp = 1, nspin_mag
+               DO igp = 1, sigma_c_st%ngmt
+                  scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp)
+               ENDDO
              ENDDO
            ENDIF
-        enddo
+        ENDDO
       ENDIF!solve_direct/solve_linter
 ENDDO 
 545 CONTINUE

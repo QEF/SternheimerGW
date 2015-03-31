@@ -9,17 +9,18 @@ USE control_gw,    ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padec
 USE qpoint,        ONLY : xq
 USE cell_base,     ONLY : at
 USE gwsigma,      ONLY : sigma_c_st
+USE noncollin_module, ONLY : noncolin, nspin_mag
 
 IMPLICIT NONE
 
-COMPLEX(DP)  :: scrcoul_g_in(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, 1)
+COMPLEX(DP)  :: scrcoul_g_in(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, nspin_mag)
 COMPLEX(DP)  :: scrcoul_g_tmp(sigma_c_st%ngmt, nfs)
 COMPLEX(DP)  :: phase
 
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
 !counter
 INTEGER      :: isym, iwim, iq, iw
-INTEGER      :: done, ngmdone
+INTEGER      :: done, ngmdone, isp
 INTEGER      :: ngmdonelist(sigma_c_st%ngmt)
 INTEGER      :: gmapsym(ngm,48)
 COMPLEX(DP)  :: eigv(ngm,48)
@@ -64,7 +65,7 @@ IF(modielec) then
          ENDDO
          DO iwim = 1, nfs
             DO isym = 1, nsymq
-               scrcoul_g_in(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim,1) = scrcoul_g_in(ig_unique(ig), ig_unique(ig), iwim,1)
+               scrcoul_g_in(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim,1) = scrcoul_g_in(ig_unique(ig), ig_unique(ig), iwim, 1)
             ENDDO
          ENDDO
       ENDDO
@@ -79,21 +80,23 @@ ELSE
 !still need to unfold this vector so we append it to the done list:
         ngmdone = ngmdone + 1
         ngmdonelist(ngmdone) = ig
+        DO isp = 1, nspin_mag
 !and unfold it with the correct correspondence ig has sym_friend(ig) where R^{-1} ig = ig_unique:
         DO iwim = 1, nfs
             DO igp = 1, sigma_c_st%ngmt
-               scrcoul_g_tmp(igp,iwim) = scrcoul_g_in(sym_friend(ig), igp, iwim, 1)
+               scrcoul_g_tmp(igp,iwim) = scrcoul_g_in(sym_friend(ig), igp, iwim, isp)
             ENDDO
         ENDDO
 !the relationship R between ig and sym_friend(ig) is given by sym_ig.
-        DO iwim = 1, nfs
-            DO igp = 1, sigma_c_st%ngmt
-            !For symmetry operations with fraction translations we need to include:
-            !the \tau_{r} part which applies to the original G, G' rotation on R
-            !e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))
-             phase = eigv(sym_friend(ig), sym_ig(ig))*conjg(eigv(igp, sym_ig(ig)))
-             scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, 1) = scrcoul_g_tmp(igp, iwim)*phase
-            ENDDO
+          DO iwim = 1, nfs
+             DO igp = 1, sigma_c_st%ngmt
+!For symmetry operations with fraction translations we need to include:
+!the \tau_{r} part which applies to the original G, G' rotation on R
+!e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))
+                phase = eigv(sym_friend(ig), sym_ig(ig))*conjg(eigv(igp, sym_ig(ig)))
+                scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, isp) = scrcoul_g_tmp(igp, iwim)*phase
+             ENDDO
+         ENDDO
         ENDDO
 128 CONTINUE
     ENDDO
