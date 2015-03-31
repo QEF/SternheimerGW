@@ -26,7 +26,7 @@ SUBROUTINE coulmatsym()
   USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE gvect,                ONLY : ngm, g, nl
   USE gvecs,                ONLY : nls, nlsm
-  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul
+  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul, do_diag
   USE mp,                   ONLY : mp_bcast, mp_sum
   USE mp_world,             ONLY : world_comm, mpime
   USE mp_pools,             ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
@@ -202,12 +202,19 @@ IMPLICIT NONE
 !Again we want per spin.
              vcnknpkp = 0.0d0
              if(.not.do_lind) then
-               do ig = 1, ngcoul 
+               if(.not.do_diag) then
+                 do ig = 1, ngcoul 
                   do igp = 1, ngcoul
                      phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
                      vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,igp)*fnknpkp(nls(igp))*phase
                   enddo
-               enddo
+                 enddo
+               else
+                 do ig = 1, ngcoul 
+                     phase = eigv(ig,isymop)*conjg(eigv(ig,isymop))
+                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))*phase
+                 enddo
+               endif
              else
                do ig = 1, ngcoul 
                   phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))

@@ -14,7 +14,7 @@ END MODULE dielectric
 MODULE control_coulmat
   USE kinds,    ONLY : DP
   SAVE
-  LOGICAL  :: do_coulmat, do_fsavg, do_lind
+  LOGICAL  :: do_coulmat, do_fsavg, do_lind, do_diag
   INTEGER  :: nbndmin, nbndmax, ngcoul
   REAL(DP) :: degaussfs, debye_e
 END MODULE control_coulmat
@@ -44,7 +44,7 @@ PROGRAM mustar
   USE units_coulmat,   ONLY : iuncoulmat, lrcoulmat, lrcoul, iuncoul
   USE dielectric,      ONLY : qtf, kf
   USE control_coulmat, ONLY : do_coulmat, do_fsavg, nbndmin, degaussfs, ngcoul, do_lind, &
-                              debye_e
+                              debye_e, do_diag
   USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
                                my_image_id, nimage, root_image
   IMPLICIT NONE
@@ -58,7 +58,7 @@ PROGRAM mustar
   CHARACTER(10)           :: calculation,smeartype
   LOGICAL                 :: metalcalc, exst
   !
-  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e
+  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag
   NAMELIST / energy_grid / smeartype,intersmear,intrasmear,wmax,wmin,nbndmax,nw,shift,nshell,eta,ibndmin,ibndmax, qmod_par
   !
   ! local variables
@@ -110,6 +110,7 @@ PROGRAM mustar
   kf           = 1.0
   degaussfs    = 0.05
   debye_e      = 0.0026
+  do_diag      =.false.
 
   !SHOULD READ FROM INPUT FILE
 
@@ -161,6 +162,7 @@ PROGRAM mustar
   CALL mp_bcast( do_lind,   ionode_id, world_comm  )
   CALL mp_bcast( kf,   ionode_id, world_comm  )
   CALL mp_bcast( qtf,   ionode_id, world_comm  )
+  CALL mp_bcast( do_diag,   ionode_id, world_comm  )
 
   IF (ionode) WRITE( stdout, "( 5x, 'Reading PW restart file...' ) " )
 
