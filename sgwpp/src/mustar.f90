@@ -14,7 +14,7 @@ END MODULE dielectric
 MODULE control_coulmat
   USE kinds,    ONLY : DP
   SAVE
-  LOGICAL  :: do_coulmat, do_fsavg, do_lind, do_diag
+  LOGICAL  :: do_coulmat, do_fsavg, do_lind, do_diag, do_plotmuk
   INTEGER  :: nbndmin, nbndmax, ngcoul
   REAL(DP) :: degaussfs, debye_e
 END MODULE control_coulmat
@@ -44,7 +44,7 @@ PROGRAM mustar
   USE units_coulmat,   ONLY : iuncoulmat, lrcoulmat, lrcoul, iuncoul
   USE dielectric,      ONLY : qtf, kf
   USE control_coulmat, ONLY : do_coulmat, do_fsavg, nbndmin, degaussfs, ngcoul, do_lind, &
-                              debye_e, do_diag
+                              debye_e, do_diag, do_plotmuk
   USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
                                my_image_id, nimage, root_image
   IMPLICIT NONE
@@ -58,7 +58,7 @@ PROGRAM mustar
   CHARACTER(10)           :: calculation,smeartype
   LOGICAL                 :: metalcalc, exst
   !
-  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag
+  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag, do_plotmuk
   NAMELIST / energy_grid / smeartype,intersmear,intrasmear,wmax,wmin,nbndmax,nw,shift,nshell,eta,ibndmin,ibndmax, qmod_par
   !
   ! local variables
@@ -163,6 +163,7 @@ PROGRAM mustar
   CALL mp_bcast( kf,   ionode_id, world_comm  )
   CALL mp_bcast( qtf,   ionode_id, world_comm  )
   CALL mp_bcast( do_diag,   ionode_id, world_comm  )
+  CALL mp_bcast( do_plotmuk,   ionode_id, world_comm  )
 
   IF (ionode) WRITE( stdout, "( 5x, 'Reading PW restart file...' ) " )
 
@@ -210,17 +211,19 @@ PROGRAM mustar
  vcnknpkp = (0.0d0,0.d0)
 
  iuncoulmat = 29
- lrcoulmat  = 2 * nks * nks * nbnd * nbnd
+ lrcoulmat  = nks 
  iuncoul    = 28
  lrcoul     = 2 * ngcoul * ngcoul
 
  CALL mp_bcast( iuncoul, ionode_id, world_comm )
  CALL mp_bcast( lrcoul,  ionode_id, world_comm )
  CALL mp_bcast( ngcoul,  ionode_id, world_comm )
+ CALL mp_bcast( iuncoulmat,  ionode_id, world_comm )
 
-! IF(ionode) THEN
 !OPEN DIRECTORY FOR COULOMB MATRIX ELEMENTS
-!  CALL diropn (29, 'coulmat', lrcoulmat, exst)
+ IF(ionode) THEN
+    CALL diropn (iuncoulmat, 'coulmat', lrcoulmat, exst)
+ ENDIF
 !OPEN COULOMB directory
   !CALL diropn (iuncoul, 'coul', lrcoul, exst)
   !tempfile = trim(tmp_dir) // trim('mgb2.coul1')
@@ -241,6 +244,9 @@ PROGRAM mustar
   IF(do_coulmat) THEN
     IF (ionode) WRITE( stdout, "( 5x, 'Calculating Coulomb Matrix Elements' ) " )
         CALL coulmatsym()
+!        CALL coulmatstar()
+  ELSE IF (do_plotmuk) THEN
+        CALL plotmuk() 
   ENDIF
 
 !Perform Fermi surface averaging of matrix elements in vcnknpkp

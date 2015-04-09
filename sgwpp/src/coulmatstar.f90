@@ -4,7 +4,7 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !------------------------------
-SUBROUTINE coulmatsym()
+SUBROUTINE coulmatstar()
   USE kinds,                ONLY : DP
   USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
   USE cell_base,            ONLY : tpiba2, omega, at, alat, bg
@@ -26,7 +26,7 @@ SUBROUTINE coulmatsym()
   USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE gvect,                ONLY : ngm, g, nl
   USE gvecs,                ONLY : nls, nlsm
-  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul
+  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul, do_diag
   USE mp,                   ONLY : mp_bcast, mp_sum
   USE mp_world,             ONLY : world_comm, mpime
   USE mp_pools,             ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
@@ -51,7 +51,9 @@ IMPLICIT NONE
 !IO
   LOGICAL     :: exst
 !to put in coul struct:
-  REAL(DP)    :: mu, mustar
+  REAL(DP)    :: mu, mustar, muloc
+  REAL(DP)    :: munnp(2, 2)
+  REAL(DP)    :: kcut
 ! SYMMMETRY
   LOGICAL     :: found_q, inv_q, minus_q
   INTEGER     :: iqrec, irotmq
@@ -67,6 +69,8 @@ IMPLICIT NONE
   INTEGER  :: nsq(48)
 
   REAL(DP) :: ehomo, elomo, bandwidth
+  REAL(DP) :: xkp_loc(3), xk_loc(3)
+  REAL(DP) :: muk(nks)
 
   ALLOCATE ( gmapsym  (ngm, nsym)   )
   ALLOCATE ( eigv     (ngm, nsym)   )
@@ -114,6 +118,8 @@ IMPLICIT NONE
 
   En      = ef
   mu      = 0.0d0
+  munnp(:,:) = 0.0d0
+  kcut = 0.33333
 
   call parallelize(nks, nqstart, nqstop)
 
@@ -138,6 +144,7 @@ IMPLICIT NONE
      WRITE( 1000+mpime, '(5x,a)') 'List of q in the star:'
      WRITE( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqs)
   !ENDIF
+     muloc = 0.0d0
      do ik = 1, nks
 !    if (mod(ik,2).eq.0) print*, "xk:  ", ik
 !    Load coulomb interaction at xq
@@ -201,13 +208,21 @@ IMPLICIT NONE
 !Again we want per spin.
              vcnknpkp = 0.0d0
              if(.not.do_lind) then
-               do ig = 1, ngcoul 
+               if(.not.do_diag) then
+                 do ig = 1, ngcoul 
                   do igp = 1, ngcoul
                      !phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
-                     phase = 1.0d0
+                     phase = 1.0
                      vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,igp)*fnknpkp(nls(igp))*phase
                   enddo
-               enddo
+                 enddo
+               else
+                 do ig = 1, ngcoul 
+                     !phase = eigv(ig,isymop)*conjg(eigv(ig,isymop))
+                     phase = 1.0d0
+                     vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))*phase
+                 enddo
+               endif
              else
                do ig = 1, ngcoul 
                   !phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
@@ -218,18 +233,44 @@ IMPLICIT NONE
 !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
+             !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
              mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(float(nsq(iq1))*wk(iq)/2.0)
-             !mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+             muk(ik) = muk(ik) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(float(nsq(iq1))*wk(iq)/2.0)
+
+             xk_loc(:)   = xk(:,ik)
+             xkp_loc(:)  = xk(:,ikp)
+
+             CALL cryst_to_cart(1, xk_loc(:), at, -1)
+             CALL cryst_to_cart(1, xkp_loc(:), at, -1)
+
+             if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .le. kcut ) then
+                if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).le.kcut) then
+                   munnp(1, 1) = munnp(1,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*((float(nsq(iq1))*wk(iq)/2.0))
+                else
+                   munnp(1, 2) = munnp(1,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*((float(nsq(iq1))*wk(iq)/2.0))
+                endif
+             else
+                if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).le.kcut) then
+                   munnp(2, 1) = munnp(2,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*((float(nsq(iq1))*wk(iq)/2.0))
+                else
+                   munnp(2, 2) = munnp(2,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*((float(nsq(iq1))*wk(iq)/2.0))
+                endif
+             endif
+             muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*((float(nsq(iq1))*wk(ik)/2.0))
           enddo!jbnd
         !if (iq.eq1) write(1000_mpime,*) mu
-         enddo!isym
-        enddo!ibnd
-       enddo!ik
-       write(1000+mpime, *) mu
+         enddo!jbnd
+        enddo!isym
+       enddo!ibnd
+       write(1000+mpime, '(5x,"\mu(iq) " 1f12.5)') muloc*wk(1)/2.0
+       write(1000+mpime, '(5X, 6f12.5)' ) munnp(1:2,1:2)
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
+     CALL mp_sum(munnp, inter_image_comm)!reduce over q points
+
 !Factors not included when we calculate V^{c}_{nkn'k'}.
      mu = mu/(omega*nsym)
+     munnp = munnp/(omega*nsym)
 
    write(stdout,*) nk1, nk2, nk3
    write(stdout,*) omega
@@ -243,7 +284,11 @@ IMPLICIT NONE
    write(stdout, '(5X, "\mu^{*} ", f12.7)'), mu/(1+mu*log((ef)/debye_e))
    write(stdout, '(5X, "\mu^{*}", f12.7)' ) mu/(1+mu*log((bandwidth)/debye_e))
 
-END SUBROUTINE coulmatsym
+   write(stdout, * ) 
+   write(stdout, * ) munnp(:,:)
+   write(stdout, * ) 
+   write(stdout, '(5X, 6f12.7)' ) munnp(1:2,1:2)
+END SUBROUTINE coulmatstar
 
 SUBROUTINE load_coul(vc, iq)
   USE kinds,           ONLY : DP

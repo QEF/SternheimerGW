@@ -52,7 +52,7 @@ IMPLICIT NONE
   LOGICAL     :: exst
 !to put in coul struct:
   REAL(DP)    :: mu, mustar, muloc
-  REAL(DP)    :: munnp(nbnd, nbnd)
+  REAL(DP)    :: munnp(2, 2)
   REAL(DP)    :: kcut
 ! SYMMMETRY
   LOGICAL     :: found_q, inv_q, minus_q
@@ -70,6 +70,7 @@ IMPLICIT NONE
   REAL(DP) :: xkp_loc(3), xk_loc(3)
 
   REAL(DP) :: ehomo, elomo, bandwidth
+  REAL(DP) :: muk(nks)
 
 
   ALLOCATE ( gmapsym  (ngm, nsym)   )
@@ -106,14 +107,12 @@ IMPLICIT NONE
   endif
 
   En      = ef
-
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
-
   kcut = 0.33333
 
-  write(stdout, * )  nbnd
-  write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
+  !write(stdout, * )  nbnd
+  !write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
 
   call parallelize(nks, nqstart, nqstop)
 
@@ -224,26 +223,30 @@ IMPLICIT NONE
 !mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
-             mu = mu+(1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-        ! Need to separate the bands in k space
-        ! for MgB2 to disambiguate the bands I think we only
-        ! need to check that the k point lies within a certain distance of
-        ! the gamma point. I think we only need the first corner of the Gamma
-        ! point!
+             mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+             muk(ik) = muk(ik) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+!Need to separate the bands in k space
+!for MgB2 to disambiguate the bands I think we only
+!need to check that the k point lies within a certain distance of
+!the gamma point. I think we only need the first corner of the Gamma
+!point!
              xk_loc(:)   = xk(:,ik)
+
+!NEED TO ROTATE THIS as well
              xkp_loc(:)  = xk(:,ikp)
 
              CALL cryst_to_cart(1, xk_loc(:), at, -1)
              CALL cryst_to_cart(1, xkp_loc(:), at, -1)
 
-             if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .le. kcut ) then
-                if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).le.kcut) then
+             if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .lt. kcut ) then
+!if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).lt.kcut) then
+                if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(1, 1) = munnp(1,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 else
                    munnp(1, 2) = munnp(1,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 endif
              else
-                if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).le.kcut) then
+                if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(2, 1) = munnp(2,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 else
                    munnp(2, 2) = munnp(2,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
@@ -255,7 +258,7 @@ IMPLICIT NONE
         enddo!ibnd
        enddo!ik
        write(1000+mpime, '(5x,"\mu(iq) " 1f12.5)') muloc*wk(1)/2.0
-       write(1000+mpime, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
+       write(1000+mpime, '(5X, 6f12.5)' ) munnp(1:2,1:2)
      enddo!iq
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
      CALL mp_sum(munnp, inter_image_comm)!reduce over q points
@@ -279,7 +282,10 @@ IMPLICIT NONE
    write(stdout, * ) 
    write(stdout, * ) munnp(:,:)
    write(stdout, * ) 
-   write(stdout, '(5X, 6f12.7)' ) munnp(1:nbnd,1:nbnd)
+   write(stdout, '(5X, 6f12.7)' ) munnp(1:2,1:2)
+
+  if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
+  write (stdout, '(5X, "nbndmin ", i4)'), nbndmin
 
 END SUBROUTINE coulmatsym
 

@@ -1,9 +1,4 @@
 SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
-! Routine finds which symmetry operation folds xq to the required qpoint, xq_req.
-! While it is true we can use the full symmetry group of the crystal for W
-! regardless of still need to use only valid symops 
-! For crystals without inversion symmetry we pray for a symmetry operations  Sq -> -q +G
-
   USE kinds,         ONLY : DP
   USE cell_base,     ONLY : at, bg
   USE klist,         ONLY : nks, nkstot, ngauss, degauss, xk, wk
@@ -52,8 +47,10 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
   !q_{IBK} = R^{-1} xq_{IBZ}
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
-  !For COULMAT
+
+  !For COULMAT:
   !K_{IBZ}+G = SK'
+
    xq_ibk_loc(:) = xq_ibk 
   !Transform xq into cartesian co-ordinates. 
    CALL cryst_to_cart(1, xq_ibk_loc(:), at, -1)

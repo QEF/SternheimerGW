@@ -12,11 +12,13 @@ mustar.o \
 ktokpmq.o \
 openfil_pp.o\
 coulmatsym.o\
+coulmatstar.o\
 find_qg_ibz.o\
 rotate.o\
 read_file_coul.o\
 parallelize.o\
 star_q.o\
+plotmuk.o\
 dosg.o\
 stop_pp.o
 
