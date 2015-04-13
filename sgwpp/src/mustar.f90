@@ -58,8 +58,10 @@ PROGRAM mustar
   CHARACTER(10)           :: calculation,smeartype
   LOGICAL                 :: metalcalc, exst
   !
-  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag, do_plotmuk, do_dosband, nbndmax
-  NAMELIST / energy_grid / smeartype,intersmear,intrasmear,wmax,wmin,nbndmax,nw,shift,nshell,eta,ibndmin,ibndmax, qmod_par
+  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, &
+                       do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e,  &
+                       do_diag, do_plotmuk, do_dosband, nbndmax
+  NAMELIST / energy_grid / smeartype,intersmear,intrasmear,wmax,wmin,nw,shift,nshell,eta,ibndmin,ibndmax, qmod_par
   !
   ! local variables
   !
@@ -94,7 +96,7 @@ PROGRAM mustar
   wmax         = 30.0d0
   eta          = 0.3
   nbndmin      = 1
-  nbndmax      = nbnd
+  nbndmax      = 8
   ibndmin      = 1
   nshell       = 0
   ibndmax      = 0

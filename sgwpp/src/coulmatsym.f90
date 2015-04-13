@@ -112,7 +112,6 @@ IMPLICIT NONE
   munnp(:,:) = 0.0d0
   dosnnp(:) = 0.0d0
   kcut = 0.33333
-  !kcut = 0.12
 
   !write(stdout, * )  nbnd
   !write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
@@ -127,8 +126,9 @@ IMPLICIT NONE
   ehomo = MAXVAL( et(ibnd,  1:nkstot) )
   elomo = MINVAL( et(:,  1:nkstot))
   bandwidth = ef - elomo
-  write(1000+mpime, *)nbnd
-  write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
+
+  write(stdout, *) nbnd
+  write (stdout, '(5X, "nbndmin ", i4, "  nbndmax ", i4)'), nbndmin, nbndmax
 !print*, "Ef Bandwidth: ", bandwidth*rytoev
   do iq = nqstart, nqstop
      write(1000+mpime, *) 
@@ -200,7 +200,7 @@ IMPLICIT NONE
              enk = (et(ibnd, ik) - ef)
              enpkp = (et(jbnd, ikp) - ef)
 
-             w0g1 = w0gauss ( enk / degaussw0, ngauss) / degaussw0
+             w0g1 = w0gauss ( enk / degaussw0,  ngauss) / degaussw0
              w0g2 = w0gauss ( enpkp / degaussw0, ngauss) / degaussw0
 
 !Again we want per spin.
@@ -221,7 +221,7 @@ IMPLICIT NONE
                endif
              else
                do ig = 1, ngcoul 
-                  phase = eigv(ig,isymop)*conjg(eigv(igp,isymop))
+                  phase = eigv(ig,isymop)*conjg(eigv(ig,isymop))
                   vcnknpkp = vcnknpkp + conjg(fnknpkp(nls(ig)))*vc(ig,ig)*fnknpkp(nls(ig))*phase
                enddo
              endif
@@ -229,7 +229,7 @@ IMPLICIT NONE
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
              mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-             muk(ik) = muk(ik) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+!             muk(ik) = muk(ik) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
 !Need to separate the bands in k space
 !for MgB2 to disambiguate the bands I think we only
 !need to check that the k point lies within a certain distance of
@@ -237,25 +237,23 @@ IMPLICIT NONE
 !point!
              xk_loc(:)   = xk(:,ik)
              xkp_loc(:)  = xk(:,ikp)
-
-            ! CALL cryst_to_cart(1, xk_loc(:), at, -1)
-            ! CALL cryst_to_cart(1, xkp_loc(:), at, -1)
-
              if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .lt. kcut ) then
                 if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(1, 1) = munnp(1,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-                   if(iq.eq.1) dosnnp(1) = dosnnp(1) + w0g1*(wk(ik)/2.0)
+                  !only calc dosband for one q point (otherwise it's a double
+                  !integral
+                  !if((iq.eq.1).and.(isymop.eq.1)) dosnnp(1) = dosnnp(1) + w0g1*(wk(ik)/2.0)
                 else
                    munnp(1, 2) = munnp(1,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-!                   dosnnp(1) = dosnnp(1) + w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 endif
              else
                 if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(2, 1) = munnp(2,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-!                  dosnnp(2,1) = dosnnp(2,1) + w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 else
                    munnp(2, 2) = munnp(2,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-                   if(iq.eq.1) dosnnp(2) = dosnnp(2) + w0g1*(wk(ik)/2.0)
+                  !only calc dosband for one q point (otherwise it's a double
+                  !integral
+                  !if((iq.eq.1).and.(isymop.eq.1)) dosnnp(2) = dosnnp(2) + w0g1*(wk(ik)/2.0)
                 endif
              endif
              muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -277,7 +275,7 @@ IMPLICIT NONE
    write(stdout,*) omega
    write(stdout,*) nsym
 
-   write(stdout, '(5X, "nbndmin ", i4)'), nbndmin
+   write(stdout, '(5X, "nbndmin ", i4, " nbndmax",i4)'), nbndmin, nbndmax
    write(stdout, '(5X, "Ef ", f12.7, " bandwidth ", f12.7)'), ef*rytoev, bandwidth*rytoev
    write(stdout, '(5X, "N(0) ", f12.7)'),  N0/rytoev
    write(stdout, '(5X, "debye temp Ry", f12.7)'), debye_e
@@ -292,10 +290,9 @@ IMPLICIT NONE
    write(stdout, * ) 
 
    write(stdout, '(5X, 6f12.7)' ) munnp(1:2,1:2)
-
    write(stdout, '(5X, 6f12.7)' ) dosnnp(1:2)
 
-  if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
+!  if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
   write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
 
 END SUBROUTINE coulmatsym

@@ -27,6 +27,7 @@ SUBROUTINE dosband()
   write(6,*) ngauss
   write(6,*) DOSofE(1)/2
   write(6,*) ef*13.605
+  write(6,*) nbnd
 
 DO ik = 1, nks
      xk_loc(:)   = xk(:,ik)
