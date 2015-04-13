@@ -44,7 +44,7 @@ PROGRAM mustar
   USE units_coulmat,   ONLY : iuncoulmat, lrcoulmat, lrcoul, iuncoul
   USE dielectric,      ONLY : qtf, kf
   USE control_coulmat, ONLY : do_coulmat, do_fsavg, nbndmin, degaussfs, ngcoul, do_lind, &
-                              debye_e, do_diag, do_plotmuk, do_dosband
+                              debye_e, do_diag, do_plotmuk, do_dosband, nbndmax
   USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
                                my_image_id, nimage, root_image
   IMPLICIT NONE
@@ -52,13 +52,13 @@ PROGRAM mustar
   !
   ! input variables
   !
-  INTEGER                 :: nw,nbndmax,nshell,ibndmin,ibndmax
+  INTEGER                 :: nw,nshell,ibndmin,ibndmax
   INTEGER                 :: nk1tmp, nk2tmp, nk3tmp
   REAL(DP)                :: intersmear,intrasmear,wmax,wmin,shift,eta, qmod_par
   CHARACTER(10)           :: calculation,smeartype
   LOGICAL                 :: metalcalc, exst
   !
-  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag, do_plotmuk, do_dosband
+  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag, do_plotmuk, do_dosband, nbndmax
   NAMELIST / energy_grid / smeartype,intersmear,intrasmear,wmax,wmin,nbndmax,nw,shift,nshell,eta,ibndmin,ibndmax, qmod_par
   !
   ! local variables
@@ -94,9 +94,9 @@ PROGRAM mustar
   wmax         = 30.0d0
   eta          = 0.3
   nbndmin      = 1
+  nbndmax      = nbnd
   ibndmin      = 1
   nshell       = 0
-  nbndmax      = 0
   ibndmax      = 0
   qmod_par     = 0.5
   nw           = 600
@@ -195,8 +195,8 @@ PROGRAM mustar
       IF (ionode) WRITE( stdout, "( 5x, 'The system is a dielectric...' ) " )
   ENDIF
 
-  IF (nbndmax == 0) nbndmax = nbnd
-  IF (ibndmax == 0) ibndmax = nbnd
+!  IF (nbndmax == 0) nbndmax = nbnd
+!  IF (ibndmax == 0) ibndmax = nbnd
 
   !
   ! ... run the specific pp calculation

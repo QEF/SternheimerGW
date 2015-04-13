@@ -26,7 +26,7 @@ SUBROUTINE coulmatsym()
   USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE gvect,                ONLY : ngm, g, nl
   USE gvecs,                ONLY : nls, nlsm
-  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul, do_diag
+  USE control_coulmat,      ONlY : degaussfs, nbndmin, nbndmax, debye_e, do_lind, ngcoul, do_diag
   USE mp,                   ONLY : mp_bcast, mp_sum
   USE mp_world,             ONLY : world_comm, mpime
   USE mp_pools,             ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
@@ -127,6 +127,8 @@ IMPLICIT NONE
   ehomo = MAXVAL( et(ibnd,  1:nkstot) )
   elomo = MINVAL( et(:,  1:nkstot))
   bandwidth = ef - elomo
+  write(1000+mpime, *)nbnd
+  write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
 !print*, "Ef Bandwidth: ", bandwidth*rytoev
   do iq = nqstart, nqstop
      write(1000+mpime, *) 
@@ -156,7 +158,7 @@ IMPLICIT NONE
         CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
         CALL get_buffer (evc, nwordwfc, iunwfc, ik)
         psink(nls(igk(1:npw)), :) = evc(1:npw,:)
-        do ibnd = nbndmin, nbnd
+        do ibnd = nbndmin, nbndmax
           CALL invfft ('Wave', psink(:,ibnd), dffts)
 !MODIFYING FOR STAR Q
           do isymop = 1, nsym
@@ -178,7 +180,7 @@ IMPLICIT NONE
              pwg0(nls(nig0)) = dcmplx(1.0d0, 0.0d0)
              CALL invfft('Wave', pwg0(:), dffts)
             endif
-            do jbnd = nbndmin, nbnd
+            do jbnd = nbndmin, nbndmax
 !calculate f_{nk,npkp}(\G)
              psi_temp = (0.0d0, 0.0d0)
              psi_temp = psinpkp(:,jbnd)
@@ -242,7 +244,7 @@ IMPLICIT NONE
              if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .lt. kcut ) then
                 if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(1, 1) = munnp(1,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-                   if(ik.eq.1) dosnnp(1) = dosnnp(1) + w0g1*(wk(ik)/2.0)
+                   if(iq.eq.1) dosnnp(1) = dosnnp(1) + w0g1*(wk(ik)/2.0)
                 else
                    munnp(1, 2) = munnp(1,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
 !                   dosnnp(1) = dosnnp(1) + w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
@@ -253,7 +255,7 @@ IMPLICIT NONE
 !                  dosnnp(2,1) = dosnnp(2,1) + w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 else
                    munnp(2, 2) = munnp(2,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-                   if(ik.eq.1) dosnnp(2) = dosnnp(2) + w0g1*(wk(ik)/2.0)
+                   if(iq.eq.1) dosnnp(2) = dosnnp(2) + w0g1*(wk(ik)/2.0)
                 endif
              endif
              muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -294,7 +296,7 @@ IMPLICIT NONE
    write(stdout, '(5X, 6f12.7)' ) dosnnp(1:2)
 
   if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
-  write (stdout, '(5X, "nbndmin ", i4)'), nbndmin
+  write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
 
 END SUBROUTINE coulmatsym
 
