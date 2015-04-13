@@ -50,17 +50,13 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
 
   !For COULMAT:
   !K_{IBZ}+G = SK'
-
    xq_ibk_loc(:) = xq_ibk 
-  !Transform xq into cartesian co-ordinates. 
+  !Transform xq into crystal co-ordinates. 
    CALL cryst_to_cart(1, xq_ibk_loc(:), at, -1)
    found_q=.false.
 IF (.not.found_q) then 
    inv_q =.true.
    DO iq = 1, nks
-!Transform xq into cartesian co-ordinates. 
-!x_q_loc(:) = x_q(:,iq)
-!Symmfix
       x_q_loc(:) = xk(:,iq)
 !HL might have to fix this:
       CALL cryst_to_cart(1, x_q_loc(:), at, -1)

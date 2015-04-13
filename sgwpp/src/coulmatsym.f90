@@ -94,7 +94,7 @@ IMPLICIT NONE
   else
   WRITE( stdout,'(/5x,"Gaussian broadening (read from input): ",&
        &        "ngauss,degauss=",i4,f12.6/)') ngauss, degauss
-   CALL dos_g(et,nspin,nbnd, nks,wk,degauss,ngauss, ef, DOSofE)
+   CALL dos_g(et,nspin,nbnd, nks,wk,degaussfs,ngauss, ef, DOSofE)
   endif
 ! tetra=.true.
 ! use tetrahedron method:
@@ -111,8 +111,8 @@ IMPLICIT NONE
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
   dosnnp(:) = 0.0d0
-  !kcut = 0.33333
-  kcut = 0.12
+  kcut = 0.33333
+  !kcut = 0.12
 
   !write(stdout, * )  nbnd
   !write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
@@ -198,8 +198,8 @@ IMPLICIT NONE
              enk = (et(ibnd, ik) - ef)
              enpkp = (et(jbnd, ikp) - ef)
 
-             w0g1 = w0gauss ( enk / degaussw0, 0) / degaussw0
-             w0g2 = w0gauss ( enpkp / degaussw0, 0) / degaussw0
+             w0g1 = w0gauss ( enk / degaussw0, ngauss) / degaussw0
+             w0g2 = w0gauss ( enpkp / degaussw0, ngauss) / degaussw0
 
 !Again we want per spin.
              vcnknpkp = 0.0d0
@@ -236,8 +236,8 @@ IMPLICIT NONE
              xk_loc(:)   = xk(:,ik)
              xkp_loc(:)  = xk(:,ikp)
 
-             CALL cryst_to_cart(1, xk_loc(:), at, -1)
-             CALL cryst_to_cart(1, xkp_loc(:), at, -1)
+            ! CALL cryst_to_cart(1, xk_loc(:), at, -1)
+            ! CALL cryst_to_cart(1, xkp_loc(:), at, -1)
 
              if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .lt. kcut ) then
                 if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then

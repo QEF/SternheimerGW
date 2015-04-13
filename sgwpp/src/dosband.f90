@@ -6,6 +6,7 @@ SUBROUTINE dosband()
   USE ener,                 ONLY : ef
   USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
   USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul, do_diag
+  USE lsda_mod,             ONLY : nspin
 
   IMPLICIT NONE
 
@@ -15,19 +16,25 @@ SUBROUTINE dosband()
   REAL(DP)    :: dosnnp(2)
   REAL(DP) :: xkp_loc(3), xk_loc(3)
   INTEGER  :: ibnd, ik
-  REAL(DP) :: enk 
+  REAL(DP) :: enk, DOSofE(2)
 
   kcut = 0.33333
   dosnnp  = 0.0d0
   degaussw0 = degaussfs
 
-  write(6,'("\sigma: ", f12.7, "\pi: ", f12.7)') dosnnp(1), dosnnp(2)
+  CALL dos_g(et,nspin,nbnd, nks,wk,degaussw0,ngauss, ef, DOSofE)
+
+  write(6,*) ngauss
+  write(6,*) DOSofE(1)/2
+  write(6,*) ef*13.605
+
 DO ik = 1, nks
-  DO ibnd = 1, nbnd
      xk_loc(:)   = xk(:,ik)
-     CALL cryst_to_cart(1, xk_loc(:), at, -1)
+     !kpoints are in cartesian coordinates:
+    write(6,'("cart: ", 3f12.7)') xk_loc
+    DO ibnd = 1, nbnd
      enk = (et(ibnd, ik) - ef)
-     w0g1 = w0gauss ( enk / degaussw0, 0) / degaussw0
+     w0g1 = w0gauss ( enk / degaussw0, ngauss) / degaussw0
      IF(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .lt. kcut ) then
         dosnnp(1) = dosnnp(1) + w0g1*(wk(ik)/2.0)
      ELSE
@@ -35,10 +42,7 @@ DO ik = 1, nks
      ENDIF
   ENDDO
 ENDDO
-
   write(6,*) 
   write(6,'("\sigma: ", f12.7, "\pi: ", f12.7)') dosnnp(1), dosnnp(2)
-  write(6,*) 
-  write(6,*) dosnnp(:)
 
 END SUBROUTINE dosband
