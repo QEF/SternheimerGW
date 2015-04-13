@@ -5,6 +5,7 @@ SUBROUTINE dosband()
   USE cell_base,            ONLY : tpiba2, omega, at, alat, bg
   USE ener,                 ONLY : ef
   USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
+  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul, do_diag
 
   IMPLICIT NONE
 
@@ -16,9 +17,11 @@ SUBROUTINE dosband()
   INTEGER  :: ibnd, ik
   REAL(DP) :: enk 
 
-  kcut = 0.12
+  kcut = 0.33333
   dosnnp  = 0.0d0
+  degaussw0 = degaussfs
 
+  write(6,'("\sigma: ", f12.7, "\pi: ", f12.7)') dosnnp(1), dosnnp(2)
 DO ik = 1, nks
   DO ibnd = 1, nbnd
      xk_loc(:)   = xk(:,ik)
@@ -33,6 +36,9 @@ DO ik = 1, nks
   ENDDO
 ENDDO
 
-  write(6,*) dosnnp
+  write(6,*) 
+  write(6,'("\sigma: ", f12.7, "\pi: ", f12.7)') dosnnp(1), dosnnp(2)
+  write(6,*) 
+  write(6,*) dosnnp(:)
 
 END SUBROUTINE dosband

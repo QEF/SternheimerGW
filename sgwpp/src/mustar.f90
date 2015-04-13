@@ -247,6 +247,7 @@ PROGRAM mustar
         CALL coulmatsym()
 !        CALL coulmatstar()
   ELSE IF(do_dosband) THEN
+    IF (ionode) WRITE( stdout, "( 5x, 'Calculating Dosband' ) " )
         CALL dosband()
   ELSE IF (do_plotmuk) THEN
         CALL plotmuk() 
