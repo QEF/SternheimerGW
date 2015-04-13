@@ -53,6 +53,7 @@ IMPLICIT NONE
 !to put in coul struct:
   REAL(DP)    :: mu, mustar, muloc
   REAL(DP)    :: munnp(2, 2)
+  REAL(DP)    :: dosnnp(2)
   REAL(DP)    :: kcut
 ! SYMMMETRY
   LOGICAL     :: found_q, inv_q, minus_q
@@ -109,7 +110,9 @@ IMPLICIT NONE
   En      = ef
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
-  kcut = 0.33333
+  dosnnp(:) = 0.0d0
+  !kcut = 0.33333
+  kcut = 0.12
 
   !write(stdout, * )  nbnd
   !write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
@@ -231,25 +234,26 @@ IMPLICIT NONE
 !the gamma point. I think we only need the first corner of the Gamma
 !point!
              xk_loc(:)   = xk(:,ik)
-
-!NEED TO ROTATE THIS as well
              xkp_loc(:)  = xk(:,ikp)
 
              CALL cryst_to_cart(1, xk_loc(:), at, -1)
              CALL cryst_to_cart(1, xkp_loc(:), at, -1)
 
              if(sqrt(xk_loc(1)**2 + xk_loc(2)**2) .lt. kcut ) then
-!if (sqrt((xkp_loc(1) - g(1,nig0))**2 + (xkp_loc(2)-g(2,nig0))**2).lt.kcut) then
                 if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(1, 1) = munnp(1,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+                   if(ik.eq.1) dosnnp(1) = dosnnp(1) + w0g1*(wk(ik)/2.0)
                 else
                    munnp(1, 2) = munnp(1,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+!                   dosnnp(1) = dosnnp(1) + w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 endif
              else
                 if ((sqrt((xkp_loc(1))**2 + (xkp_loc(2)))**2).lt.kcut) then
                    munnp(2, 1) = munnp(2,1) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+!                  dosnnp(2,1) = dosnnp(2,1) + w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
                 else
                    munnp(2, 2) = munnp(2,2) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+                   if(ik.eq.1) dosnnp(2) = dosnnp(2) + w0g1*(wk(ik)/2.0)
                 endif
              endif
              muloc = muloc + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)
@@ -282,7 +286,12 @@ IMPLICIT NONE
    write(stdout, * ) 
    write(stdout, * ) munnp(:,:)
    write(stdout, * ) 
+   write(stdout, * ) dosnnp(:)
+   write(stdout, * ) 
+
    write(stdout, '(5X, 6f12.7)' ) munnp(1:2,1:2)
+
+   write(stdout, '(5X, 6f12.7)' ) dosnnp(1:2)
 
   if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
   write (stdout, '(5X, "nbndmin ", i4)'), nbndmin

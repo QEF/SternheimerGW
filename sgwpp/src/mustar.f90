@@ -14,7 +14,7 @@ END MODULE dielectric
 MODULE control_coulmat
   USE kinds,    ONLY : DP
   SAVE
-  LOGICAL  :: do_coulmat, do_fsavg, do_lind, do_diag, do_plotmuk
+  LOGICAL  :: do_coulmat, do_fsavg, do_lind, do_diag, do_plotmuk, do_dosband
   INTEGER  :: nbndmin, nbndmax, ngcoul
   REAL(DP) :: degaussfs, debye_e
 END MODULE control_coulmat
@@ -44,7 +44,7 @@ PROGRAM mustar
   USE units_coulmat,   ONLY : iuncoulmat, lrcoulmat, lrcoul, iuncoul
   USE dielectric,      ONLY : qtf, kf
   USE control_coulmat, ONLY : do_coulmat, do_fsavg, nbndmin, degaussfs, ngcoul, do_lind, &
-                              debye_e, do_diag, do_plotmuk
+                              debye_e, do_diag, do_plotmuk, do_dosband
   USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
                                my_image_id, nimage, root_image
   IMPLICIT NONE
@@ -58,7 +58,7 @@ PROGRAM mustar
   CHARACTER(10)           :: calculation,smeartype
   LOGICAL                 :: metalcalc, exst
   !
-  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag, do_plotmuk
+  NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e, do_diag, do_plotmuk, do_dosband
   NAMELIST / energy_grid / smeartype,intersmear,intrasmear,wmax,wmin,nbndmax,nw,shift,nshell,eta,ibndmin,ibndmax, qmod_par
   !
   ! local variables
@@ -164,6 +164,7 @@ PROGRAM mustar
   CALL mp_bcast( qtf,   ionode_id, world_comm  )
   CALL mp_bcast( do_diag,   ionode_id, world_comm  )
   CALL mp_bcast( do_plotmuk,   ionode_id, world_comm  )
+  CALL mp_bcast( do_dosband,   ionode_id, world_comm  )
 
   IF (ionode) WRITE( stdout, "( 5x, 'Reading PW restart file...' ) " )
 
@@ -245,6 +246,8 @@ PROGRAM mustar
     IF (ionode) WRITE( stdout, "( 5x, 'Calculating Coulomb Matrix Elements' ) " )
         CALL coulmatsym()
 !        CALL coulmatstar()
+  ELSE IF(do_dosband) THEN
+        CALL dosband()
   ELSE IF (do_plotmuk) THEN
         CALL plotmuk() 
   ENDIF

@@ -12,6 +12,7 @@ mustar.o \
 ktokpmq.o \
 openfil_pp.o\
 coulmatsym.o\
+dosband.o\
 coulmatstar.o\
 find_qg_ibz.o\
 rotate.o\
