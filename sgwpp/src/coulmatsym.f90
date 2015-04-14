@@ -6,7 +6,7 @@
 !------------------------------
 SUBROUTINE coulmatsym()
   USE kinds,                ONLY : DP
-  USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
+  USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8, ev_to_kelvin
   USE cell_base,            ONLY : tpiba2, omega, at, alat, bg
   USE ener,                 ONLY : ef
   USE io_global,            ONLY : ionode, stdout
@@ -94,19 +94,15 @@ IMPLICIT NONE
   else
   WRITE( stdout,'(/5x,"Gaussian broadening (read from input): ",&
        &        "ngauss,degauss=",i4,f12.6/)') ngauss, degauss
-   CALL dos_g(et,nspin,nbnd, nks,wk,degaussfs,ngauss, ef, DOSofE)
+   CALL dos_g(et,nspin,nbnd, nks,wk,degauss,ngauss, ef, DOSofE)
   endif
 ! tetra=.true.
 ! use tetrahedron method:
 ! CALL dos_t(et, nspin, nbnd, nks, ntetra, tetra, ef, DOSofE)
 ! want density of states per spin.
   N0 = DOSofE(1)/2.d0
-  if (degaussfs.eq.0.0d0) then
-     degaussw0 = 0.05
-  else
-     degaussw0 = degaussfs
-  endif
-
+  degaussw0 = degauss
+  if(degaussw0.eq.0.0d0) call errore('coulmatsym','degauss is 0!',1)
   En      = ef
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
@@ -268,17 +264,17 @@ IMPLICIT NONE
      CALL mp_sum(munnp, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
 
-     mu = mu/(omega*nsym)
-     munnp = munnp/(omega*nsym)
+   mu = mu/(omega*nsym)
+   munnp = munnp/(omega*nsym)
 
    write(stdout,*) nk1, nk2, nk3
    write(stdout,*) omega
    write(stdout,*) nsym
 
    write(stdout, '(5X, "nbndmin ", i4, " nbndmax",i4)'), nbndmin, nbndmax
-   write(stdout, '(5X, "Ef ", f12.7, " bandwidth ", f12.7)'), ef*rytoev, bandwidth*rytoev
-   write(stdout, '(5X, "N(0) ", f12.7)'),  N0/rytoev
-   write(stdout, '(5X, "debye temp Ry", f12.7)'), debye_e
+   write(stdout, '(5X, "Ef eV", f12.7, " bandwidth eV", f12.7)'), ef*rytoev, bandwidth*rytoev
+   write(stdout, '(5X, "N(0) states per atom per spin per eV ", f12.7)'),  N0/rytoev
+   write(stdout, '(5X, "debye temp Ry:", f12.7, " eV ", f12.7, " Kelvin ", f12.7)'), debye_e, debye_e*RYTOEV, (debye_e*RYTOEV*eV_to_kelvin)
    write(stdout, '(5X, "\mu", f12.7)'), mu
    write(stdout, '(5X, "\mu^{*} ", f12.7)'), mu/(1+mu*log((ef)/debye_e))
    write(stdout, '(5X, "\mu^{*}", f12.7)' ) mu/(1+mu*log((bandwidth)/debye_e))
@@ -291,7 +287,6 @@ IMPLICIT NONE
 
    write(stdout, '(5X, 6f12.7)' ) munnp(1:2,1:2)
    write(stdout, '(5X, 6f12.7)' ) dosnnp(1:2)
-
 !  if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
   write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
 

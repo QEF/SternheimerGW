@@ -111,7 +111,7 @@ PROGRAM mustar
   qtf          = 1.0
   kf           = 1.0
   degaussfs    = 0.05
-  debye_e      = 0.0026
+  debye_e      = 0.0023
   do_diag      =.false.
 
   !SHOULD READ FROM INPUT FILE
