@@ -38,10 +38,11 @@ SUBROUTINE gwq_readin()
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
-                            do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG, do_green, do_sigma_matel, &
+                            do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG,&
+                            do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil, do_serial, &
-                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid
+                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid, high_io
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
@@ -103,7 +104,7 @@ SUBROUTINE gwq_readin()
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3
+                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -202,6 +203,8 @@ SUBROUTINE gwq_readin()
   do_diag_w       = .FALSE.
   do_imag         = .FALSE.
   do_pade_coul    = .FALSE.
+
+  high_io    = .FALSE.
 
 !Sigma cutoff, correlation cutoff, exchange cutoff
   plasmon      = 17.0d0

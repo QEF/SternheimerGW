@@ -352,8 +352,9 @@ MODULE control_gw
              do_epsil,& !in case you want to set xq point
              do_imag,&    !from input file for epsilon
              do_pade_coul,&
-             newgrid=.FALSE.,&
-             loqua=.FALSE.
+             newgrid = .FALSE.,&
+             loqua   = .FALSE.,&
+             high_io  
 
 END MODULE control_gw
 !

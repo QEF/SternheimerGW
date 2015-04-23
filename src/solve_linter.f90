@@ -49,7 +49,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta
+                                   ext_recover, eta, high_io
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
@@ -291,12 +291,22 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
         !
            if (where_rec=='solve_lint'.or.iter > 1) then
-              call get_buffer( dpsip, lrdwf, iudwfp, ik)
-              call get_buffer( dpsim, lrdwf, iudwfm, ik)
-
-             !threshold for iterative solution of the linear system
-             !write(6,*)1.d-1*sqrt(dr2), 1.d-4
-               thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+              if(high_io) then
+                 call get_buffer( dpsip, lrdwf, iudwfp, ik)
+                 call get_buffer( dpsim, lrdwf, iudwfm, ik)
+              else
+                 dpsim(:,:)     = (0.d0, 0.d0) 
+                 dpsip(:,:)     = (0.d0, 0.d0) 
+             !!!!! TRIAL Soln!!!!!!
+             ! do ig = 1, npwx
+             !    do ibnd =1, nbnd
+             !       dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) - fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+             !       dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+             !    enddo
+             ! enddo
+             !!!!!!!!!!!!!! 
+              endif
+             thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
            else
             !
             ! At the first iteration dpsi and dvscfin are set to zero
@@ -305,11 +315,18 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
             if(iw.le.2) then
               dpsim(:,:)     = (0.d0, 0.d0) 
               dpsip(:,:)     = (0.d0, 0.d0) 
+             !!!!! TRIAL Soln!!!!!!
+             ! do ig = 1, npwx
+             !    do ibnd =1, nbnd
+             !       dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+             !       dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+             !    enddo
+             ! enddo
+             !!!!!!!!!!!!!! 
             else!reuse dpsip dpsim (iw) from previous run frequency.
               call get_buffer( dpsip, lrdwf, iudwfp, ik)
               call get_buffer( dpsim, lrdwf, iudwfm, ik)
             endif
-
               dvscfin(:, :)  = (0.d0, 0.d0)
               dvscfout(:, :) = (0.d0, 0.d0)
             !
@@ -338,14 +355,20 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        ltaver = ltaver + lter
        lintercall = lintercall + 1
 
-       IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint",i4," ibnd",i4, &
+       IF(ik.eq.3) WRITE(1000+mpime, '(5x, "ik ", i4, " iw ", i4, " number of iters", i5)') ik, iw, lter 
+
+       IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
                   &              " solve_linter: root not converged ",e10.3)')  &
                   &                ik , ibnd, anorm
            nrec1 =  ik
          ! calculates dvscf, sum over k => dvscf_q_ipert
          ! incdrhoscf:  This routine computes the change of the charge density due to the
+         !HL low/io
+          if(high_io) then
            call save_buffer (dpsim, lrdwf, iudwfp, ik)
            call save_buffer (dpsip, lrdwf, iudwfm, ik)
+          endif
+
          ! perturbation. It is called at the end of the computation of the
          ! change of the wavefunction for a given k point.
            weight = wk (ikk)
