@@ -355,7 +355,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        ltaver = ltaver + lter
        lintercall = lintercall + 1
 
-       IF(ik.eq.3) WRITE(1000+mpime, '(5x, "ik ", i4, " iw ", i4, " number of iters", i5)') ik, iw, lter 
+ !IF(ik.eq.3) WRITE(1000+mpime,'(5x, "ik ", i4, " iw ", i4, " number of iters", i5)') ik, iw, lter 
 
        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
                   &              " solve_linter: root not converged ",e10.3)')  &
