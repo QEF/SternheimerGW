@@ -22,8 +22,7 @@ SUBROUTINE green_linsys (ik0)
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
-                                   where_rec, current_iq, &
-                                   ext_recover, eta, tr2_green, w_green_start
+                                   current_iq, ext_recover, eta, tr2_green, w_green_start
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
@@ -39,27 +38,26 @@ SUBROUTINE green_linsys (ik0)
 
   IMPLICIT NONE 
 
-  real(DP) :: thresh, anorm, averlt, dr2
-  logical :: conv_root
   COMPLEX(DP) :: rhs(npwx, 1)
   COMPLEX(DP) :: aux1(npwx)
   COMPLEX(DP) :: ci, cw, green(ngmgrn,ngmgrn)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
-  REAL(DP)    :: eprecloc
-  INTEGER :: iw, igp, iwi
-  INTEGER :: iq, ik0
-  INTEGER :: ngvecs, ngsol
-  INTEGER :: rec0, n1
-  REAL(DP) :: dirac, delta
-  REAL(DP) :: x
-  real(DP) :: k0mq(3) 
-  real(DP) :: w_ryd(nwgreen)
-  external cg_psi, cch_psi_all_fix, cch_psi_all_green
-  real(DP) , allocatable :: h_diag (:,:)
-
   COMPLEX(DP), ALLOCATABLE :: gr_A(:,:)
 
-  integer :: kter,       & ! counter on iterations
+  REAL(DP)    :: eprecloc
+  REAL(DP) :: thresh, anorm, averlt, dr2
+  REAL(DP) :: dirac, delta
+  REAL(DP) :: x
+  REAL(DP) :: k0mq(3) 
+  REAL(DP) :: w_ryd(nwgreen)
+  REAL(DP) , ALLOCATABLE :: h_diag (:,:)
+  REAL(DP) :: ar, ai
+
+  INTEGER :: iw, igp, iwi
+  INTEGER :: iq, ik0
+  INTEGER :: ngvecs
+  INTEGER :: rec0, n1
+  INTEGER :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
              ipert,      & ! counter on perturbations
              ibnd,       & ! counter on bands
@@ -78,30 +76,34 @@ SUBROUTINE green_linsys (ik0)
              ios,        & ! integer variable for I/O control
              mode          ! mode index
 
+  LOGICAL :: conv_root
+
+  COMPLEX(DP), EXTERNAL :: zdotc
+  EXTERNAL cg_psi, cch_psi_all_fix, cch_psi_all_green
+
   INTEGER, PARAMETER   ::  lmres = 1
-!Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
   INTEGER     :: counter
 !PARALLEL
   INTEGER :: igstart, igstop, ngpool, ngr, igs
 !LINALG
-  COMPLEX(DP), EXTERNAL :: zdotc
-  REAL(DP) :: ar, ai
-!HL NOTA BENE:
-!Green's function has dimensions npwx, 1 in current notation...
-!Since we store in G space there is no truncation error at this stage...
-!When we start going to real space we want to transform on to the full correlation density grid.
+
    ALLOCATE (h_diag (npwx, 1))
    ALLOCATE (etc(nbnd, nkstot))
+   ALLOCATE(gr_A(npwx, 1))
+
+
    ci = (0.0d0, 1.0d0)
+
+
 !Convert freq array generated in freqbins into rydbergs.
    w_ryd(:) = wgreen(:)/RYTOEV
    CALL start_clock('greenlinsys')
-   where_rec='no_recover'
    if (nksq.gt.1) rewind (unit = iunigk)
-   ngvecs = igstart - igstop + 1
-   ALLOCATE(gr_A(npwx, 1))
+
+
+
 !Loop over q in the IBZ_{k}
 DO iq = w_green_start, nksq 
       if (lgamma) then
@@ -137,36 +139,17 @@ DO iq = w_green_start, nksq
          endif
       enddo
 
-!Difference in parallelization routine. Instead of parallelizing over the usual list of G-vectors as in the straight
-!forward pilot implementation I need to first generate the list of igkq's within my correlation cutoff
-!this gives the number of vectors that requires parallelizing over. Then I split the work (up to counter) between the
-!nodes as with the coulomb i.e. igstart and igstop.
-
-#ifdef __PARA
-      npool = nproc / nproc_pool
-      write(stdout,'("npool", i4, i5)') npool, counter
-      if (npool.gt.1) then
-      ! number of g-vec per pool and reminder
-        ngpool = counter / npool
-        ngr = counter - ngpool * npool
-      ! the remainder goes to the first ngr pools
-        if ( my_pool_id < ngr ) ngpool = ngpool + 1
-        igs = ngpool * my_pool_id + 1
-        if ( my_pool_id >= ngr ) igs = igs + ngr
-      ! the index of the first and the last g vec in this pool
-        igstart = igs
-        igstop = igs - 1 + ngpool
-        write (stdout,'(/4x,"Max n. of G vecs in Green_linsys per pool = ",i5)') igstop-igstart+1
+      if(nimage.gt.1) then
+          CALL para_img(ngmunique, igstart, igstop)
       else
-#endif
-       igstart = 1
-       igstop = counter
-#ifdef __PARA
+          igstart = 1
+          igstop = ngmunique
       endif
-#endif
-! Now the G-vecs up to the correlation cutoff have been divided between pools.
-! Calculates beta functions (Kleinman-Bylander projectors), with
-! structure factor, for all atoms, in reciprocal space
+      WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)')iq, igstart, igstop
+
+! Now the G-vecs up to the correlation cutoff have been divided between images.
+
+
       call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
 ! psi_{k+q}(r) is every ikq entry
       call davcio (evq, lrwfc, iuwfc, ikq, - 1)
@@ -175,6 +158,7 @@ DO iq = w_green_start, nksq
                        (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
                        (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
       enddo
+
   WRITE(6, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
   WRITE(600+mpime, '(4x,"k0-q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
   aux1=(0.d0,0.d0)
@@ -213,8 +197,6 @@ DO iq = w_green_start, nksq
          endif
       enddo
       do ig = igstart, igstop
-!allows us to use the solution for the previous frequency for the current frequency
-         ngsol = ngvecs - (igstop-igstart)
          rhs(:,:)  = DCMPLX(0.0d0, 0.0d0)
          rhs(igkq_ig(ig), 1) = DCMPLX(-1.0d0, 0.0d0)
          gr_A(:,:) = DCMPLX(0.0d0, 0.0d0) 
@@ -261,11 +243,11 @@ DO iq = w_green_start, nksq
     enddo 
 !Collect G vectors across processors and then write the full green's function to file. 
 #ifdef __PARA
-    CALL mp_barrier(inter_pool_comm)
+    CALL mp_barrier(inter_image_comm)
 !Collect all elements of green's matrix from different
 !processors.
-    CALL mp_sum (green, inter_pool_comm )
-    CALL mp_barrier(inter_pool_comm)
+    CALL mp_sum (green, inter_image_comm )
+    CALL mp_barrier(inter_image_comm)
     if(ionode) then
 #endif
 !HL Original:
@@ -274,7 +256,7 @@ DO iq = w_green_start, nksq
      CALL davcio(green, lrgrn, iungreen, rec0, +1, ios)
 #ifdef __PARA
     endif
-    CALL mp_barrier(inter_pool_comm)
+    CALL mp_barrier(inter_image_comm)
 #endif
   ENDDO  ! iw 
 ENDDO    ! iq

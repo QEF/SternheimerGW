@@ -29,10 +29,9 @@ SUBROUTINE green_linsys_shift (ik0)
   USE gvect,         ONLY : g
   USE mp,            ONLY : mp_sum, mp_barrier
   USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
-                            me_image, nproc_image
+                            me_image, nproc_image, inter_image_comm
   USE mp_global,     ONLY : nproc_pool_file, &
                             nproc_bgrp_file, nproc_image_file
-  USE mp_pools,      ONLY : nproc_pool, npool, inter_pool_comm, my_pool_id
   USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
   USE mp_world,      ONLY : nproc, mpime
 
@@ -41,24 +40,26 @@ SUBROUTINE green_linsys_shift (ik0)
 
   IMPLICIT NONE 
 
-  real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
-  logical :: conv_root
-
   !should be freq blocks...
   COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
-  COMPLEX(DP) :: gr(npwx, 1), ci, cw, green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
+  COMPLEX(DP) :: gr(npwx, 1), ci, cw 
+  COMPLEX(DP) :: green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
   COMPLEX(DP), ALLOCATABLE :: etc(:,:)
+
+  REAL(DP) :: dirac, x, delta, support
+  REAL(DP) :: k0mq(3) 
+  REAL(DP) :: w_ryd(nwgreen)
+  REAL(DP) , allocatable :: h_diag (:,:)
+  REAL(DP)               :: eprec_gamma
+  REAL(DP) :: thresh, anorm, averlt, dr2, sqrtpi
+  REAL(DP) :: tr_cgsolve = 1.0d-4
+
   INTEGER :: iw, igp, iwi
   INTEGER :: iq, ik0
   INTEGER :: rec0, n1, gveccount
-  REAL(DP) :: dirac, x, delta, support
-  real(DP) :: k0mq(3) 
-  real(DP) :: w_ryd(nwgreen)
   INTEGER, ALLOCATABLE      :: niters(:)
-  REAL(DP) , allocatable :: h_diag (:,:)
-  REAL(DP)               :: eprec_gamma
-  integer :: kter,       & ! counter on iterations
+  INTEGER :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
              ipert,      & ! counter on perturbations
              ibnd,       & ! counter on bands
@@ -78,7 +79,6 @@ SUBROUTINE green_linsys_shift (ik0)
              mode          ! mode index
 !HL need a threshold here for the linear system solver. This could also go in the punch card
 !with some default at a later date. 
-    REAL(DP) :: tr_cgsolve = 1.0d-4
 !Arrays to handle case where nlsco does not contain all G vectors required for |k+G| < ecut
     INTEGER     :: igkq_ig(npwx) 
     INTEGER     :: igkq_tmp(npwx) 
@@ -89,7 +89,8 @@ SUBROUTINE green_linsys_shift (ik0)
 
 !tmp number of blocks
     INTEGER :: nblocks, block
-    external cg_psi, ch_psi_all_green
+    LOGICAL :: conv_root
+    EXTERNAL cg_psi, ch_psi_all_green
 
      allocate  (h_diag (npwx, 1))
      allocate  (etc(nbnd_occ(ik0), nkstot))
@@ -144,33 +145,15 @@ do iq = 1, nksq
          endif
       enddo
 
-!Difference in parallelization routine. Instead of parallelizing over the usual list of G-vectors as in the straight
-!forward pilot implementation I need to first generate the list of igkq's within my correlation cutoff
-!this gives the number of vectors that requires parallelizing over. Then I split the work (up to counter) between the
-!nodes as with the coulomb i.e. igstart and igstop.
 
-#ifdef __PARA
-      npool = nproc / nproc_pool
-      write(stdout,'("npool", i4, i5)') npool, counter
-      if (npool.gt.1) then
-      ! number of g-vec per pool and reminder
-        ngpool = counter / npool
-        ngr = counter - ngpool * npool
-      ! the remainder goes to the first ngr pools
-        if ( my_pool_id < ngr ) ngpool = ngpool + 1
-        igs = ngpool * my_pool_id + 1
-        if ( my_pool_id >= ngr ) igs = igs + ngr
-      ! the index of the first and the last g vec in this pool
-        igstart = igs
-        igstop = igs - 1 + ngpool
-        write (stdout,'(/4x,"Max n. of G vecs in Green_linsys per pool = ",i5)') igstop-igstart+1
-      else
-#endif
-       igstart = 1
-       igstop = counter
-#ifdef __PARA
-      endif
-#endif
+       IF(nimage.gt.1) then
+          CALL para_img(counter, igstart, igstop)
+       ELSE
+          igstart = 1
+          igstop  = counter
+       ENDIF
+       WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
+
 !allocate list to keep track of the number of residuals for each G-vector:
        ngvecs = igstop-igstart + 1
        if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
@@ -190,13 +173,10 @@ do iq = 1, nksq
        WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
        green  = (0.0d0, 0.0d0)
        h_diag = 0.d0
-
 !No preconditioning with multishift
      do ig = 1, npwx
            h_diag(ig,1) =  1.0d0
      enddo
-
-!Due to memory constraints we might break up the green's fxn into frequency blocks:
 !On first frequency block we do the seed system with BiCG:
      gveccount = 1 
      do ig = igstart, igstop
@@ -216,13 +196,11 @@ do iq = 1, nksq
                                        cw, niters(gveccount))
              endif
              call green_multishift(npwx, npwq, nwgreen, niters(gveccount), 1, gr_A_shift)
-
              if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", 10i4, i4)') niters, ig
              if (niters(gveccount).ge.maxter_green) then
                  if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
              endif
-
              do iw = 1, nwgreen
                 do igp = 1, counter
                    if( ieee_is_nan(real(gr_A_shift(igkq_ig(igp),iw))).or.ieee_is_nan(aimag(gr_A_shift(igkq_ig(igp),iw)))) then
@@ -256,22 +234,20 @@ do iq = 1, nksq
        enddo !blocks
      enddo !ig
 
-!#ifdef __PARA
-!upper limit on mp_barrier communicate?
-!    CALL mp_barrier(inter_pool_comm)
-!Collect all elements of green's matrix from different processors.
-!    CALL mp_sum (green, inter_pool_comm )
-!    CALL mp_barrier(inter_pool_comm)
-!    if(ionode) then
-!#endif
-    do iw = 1, nwgreen
-       rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
-       CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)
-    enddo
-!#ifdef __PARA
-!    endif
-!    CALL mp_barrier(inter_pool_comm)
-!#endif
+#ifdef __PARA
+    CALL mp_barrier(inter_image_comm)
+    CALL mp_sum(green, inter_image_comm)
+    CALL mp_barrier(inter_image_comm)
+    if(ionode) then
+#endif
+      do iw = 1, nwgreen
+         rec0 = (iw-1) * 1 * nksq + (iq-1) + 1
+         CALL davcio(green(:,:,iw), lrgrn, iungreen, rec0, +1, ios)
+      enddo
+#ifdef __PARA
+    endif
+    CALL mp_barrier(inter_image_comm)
+#endif
 ENDDO !iq
 
 if(allocated(niters)) DEALLOCATE(niters)

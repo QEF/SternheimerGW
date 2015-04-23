@@ -24,9 +24,10 @@ SUBROUTINE sigma_c(ik0)
   USE control_flags,        ONLY : noinv
   USE gwsigma,       ONLY : sigma_c_st
   USE mp_global,     ONLY : mp_global_end
-  USE mp,            ONLY : mp_barrier, mp_bcast, mp_sum
-  USE mp_pools,      ONLY : nproc_pool, me_pool, my_pool_id, inter_pool_comm, npool
   USE mp_world,      ONLY : nproc, mpime
+  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
+                            me_image, nproc_image, inter_image_comm
+  USE mp,            ONLY : mp_sum, mp_barrier
 
   IMPLICIT NONE
 
@@ -136,8 +137,10 @@ SUBROUTINE sigma_c(ik0)
          wq(iq) = 0.5d0*wk(2*iq-1) 
       ENDIF
    ENDDO
+
 !Every processor needs access to the files: _gw0si.coul1 and _gw0si.green1
-call mp_barrier(inter_pool_comm)
+ call mp_barrier(inter_image_comm)
+
 
 #ifdef __PARA
 if(.not.ionode) then
@@ -155,29 +158,19 @@ if(.not.ionode) then
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 endif
 #endif
+!
+! Parallelizing q over images should probable use pools with 
+! point to point communication and then do frequencies
+! over images.
+!
+    IF (nimage.gt.1) then
+        CALL para_img(nksq, iqstart, iqstop)
+    ELSE
+        iqstart = 1
+        iqstop = iqstop
+    ENDIF
+    WRITE(6, '(5x, "iq ",i4, " iqstart ", i4, " iqstop ", i4)') iqstart, iqstop
 
-#ifdef __PARA
-      npool = nproc / nproc_pool
-      write(stdout,'("npool", i4, i5)') npool, nksq
-      if (npool.gt.1) then
-      ! number of q-vec per pool and remainder
-        nkpool = nksq / npool
-        nkr = nksq - nkpool * npool
-      ! the remainder goes to the first nkr pools
-        if ( my_pool_id < nkr ) nkpool = nkpool + 1
-        iqs = nkpool * my_pool_id + 1
-        if ( my_pool_id >= nkr ) iqs = iqs + nkr
-      ! the index of the first and the last g vec in this pool
-        iqstart = iqs
-        iqstop  = iqs - 1 + nkpool
-        write (stdout,'(/4x,"Max n. of Kpoint in Sigma_C per pool = ",i5)') iqstop-iqstart+1
-      else
-#endif
-       iqstart = 1
-       iqstop = nksq
-#ifdef __PARA
-      endif
-#endif
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
   WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
@@ -186,7 +179,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
       IF (lgamma) THEN
           ikq = iq
       ELSE
-!k+q is in even positions of list (k,k+q)
           ikq = 2*iq
       ENDIF
 !  q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
@@ -213,23 +205,17 @@ IF(iqstop-iqstart+1.ne.0) THEN
    write(6, '("equivalent xq_IBZ point, symop, iqrec")')
    write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
    write(6,*)
-
    write(1000+mpime, *)  
    write(1000+mpime, '("xq_IBK point")')
    write(1000+mpime, '(3f11.7)') xq_ibk
    write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
    write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-
-
 !Inverse Dielectric Function is Written to file at this point
 !So we read that in, rotate it, and then apply the Coulomb operator.
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
-
    if(modielec.and.padecont) PRINT*, "WARNING: PADECONT AND MODIELEC?"
-
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
-
 !Rotate G_vectors for FFT.
 !In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
 !I have checked that here as well and it works.
@@ -239,28 +225,16 @@ IF(iqstop-iqstart+1.ne.0) THEN
          IF((gmapsym(ig,isym).le.sigma_c_st%ngmt).and.(gmapsym(igp,isym).le.sigma_c_st%ngmt) &
              .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
              DO iwim = 1, nfs
-!Rotating dielectric matrix with phase factor 
-!for nonsymmorphic space groups normal:
                phase = eigv(ig,isym)*conjg(eigv(igp,isym))
                scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
              ENDDO
          ENDIF
       ENDDO
    ENDDO
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!Generate bare coulomb:   !!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!HL using  sax cutoff
-!this should be L_{z}/2
-!rcut = 0.50d0*minval(sqrt(sum(at**2,1)))*alat*tpi
-!rcut = rcut-rcut/50.0d0
-  rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-
-!Sax for silicon
-!    rcut = 21.329d0
-  IF(.not.modielec) THEN
-    DO iw = 1, nfs
-     DO ig = 1, sigma_c_st%ngmt
+   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+   IF(.not.modielec) THEN
+     DO iw = 1, nfs
+      DO ig = 1, sigma_c_st%ngmt
 !SPHERICAL SCREENING
          qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
          limq = (qg2.lt.eps8) 
@@ -268,13 +242,10 @@ IF(iqstop-iqstart+1.ne.0) THEN
              DO igp = 1, sigma_c_st%ngmt
                                           !!!!eps^{-1}(\G,\G';\omegaa  )!!!!!   v(q+G)!!!!
                 scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-!!!!!!
-!                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(sqrt(e2*fpi)/(tpiba*qg), 0.0d0)
              ENDDO
          ENDIF
          qg = sqrt(qg2)
          spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!Normal case using truncated coulomb potential.
          IF(.not.limq) THEN
             DO igp = 1, sigma_c_st%ngmt
                 scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
@@ -290,6 +261,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
      ENDDO!ig
     ENDDO!nfs
   ENDIF
+
 !zeroing wings of W again!
     IF(iq.eq.1) THEN
         DO iw = 1, nfs
@@ -301,6 +273,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
             ENDDO
         ENDDO
     ENDIF
+
     IF(.NOT.modielec) THEN
         IF(godbyneeds) THEN
         DO ig = 1, sigma_c_st%ngmt
@@ -420,40 +393,42 @@ IF(iqstop-iqstart+1.ne.0) THEN
     ENDDO ! on frequency convolution over w'
   ENDDO ! end loop iqstart, iqstop 
 ENDIF
-    DEALLOCATE ( gmapsym          )
-    DEALLOCATE ( greenfr          )
-    DEALLOCATE ( greenf_g         )
-    DEALLOCATE ( scrcoul          )
-    DEALLOCATE ( scrcoul_pade_g   )
-    DEALLOCATE ( scrcoul_g, scrcoul_g_R )
-    DEALLOCATE ( z,a,u )
-!#ifdef __PARA
-!    CALL mp_barrier(inter_pool_comm)
-!    CALL mp_sum(sigma, inter_pool_comm)
-!    CALL mp_barrier(inter_pool_comm)
-!#endif __PARA
-IF (ionode) THEN
-  ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
-  IF(allocated(sigma_g)) THEN
-     WRITE(6,'(4x,"Sigma_g allocated")')
-  ELSE
-     WRITE(6,'(4x,"Sigma_g too large!")')
-     CALL mp_global_end()
-     STOP
-  ENDIF
-  WRITE(6,'(4x,"Sigma in G-Space")')
-  sigma_g = (0.0d0,0.0d0)
-  DO iw = 1, nwsigma
-     CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
-  ENDDO
-!Now write Sigma in G space to file. 
-  CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
-  WRITE(6,'(4x,"Sigma Written to File")')
-  CALL stop_clock('sigmac')
-  DEALLOCATE ( sigma_g  )
-ENDIF !ionode
-call mp_barrier(inter_pool_comm)
-DEALLOCATE ( sigma    )
+
+  DEALLOCATE ( gmapsym          )
+  DEALLOCATE ( greenfr          )
+  DEALLOCATE ( greenf_g         )
+  DEALLOCATE ( scrcoul          )
+  DEALLOCATE ( scrcoul_pade_g   )
+  DEALLOCATE ( scrcoul_g, scrcoul_g_R )
+  DEALLOCATE ( z,a,u )
+
+#ifdef __PARA
+      CALL mp_barrier(inter_image_comm)
+      CALL mp_sum(sigma, inter_image_comm)
+      CALL mp_barrier(inter_image_comm)
+#endif __PARA
+
+  IF (ionode) THEN
+    ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
+    IF(allocated(sigma_g)) THEN
+       WRITE(6,'(4x,"Sigma_g allocated")')
+    ELSE
+       WRITE(6,'(4x,"Sigma_g too large!")')
+       CALL mp_global_end()
+       STOP
+    ENDIF
+    WRITE(6,'(4x,"Sigma in G-Space")')
+    sigma_g = (0.0d0,0.0d0)
+    DO iw = 1, nwsigma
+       CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
+    ENDDO
+  !Now write Sigma in G space to file. 
+    CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
+    WRITE(6,'(4x,"Sigma Written to File")')
+    CALL stop_clock('sigmac')
+    DEALLOCATE ( sigma_g  )
+  ENDIF !ionode
+  call mp_barrier(inter_image_comm)
+  DEALLOCATE ( sigma    )
 RETURN
 END SUBROUTINE sigma_c
-

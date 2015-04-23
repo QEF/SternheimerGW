@@ -92,14 +92,17 @@ IMPLICIT NONE
      call get_buffer (evq, lrwfc, iuwfc, ikq)
    endif
 
-  WRITE(6,'("NBND")')
-  WRITE(6,*) nbnd_sig
+  WRITE(6,'("NBND ", i5)'), nbnd_sig
+
+
 ! generate v_xc(r) in real space:
   v%of_r(:,:) = (0.0d0)
   CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
   vxc(:,:) = (0.0d0, 0.0d0)
+
   WRITE(6,'("Taking Matels.")')
   WRITE(6,'("Taking NPWQ.", i4)')npwq
+
   do jbnd = 1, nbnd_sig
      psic = czero
      do ig = 1, npwq
@@ -121,6 +124,7 @@ IMPLICIT NONE
 
   write(stdout,'(4x,"VXC (eV)")')
   write(stdout,'(8(1x,f7.3))') real(vxc(:,:))*RYTOEV
+
   WRITE(6,'("Max number Plane Waves WFC ", i4)') npwx
   WRITE(6,'("Sigma_Ex Matrix Element")') 
 
@@ -147,7 +151,7 @@ IMPLICIT NONE
   ios = 0 
   READ( UNIT = iunsex, REC = 1, IOSTAT = ios ) sigma_g_ex
   if(ios /= 0) then
-     print*, "Couldn't read Sigma_X file. Have you calculated it?", ios
+    WRITE(6, '(5x, "Could not read Sigma_X file. Have you calculated it?")') 
   else
     sigma_band_ex (:, :) = czero
     do ibnd = 1, nbnd_sig
