@@ -131,7 +131,7 @@ SUBROUTINE sigma_c(ik0)
    wq(:) = 0.0d0
    DO iq = 1, nksq
       IF (lgamma) THEN
-         write(6, '(" lgamma ")')
+!         write(6, '(" lgamma ")')
          wq(iq) = 0.5d0*wk(iq) 
       ELSE
          wq(iq) = 0.5d0*wk(2*iq-1) 
@@ -141,22 +141,23 @@ SUBROUTINE sigma_c(ik0)
 !Every processor needs access to the files: _gw0si.coul1 and _gw0si.green1
  call mp_barrier(inter_image_comm)
 
-
 #ifdef __PARA
-if(.not.ionode) then
+!if(.not.ionode) then
 !OPEN coulomb file (only written to by head node).
    filename = trim(prefix)//"."//"coul1"
-   tempfile = trim(tmp_dir) // trim(filename)
+   !tempfile = trim(tmp_dir) // trim(filename)
+   tempfile =  "./tmp/_gw0/"// trim(filename)
    unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 !OPEN green file (only written to by head node as well).
    filename = trim(prefix)//"."//"green1"
-   tempfile = trim(tmp_dir) // trim(filename)
+   !tempfile = trim(tmp_dir) // trim(filename)
+   tempfile =  "./tmp/_gw0/"// trim(filename)
    unf_recl = DIRECT_IO_FACTOR * int(lrgrn, kind=kind(unf_recl))
    open(iungreen, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-endif
+!endif
 #endif
 !
 ! Parallelizing q over images should probable use pools with 
@@ -216,6 +217,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
    scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
    if(modielec.and.padecont) PRINT*, "WARNING: PADECONT AND MODIELEC?"
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
+
 !Rotate G_vectors for FFT.
 !In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
 !I have checked that here as well and it works.

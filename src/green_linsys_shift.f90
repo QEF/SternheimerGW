@@ -145,14 +145,8 @@ do iq = 1, nksq
          endif
       enddo
 
-
-       IF(nimage.gt.1) then
-          CALL para_img(counter, igstart, igstop)
-       ELSE
-          igstart = 1
-          igstop  = counter
-       ENDIF
-       WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
+      CALL para_img(counter, igstart, igstop)
+      WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
 
 !allocate list to keep track of the number of residuals for each G-vector:
        ngvecs = igstop-igstart + 1

@@ -257,7 +257,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         h_diag = 0.d0
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              h_diag(ig,ibnd)= 1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+              h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
            enddo
            IF (noncolin) THEN
               do ig = 1, npwq
@@ -289,49 +289,57 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         ! -P_c^ = - (1-P_v^):
         !
            CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
-        !
-           if (where_rec=='solve_lint'.or.iter > 1) then
+        
+           if(where_rec=='solve_lint'.or.iter > 1) then
               if(high_io) then
                  call get_buffer( dpsip, lrdwf, iudwfp, ik)
                  call get_buffer( dpsim, lrdwf, iudwfm, ik)
               else
                  dpsim(:,:)     = (0.d0, 0.d0) 
                  dpsip(:,:)     = (0.d0, 0.d0) 
-             !!!!! TRIAL Soln!!!!!!
-             ! do ig = 1, npwx
-             !    do ibnd =1, nbnd
-             !       dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) - fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-             !       dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-             !    enddo
-             ! enddo
-             !!!!!!!!!!!!!! 
+                 do ibnd =1, nbnd
+                    do ig = 1, npwx
+                       dpsim(ig,ibnd) = (1/( dcmplx(g2kin(ig), 0.d0) - fiu(iw) + dcmplx(et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+                       dpsip(ig,ibnd) = (1/( dcmplx(g2kin(ig), 0.d0) + fiu(iw) + dcmplx(et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+                    enddo
+                 enddo
               endif
-             thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+              thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
            else
             !
             ! At the first iteration dpsi and dvscfin are set to zero
             !
-            dpsi(:,:)      = (0.d0, 0.d0) 
-            if(iw.le.2) then
+           dpsi(:,:)      = (0.d0, 0.d0) 
+           if(iw.le.2) then
               dpsim(:,:)     = (0.d0, 0.d0) 
               dpsip(:,:)     = (0.d0, 0.d0) 
-             !!!!! TRIAL Soln!!!!!!
-             ! do ig = 1, npwx
-             !    do ibnd =1, nbnd
-             !       dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-             !       dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-             !    enddo
-             ! enddo
-             !!!!!!!!!!!!!! 
-            else!reuse dpsip dpsim (iw) from previous run frequency.
-              call get_buffer( dpsip, lrdwf, iudwfp, ik)
-              call get_buffer( dpsim, lrdwf, iudwfm, ik)
-            endif
-              dvscfin(:, :)  = (0.d0, 0.d0)
-              dvscfout(:, :) = (0.d0, 0.d0)
-            !
+           !!!!
+              do ibnd =1, nbnd
+                 do ig = 1, npwx
+!                    dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) - fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+!                    dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+                 enddo
+              enddo
+           !!!!
+           else!reuse dpsip dpsim (iw) from previous run frequency.
+           !!!!
+              if(high_io) then
+                 call get_buffer( dpsip, lrdwf, iudwfp, ik)
+                 call get_buffer( dpsim, lrdwf, iudwfm, ik)
+              else
+                 do ibnd =1, nbnd
+                    do ig = 1, npwx
+!                       dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) - fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+!                       dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
+                    enddo
+                 enddo
+              endif
+           !!!!
+           endif
+
+            dvscfin(:, :)  = (0.d0, 0.d0)
+            dvscfout(:, :) = (0.d0, 0.d0)
             ! starting threshold for iterative solution of the linear system
-            !
               thresh = 1.0d-2
            endif
 
@@ -355,8 +363,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        ltaver = ltaver + lter
        lintercall = lintercall + 1
 
- !IF(ik.eq.3) WRITE(1000+mpime,'(5x, "ik ", i4, " iw ", i4, " number of iters", i5)') ik, iw, lter 
-
+       IF(ik.eq.3) WRITE(1000+mpime, '(5x, "ik ", i4, " iw ", i4, " number of iters  ", i4, &
+                                       " number of cg-iters", i5)') ik, iw, kter, lter 
        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
                   &              " solve_linter: root not converged ",e10.3)')  &
                   &                ik , ibnd, anorm

@@ -40,9 +40,12 @@
   integer :: N
   complex(DP) :: z(N), u(N)
   complex(DP) :: g(N,N), a(N)
-  integer :: i, j, p
   real(DP) :: ar, ai
   complex(DP) :: tmp1, tmp2
+
+  !complex(selevted_real_kind(18,50))?
+
+  integer :: i, j, p
   !
   do p = 1, N
     if (p.eq.1) then

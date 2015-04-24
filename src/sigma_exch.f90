@@ -54,7 +54,6 @@ IMPLICIT NONE
   do iq = 1, nksq
      if(lgamma) then
         wq(iq) = 0.5d0*wk(iq)
-        print*, wq(iq)
      else
         wq(iq) = 0.5d0*wk(2*iq-1) 
      endif
@@ -65,6 +64,7 @@ IMPLICIT NONE
   else
      ikq = 2*ik0
   endif
+
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma",i3)') nbnd_occ(ik0)
 
@@ -72,7 +72,7 @@ IMPLICIT NONE
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   DO iq = 1, nksq
-     write(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
+!     write(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
      if (lgamma) then
         ikq = iq
      else

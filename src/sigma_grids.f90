@@ -99,5 +99,5 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, "nr1, nr2, nr3")')
   WRITE(stdout, '(5x, 3i4)') sigma_c_st%nr1t, sigma_c_st%nr2t, sigma_c_st%nr3t
   WRITE(stdout, '(5x, "Ecut, Ngmsco:")')
-  WRITE(stdout, '(5x, f10.7, i4)') sigma_c_st%ecutt, sigma_c_st%ngmt
+  WRITE(stdout, '(5x, f10.7, i4, //)') sigma_c_st%ecutt, sigma_c_st%ngmt
 END SUBROUTINE
