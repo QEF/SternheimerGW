@@ -7,7 +7,8 @@ PROGRAM gw
   USE environment,     ONLY : environment_start
   USE check_stop,      ONLY : check_stop_init
   USE control_gw,      ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
-                              do_green, multishift, do_sigma_c, do_q0_only
+                              do_green, multishift, do_sigma_c, do_q0_only,&
+                              do_imag
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,        ONLY : diropn
   USE units_gw,        ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
@@ -46,8 +47,14 @@ PROGRAM gw
 !Calculation G
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
-  IF(do_green)   CALL green_linsys_shift(ik)
-  IF(do_sigma_c) CALL sigma_c(ik)
+  IF(do_imag) THEN
+    IF(do_green)   CALL green_linsys_shift_im(ik)
+    IF(do_sigma_c) CALL sigma_c_im(ik)
+  ELSE
+    IF(do_green)   CALL green_linsys_shift(ik)
+    IF(do_sigma_c) CALL sigma_c(ik)
+  ENDIF
+
   IF(do_green.and.multishift) then
      CLOSE(UNIT = iunresid, STATUS = 'DELETE')
      CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')

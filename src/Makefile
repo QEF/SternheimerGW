@@ -57,10 +57,13 @@ dvqpsi_us.o\
 unfold_w.o\
 invert_epsilon.o\
 green_linsys_shift.o\
+green_linsys_shift_im.o\
 h_psi_all.o\
 green_multishift.o\
+green_multishift_im.o\
 ch_psi_all_green.o\
 sigma_c.o\
+sigma_c_im.o\
 find_q_ibz.o\
 godby_needs.o\
 mod_diel.o\

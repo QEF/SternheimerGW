@@ -15,10 +15,14 @@ COMPLEX (DP)             :: sigma_band_c(nbnd_sig, nbnd_sig, nwsigma)
 COMPLEX (DP)             :: sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin)
 COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
 REAL(DP)                 :: w_ryd(nwsigwin), w_ryd2(nwsigwin), wsigwin(nwsigwin)
+REAL(DP) :: ehomo, elumo, mu
 
 !nwsigma is the number of points we have calculated sigma at.
-!nwsigwin is the number of points in the sigma window we wan
+!nwsigwin is the number of points in the sigma window we want
     ALLOCATE ( z(nwsigma), a(nwsigma), u(nwsigma))
+
+    CALL get_homo_lumo (ehomo, elumo)
+    mu = ehomo + 0.014
 
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
@@ -26,13 +30,13 @@ REAL(DP)                 :: w_ryd(nwsigwin), w_ryd2(nwsigwin), wsigwin(nwsigwin)
     do ibnd =1 , nbnd_sig
         do jbnd = 1, nbnd_sig
             do iw = 1, nwsigma
-               z(iw) = (0.0d0, 1.0d0)*wsigma(iw)
+               z(iw) = dcmplx(mu, w_ryd(iw))
                u(iw) = sigma_band_c (ibnd, jbnd, iw)
             enddo
             call pade_coeff(nwsigma, z, u, a)
             do iw = 1, nwsigwin
            !continuation to the real axis.
-               call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), 0.5), sigma_band_con(ibnd, jbnd, iw))
+               call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
             enddo
         enddo
     enddo
