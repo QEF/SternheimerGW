@@ -95,12 +95,11 @@ SUBROUTINE green_linsys_shift_im (ik0)
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
     if (nksq.gt.1) rewind (unit = iunigk)
-!We assume a band gap of at least 0.2 eV.
+! We assume a band gap of at least 0.2 eV.
     CALL get_homo_lumo (ehomo, elumo)
-   !mu = ehomo + 0.014 
+! mu = ehomo + 0.014 
     mu = ehomo + 0.50d0*(elumo-ehomo)
     WRITE(6,'("Fermi energy", 1f10.6)'), mu*RYTOEV
-
 !Loop over q in the IBZ_{k}
 do iq = 1, nksq 
       if (lgamma) then
@@ -108,24 +107,19 @@ do iq = 1, nksq
           else
           ikq = 2*iq
       endif
-
       if (nksq.gt.1) then
           read (iunigk, err = 100, iostat = ios) npw, igk
  100      call errore ('green_linsys', 'reading igk', abs (ios) )
       endif
-    
       if(lgamma) npwq=npw 
-
       if (.not.lgamma.and.nksq.gt.1) then
           read (iunigk, err = 200, iostat = ios) npwq, igkq
  200      call errore ('green_linsys', 'reading igkq', abs (ios) )
       endif
-     
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
 !need to loop over...
-
     counter = 0
     igkq_tmp(:) = 0
     igkq_ig(:)  = 0 
@@ -177,7 +171,7 @@ do iq = 1, nksq
            gr_A(:,:) = (0.0d0, 0.0d0) 
            lter = 0
            etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-           cw = CMPLX( mu, 0, kind=DP)
+           cw = CMPLX( mu, 0.000, kind=DP)
            conv_root = .true.
            anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
