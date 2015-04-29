@@ -130,11 +130,9 @@ do iq = 1, nksq
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
 !need to loop over...
-
       counter = 0
       igkq_tmp(:) = 0
       igkq_ig(:)  = 0 
-
       do ig = 1, npwx
          if((igkq(ig).le.sigma_c_st%ngmt).and.((igkq(ig)).gt.0)) then
              counter = counter + 1
@@ -144,14 +142,12 @@ do iq = 1, nksq
              igkq_ig  (counter) = ig
          endif
       enddo
-
       CALL para_img(counter, igstart, igstop)
       WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
-
 !allocate list to keep track of the number of residuals for each G-vector:
-       ngvecs = igstop-igstart + 1
-       if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
-       niters = 0 
+      ngvecs = igstop-igstart + 1
+      if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
+      niters = 0 
 
 ! Now the G-vecs up to the correlation cutoff have been divided between pools.
 ! Calculates beta functions (Kleinman-Bylander projectors), with
@@ -169,7 +165,7 @@ do iq = 1, nksq
        h_diag = 0.d0
 !No preconditioning with multishift
      do ig = 1, npwx
-           h_diag(ig,1) =  1.0d0
+        h_diag(ig,1) =  1.0d0
      enddo
 !On first frequency block we do the seed system with BiCG:
      gveccount = 1 

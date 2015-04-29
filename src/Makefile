@@ -19,6 +19,7 @@ q_points.o\
 check_initial_status.o\
 opengwfil.o\
 freqbins.o\
+gauleg_grid.o\
 sigma_grids.o\
 fft6.o\
 initialize_gw.o\
@@ -44,6 +45,8 @@ apply_dpot.o\
 cBiCG_solve_green.o\
 cBiCG_solve_coul.o\
 cBiCG_solve_mag.o\
+construct_w.o\
+rotate_w.o\
 incdrhoscf.o\
 orthogonalize.o\
 cgsolve_all.o\

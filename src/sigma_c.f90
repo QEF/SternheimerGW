@@ -107,13 +107,20 @@ SUBROUTINE sigma_c(ik0)
    ALLOCATE (sigma          (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma) )
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
    w_ryd(:) = wcoul(:)/RYTOEV
+
+
    WRITE(6," ")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk(ipol, ik0), ipol=1,3)
    WRITE(6," ")
    WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
+
+
+
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
+
+
    sigma(:,:,:) = (0.0d0, 0.0d0)
    CALL start_clock('sigmac')
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
@@ -125,13 +132,13 @@ SUBROUTINE sigma_c(ik0)
      STOP
    ENDIF
    WRITE(6,'("nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
+
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
    wq(:) = 0.0d0
    DO iq = 1, nksq
       IF (lgamma) THEN
-!         write(6, '(" lgamma ")')
          wq(iq) = 0.5d0*wk(iq) 
       ELSE
          wq(iq) = 0.5d0*wk(2*iq-1) 
@@ -263,7 +270,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
      ENDDO!ig
     ENDDO!nfs
   ENDIF
-
 !zeroing wings of W again!
     IF(iq.eq.1) THEN
         DO iw = 1, nfs

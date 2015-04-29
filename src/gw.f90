@@ -48,7 +48,7 @@ PROGRAM gw
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
   IF(do_imag) THEN
-    IF(do_green)   CALL green_linsys_shift_im(ik)
+    !IF(do_green)   CALL green_linsys_shift_im(ik)
     IF(do_sigma_c) CALL sigma_c_im(ik)
   ELSE
     IF(do_green)   CALL green_linsys_shift(ik)

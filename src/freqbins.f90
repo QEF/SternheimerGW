@@ -16,11 +16,11 @@ SUBROUTINE freqbins()
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
-                         wgreenmax, fiu, nfs, greenzero
+                         wgreenmax, fiu, nfs, greenzero, w0pmw, wgtcoul
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
-  USE control_gw, ONLY : eta, godbyneeds, padecont
+  USE control_gw, ONLY : eta, godbyneeds, padecont, freq_gl
            
 
   IMPLICIT NONE 
@@ -28,88 +28,110 @@ SUBROUTINE freqbins()
   LOGICAL  :: foundp, foundm
   REAL(DP) :: zero, w0mw, w0pw
   INTEGER  :: iw, iw0, iwp, iw0mw, iw0pw, i
+  REAL(DP)               :: x1, x2       !ranges
+  INTEGER                :: n            !number of points
+  REAL(DP), ALLOCATABLE  :: x(:), w(:)   !abcissa and weights
 
-!  wsigmamin = -14.d0 
-!  wsigmamax =  28.d0 
-!  deltaw    = 0.25d0
-!  wcoulmax  = 80.d0
-!  greenzero      = 0.0d0
+
+
+  IF(.not.freq_gl) THEN
    zero = 0.0d0
-
    wgreenmin = wsigmamin-wcoulmax
    wgreenmax = wsigmamax+wcoulmax
-
    nwalloc = 1 + ceiling( (wgreenmax-wgreenmin) / deltaw )
-
    allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc) )
-
    wcoul = zero
    wgreen = zero
    wsigma = zero
 
-  do iw = 1, nwalloc
-    wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
-  enddo
+   do iw = 1, nwalloc
+      wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
+   enddo
 
- !align the bins with the zero of energy
- !HL?
- !wtmp = wtmp - minval ( abs ( wgreen) )
- !HLF
- ! wtmp = wtmp - greenzero
+   nwgreen = 0
+   nwcoul = 0
+   nwsigma = 0
 
-  nwgreen = 0
-  nwcoul = 0
-  nwsigma = 0
+   do iw = 1, nwalloc
+    if ( ( wtmp(iw) .ge. wgreenmin ) .and. ( wtmp(iw) .le. wgreenmax) ) then
+      nwgreen = nwgreen + 1
+      wgreen(nwgreen) = wtmp(iw)
+    endif
+    if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
+      nwcoul = nwcoul + 1
+      wcoul(nwcoul) = wtmp(iw)
+    endif
 
- 
-  do iw = 1, nwalloc
-   if ( ( wtmp(iw) .ge. wgreenmin ) .and. ( wtmp(iw) .le. wgreenmax) ) then
-     nwgreen = nwgreen + 1
-     wgreen(nwgreen) = wtmp(iw)
-   endif
-
-   if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
-     nwcoul = nwcoul + 1
-     wcoul(nwcoul) = wtmp(iw)
-   endif
-
-   if ( ( wtmp(iw) .ge. wsigmamin ) .and. ( wtmp(iw) .le. wsigmamax) ) then
-     nwsigma = nwsigma + 1
-     wsigma(nwsigma) = wtmp(iw)
-   endif
-  enddo
-  
+    if ( ( wtmp(iw) .ge. wsigmamin ) .and. ( wtmp(iw) .le. wsigmamax) ) then
+      nwsigma = nwsigma + 1
+      wsigma(nwsigma) = wtmp(iw)
+    endif
+   enddo
   ! now find the correspondence between the arrays
   ! This is needed for the convolution G(w0-w)W(w) at the end
-
-  allocate ( ind_w0mw (nwsigma,nwcoul), ind_w0pw (nwsigma,nwcoul) )
-
-  do iw0 = 1, nwsigma
-    do iw = 1, nwcoul
-      w0mw = wsigma(iw0)-wcoul(iw)
-      w0pw = wsigma(iw0)+wcoul(iw)
-      foundp = .false.
-      foundm = .false.
-      do iwp = 1, nwgreen
-        if ( abs(w0mw-wgreen(iwp)) .lt. 1.d-10 ) then
-          foundm = .true.
-          iw0mw = iwp
-        endif
-        if ( abs(w0pw-wgreen(iwp)) .lt. 1.d-10 ) then
-          foundp = .true.
-          iw0pw = iwp
-        endif
-      enddo
-      if ( ( .not. foundm ) .or. ( .not. foundp ) ) then
-         call errore ('gwhs','frequency correspondence not found',1)
-      else
-         ind_w0mw(iw0,iw) = iw0mw
-         ind_w0pw(iw0,iw) = iw0pw
-      endif
+   allocate ( ind_w0mw (nwsigma,nwcoul), ind_w0pw (nwsigma,nwcoul) )
+   do iw0 = 1, nwsigma
+     do iw = 1, nwcoul
+       w0mw = wsigma(iw0)-wcoul(iw)
+       w0pw = wsigma(iw0)+wcoul(iw)
+       foundp = .false.
+       foundm = .false.
+       do iwp = 1, nwgreen
+         if (abs(w0mw-wgreen(iwp)) .lt. 1.d-10 ) then
+           foundm = .true.
+           iw0mw = iwp
+         endif
+         if ( abs(w0pw-wgreen(iwp)) .lt. 1.d-10 ) then
+           foundp = .true.
+           iw0pw = iwp
+          endif
+        enddo
+       if ( ( .not. foundm ) .or. ( .not. foundp ) ) then
+          call errore ('gwhs','frequency correspondence not found',1)
+       else
+          ind_w0mw(iw0,iw) = iw0mw
+          ind_w0pw(iw0,iw) = iw0pw
+       endif
+     enddo
     enddo
-  enddo
-   
-!Print out Frequencies on Imaginary Axis for reference.
+  ELSE
+! We generate Sigma on a uniform grid:
+
+   nwcoul  = 20
+   nwgreen = 2*nwcoul
+   nwsigma = 1 + ceiling( (wsigmamax-wsigmamin) / deltaw )
+   allocate(wsigma(nwsigma))
+   allocate(wcoul(nwcoul), wgtcoul(nwcoul))
+    
+   wcoul   = zero
+   wgtcoul = zero
+   wsigma  = zero
+
+   do iw = 1, nwsigma
+      wsigma(iw) = wsigmamin + (wsigmamax-wsigmamin)/float(nwsigma-1)*float(iw-1)
+   enddo
+
+! We generate W(iw) on a gauss legendre grid:
+   wcoul   = zero
+   wgtcoul = zero
+
+   CALL gauleg_grid(0.0d0, wcoulmax, wcoul, wgtcoul, nwcoul)
+
+! Correpspondence arrays for convolution arguments for green's function.
+   allocate ( w0pmw (nwsigma, 2*nwcoul) )
+
+   DO iw0 = 1, nwsigma
+     DO iw = 1, nwcoul
+        w0pmw(iw0, iw)        = wsigma(iw0) - wcoul(iw)
+        w0pmw(iw0, iw+nwcoul) = wsigma(iw0) + wcoul(iw)
+     ENDDO
+   ENDDO
+   WRITE(stdout, '(7x, "Gauss-Legendre grid: ")')
+   DO i = 1, nwcoul
+      WRITE(stdout,'(8x, i4, 4x, 2f9.4)') i, wgtcoul(i), wcoul(i)
+   ENDDO
+  ENDIF
+! Print out Frequencies on Imaginary Axis for reference.
   WRITE(stdout, '(//5x,"Frequency Grids (eV):")')
   WRITE(stdout, '(/5x, "wsigmamin, wsigmamax, deltaw")')
   WRITE(stdout, '(5x, 3f10.4 )') wsigmamin, wsigmamax, deltaw 
@@ -130,5 +152,4 @@ SUBROUTINE freqbins()
        WRITE(stdout,'(8x, i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
   ENDDO
   WRITE(stdout, '(5x, "Broadening: ", 1f10.4)'), eta
-
 END SUBROUTINE freqbins

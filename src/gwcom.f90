@@ -354,7 +354,8 @@ MODULE control_gw
              do_pade_coul,&
              newgrid = .FALSE.,&
              loqua   = .FALSE.,&
-             high_io  
+             high_io, &  
+             freq_gl
 
 END MODULE control_gw
 !
@@ -378,8 +379,9 @@ MODULE freq_gw
   !with default values eventually. 
 
   REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax
-  REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:) 
+  REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
   INTEGER, ALLOCATABLE :: ind_w0mw (:,:), ind_w0pw (:,:)
+  REAL,    ALLOCATABLE :: w0pmw (:,:)
   REAL(DP) :: plasmon
   REAL(DP) :: greenzero
 

@@ -8,7 +8,7 @@ SUBROUTINE sigma_matel (ik0)
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
   USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma
   USE klist,                ONLY : xk, wk, nkstot
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
   USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG
@@ -68,33 +68,28 @@ IMPLICIT NONE
       ikq = 2*ik0
   endif
 
-  write(stdout,'(/4x,"k0(",i3," ) = (",3f7.3," )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
 
   IF (ionode) THEN
-     if (nksq.gt.1) rewind (unit = iunigk)
-     if (nksq.gt.1) then
-        read (iunigk, err = 100, iostat = ios) npw, igk
- 100        call errore ('green_linsys', 'reading igk', abs (ios) )
-     endif
-  
-     if(lgamma) npwq = npw
-
-     if (.not.lgamma.and.nksq.gt.1) then
-           read (iunigk, err = 100, iostat = ios) npwq, igkq
- 200             call errore ('green_linsys', 'reading igkq', abs (ios) )
-     endif
-
+      IF (nksq.gt.1) then
+          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                        npw, igk, g2kin )
+      ENDIF
+      if(lgamma) npwq = npw
+      IF (.not.lgamma.and.nksq.gt.1) then
+        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+                      npwq, igkq, g2kin )
+      ENDIF
 !if just gamma then psi_{\Gamma} should be first entry in list.
-   if (lgamma) then
-     call get_buffer (evc, lrwfc, iuwfc, ikq)
-   else
+!   if (lgamma) then
+!     call get_buffer (evc, lrwfc, iuwfc, ikq)
+!   else
 !else then psi_{\k+\gamma = \psi_{k}} should be second entry in list.
-     call get_buffer (evq, lrwfc, iuwfc, ikq)
-   endif
+!     call get_buffer (evc, lrwfc, iuwfc, ikq)
+!   endif
+   call get_buffer (evc, lrwfc, iuwfc, ikq)
 
   WRITE(6,'("NBND ", i5)'), nbnd_sig
-
-
 ! generate v_xc(r) in real space:
   v%of_r(:,:) = (0.0d0)
   CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
@@ -246,7 +241,7 @@ IMPLICIT NONE
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
     wsigmin   = -30.0
     wsigmax   =  30.0
-    deltaws   =   0.2
+    deltaws   =   0.1
     nwsigwin  = 1 + ceiling((wsigmax - wsigmin)/deltaws)
     allocate (wsigwin(nwsigwin))
     do iw = 1, nwsigwin

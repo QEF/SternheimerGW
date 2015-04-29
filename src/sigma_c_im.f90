@@ -7,13 +7,14 @@ SUBROUTINE sigma_c_im(ik0)
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d
-  USE klist,         ONLY : wk, xk
+  USE klist,         ONLY : wk, xk, nkstot
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
-                            deltaw, wcoulmax, ind_w0mw, ind_w0pw
+                            deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
+                            w0pmw, wgtcoul
   USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE gvect,         ONLY : g, ngm, nl
@@ -28,6 +29,7 @@ SUBROUTINE sigma_c_im(ik0)
   USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
                             me_image, nproc_image, inter_image_comm
   USE mp,            ONLY : mp_sum, mp_barrier
+  USE mp_pools,             ONLY : inter_pool_comm
 
   IMPLICIT NONE
 
@@ -45,14 +47,14 @@ SUBROUTINE sigma_c_im(ik0)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_pade_g (:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul(:,:)
 !G arrays:
-  COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:), greenfr(:,:)
+  COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:,:), greenfr(:,:)
   COMPLEX(DP) :: cprefac
   COMPLEX(DP), ALLOCATABLE  ::  eigv(:,:)
 !v array
 !COMPLEX(DP), ALLOCATABLE ::  barcoul(:,:), barcoulr(:,:), barcoul_R(:,:)
   REAL(DP) :: qg2, qg, qxy, qz
   REAL(DP) :: w_ryd(nwcoul)
-  REAL(DP)              :: xq_ibk(3), xq_ibz(3)
+  REAL(DP) :: xq_ibk(3), xq_ibz(3)
 !q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
   REAL(DP) :: xq_coul(3)
   REAL(DP) :: rcut, spal, zcut
@@ -78,24 +80,25 @@ SUBROUTINE sigma_c_im(ik0)
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
   INTEGER     :: ss(3,3)
-  INTEGER  :: ibnd
+  INTEGER     :: ibnd
+  INTEGER     :: iw0start, iw0stop
 
 !For running PWSCF need some variables 
   LOGICAL             :: pade_catch
   LOGICAL             :: found_q
   LOGICAL             :: limq, inv_q, found
-
 !File related:
   character(len=256) :: tempfile, filename
 !Complete file name
   integer*8 :: unf_recl
+    
 
 #define DIRECT_IO_FACTOR 8 
 ! iG(W-v)
-   ALLOCATE ( scrcoul_g      (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)     )
-   ALLOCATE ( scrcoul_g_R    (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)     )
-   ALLOCATE ( scrcoul_pade_g (sigma_c_st%ngmt, sigma_c_st%ngmt)          )
-   ALLOCATE ( greenf_g       (sigma_c_st%ngmt, sigma_c_st%ngmt)          )
+   ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
+   ALLOCATE ( scrcoul_g_R     (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
+   ALLOCATE ( scrcoul_pade_g  (sigma_c_st%ngmt, sigma_c_st%ngmt)         )
+   ALLOCATE ( greenf_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, 2*nwcoul) )
 !These go on the big grid...
    ALLOCATE ( scrcoul        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
    ALLOCATE ( greenfr        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
@@ -106,16 +109,20 @@ SUBROUTINE sigma_c_im(ik0)
    ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
    w_ryd(:) = wcoul(:)/RYTOEV
+
    WRITE(6," ")
-   WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk(ipol, ik0), ipol=1,3)
+   WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
    WRITE(6," ")
    WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
+
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
    sigma(:,:,:) = (0.0d0, 0.0d0)
+
    CALL start_clock('sigmac')
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
+
    IF(allocated(sigma)) THEN
      WRITE(6,'(4x,"Sigma allocated")')
    ELSE
@@ -130,16 +137,14 @@ SUBROUTINE sigma_c_im(ik0)
    wq(:) = 0.0d0
    DO iq = 1, nksq
       IF (lgamma) THEN
-!         write(6, '(" lgamma ")')
-         wq(iq) = 0.5d0*wk(iq) 
+!        write(6, '(" lgamma ")')
+          wq(iq) = 0.5d0*wk(iq) 
       ELSE
-         wq(iq) = 0.5d0*wk(2*iq-1) 
+          wq(iq) = 0.5d0*wk(2*iq-1) 
       ENDIF
    ENDDO
-
 !Every processor needs access to the files: _gw0si.coul1 and _gw0si.green1
- call mp_barrier(inter_image_comm)
-
+   call mp_barrier(inter_image_comm)
 #ifdef __PARA
 !if(.not.ionode) then
 !OPEN coulomb file (only written to by head node).
@@ -162,39 +167,37 @@ SUBROUTINE sigma_c_im(ik0)
 ! Parallelizing q over images should probable use pools with 
 ! point to point communication and then do frequencies
 ! over images.
-!
-    IF (nimage.gt.1) then
-        CALL para_img(nksq, iqstart, iqstop)
-    ELSE
-        iqstart = 1
-        iqstop = iqstop
-    ENDIF
-    WRITE(6, '(5x, "iq ",i4, " iqstart ", i4, " iqstop ", i4)') iqstart, iqstop
+!    CALL para_img(nksq, iqstart, iqstop)
+!Should be...
+!CALL para_pool(nksq, iqstart, iqstop)
+   WRITE(6, '(5x, " nksq ", i4)') nksq
+   WRITE(6, *) xk(:,1:nkstot)
+   CALL para_img(nwsigma, iw0start, iw0stop)
+   WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 
 !ONLY PROCESSORS WITH K points to process: 
 IF(iqstop-iqstart+1.ne.0) THEN
   WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
   IF (nksq.gt.1) rewind (unit = iunigk)
-  DO iq = iqstart, iqstop
+!  DO iq = iqstart, iqstop
+! kpoints split between pools
+  DO iq = 1, nksq
       IF (lgamma) THEN
           ikq = iq
       ELSE
           ikq = 2*iq
       ENDIF
-!  q point for convolution \sum_{q \in IBZ_{k}} G_{k+q} W_{-q}
-!  q = (k0 + q) - k0
-!  xq_ibk(:) = xk(:,ikq) - xk_kpoints(:, ik0)
-!  by actually searching for -q and calculating w of -q  
-!  we ensure there is no confusion in which symmetry routine is required.
-!  SYMMFIX
 !  -q =  k0 - (k0 + q)
      xq_ibk(:) = xk_kpoints(:, ik0) - xk(:, ikq)
+
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
 !q is stored in the list x_q as positive q but all the calculations have
 !been done at -q therefore we are just going to calculate \Sum G_{k+q}W_{-q}
    inv_q=.false.
    call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
+   cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+
    if(lgamma) npwq=npw 
    write(6, *)  
    write(6, '("xq_IBK point")')
@@ -202,68 +205,25 @@ IF(iqstop-iqstart+1.ne.0) THEN
    write(6, '("equivalent xq_IBZ point, symop, iqrec")')
    write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
    write(6,*)
+
    write(1000+mpime, *)  
    write(1000+mpime, '("xq_IBK point")')
    write(1000+mpime, '(3f11.7)') xq_ibk
    write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
    write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+   write(1000+mpime, *)  
 
 !Inverse Dielectric Function is Written to file at this point
 !So we read that in, rotate it, and then apply the Coulomb operator.
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    scrcoul_g_R(:,:,:) = dcmplx(0.0d0, 0.0d0)
-
    if(modielec.and.padecont) PRINT*, "WARNING: PADECONT AND MODIELEC?"
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
-
-!Rotate G_vectors for FFT.
-!In EPW FG checked that gmapsym(gmapsym(ig,isym),invs(isym)) = ig
-!I have checked that here as well and it works.
-!write(6,'(11i4)')gmapsym(gmapsym(:ngmsco,isym),invs(isym))
-   DO igp = 1, sigma_c_st%ngmt
-      DO ig = 1, sigma_c_st%ngmt
-         IF((gmapsym(ig,isym).le.sigma_c_st%ngmt).and.(gmapsym(igp,isym).le.sigma_c_st%ngmt) &
-             .and.(gmapsym(ig,isym).gt.0).and.(gmapsym(ig,isym).gt.0)) then
-             DO iwim = 1, nfs
-               phase = eigv(ig,isym)*conjg(eigv(igp,isym))
-               scrcoul_g_R(ig, igp, iwim) = scrcoul_g(gmapsym(ig,isym), gmapsym(igp,isym),iwim)*phase
-             ENDDO
-         ENDIF
-      ENDDO
-   ENDDO
-
-   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-
-   IF(.not.modielec) THEN
-     DO iw = 1, nfs
-      DO ig = 1, sigma_c_st%ngmt
-!SPHERICAL SCREENING
-         qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-         limq = (qg2.lt.eps8) 
-         IF(.not.limq) THEN
-             DO igp = 1, sigma_c_st%ngmt
-                                          !!!!eps^{-1}(\G,\G';\omegaa  )!!!!!   v(q+G)!!!!
-                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-             ENDDO
-         ENDIF
-         qg = sqrt(qg2)
-         spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-         IF(.not.limq) THEN
-            DO igp = 1, sigma_c_st%ngmt
-                scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
-            ENDDO
-         ELSE
-            IF(iw.eq.1) THEN
-               scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
-            ENDIF
-            DO igp = 1, sigma_c_st%ngmt
-               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-            ENDDO
-         ENDIF
-     ENDDO!ig
-    ENDDO!nfs
-  ENDIF
-
+!Start integration over iw +/- wcoul. 
+    WRITE(6,'("Starting Frequency Integration")')
+!Rotate W and initialize necessary quantities for pade_continuation or godby
+!needs.
+    CALL rotate_w(scrcoul_g, scrcoul_g_R, gmapsym(1,1), eigv(1,1), isym, xq_ibk(1))
 !zeroing wings of W again!
     IF(iq.eq.1) THEN
         DO iw = 1, nfs
@@ -275,129 +235,32 @@ IF(iqstop-iqstart+1.ne.0) THEN
             ENDDO
         ENDDO
     ENDIF
-
-    IF(.NOT.modielec) THEN
-        IF(godbyneeds) THEN
-        DO ig = 1, sigma_c_st%ngmt
-          DO igp = 1, sigma_c_st%ngmt 
-!For godby-needs plasmon pole the algebra is done assuming real frequency*i.
-!that is: the calculation is done at i*wp but we pass a real number as the freq.
-               DO iw = 1, nfs
-                  z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
-                  u(iw) = scrcoul_g_R(ig, igp, iw)
-               ENDDO
-               CALL godby_needs_coeffs(nfs, z, u, a)
-               DO iw = 1, nfs 
-!Just overwrite scrcoul_g_R with godby-needs coefficients.
-                  scrcoul_g_R (ig, igp, iw) = a(iw)
-               ENDDO
-          ENDDO
-        ENDDO
-        ELSE IF (padecont) THEN
-          DO igp = 1, sigma_c_st%ngmt
-           DO ig = 1, sigma_c_st%ngmt
-!Pade input points on the imaginary axis
-              DO iw = 1, nfs
-                 z(iw) = fiu(iw)
-                 u(iw) = scrcoul_g_R (ig, igp, iw)
-              ENDDO
-              call pade_coeff ( nfs, z, u, a)
-!Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
-             DO iw = 1, nfs 
-                scrcoul_g_R (ig, igp, iw) = a(iw)
-             ENDDO
-           ENDDO !enddo on ig
-        ENDDO  !enddo on igp
-        ELSE IF(.not.padecont.and..not.godbyneeds) THEN
-                 WRITE(6,'("No screening model chosen!")')
-        ENDIF
-    ENDIF
-!Start integration over iw +/- wcoul. 
-    WRITE(6,'("Starting Frequency Integration")')
-    DO iw = 1, nwcoul
-       scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
-
-      IF(.NOT.modielec) THEN
-        DO ig = 1, sigma_c_st%ngmt
-           DO igp = 1, sigma_c_st%ngmt
-              DO iwim = 1, nfs
-                  z(iwim) = fiu(iwim)
-                  a(iwim) = scrcoul_g_R (ig,igp,iwim)
-              ENDDO
-              pade_catch=.false.
-
-              IF (padecont) THEN
-                  call pade_eval ( nfs, z, a, dcmplx(0.0d0, w_ryd(iw)), scrcoul_pade_g (ig,igp))
-              ELSE IF (godbyneeds) THEN
-                  scrcoul_pade_g(ig,igp) = -a(2)/(w_ryd(iw)**2+(a(1))**2)
-              ELSE
-                   WRITE(6,'("No screening model chosen!")')
-                   STOP
-                   CALL mp_global_end()
-              ENDIF
-           ENDDO
-        ENDDO
-      ELSE IF (modielec) THEN
-          DO ig = 1, sigma_c_st%ngmt
-             CALL mod_diel(ig, xq_ibk, w_ryd(iw), scrcoul_pade_g(ig,ig), 1)
-!scrcoul_pade_g(ig,ig) = mod_dielec_(xq,w_ryd,ig)*v_(q+G,truncation)
-             qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-             limq = (qg2.lt.eps8) 
-             IF(.not.limq) THEN
-                scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-             ENDIF
-             qg = sqrt(qg2)
-             spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!Normal case using truncated coulomb potential.
-             IF(.not.limq) THEN
-                   scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx(spal, 0.0d0)
-             ELSE
-                   scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-             ENDIF
-          ENDDO
-      ENDIF
+!Calculate seed system: G(G,G';w=0).
+    DO iw0 = iw0start, iw0stop
+       CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iq, 2*nwcoul)
+       DO iw = 1, nwcoul
 !W(G,G';w)
-         scrcoul(:,:) = czero
-         CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
-! Now have W(r,r';omega')
-! simpson quadrature: int_w1^wN f(w)dw = deltaw * 
-! [ 1/3 ( f1 + fN ) + 4/3 sum_even f_even + 2/3 sum_odd f_odd ]
-         cprefac = (deltaw/RYTOEV)*wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
-         IF ( iw/2*2.eq.iw ) THEN
-            cprefac = cprefac * 4.d0/3.d0
-         ELSE
-            cprefac = cprefac * 2.d0/3.d0
-         ENDIF
-
-! Presumably the fxn should be zero at the cutoff but might as well be consistent...
-         IF (iw.eq.1) THEN
-             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * dcmplx(-1.0d0, 0.0d0)/ tpi
-         ELSE IF (iw.eq.nwcoul) THEN
-             cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * dcmplx(-1.0d0, 0.0d0)/ tpi
-         ENDIF
+          CALL construct_w(scrcoul_g_R(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
+          scrcoul(:,:) = czero
+          CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
+!Now have W(r,r';omega')
 !Calculate \Sigma(w_0)  =  \G(w_0 \pm w') W(\w') 
-         DO iw0 = 1, nwsigma
-            iw0mw = ind_w0mw (iw0,iw)
-            iw0pw = ind_w0pw (iw0,iw)
+          greenfr(:,:) = czero
+          CALL fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, +1)
+          sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
 
-            rec0 = (iw0mw-1) * 1 * nksq + (iq-1) + 1
-            CALL davcio( greenf_g, lrgrn, iungreen, rec0, -1 )
-            greenfr(:,:) = czero
-            CALL fft6(greenf_g(1,1), greenfr(1,1), sigma_c_st, +1)
+          greenfr(:,:) = czero
+          CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st,+1)
+          sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
 
-            sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
-
-            rec0 = (iw0pw-1) * 1 * nksq + (iq-1) + 1
-            CALL davcio(greenf_g, lrgrn, iungreen, rec0, -1)
-            greenfr(:,:) = czero
-            CALL fft6(greenf_g(1,1), greenfr(1,1),sigma_c_st,+1)
-
-            sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
-        ENDDO !on iw0  
+          IF (iw0.eq.1) THEN
+            write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
+            write(2000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
+          ENDIF
+       ENDDO !on iw0  
     ENDDO ! on frequency convolution over w'
   ENDDO ! end loop iqstart, iqstop 
 ENDIF
-
   DEALLOCATE ( gmapsym          )
   DEALLOCATE ( greenfr          )
   DEALLOCATE ( greenf_g         )
@@ -407,10 +270,12 @@ ENDIF
   DEALLOCATE ( z,a,u )
 
 #ifdef __PARA
-      CALL mp_barrier(inter_image_comm)
-      CALL mp_sum(sigma, inter_image_comm)
-      CALL mp_barrier(inter_image_comm)
+  CALL mp_barrier(inter_image_comm)
+  CALL mp_sum(sigma, inter_pool_comm)
+  CALL mp_sum(sigma, inter_image_comm)
+  CALL mp_barrier(inter_image_comm)
 #endif __PARA
+
 
   IF (ionode) THEN
     ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
@@ -432,7 +297,7 @@ ENDIF
     CALL stop_clock('sigmac')
     DEALLOCATE ( sigma_g  )
   ENDIF !ionode
-  call mp_barrier(inter_image_comm)
-  DEALLOCATE ( sigma    )
+  CALL mp_barrier(inter_image_comm)
+  DEALLOCATE ( sigma  )
 RETURN
 END SUBROUTINE sigma_c_im

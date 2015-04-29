@@ -8,6 +8,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   USE control_gw,           ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
                                    do_diag_g, do_diag_w, trunc_2d
 IMPLICIT NONE
+
 INTEGER                  :: ig, igp, nw, iw, ibnd, jbnd, ios, &
                             ipol, ik0, ir,irp, counter
 INTEGER                  :: nwsigwin
@@ -22,24 +23,27 @@ REAL(DP) :: ehomo, elumo, mu
     ALLOCATE ( z(nwsigma), a(nwsigma), u(nwsigma))
 
     CALL get_homo_lumo (ehomo, elumo)
-    mu = ehomo + 0.014
+    mu = ehomo + 0.5d0*(elumo-ehomo)
 
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
 
-    do ibnd =1 , nbnd_sig
-        do jbnd = 1, nbnd_sig
-            do iw = 1, nwsigma
+    DO ibnd =1 , nbnd_sig
+        DO jbnd = 1, nbnd_sig
+            DO iw = 1, nwsigma
                z(iw) = dcmplx(mu, w_ryd(iw))
                u(iw) = sigma_band_c (ibnd, jbnd, iw)
-            enddo
+            ENDDO
             call pade_coeff(nwsigma, z, u, a)
-            do iw = 1, nwsigwin
-           !continuation to the real axis.
-               call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
-            enddo
-        enddo
-    enddo
+            DO iw = 1, nwsigwin
+               IF(w_ryd2(iw).lt.mu) THEN
+                  call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), -eta), sigma_band_con(ibnd, jbnd, iw))
+               ELSE
+                  call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
+               ENDIF
+            ENDDO
+        ENDDO
+    ENDDO
     DEALLOCATE ( z,a,u )
 end subroutine sigma_pade
 

@@ -5,7 +5,7 @@ SUBROUTINE sigma_exch(ik0)
   USE control_gw,    ONLY : eta, nbnd_occ
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk
-  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
   USE eqv,           ONLY : evq, eprec
   USE units_gw,      ONLY : iunsex, lrsex, lrwfc, iuwfc
@@ -14,6 +14,8 @@ SUBROUTINE sigma_exch(ik0)
   USE buffers,       ONLY : save_buffer, get_buffer
   USE io_global,     ONLY : stdout, ionode_id, ionode
   USE gvect,         ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
+  USE mp,            ONLY : mp_sum, mp_barrier
+  USE mp_pools,      ONLY : inter_pool_comm
 
 IMPLICIT NONE
 
@@ -68,26 +70,31 @@ IMPLICIT NONE
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma",i3)') nbnd_occ(ik0)
 
+  WRITE(6, '(5x, " nksq ", i4)') nksq
+  WRITE(6, *) xk(:,1:nkstot)
+  
 
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   DO iq = 1, nksq
-!     write(6,'(4x,"q ",i3, 3f12.7)') iq, (xk(ipol, iq), ipol=1,3)
      if (lgamma) then
         ikq = iq
      else
         ikq = 2*iq
      endif
+     write(6,'(4x,"q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
+
      call get_buffer (evq, lrwfc, iuwfc, ikq)
-     if (nksq.gt.1) then
-          read (iunigk, err = 100, iostat = ios) npw, igk
-100       CALL errore ('sigma_exch', 'reading igk', abs (ios) )
-     endif
-     if (lgamma)  npwq = npw
-     if (.not.lgamma.and.nksq.gt.1) then
-           read (iunigk, err = 200, iostat = ios) npwq, igkq
-200        call errore ('sigma_exch', 'reading igkq', abs (ios) )
-     endif
+
+      IF (nksq.gt.1) then
+          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                        npw, igk, g2kin )
+      ENDIF
+      if(lgamma) npwq = npw
+      IF (.not.lgamma.and.nksq.gt.1) then
+        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+                      npwq, igkq, g2kin )
+      ENDIF
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
      counter  = 0
@@ -145,13 +152,13 @@ IMPLICIT NONE
      sigma_ex = sigma_ex + wq(iq)* (0.0d0,1.0d0) / tpi *  greenf_nar * barcoulr
      DEALLOCATE(barcoulr)
      DEALLOCATE(greenf_nar)
-   ENDDO
-
-   ALLOCATE ( sigma_g_ex  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
-   sigma_g_ex(:,:) = (0.0d0,0.0d0)
-   call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
-   CALL davcio(sigma_g_ex, lrsex, iunsex, ik0, 1)
-   DEALLOCATE(sigma_g_ex)
-   DEALLOCATE (sigma_ex)
-   CALL stop_clock('sigma_exch')
+  ENDDO
+  CALL mp_sum (sigma_ex, inter_pool_comm)  
+  ALLOCATE ( sigma_g_ex  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
+  sigma_g_ex(:,:) = (0.0d0,0.0d0)
+  call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
+  CALL davcio(sigma_g_ex, lrsex, iunsex, ik0, 1)
+  DEALLOCATE(sigma_g_ex)
+  DEALLOCATE (sigma_ex)
+  CALL stop_clock('sigma_exch')
 END SUBROUTINE sigma_exch

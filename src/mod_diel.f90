@@ -64,7 +64,6 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
  !Effective bi-layer plasmon model
  !Inkson and White semicond. sci. technol. 4 1989
  !only xy screened and effective coupling along z...
- !we might also introduce a penn model dielectric function to account for the gap.
      qg2     = (g(1,ig)+xq(1))*2 + (g(2,ig)+xq(2))**2
      qg      = sqrt(tpiba2*qg2)
 
@@ -87,7 +86,6 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
      wwq2    = alpha/(1 - inveps)
 !Skip through frequencies.
      inveps  = alpha/(w**2 - wwq2)
-
  else if(screening.eq.3) then
 !Bilayer plasmon model 
      qg2     = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2
@@ -98,7 +96,6 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
 !     wwqi2   =
 !     wwqj2   =
      expqxy  = exp(-2*qg*z)
-
 !correct expression for two poles:
      wwpl2   = ((wwqi2+wwqj2)/2) + sqrt(((wwqi2-wwqj2)/2)**2 + wwpi2*wwpj2*expqxy)
      wwmi2   = ((wwqi2+wwqj2)/2) - sqrt(((wwqi2-wwqj2)/2)**2 + wwpi2*wwpj2*expqxy)

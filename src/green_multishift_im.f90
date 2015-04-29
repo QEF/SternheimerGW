@@ -1,5 +1,4 @@
-SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, mu, x_sig)
-!SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
+SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, x_sig)
    USE kinds,       ONLY : DP
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
    USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
@@ -36,7 +35,6 @@ IMPLICIT NONE
 !ALLOCATE(x_sig(ndmx,nfreq), r(ndmx))
   ALLOCATE(r(ndmx))
   ALLOCATE(u_sig(ndmx,nfreq), u_sig_old(ndmx,nfreq), r_sig(ndmx,nfreq))
-  w_ryd(:) = wgreen(:)/RYTOEV
 !Green shifted system.
      u_sig(:,:) = czero
      x_sig(:,:) = czero
@@ -55,8 +53,6 @@ IMPLICIT NONE
               x_sig(:,:)        = czero
               call davcio (r, lrresid, iunresid, iter, -1)
               do iw = 1, nfreq 
-                !u_sig(:,iw) = r(:)
-                !r_sig(:,iw) = r(:)
                  u_sig(:,iw) = r(:)
                  r_sig(:,iw) = r(:)
               enddo
@@ -70,8 +66,6 @@ IMPLICIT NONE
          do iw = 1, nfreq
 !-alpha because we are solve (H-w^{+}):
 ! conjg means something...
-           !pi_coeff_new(iw) = (cone - alpha*DCMPLX(w_ryd(iw), eta))*pi_coeff(iw) - &
-           !pi_coeff_new(iw) = (cone - alpha*DCMPLX(0.0d0, w_ryd(iw)))*pi_coeff(iw) - &
             pi_coeff_new(iw) = (cone - alpha*DCMPLX( 0.0d0 , w_ryd(iw)))*pi_coeff(iw) - &
                               ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
