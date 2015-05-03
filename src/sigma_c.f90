@@ -35,7 +35,6 @@ SUBROUTINE sigma_c(ik0)
   COMPLEX(DP)         :: phase
   COMPLEX(DP)         :: aux (sigma_c_st%dfftt%nnr)
 !For running PWSCF need some variables 
-  LOGICAL             :: pade_catch
   LOGICAL             :: found_q
   LOGICAL             :: limq, inv_q, found
 !Pade arrays
@@ -284,8 +283,8 @@ IF(iqstop-iqstart+1.ne.0) THEN
 
     IF(.NOT.modielec) THEN
         IF(godbyneeds) THEN
-        DO ig = 1, sigma_c_st%ngmt
-          DO igp = 1, sigma_c_st%ngmt 
+          DO ig = 1, sigma_c_st%ngmt
+            DO igp = 1, sigma_c_st%ngmt 
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
                DO iw = 1, nfs
@@ -297,8 +296,8 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !Just overwrite scrcoul_g_R with godby-needs coefficients.
                   scrcoul_g_R (ig, igp, iw) = a(iw)
                ENDDO
+            ENDDO
           ENDDO
-        ENDDO
         ELSE IF (padecont) THEN
           DO igp = 1, sigma_c_st%ngmt
            DO ig = 1, sigma_c_st%ngmt
@@ -322,28 +321,25 @@ IF(iqstop-iqstart+1.ne.0) THEN
     WRITE(6,'("Starting Frequency Integration")')
     DO iw = 1, nwcoul
        scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
-
-      IF(.NOT.modielec) THEN
-        DO ig = 1, sigma_c_st%ngmt
-           DO igp = 1, sigma_c_st%ngmt
-              DO iwim = 1, nfs
-                  z(iwim) = fiu(iwim)
-                  a(iwim) = scrcoul_g_R (ig,igp,iwim)
-              ENDDO
-              pade_catch=.false.
-
-              IF (padecont) THEN
-                  call pade_eval ( nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
-              ELSE IF (godbyneeds) THEN
-                  scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd(iw)**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
-              ELSE
-                   WRITE(6,'("No screening model chosen!")')
-                   STOP
-                   CALL mp_global_end()
-              ENDIF
-           ENDDO
-        ENDDO
-      ELSE IF (modielec) THEN
+       IF(.NOT.modielec) THEN
+         DO ig = 1, sigma_c_st%ngmt
+            DO igp = 1, sigma_c_st%ngmt
+               DO iwim = 1, nfs
+                   z(iwim) = fiu(iwim)
+                   a(iwim) = scrcoul_g_R (ig,igp,iwim)
+               ENDDO
+               IF (padecont) THEN
+                   call pade_eval ( nfs, z, a, dcmplx(w_ryd(iw), eta), scrcoul_pade_g (ig,igp))
+               ELSE IF (godbyneeds) THEN
+                   scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd(iw)**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
+               ELSE
+                    WRITE(6,'("No screening model chosen!")')
+                    STOP
+                    CALL mp_global_end()
+               ENDIF
+            ENDDO
+         ENDDO
+       ELSE IF (modielec) THEN
           DO ig = 1, sigma_c_st%ngmt
              CALL mod_diel(ig, xq_ibk, w_ryd(iw), scrcoul_pade_g(ig,ig), 1)
 !scrcoul_pade_g(ig,ig) = mod_dielec_(xq,w_ryd,ig)*v_(q+G,truncation)

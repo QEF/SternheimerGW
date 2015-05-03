@@ -40,7 +40,6 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
 !     q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
 !!!!!!
      fac    = 1.d0/(1.d0-1.d0/eps0)
-!!!!!
 !effective mass annd density of electrons in layer i,j.
      meff   = 1.0d0
 !or should this be the fourier co-efficient of the density at the particular G vector?
@@ -48,7 +47,6 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
      rhoj   = 1.0d0
 !z is interlayer distance.
      z = 2.0d0
-
  if(screening.eq.1) then
 !Standard 3D-bulk ppm:
 !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
@@ -103,7 +101,7 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
 !     A       = 
 !     B       = 1 - A
      inveps  =  A/(w**2 - wwpl2) + B/(w**2- wwmi2)
-else if(screening.eq.4) then
+!else if(screening.eq.4) then
 !Multilayer plasmon model gives the expression for stern 2-D dielectric response.
 !analytic layered electron gas inverse dielectric function from hawyrlak and co-workers.
 !bqg=cosh(qg*d)-((2*pi)/(eps0*x))*((eps0*meff)/(kf*x)-sqrt((eps0*meff/(kf*x))-1))*sinh(qxy*d)

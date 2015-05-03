@@ -113,9 +113,10 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
 !This should ensure the Green's fxn has the correct -\delta for \omega <
 !\epsilon_{F}:
    CALL get_homo_lumo (ehomo, elumo)
-!  mu = ehomo + 0.50d0*(elumo-ehomo)
-!  This smooths out variations and I think makes sense
-   mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
+   mu = ehomo + 0.50d0*(elumo-ehomo)
+  ! mu = 0.00
+! This smooths out variations and I think makes sense
+  ! mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
 
       IF (nksq.gt.1) then
           CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&

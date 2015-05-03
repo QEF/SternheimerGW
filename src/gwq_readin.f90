@@ -196,7 +196,7 @@ SUBROUTINE gwq_readin()
   maxter_green  = 220
   w_green_start = 1
 
-  do_serial       = .TRUE.
+  do_serial       = .FALSE.
   coul_multishift = .FALSE.
   trunc_2d        = .FALSE.
   do_epsil        = .FALSE.
@@ -206,8 +206,7 @@ SUBROUTINE gwq_readin()
   do_pade_coul    = .FALSE.
 
   high_io    = .FALSE.
-  freq_gl    = .FALSE.
-
+  freq_gl    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
   plasmon      = 17.0d0
   greenzero    = 0.0d0 
@@ -216,16 +215,13 @@ SUBROUTINE gwq_readin()
   ecutsco      = 5.0
   ecutsex      = 5.0
   nbnd_sig     = 8
-
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   godbyneeds   = .FALSE.
   cohsex       = .FALSE.
   padecont     = .FALSE.
   multishift   = .FALSE.
-
-
-!imaginary component added to linear system should be in Rydberg
+!Imaginary component added to linear system should be in Rydberg
   eta            = 0.02
   kpoints        = .FALSE.
   do_coulomb     = .FALSE.
@@ -238,22 +234,17 @@ SUBROUTINE gwq_readin()
   do_q0_only     = .FALSE.
   solve_direct   = .FALSE.
   tinvert        = .TRUE.
-
 !Frequency variables
   wsigmamin      =-10.0d0
   wsigmamax      = 10.0d0
   deltaw         =  0.2d0 
   wcoulmax       = 80.0d0   
-
- !Symmetry Default:yes!, which q, point to start on.
- !can be used in conjunction with do_q0_only.
+!Symmetry Default:yes!, which q, point to start on.
+!can be used in conjunction with do_q0_only.
   use_symm       = .TRUE.
   w_of_q_start   = 1
   w_green_start  = 1 
-
-  
-
-  ! ...  reading the namelist inputgw
+! ...  reading the namelist inputgw
 
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
 !HL TEST PARA FINE

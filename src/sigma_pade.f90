@@ -15,12 +15,17 @@ INTEGER                  :: nwsigwin
 COMPLEX (DP)             :: sigma_band_c(nbnd_sig, nbnd_sig, nwsigma)
 COMPLEX (DP)             :: sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin)
 COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
+COMPLEX(DP), ALLOCATABLE :: z2(:), u2(:), a2(:)
 REAL(DP)                 :: w_ryd(nwsigwin), w_ryd2(nwsigwin), wsigwin(nwsigwin)
 REAL(DP) :: ehomo, elumo, mu
 
 !nwsigma is the number of points we have calculated sigma at.
 !nwsigwin is the number of points in the sigma window we want
     ALLOCATE ( z(nwsigma), a(nwsigma), u(nwsigma))
+!Sigma should be calculated on a uniform grid from [0:wsigma]
+!We then exploit the symmetry of the selfenergy on the imaginary axis.
+!Re(Sig(w)) = Re(Sig(-w)) and Im(Sig(w)) = -Im(Sig(-w))
+    ALLOCATE ( z2(2*nwsigma-1), a2(2*nwsigma-1), u2(2*nwsigma-1))
 
     CALL get_homo_lumo (ehomo, elumo)
     mu = ehomo + 0.5d0*(elumo-ehomo)
@@ -30,20 +35,41 @@ REAL(DP) :: ehomo, elumo, mu
 
     DO ibnd =1 , nbnd_sig
         DO jbnd = 1, nbnd_sig
-            DO iw = 1, nwsigma
-               z(iw) = dcmplx(mu, w_ryd(iw))
-               u(iw) = sigma_band_c (ibnd, jbnd, iw)
+            DO iw = 1, nwsigma-1
+               z2(iw) = dcmplx(mu, - w_ryd(iw+1))
+               u2(iw) = dconjg(sigma_band_c (ibnd, jbnd, iw+1))
             ENDDO
-            call pade_coeff(nwsigma, z, u, a)
+            DO iw = 1, nwsigma 
+               z2(iw+nwsigma-1) = dcmplx(mu, w_ryd(iw))
+               u2(iw+nwsigma-1) = sigma_band_c (ibnd, jbnd, iw)
+            ENDDO
+            call pade_coeff(2*nwsigma-1, z2, u2, a2)
             DO iw = 1, nwsigwin
                IF(w_ryd2(iw).lt.mu) THEN
-                  call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), -eta), sigma_band_con(ibnd, jbnd, iw))
+                  call pade_eval(2*nwsigma-1, z2, a2, dcmplx(w_ryd2(iw), -eta), sigma_band_con(ibnd, jbnd, iw))
                ELSE
-                  call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
+                  call pade_eval(2*nwsigma-1, z2, a2, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
                ENDIF
             ENDDO
         ENDDO
     ENDDO
+
+!    DO ibnd =1 , nbnd_sig
+!        DO jbnd = 1, nbnd_sig
+!            DO iw = 1, nwsigma
+!               z(iw) = dcmplx(mu, w_ryd(iw))
+!               u(iw) = sigma_band_c (ibnd, jbnd, iw)
+!            ENDDO
+!            call pade_coeff(nwsigma, z, u, a)
+!            DO iw = 1, nwsigwin
+!               IF(w_ryd2(iw).lt.mu) THEN
+!                  call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), -eta), sigma_band_con(ibnd, jbnd, iw))
+!               ELSE
+!                  call pade_eval(nwsigma, z, a, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
+!               ENDIF
+!            ENDDO
+!        ENDDO
+!    ENDDO
     DEALLOCATE ( z,a,u )
 end subroutine sigma_pade
 

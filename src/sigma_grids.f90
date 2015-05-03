@@ -10,7 +10,7 @@ SUBROUTINE sigma_grids()
   USE gvect,            ONLY : gcutm
   USE stick_set,        ONLY : pstickset_custom
   USE mp,               ONLY : mp_sum, mp_max,mp_barrier
-  USE mp_pools,         ONLY : inter_pool_comm
+  USE mp_pools,         ONLY : inter_pool_comm, nproc_pool
   USE mp_bands,         ONLY : me_bgrp, nproc_bgrp, inter_bgrp_comm, &
                                intra_bgrp_comm, root_bgrp, ntask_groups
   USE fft_types,        ONLY : fft_dlay_descriptor, fft_dlay_allocate, &
@@ -18,6 +18,7 @@ SUBROUTINE sigma_grids()
   USE io_global,        ONLY :  stdout, ionode, ionode_id
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st
   USE gwsigma,          ONLY : ecutsex, ecutsco
+  USE grid_subroutines, ONLY : realspace_grids_info 
 
   IMPLICIT NONE
 
@@ -100,4 +101,5 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, 3i4)') sigma_c_st%nr1t, sigma_c_st%nr2t, sigma_c_st%nr3t
   WRITE(stdout, '(5x, "Ecut, Ngmsco:")')
   WRITE(stdout, '(5x, f10.7, i4, //)') sigma_c_st%ecutt, sigma_c_st%ngmt
+  CALL realspace_grids_info(sigma_c_st%dfftt, sigma_c_st%dfftt, nproc_pool)
 END SUBROUTINE

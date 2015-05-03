@@ -123,10 +123,11 @@ SUBROUTINE setup_green (xq)
   !
 
   nkstot = nks_start
-  xk(:,1:nkstot) = xk_start(:,1:nkstot)
-
+!xk(:,1:nkstot) = xk_start(:,1:nkstot)
+!@
+!want <nk'|\sum_{kq} G_{k}W_{q}\delta{k'+k+q}|nk'>
+  xk(:,1:nkstot) = -xk_start(:,1:nkstot)
   !write(6,'(3f11.7)') xk(:,:)
-
   wk(1:nkstot)   = wk_start(1:nkstot)
 
   !

@@ -248,11 +248,9 @@ IF(iqstop-iqstart+1.ne.0) THEN
           greenfr(:,:) = czero
           CALL fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, +1)
           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-
           greenfr(:,:) = czero
           CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st,+1)
           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-
           IF (iw0.eq.1) THEN
             write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
             write(2000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
@@ -275,7 +273,6 @@ ENDIF
   CALL mp_sum(sigma, inter_image_comm)
   CALL mp_barrier(inter_image_comm)
 #endif __PARA
-
 
   IF (ionode) THEN
     ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
