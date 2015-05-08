@@ -108,7 +108,7 @@ DO ig = igstart, igstop
                endif
             enddo
          enddo !iw
-         if(do_epsil) GOTO 545
+         !if(do_epsil) GOTO 545
       ELSE
         if(qg2.lt.0.001.AND.lgauss) then 
           write(6,'("Not calculating static electric field applied to metal, cycling coulomb")')

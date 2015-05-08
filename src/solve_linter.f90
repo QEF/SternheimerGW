@@ -297,61 +297,35 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
               else
                  dpsim(:,:)     = (0.d0, 0.d0) 
                  dpsip(:,:)     = (0.d0, 0.d0) 
-                 do ibnd =1, nbnd
-                    do ig = 1, npwx
-                       dpsim(ig,ibnd) = (1/( dcmplx(g2kin(ig), 0.d0) - fiu(iw) + dcmplx(et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-                       dpsip(ig,ibnd) = (1/( dcmplx(g2kin(ig), 0.d0) + fiu(iw) + dcmplx(et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-                    enddo
-                 enddo
               endif
               thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
            else
             !
             ! At the first iteration dpsi and dvscfin are set to zero
             !
-           dpsi(:,:)      = (0.d0, 0.d0) 
-           if(iw.le.2) then
-              dpsim(:,:)     = (0.d0, 0.d0) 
-              dpsip(:,:)     = (0.d0, 0.d0) 
-           !!!!
-              do ibnd =1, nbnd
-                 do ig = 1, npwx
-!                    dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) - fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-!                    dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-                 enddo
-              enddo
-           !!!!
-           else!reuse dpsip dpsim (iw) from previous run frequency.
-           !!!!
-              if(high_io) then
-                 call get_buffer( dpsip, lrdwf, iudwfp, ik)
-                 call get_buffer( dpsim, lrdwf, iudwfm, ik)
-              else
-                 do ibnd =1, nbnd
-                    do ig = 1, npwx
-!                       dpsim(ig,ibnd) = (1/((g2kin(ig), 0.d0) - fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-!                       dpsip(ig,ibnd) = (1/((g2kin(ig), 0.d0) + fiu(iw) + (et(ibnd,ikk),0.0d0)))*dvpsi(ig,ibnd)
-                    enddo
-                 enddo
+             dpsi(:,:)      = (0.d0, 0.d0) 
+             dpsim(:,:)     = (0.d0, 0.d0) 
+             dpsip(:,:)     = (0.d0, 0.d0) 
+             if(iw.ge.2.and.high_io) then
+                call get_buffer( dpsip, lrdwf, iudwfp, ik)
+                call get_buffer( dpsim, lrdwf, iudwfm, ik)
               endif
-           !!!!
-           endif
-
-            dvscfin(:, :)  = (0.d0, 0.d0)
-            dvscfout(:, :) = (0.d0, 0.d0)
+              dvscfin(:, :)  = (0.d0, 0.d0)
+              dvscfout(:, :) = (0.d0, 0.d0)
+            !
             ! starting threshold for iterative solution of the linear system
               thresh = 1.0d-2
            endif
 
        conv_root = .true.
-       etc(:,:) = CMPLX( et(:,:), 0.0d0 , kind=DP)
-       cw       = fiu(iw) 
+       etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
+       cw        = fiu(iw) 
 
        IF (iw.eq.1) THEN
                CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                dpsim(:,:) = dpsip(:,:)
-               dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
+               dpsi(:,:)  = dpsim(:,:)  
        ELSE
                CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
@@ -363,8 +337,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        ltaver = ltaver + lter
        lintercall = lintercall + 1
 
-       IF(ik.eq.3) WRITE(1000+mpime, '(5x, "ik ", i4, " iw ", i4, " number of iters  ", i4, &
-                                       " number of cg-iters", i5)') ik, iw, kter, lter 
        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
                   &              " solve_linter: root not converged ",e10.3)')  &
                   &                ik , ibnd, anorm
@@ -427,7 +399,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
      call mp_sum ( drhoscf, inter_pool_comm )
      call mp_sum ( drhoscfh, inter_pool_comm )
-
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
 
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)

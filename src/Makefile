@@ -52,6 +52,7 @@ orthogonalize.o\
 cgsolve_all.o\
 mix_pot_c.o\
 mix_pot.o\
+truncate_2d.o\
 cg_psi.o\
 ch_psi_all.o\
 h_psiq.o\

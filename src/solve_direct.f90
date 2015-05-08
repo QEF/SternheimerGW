@@ -43,7 +43,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta, maxter_green
+                                   ext_recover, eta, maxter_green, prec_direct
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
@@ -147,7 +147,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1), dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
   COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
  
-  external cg_psi, ch_psi_all
+  external cg_psi, ch_psi_all, h_psi_all
   
   IF (rec_code_read > 20 ) RETURN
 
@@ -218,11 +218,25 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         enddo
 !MULTISHIFT No Preconditioning.
         h_diag = 0.d0
+    IF(prec_direct) THEN
+        do ibnd = 1, nbnd_occ (ikk)
+           do ig = 1, npwq
+              h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
+           enddo
+           IF (noncolin) THEN
+              do ig = 1, npwq
+                 h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
+              enddo
+           END IF
+        enddo
+    ELSE
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
               h_diag(ig,ibnd) =  (1.0d0, 0.0d0)
            enddo
         enddo
+    ENDIF
+
 !mode relic from phonon days:
         mode = 1
         nrec = ik
@@ -242,31 +256,27 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
+   IF(prec_direct) then!need to add another variable here for case where we want to do direct solution with tprec
+        CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, & 
+               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
+   ELSE 
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta)
-
         if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
-
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
         call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-
         dpsi(:,:,:)    = dpsit(:,:,:)
 !       dpsi = dpsi^{+} + dpsi^{-}
-
         dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
         call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
-
         dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
-        
-
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_green) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
            endif
         enddo
-        
         do iw = 1, nfs
            do ibnd=1, nbnd 
             if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
@@ -275,7 +285,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
             endif
            enddo
         enddo
-  
+   ENDIF
 
         ltaver = ltaver + lter
         lintercall = lintercall + 1
@@ -328,7 +338,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     do iw = 1, nfs
        call dv_of_drho (1, dvscfout(1,iw), .true.)
     enddo
-
 
     averlt = DBLE (ltaver) / lintercall
     tcpu = get_clock ('GW')

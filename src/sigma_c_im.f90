@@ -57,11 +57,11 @@ SUBROUTINE sigma_c_im(ik0)
   REAL(DP) :: xq_ibk(3), xq_ibz(3)
 !q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
   REAL(DP) :: xq_coul(3)
-  REAL(DP) :: rcut, spal, zcut
+  REAL(DP) :: rcut, spal
 !CHECK FOR NAN's
   REAL(DP)     :: ar, ai
 !For dirac delta fxn.
-  REAL(DP)     :: dirac, x, support
+  REAL(DP)     :: dirac, x, support, zcut
 !FREQUENCY GRIDS/COUNTERS
   INTEGER  :: iwim, iw, ikq
   INTEGER  :: iw0, iw0mw, iw0pw
@@ -115,6 +115,9 @@ SUBROUTINE sigma_c_im(ik0)
    WRITE(6," ")
    WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
+
+  zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+  WRITE(6,'("zcut ", f12.7)'), zcut
 
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)

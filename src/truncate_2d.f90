@@ -3,10 +3,6 @@ subroutine truncate_2D(scrcoul, xqloc, opt)
   USE kinds,         ONLY : DP
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  !USE gvect,         ONLY : nrxx, nr1, nr2, nr3, nrx1, nrx2, nrx3, &
-  !                          nl, ngm, g, nlm
-  !USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig,&
-  !                          nr1sco, nr2sco, nr3sco, ngmgrn, sigma_c_St%ngmt
   USE gvect,         ONLY : g, ngm, nl
   USE qpoint,        ONLY : xqloc, npwq, igkq, nksq, ikks, ikqs
   USE gwsigma,       ONLY : sigma_c_st
@@ -24,20 +20,13 @@ IMPLICIT NONE
   REAL(DP) :: dv_rho(1)
   INTEGER   :: is
   REAL(DP)  :: at1(3,3)
-  COMPLEX(DP)  :: scrcoul(sigma_c_St%ngmt, sigma_c_St%ngmt, nfs)
+  COMPLEX(DP)  :: scrcoul(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
 !2D screening.
 !Choose zcut to be 1/2*L_{z}.
 
-!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2))**(float(1)/float(3))
-
-at1(:,:) = at(:,:)
-zcut = 0.50d0*sqrt(at1(1,3)**2 + at1(2,3)**2 + at1(3,3)**2)*alat
-
-!from prb 73 205119
-!rcut = -2.0*pi*zcut**2
-!rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2))**(float(1)/float(3))
-rcut = 0.5d0*zcut
-
+zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+!from PRB 73, 205119
+rcut = -2.0*pi*zcut**2
 IF(opt.eq.1) then
            DO ig = 1, ngm
                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
@@ -49,26 +38,23 @@ IF(opt.eq.1) then
              ENDIF 
            ENDDO
 ELSE IF (opt.eq.2) then
-      DO iw = 1, nfs
-        DO ig = 1, sigma_c_St%ngmt
+     DO iw = 1, nfs
+         DO ig = 1, sigma_c_st%ngmt
                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
                 limq = (qg2.lt.eps8) 
           IF(.not.limq) then
-           do igp = 1, sigma_c_St%ngmt
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
-                 qz   = (g(3,ig)+xqloc(3))
+                 qz   = sqrt((g(3,ig)+xqloc(3))**2)
                  spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-                 scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-                 scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx(spal, 0.0d0)
-           enddo 
+                 !if(ig.eq.5) print*,scrcoul(1,1,iw), spal, qg2
+                 DO igp = 1, sigma_c_st%ngmt
+                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+                 ENDDO
+                 !if(ig.eq.5) print*,scrcoul(1,1,iw), spal, qg2
           ELSE  
-!for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
-!we enforce that here:
-           do igp = 1, sigma_c_St%ngmt
-              scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-           enddo
+                scrcoul(ig, ig, iw) = scrcoul(ig,ig,iw)*dcmplx(rcut,0.0d0)
           ENDIF
-        ENDDO
-      ENDDO
+         ENDDO
+     ENDDO
 ENDIF
 END subroutine truncate_2D

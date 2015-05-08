@@ -2,7 +2,7 @@ SUBROUTINE sigma_exch(ik0)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,    ONLY : eta, nbnd_occ
+  USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
@@ -21,11 +21,11 @@ IMPLICIT NONE
 
 !ARRAYS to describe exchange operator.
   LOGICAL :: limit, lgamma
-  REAL(DP) :: rcut, spal
+  REAL(DP) :: rcut, spal, zcut
   INTEGER :: ikmq, ik0, ik
   INTEGER :: ig, igp, ir, irp
   INTEGER :: iq, ipol, ibnd, jbnd, counter, ios
-  REAL(DP) :: qg2, qg 
+  REAL(DP) :: qg2, qg, qxy, qz
   COMPLEX(DP) :: ZDOTC
   COMPLEX(DP) :: czero, exch_element
 !q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
@@ -126,25 +126,42 @@ IMPLICIT NONE
      call fft6(greenf_na(1,1), greenf_nar(1,1), sigma_x_st, 1)
      DEALLOCATE(greenf_na)
      ALLOCATE ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
-
      rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
      barcoul(:,:) = (0.0d0,0.0d0)
      xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
+     IF(.not.trunc_2d) THEN
+       do ig = 1, sigma_x_st%ngmt
+          qg = sqrt((g(1,ig)  + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
+                  + (g(3,ig ) + xq_coul(3))**2.d0)
 
-     do ig = 1, sigma_x_st%ngmt
-        qg = sqrt((g(1,ig)  + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
-                + (g(3,ig ) + xq_coul(3))**2.d0)
-
-        qg2 =   (g(1,ig)   + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
-                + ((g(3,ig)) + xq_coul(3))**2.d0
-        limit = (qg.lt.eps8)
-        if(.not.limit) then
-            spal = 1.0d0 - cos (rcut * tpiba * qg)
-            barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
-        else
-            barcoul(ig,ig)= (fpi*e2*(rcut**2))/2 
-        endif
-     enddo
+          qg2 =   (g(1,ig)   + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
+                  + ((g(3,ig)) + xq_coul(3))**2.d0
+          limit = (qg.lt.eps8)
+          if(.not.limit) then
+              spal = 1.0d0 - cos (rcut * tpiba * qg)
+              barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
+          else
+              barcoul(ig,ig)= (fpi*e2*(rcut**2))/2 
+          endif
+       enddo
+     ELSE
+        zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+        rcut = -2.0*pi*zcut**2
+        DO ig = 1, sigma_x_st%ngmt
+                qg2 = (g(1,ig) + xq_coul(1))**2 + (g(2,ig) + xq_coul(2))**2 + (g(3,ig)+xq_coul(3))**2
+                limit = (qg2.lt.eps8) 
+          IF(.not.limit) then
+                 qxy  = sqrt((g(1,ig) + xq_coul(1))**2 + (g(2,ig) + xq_coul(2))**2)
+                 qz   = sqrt((g(3,ig) + xq_coul(3))**2)
+                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+                 barcoul(ig, ig) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+          ELSE  
+!for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
+!we enforce that here:
+            barcoul(ig, ig) = barcoul(ig,ig)*rcut
+          ENDIF
+        ENDDO
+     ENDIF
      ALLOCATE (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
      barcoulr(:,:) = (0.0d0, 0.0d0)
      call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)

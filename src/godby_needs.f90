@@ -17,7 +17,6 @@ integer  :: p, N, i
 !\epsilon^{-1}_{\G,\G'}(\q,\omega) = \frac{A_{GG'(q)}}{\omega - \omegatilde + idelta} -
 !                                    \frac{A_{GG'(q)}}{\omega + \omegatilde - idelta}
      a(:) = DCMPLX(0.0d0, 0.0d0)
-
 !Currently using the same criterion as in SaX
 !this essentially checks if the real part of the pole
 !is smaller than the imaginary part of the pole and if so

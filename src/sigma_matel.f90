@@ -18,7 +18,7 @@ SUBROUTINE sigma_matel (ik0)
   USE noncollin_module,     ONLY : nspin_mag
   USE eqv,                  ONLY : dmuxc, evq, eprec
   USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
-  USE cell_base,            ONLY : omega, tpiba2, at, bg
+  USE cell_base,            ONLY : omega, tpiba2, at, bg, alat
   USE buiol,                ONLY : buiol_check_unit
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
@@ -34,7 +34,7 @@ IMPLICIT NONE
                                  sigma_ex_tr, sigma_ex_diag(nbnd_sig)
   REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                  et_qp_tr, z_tr, z(nbnd_sig)
-  REAL(DP)                  ::   one
+  REAL(DP)                  ::   one, zcut
   COMPLEX(DP)               ::   czero, temp
   COMPLEX(DP)               ::   aux(sigma_x_st%ngmt), psic(dfftp%nnr), vpsi(ngm), auxsco(sigma_c_st%ngmt)
   COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
@@ -87,7 +87,9 @@ IMPLICIT NONE
 !else then psi_{\k+\gamma = \psi_{k}} should be second entry in list.
 !     call get_buffer (evc, lrwfc, iuwfc, ikq)
 !   endif
-   call get_buffer (evc, lrwfc, iuwfc, ikq)
+  call get_buffer (evc, lrwfc, iuwfc, ikq)
+  zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+  WRITE(6,'("zcut ", f12.7)'), zcut
 
   WRITE(6,'("NBND ", i5)'), nbnd_sig
 ! generate v_xc(r) in real space:

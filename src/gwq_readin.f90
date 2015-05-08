@@ -42,7 +42,7 @@ SUBROUTINE gwq_readin()
                             do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont, cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d, do_epsil, do_serial, &
-                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid, high_io, freq_gl
+                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
@@ -105,7 +105,7 @@ SUBROUTINE gwq_readin()
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl
+                       freq_gl, prec_direct
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -171,6 +171,7 @@ SUBROUTINE gwq_readin()
   fpol         = .FALSE.
   max_seconds  =  1.E+7_DP
   reduce_io    = .FALSE.
+  prec_direct  = .FALSE.
   IF ( TRIM(outdir) == './') THEN
      CALL get_env( 'ESPRESSO_TMPDIR', outdir )
      IF ( TRIM( outdir ) == ' ' ) outdir = './'

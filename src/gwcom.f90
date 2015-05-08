@@ -337,6 +337,7 @@ MODULE control_gw
              do_green, &
              do_sigma_matel,&
              do_q0_only,&
+             prec_direct,&
              godbyneeds,&
              padecont,&
              cohsex,&
