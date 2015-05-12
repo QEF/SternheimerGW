@@ -51,37 +51,37 @@ SUBROUTINE rotate_w(scrcoul_g, scrcoul_g_R, gmapsym, eigv, isym, xq_ibk)
    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    IF(.not.modielec) THEN
 !SPHERICAL SCREENING
-         IF(.not.trunc_2d) THEN
-         DO iw = 1, nfs
-           DO ig = 1, sigma_c_st%ngmt
-           qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-           limq = (qg2.lt.eps8) 
-           IF(.not.limq) THEN
-               DO igp = 1, sigma_c_st%ngmt
-                                            !eps^{-1}(\G,\G';\omegaa  )   v(q+G)!
-                  scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-               ENDDO
-           ENDIF
-           qg = sqrt(qg2)
-           spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-           IF(.not.limq) THEN
-              DO igp = 1, sigma_c_st%ngmt
-                  scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
-              ENDDO
-           ELSE
-              IF(iw.eq.1) THEN
-                 scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
-              ENDIF
-              DO igp = 1, sigma_c_st%ngmt
-                 scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-              ENDDO
-           ENDIF
-           ENDDO!ig
-         ENDDO!nfs
-         ELSE
-            CALL truncate_2d(scrcoul_g_R(1,1,1), xq_ibk, 2)
+    IF(.not.trunc_2d) THEN
+       DO iw = 1, nfs
+         DO ig = 1, sigma_c_st%ngmt
+         qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
+         limq = (qg2.lt.eps8) 
+         IF(.not.limq) THEN
+            DO igp = 1, sigma_c_st%ngmt
+                         !eps^{-1}(\G,\G';\omegaa  )   v(q+G)!
+               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
+            ENDDO
          ENDIF
-  ENDIF
+         qg = sqrt(qg2)
+         spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
+         IF(.not.limq) THEN
+            DO igp = 1, sigma_c_st%ngmt
+               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx(spal, 0.0d0)
+            ENDDO
+         ELSE
+            IF(iw.eq.1) THEN
+               scrcoul_g_R(ig, igp, iw) = real(scrcoul_g_R(ig,igp,iw))
+            ENDIF
+            DO igp = 1, sigma_c_st%ngmt
+               scrcoul_g_R(ig, igp, iw) = scrcoul_g_R(ig,igp,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+            ENDDO
+         ENDIF
+        ENDDO!ig
+       ENDDO!nfs
+       ELSE
+            CALL truncate_2d(scrcoul_g_R(1,1,1), xq_ibk, 2)
+      ENDIF
+    ENDIF
     IF(.NOT.modielec) THEN
         IF(godbyneeds) THEN
         DO ig = 1, sigma_c_st%ngmt

@@ -89,18 +89,13 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     allocate  (h_diag (npwx, 1))
     allocate  (etc(nbnd_occ(1), nkstot))
     ci = (0.0d0, 1.0d0)
-
 !We support the numerical delta fxn in a x eV window...
 !Convert freq array generated in freqbins into rydbergs.
-
     do  iw =1, nwgreen
       w_ryd(iw) = w0pmw(iw0,iw)/RYTOEV
     enddo
-
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
-
-
 !WRITE(6,'("Fermi energy", 1f10.6)'), mu*RYTOEV
 !Loop over q in the IBZ_{k}
 !do iq = 1, nksq 
@@ -109,24 +104,22 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
           else
           ikq = 2*iq
       endif
-
 !This should ensure the Green's fxn has the correct -\delta for \omega <
 !\epsilon_{F}:
    CALL get_homo_lumo (ehomo, elumo)
-   mu = ehomo + 0.50d0*(elumo-ehomo)
+  ! mu = ehomo + 0.50d0*(elumo-ehomo)
   ! mu = 0.00
   !This smooths out variations and I think makes sense
-  ! mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
-
-      IF (nksq.gt.1) then
-          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-                        npw, igk, g2kin )
-      ENDIF
-      if(lgamma) npwq = npw
-      IF (.not.lgamma.and.nksq.gt.1) then
-        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
-                      npwq, igkq, g2kin )
-      ENDIF
+   mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
+   IF (nksq.gt.1) then
+       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                     npw, igk, g2kin )
+   ENDIF
+   if(lgamma) npwq = npw
+   IF (.not.lgamma.and.nksq.gt.1) then
+     CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+                   npwq, igkq, g2kin )
+   ENDIF
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
@@ -146,17 +139,16 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
 !CALL para_img(counter, igstart, igstop)
     igstart = 1
     igstop = counter
-!   WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
+!WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
 !allocate list to keep track of the number of residuals for each G-vector:
     ngvecs = igstop-igstart + 1
     if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
     niters = 0 
-! Now the G-vecs up to the correlation cutoff have been divided between pools.
-! Calculates beta functions (Kleinman-Bylander projectors), with
-! structure factor, for all atoms, in reciprocal space
+!Now the G-vecs up to the correlation cutoff have been divided between pools.
+!Calculates beta functions (Kleinman-Bylander projectors), with
+!structure factor, for all atoms, in reciprocal space
     call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
     call davcio (evq, lrwfc, iuwfc, ikq, - 1)
-
     DO ig = 1, npwq
        g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
                      (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
@@ -188,9 +180,10 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                  cw , niters(gveccount))
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
-           if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
+
+           if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4)') ig, niters(gveccount)
            if (niters(gveccount).ge.maxter_green) then
-                 if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
+                 !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
            endif
            do iw = 1, nwgreen
@@ -201,7 +194,6 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
            enddo
            gveccount = gveccount + 1
      enddo !ig
-
 !ENDDO !iq
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)

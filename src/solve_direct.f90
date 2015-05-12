@@ -141,8 +141,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   INTEGER                   :: gveccount
 
 ! COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:), dpsit(:,:,:), dpsi(:,:,:)
-! complex(DP), allocatable :: alphabeta(:,:,:)
-! INTEGER, ALLOCATABLE      :: niters(:)
+! COMPLEX(DP), ALLOCATABLE :: alphabeta(:,:,:)
+! INTEGER, ALLOCATABLE     :: niters(:)
   INTEGER     :: niters(nbnd)
   COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1), dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
   COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
@@ -256,9 +256,16 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
-   IF(prec_direct) then!need to add another variable here for case where we want to do direct solution with tprec
+   IF(prec_direct) then
+      if(iw.eq.1) then
         CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, & 
                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
+      else
+               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,1), h_diag, &
+                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,2), h_diag, &
+                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+      endif
    ELSE 
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
@@ -296,19 +303,13 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                  dbecsum(1,1,current_spin), dpsi(:,:,iw))
         enddo
      enddo !kpoints
-!HLPARA
-!     WRITE(1000+mpime, '(5x,"Communication for kpoints")') 
-!     WRITE(1000+mpime, '(5x,"nks", i4, "nksq", i4)') nks, nksq
      do iw = 1, nfs
-!         call mp_sum ( dvscfout(:,iw), inter_pool_comm )
          call mp_sum ( drhoscf(:,iw), inter_pool_comm )
      enddo
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
       enddo
-
 !!!!!!!NEED THIS FOR ULTRASOFT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     do iw = 1, nfs
 !        call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
@@ -316,7 +317,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !        call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw),1, dvscfout(1,iw),1)
 !     enddo
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 ! SGW: here we enforce zero average variation of the charge density
 ! if the bare perturbation does not have a constant term
 ! (otherwise the numerical error, coupled with a small denominator

@@ -6,6 +6,7 @@ subroutine truncate_2D(scrcoul, xqloc, opt)
   USE gvect,         ONLY : g, ngm, nl
   USE qpoint,        ONLY : xqloc, npwq, igkq, nksq, ikks, ikqs
   USE gwsigma,       ONLY : sigma_c_st
+  USE fft_base,      ONLY : dfftp
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE noncollin_module, ONLY : nspin_lsda, nspin_mag, nspin_gga
@@ -17,9 +18,9 @@ IMPLICIT NONE
   REAL(DP) :: qg2, qg, qxy, qz
   REAL(DP) :: xqloc(3)     
   REAL(DP) :: rcut, spal, zcut
-  REAL(DP) :: dv_rho(1)
-  INTEGER   :: is
-  REAL(DP)  :: at1(3,3)
+  REAL(DP) :: dv_rho(dfftp%nnr)
+  INTEGER  :: is
+  REAL(DP) :: at1(3,3)
   COMPLEX(DP)  :: scrcoul(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
 !2D screening.
 !Choose zcut to be 1/2*L_{z}.
@@ -32,9 +33,9 @@ IF(opt.eq.1) then
                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
              IF (qg2 > 1.d-8) then
                 qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
-                qz   = (g(3,ig)+xqloc(3))
+                qz   = sqrt((g(3,ig)+xqloc(3))**2)
                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-                dv_rho(nl(ig)) = dv_rho(nl(ig))*dcmplx(spal, 0.0d0)
+                dv_rho(nl(ig)) = dv_rho(nl(ig)) + dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
              ENDIF 
            ENDDO
 ELSE IF (opt.eq.2) then

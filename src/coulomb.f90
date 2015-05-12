@@ -69,7 +69,6 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   CALL start_clock ('coulomb')
 
 if(solve_direct) then
-!
   ALLOCATE (drhoscfs(dfftp%nnr, nfs))    
 else
 !for self-consistent solution we only consider one
@@ -84,10 +83,10 @@ irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
-WRITE(1000+mpime, '(2i4)') igstart, igstop
+!WRITE(1000+mpime, '(2i4)') igstart, igstop
 DO ig = igstart, igstop
-!      if (do_q0_only.and.ig.gt.1) CYCLE
-      qg2 = (g(1,ig_unique(ig))+xq(1))**2 + (g(2,ig_unique(ig))+xq(2))**2 + (g(3,ig_unique(ig))+xq(3))**2
+!     if (do_q0_only.and.ig.gt.1) CYCLE
+      qg2 = (g(1,ig_unique(ig))+xq(1))**2+(g(2,ig_unique(ig))+xq(2))**2+(g(3,ig_unique(ig))+xq(3))**2
       IF(solve_direct) THEN
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
@@ -97,7 +96,7 @@ DO ig = igstart, igstop
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
-            WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'), drhoscfs(nls(ig_unique(ig)), iw) + dvbare(nls(ig_unique(ig)))
+            WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
             do igp = 1, sigma_c_st%ngmt
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
@@ -108,7 +107,6 @@ DO ig = igstart, igstop
                endif
             enddo
          enddo !iw
-         !if(do_epsil) GOTO 545
       ELSE
         if(qg2.lt.0.001.AND.lgauss) then 
           write(6,'("Not calculating static electric field applied to metal, cycling coulomb")')

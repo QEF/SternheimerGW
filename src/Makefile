@@ -39,7 +39,6 @@ solve_linter.o\
 cft_wave.o\
 incdrhoscf_w.o\
 dgradcorr.o\
-truncate_2D.o\
 coul_multishift.o\
 apply_dpot.o\
 cBiCG_solve_green.o\

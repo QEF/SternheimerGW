@@ -133,18 +133,20 @@ subroutine dv_of_drho (mode, dvscf, flag)
   else
     do is = 1, nspin_lsda
        CALL fwfft ('Dense', dvaux (:, is), dfftp)
+
+      IF(.not.trunc_2d) then
        do ig = 1, ngm
           qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
            if (qg2 > 1.d-8) then
               dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
                                  e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
-   !  HL apply 2D truncation:
-           if(trunc_2d) call truncate_2D(dvaux(1,is), xq, 1)
           endif
        enddo
-   !
-   !  and transformed back to real space
-   !
+      ELSE
+!  HL apply 2D truncation:
+      IF(trunc_2d) call truncate_2D(dvaux(1,is), xq, 1)
+      ENDIF
+!  And transformed back to real space:
        CALL invfft ('Dense', dvaux (:, is), dfftp)
     enddo
     !
