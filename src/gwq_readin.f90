@@ -236,9 +236,9 @@ SUBROUTINE gwq_readin()
   solve_direct   = .FALSE.
   tinvert        = .TRUE.
 !Frequency variables
-  wsigmamin      =-10.0d0
-  wsigmamax      = 10.0d0
-  deltaw         =  0.2d0 
+  wsigmamin      = 0.0d0
+  wsigmamax      = 20.0d0
+  deltaw         =  2.0d0 
   wcoulmax       = 80.0d0   
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.

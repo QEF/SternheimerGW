@@ -14,7 +14,7 @@ SUBROUTINE coulmatsym()
                                    nk1, nk2, nk3, k1, k2, k3
   USE klist,                ONLY : nks, nkstot, ngauss, degauss, xk, wk, nelec
   USE wavefunctions_module, ONLY : evc 
-  USE wvfct,                ONLY : nbnd, et, npw, igk, npwx,  g2kin, ecutwfc
+  USE wvfct,                ONLY : nbnd, et, npw, igk, npwx, g2kin, ecutwfc
   USE lsda_mod,             ONLY : nspin
   USE ktetra,               ONLY : ntetra, tetra, ltetra
   USE fft_base,             ONLY : dfftp, dffts

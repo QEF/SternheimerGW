@@ -5,7 +5,7 @@ SUBROUTINE dosband()
   USE cell_base,            ONLY : tpiba2, omega, at, alat, bg
   USE ener,                 ONLY : ef
   USE constants,            ONLY : pi, RYTOEV, e2, fpi, eps8
-  USE control_coulmat,      ONlY : degaussfs, nbndmin, debye_e, do_lind, ngcoul, do_diag
+  USE control_coulmat,      ONlY : nbndmin, debye_e, do_lind, ngcoul, do_diag
   USE lsda_mod,             ONLY : nspin
 
   IMPLICIT NONE
@@ -20,7 +20,7 @@ SUBROUTINE dosband()
 
   kcut = 0.33333
   dosnnp  = 0.0d0
-  degaussw0 = degaussfs
+  degaussw0 = degauss
 
   CALL dos_g(et,nspin,nbnd, nks,wk,degaussw0,ngauss, ef, DOSofE)
 
@@ -30,9 +30,9 @@ SUBROUTINE dosband()
   write(6,*) nbnd
 
 DO ik = 1, nks
-     xk_loc(:)   = xk(:,ik)
-     !kpoints are in cartesian coordinates:
-    write(6,'("cart: ", 3f12.7)') xk_loc
+    xk_loc(:)   = xk(:,ik)
+    !kpoints are in cartesian coordinates:
+    print *, xk_loc(:)
     DO ibnd = 1, nbnd
      enk = (et(ibnd, ik) - ef)
      w0g1 = w0gauss ( enk / degaussw0, ngauss) / degaussw0
