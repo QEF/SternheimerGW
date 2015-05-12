@@ -18,7 +18,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   USE fft_base,  ONLY: dfftp
   USE fft_interfaces, ONLY: fwfft, invfft
   USE gvect,     ONLY : nl, ngm, g,nlm, gstart
-  USE cell_base, ONLY : alat, tpiba2
+  USE cell_base, ONLY : alat, tpiba2, at, tpiba
   USE noncollin_module, ONLY : nspin_lsda, nspin_mag, nspin_gga
   USE funct,     ONLY : dft_is_gradient
   USE scf,       ONLY : rho, rho_core
@@ -47,7 +47,8 @@ subroutine dv_of_drho (mode, dvscf, flag)
   ! counter on spin polarizations
   ! counter on g vectors
 
-  real(DP) :: qg2, fac
+  real(DP) :: qg2, fac, qxy, qz
+  real(DP) :: zcut, spal
   ! the modulus of (q+G)^2
   ! the structure factor
 
@@ -133,20 +134,27 @@ subroutine dv_of_drho (mode, dvscf, flag)
   else
     do is = 1, nspin_lsda
        CALL fwfft ('Dense', dvaux (:, is), dfftp)
-
-      IF(.not.trunc_2d) then
-       do ig = 1, ngm
-          qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
-           if (qg2 > 1.d-8) then
-              dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
+       IF(.not.trunc_2d) then
+         do ig = 1, ngm
+            qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
+            if (qg2 > 1.d-8) then
+                dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
                                  e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
-          endif
-       enddo
-      ELSE
-!  HL apply 2D truncation:
-      IF(trunc_2d) call truncate_2D(dvaux(1,is), xq, 1)
-      ENDIF
-!  And transformed back to real space:
+            endif
+         enddo
+       ELSE
+         !call truncate_2D(dvaux(1,is), xq, 1)
+           zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+           DO ig = 1, ngm
+                qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+             IF (qg2 > 1.d-8) then
+                qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+                qz   = sqrt((g(3,ig)+xq(3))**2)
+                spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+                dvaux(nl(ig), is) = dvaux(nl(ig), is) + dvscf(nl(ig), 1)*dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
+             ENDIF 
+           ENDDO
+       ENDIF
        CALL invfft ('Dense', dvaux (:, is), dfftp)
     enddo
     !

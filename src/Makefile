@@ -90,6 +90,11 @@ TLDEPS= bindir mods libs pw-lib
 
 all : libgw.a gw.x
 
+#gw.x : gw.o $(PWOBJS) $(LIBOBJS)
+#	$(LD) $(LDFLAGS) -o gw.x gw.o \
+#		 $(PWOBJS) $(QEMODS) $(GWOBJS) $(LIBOBJS) $(LIBS)
+#	- ( cd ../bin ; ln -fs ../src/gw.x . )
+
 gw.x : gw.o libgw.a $(PWOBJS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o gw.x gw.o libgw.a \
 		 $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)

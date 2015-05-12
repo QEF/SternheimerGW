@@ -29,7 +29,7 @@ SUBROUTINE sigma_c_im(ik0)
   USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
                             me_image, nproc_image, inter_image_comm
   USE mp,            ONLY : mp_sum, mp_barrier
-  USE mp_pools,             ONLY : inter_pool_comm
+  USE mp_pools,      ONLY : inter_pool_comm
 
   IMPLICIT NONE
 
