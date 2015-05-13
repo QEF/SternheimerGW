@@ -3,8 +3,8 @@ si scf input card with monkhorst pack automesh
     calculation='scf',
     restart_mode='from_scratch',
     prefix='si'
-    pseudo_dir = '/home/lambert/espresso-4.2.1/pseudo/',
-    outdir='./tmp/'
+    pseudo_dir = '{LOCATION OF JOB INPUT}',
+    outdir='{TEMPLOC}'
     wf_collect=.true.
  /
  &system
