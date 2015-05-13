@@ -313,6 +313,10 @@ SUBROUTINE gwq_readin()
      CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
      CALL mp_bcast(nfs, meta_ionode_id, world_comm )
 
+!No adaptive grid for real freq calc (YET)
+     if(.not.do_imag) freq_gl=.false.
+     CALL mp_bcast(freq_gl,meta_ionode_id, world_comm)
+
      if (nfs > nfsmax) call errore('gwq_readin','Too many frequencies',1) 
      if (nfs < 1) call errore('gwq_readin','Too few frequencies',1) 
 
