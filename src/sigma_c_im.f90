@@ -254,10 +254,10 @@ IF(iqstop-iqstart+1.ne.0) THEN
           greenfr(:,:) = czero
           CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st,+1)
           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-          IF (iw0.eq.1) THEN
-            write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
-            write(2000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
-          ENDIF
+          !IF (iw0.eq.1) THEN
+          !  write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
+          !  write(2000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
+          !ENDIF
        ENDDO !on iw0  
     ENDDO ! on frequency convolution over w'
   ENDDO ! end loop iqstart, iqstop 

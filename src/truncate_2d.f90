@@ -47,11 +47,9 @@ ELSE IF (opt.eq.2) then
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
                  qz   = sqrt((g(3,ig)+xqloc(3))**2)
                  spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-                 !if(ig.eq.5) print*,scrcoul(1,1,iw), spal, qg2
                  DO igp = 1, sigma_c_st%ngmt
                     scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
                  ENDDO
-                 !if(ig.eq.5) print*,scrcoul(1,1,iw), spal, qg2
           ELSE  
                 scrcoul(ig, ig, iw) = scrcoul(ig,ig,iw)*dcmplx(rcut,0.0d0)
           ENDIF
