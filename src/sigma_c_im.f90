@@ -269,7 +269,6 @@ ENDIF
   DEALLOCATE ( scrcoul_pade_g   )
   DEALLOCATE ( scrcoul_g, scrcoul_g_R )
   DEALLOCATE ( z,a,u )
-
 #ifdef __PARA
   CALL mp_barrier(inter_image_comm)
   CALL mp_sum(sigma, inter_pool_comm)

@@ -162,11 +162,14 @@ IMPLICIT NONE
            do igp = 1, counter
               evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
            enddo
-           do igp = 1, sigma_x_st%ngmt
-              aux(igp) = sigma_g_ex (igp, ig)
-           enddo
-             sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
-             ZDOTC(sigma_x_st%ngmt, evc_tmp_j (1:sigma_x_st%ngmt), 1, aux,1)*evc_tmp_i(ig)
+            !do igp = 1, sigma_x_st%ngmt
+            !   aux(igp) = sigma_g_ex (igp, ig)
+            !enddo
+            !sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
+            !ZDOTC(sigma_x_st%ngmt, conjg(evc_tmp_j (1:sigma_x_st%ngmt)), 1, aux,1)*conjg(evc_tmp_i(ig))
+             do igp = 1, sigma_x_st%ngmt
+                sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + evc_tmp_j (igp)*sigma_g_ex(igp,ig)*conjg(evc_tmp_i(ig))
+             enddo
         enddo
       enddo
     enddo
@@ -226,11 +229,14 @@ IMPLICIT NONE
               do igp = 1, counter
                  evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
               enddo
+              !do igp = 1, sigma_c_st%ngmt
+              ! auxsco(igp) = sigma (ig, igp, iw)
+              !enddo
+              !sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
+              !conjg(evc_tmp_i(ig))*ZDOTC(sigma_c_st%ngmt, conjg(evc_tmp_j (1:sigma_c_st%ngmt)), 1, auxsco, 1)
               do igp = 1, sigma_c_st%ngmt
-               auxsco(igp) = sigma (ig, igp, iw)
+                 sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + evc_tmp_j(ig)*sigma(ig,igp,iw)*conjg(evc_tmp_i(igp))
               enddo
-              sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + &
-              conjg(evc_tmp_i(ig))*ZDOTC(sigma_c_st%ngmt, conjg(evc_tmp_j (1:sigma_c_st%ngmt)), 1, auxsco, 1)
            enddo
           enddo
          enddo
@@ -241,8 +247,8 @@ IMPLICIT NONE
   endif
   if (do_imag) then 
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-    wsigmin   = -15.0
-    wsigmax   =  15.0
+    wsigmin   = -30.0
+    wsigmax   =  30.0
     deltaws   =   0.1
     nwsigwin  = 1 + ceiling((wsigmax - wsigmin)/deltaws)
     allocate (wsigwin(nwsigwin))

@@ -10,7 +10,7 @@ USE gwsigma,       ONLY : sigma_c_st
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm
 USE modes,         ONLY : nsymq, invsymq 
-USE control_gw,       ONLY : loqua
+USE control_gw,    ONLY : loqua
 
 IMPLICIT NONE
 
@@ -51,7 +51,6 @@ DO ig = 2, sigma_c_st%ngmt
 !Loop over symmetry operations in small group of q.
    DO isym = 1, nsymq
       DO igp = 1, ngmunique
-         !IF (gmapsym(ig,invs(isym)).eq.ig_unique(igp)) then
          IF (ig.eq.gmapsym(ig_unique(igp), invs(isym))) then
              unique_g = .false.
            !Rotation R^{-1}(ig) = ig_{un}

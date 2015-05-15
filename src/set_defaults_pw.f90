@@ -116,8 +116,10 @@ SUBROUTINE setup_nscf_green(xq)
      nkstot = nks_start
      !xk(:,1:nkstot) = xk_start(:,1:nkstot)
   !@ 
+     WRITE(6,'(\5x, "-k for matrix elements:")')
      xk(:,1:nkstot) = -xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)
+     WRITE(6,'(\5x, "-k for matrix elements:")')
   else
      !
      ! In this case I generate a new set of k-points
@@ -125,9 +127,11 @@ SUBROUTINE setup_nscf_green(xq)
      ! In the case of electron-phonon matrix element with
      ! wannier functions the k-points should not be reduced
      !
-!     skip_equivalence = .false.
+     !skip_equivalence = .false.
      CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
                       bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
+
+     WRITE(6,*) nks_start, nkstot, newgrid
   endif
 
   ! ... If some symmetries of the lattice no longer apply for this kpoint
@@ -190,6 +194,7 @@ SUBROUTINE setup_nscf_green(xq)
   !
   ENDIF
   !
+
    CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
   !
 #else

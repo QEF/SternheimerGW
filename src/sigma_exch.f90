@@ -78,11 +78,12 @@ IMPLICIT NONE
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   DO iq = 1, nksq
      if (lgamma) then
+        write(6,'(4x,"lgamma q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
         ikq = iq
      else
+        write(6,'(4x,"q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
         ikq = 2*iq
      endif
-     write(6,'(4x,"q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
 
      call get_buffer (evq, lrwfc, iuwfc, ikq)
 
@@ -114,9 +115,12 @@ IMPLICIT NONE
      do ig = 1, counter
        do igp = 1, counter
          do ibnd = 1, nbnd_occ(ikq)
+            !greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
+            !                                tpi * (0.0d0, 1.0d0) * (evq(igkq_ig(ig),ibnd))* &
+            !                                conjg((evq(igkq_ig(igp), ibnd)))
             greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
-                                            tpi * (0.0d0, 1.0d0) * (evq(igkq_ig(ig),ibnd))* &
-                                            conjg((evq(igkq_ig(igp), ibnd)))
+                                            tpi * (0.0d0, 1.0d0) * conjg(evq(igkq_ig(ig),ibnd))*&
+                                            (evq(igkq_ig(igp), ibnd))
          enddo
        enddo
      enddo
@@ -146,7 +150,8 @@ IMPLICIT NONE
        enddo
      ELSE
         zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-        rcut = -2.0*pi*zcut**2
+       !rcut = -2.0*pi*zcut**2
+        rcut = 0.0d0
         DO ig = 1, sigma_x_st%ngmt
                 qg2 = (g(1,ig) + xq_coul(1))**2 + (g(2,ig) + xq_coul(2))**2 + (g(3,ig)+xq_coul(3))**2
                 limit = (qg2.lt.eps8) 
@@ -158,7 +163,7 @@ IMPLICIT NONE
           ELSE  
 !for omega=0,q-->0, G=0 the real part of the head of the dielectric matrix should be real
 !we enforce that here:
-            barcoul(ig, ig) = barcoul(ig,ig)*rcut
+            barcoul(ig, ig) = 0.0d0
           ENDIF
         ENDDO
      ENDIF
