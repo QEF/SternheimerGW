@@ -182,9 +182,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
 
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
 
-           if((mod(ig,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ig, niters(gveccount), anorm
-          !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4)') ig, niters(gveccount)
-
+           !if((mod(ig,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ig, niters(gveccount), anorm
            if (niters(gveccount).ge.maxter_green) then
                  !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
