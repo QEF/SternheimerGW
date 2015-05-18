@@ -172,16 +172,19 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
            gr_A(:,:) = (0.0d0, 0.0d0) 
            lter = 0
            etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-           cw = CMPLX( mu, 0.0d0, kind=DP)
+           cw = CMPLX( mu, 0.0d0, kind=DP) 
            conv_root = .true.
            anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
            call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                  cw , niters(gveccount))
+
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
 
-           if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4)') ig, niters(gveccount)
+           if((mod(ig,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ig, niters(gveccount), anorm
+          !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4)') ig, niters(gveccount)
+
            if (niters(gveccount).ge.maxter_green) then
                  !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

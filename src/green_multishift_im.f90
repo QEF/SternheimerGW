@@ -66,7 +66,7 @@ IMPLICIT NONE
          do iw = 1, nfreq
 !-alpha because we are solve (H-w^{+}):
 ! conjg means something...
-            pi_coeff_new(iw) = (cone - alpha*DCMPLX( 0.0d0 , w_ryd(iw)))*pi_coeff(iw) - &
+            pi_coeff_new(iw) = (cone - alpha*(DCMPLX(0.0d0 , w_ryd(iw))))*pi_coeff(iw) - &
                               ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
             alpha_sig(iw)    = (pi_coeff(iw)/pi_coeff_new(iw))*alpha
