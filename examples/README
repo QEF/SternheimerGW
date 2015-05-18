@@ -9,6 +9,7 @@ example02:
     then analytically continues the selfenergy.
   
 example03:
-    Do an imaginary frequency calculation for MoS2.
-    
+    Do an imaginary frequency calculation for MoS2, using godby-needs approximation.
 
+example04:
+    Do an imaginary frequency calculation for MoS2, using analytic continuation.
