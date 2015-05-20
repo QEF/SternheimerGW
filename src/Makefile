@@ -43,7 +43,7 @@ coul_multishift.o\
 apply_dpot.o\
 cBiCG_solve_green.o\
 cBiCG_solve_coul.o\
-cBiCG_solve_mag.o\
+cBiCG_solve.o\
 construct_w.o\
 rotate_w.o\
 incdrhoscf.o\

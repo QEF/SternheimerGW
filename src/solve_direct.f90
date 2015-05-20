@@ -144,7 +144,10 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! COMPLEX(DP), ALLOCATABLE :: alphabeta(:,:,:)
 ! INTEGER, ALLOCATABLE     :: niters(:)
   INTEGER     :: niters(nbnd)
-  COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1), dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
+  COMPLEX(DP) :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
+  !COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1),
+  COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:)
+
   COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
  
   external cg_psi, ch_psi_all, h_psi_all
@@ -164,6 +167,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
+  if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_green+1))
+
   iter0 = 0
   convt =.FALSE.
   where_rec='no_recover'
@@ -222,6 +227,9 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
               h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
+              !x = (g2kin(ig)/eprec(ibnd,ik))
+              !h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+              !                  /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
            enddo
            IF (noncolin) THEN
               do ig = 1, npwq
@@ -245,7 +253,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! Apply -P_c^+.
 ! -P_c^ = - (1-P_v^):
         CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
-        dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
+
+        if(.not.prec_direct) dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
         dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
         dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
         alphabeta(:,:,:) =  dcmplx(0.d0, 0.d0)
@@ -253,21 +262,26 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
         thresh    = tr2_gw
         conv_root = .true.
-
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
 
    IF(prec_direct) then
-      if(iw.eq.1) then
-        CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, & 
-               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
-      else
-               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,1), h_diag, &
-                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(:,:,2), h_diag, &
-                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-      endif
+     do iw = 1, nfs
+        cw    = fiu(iw) 
+        !first frequency in list should be zero.
+        if((real(cw).eq.0.0d0).and.(aimag(cw).eq.0.0d0)) then
+                 CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, & 
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
+        else
+                 CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,1), h_diag, &
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+                 CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,2), h_diag, &
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+                !if((mod(ik,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ik, lter, anorm
+                 dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsit(:,:,1) + dpsit(:,:,2))
+        endif
+     enddo
    ELSE 
-        call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic, h_diag, &
+        call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta)
         if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
@@ -355,6 +369,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
    end if
   endif
 
+  if(.not.prec_direct) deallocate(dpsic)
   deallocate (h_diag)
   deallocate (dvscfout)
 !  deallocate (drhoscfh)
