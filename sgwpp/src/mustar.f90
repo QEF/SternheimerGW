@@ -24,7 +24,7 @@ PROGRAM mustar
   !
 #  define DIRECT_IO_FACTOR 8 
   USE kinds,       ONLY : DP
-  USE io_global,   ONLY : stdout, ionode, ionode_id
+  USE io_global,   ONLY : stdout, ionode, ionode_id, meta_ionode 
   USE mp,          ONLY : mp_bcast
   USE mp_world,    ONLY : world_comm
   USE iotk_module
@@ -241,7 +241,6 @@ PROGRAM mustar
  WRITE(stdout, '(\5x, "nk1 nk2 nk3", 3i4)'), nk1, nk2, nk3
  WRITE(stdout, '(\5x, "Fermi Vector", f12.7)'), kf
  WRITE(stdout, '(\5x, "Thomas-Fermi Vector", f12.7)'), qtf
-
 !Calculate Coulomb matrix elements stored in struct vcnknpkp
   CALL start_clock( 'calculation' )
   IF(do_coulmat) THEN
@@ -251,15 +250,12 @@ PROGRAM mustar
   ELSE IF(do_dosband) THEN
     IF (ionode) WRITE( stdout, "( 5x, 'Calculating Dosband' ) " )
         CALL dosband()
-  ELSE IF (do_plotmuk) THEN
-        CALL plotmuk() 
   ENDIF
-
-!Perform Fermi surface averaging of matrix elements in vcnknpkp
-!IF(do_fsavg) THEN
-!  IF (ionode) WRITE( stdout, "( 5x, 'Performing Fermi Surface average' ) " )
-!    CALL fsaverage()
-!ENDIF
+  
+  IF (do_plotmuk) THEN
+     IF(meta_ionode)   CALL plotmuk() 
+  ENDIF
+  call mp_barrier(inter_image_comm)
 
   CASE DEFAULT
       CALL errore('sgwpp','invalid CALCULATION = '//trim(calculation),1)
