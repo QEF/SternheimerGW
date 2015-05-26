@@ -34,27 +34,29 @@ REAL(DP) :: ehomo, elumo, mu
 
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
-
-!    DO ibnd =1 , nbnd_sig
-!        DO jbnd = 1, nbnd_sig
-!            DO iw = 1, nwsigma-1
-!               z2(iw) = dcmplx(mu, - wryd(iw+1))
-!               u2(iw) = dconjg(sigma_band_c (ibnd, jbnd, iw+1))
-!            ENDDO
-!            DO iw = 1, nwsigma 
-!               z2(iw+nwsigma-1) = dcmplx(mu, w_ryd(iw))
-!               u2(iw+nwsigma-1) = sigma_band_c (ibnd, jbnd, iw)
-!            ENDDO
-!            call pade_coeff(2*nwsigma-1, z2, u2, a2)
-!            DO iw = 1, nwsigwin
-!               IF(w_ryd2(iw).lt.mu) THEN
-!                  call pade_eval(2*nwsigma-1, z2, a2, dcmplx(w_ryd2(iw), -eta), sigma_band_con(ibnd, jbnd, iw))
-!               ELSE
-!                  call pade_eval(2*nwsigma-1, z2, a2, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
-!               ENDIF
-!            ENDDO
-!        ENDDO
-!    ENDDO
+!
+IF(.false.) THEN
+    DO ibnd =1 , nbnd_sig
+        DO jbnd = 1, nbnd_sig
+            DO iw = 1, nwsigma-1
+               z2(iw) = dcmplx(mu, - w_ryd(iw+1))
+               u2(iw) = dconjg(sigma_band_c (ibnd, jbnd, iw+1))
+            ENDDO
+            DO iw = 1, nwsigma 
+               z2(iw+nwsigma-1) = dcmplx(mu, w_ryd(iw))
+               u2(iw+nwsigma-1) = sigma_band_c (ibnd, jbnd, iw)
+            ENDDO
+            call pade_coeff(2*nwsigma-1, z2, u2, a2)
+            DO iw = 1, nwsigwin
+               IF(w_ryd2(iw).lt.mu) THEN
+                  call pade_eval(2*nwsigma-1, z2, a2, dcmplx(w_ryd2(iw), -eta), sigma_band_con(ibnd, jbnd, iw))
+               ELSE
+                  call pade_eval(2*nwsigma-1, z2, a2, dcmplx(w_ryd2(iw), eta), sigma_band_con(ibnd, jbnd, iw))
+               ENDIF
+            ENDDO
+        ENDDO
+    ENDDO
+ELSE
     DO ibnd =1 , nbnd_sig
         DO jbnd = 1, nbnd_sig
             DO iw = 1, nwsigma
@@ -71,6 +73,7 @@ REAL(DP) :: ehomo, elumo, mu
             ENDDO
         ENDDO
     ENDDO
+ENDIF
     DEALLOCATE ( z,a,u )
 end subroutine sigma_pade
 

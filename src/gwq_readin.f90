@@ -105,7 +105,7 @@ SUBROUTINE gwq_readin()
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl, prec_direct
+                       freq_gl, prec_direct, tmp_dir
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
