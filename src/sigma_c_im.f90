@@ -173,6 +173,8 @@ SUBROUTINE sigma_c_im(ik0)
 !CALL para_pool(nksq, iqstart, iqstop)
    WRITE(6, '(5x, " nksq ", i4)') nksq
    WRITE(6, *) xk(:,1:nkstot)
+
+   WRITE(6, *) xk(:,1:nkstot)
    CALL para_img(nwsigma, iw0start, iw0stop)
    WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 
@@ -183,13 +185,17 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !  DO iq = iqstart, iqstop
 ! kpoints split between pools
   DO iq = 1, nksq
-      IF (lgamma) THEN
-          ikq = iq
-      ELSE
-          ikq = 2*iq
-      ENDIF
-!  -q =  k0 - (k0 + q)
-     xq_ibk(:) = xk_kpoints(:, ik0) - xk(:, ikq)
+     IF (lgamma) THEN
+         ikq = iq
+     ELSE
+         ikq = 2*iq
+     ENDIF
+!  \Sigma_{k'} = \sum_{q} G_{q}W_{k'-q}
+!   we want -q but we have calculated W_{-q}
+!   so just find q in the list:
+!   q =  (k0 + q) - k0
+!   and this gives the index of W_{-q}
+     xq_ibk(:) = xk(:, ikq) - xk_kpoints(:, ik0)
 
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.

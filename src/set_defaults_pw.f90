@@ -114,12 +114,11 @@ SUBROUTINE setup_nscf_green(xq)
      !  calculations
      !
      nkstot = nks_start
-     !xk(:,1:nkstot) = xk_start(:,1:nkstot)
+     xk(:,1:nkstot) = xk_start(:,1:nkstot)
   !@ 
-     WRITE(6,'(\5x, "-k for matrix elements:")')
-     xk(:,1:nkstot) = -xk_start(:,1:nkstot)
+     !xk(:,1:nkstot) = -xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)
-     WRITE(6,'(\5x, "-k for matrix elements:")')
+     !WRITE(6,'(\5x, "-k for matrix elements:")')
   else
      !
      ! In this case I generate a new set of k-points

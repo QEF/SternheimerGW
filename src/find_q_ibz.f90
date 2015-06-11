@@ -54,25 +54,21 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
   !q_{IBK} = R^{-1} xq_{IBZ}
   !Hit the vector we need with every symm op R until it equals a q point in the IBZ.
-  !Possible solution to not using symmetry
-  !1) Give up, join a monastery and commit myself to a life of good deeds (simplest). 
    xq_ibk_loc(:) = xq_ibk 
+
   !Transform xq into cartesian co-ordinates. 
    CALL cryst_to_cart(1, xq_ibk_loc(:), at, -1)
    found_q=.false.
 
 DO iq = 1, nqs
-  !Transform xq into cartesian co-ordinates. 
-  !x_q_loc(:) = x_q(:,iq)
-  !Symmfix
-   x_q_loc(:) = -x_q(:,iq)
+!  Transform xq into cartesian co-ordinates. 
+   x_q_loc(:) = x_q(:,iq)
    CALL cryst_to_cart(1, x_q_loc(:), at, -1)
    DO isym = 1, nsym
       ism1 = invs(isym)
       xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
       xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
       xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
-
  
       found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
                  (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
@@ -80,29 +76,6 @@ DO iq = 1, nqs
       if (found_q) return
    END DO
 END DO
-
-if (.not.found_q) then 
-   inv_q =.true.
-   DO iq = 1, nqs
-!Transform xq into cartesian co-ordinates. 
-!x_q_loc(:) = x_q(:,iq)
-!Symmfix
-      x_q_loc(:) = x_q(:,iq)
-      CALL cryst_to_cart(1, x_q_loc(:), at, -1)
-      DO isym = 1, nsym
-         ism1 = invs(isym)
-         xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
-         xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
-         xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
-         found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
-                    (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
-                    (abs(x_q_loc(3) - xq_ibk_locr(3)).le.eps) 
-      if (found_q) then
-          return
-      endif
-    END DO
-   END DO
-endif
 
 RETURN
 END SUBROUTINE

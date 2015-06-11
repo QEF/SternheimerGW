@@ -40,7 +40,7 @@ PROGRAM gw
   setup_pw = .TRUE.
   do_band  = .TRUE.
   do_matel = .TRUE.
-  ik=1
+  ik = 1
   if(do_q0_only) GOTO 127
   CALL run_nscf(do_band, do_matel, ik)
   CALL initialize_gw()
@@ -48,11 +48,10 @@ PROGRAM gw
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
   IF(do_imag) THEN
-    !IF(do_green)   CALL green_linsys_shift_im(ik)
-    IF(do_sigma_c) CALL sigma_c_im(ik)
+    IF(do_sigma_c) CALL sigma_c_im(1)
   ELSE
-    IF(do_green)   CALL green_linsys_shift(ik)
-    IF(do_sigma_c) CALL sigma_c(ik)
+    IF(do_green)   CALL green_linsys_shift(1)
+    IF(do_sigma_c) CALL sigma_c(1)
   ENDIF
 
   IF(do_green.and.multishift) then

@@ -4,7 +4,7 @@ SUBROUTINE sigma_grids()
   USE fft_custom,       ONLY : fft_cus, set_custom_grid, ggent, gvec_init
   USE gvect,            ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE control_flags,    ONLY : gamma_only
-  USE grid_subroutines, ONLY : realspace_grid_init_custom
+  USE grid_subroutines, ONLY : realspace_grid_init
   USE fft_base,         ONLY : dfftp
   USE klist,            ONLY : xk, nks
   USE gvect,            ONLY : gcutm
@@ -65,7 +65,7 @@ SUBROUTINE sigma_grids()
      if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) sigma_x_st%ngmt_g = ng
   enddo
   CALL set_custom_grid(sigma_x_st)
-  CALL realspace_grid_init_custom(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt)
+  CALL realspace_grid_init(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt)
   CALL pstickset_custom( gamma_only, bg, sigma_x_st%gcutmt, gkcut, sigma_x_st%gcutmt, &
                   dfftp, sigma_x_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
@@ -89,7 +89,7 @@ SUBROUTINE sigma_grids()
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt_g = ng
   enddo
   CALL set_custom_grid(sigma_c_st)
-  CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
+  CALL realspace_grid_init(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
   CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_c_st%gcutmt, &
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
