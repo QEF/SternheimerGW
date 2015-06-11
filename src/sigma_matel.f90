@@ -6,7 +6,7 @@ SUBROUTINE sigma_matel (ik0)
   USE gvect,                ONLY : ngm, g
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma
+  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsigmin, wsigmax, deltaws
   USE klist,                ONLY : xk, wk, nkstot
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
@@ -46,7 +46,6 @@ IMPLICIT NONE
   INTEGER, ALLOCATABLE      ::   igkq_ig(:) 
   INTEGER, ALLOCATABLE      ::   igkq_tmp(:) 
 !for analytic continuation of selfenergy:
-  REAL(DP)                  ::   wsigmax, wsigmin, deltaws
   INTEGER                   ::   nwsigwin, ierr
   REAL(DP), ALLOCATABLE     ::   wsigwin(:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)

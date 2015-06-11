@@ -25,7 +25,7 @@ subroutine bcast_gw_input ( )
                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                          coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
-                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct
+                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct, tmp_dir_coul
   USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial,  ONLY : nat_todo, nrapp
   USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero
@@ -80,6 +80,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (fildvscf, meta_ionode_id, world_comm )
   call mp_bcast (fildrho, meta_ionode_id, world_comm )
   call mp_bcast (tmp_dir, meta_ionode_id, world_comm )
+  call mp_bcast (tmp_dir_coul, meta_ionode_id, world_comm )
   call mp_bcast (prefix, meta_ionode_id, world_comm )
 
  !SGW cutoffs and control

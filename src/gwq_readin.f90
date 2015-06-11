@@ -36,7 +36,7 @@ SUBROUTINE gwq_readin()
   USE control_gw,    ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
                             reduce_io, tr2_gw, niter_gw, tr2_green, &
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
-                            last_irr, start_q, last_q, current_iq, tmp_dir_gw, &
+                            last_irr, start_q, last_q, current_iq, tmp_dir_gw, tmp_dir_coul, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG,&
                             do_green, do_sigma_matel, &
@@ -382,6 +382,8 @@ SUBROUTINE gwq_readin()
   !
   tmp_dir_save=tmp_dir
   tmp_dir_gw= TRIM (tmp_dir) //'_gw'//trim(int_to_char(my_image_id))//'/'
+  tmp_dir_coul= TRIM (tmp_dir) //'_gw0'//'/'
+
   CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
   ext_restart=.FALSE.
   ext_recover=.FALSE.

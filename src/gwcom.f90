@@ -295,7 +295,7 @@ MODULE control_gw
   ! CPU time up to now
   ! the alpha value for shifting the bands
   CHARACTER(LEN=10)  :: where_rec='no_recover'! where the gw run recovered
-  CHARACTER(LEN=256) :: flmixdpot, tmp_dir_gw
+  CHARACTER(LEN=256) :: flmixdpot, tmp_dir_gw, tmp_dir_coul
   INTEGER :: rec_code, &   ! code for recover
              rec_code_read=-1000 ! code for recover. Not changed during the run
 
@@ -379,7 +379,9 @@ MODULE freq_gw
   !I will change this so that it becomes a user defined option in the punchcard
   !with default values eventually. 
 
-  REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax
+  REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax 
+  !Grid for the analytic continuation
+  REAL(DP) :: wsigmax, wsigmin, deltaws
   REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
   INTEGER, ALLOCATABLE :: ind_w0mw (:,:), ind_w0pw (:,:)
   REAL,    ALLOCATABLE :: w0pmw (:,:)

@@ -6,7 +6,7 @@ SUBROUTINE sigma_c_im(ik0)
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul
   USE klist,         ONLY : wk, xk, nkstot
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
@@ -152,15 +152,13 @@ SUBROUTINE sigma_c_im(ik0)
 !if(.not.ionode) then
 !OPEN coulomb file (only written to by head node).
    filename = trim(prefix)//"."//"coul1"
-   !tempfile = trim(tmp_dir) // trim(filename)
-   tempfile =  "./tmp/_gw0/"// trim(filename)
+   tempfile = trim(tmp_dir_coul) // trim(filename)
    unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 !OPEN green file (only written to by head node as well).
    filename = trim(prefix)//"."//"green1"
-   !tempfile = trim(tmp_dir) // trim(filename)
-   tempfile =  "./tmp/_gw0/"// trim(filename)
+   tempfile = trim(tmp_dir_coul) // trim(filename)
    unf_recl = DIRECT_IO_FACTOR * int(lrgrn, kind=kind(unf_recl))
    open(iungreen, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)

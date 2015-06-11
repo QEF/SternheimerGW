@@ -51,7 +51,7 @@ ELSE IF (opt.eq.2) then
                     scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
                  ENDDO
           ELSE  
-                scrcoul(ig, ig, iw) = scrcoul(ig,ig,iw)*dcmplx(0.0d0,0.0d0)
+                scrcoul(ig, ig, iw) = scrcoul(ig,ig,iw)*dcmplx(rcut,0.0d0)
           ENDIF
          ENDDO
      ENDDO
