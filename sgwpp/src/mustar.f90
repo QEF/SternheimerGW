@@ -25,7 +25,7 @@ PROGRAM mustar
 #  define DIRECT_IO_FACTOR 8 
   USE kinds,       ONLY : DP
   USE io_global,   ONLY : stdout, ionode, ionode_id, meta_ionode 
-  USE mp,          ONLY : mp_bcast
+  USE mp,          ONLY : mp_bcast, mp_barrier
   USE mp_world,    ONLY : world_comm
   USE iotk_module
   USE xml_io_base

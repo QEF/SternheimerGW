@@ -18,7 +18,7 @@ SUBROUTINE dosband()
   INTEGER  :: ibnd, ik
   REAL(DP) :: enk, DOSofE(2)
 
-  kcut = 0.33333
+  kcut = 0.3333
   dosnnp  = 0.0d0
   degaussw0 = degauss
 

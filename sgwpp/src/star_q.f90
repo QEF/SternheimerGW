@@ -123,7 +123,7 @@ end subroutine star_q
 
   !FROM DRESSELHAUS:
   !The  irreducible representation D(S) of a space group S is
-  !characterized by the star of wave vectors nad the irreduvible
+  !characterized by the star of wave vectors nad the irreducible
   !representation Gamma(H) of the point group H(K_{1}). Its dimension is
   !m =qd where q is the index of the star of wave vectors (HL nqs), and
   !d is the dimension of the representation \Gamma.  

@@ -20,13 +20,18 @@ REAL(DP) :: muk(nks)
 
 !READ the mu(k) file:
 if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, -1)
+print*, nks
 DO ik=1, nks
    xk_loc(:) = xk(:,ik)
+   write(5000+mpime,'(7x, "k1", 3f12.7)') xk(:,ik)
    CALL star_q(xk(:,ik), at, bg, nsym, s, invs, nqs, sxq, isq, nsq, imq, .false. )
    DO iq = 1, nqs
       CALL cryst_to_cart(1, sxq(:,iq), at, -1)
    ENDDO
-   WRITE( 5000+mpime, '(7x,4f14.9)') ((sxq(i,iq1), i=1,3), (muk(ik)*(wk(1)/(wk(ik)))), iq1=1,nqs)
+   !WRITE( 5000+mpime, '(7x,i4)') nqs
+   !WRITE( 5000+mpime, '(7x,4f14.9)') ((sxq(i,iq1), i=1,3), (muk(ik)*(wk(1)/(wk(ik)))), iq1=1,nqs)
+   WRITE( 5000+mpime, '(7x,4f14.9)') ((sxq(i,iq1), i=1,3), (muk(ik)/nqs), iq1=1,nqs)
+   !if (imq) WRITE( 5000+mpime, '(7x,4f14.9)') ((-sxq(i,iq1), i=1,3), (muk(ik)*(wk(1)/(wk(ik)))), iq1=1,nqs)
 ENDDO
 
 END SUBROUTINE plotmuk
