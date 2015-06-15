@@ -225,11 +225,11 @@ IMPLICIT NONE
 !wk weight includes 2*spin index... so for Coulomb we kill that...
 !and to get per spin we need to kill it in the wk factor.
              mu = mu + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
-!             muk(ik) = muk(ik) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(ik)/2.0)*(wk(iq)/2.0)
+             muk(ik) = muk(ik) + (1.0d0/N0)*vcnknpkp*w0g1*w0g2*(wk(1)/2.0)*(wk(iq)/2.0)
 !Need to separate the bands in k space
 !for MgB2 to disambiguate the bands I think we only
 !need to check that the k point lies within a certain distance of
-!the gamma point. I think we only need the first corner of the Gamma
+!the gamma point. I think we only need the first corner around the Gamma
 !point!
              xk_loc(:)   = xk(:,ik)
              xkp_loc(:)  = xk(:,ikp)
@@ -263,9 +263,9 @@ IMPLICIT NONE
      CALL mp_sum(mu, inter_image_comm)!reduce over q points
      CALL mp_sum(munnp, inter_image_comm)!reduce over q points
 !Factors not included when we calculate V^{c}_{nkn'k'}.
-
-   mu = mu/(omega*nsym)
-   munnp = munnp/(omega*nsym)
+     mu = mu/(omega*nsym)
+     munnp = munnp/(omega*nsym)
+     muk = muk/(omega*nsym)
 
    write(stdout,*) nk1, nk2, nk3
    write(stdout,*) omega
@@ -287,8 +287,8 @@ IMPLICIT NONE
 
    write(stdout, '(5X, 6f12.7)' ) munnp(1:2,1:2)
    write(stdout, '(5X, 6f12.7)' ) dosnnp(1:2)
-!  if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
-  write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
+   if (ionode) CALL davcio (muk, lrcoulmat, iuncoulmat, 1, 1)
+   write (stdout, '(5X, "nbndmin ", i4, "nbndmax ", i4)'), nbndmin, nbndmax
 
 END SUBROUTINE coulmatsym
 
