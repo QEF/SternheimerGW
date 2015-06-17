@@ -7,7 +7,7 @@ SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
 
   USE kinds,         ONLY : DP
   USE cell_base,     ONLY : at, bg
-  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, nqs
+  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q
   USE modes,         ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
  !  7) computes the variables needed to pass to the pattern representation
  !     tmq    the matrix of the symmetry which sends q -> -q + G

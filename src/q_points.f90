@@ -13,7 +13,7 @@ SUBROUTINE q_points ( )
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE disp,  ONLY : nq1, nq2, nq3, x_q, nqs, wq
   USE output, ONLY : fildyn
-  USE symm_base, ONLY : nsym, s, time_reversal, t_rev, invs
+  USE symm_base, ONLY : nsym, s, time_reversal, t_rev, invs, nrot
   USE cell_base, ONLY : at, bg
   USE mp_images,  ONLY : intra_image_comm
   USE mp,         ONLY : mp_bcast
@@ -37,7 +37,9 @@ SUBROUTINE q_points ( )
 
   allocate (wq(nqmax))
   allocate (xq(3,nqmax))
-  call kpoint_grid( nsym, time_reversal, skip_equivalence, s, t_rev, bg, nqmax,&
+  !call kpoint_grid( nsym, time_reversal, skip_equivalence, s, t_rev, bg, nqmax,&
+  !                       0,0,0, nq1,nq2,nq3, nqs, xq, wq )
+  call kpoint_grid( nrot, time_reversal, skip_equivalence, s, t_rev, bg, nqmax,&
                          0,0,0, nq1,nq2,nq3, nqs, xq, wq )
   allocate(x_q(3,nqs))
   x_q(:,:)=xq(:,1:nqs)

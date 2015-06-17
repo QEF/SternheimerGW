@@ -164,25 +164,13 @@ SUBROUTINE sigma_c_im(ik0)
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 !endif
 #endif
-!
-! Parallelizing q over images should probable use pools with 
-! point to point communication and then do frequencies
-! over images.
-!    CALL para_img(nksq, iqstart, iqstop)
-!Should be...
-!CALL para_pool(nksq, iqstart, iqstop)
    WRITE(6, '(5x, " nksq ", i4)') nksq
    WRITE(6, *) xk(:,1:nkstot)
-
-   WRITE(6, *) xk(:,1:nkstot)
+!  WRITE(6, *) xk(:,1:nkstot)
    CALL para_img(nwsigma, iw0start, iw0stop)
    WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
-
 !ONLY PROCESSORS WITH K points to process: 
-IF(iqstop-iqstart+1.ne.0) THEN
-  WRITE(1000+mpime, '("mpime ", i4, "  iqstart, iqstop: ", 2i5)')mpime, iqstart, iqstop
   IF (nksq.gt.1) rewind (unit = iunigk)
-!  DO iq = iqstart, iqstop
 ! kpoints split between pools
   DO iq = 1, nksq
      IF (lgamma) THEN
@@ -195,8 +183,7 @@ IF(iqstop-iqstart+1.ne.0) THEN
 !   so just find q in the list:
 !   q =  (k0 + q) - k0
 !   and this gives the index of W_{-q}
-     xq_ibk(:) = xk(:, ikq) - xk_kpoints(:, ik0)
-
+    xq_ibk(:) = xk(:, ikq) - xk_kpoints(:, ik0)
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
 !q is stored in the list x_q as positive q but all the calculations have
@@ -265,7 +252,6 @@ IF(iqstop-iqstart+1.ne.0) THEN
        ENDDO !on iw0  
     ENDDO ! on frequency convolution over w'
   ENDDO ! end loop iqstart, iqstop 
-ENDIF
   DEALLOCATE ( gmapsym          )
   DEALLOCATE ( greenfr          )
   DEALLOCATE ( greenf_g         )

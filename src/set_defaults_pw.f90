@@ -129,8 +129,6 @@ SUBROUTINE setup_nscf_green(xq)
      !skip_equivalence = .false.
      CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
                       bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
-
-     WRITE(6,*) nks_start, nkstot, newgrid
   endif
 
   ! ... If some symmetries of the lattice no longer apply for this kpoint
