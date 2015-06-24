@@ -251,7 +251,6 @@ PROGRAM mustar
     IF (ionode) WRITE( stdout, "( 5x, 'Calculating Dosband' ) " )
         CALL dosband()
   ENDIF
-  
   IF (do_plotmuk) THEN
      IF(meta_ionode)   CALL plotmuk() 
   ENDIF
