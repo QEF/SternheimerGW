@@ -66,12 +66,11 @@ subroutine dv_of_drho (mode, dvscf, flag)
   if (lrpa) goto 111
   fac = 1.d0 / DBLE (nspin_lsda)
   if (nlcc_any.and.flag) then
-!extra contribution from frozen core charge:
-!     if (mode > 0) call addcore (mode, drhoc)
+  !extra contribution from frozen core charge:
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) + fac * rho_core (:)
-        !dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
-     enddo
+        dvscf(:, is) = dvscf(:, is) + fac * drhoc (:)
+       enddo
   endif
 
   do is = 1, nspin_mag
@@ -88,8 +87,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   if ( dft_is_gradient() ) call dgradcorr &
        (rho%of_r, grho, dvxc_rr, dvxc_sr, dvxc_ss, dvxc_s, xq, &
        dvscf, dfftp%nnr, nspin_mag, nspin_gga, nl, ngm, g, alat, dvaux)
-
-!Here they subtract out the core charge.
+  !Here they subtract out the core charge.
   if (nlcc_any.and.flag) then
      do is = 1, nspin_lsda
         rho%of_r(:, is) = rho%of_r(:, is) - fac * rho_core (:)

@@ -62,8 +62,6 @@ IMPLICIT NONE
          ig_unique(ig) = ig
       ENDDO
     ENDIF
-!Need to distribute G vectors according to a sensible algorithm based
-!on images which maintains, pool, and plane wave parallelism!
        if(nimage.gt.1) then
           CALL para_img(ngmunique, igstart, igstop)
        else

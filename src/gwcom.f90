@@ -357,7 +357,8 @@ MODULE control_gw
              newgrid = .FALSE.,&
              loqua   = .FALSE.,&
              high_io, &  
-             freq_gl
+             freq_gl, &
+             just_corr
 
 END MODULE control_gw
 !

@@ -45,7 +45,7 @@ SUBROUTINE gwq_readin()
                             solve_direct, w_green_start, tinvert, coul_multishift,&
                             trunc_2d, do_epsil, do_serial, &
                             do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                            high_io, freq_gl, prec_direct, prec_shift
+                            high_io, freq_gl, prec_direct, prec_shift, just_corr
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
@@ -108,7 +108,7 @@ SUBROUTINE gwq_readin()
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl, prec_direct, tmp_dir, prec_shift
+                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -251,6 +251,7 @@ SUBROUTINE gwq_readin()
   w_of_q_start   = 1
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
+  just_corr = .FALSE.
 
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
 !HL TEST PARA FINE

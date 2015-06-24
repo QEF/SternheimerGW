@@ -77,7 +77,7 @@
                             last_irr, niter_gw, alpha_mix, all_done, &
                             epsil, lgamma, recover, where_rec, alpha_pv, &
                             nbnd_occ, flmixdpot, reduce_io, rec_code_read, &
-                            done_epsil, zeu, done_zeu, current_iq, u_from_file
+                            done_epsil, zeu, done_zeu, current_iq, just_corr
   USE output,        ONLY : fildrho
   USE modes,         ONLY : u, ubar, npertx, npert, gi, gimq, nirr, &
                             t, tmq, irotmq, irgq, minus_q, &
@@ -91,7 +91,7 @@
                             equiv_atoms, n_equiv_atoms, with_symmetry
   USE control_flags, ONLY : iverbosity, modenum, noinv
   USE disp,          ONLY : comp_irr_iq
-  USE funct,         ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient
+  USE funct,         ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
   USE mp,            ONLY : mp_max, mp_min
   USE mp_pools,      ONLY : inter_pool_comm, npool
 
@@ -119,6 +119,8 @@
   logical :: sym (48), is_symmorgwic, magnetic_sym
   integer, allocatable :: ifat(:)
   integer :: ierr
+
+  real(DP) :: dmxc_corr
 
   call start_clock ('gwq_setup')
   !
@@ -173,8 +175,14 @@
      ELSE
         do ir = 1, dfftp%nnr
            rhotot = rho%of_r (ir, 1) + rho_core (ir)
-           if (rhotot.gt.1.d-30) dmuxc (ir, 1, 1) = dmxc (rhotot)
-           if (rhotot.lt. - 1.d-30) dmuxc (ir, 1, 1) = - dmxc ( - rhotot)
+           IF(.not.just_corr) THEN
+             if (rhotot.gt.1.d-30) dmuxc (ir, 1, 1) = dmxc (rhotot)
+             if (rhotot.lt. - 1.d-30) dmuxc (ir, 1, 1) = - dmxc ( - rhotot)
+           ELSE
+           !Only correlation energy is included in the RPA + Vxc.
+             if (rhotot.gt.1.d-30) dmuxc (ir, 1, 1) = dmxc_corr      (rhotot)
+             if (rhotot.lt. - 1.d-30) dmuxc (ir, 1, 1) = - dmxc_corr (- rhotot)
+           ENDIF
         enddo
      END IF
   endif
@@ -276,3 +284,65 @@
   CALL stop_clock ('gwq_setup')
   RETURN
 END SUBROUTINE gwq_setup
+
+!FXN to only include correlation energy:
+!-----------------------------------------------------------------------
+function dmxc_corr (rho)
+  !-----------------------------------------------------------------------
+  !
+  !  derivative of the xc potential with respect to the local density
+  !
+  !
+  USE kinds,         ONLY : DP
+  USE funct,         ONLY : get_icorr, xc
+  implicit none
+  !
+  real(DP), intent(in) :: rho
+  ! input: the charge density ( positive )
+  real(DP) :: dmxc_corr
+  ! output: the derivative of the xc potential
+  !
+  ! local variables
+  !
+  real(DP) :: dr, vxp, vcp, vxm, vcm, vx, ex, ec, rs
+  real(DP), external :: dpz
+  integer :: iflg
+  !
+  real(DP), parameter :: small = 1.E-30_DP, e2 = 2.0_DP, &
+       pi34 = 0.75_DP / 3.141592653589793_DP, third = 1.0_DP /3.0_DP
+  !
+  dmxc_corr = 0.0_DP
+  if (rho < small) then
+     return
+  endif
+  !
+  !    first case: analytical derivatives available
+  !
+  if (get_icorr() == 1) then
+     rs = (pi34 / rho)**third
+     !..exchange
+     !call slater (rs, ex, vx)
+     !dmxc = vx / (3.0_DP * rho)
+     !..correlation
+     iflg = 2
+     if (rs < 1.0_DP) iflg = 1
+     dmxc_corr = dpz (rs, iflg)
+  else
+     !
+     !     second case: numerical derivatives
+     !
+     dr = min (1.E-6_DP, 1.E-4_DP * rho)
+     call xc (rho + dr, ex, ec, vxp, vcp)
+     call xc (rho - dr, ex, ec, vxm, vcm)
+     !dmxc = (vxp + vcp - vxm - vcm) / (2.0_DP * dr)
+     dmxc_corr = (vcp - vcm) / (2.0_DP * dr)
+  endif
+  !
+  ! bring to rydberg units
+  !
+  dmxc_corr = e2 * dmxc_corr
+  return
+  !
+end function dmxc_corr
+!
+!-----------------------------------------------------------------------

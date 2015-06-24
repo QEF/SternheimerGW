@@ -76,6 +76,7 @@ else
 !we use the frequency variable for multishift as the nspin_mag var.
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
+  WRITE(stdout, '(4x,4x,"nspinmag", i4)'), nspin_mag
   ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag))    
 endif
 
@@ -124,7 +125,7 @@ DO ig = igstart, igstop
               CALL fwfft('Dense', drhoscfs(:,isp), dffts)
            ENDDO
            IF(ionode) THEN
-             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nl(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
+             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nls(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
              DO isp = 1, nspin_mag
                DO igp = 1, sigma_c_st%ngmt
                   scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp)
