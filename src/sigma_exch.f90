@@ -115,9 +115,6 @@ IMPLICIT NONE
      do ig = 1, counter
        do igp = 1, counter
          do ibnd = 1, nbnd_occ(ikq)
-            !greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
-            !                                tpi * (0.0d0, 1.0d0) * (evq(igkq_ig(ig),ibnd))* &
-            !                                conjg((evq(igkq_ig(igp), ibnd)))
             greenf_na(igkq_tmp(ig),igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
                                             tpi * (0.0d0, 1.0d0) * conjg(evq(igkq_ig(ig),ibnd))*&
                                             (evq(igkq_ig(igp), ibnd))
@@ -135,10 +132,10 @@ IMPLICIT NONE
      xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
      IF(.not.trunc_2d) THEN
        do ig = 1, sigma_x_st%ngmt
-          qg = sqrt((g(1,ig)  + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
-                  + (g(3,ig ) + xq_coul(3))**2.d0)
+          qg = sqrt((g(1,ig) + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
+                  + (g(3,ig) + xq_coul(3))**2.d0)
 
-          qg2 =   (g(1,ig)   + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
+          qg2 =     (g(1,ig) + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
                   + ((g(3,ig)) + xq_coul(3))**2.d0
           limit = (qg.lt.eps8)
           if(.not.limit) then

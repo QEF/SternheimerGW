@@ -50,7 +50,6 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   CALL close_files( .true. )
   !
   if(do_matel) xq(:) = xk_kpoints(:, ik)
-
   lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
   !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw
@@ -66,17 +65,12 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   if(do_matel) nbnd = nbnd_sig
   CALL setup_nscf_green (xq)
   CALL init_run()
-  !
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
-  !
   IF (do_band) CALL non_scf ( )
   IF (.NOT.reduce_io.and.do_band) THEN
-!  If only_wfc flag is true, we use the same twfcollect as in the pw.x
-!  calculation.
      twfcollect=.FALSE.
      CALL punch( 'all' )
   ENDIF
-  !
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
   ext_restart=.FALSE.

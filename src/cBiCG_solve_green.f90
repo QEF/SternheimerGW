@@ -1,5 +1,5 @@
 SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
-     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, niters)
+     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, niters, tprec)
 !
 !-----------------------------------------------------------------------
 !
@@ -44,6 +44,9 @@ complex(DP) :: &
              d0psi (ndmx*npol, nbnd)   ! input: the known term
 
 logical :: conv_root ! output: if true the root is converged
+
+!@
+COMPLEX(DP) :: alpha1, beta1
 
 external h_psi       ! input: the routine computing h_psi
 
@@ -90,6 +93,8 @@ external cg_psi      ! input: the routine computing cg_psi
   real(DP) :: kter_eff
   ! account the number of iterations with b
   ! coefficient of quadratic form
+
+  LOGICAL :: tprec
   !
   call start_clock ('cgsolve')
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
@@ -132,9 +137,10 @@ external cg_psi      ! input: the routine computing cg_psi
            call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
+           if(tprec) call cg2_psi(ndmx, ndim, 1, g(1,ibnd), h_diag(1,ibnd) )
            gt(:,ibnd) = dconjg ( g(:,ibnd) )
-        ! p   =  inv(M) * r
-        ! pt  =  conjg ( p )
+        !p   =  inv(M) * r
+        !pt  =  conjg ( p )
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
            ht(:,ibnd) = dconjg( h(:,ibnd) )
         enddo
@@ -152,6 +158,8 @@ external cg_psi      ! input: the routine computing cg_psi
 ! "get out if all bands are converged."
      conv_root = .true.
      do ibnd = 1, nbnd
+       ! anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, gp(1,ibnd), 1)  ) )
+        !if(iter.eq.1) anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)  ) )
         anorm = sqrt ( abs ( ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1)  ) )
         !write(6,*) anorm, ibnd, ethr
         if (anorm.lt.ethr) conv (ibnd) = 1
@@ -161,10 +169,33 @@ external cg_psi      ! input: the routine computing cg_psi
      if (conv_root) goto 100
 
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-
-     call h_psi (ndim, h, t, e(1), cw, ik, nbnd)
-     call h_psi (ndim, ht, tt, e(1), conjg(cw), ik, nbnd)
-
+!@
+!A' = E^{-1}A^{E-1}^{T}
+!
+     if(tprec) then
+        do ibnd =1,nbnd
+           call ZCOPY (ndmx*npol, h  (1, ibnd), 1, gp  (1, ibnd), 1)
+           call ZCOPY (ndmx*npol, ht (1, ibnd), 1, gtp (1, ibnd), 1)
+           call cg2_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd))
+           call cg2_psi (ndmx, ndim, 1, gtp(1,ibnd), h_diag(1,ibnd))
+           !call cg2_psi (ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd))
+           !call cg2_psi (ndmx, ndim, 1, ht(1,ibnd), h_diag(1,ibnd))
+        enddo 
+        call h_psi (ndim, gp, t, e(1), cw, ik, nbnd)
+        call h_psi (ndim, gtp, tt, e(1), conjg(cw), ik, nbnd)
+     else
+        call h_psi (ndim, h, t, e(1), cw, ik, nbnd)
+        call h_psi (ndim, ht, tt, e(1), conjg(cw), ik, nbnd)
+     endif
+     if(tprec) then
+       do ibnd =1,nbnd
+         call cg2_psi (ndmx, ndim, 1, t(1,ibnd), h_diag(1,ibnd))
+         call cg2_psi (ndmx, ndim, 1, tt(1,ibnd), h_diag(1,ibnd))
+       enddo 
+     endif
+!
+!A' = E^{-1}A^{E-1}^{T}
+!@
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
@@ -172,23 +203,29 @@ external cg_psi      ! input: the routine computing cg_psi
         ! alpha = <\tilde{r}|M^{-1}r>/<\tilde{u}|A{u}>
         ! [ the denominator is stored for subsequent use in beta ]
         ! HL:
-        ! call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+!@
+!        call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+!        if (tprec) call cg_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd))
          a(ibnd) = ZDOTC (ndim, gt(1,ibnd), 1, g(1,ibnd), 1)
          c(ibnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
          alpha = a(ibnd) / c(ibnd)
          alphabeta(1) = alpha
-        !  x  = x  + alpha        * u
-        !  r  = r  - alpha       * Au
-        !  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
+!  x  = x  + alpha        * u
+!  r  = r  - alpha       * Au
+!  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
          call ZAXPY (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
          call ZAXPY (ndmx*npol, -alpha,        t  (1,lbnd), 1, g  (1,ibnd), 1)
          call ZAXPY (ndmx*npol, -conjg(alpha), tt (1,ibnd), 1, gt (1,ibnd), 1)
         !rp  = inv(M) * r
         !rtp = inv(M) * rt
-         call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
-         call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
+        call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+        call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
+!Transformed:
+         !if (tprec) call cg_psi (ndmx, ndim, 1, gp  (1,ibnd), h_diag(1,ibnd) )
+         !if (tprec) call cg_psi (ndmx, ndim, 1, gtp (1,ibnd), h_diag(1,ibnd) )
          nrec = iter+1
          call davcio (g(:,1), lrresid, iunresid, nrec, +1)
+
          a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
          beta = - a(ibnd) / c(ibnd)
          alphabeta(2) = beta

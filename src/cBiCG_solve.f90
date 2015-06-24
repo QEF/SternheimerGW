@@ -151,7 +151,6 @@ real(DP) :: &
      do ibnd = 1, nbnd
         if (conv (ibnd).eq.0) then
             lbnd = lbnd+1
-           !rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
             rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, gp(1,ibnd), 1))
             if (iter.eq.1) rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
 !           trick where we truncate early.

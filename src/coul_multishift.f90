@@ -113,13 +113,13 @@ REAL(DP) :: anorm(nwgreen)
   enddo!iter
 
 !zero unconverged bands.
-  do ibnd = 1, nbnd
-     if (niters(ibnd).ge.maxter_green) then
-         do iw = 1, nfreq
-            x_sig(:,ibnd, iw) = (0.0d0, 0.0d0)
-         enddo 
-     endif
-  enddo  
+!  do ibnd = 1, nbnd
+!     if (niters(ibnd).ge.maxter_green) then
+!         do iw = 1, nfreq
+!            x_sig(:,ibnd, iw) = (0.0d0, 0.0d0)
+!         enddo 
+!     endif
+!  enddo  
 
   DEALLOCATE(u_sig, u_sig_old)
 END SUBROUTINE coul_multishift

@@ -96,7 +96,7 @@ DO ig = igstart, igstop
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
-         if(ig.eq.1.or.mod(ig,10).eq.0) WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
+            if(ig.eq.1.or.mod(ig,10).eq.0) WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f14.7)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
             do igp = 1, sigma_c_st%ngmt
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
@@ -132,7 +132,7 @@ DO ig = igstart, igstop
              ENDDO
            ENDIF
         ENDDO
-      ENDIF!solve_direct/solve_linter
+      ENDIF !solve_direct/solve_linter
 ENDDO 
 545 CONTINUE
 tcpu = get_clock ('GW')

@@ -25,7 +25,7 @@ subroutine bcast_gw_input ( )
                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                          coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
-                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct, tmp_dir_coul
+                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct, tmp_dir_coul, prec_shift
   USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial,  ONLY : nat_todo, nrapp
   USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero
@@ -36,7 +36,7 @@ subroutine bcast_gw_input ( )
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
   USE ions_base,        ONLY : amass
   USE run_info, ONLY : title
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco
+  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec
   USE gwsymm,        ONLY : use_symm
  
   implicit none
@@ -86,6 +86,7 @@ subroutine bcast_gw_input ( )
  !SGW cutoffs and control
   call mp_bcast (ecutsex, meta_ionode_id, world_comm)
   call mp_bcast (ecutsco, meta_ionode_id, world_comm)
+  call mp_bcast (ecutprec, meta_ionode_id, world_comm)
   call mp_bcast (nbnd_sig, meta_ionode_id, world_comm)
   call mp_bcast (modielec, meta_ionode_id, world_comm)
   call mp_bcast (godbyneeds, meta_ionode_id, world_comm)
@@ -130,6 +131,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (high_io,    meta_ionode_id, world_comm)
   call mp_bcast (freq_gl,    meta_ionode_id, world_comm)
   call mp_bcast (prec_direct,    meta_ionode_id, world_comm)
+  call mp_bcast (prec_shift,    meta_ionode_id, world_comm)
 
   call mp_bcast (use_symm, meta_ionode_id, world_comm)
   call mp_bcast (w_of_q_start, meta_ionode_id, world_comm)

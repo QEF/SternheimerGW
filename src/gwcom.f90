@@ -338,6 +338,7 @@ MODULE control_gw
              do_sigma_matel,&
              do_q0_only,&
              prec_direct,&
+             prec_shift,&
              godbyneeds,&
              padecont,&
              cohsex,&
@@ -510,6 +511,7 @@ MODULE gwsigma
 ! Cutoff for the sigma + exchange/correlation.
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
+  REAL(DP) :: ecutprec
 !OLD FFT ROUTINES
 !Real space mesh for description of self-energy.
   REAL(DP) :: gcutmsig

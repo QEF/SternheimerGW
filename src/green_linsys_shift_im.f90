@@ -25,7 +25,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, w0pmw
-  USE gwsigma,              ONLY : sigma_c_st
+  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
   USE gvect,                ONLY : g, ngm
   USE mp,                   ONLY : mp_sum, mp_barrier
   USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
@@ -83,22 +83,21 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     INTEGER     :: igkq_tmp(npwx) 
     INTEGER     :: counter
     INTEGER :: igstart, igstop, ngpool, ngr, igs, ngvecs
+
+    REAL(DP) :: gam(3)
+
     LOGICAL :: conv_root
     EXTERNAL cg_psi, ch_psi_all_green
 
     allocate  (h_diag (npwx, 1))
     allocate  (etc(nbnd_occ(1), nkstot))
     ci = (0.0d0, 1.0d0)
-!We support the numerical delta fxn in a x eV window...
 !Convert freq array generated in freqbins into rydbergs.
     do  iw =1, nwgreen
       w_ryd(iw) = w0pmw(iw0,iw)/RYTOEV
     enddo
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
-!WRITE(6,'("Fermi energy", 1f10.6)'), mu*RYTOEV
-!Loop over q in the IBZ_{k}
-!do iq = 1, nksq 
       if (lgamma) then
           ikq = iq
           else
@@ -136,7 +135,6 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
            igkq_ig  (counter) = ig
        endif
     enddo
-!CALL para_img(counter, igstart, igstop)
     igstart = 1
     igstop = counter
 !WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
@@ -159,17 +157,26 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     green  = (0.0d0, 0.0d0)
 !No preconditioning with multishift
      h_diag = 0.d0
-     do ig = 1, npwx
+     do ig = 1, npwq
+        if(g2kin(ig).le.ecutprec) then
            h_diag(ig,1) =  1.0d0
+        else
+          x = (g2kin(ig)/(ecutprec))
+          h_diag(ig,1) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+                             /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+        endif
      enddo
+!     do ig = 1, npwq
+!        write(3000+mpime,'(i4, 2f12.7)') ig, g2kin(ig), h_diag(ig,1)
+!     enddo
 !On first frequency block we do the seed system with BiCG:
-     gveccount = 1 
+     gveccount = 1
      gr_A_shift = (0.0d0, 0.d0)
      niters(:) = 0
      do ig = igstart, igstop
            rhs(:,:)  = (0.0d0, 0.0d0)
            rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
-           gr_A(:,:) = (0.0d0, 0.0d0) 
+           gr_A(:,:) = (0.0d0, 0.0d0)
            lter = 0
            etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
            cw = CMPLX( mu, 0.0d0, kind=DP) 
@@ -178,13 +185,12 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
            call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-                                 cw , niters(gveccount))
-
+                                 cw , niters(gveccount), .true.)
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
-
           !if((mod(ig,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ig, niters(gveccount), anorm
+          !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4)') ig, niters(gveccount)
            if (niters(gveccount).ge.maxter_green) then
-                 !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec", i4)') ig
+                 WRITE(1000+mpime, '(5x,"Gvec: ", 3i4, f12.7)') ig, igkq_ig(ig), niters(gveccount), anorm
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
            endif
            do iw = 1, nwgreen
@@ -195,7 +201,6 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
            enddo
            gveccount = gveccount + 1
      enddo !ig
-!ENDDO !iq
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)
 if(allocated(etc))    DEALLOCATE(etc)

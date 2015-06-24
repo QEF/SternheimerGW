@@ -104,6 +104,11 @@ SUBROUTINE setup_nscf_green(xq)
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
     if (invsymq)      WRITE(6,'(\5x, "qpoint HAS inversion symmetry")')
     if (.not.invsymq) WRITE(6,'(\5x, "qpoint does NOT have inversion symmetry")')
+
+    WRITE(6,'(\5x, "nsym, nsymq, nrot ", i4, i4, i4)') nsym,  nsymq, nrot 
+    WRITE(6,'(\5x, "nsym, nsymq, nrot ", i4, i4)') nks_start, nsymq, nkstot
+    WRITE(6,*) newgrid 
+
   ! Since the order of the s matrices is changed we need to recalculate:
     call s_axis_to_cart () 
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
@@ -115,33 +120,23 @@ SUBROUTINE setup_nscf_green(xq)
      !
      nkstot = nks_start
      xk(:,1:nkstot) = xk_start(:,1:nkstot)
-  !@ 
-     !xk(:,1:nkstot) = -xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)
-     !WRITE(6,'(\5x, "-k for matrix elements:")')
   else
-     !
-     ! In this case I generate a new set of k-points
-     !
-     ! In the case of electron-phonon matrix element with
-     ! wannier functions the k-points should not be reduced
-     !
-     !skip_equivalence = .false.
-     CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
-                      bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
+     !In this case I generate a new set of k-points
+     CALL kpoint_grid ( nsym, time_reversal, .false., s, t_rev, &
+                        bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
   endif
 
   ! ... If some symmetries of the lattice no longer apply for this kpoint
   ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
   ! ... symmetry operations. 
 
-  CALL irreducible_BZ (nrot, s, nsymq, minus_q, magnetic_sym, &
+  CALL irreducible_BZ (nsym, s, nsymq, minus_q, magnetic_sym, &
                        at, bg, npk, nkstot, xk, wk, t_rev)
 
   !wk(contains weights 
   CALL set_kplusq( xk, wk, xq, nkstot, npk )
   !
-
   IF ( lsda ) THEN
      !
      ! ... LSDA case: two different spin polarizations,

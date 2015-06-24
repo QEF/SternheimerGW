@@ -43,7 +43,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta, maxter_green, prec_direct
+                                   ext_recover, eta, maxter_green, prec_direct, &
+                                   prec_shift
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
@@ -60,6 +61,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE mp,              ONLY : mp_sum, mp_barrier
   USE mp_world,        ONLY : mpime
   USE mp_pools,             ONLY : inter_pool_comm
+  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
 
   implicit none
   !
@@ -227,9 +229,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
               h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
-              !x = (g2kin(ig)/eprec(ibnd,ik))
-              !h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-              !                  /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
            enddo
            IF (noncolin) THEN
               do ig = 1, npwq
@@ -237,12 +236,24 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
               enddo
            END IF
         enddo
-    ELSE
+    ELSE IF (prec_shift) THEN
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              h_diag(ig,ibnd) =  (1.0d0, 0.0d0)
+              if(g2kin(ig).le.(ecutprec)) then
+                 h_diag(ig,ibnd) =  1.0d0
+              else
+                 !x = (g2kin(ig)/(ecutprec))
+                 !h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+                 !               /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+                 !x = (g2kin(ig)/(eprec(ibnd,ik)))
+                 !h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+                 !               /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+                 h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
+              endif
            enddo
         enddo
+    ELSE
+       h_diag = 1.0d0
     ENDIF
 
 !mode relic from phonon days:
@@ -263,7 +274,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         thresh    = tr2_gw
         conv_root = .true.
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
-
    IF(prec_direct) then
      do iw = 1, nfs
         cw    = fiu(iw) 
@@ -283,31 +293,32 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
    ELSE 
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
-                             npol, niters, alphabeta)
-        if (.not.conv_root) WRITE(1000+mpime, '(5x,"kpoint", 10i4)') niters
+                             npol, niters, alphabeta, .true.)
+        if((mod(ik,20)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, f12.7)') ik, anorm
+        if((mod(ik,20)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ",14i4)') niters(1:13)
+        if(.not.conv_root)    WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
+        if(.not.conv_root)    WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
         call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
         dpsi(:,:,:)    = dpsit(:,:,:)
 !       dpsi = dpsi^{+} + dpsi^{-}
         dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu(:)))
         dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
+!transform solution vector x = E^{-T}x':
+        do iw =1, nfs
+           do ibnd =1, nbnd
+             call cg2_psi(npwx, npwq, 1, dpsi(1,ibnd,iw), h_diag(1,ibnd))
+           enddo
+        enddo
+
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_green) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
            endif
         enddo
-        do iw = 1, nfs
-           do ibnd=1, nbnd 
-            if (sum(dpsi(:,ibnd,iw)).ne.sum(dpsi(:,ibnd,iw))) then
-                write(1000+mpime,'("dpsi is NAN")')
-                dpsi(:,ibnd,iw) = dcmplx(0.0d0,0.0d0)
-            endif
-           enddo
-        enddo
    ENDIF
-
         ltaver = ltaver + lter
         lintercall = lintercall + 1
         nrec1 =  ik
