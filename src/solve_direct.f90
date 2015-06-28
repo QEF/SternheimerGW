@@ -242,12 +242,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
               if(g2kin(ig).le.(ecutprec)) then
                  h_diag(ig,ibnd) =  1.0d0
               else
-                 !x = (g2kin(ig)/(ecutprec))
-                 !h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-                 !               /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
-                 !x = (g2kin(ig)/(eprec(ibnd,ik)))
-                 !h_diag(ig,ibnd) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-                 !               /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
                  h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
               endif
            enddo
@@ -312,7 +306,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
              call cg2_psi(npwx, npwq, 1, dpsi(1,ibnd,iw), h_diag(1,ibnd))
            enddo
         enddo
-
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_green) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)

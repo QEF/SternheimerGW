@@ -37,7 +37,8 @@ subroutine cg2_psi (lda, n, m, psi, h_diag)
   !HL reinflates vector!
   do k = 1, m
      do i = 1, n
-        psi (i, k) = psi (i, k) * (1.0d0/sqrt(h_diag (i, k)))
+        !psi (i, k) = psi (i, k) * (1.0d0/sqrt(h_diag (i, k)))
+        psi (i, k) = psi (i, k) * sqrt(h_diag (i, k))
      enddo
   enddo
 
