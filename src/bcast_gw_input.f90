@@ -36,7 +36,7 @@ subroutine bcast_gw_input ( )
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
   USE ions_base,        ONLY : amass
   USE run_info, ONLY : title
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec
+  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv
   USE gwsymm,        ONLY : use_symm
  
   implicit none
@@ -86,6 +86,7 @@ subroutine bcast_gw_input ( )
  !SGW cutoffs and control
   call mp_bcast (ecutsex, meta_ionode_id, world_comm)
   call mp_bcast (ecutsco, meta_ionode_id, world_comm)
+  call mp_bcast (corr_conv, meta_ionode_id, world_comm)
   call mp_bcast (ecutprec, meta_ionode_id, world_comm)
   call mp_bcast (nbnd_sig, meta_ionode_id, world_comm)
   call mp_bcast (modielec, meta_ionode_id, world_comm)

@@ -3,7 +3,7 @@ SUBROUTINE sigma_matel (ik0)
   USE io_files,             ONLY : prefix, iunigk
   USE buffers,              ONLY : get_buffer
   USE kinds,                ONLY : DP
-  USE gvect,                ONLY : ngm, g
+  USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
   USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsigmin, wsigmax, deltaws
@@ -13,7 +13,7 @@ SUBROUTINE sigma_matel (ik0)
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
   USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG
   USE wavefunctions_module, ONLY : evc
-  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig
+  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv
   USE disp,                 ONLY : xk_kpoints
   USE noncollin_module,     ONLY : nspin_mag
   USE eqv,                  ONLY : dmuxc, evq, eprec
@@ -46,12 +46,14 @@ IMPLICIT NONE
   INTEGER, ALLOCATABLE      ::   igkq_ig(:) 
   INTEGER, ALLOCATABLE      ::   igkq_tmp(:) 
 !for analytic continuation of selfenergy:
-  INTEGER                   ::   nwsigwin, ierr
+  INTEGER                   ::   nwsigwin, ierr, ng
   REAL(DP), ALLOCATABLE     ::   wsigwin(:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_g_ex(:,:)
 !For VXC matrix elements:
   REAL(DP) :: vtxc, etxc, ehart, eth, charge
+!arbitrary cutoff
+  INTEGER :: sigma_c_ngm
 
   ALLOCATE (igkq_tmp(npwx))
   ALLOCATE (igkq_ig(npwx))
@@ -191,8 +193,27 @@ IMPLICIT NONE
   igkq_tmp(:) = 0
   igkq_ig(:)  = 0
 
+
+  !actually want to 
+  if (corr_conv.eq.sigma_c_st%ecutt) then
+      sigma_c_ngm = sigma_c_st%ngmt
+  elseif(corr_conv.lt.sigma_c_st%ecutt) then
+    do ng = 1, ngm
+       if ( gl( igtongl (ng) ) .le. corr_conv ) sigma_c_ngm = ng
+    enddo
+  else
+    write(6, '("Corr Conv cannot be greater than ecut_sco")')
+    stop
+  endif
+
+  WRITE(6,*)
+  WRITE(stdout, '(5x, "G-Vects CORR_CONV:")')
+  WRITE(stdout, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
+  WRITE(6,*)
+
   do ig = 1, npwq
-     if((igkq(ig).le.sigma_c_st%ngmt).and.((igkq(ig)).gt.0)) then
+     !if((igkq(ig).le.sigma_c_st%ngmt).and.((igkq(ig)).gt.0)) then
+     if((igkq(ig).le.sigma_c_ngm).and.((igkq(ig)).gt.0)) then
        counter = counter + 1
        igkq_tmp (counter) = igkq(ig)
        igkq_ig  (counter) = ig
@@ -219,11 +240,13 @@ IMPLICIT NONE
              do ig = 1, counter
                 evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
              enddo
-            do ig = 1, sigma_c_st%ngmt
+            !do ig = 1, sigma_c_st%ngmt
+            do ig = 1, sigma_c_ngm
               do igp = 1, counter
                  evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
               enddo
-              do igp = 1, sigma_c_st%ngmt
+              !do igp = 1, sigma_c_st%ngmt
+              do igp = 1, sigma_c_ngm
                  sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + evc_tmp_j(ig)*sigma(ig,igp,iw)*conjg(evc_tmp_i(igp))
               enddo
            enddo

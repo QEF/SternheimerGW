@@ -66,7 +66,7 @@ SUBROUTINE gwq_readin()
   USE paw_variables, ONLY : okpaw
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
                             greenzero
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec
+  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv
   USE gwsymm,        ONLY : use_symm
   !
   !
@@ -101,7 +101,7 @@ SUBROUTINE gwq_readin()
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, fpol, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
-                       ecutsco, ecutsex, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
+                       ecutsco, ecutsex, corr_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
@@ -219,6 +219,7 @@ SUBROUTINE gwq_readin()
 !W and G. G cannot exceed sigma.
   ecutsco      = 5.0
   ecutsex      = 5.0
+  corr_conv    = ecutsco
   ecutprec     = 20.0
   nbnd_sig     = 8
 !Should have a catch if no model for screening is chosen...

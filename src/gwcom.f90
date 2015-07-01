@@ -513,6 +513,7 @@ MODULE gwsigma
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
   REAL(DP) :: ecutprec
+  REAL(DP) :: corr_conv
 !OLD FFT ROUTINES
 !Real space mesh for description of self-energy.
   REAL(DP) :: gcutmsig
