@@ -358,7 +358,8 @@ MODULE control_gw
              loqua   = .FALSE.,&
              high_io, &  
              freq_gl, &
-             just_corr
+             just_corr,&
+             double_grid
 
 END MODULE control_gw
 !

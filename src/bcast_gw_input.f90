@@ -25,10 +25,11 @@ subroutine bcast_gw_input ( )
                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                          coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
-                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct, tmp_dir_coul, prec_shift, just_corr
+                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct, tmp_dir_coul, prec_shift, just_corr,&
+                         double_grid
   USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial,  ONLY : nat_todo, nrapp
-  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero
+  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul
   USE output,   ONLY : fildvscf, fildyn, fildrho
   use io_files, ONLY : tmp_dir, prefix
   USE control_flags,    ONLY: iverbosity, modenum
@@ -116,6 +117,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (do_diag_g, meta_ionode_id, world_comm)
   call mp_bcast (do_imag, meta_ionode_id, world_comm)
   call mp_bcast (do_pade_coul, meta_ionode_id, world_comm)
+  call mp_bcast (double_grid, meta_ionode_id, world_comm)
 
 !Frequency grid
   call mp_bcast (wsigmamin, meta_ionode_id, world_comm)
@@ -134,6 +136,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (freq_gl,    meta_ionode_id, world_comm)
   call mp_bcast (prec_direct,    meta_ionode_id, world_comm)
   call mp_bcast (prec_shift,    meta_ionode_id, world_comm)
+  call mp_bcast (nwcoul,    meta_ionode_id, world_comm)
 
   call mp_bcast (use_symm, meta_ionode_id, world_comm)
   call mp_bcast (w_of_q_start, meta_ionode_id, world_comm)

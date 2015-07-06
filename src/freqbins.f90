@@ -97,7 +97,6 @@ SUBROUTINE freqbins()
   ELSE
 ! We generate Sigma on a uniform grid:
 
-   nwcoul  = 40
    nwgreen = 2*nwcoul
    nwsigma = 1 + ceiling( (wsigmamax-wsigmamin) / deltaw )
    allocate(wsigma(nwsigma))

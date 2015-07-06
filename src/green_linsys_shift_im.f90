@@ -162,8 +162,9 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
            h_diag(ig,1) =  1.0d0
         else
           x = (g2kin(ig)/(ecutprec))
-          h_diag(ig,1) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-                             /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+       !   h_diag(ig,1) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
+       !                      /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
+          h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/ecutprec)
         endif
      enddo
 !     do ig = 1, npwq

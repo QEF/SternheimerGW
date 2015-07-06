@@ -7,7 +7,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE control_gw,           ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
-                                   do_diag_g, do_diag_w, trunc_2d, nbnd_occ
+                                   do_diag_g, do_diag_w, trunc_2d, nbnd_occ, double_grid
 IMPLICIT NONE
 
 INTEGER                  :: ig, igp, nw, iw, ibnd, jbnd, ios, &
@@ -35,7 +35,7 @@ REAL(DP) :: ehomo, elumo, mu
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
 !
-IF(.false.) THEN
+IF(double_grid) THEN
     DO ibnd =1 , nbnd_sig
         DO jbnd = 1, nbnd_sig
             DO iw = 1, nwsigma-1

@@ -20,13 +20,15 @@ SUBROUTINE sigma_grids()
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st
   USE gwsigma,          ONLY : ecutsex, ecutsco
   USE grid_subroutines, ONLY : realspace_grids_info 
+  USE freq_gw,          ONLY : nwgreen, nwcoul, nfs, nwsigma
 
   IMPLICIT NONE
 
-  INTEGER    :: ng
-  INTEGER :: ik, ngm_, ngs_, ngw_ , nogrp, kpoint
+  INTEGER   :: ng
+  INTEGER   :: ik, ngm_, ngs_, ngw_ , nogrp, kpoint
   REAL (DP) :: gkcut
-  INTEGER :: me, nproc, inter_comm, intra_comm, root
+  REAL(DP)  :: Gb
+  INTEGER   :: me, nproc, inter_comm, intra_comm, root
 
 
 !Define COMMUNICATORS here we're using the band group (bgrp) comm
@@ -99,10 +101,28 @@ SUBROUTINE sigma_grids()
   CALL gvec_init(sigma_c_st, sigma_c_st%ngmt, intra_comm)
   sigma_c_st%initalized = .true.
   CALL ggent(sigma_c_st)
+
   WRITE(stdout, '(//5x,"Correlation Grid:")')
   WRITE(stdout, '(5x, "nr1, nr2, nr3")')
   WRITE(stdout, '(5x, 3i4)') sigma_c_st%nr1t, sigma_c_st%nr2t, sigma_c_st%nr3t
   WRITE(stdout, '(5x, "Ecut, Ngmsco:")')
   WRITE(stdout, '(5x, f6.2, i5, //)') sigma_c_st%ecutt, sigma_c_st%ngmt
+
   CALL realspace_grids_info(sigma_c_st%dfftt, sigma_c_st%dfftt, nproc_pool)
+
+  Gb = (DBLE(2)**26)
+ 
+  WRITE ( stdout, '("MEMORY USAGE:")' )
+  WRITE ( stdout, '("")' )
+  WRITE( stdout, '(5x,"G(G,Gp;iw) fxn:   ", f10.2," Gb")') &
+      ((DBLE(sigma_c_st%ngmt)**2)*2*float(nwcoul))/Gb
+  WRITE( stdout, '(5x,"W(G,Gp;iw) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+      ((DBLE(sigma_c_st%ngmt)**2)*nfs)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+  WRITE( stdout, '(5x,"Sigma(r,rp,iw) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+      ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+  WRITE( stdout, '(5x,"G(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+      ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+  WRITE( stdout, '(5x,"W(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+      ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+  WRITE ( stdout, '("")' )
 END SUBROUTINE

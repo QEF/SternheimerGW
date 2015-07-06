@@ -45,7 +45,8 @@ SUBROUTINE gwq_readin()
                             solve_direct, w_green_start, tinvert, coul_multishift,&
                             trunc_2d, do_epsil, do_serial, &
                             do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                            high_io, freq_gl, prec_direct, prec_shift, just_corr
+                            high_io, freq_gl, prec_direct, prec_shift, just_corr,&
+                            double_grid
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
@@ -65,7 +66,7 @@ SUBROUTINE gwq_readin()
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
-                            greenzero
+                            greenzero, nwcoul
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv
   USE gwsymm,        ONLY : use_symm
   !
@@ -108,7 +109,7 @@ SUBROUTINE gwq_readin()
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr
+                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr, nwcoul, double_grid
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -209,7 +210,7 @@ SUBROUTINE gwq_readin()
   do_diag_w       = .FALSE.
   do_imag         = .FALSE.
   do_pade_coul    = .FALSE.
-
+  double_grid     = .TRUE.
   high_io    = .FALSE.
   freq_gl    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
@@ -222,6 +223,7 @@ SUBROUTINE gwq_readin()
   corr_conv    = ecutsco
   ecutprec     = 20.0
   nbnd_sig     = 8
+  nwcoul       = 30
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   godbyneeds   = .FALSE.
