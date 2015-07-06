@@ -155,10 +155,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
         if(g2kin(ig).le.ecutprec) then
            h_diag(ig,1) =  1.0d0
         else
-!          x = (g2kin(ig)/(ecutprec))
-!h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/ecutprec)
-!occupied bandwidth sets reasonable energy scale?
-          h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
+          h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
         endif
      enddo
 !     do ig = 1, npwq
@@ -183,7 +180,8 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
                                  cw , niters(gveccount), .true.)
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
            if (niters(gveccount).ge.maxter_green) then
-                 WRITE(1000+mpime, '(5x,"Gvec: ", 3i4, f12.7)') ig, igkq_ig(ig), niters(gveccount), anorm
+                 !WRITE(1000+mpime, '(5x,"Gvec: ", 3i4, f12.7)') ig, igkq_ig(ig), niters(gveccount), anorm
+                 WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
            endif
            do iw = 1, nwgreen
