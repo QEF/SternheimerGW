@@ -98,17 +98,14 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     enddo
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
-      if (lgamma) then
-          ikq = iq
+    if (lgamma) then
+         ikq = iq
           else
-          ikq = 2*iq
-      endif
+         ikq = 2*iq
+    endif
 !This should ensure the Green's fxn has the correct -\delta for \omega <
 !\epsilon_{F}:
-  ! CALL get_homo_lumo (ehomo, elumo)
-  ! mu = ehomo + 0.50d0*(elumo-ehomo)
-  ! mu = 0.00
-  !This smooths out variations and I think makes sense
+!This smooths out variations and I think makes sense
    mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
    IF (nksq.gt.1) then
        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -152,19 +149,16 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
                      (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
                      (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
     ENDDO
-! WRITE(6, '(4x,"k0+q = (",3f12.7," )",10(3x,f7.3))') xk(:,ikq), et(:,ikq)*RYTOEV
-! WRITE(6, '(4x,"tr2_green for green_linsys",e10.3)') tr2_green
     green  = (0.0d0, 0.0d0)
-!No preconditioning with multishift
      h_diag = 0.d0
      do ig = 1, npwq
         if(g2kin(ig).le.ecutprec) then
            h_diag(ig,1) =  1.0d0
         else
-          x = (g2kin(ig)/(ecutprec))
-       !   h_diag(ig,1) =  (27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0) &
-       !                      /(27.d0+18.d0*x+12.d0*x*x+8.d0*x**3.d0+16.d0*x**4.d0)
-          h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/ecutprec)
+!          x = (g2kin(ig)/(ecutprec))
+!h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/ecutprec)
+!occupied bandwidth sets reasonable energy scale?
+          h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
         endif
      enddo
 !     do ig = 1, npwq
@@ -188,8 +182,6 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                  cw , niters(gveccount), .true.)
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
-          !if((mod(ig,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ig, niters(gveccount), anorm
-          !if (.not.conv_root) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4)') ig, niters(gveccount)
            if (niters(gveccount).ge.maxter_green) then
                  WRITE(1000+mpime, '(5x,"Gvec: ", 3i4, f12.7)') ig, igkq_ig(ig), niters(gveccount), anorm
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

@@ -115,9 +115,8 @@ SUBROUTINE sigma_c_im(ik0)
    WRITE(6," ")
    WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
-
-  zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-  WRITE(6,'("zcut ", f12.7)'), zcut
+   zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+   !WRITE(6,'("zcut ", f12.7)'), zcut
 
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)

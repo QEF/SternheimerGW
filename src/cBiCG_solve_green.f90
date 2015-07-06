@@ -138,11 +138,11 @@ external cg_psi      ! input: the routine computing cg_psi
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
            if(tprec) call cg2_psi(ndmx, ndim, 1, g(1,ibnd), h_diag(1,ibnd) )
-           gt(:,ibnd) = dconjg ( g(:,ibnd) )
         !p   =  inv(M) * r
         !pt  =  conjg ( p )
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
-           ht(:,ibnd) = dconjg( h(:,ibnd) )
+           gt(:,ibnd) = g(:,ibnd) 
+           ht(:,ibnd) = h(:,ibnd)
         enddo
         IF (npol==2) THEN
            do ibnd = 1, nbnd
@@ -178,8 +178,6 @@ external cg_psi      ! input: the routine computing cg_psi
            call ZCOPY (ndmx*npol, ht (1, ibnd), 1, gtp (1, ibnd), 1)
            call cg2_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd))
            call cg2_psi (ndmx, ndim, 1, gtp(1,ibnd), h_diag(1,ibnd))
-           !call cg2_psi (ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd))
-           !call cg2_psi (ndmx, ndim, 1, ht(1,ibnd), h_diag(1,ibnd))
         enddo 
         call h_psi (ndim, gp, t, e(1), cw, ik, nbnd)
         call h_psi (ndim, gtp, tt, e(1), conjg(cw), ik, nbnd)
@@ -215,7 +213,7 @@ external cg_psi      ! input: the routine computing cg_psi
 !  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
          call ZAXPY (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
          call ZAXPY (ndmx*npol, -alpha,        t  (1,lbnd), 1, g  (1,ibnd), 1)
-         call ZAXPY (ndmx*npol, -conjg(alpha), tt (1,ibnd), 1, gt (1,ibnd), 1)
+         call ZAXPY (ndmx*npol, -dconjg(alpha), tt (1,ibnd), 1, gt (1,ibnd), 1)
         !rp  = inv(M) * r
         !rtp = inv(M) * rt
         call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)

@@ -221,7 +221,7 @@ SUBROUTINE gwq_readin()
   ecutsco      = 5.0
   ecutsex      = 5.0
   corr_conv    = ecutsco
-  ecutprec     = 20.0
+  ecutprec     = 15.0
   nbnd_sig     = 8
   nwcoul       = 30
 !Should have a catch if no model for screening is chosen...
