@@ -98,14 +98,10 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     enddo
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
-    if (lgamma) then
-         ikq = iq
-          else
-         ikq = 2*iq
-    endif
 !This should ensure the Green's fxn has the correct -\delta for \omega <
 !\epsilon_{F}:
 !This smooths out variations and I think makes sense
+   ikq = iq
    mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
    IF (nksq.gt.1) then
        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -143,7 +139,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
     call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
-    call davcio (evq, lrwfc, iuwfc, ikq, - 1)
+!   call davcio (evq, lrwfc, iuwfc, ikq, -1)
     DO ig = 1, npwq
        g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
                      (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
