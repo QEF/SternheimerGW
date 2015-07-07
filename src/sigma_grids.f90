@@ -30,7 +30,6 @@ SUBROUTINE sigma_grids()
   REAL(DP)  :: Gb
   INTEGER   :: me, nproc, inter_comm, intra_comm, root
 
-
 !Define COMMUNICATORS here we're using the band group (bgrp) comm
 !this is a sub division of the pools. 
   me = me_bgrp
@@ -121,8 +120,8 @@ SUBROUTINE sigma_grids()
   WRITE( stdout, '(5x,"Sigma(r,rp,iw) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
       ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
   WRITE( stdout, '(5x,"G(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
-      ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+      ((DBLE(sigma_c_st%dfftt%nnr)**2))/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
   WRITE( stdout, '(5x,"W(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
-      ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+      ((DBLE(sigma_c_st%dfftt%nnr)**2))/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
   WRITE ( stdout, '("")' )
 END SUBROUTINE

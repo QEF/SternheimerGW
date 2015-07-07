@@ -141,7 +141,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
             endif
          enddo
        ELSE
-         !call truncate_2D(dvaux(1,is), xq, 1)
            zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
            DO ig = 1, ngm
                 qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2

@@ -98,7 +98,7 @@ SUBROUTINE sigma_c_im(ik0)
    ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
    ALLOCATE ( scrcoul_g_R     (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
    ALLOCATE ( scrcoul_pade_g  (sigma_c_st%ngmt, sigma_c_st%ngmt)         )
-   ALLOCATE ( greenf_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, 2*nwcoul) )
+   ALLOCATE ( greenf_g        (sigma_c_st%ngmt, sigma_c_st%ngmt, 2*nwcoul) )
 !These go on the big grid...
    ALLOCATE ( scrcoul        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
    ALLOCATE ( greenfr        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
@@ -107,6 +107,7 @@ SUBROUTINE sigma_c_im(ik0)
    ALLOCATE ( eigv     (ngm, nrot)   )
 !This is a memory hog...
    ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
+
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
    w_ryd(:) = wcoul(:)/RYTOEV
 
