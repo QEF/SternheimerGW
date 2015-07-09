@@ -189,6 +189,10 @@ SUBROUTINE sigma_c_im(ik0)
 !been done at -q therefore we are just going to calculate \Sum G_{k+q}W_{-q}
       inv_q=.false.
       call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
+!Since we want W_{-q} we now need to swap xq_ibk.
+!This is consistent with sigma_X. 
+      xq_ibk(:) = xk_kpoints(:, ik0) - xk(:,ikq)
+
       cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
       if(lgamma) npwq=npw 
       write(6, *)  
@@ -256,7 +260,6 @@ SUBROUTINE sigma_c_im(ik0)
  DEALLOCATE ( scrcoul_pade_g   )
  DEALLOCATE ( scrcoul_g, scrcoul_g_R )
  DEALLOCATE ( z,a,u )
-
 #ifdef __PARA
   CALL mp_barrier(inter_image_comm)
   CALL mp_sum(sigma, inter_pool_comm)

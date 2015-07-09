@@ -68,7 +68,7 @@ IMPLICIT NONE
   endif
 
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
-  write(6,'(4x,"Occupied bands at Gamma",i3)') nbnd_occ(ik0)
+  write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
 
   WRITE(6, '(5x, " nksq ", i4)') nksq
   WRITE(6, *) xk(:,1:nkstot)
@@ -78,24 +78,24 @@ IMPLICIT NONE
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   DO iq = 1, nksq
      if (lgamma) then
-        write(6,'(4x,"lgamma q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
+        !write(6,'(4x,"lgamma q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
         ikq = iq
      else
-        write(6,'(4x,"q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
+        !write(6,'(4x,"q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
         ikq = 2*iq
      endif
 
      call get_buffer (evq, lrwfc, iuwfc, ikq)
 
-      IF (nksq.gt.1) then
-          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-                        npw, igk, g2kin )
-      ENDIF
-      if(lgamma) npwq = npw
-      IF (.not.lgamma.and.nksq.gt.1) then
-        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
-                      npwq, igkq, g2kin )
-      ENDIF
+     IF (nksq.gt.1) then
+         CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                       npw, igk, g2kin )
+     ENDIF
+     if(lgamma) npwq = npw
+     IF (.not.lgamma.and.nksq.gt.1) then
+       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+                     npwq, igkq, g2kin )
+     ENDIF
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
      counter  = 0
@@ -129,7 +129,10 @@ IMPLICIT NONE
      ALLOCATE ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
      rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
      barcoul(:,:) = (0.0d0,0.0d0)
+
+     !xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
      xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
+
      IF(.not.trunc_2d) THEN
        do ig = 1, sigma_x_st%ngmt
           qg = sqrt((g(1,ig) + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &

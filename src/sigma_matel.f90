@@ -81,18 +81,11 @@ IMPLICIT NONE
         CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
                       npwq, igkq, g2kin )
       ENDIF
-!if just gamma then psi_{\Gamma} should be first entry in list.
-!   if (lgamma) then
-!     call get_buffer (evc, lrwfc, iuwfc, ikq)
-!   else
-!else then psi_{\k+\gamma = \psi_{k}} should be second entry in list.
-!     call get_buffer (evc, lrwfc, iuwfc, ikq)
-!   endif
   call get_buffer (evc, lrwfc, iuwfc, ikq)
   zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
   WRITE(6,'("zcut ", f12.7)'), zcut
-
   WRITE(6,'("NBND ", i5)'), nbnd_sig
+
 ! generate v_xc(r) in real space:
   v%of_r(:,:) = (0.0d0)
   CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
