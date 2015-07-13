@@ -46,13 +46,11 @@ IMPLICIT NONE
   if (nksq.gt.1) rewind (unit = iunigk)
 !set appropriate weights for points in the brillouin zone. 
 !weights of all the k-points are in odd positions in list.  
-
   wq(:) = 0.0d0
 !check if we're looking at k = gamma.
   lgamma = (abs(xk_kpoints(1,1)).lt.1.0e-10_dp .and. &
             abs(xk_kpoints(2,1)) .lt. 1.0e-10_dp .and. &
             abs(xk_kpoints(3,1)) .lt. 1.0e-10_dp )
-
   do iq = 1, nksq
      if(lgamma) then
         wq(iq) = 0.5d0*wk(iq)
@@ -60,33 +58,19 @@ IMPLICIT NONE
         wq(iq) = 0.5d0*wk(2*iq-1) 
      endif
   enddo
-
-  if (lgamma) then
-     ikq = ik0
-  else
-     ikq = 2*ik0
-  endif
-
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
-
-  WRITE(6, '(5x, " nksq ", i4)') nksq
-  WRITE(6, *) xk(:,1:nkstot)
-  
-
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   DO iq = 1, nksq
      if (lgamma) then
-        !write(6,'(4x,"lgamma q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
+        WRITE(6,'("lgamma")')
         ikq = iq
      else
-        !write(6,'(4x,"q ",i3, 3f12.7, i3)') ikq, (xk(ipol, ikq), ipol=1,3), nksq
-        ikq = 2*iq
+        WRITE(6,'("not lgamma")')
+        ikq = 2*iq-1
      endif
-
      call get_buffer (evq, lrwfc, iuwfc, ikq)
-
      IF (nksq.gt.1) then
          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                        npw, igk, g2kin )
@@ -129,17 +113,13 @@ IMPLICIT NONE
      ALLOCATE ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
      rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
      barcoul(:,:) = (0.0d0,0.0d0)
-
-     !xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
      xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
-
      IF(.not.trunc_2d) THEN
        do ig = 1, sigma_x_st%ngmt
-          qg = sqrt((g(1,ig) + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
-                  + (g(3,ig) + xq_coul(3))**2.d0)
-
-          qg2 =     (g(1,ig) + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
-                  + ((g(3,ig)) + xq_coul(3))**2.d0
+           qg = sqrt((g(1,ig) + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
+                   + (g(3,ig) + xq_coul(3))**2.d0)
+          qg2 =      (g(1,ig) + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
+                   + ((g(3,ig)) + xq_coul(3))**2.d0
           limit = (qg.lt.eps8)
           if(.not.limit) then
               spal = 1.0d0 - cos (rcut * tpiba * qg)
@@ -150,7 +130,6 @@ IMPLICIT NONE
        enddo
      ELSE
         zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-       !rcut = -2.0*pi*zcut**2
         rcut = 0.0d0
         DO ig = 1, sigma_x_st%ngmt
                 qg2 = (g(1,ig) + xq_coul(1))**2 + (g(2,ig) + xq_coul(2))**2 + (g(3,ig)+xq_coul(3))**2

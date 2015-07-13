@@ -126,8 +126,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
     !
     ! at the end the two contributes are added
     dvscf  = dvaux  + dvhart
-    !OBM : Again not totally convinced about this trimming. 
-    !dvscf (:,:) = cmplx(DBLE(dvscf(:,:)),0.0d0,dp)
     deallocate(dvhart)
   else
     do is = 1, nspin_lsda
@@ -154,7 +152,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
        ENDIF
        CALL invfft ('Dense', dvaux (:, is), dfftp)
     enddo
-    !
     ! at the end the two contributes are added
     dvscf (:,:) = dvaux (:,:)
   endif

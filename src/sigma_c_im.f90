@@ -55,7 +55,7 @@ SUBROUTINE sigma_c_im(ik0)
   REAL(DP) :: qg2, qg, qxy, qz
   REAL(DP) :: w_ryd(nwcoul)
   REAL(DP) :: xq_ibk(3), xq_ibz(3)
-!q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
+!q-vector of coulomb potential:
   REAL(DP) :: xq_coul(3)
   REAL(DP) :: rcut, spal
 !CHECK FOR NAN's
@@ -118,14 +118,11 @@ SUBROUTINE sigma_c_im(ik0)
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
    zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
    !WRITE(6,'("zcut ", f12.7)'), zcut
-
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
    sigma(:,:,:) = (0.0d0, 0.0d0)
-
    CALL start_clock('sigmac')
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
-
    IF(allocated(sigma)) THEN
      WRITE(6,'(4x,"Sigma allocated")')
    ELSE
@@ -164,14 +161,13 @@ SUBROUTINE sigma_c_im(ik0)
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 !endif
 #endif
-
 !   WRITE(6, '(5x, " nksq ", i4)') nksq
 !   WRITE(6, *) xk(:,1:nkstot)
 !   WRITE(6, '(5x, " nqs ", i4)') nqs
 !   WRITE(6, *) x_q(:,1:nqs)
-
    CALL para_img(nwsigma, iw0start, iw0stop)
    WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
+   write(6,*) x_q(:,:)
 !ONLY PROCESSORS WITH K points to process: 
   IF (nksq.gt.1) rewind (unit = iunigk)
 ! kpoints split between pools
@@ -179,19 +175,21 @@ SUBROUTINE sigma_c_im(ik0)
       IF (lgamma) THEN
           ikq = iq
       ELSE
-          ikq = 2*iq
+         ikq = 2*iq
       ENDIF
 !   q = k0 + q - k0
-      xq_ibk(:) = xk(:, ikq) - xk_kpoints(:, ik0)
+      xq_ibk(:) = xk_kpoints(:,ik0) - xk(:, ikq)
+      write(6,*) xq_ibk 
 !Find which symmetry operation rotates xq_ibk back to
 !The irreducible brillouin zone and which q \in IBZ it corresponds to.
 !q is stored in the list x_q as positive q but all the calculations have
 !been done at -q therefore we are just going to calculate \Sum G_{k+q}W_{-q}
       inv_q=.false.
       call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
-!Since we want W_{-q} we now need to swap xq_ibk.
-!This is consistent with sigma_X. 
-      xq_ibk(:) = xk_kpoints(:, ik0) - xk(:,ikq)
+
+      if(iqrec.gt.nqs) WRITE(6,'("SCREENED COULOMB NOT ROTATED BACK TO 1st BZ")')
+      if(iqrec.gt.nqs) call mp_global_end()
+      if(iqrec.gt.nqs) STOP
 
       cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
       if(lgamma) npwq=npw 
@@ -199,15 +197,14 @@ SUBROUTINE sigma_c_im(ik0)
       write(6, '("xq_IBK point")')
       write(6, '(3f11.7)') xq_ibk
       write(6, '("equivalent xq_IBZ point, symop, iqrec")')
-      write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
+      write(6, '(3f11.7, 2i4)') -x_q(:,iqrec), isym, iqrec
       write(6,*)
-
-      write(1000+mpime, *)  
+      write(1000+mpime, *)
       write(1000+mpime, '("xq_IBK point")')
       write(1000+mpime, '(3f11.7)') xq_ibk
       write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-      write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-      write(1000+mpime, *)  
+      write(1000+mpime, '(3f11.7, 2i4)') -x_q(:, iqrec), isym, iqrec
+      write(1000+mpime, *)
 !Inverse Dielectric Function is Written to file at this point
 !So we read that in, rotate it, and then apply the Coulomb operator.
       scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
@@ -216,8 +213,7 @@ SUBROUTINE sigma_c_im(ik0)
       if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqrec, -1)
 !Start integration over iw +/- wcoul. 
       WRITE(6,'("Starting Frequency Integration")')
-!Rotate W and initialize necessary quantities for pade_continuation or godby
-!needs.
+!Rotate W and initialize necessary quantities for pade_continuation or godby needs.
       CALL rotate_w(scrcoul_g, scrcoul_g_R, gmapsym(1,1), eigv(1,1), isym, xq_ibk(1))
 !zeroing wings of W again!
       IF(iq.eq.1) THEN
@@ -233,23 +229,25 @@ SUBROUTINE sigma_c_im(ik0)
 !Calculate seed system: G(G,G';w=0).
       DO iw0 = iw0start, iw0stop
          CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iq, 2*nwcoul)
-         DO iw = 1, nwcoul
+!!
+!do iq = 1, nqs
+!do isym = 1, nsymq
+!enddo
+!enddo
+!!
 !W(G,G';w)
+         DO iw = 1, nwcoul
             CALL construct_w(scrcoul_g_R(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
             scrcoul(:,:) = czero
             CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
 !Now have W(r,r';omega')
-!Calculate \Sigma(w_0)  =  \G(w_0 \pm w') W(\w') 
+!Calculate \Sigma(w_0)  =  \G_{k'+q}(w_0 \pm w') W_{-q}(\w')
             greenfr(:,:) = czero
             CALL fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, +1)
             sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
             greenfr(:,:) = czero
             CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st,+1)
             sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-        !IF (iw0.eq.1) THEN
-        !  write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
-        !  write(2000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
-        !ENDIF
         ENDDO !on iw0  
       ENDDO ! on frequency convolution over w'
    ENDDO

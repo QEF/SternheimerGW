@@ -85,15 +85,12 @@ IMPLICIT NONE
   zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
   WRITE(6,'("zcut ", f12.7)'), zcut
   WRITE(6,'("NBND ", i5)'), nbnd_sig
-
 ! generate v_xc(r) in real space:
   v%of_r(:,:) = (0.0d0)
   CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
   vxc(:,:) = (0.0d0, 0.0d0)
-
   WRITE(6,'("Taking Matels.")')
   WRITE(6,'("Taking NPWQ.", i4)')npwq
-
   do jbnd = 1, nbnd_sig
      psic = czero
      do ig = 1, npwq
@@ -132,7 +129,6 @@ IMPLICIT NONE
   enddo
 
   if(do_sigma_exxG) GOTO 143
-
   ALLOCATE (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
   ALLOCATE (evc_tmp_i  (sigma_x_st%ngmt))
   ALLOCATE (evc_tmp_j  (sigma_x_st%ngmt))
@@ -233,12 +229,10 @@ IMPLICIT NONE
              do ig = 1, counter
                 evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
              enddo
-            !do ig = 1, sigma_c_st%ngmt
             do ig = 1, sigma_c_ngm
               do igp = 1, counter
                  evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
               enddo
-              !do igp = 1, sigma_c_st%ngmt
               do igp = 1, sigma_c_ngm
                  sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + evc_tmp_j(ig)*sigma(ig,igp,iw)*conjg(evc_tmp_i(igp))
               enddo

@@ -12,7 +12,6 @@ COMPLEX(DP)  :: f_g(fc%ngmt, fc%ngmt)
 COMPLEX(DP)  :: f_r(fc%dfftt%nnr, fc%dfftt%nnr)
 COMPLEX(DP)  :: aux (fc%dfftt%nnr)
 COMPLEX(DP)  :: ci, czero
-
 INTEGER :: ig, igp, irr, icounter, ir, irp
 INTEGER :: conv
 
@@ -44,7 +43,6 @@ else if (conv.eq.-1) then
       do irp = 1, fc%dfftt%nnr
          aux(irp) = f_r(ir,irp)
       enddo
-!call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, -1)
       call fwfft('Custom', aux, fc%dfftt)
       do igp = 1, fc%ngmt
          f_r (ir, igp) = aux(fc%nlt(igp))
@@ -55,7 +53,6 @@ else if (conv.eq.-1) then
       do ir = 1, fc%dfftt%nnr
         aux(ir) = conjg (f_r(ir,igp))
       enddo
-!call cfft3d (aux, nr1sco, nr2sco, nr3sco, nr1sco, nr2sco, nr3sco, -1)
       call fwfft ('Custom', aux, fc%dfftt)
       do ig = 1, fc%ngmt
          f_r(ig, igp) = conjg ( aux( fc%nlt( ig )) ) * omega
