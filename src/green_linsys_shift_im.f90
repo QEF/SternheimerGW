@@ -23,7 +23,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE disp,                 ONLY : nqs
+  USE disp,                 ONLY : nqs, x_q
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, w0pmw
   USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
   USE gvect,                ONLY : g, ngm
@@ -104,12 +104,16 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
    ikq = iq
    mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
    IF (nksq.gt.1) then
-       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+       !CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+       !              npw, igk, g2kin )
+       CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                      npw, igk, g2kin )
    ENDIF
    if(lgamma) npwq = npw
    IF (.not.lgamma.and.nksq.gt.1) then
-     CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+     !CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+     !              npwq, igkq, g2kin )
+     CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
                    npwq, igkq, g2kin )
    ENDIF
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
@@ -122,9 +126,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     do ig = 1, npwx
        if((igkq(ig).le.sigma_c_st%ngmt).and.((igkq(ig)).gt.0)) then
            counter = counter + 1
-          !index in total G grid.
            igkq_tmp (counter) = igkq(ig)
-          !index for loops 
            igkq_ig  (counter) = ig
        endif
     enddo
@@ -141,9 +143,12 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
     call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
 !   call davcio (evq, lrwfc, iuwfc, ikq, -1)
     DO ig = 1, npwq
-       g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-                     (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                     (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       !g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+       !              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+       !              (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       g2kin (ig) = ((x_q (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+                     (x_q (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+                     (x_q (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
     ENDDO
     green  = (0.0d0, 0.0d0)
      h_diag = 0.d0
@@ -154,9 +159,6 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
           h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
         endif
      enddo
-!     do ig = 1, npwq
-!        write(3000+mpime,'(i4, 2f12.7)') ig, g2kin(ig), h_diag(ig,1)
-!     enddo
 !On first frequency block we do the seed system with BiCG:
      gveccount = 1
      gr_A_shift = (0.0d0, 0.d0)
@@ -176,7 +178,6 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
                                  cw , niters(gveccount), .true.)
            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
            if (niters(gveccount).ge.maxter_green) then
-                 !WRITE(1000+mpime, '(5x,"Gvec: ", 3i4, f12.7)') ig, igkq_ig(ig), niters(gveccount), anorm
                  WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
            endif

@@ -186,24 +186,22 @@ SUBROUTINE sigma_c_im(ik0)
 !been done at -q therefore we are just going to calculate \Sum G_{k+q}W_{-q}
       inv_q=.false.
       call find_q_ibz(xq_ibk, s, iqrec, isym, found_q, inv_q)
-
       if(iqrec.gt.nqs) WRITE(6,'("SCREENED COULOMB NOT ROTATED BACK TO 1st BZ")')
       if(iqrec.gt.nqs) call mp_global_end()
       if(iqrec.gt.nqs) STOP
-
       cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
       if(lgamma) npwq=npw 
       write(6, *)  
       write(6, '("xq_IBK point")')
       write(6, '(3f11.7)') xq_ibk
       write(6, '("equivalent xq_IBZ point, symop, iqrec")')
-      write(6, '(3f11.7, 2i4)') -x_q(:,iqrec), isym, iqrec
+      write(6, '(3f11.7, 2i4)') x_q(:,iqrec), isym, iqrec
       write(6,*)
       write(1000+mpime, *)
       write(1000+mpime, '("xq_IBK point")')
       write(1000+mpime, '(3f11.7)') xq_ibk
       write(1000+mpime, '("equivalent xq_IBZ point, symop, iqrec")')
-      write(1000+mpime, '(3f11.7, 2i4)') -x_q(:, iqrec), isym, iqrec
+      write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
       write(1000+mpime, *)
 !Inverse Dielectric Function is Written to file at this point
 !So we read that in, rotate it, and then apply the Coulomb operator.
@@ -229,13 +227,6 @@ SUBROUTINE sigma_c_im(ik0)
 !Calculate seed system: G(G,G';w=0).
       DO iw0 = iw0start, iw0stop
          CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iq, 2*nwcoul)
-!!
-!do iq = 1, nqs
-!do isym = 1, nsymq
-!enddo
-!enddo
-!!
-!W(G,G';w)
          DO iw = 1, nwcoul
             CALL construct_w(scrcoul_g_R(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
             scrcoul(:,:) = czero

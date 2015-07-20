@@ -68,8 +68,11 @@ IMPLICIT NONE
   else
       ikq = 2*ik0
   endif
+  !write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
 
-  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
+  lgamma=.true.
+  ikq = 7
 
   IF (ionode) THEN
       IF (nksq.gt.1) then
@@ -144,18 +147,18 @@ IMPLICIT NONE
     do ibnd = 1, nbnd_sig
         evc_tmp_i(:) = czero
       do jbnd = 1, nbnd_sig
-        evc_tmp_j(:) = czero
-        do ig = 1, counter
-           evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-        enddo
-        do ig = 1, sigma_x_st%ngmt
-           do igp = 1, counter
-              evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-           enddo
-             do igp = 1, sigma_x_st%ngmt
-                sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + evc_tmp_j (igp)*sigma_g_ex(igp,ig)*conjg(evc_tmp_i(ig))
-             enddo
-        enddo
+         evc_tmp_j(:) = czero
+         do ig = 1, counter
+            evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
+         enddo
+         do ig = 1, sigma_x_st%ngmt
+            do igp = 1, counter
+               evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
+            enddo
+            do igp = 1, sigma_x_st%ngmt
+               sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + evc_tmp_j (igp)*sigma_g_ex(igp,ig)*conjg(evc_tmp_i(ig))
+            enddo
+         enddo
       enddo
     enddo
   endif

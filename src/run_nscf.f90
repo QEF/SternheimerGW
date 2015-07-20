@@ -49,7 +49,11 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   CALL close_files( .true. )
   !
-  if(do_matel) xq(:) = xk_kpoints(:, ik)
+  if(do_matel) xq(1) = 0.0d0 
+  if(do_matel) xq(2) = 0.0d0 
+  if(do_matel) xq(3) = 0.0d0 
+  !if(do_matel) xq(:) = xk_kpoints(:, ik)
+
   lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
   !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw

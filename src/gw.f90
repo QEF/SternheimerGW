@@ -48,7 +48,7 @@ PROGRAM gw
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
   IF(do_imag) THEN
-    IF(do_sigma_c) CALL sigma_c_im(1)
+    IF(do_sigma_c) CALL sym_sigma_c_im(1)
   ELSE
     IF(do_green)   CALL green_linsys_shift(1)
     IF(do_sigma_c) CALL sigma_c(1)
@@ -58,7 +58,8 @@ PROGRAM gw
      CLOSE(UNIT = iunresid, STATUS = 'DELETE')
      CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
   ENDIF
-  IF(do_sigma_exx)   CALL sigma_exch(ik)
+  IF(do_sigma_exx)   CALL sym_sigma_exch(ik)
+  !IF(do_sigma_exx)   CALL sigma_exch(ik)
   IF(do_sigma_matel) CALL sigma_matel(ik)
   127 CONTINUE
   CALL stop_gw( .TRUE. )

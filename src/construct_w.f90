@@ -1,4 +1,4 @@
-SUBROUTINE construct_w(scrcoul_g_R, scrcoul_pade_g, w_ryd)
+SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d
@@ -16,7 +16,7 @@ SUBROUTINE construct_w(scrcoul_g_R, scrcoul_pade_g, w_ryd)
 
   COMPLEX(DP) :: scrcoul_pade_g (sigma_c_st%ngmt, sigma_c_st%ngmt)
   COMPLEX(DP) :: z(nfs), u(nfs), a(nfs)
-  COMPLEX(DP)  :: scrcoul_g_R    (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs) 
+  COMPLEX(DP)  :: scrcoul_g    (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs) 
 
   REAL(DP) :: qg2, qg, qxy, qz
   REAL(DP) :: w_ryd
@@ -37,7 +37,7 @@ SUBROUTINE construct_w(scrcoul_g_R, scrcoul_pade_g, w_ryd)
         DO igp = 1, sigma_c_st%ngmt
            DO iwim = 1, nfs
                z(iwim) = fiu(iwim)
-               a(iwim) = scrcoul_g_R (ig,igp,iwim)
+               a(iwim) = scrcoul_g (ig,igp,iwim)
            ENDDO
            pade_catch=.false.
            IF (padecont) THEN

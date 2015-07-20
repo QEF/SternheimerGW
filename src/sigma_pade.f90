@@ -40,11 +40,13 @@ IF(double_grid) THEN
         DO jbnd = 1, nbnd_sig
             DO iw = 1, nwsigma-1
                z2(iw) = dcmplx(mu, - w_ryd(iw+1))
-               u2(iw) = dconjg(sigma_band_c (ibnd, jbnd, iw+1))
+               u2(iw) = conjg(sigma_band_c (ibnd, jbnd, iw+1))
+               !u2(iw) = sigma_band_c (ibnd, jbnd, iw+1)
             ENDDO
             DO iw = 1, nwsigma 
                z2(iw+nwsigma-1) = dcmplx(mu, w_ryd(iw))
                u2(iw+nwsigma-1) = sigma_band_c (ibnd, jbnd, iw)
+              !u2(iw+nwsigma-1) = conjg(sigma_band_c (ibnd, jbnd, iw))
             ENDDO
             call pade_coeff(2*nwsigma-1, z2, u2, a2)
             DO iw = 1, nwsigwin
@@ -62,6 +64,7 @@ ELSE
             DO iw = 1, nwsigma
                z(iw) = dcmplx(mu, w_ryd(iw))
                u(iw) = sigma_band_c (ibnd, jbnd, iw)
+              !u(iw) = conjg(sigma_band_c (ibnd, jbnd, iw))
             ENDDO
             call pade_coeff(nwsigma, z, u, a)
             DO iw = 1, nwsigwin
@@ -76,4 +79,3 @@ ELSE
 ENDIF
     DEALLOCATE ( z,a,u )
 end subroutine sigma_pade
-

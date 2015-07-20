@@ -69,11 +69,13 @@ ch_psi_all_green.o\
 sigma_c.o\
 sigma_c_im.o\
 find_q_ibz.o\
+find_qg_ibz.o\
 godby_needs.o\
 mod_diel.o\
 clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
+sym_sigma_exch.o\
 sigma_exch.o\
 sigma_matel.o\
 print_matel.o\
@@ -82,7 +84,13 @@ print_matel_im.o\
 sigma_pade.o\
 print_clock_gw.o\
 close_gwq.o\
-stop_gw.o
+stop_gw.o\
+fft6_g.o\
+sym_sigma_c_im.o\
+rotate.o\
+coulpade.o\
+star_q.o\
+find_xk_uniq.o
 
 PWOBJS = ../../PW/src/libpw.a
 QEMODS = ../../Modules/libqemod.a
