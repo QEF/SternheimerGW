@@ -23,9 +23,7 @@ SUBROUTINE sigma_matel (ik0)
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-
 IMPLICIT NONE
-
   INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
   REAL(DP)                  ::   w_ryd(nwsigma)
   REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
@@ -70,10 +68,8 @@ IMPLICIT NONE
   endif
   !write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
-
   lgamma=.true.
-  ikq = 7
-
+  ikq = 17
   IF (ionode) THEN
       IF (nksq.gt.1) then
           CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -112,17 +108,13 @@ IMPLICIT NONE
         vxc(ibnd,jbnd) = ZDOTC (npwq, evc (1, ibnd), 1, vpsi, 1)
      enddo
   enddo
-
   write(stdout,'(4x,"VXC (eV)")')
   write(stdout,'(8(1x,f7.3))') real(vxc(:,:))*RYTOEV
-
   WRITE(6,'("Max number Plane Waves WFC ", i4)') npwx
   WRITE(6,'("Sigma_Ex Matrix Element")') 
-
   counter  = 0
   igkq_tmp(:) = 0
   igkq_ig(:)  = 0
-
   do ig = 1, npwq
      if((igkq(ig).le.sigma_x_st%ngmt).and.((igkq(ig)).gt.0)) then
       counter = counter + 1
@@ -130,7 +122,6 @@ IMPLICIT NONE
       igkq_ig  (counter) = ig
     endif
   enddo
-
   if(do_sigma_exxG) GOTO 143
   ALLOCATE (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
   ALLOCATE (evc_tmp_i  (sigma_x_st%ngmt))

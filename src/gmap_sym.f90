@@ -6,7 +6,7 @@
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .             
   !                                                                            
   !-----------------------------------------------------------------------
-  SUBROUTINE gmap_sym ( nsym, s, ftau, gmapsym, eigv, invs )
+  SUBROUTINE gmap_sym ( nsym, s, ftau, gmapsym, eigv, invs)
   !-----------------------------------------------------------------------
   !
   !  For every G vector, find S(G) for all the symmetry operations
@@ -25,14 +25,15 @@
   !
   !----------------------------------------------------------------------
 !#include "f_defs.h"
-  USE kinds,         ONLY: DP
+  USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout
   USE control_flags, ONLY : iverbosity
-  USE fft_base,  ONLY: dfftp
-  !USE gvect,         ONLY : ig1, ig2, ig3, ngm, g
   USE gvect,         ONLY : mill, ngm, g
   USE cell_base,     ONLY : at, bg
-  USE mp_world,     ONLY : mpime
+  USE mp_world,      ONLY : mpime
+  USE fft_base,      ONLY : dfftp
+  USE fft_custom,     ONLY : fft_cus, set_custom_grid, ggent, gvec_init
+  USE gwsigma,       ONLY : sigma_x_st, nbnd_sig
 
 #ifdef __PARA
   USE mp_global,    ONLY : my_pool_id
@@ -63,6 +64,8 @@
   real(kind=DP) :: rdotk, ft(3)
   complex(kind=DP), PARAMETER :: ci = (0.d0,1.d0), &
      czero = (0.d0, 0.d0), cone = (1.d0, 0.d0)
+  TYPE(fft_cus) fc 
+
   !
   !  loop on the symmetries of the crystal
   !
@@ -99,15 +102,19 @@
       ! now the phase factors e^{iGv}
       !
       IF ( ftau (1, isym).ne.0 .or. ftau (2, isym).ne.0 .or. ftau (3, isym).ne.0 ) THEN
-  !      if(ig.eq.1)  write(6,'("FTAU")')
-  !      if(ig.eq.1)  write(6,*) isym, ftau(:,isym)
-        !
-        ! fractional traslation in crystal coord is ftau/nr*
-        ! for cart/crys transform of the G-vecctors have a look at the bottom
-        !
-        rdotk = float( mill(1,ig) * ftau (1, isym) ) / float (dfftp%nr1) &
-              + float( mill(2,ig) * ftau (2, isym) ) / float (dfftp%nr2) &
-              + float( mill(3,ig) * ftau (3, isym) ) / float (dfftp%nr3)
+!      if(ig.eq.1)  write(6,'("FTAU")')
+!      if(ig.eq.1)  write(6,*) isym, ftau(:,isym)
+!
+!      fractional traslation in crystal coord is ftau/nr*
+!      for cart/crys transform of the G-vecctors have a look at the bottom
+!
+      rdotk = float( mill(1,ig) * ftau (1, isym) ) / float (dfftp%nr1) &
+            + float( mill(2,ig) * ftau (2, isym) ) / float (dfftp%nr2) &
+            + float( mill(3,ig) * ftau (3, isym) ) / float (dfftp%nr3)
+
+!       rdotk = float( mill(1,ig) * ftau (1, isym) ) / float (sigma_x_st%dfftt%nr1) &
+!             + float( mill(2,ig) * ftau (2, isym) ) / float (sigma_x_st%dfftt%nr2) &
+!             + float( mill(3,ig) * ftau (3, isym) ) / float (sigma_x_st%dfftt%nr3)
 
         !     ft(:)    = at(:,1)*ftau(1,ns)/nr1 + &
         !                at(:,2)*ftau(2,ns)/nr2 + &
