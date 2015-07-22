@@ -288,8 +288,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta, .true.)
-        if((mod(ik,20)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, f12.7)') ik, anorm
-        if((mod(ik,20)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ",14i4)') niters(1:13)
+        !if((mod(ik,20)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, f12.7)') ik, anorm
+        !if((mod(ik,20)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ",14i4)') niters(1:13)
         if(.not.conv_root)    WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
         if(.not.conv_root)    WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
 !       dpsi = dpsi^{+}

@@ -53,6 +53,8 @@ IMPLICIT NONE
 !arbitrary cutoff
   INTEGER :: sigma_c_ngm
 
+  logical, external :: eqvect
+
   ALLOCATE (igkq_tmp(npwx))
   ALLOCATE (igkq_ig(npwx))
 
@@ -66,10 +68,13 @@ IMPLICIT NONE
   else
       ikq = 2*ik0
   endif
-  !write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
-  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
+
   lgamma=.true.
-  ikq = 17
+  ikq = 1
+!write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
+
   IF (ionode) THEN
       IF (nksq.gt.1) then
           CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&

@@ -18,7 +18,7 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, current_iq, ext_recover, &
-                                   eta, tr2_green, maxter_green
+                                   eta, tr2_green, maxter_green, prec_shift
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprec
@@ -103,16 +103,13 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
 !This smooths out variations and I think makes sense
    ikq = iq
    mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
+  !mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
    IF (nksq.gt.1) then
-       !CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-       !              npw, igk, g2kin )
        CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                      npw, igk, g2kin )
    ENDIF
    if(lgamma) npwq = npw
    IF (.not.lgamma.and.nksq.gt.1) then
-     !CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
-     !              npwq, igkq, g2kin )
      CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
                    npwq, igkq, g2kin )
    ENDIF
@@ -156,7 +153,11 @@ SUBROUTINE green_linsys_shift_im (green, iw0, iq, nwgreen)
         if(g2kin(ig).le.ecutprec) then
            h_diag(ig,1) =  1.0d0
         else
-          h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
+          if(prec_shift) then
+             h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
+          else
+             h_diag(ig,1) =  1.0d0
+          endif
         endif
      enddo
 !On first frequency block we do the seed system with BiCG:

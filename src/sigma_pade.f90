@@ -27,11 +27,9 @@ REAL(DP) :: ehomo, elumo, mu
 !We then exploit the symmetry of the selfenergy on the imaginary axis.
 !Re(Sig(w)) = Re(Sig(-w)) and Im(Sig(w)) = -Im(Sig(-w))
     ALLOCATE ( z2(2*nwsigma-1), a2(2*nwsigma-1), u2(2*nwsigma-1))
-
-   ! CALL get_homo_lumo (ehomo, elumo)
-   ! mu = ehomo + 0.5d0*(elumo-ehomo)
+! CALL get_homo_lumo (ehomo, elumo)
+! mu = ehomo + 0.5d0*(elumo-ehomo)
     mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
-
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
 !

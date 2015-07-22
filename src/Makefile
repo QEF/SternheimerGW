@@ -21,7 +21,6 @@ opengwfil.o\
 freqbins.o\
 gauleg_grid.o\
 sigma_grids.o\
-fft6.o\
 initialize_gw.o\
 allocate_gwq.o\
 openfilq.o\
@@ -85,7 +84,9 @@ sigma_pade.o\
 print_clock_gw.o\
 close_gwq.o\
 stop_gw.o\
+fft6.o\
 fft6_g.o\
+fft6_c.o\
 sym_sigma_c_im.o\
 rotate.o\
 coulpade.o\

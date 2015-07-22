@@ -223,7 +223,7 @@ SUBROUTINE gwq_readin()
   corr_conv    = ecutsco
   ecutprec     = 15.0
   nbnd_sig     = 8
-  nwcoul       = 40
+  nwcoul       = 35
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   godbyneeds   = .FALSE.
