@@ -97,7 +97,8 @@ SUBROUTINE freqbins()
   ELSE
 ! We generate Sigma on a uniform grid:
 
-   nwgreen = 2*nwcoul
+    nwgreen = 2*nwcoul
+!   nwgreen = nwcoul !if we  use G(iw) = G^{*}(-iw)
    nwsigma = 1 + ceiling( (wsigmamax-wsigmamin) / deltaw )
    allocate(wsigma(nwsigma))
    allocate(wcoul(nwcoul), wgtcoul(nwcoul))
@@ -127,7 +128,7 @@ SUBROUTINE freqbins()
    ENDDO
    WRITE(stdout, '(7x, "Gauss-Legendre grid: ")')
    DO i = 1, nwcoul
-      WRITE(stdout,'(8x, i4, 4x, 2f9.4)') i, wgtcoul(i), wcoul(i)
+      WRITE(stdout,'(8x, i4, 4x, 2f12.3)') i, wgtcoul(i), wcoul(i)
    ENDDO
   ENDIF
 ! Print out Frequencies on Imaginary Axis for reference.

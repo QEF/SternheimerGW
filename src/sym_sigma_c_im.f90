@@ -62,6 +62,7 @@ SUBROUTINE sym_sigma_c_im(ik0)
   REAL(DP)     :: ar, ai
 !For dirac delta fxn.
   REAL(DP)     :: dirac, x, support, zcut
+  REAL(DP) :: ehomo, elumo, mu
 !FREQUENCY GRIDS/COUNTERS
   INTEGER  :: iwim, iw, ikq
   INTEGER  :: iw0, iw0mw, iw0pw
@@ -172,60 +173,72 @@ WRITE(6,'("Starting Frequency Integration")')
 !WRITE( 1000+mpime, '(5x,a,i4)') 'List of ks on this processor:', nkstot
 !WRITE( 1000+mpime, '(7x,3f14.9)')((xk(i,iq1), i=1,3), iq1=1,nkstot)
 !WRITE( 1000+mpime, '(7x,3f14.9)')((x_q(i,iq1), i=1,3), iq1=1,nkstot)
-DO iq = 1, nksq
+     CALL get_homo_lumo (ehomo, elumo)
+     mu = ehomo + 0.5d0*(elumo-ehomo)
+     !mu = ehomo
+DO iq = 1, nqs
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
-   xq(:) = x_q(:,iq)
+   !xq(:) = x_q(:,iq)
+   xq(:) = -x_q(:,iq)
    cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
+!zeroing wings of W again if xq = 0
    nsq(:) = 0
-!   CALL find_xk_unique(xq, xk_kpoints, xk_un(1,1), nsq(1), numxk1, wgt)
-!   WRITE( 1000+mpime, '(5x,a,i4)') 'List of unique k1s:', numxk1
-!   WRITE( 1000+mpime, '(7x,i4, 3f14.9)') (iq1, (xk_un(i,iq1), i=1,3), iq1=1,numxk1)
-!   WRITE( 1000+mpime, '(7x,i4, f14.9)') (iq1, wgt(iq1), iq1=1,numxk1)
-!   WRITE( 1000+mpime, '(7x,i4, i4)') (iq1, nsq(iq1), iq1=1,numxk1)
-!   need the star of q based on the symmetry group of k!
+!  CALL find_xk_unique(xq, xk_kpoints, xk_un(1,1), nsq(1), numxk1, wgt)
+!  WRITE( 1000+mpime, '(5x,a,i4)') 'List of unique k1s:', numxk1
+!  WRITE( 1000+mpime, '(7x,i4, 3f14.9)') (iq1, (xk_un(i,iq1), i=1,3), iq1=1,numxk1)
+!  WRITE( 1000+mpime, '(7x,i4, f14.9)') (iq1, wgt(iq1), iq1=1,numxk1)
+!  WRITE( 1000+mpime, '(7x,i4, i4)') (iq1, nsq(iq1), iq1=1,numxk1)
+!  need the star of q based on the symmetry group of k!
    DO iw0 = iw0start, iw0stop
       write(1000+mpime, '("iw0", i4)') iw0
-      DO isymop = 1, nsym
+!     We should be able to take green_linsys_shift_im out of the 
+!     loop over symmetries.
+!@
+!     CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iqrec, 2*nwcoul)
+      !DO isymop = 1, nsym
+      DO isymop = 1, 1
         CALL rotate(xq, aq, s, nsym, invs(isymop))
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0 = 1
         inv_q=.false.
         call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
         if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-
         write(1000+mpime, '("xq point, iq, nksq")')
         write(1000+mpime, '(3f11.7, 2i4)') xq(:), iq, isymop
-        !write(1000+mpime, '("xk1 point, isym, nig0")')
-        !write(1000+mpime, '(3f11.7, 2i4)') xk_un(:, ixk1), numxk1, nig0
+        write(1000+mpime, '("xk1 point, isym, nig0")')
+        write(1000+mpime, '(3f11.7, 2i4)') xk1(:), nig0, isym
         write(1000+mpime, '("xk point, isym, iqrec")')
         write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
         write(1000+mpime, *)
-        
-        CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iqrec, 2*nwcoul)
-
+        CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), iw0, mu, iqrec, 2*nwcoul)
         if(modielec.and.padecont) PRINT*, "WARNING: PADECONT AND MODIELEC?"
 !Start integration over iw +/- wcoul.
 !Rotate W and initialize necessary quantities for pade_continuation or godby needs.
 !Calculate seed system: G(G,G';w=0).
         DO iw = 1, nwcoul
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
-
            scrcoul = czero
-           CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-
+           !CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+            CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
            greenfr(:,:) = czero
-           CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           !if(.not.inv_q) sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           !if(inv_q)      sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
-
+           !CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+           CALL fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, +1)
+           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
            greenfr(:,:) = czero
-           CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1),eigv(1,1), isym, nig0, +1)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           !if(.not.inv_q) sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           !if(inv_q)      sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
+           !CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1),eigv(1,1), isym, nig0, +1)
+           CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, +1)
+           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           if (iq.eq.1.and.iw0.eq.1) then
+            write(4000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
+            write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1, iw+nwcoul), real(scrcoul(1,1)) 
+           endif
+           !if (iq.eq.1.and.iw0.eq.5) then
+           ! write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
+           !endif
         ENDDO !on iw0  
     ENDDO ! on frequency convolution over w'
   ENDDO

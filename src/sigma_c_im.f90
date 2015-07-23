@@ -91,7 +91,6 @@ SUBROUTINE sigma_c_im(ik0)
   character(len=256) :: tempfile, filename
 !Complete file name
   integer*8 :: unf_recl
-    
 
 #define DIRECT_IO_FACTOR 8 
 ! iG(W-v)
@@ -107,10 +106,8 @@ SUBROUTINE sigma_c_im(ik0)
    ALLOCATE ( eigv     (ngm, nrot)   )
 !This is a memory hog...
    ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
-
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
    w_ryd(:) = wcoul(:)/RYTOEV
-
    WRITE(6," ")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
    WRITE(6," ")

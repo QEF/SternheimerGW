@@ -220,7 +220,7 @@ SUBROUTINE gwq_readin()
 !W and G. G cannot exceed sigma.
   ecutsco      = 5.0
   ecutsex      = 5.0
-  corr_conv    = ecutsco
+  corr_conv    = 0.0
   ecutprec     = 15.0
   nbnd_sig     = 8
   nwcoul       = 35
@@ -255,8 +255,10 @@ SUBROUTINE gwq_readin()
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
-
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
+! if corr_conv not set in input file default to the full
+! correlation cutoff.
+  if(corr_conv.eq.0) corr_conv = ecutsco
 !HL TEST PARA FINE
 30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
    CALL errore( 'gwq_readin', 'reading inputgw namelist', ABS( ios ) )

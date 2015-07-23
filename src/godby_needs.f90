@@ -37,11 +37,15 @@ integer  :: p, N, i
        !on the real axis to avoid numerical instability.
        !although this isn't really that far out....
            a(1) = 10.0
-           a(2) = -u(1)*a(1)**2 
+          !a(2) = -u(1)*a(1)**2 
+           a(2) = 0.0d0
+          !write(1000+mpime,'("WINGS ZEROD")') 
    else if(real(u(2)/(u(1)-u(2))).lt.(0.0d0)) then
     !case for wings having been zerod
            a(1) = 10.0
-           a(2) = -u(1)*a(1)**2 
+           a(2) = 0.0
+          !a(2) = -u(1)*a(1)**2 
+          !write(1000+mpime,'("less than 0")') 
    else
 !\tilde{\omega}:
 !     a(1) = z(2)*SQRT(real(u(2)/(u(1)-u(2))))

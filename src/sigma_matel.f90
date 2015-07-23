@@ -52,7 +52,8 @@ IMPLICIT NONE
   REAL(DP) :: vtxc, etxc, ehart, eth, charge
 !arbitrary cutoff
   INTEGER :: sigma_c_ngm
-
+  real(DP), parameter :: accep=1.e-5_dp
+  REAL(DP) :: zero(3)
   logical, external :: eqvect
 
   ALLOCATE (igkq_tmp(npwx))
@@ -62,18 +63,22 @@ IMPLICIT NONE
   czero = (0.0d0, 0.0d0)
   w_ryd = wsigma/RYTOEV
   nbnd = nbnd_sig 
-
-  if (lgamma) then
-      ikq = ik0
-  else
-      ikq = 2*ik0
-  endif
+  zero(:) = 0.d0
 
   lgamma=.true.
-  ikq = 1
+
+  do iq = 1, nkstot
+     if (eqvect(xk_kpoints(1,ik0), xk(1, iq), zero, accep)) then
+        ikq = iq
+        exit
+     else
+        write(6,'("K POINT NOT FOUND IN IRREDUCIBLE BRILLOUIN ZONE")') 
+     endif
+  enddo
+     write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
+     write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
+
 !write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
-  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
-  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
 
   IF (ionode) THEN
       IF (nksq.gt.1) then

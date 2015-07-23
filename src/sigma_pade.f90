@@ -27,24 +27,28 @@ REAL(DP) :: ehomo, elumo, mu
 !We then exploit the symmetry of the selfenergy on the imaginary axis.
 !Re(Sig(w)) = Re(Sig(-w)) and Im(Sig(w)) = -Im(Sig(-w))
     ALLOCATE ( z2(2*nwsigma-1), a2(2*nwsigma-1), u2(2*nwsigma-1))
-! CALL get_homo_lumo (ehomo, elumo)
-! mu = ehomo + 0.5d0*(elumo-ehomo)
-    mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
+    CALL get_homo_lumo (ehomo, elumo)
+    !mu = ehomo + 0.5d0*(elumo-ehomo)
+     mu = ehomo
+   !write(6, '(f14.7)'), mu 
+   ! mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
-!
 IF(double_grid) THEN
     DO ibnd =1 , nbnd_sig
         DO jbnd = 1, nbnd_sig
             DO iw = 1, nwsigma-1
                z2(iw) = dcmplx(mu, - w_ryd(iw+1))
                u2(iw) = conjg(sigma_band_c (ibnd, jbnd, iw+1))
+               !z2(iw) = dcmplx(0.0d0, - w_ryd(iw+1))
+               !u2(iw) = conjg(sigma_band_c (ibnd, jbnd, iw+1))
                !u2(iw) = sigma_band_c (ibnd, jbnd, iw+1)
             ENDDO
             DO iw = 1, nwsigma 
                z2(iw+nwsigma-1) = dcmplx(mu, w_ryd(iw))
                u2(iw+nwsigma-1) = sigma_band_c (ibnd, jbnd, iw)
-              !u2(iw+nwsigma-1) = conjg(sigma_band_c (ibnd, jbnd, iw))
+               !z2(iw+nwsigma-1) = dcmplx(0.0d0, w_ryd(iw))
+               !u2(iw+nwsigma-1) = sigma_band_c (ibnd, jbnd, iw)
             ENDDO
             call pade_coeff(2*nwsigma-1, z2, u2, a2)
             DO iw = 1, nwsigwin

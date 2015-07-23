@@ -97,7 +97,7 @@ DO ig = igstart, igstop
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
-            if(ig.eq.1.or.mod(ig,10).eq.0) WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
+            if(ig.eq.1.or.mod(ig,10).eq.0) WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
             do igp = 1, sigma_c_st%ngmt
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').

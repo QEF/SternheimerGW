@@ -97,7 +97,7 @@ IMPLICIT NONE
         do ig = 1, npwq
            if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
                counter = counter + 1
-               igkq_tmp (counter) = igkq(ig)
+               igkq_tmp (counter) = igk(ig)
                igkq_ig  (counter) = ig
            endif
         enddo
