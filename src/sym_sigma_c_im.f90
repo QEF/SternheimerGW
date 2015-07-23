@@ -53,7 +53,7 @@ SUBROUTINE sym_sigma_c_im(ik0)
 !v array
 !COMPLEX(DP), ALLOCATABLE ::  barcoul(:,:), barcoulr(:,:), barcoul_R(:,:)
   REAL(DP) :: qg2, qg, qxy, qz
-  REAL(DP) :: w_ryd(nwcoul)
+  REAL(DP) :: w_ryd(nwcoul), w_rydsig(nwsigma)
   REAL(DP) :: xq_ibk(3), xq_ibz(3)
 !q-vector of coulomb potential:
   REAL(DP) :: xq_coul(3)
@@ -117,6 +117,7 @@ SUBROUTINE sym_sigma_c_im(ik0)
    ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
    w_ryd(:) = wcoul(:)/RYTOEV
+   w_rydsig(:) = wsigma(:)/RYTOEV
 
    WRITE(6," ")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
@@ -218,24 +219,29 @@ DO iq = 1, nqs
 !Rotate W and initialize necessary quantities for pade_continuation or godby needs.
 !Calculate seed system: G(G,G';w=0).
         DO iw = 1, nwcoul
-           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
+          !CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
+           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
            scrcoul = czero
-           !CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-            CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
+          !CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+           CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
            greenfr(:,:) = czero
-           !CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+          !CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
            CALL fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, +1)
-           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+          !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
            sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           greenfr(:,:) = czero
-           !CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1),eigv(1,1), isym, nig0, +1)
-           CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, +1)
-           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           if (iq.eq.1.and.iw0.eq.1) then
-            write(4000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
-            write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1, iw+nwcoul), real(scrcoul(1,1)) 
-           endif
+          !greenfr(:,:) = czero
+          !CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1),eigv(1,1), isym, nig0, +1)
+          !CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, +1)
+          !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
+           scrcoul = czero
+           CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
+
+           !if (iq.eq.1.and.iw0.eq.1) then
+           ! write(4000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
+           ! write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1, iw+nwcoul), real(scrcoul(1,1)) 
+           !endif
            !if (iq.eq.1.and.iw0.eq.5) then
            ! write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
            !endif

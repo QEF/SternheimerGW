@@ -122,10 +122,13 @@ SUBROUTINE freqbins()
 
    DO iw0 = 1, nwsigma
      DO iw = 1, nwcoul
-        w0pmw(iw0, iw)        = wsigma(iw0) - wcoul(iw)
-        w0pmw(iw0, iw+nwcoul) = wsigma(iw0) + wcoul(iw)
+        w0pmw(iw0, iw)        = wsigma(iw0) + wcoul(iw)
+!@@
+       ! w0pmw(iw0, iw)        = wsigma(iw0) - wcoul(iw)
+       ! w0pmw(iw0, iw+nwcoul) = wsigma(iw0) + wcoul(iw)
      ENDDO
    ENDDO
+
    WRITE(stdout, '(7x, "Gauss-Legendre grid: ")')
    DO i = 1, nwcoul
       WRITE(stdout,'(8x, i4, 4x, 2f12.3)') i, wgtcoul(i), wcoul(i)
