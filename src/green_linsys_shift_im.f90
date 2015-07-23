@@ -97,7 +97,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     do iw =1, nwgreen
        !w_ryd(iw) = w0pmw(iw0,iw)/RYTOEV
        w_ryd(iw) = w0pmw(1,iw)/RYTOEV
-       write(6,'(f12.7)') w0pmw(1,iw)
     enddo
 
     CALL start_clock('greenlinsys')
@@ -106,9 +105,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !\epsilon_{F}:
 !This smooths out variations and I think makes sense
    ikq = iq
- !mu = et(nbnd_occ(ikq), ikq) + 0.5d0*(et(nbnd_occ(ikq)+1, ikq) - et(nbnd_occ(ikq), ikq))
-   WRITE(6,*) RYTOEV*mu
- !mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
    IF (nksq.gt.1) then
        !CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
        !              npw, igk, g2kin )
@@ -140,17 +136,18 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !Now the G-vecs up to the correlation cutoff have been divided between pools.
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
-    call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
-    !call init_us_2 (npwq, igkq, xk1 (1), vkb)
-    !call davcio (evq, lrwfc, iuwfc, ikq, -1)
+   !call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
+    call init_us_2 (npwq, igkq, xk1 (1), vkb)
+
     DO ig = 1, npwq
-       g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-                     (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                     (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
-       !g2kin (ig) = ((xk1 (1) + g (1, igkq(ig) ) ) **2 + &
-       !              (xk1 (2) + g (2, igkq(ig) ) ) **2 + &
-       !              (xk1 (3) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       !g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+       !              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+       !              (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       g2kin (ig) = ((xk1 (1) + g (1, igkq(ig) ) ) **2 + &
+                     (xk1 (2) + g (2, igkq(ig) ) ) **2 + &
+                     (xk1 (3) + g (3, igkq(ig) ) ) **2 ) * tpiba2
     ENDDO
+
     green  = (0.0d0, 0.0d0)
      h_diag = 0.d0
      do ig = 1, npwq
@@ -182,7 +179,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
            call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                  cw , niters(gveccount), .true.)
-           call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+           call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
            if (niters(gveccount).ge.maxter_green) then
                  WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

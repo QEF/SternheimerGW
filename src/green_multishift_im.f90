@@ -1,4 +1,4 @@
-SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd,mu, x_sig)
+SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, x_sig)
    USE kinds,       ONLY : DP
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
    USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen

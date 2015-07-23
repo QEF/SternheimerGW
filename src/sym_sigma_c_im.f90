@@ -176,7 +176,7 @@ WRITE(6,'("Starting Frequency Integration")')
 !WRITE( 1000+mpime, '(7x,3f14.9)')((x_q(i,iq1), i=1,3), iq1=1,nkstot)
      CALL get_homo_lumo (ehomo, elumo)
      mu = ehomo + 0.5d0*(elumo-ehomo)
-     !mu = ehomo
+     WRITE(6,'("mu", f12.7)'),mu*RYTOEV
 DO iq = 1, nqs
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
@@ -193,13 +193,12 @@ DO iq = 1, nqs
 !  WRITE( 1000+mpime, '(7x,i4, i4)') (iq1, nsq(iq1), iq1=1,numxk1)
 !  need the star of q based on the symmetry group of k!
    DO iw0 = iw0start, iw0stop
-      write(1000+mpime, '("iw0", i4)') iw0
+!     write(1000+mpime, '("iw0", i4)') iw0
 !     We should be able to take green_linsys_shift_im out of the 
 !     loop over symmetries.
-!@
 !     CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iqrec, 2*nwcoul)
-      !DO isymop = 1, nsym
-      DO isymop = 1, 1
+      DO isymop = 1, nsym
+     !DO isymop = 1, 1
         CALL rotate(xq, aq, s, nsym, invs(isymop))
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0 = 1
@@ -222,29 +221,22 @@ DO iq = 1, nqs
           !CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), w_ryd(iw))
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
            scrcoul = czero
-          !CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-           CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
+           CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+          !CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
+          !sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
            greenfr(:,:) = czero
           !CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
            CALL fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, +1)
-          !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
           !greenfr(:,:) = czero
           !CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1),eigv(1,1), isym, nig0, +1)
           !CALL fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, +1)
           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
            scrcoul = czero
-           CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
-
-           !if (iq.eq.1.and.iw0.eq.1) then
-           ! write(4000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw), real(scrcoul(1,1)) 
-           ! write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1, iw+nwcoul), real(scrcoul(1,1)) 
-           !endif
-           !if (iq.eq.1.and.iw0.eq.5) then
-           ! write(3000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw+nwcoul), real(scrcoul(1,1)) 
-           !endif
+           !CALL fft6(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st,1)
+           CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
         ENDDO !on iw0  
     ENDDO ! on frequency convolution over w'
   ENDDO
