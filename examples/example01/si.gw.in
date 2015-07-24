@@ -2,7 +2,7 @@ Screened Coulomb for the full mesh.
  &inputgw
   prefix='si',
   amass(1) = 28.09,
-  outdir='./special_tmp/new'
+  outdir='./tmp'
   fpol=.true.
   ldisp=.true.
   lrpa=.true.

@@ -4,7 +4,7 @@ si scf input card with monkhorst pack automesh
     restart_mode='from_scratch',
     prefix='si'
     pseudo_dir = './',
-    outdir='./special_tmp/new'
+    outdir='./tmp'
     wf_collect=.true. 
  /
  &system
