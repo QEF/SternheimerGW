@@ -106,10 +106,10 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !This smooths out variations and I think makes sense
    ikq = iq
    IF (nksq.gt.1) then
-       !CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-       !              npw, igk, g2kin )
-       CALL gk_sort( xk1(1), ngm, g, ( ecutwfc / tpiba2 ),&
+       CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                      npw, igk, g2kin )
+       !CALL gk_sort( xk1(1), ngm, g, ( ecutwfc / tpiba2 ),&
+       !              npw, igk, g2kin )
    ENDIF
    npwq = npw
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
@@ -136,16 +136,16 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !Now the G-vecs up to the correlation cutoff have been divided between pools.
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
-   !call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
-    call init_us_2 (npwq, igkq, xk1 (1), vkb)
+   call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
+   !call init_us_2 (npwq, igkq, xk1 (1), vkb)
 
     DO ig = 1, npwq
-       !g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-       !              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-       !              (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
-       g2kin (ig) = ((xk1 (1) + g (1, igkq(ig) ) ) **2 + &
-                     (xk1 (2) + g (2, igkq(ig) ) ) **2 + &
-                     (xk1 (3) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+                     (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+                     (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       !g2kin (ig) = ((xk1 (1) + g (1, igkq(ig) ) ) **2 + &
+       !              (xk1 (2) + g (2, igkq(ig) ) ) **2 + &
+       !              (xk1 (3) + g (3, igkq(ig) ) ) **2 ) * tpiba2
     ENDDO
 
     green  = (0.0d0, 0.0d0)
@@ -171,15 +171,15 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
            gr_A(:,:) = (0.0d0, 0.0d0)
            lter = 0
            etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-           !cw = CMPLX( 0, 0.0d0, kind=DP) 
-           cw = CMPLX( mu, 0.0d0, kind=DP) 
+           cw = CMPLX( 0, 0.0d0, kind=DP) 
+           !cw = CMPLX( mu, 0.0d0, kind=DP) 
            conv_root = .true.
            anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
            call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                  cw , niters(gveccount), .true.)
-           call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), gr_A_shift)
+           call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1),mu, gr_A_shift)
            if (niters(gveccount).ge.maxter_green) then
                  WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

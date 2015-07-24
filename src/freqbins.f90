@@ -114,21 +114,15 @@ SUBROUTINE freqbins()
 ! We generate W(iw) on a gauss legendre grid:
    wcoul   = zero
    wgtcoul = zero
-
    CALL gauleg_grid(0.0d0, wcoulmax, wcoul, wgtcoul, nwcoul)
-
 ! Correpspondence arrays for convolution arguments for green's function.
    allocate ( w0pmw (nwsigma, 2*nwcoul) )
-
    DO iw0 = 1, nwsigma
      DO iw = 1, nwcoul
         w0pmw(iw0, iw)        = wsigma(iw0) + wcoul(iw)
-!@@
-       ! w0pmw(iw0, iw)        = wsigma(iw0) - wcoul(iw)
-       ! w0pmw(iw0, iw+nwcoul) = wsigma(iw0) + wcoul(iw)
+        w0pmw(iw0, iw+nwcoul)        = wsigma(iw0) - wcoul(iw)
      ENDDO
    ENDDO
-
    WRITE(stdout, '(7x, "Gauss-Legendre grid: ")')
    DO i = 1, nwcoul
       WRITE(stdout,'(8x, i4, 4x, 2f12.3)') i, wgtcoul(i), wcoul(i)
@@ -141,7 +135,6 @@ SUBROUTINE freqbins()
   WRITE(stdout, '(/5x, "wcoulmax:", 1f10.4, " eV")'), wcoulmax
   WRITE(stdout, '(5x, "nwgreen:", i5)'), nwgreen
   WRITE(stdout, '(5x, "nwcoul:", i5)'), nwcoul
-
   WRITE(stdout,'(//5x, "Dynamic Screening Model:")')
   IF(godbyneeds) then
       WRITE(stdout, '(6x, "Godby Needs Plasmon-Pole")')

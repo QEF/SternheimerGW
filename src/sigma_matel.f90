@@ -52,9 +52,10 @@ IMPLICIT NONE
   REAL(DP) :: vtxc, etxc, ehart, eth, charge
 !arbitrary cutoff
   INTEGER :: sigma_c_ngm
-  real(DP), parameter :: accep=1.e-5_dp
+  real(DP), parameter :: eps=1.e-5_dp
   REAL(DP) :: zero(3)
   logical, external :: eqvect
+  logical :: found_k
 
   ALLOCATE (igkq_tmp(npwx))
   ALLOCATE (igkq_ig(npwx))
@@ -64,22 +65,23 @@ IMPLICIT NONE
   w_ryd = wsigma/RYTOEV
   nbnd = nbnd_sig 
   zero(:) = 0.d0
-
   lgamma=.true.
-
-  do iq = 1, nkstot
-     if (eqvect(xk_kpoints(1,ik0), xk(1, iq), zero, accep)) then
+  iq = 1
+  found_k = .false.
+  do while(.not.found_k)
+     found_k  = (abs(xk_kpoints(1,ik0) - xk(1,iq)).le.eps).and. &
+                (abs(xk_kpoints(2,ik0) - xk(2,iq)).le.eps).and. & 
+                (abs(xk_kpoints(3,ik0) - xk(3,iq)).le.eps) 
+     if (found_k) then
         ikq = iq
-        exit
+        write(6,'("K POINT FOUND ", 2i4)'),ikq,iq 
      else
-        write(6,'("K POINT NOT FOUND IN IRREDUCIBLE BRILLOUIN ZONE")') 
+        iq = iq + 1
      endif
   enddo
-     write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
-     write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
-
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
 !write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
-
   IF (ionode) THEN
       IF (nksq.gt.1) then
           CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
