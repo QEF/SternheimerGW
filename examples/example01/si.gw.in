@@ -6,9 +6,9 @@ Screened Coulomb for the full mesh.
   fpol=.true.
   ldisp=.true.
   lrpa=.true.
-  nq1 = 6
-  nq2 = 6
-  nq3 = 6
+  nq1 = 5
+  nq2 = 5
+  nq3 = 5
   tr2_gw=1.0d-4,
   tr2_green=1.0d-5
   kpoints = .true.
@@ -18,7 +18,7 @@ Screened Coulomb for the full mesh.
   do_q0_only     = .false.
   do_imag        = .true.
   solve_direct   = .true.
-  do_coulomb     = .false.
+  do_coulomb     = .true.
   do_green       = .true.
   do_sigma_c     = .true.
   multishift     = .true.
