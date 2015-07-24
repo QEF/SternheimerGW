@@ -195,8 +195,7 @@ DO iq = 1, nqs
 !     We should be able to take green_linsys_shift_im out of the 
 !     loop over symmetries.
 !     CALL green_linsys_shift_im(greenf_g(1,1,1), iw0, iqrec, 2*nwcoul)
-      !DO isymop = 1, nsym
-      DO isymop = 1,1
+      DO isymop = 1, nsym
         CALL rotate(xq, aq, s, nsym, invs(isymop))
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0 = 1
@@ -223,13 +222,15 @@ DO iq = 1, nqs
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
            CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/1.0)*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+          !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/1.0)*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
            CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/1.0)*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/1.0)*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
          !  if (iq.eq.1.and.iw0.eq.1) then
          !   write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw)
          !  endif
