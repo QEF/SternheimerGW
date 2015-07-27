@@ -181,7 +181,10 @@ DO iq = 1, nqs
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
    xq(:) = x_q(:,iq)
+
    cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+  !cprefac = 0.50d0*wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
 !zeroing wings of W again if xq = 0
    nsq(:) = 0
@@ -215,30 +218,32 @@ DO iq = 1, nqs
 !Start integration over iw +/- wcoul.
 !Rotate W and initialize necessary quantities for pade_continuation or godby needs.
 !Calculate seed system: G(G,G';w=0).
-    DO  iw0 = iw0start, iw0stop
+     DO iw0 = iw0start, iw0stop
         DO iw = 1, nwcoul
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
-           CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-          !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/1.0)*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           if(.not.inv_q) then
+             CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           else
+             CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
+           endif
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
-           CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-           !sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/1.0)*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-           sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
-         !  if (iq.eq.1.and.iw0.eq.1) then
-         !   write(1000+mpime,'(4f12.7)') w0pmw(iw0, iw), greenf_g(1,1,iw)
-         !  endif
-         !  if (iq.eq.4.and.iw0.eq.3) then
-         !   write(2000+mpime,'(4f12.7)') w0pmw(iw0, iw+nwcoul), greenf_g(1,1,iw) 
-         !  endif
-        ENDDO !on iw0  
-    ENDDO ! on frequency convolution over w'
+           if(.not.inv_q) then
+             CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+           else
+             CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
+           endif
+        ENDDO !on frequency convolution over w'
+     ENDDO !on iw0  
   ENDDO
 ENDDO
 

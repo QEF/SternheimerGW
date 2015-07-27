@@ -252,9 +252,6 @@ IMPLICIT NONE
   endif
   if (do_imag) then 
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-    wsigmin   = -30.0
-    wsigmax   =  30.0
-    deltaws   =   0.1
     nwsigwin  = 1 + ceiling((wsigmax - wsigmin)/deltaws)
     allocate (wsigwin(nwsigwin))
     do iw = 1, nwsigwin

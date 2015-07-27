@@ -53,7 +53,6 @@ if(conv.eq.1) then
             endif              
             if(nig0.gt.1) then
                pwg0(:) = dcmplx(0.0d0, 0.0d0)
-               !pwg0(fc%nlt(gmapsym(nig0,invs(isym)))) = dcmplx(1.0d0, 0.0d0)
                pwg0(fc%nlt(nig0)) = dcmplx(1.0d0, 0.0d0)
                CALL invfft('Custom', pwg0(:), fc%dfftt)
                pwg0(:) = conjg(pwg0(:))

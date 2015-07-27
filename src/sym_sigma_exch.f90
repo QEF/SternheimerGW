@@ -64,6 +64,7 @@ IMPLICIT NONE
   do iq = 1, nksq
         wq(iq) = 0.5d0*wk(iq)
   enddo
+
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
   czero = (0.0d0, 0.0d0)
@@ -155,8 +156,8 @@ IMPLICIT NONE
      call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)
      DEALLOCATE(barcoul)
      sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
-    !if (.not.inv_q) sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
-    !if (inv_q)      sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
+     if (.not.inv_q) sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
+     if (inv_q)      sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
      DEALLOCATE(barcoulr)
      DEALLOCATE(greenf_nar)
    ENDDO
