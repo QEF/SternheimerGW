@@ -65,6 +65,9 @@ IMPLICIT NONE
         wq(iq) = 0.5d0*wk(iq)
   enddo
 
+  rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+  WRITE(6,'("rcut ", f12.7)') rcut
+
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
   czero = (0.0d0, 0.0d0)
@@ -84,6 +87,8 @@ IMPLICIT NONE
         write(1000+mpime, '(3f11.7, i4)') xk1(:), isymop
         write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
         write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
+
+
         call get_buffer (evq, lrwfc, iuwfc, iqrec)
         IF (nksq.gt.1) THEN
             CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -107,7 +112,7 @@ IMPLICIT NONE
         greenf_na = (0.0d0, 0.0d0)
         do ig = 1, counter
            do igp = 1, counter
-             do ibnd = 1, nbnd_occ(iq)
+              do ibnd = 1, nbnd_occ(iq)
                 greenf_na(igkq_tmp(ig), igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
                                                          tpi*(0.0d0, 1.0d0)*conjg(evq(igkq_ig(ig),ibnd))*(evq(igkq_ig(igp), ibnd))
              enddo
@@ -155,7 +160,6 @@ IMPLICIT NONE
      barcoulr(:,:) = (0.0d0, 0.0d0)
      call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)
      DEALLOCATE(barcoul)
-     sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
      if (.not.inv_q) sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
      if (inv_q)      sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
      DEALLOCATE(barcoulr)

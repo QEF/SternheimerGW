@@ -136,13 +136,17 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !Now the G-vecs up to the correlation cutoff have been divided between pools.
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
-   call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
+    call init_us_2 (npwq, igkq, x_q (1, ikq), vkb)
+   !call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
    !call init_us_2 (npwq, igkq, xk1 (1), vkb)
 
     DO ig = 1, npwq
-       g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-                     (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                     (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       g2kin (ig) = ((x_q (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+                     (x_q (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+                     (x_q (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       !g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+       !              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+       !              (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
        !g2kin (ig) = ((xk1 (1) + g (1, igkq(ig) ) ) **2 + &
        !              (xk1 (2) + g (2, igkq(ig) ) ) **2 + &
        !              (xk1 (3) + g (3, igkq(ig) ) ) **2 ) * tpiba2

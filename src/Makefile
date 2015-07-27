@@ -87,7 +87,7 @@ stop_gw.o\
 fft6.o\
 fft6_g.o\
 fft6_c.o\
-sym_sigma_c_im.o\
+sigcim.o\
 rotate.o\
 coulpade.o\
 star_q.o\

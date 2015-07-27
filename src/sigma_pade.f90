@@ -38,7 +38,7 @@ IF(double_grid) THEN
     DO ibnd =1 , nbnd_sig
         DO jbnd = 1, nbnd_sig
             DO iw = 1, nwsigma-1
-               z2(iw) = dcmplx(mu, - w_ryd(iw+1))
+               z2(iw) = dcmplx(mu, -w_ryd(iw+1))
                u2(iw) = conjg(sigma_band_c (ibnd, jbnd, iw+1))
                !z2(iw) = dcmplx(0.0d0, - w_ryd(iw+1))
                !u2(iw) = conjg(sigma_band_c (ibnd, jbnd, iw+1))

@@ -77,29 +77,31 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
 !symmetry.
 
 IF (.not.found_q) then 
+   xq_ibk_loc(:) = -xq_ibk 
+  !Transform xq into crystal co-ordinates. 
+   CALL cryst_to_cart(1, xq_ibk_loc(:), at, -1)
    DO iq = 1, nkstot
       !x_q_loc(:) = xk(:,iq)
 !Seeing if we can use time reversal
-      x_q_loc(:) = -x_q(:,iq)
+      x_q_loc(:) = x_q(:,iq)
       CALL cryst_to_cart(1, x_q_loc(:), at, -1)
-   !! DO ig = 1 , 27 WORKS FOR CUBIC CRYSTAL
       DO ig = 1 , 125 !CAC6 IS very freaky c.f. FG's cuprates stuff
-          g_loc = g(:,ig)
-          call cryst_to_cart(1, g_loc, at, -1)
-        DO isym = 1, nsym
-           ism1 = invs(isym)
-           xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
-           xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
-           xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
-           found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1) + g_loc(1)).le.eps).and. &
-                      (abs(x_q_loc(2) - xq_ibk_locr(2) + g_loc(2)).le.eps).and. & 
-                      (abs(x_q_loc(3) - xq_ibk_locr(3) + g_loc(3)).le.eps) 
-           if (found_q) then
-               nig0 = ig
-               inv_q = .true.
-               return
-           endif
-        END DO
+         g_loc = g(:,ig)
+         call cryst_to_cart(1, g_loc, at, -1)
+         DO isym = 1, nsym
+            ism1 = invs(isym)
+            xq_ibk_locr(1) = s (1, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (1, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (1, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+            xq_ibk_locr(2) = s (2, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (2, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (2, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+            xq_ibk_locr(3) = s (3, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (3, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (3, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+            found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
+                       (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
+                       (abs(x_q_loc(3) - xq_ibk_locr(3)).le.eps) 
+            if (found_q) then
+                nig0 = ig
+                inv_q = .true.
+                return
+            endif
+         END DO
       END DO
    END DO
 ENDIF
