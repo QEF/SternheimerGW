@@ -142,19 +142,33 @@ IMPLICIT NONE
         enddo
      ELSE
         zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-        rcut = 0.0d0
+        rcut = -2*pi*zcut**2
         DO ig = 1, sigma_x_st%ngmt
                 qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-                limit = (qg2.lt.eps8) 
-           IF(.not.limit) then
                 qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
                 qz   = sqrt((g(3,ig) + xq(3))**2)
-                spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+         IF(qxy.gt.eps8) then
+                spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
                 barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-           ELSE  
-                barcoul(ig, ig) = 0.0d0
-           ENDIF
+         ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+                spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
+                barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+         ELSE  
+                barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(rcut, 0.0d0)
+         ENDIF
         ENDDO
+       ! DO ig = 1, sigma_x_st%ngmt
+       !         qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+       !         limit = (qg2.lt.eps8) 
+       !    IF(.not.limit) then
+       !         qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+       !         qz   = sqrt((g(3,ig) + xq(3))**2)
+       !         spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+       !         barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+       !    ELSE  
+       !         barcoul(ig, ig) = 0.0d0
+       !    ENDIF
+       ! ENDDO
      ENDIF
      ALLOCATE (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
      barcoulr(:,:) = (0.0d0, 0.0d0)

@@ -22,9 +22,10 @@ IMPLICIT NONE
   COMPLEX(DP)  :: scrcoul(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
 !2D screening.
 !Choose zcut to be 1/2*L_{z}.
+!zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
 zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
 !from PRB 73, 205119
-rcut = 0.0
+rcut = -2*pi*zcut**2
 IF(opt.eq.1) then
            DO ig = 1, ngm
                  qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
@@ -38,12 +39,19 @@ IF(opt.eq.1) then
 ELSE IF (opt.eq.2) then
      DO iw = 1, nfs
          DO ig = 1, sigma_c_st%ngmt
-                qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
-                limq = (qg2.lt.eps8) 
-          IF(.not.limq) then
+                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
                  qz   = sqrt((g(3,ig)+xqloc(3))**2)
-                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+                 !qxy  = sqrt((g(1,ig))**2 + (g(2,ig))**2)
+                 !qz   = sqrt((g(3,ig))**2)
+                 limq = (qg2.lt.eps8) 
+          IF(qxy.gt.eps8) then
+                 spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+                 DO igp = 1, sigma_c_st%ngmt
+                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+                 ENDDO
+          ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+                 spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
                  DO igp = 1, sigma_c_st%ngmt
                     scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
                  ENDDO
