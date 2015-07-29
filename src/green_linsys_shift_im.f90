@@ -153,49 +153,53 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     ENDDO
 
     green  = (0.0d0, 0.0d0)
-     h_diag = 0.d0
-     do ig = 1, npwq
-        if(g2kin(ig).le.ecutprec) then
-           h_diag(ig,1) =  1.0d0
-        else
-          if(prec_shift) then
-             h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
-          else
-             h_diag(ig,1) =  1.0d0
-          endif
-        endif
-     enddo
+    h_diag = 0.d0
+
+    WRITE(6,*) nksq
+    WRITE(6,*) eprec(nbnd_occ(ikq),ikq)
+
+    do ig = 1, npwq
+       if(g2kin(ig).le.ecutprec) then
+          h_diag(ig,1) =  1.0d0
+       else
+         if(prec_shift) then
+            h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
+         else
+            h_diag(ig,1) =  1.0d0
+         endif
+       endif
+    enddo
 !On first frequency block we do the seed system with BiCG:
-     gveccount = 1
-     gr_A_shift = (0.0d0, 0.d0)
-     niters(:) = 0
-     do ig = igstart, igstop
-           rhs(:,:)  = (0.0d0, 0.0d0)
-           rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
-           gr_A(:,:) = (0.0d0, 0.0d0)
-           lter = 0
-           etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-           cw = CMPLX( 0, 0.0d0, kind=DP) 
-           !cw = CMPLX( mu, 0.0d0, kind=DP) 
-           conv_root = .true.
-           anorm = 0.0d0
+    gveccount = 1
+    gr_A_shift = (0.0d0, 0.d0)
+    niters(:) = 0
+    do ig = igstart, igstop
+          rhs(:,:)  = (0.0d0, 0.0d0)
+          rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
+          gr_A(:,:) = (0.0d0, 0.0d0)
+          lter = 0
+          etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
+          cw = CMPLX( 0, 0.0d0, kind=DP) 
+          !cw = CMPLX( mu, 0.0d0, kind=DP) 
+          conv_root = .true.
+          anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
-           call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
-                                 npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-                                 cw , niters(gveccount), .true.)
-           call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1),mu, gr_A_shift)
-           if (niters(gveccount).ge.maxter_green) then
-                 WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
-                 gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
-           endif
-           do iw = 1, nwgreen
-              do igp = 1, counter
-                 green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-                                                          gr_A_shift(igkq_ig(igp),iw)
-              enddo
-           enddo
-           gveccount = gveccount + 1
-     enddo !ig
+          call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
+                                npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
+                                cw , niters(gveccount), .true.)
+          call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1),mu, gr_A_shift)
+          if (niters(gveccount).ge.maxter_green) then
+                WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
+                gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
+          endif
+          do iw = 1, nwgreen
+             do igp = 1, counter
+                green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
+                                                         gr_A_shift(igkq_ig(igp),iw)
+             enddo
+          enddo
+          gveccount = gveccount + 1
+    enddo !ig
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)
 if(allocated(etc))    DEALLOCATE(etc)

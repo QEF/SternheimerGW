@@ -72,11 +72,12 @@ IMPLICIT NONE
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
-  DO iq = 1, nqs
+  !DO iq = 1, nqs
+  DO iq = 1, nks
      DO isymop = 1, nsym
-        xq(:) = x_q(:,iq)
+        !xq(:) = x_q(:,iq)
+        xq(:) = xk(:,iq)
         CALL rotate(xq, aq, s, nsym, invs(isymop))
-       !xq(:) = aq(:)
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0  = 1
         call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
@@ -87,8 +88,6 @@ IMPLICIT NONE
         write(1000+mpime, '(3f11.7, i4)') xk1(:), isymop
         write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
         write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
-
-
         call get_buffer (evq, lrwfc, iuwfc, iqrec)
         IF (nksq.gt.1) THEN
             CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -157,29 +156,17 @@ IMPLICIT NONE
                 barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(rcut, 0.0d0)
          ENDIF
         ENDDO
-       ! DO ig = 1, sigma_x_st%ngmt
-       !         qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-       !         limit = (qg2.lt.eps8) 
-       !    IF(.not.limit) then
-       !         qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-       !         qz   = sqrt((g(3,ig) + xq(3))**2)
-       !         spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-       !         barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-       !    ELSE  
-       !         barcoul(ig, ig) = 0.0d0
-       !    ENDIF
-       ! ENDDO
      ENDIF
      ALLOCATE (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
      barcoulr(:,:) = (0.0d0, 0.0d0)
      call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)
      DEALLOCATE(barcoul)
-     if (.not.inv_q) sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
-     if (inv_q)      sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
+     if (.not.inv_q) sigma_ex = sigma_ex + 0.5*wk(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
+     if (inv_q)      sigma_ex = sigma_ex + 0.5*wk(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
      DEALLOCATE(barcoulr)
      DEALLOCATE(greenf_nar)
-   ENDDO
-  ENDDO
+   ENDDO!isym
+  ENDDO!iq
   CALL mp_sum (sigma_ex, inter_pool_comm)  
   ALLOCATE ( sigma_g_ex  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
   sigma_g_ex(:,:) = (0.0d0,0.0d0)

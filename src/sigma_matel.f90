@@ -7,14 +7,14 @@ SUBROUTINE sigma_matel (ik0)
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
   USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsigmin, wsigmax, deltaws
-  USE klist,                ONLY : xk, wk, nkstot
+  USE klist,                ONLY : xk, wk, nkstot, nks
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
   USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv
-  USE disp,                 ONLY : xk_kpoints
+  USE disp,                 ONLY : xk_kpoints, x_q
   USE noncollin_module,     ONLY : nspin_mag
   USE eqv,                  ONLY : dmuxc, evq, eprec
   USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
@@ -48,6 +48,7 @@ IMPLICIT NONE
   REAL(DP), ALLOCATABLE     ::   wsigwin(:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_g_ex(:,:)
+  REAL(DP) :: xk_collect(nkstot), wk_collect(nkstot)
 !For VXC matrix elements:
   REAL(DP) :: vtxc, etxc, ehart, eth, charge
 !arbitrary cutoff
@@ -68,10 +69,14 @@ IMPLICIT NONE
   lgamma=.true.
   iq = 1
   found_k = .false.
+  !CALL xk_wk_collect(xk_collect, wk_collect, xk, wk, nkstot, nks)
   do while(.not.found_k)
-     found_k  = (abs(xk_kpoints(1,ik0) - xk(1,iq)).le.eps).and. &
-                (abs(xk_kpoints(2,ik0) - xk(2,iq)).le.eps).and. & 
-                (abs(xk_kpoints(3,ik0) - xk(3,iq)).le.eps) 
+     !found_k  = (abs(xk_kpoints(1,ik0) - xk(1,iq)).le.eps).and. &
+     !           (abs(xk_kpoints(2,ik0) - xk(2,iq)).le.eps).and. & 
+     !           (abs(xk_kpoints(3,ik0) - xk(3,iq)).le.eps) 
+     found_k  = (abs(xk_kpoints(1,ik0) - x_q(1,iq)).le.eps).and. &
+                (abs(xk_kpoints(2,ik0) - x_q(2,iq)).le.eps).and. & 
+                (abs(xk_kpoints(3,ik0) - x_q(3,iq)).le.eps) 
      if (found_k) then
         ikq = iq
         write(6,'("K POINT FOUND ", 2i4)'),ikq,iq 
@@ -80,16 +85,16 @@ IMPLICIT NONE
      endif
   enddo
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
-  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (x_q(ipol,ikq) , ipol = 1, 3)
 !write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
   IF (ionode) THEN
       IF (nksq.gt.1) then
-          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+          CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                         npw, igk, g2kin )
       ENDIF
       if(lgamma) npwq = npw
       IF (.not.lgamma.and.nksq.gt.1) then
-        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
+        CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
                       npwq, igkq, g2kin )
       ENDIF
   call get_buffer (evc, lrwfc, iuwfc, ikq)
@@ -139,8 +144,6 @@ IMPLICIT NONE
   ALLOCATE (evc_tmp_i  (sigma_x_st%ngmt))
   ALLOCATE (evc_tmp_j  (sigma_x_st%ngmt))
   sigma_g_ex(:,:) = (0.0d0, 0.0d0)
-
-!CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
   ios = 0 
   READ( UNIT = iunsex, REC = 1, IOSTAT = ios ) sigma_g_ex
   if(ios /= 0) then

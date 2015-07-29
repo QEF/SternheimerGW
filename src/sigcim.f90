@@ -7,7 +7,7 @@ SUBROUTINE sym_sigma_c_im(ik0)
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul
-  USE klist,         ONLY : wk, xk, nkstot
+  USE klist,         ONLY : wk, xk, nkstot, nks
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
@@ -100,7 +100,9 @@ SUBROUTINE sym_sigma_c_im(ik0)
   INTEGER     :: ixk1, iqrec_old
   INTEGER     :: isym_k(nsym), nig0_k(nsym), iqrec_k(nsym)
   LOGICAL, EXTERNAL :: eqvect
-  LOGICAL     :: invq_k(nsym)
+  LOGICAL     :: invq_k(nsym), found_qc
+  LOGICAL     :: iqcoul
+  real(DP), parameter :: eps=1.e-5_dp
 
 #define DIRECT_IO_FACTOR 8 
 ! iG(W-v)
@@ -171,41 +173,56 @@ CALL get_homo_lumo (ehomo, elumo)
 mu = ehomo + 0.5d0*(elumo-ehomo)
 !mu = ehomo + 0.03
 WRITE(6,'("mu", f12.7)'),mu*RYTOEV
-DO iq = 1, nqs
-!only do q points on this processor i.e. same parallelism scheme as kpoints
-!DO iq = 1, nks
-  scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
-  if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
-  xq(:) = x_q(:,iq)
-  cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+!DO iq = 1, nqs
+DO iq = 1, nks
+   found_qc = .false.
+   iqcoul = 1
+   do while(.not.found_qc)
+      found_qc  = (abs(xk(1,iq) - x_q(1,iqcoul)).le.eps).and. &
+                 (abs(xk(2,iq) - x_q(2,iqcoul)).le.eps).and. & 
+                 (abs(xk(3,iq) - x_q(3,iqcoul)).le.eps) 
+      if (found_qc) then
+          xq = x_q(:,iqcoul)
+          write(1000+mpime, '("xq point, iq, iuncoul")')
+          write(1000+mpime, '(3f11.7, 2i4)') xq(:), iqcoul 
+      else
+         iqcoul = iqcoul + 1
+      endif
+   enddo
+   if(.not.found_qc) WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
+   scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
+   if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqcoul, -1)
+
+!wk(iq) should be the correct weight for this q point.
+   cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
  !cprefac = 0.50d0*wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
-  CALL coulpade(scrcoul_g(1,1,1), xq(1))
+   CALL coulpade(scrcoul_g(1,1,1), xq(1))
 !zeroing wings of W again if xq = 0
-  iqrec_k = 0
-  isym_k  = 0
-  nig0_k  = 0
-  invq_k  = .false.
-  DO isymop = 1, nsym
-     CALL rotate(xq, aq, s, nsym, invs(isymop))
-     xk1 = xk_kpoints(:,ik0) - aq(:)
-     nig0 = 1
-     inv_q=.false.
-     call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
-     iqrec_k(isymop) = iqrec
-     isym_k(isymop)  = isym
-     nig0_k(isymop)  = nig0
-     invq_k(isymop)  = inv_q
-     if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-     write(1000+mpime, '("xq point, iq, nksq")')
-     write(1000+mpime, '(3f11.7, 2i4)') xq(:), iq, isymop
-     write(1000+mpime, '("xk1 point, isym, nig0")')
-     write(1000+mpime, '(3f11.7, 2i4)') xk1(:), nig0, isym
-     write(1000+mpime, '("xk point, isym, iqrec")')
-     write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-     write(1000+mpime, *)
-  ENDDO
-  iqrec_old = 0
-  DO isymop = 1, nsym
+   iqrec_k = 0
+   isym_k  = 0
+   nig0_k  = 0
+   invq_k  = .false.
+   DO isymop = 1, nsym
+      CALL rotate(xq, aq, s, nsym, invs(isymop))
+      xk1 = xk_kpoints(:,ik0) - aq(:)
+      nig0 = 1
+      inv_q=.false.
+      call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
+      iqrec_k(isymop) = iqrec
+      isym_k(isymop)  = isym
+      nig0_k(isymop)  = nig0
+      invq_k(isymop)  = inv_q
+      if(inv_q) write(1000+mpime, '("Need to use time reversal")')
+      write(1000+mpime, '("xq point, iq, nksq")')
+      write(1000+mpime, '(3f11.7, 2i4)') xq(:), iq, isymop
+      write(1000+mpime, '("xk1 point, isym, nig0")')
+      write(1000+mpime, '(3f11.7, 2i4)') xk1(:), nig0, isym
+      write(1000+mpime, '("xk point, isym, iqrec")')
+      write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+      write(1000+mpime, *)
+   ENDDO
+   iqrec_old = 0
+   DO isymop = 1, nsym
 !Generally we should only need to calculate green_linsys_shift once however 
 !it is possible for a really strange unit cell for this to become greater than
 !1:
@@ -247,7 +264,7 @@ DO iq = 1, nqs
            endif
         ENDDO !on frequency convolution over w'
      ENDDO !on iw0  
-  ENDDO!ISYMOP
+   ENDDO!ISYMOP
 ENDDO!iq
 
  DEALLOCATE ( gmapsym          )
@@ -258,6 +275,7 @@ ENDDO!iq
  DEALLOCATE ( scrcoul_g, scrcoul_g_R )
  DEALLOCATE ( z,a,u )
 #ifdef __PARA
+  CALL mp_sum(sigma, inter_pool_comm)
   CALL mp_barrier(inter_image_comm)
   CALL mp_sum(sigma, inter_image_comm)
   CALL mp_barrier(inter_image_comm)

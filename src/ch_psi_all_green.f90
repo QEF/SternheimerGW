@@ -82,7 +82,7 @@ subroutine ch_psi_all_green (n, h, ah, e, cw, ik, m)
   IF (noncolin) THEN
      do ibnd = 1, m
         do ig = 1, n
-          ah (ig+npwx,ibnd)=hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd) - cw*(h(ig+npwx,ibnd)) 
+           ah (ig+npwx,ibnd) = hpsi(ig+npwx,ibnd)-e(ibnd)*spsi(ig+npwx,ibnd)-cw*(h(ig+npwx,ibnd)) 
         end do
      end do
   END IF
