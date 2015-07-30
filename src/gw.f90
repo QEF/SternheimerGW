@@ -8,7 +8,7 @@ PROGRAM gw
   USE check_stop,      ONLY : check_stop_init
   USE control_gw,      ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
                               do_green, multishift, do_sigma_c, do_q0_only,&
-                              do_imag
+                              do_imag, lgamma
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,        ONLY : diropn
   USE units_gw,        ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
@@ -49,7 +49,6 @@ PROGRAM gw
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
   IF(do_imag) THEN
     IF(do_sigma_c) CALL sym_sigma_c_im(1)
-  ! IF(do_sigma_c) CALL sigma_c_im(1)
   ELSE
     IF(do_green)   CALL green_linsys_shift(1)
     IF(do_sigma_c) CALL sigma_c(1)
@@ -60,7 +59,6 @@ PROGRAM gw
      CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
   ENDIF
   IF(do_sigma_exx)   CALL sym_sigma_exch(ik)
-  !IF(do_sigma_exx)   CALL sigma_exch(ik)
   IF(do_sigma_matel) CALL sigma_matel(ik)
   127 CONTINUE
   CALL stop_gw( .TRUE. )

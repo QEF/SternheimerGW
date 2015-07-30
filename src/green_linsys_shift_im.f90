@@ -21,19 +21,20 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
                                    eta, tr2_green, maxter_green, prec_shift
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
-  USE eqv,                  ONLY : evq, eprec
+  USE eqv,                  ONLY : evq, eprectot
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs, x_q
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, w0pmw
   USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
   USE gvect,                ONLY : g, ngm
-  USE mp,                   ONLY : mp_sum, mp_barrier
+  USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
                                    me_image, nproc_image, inter_image_comm
   USE mp_global,            ONLY : nproc_pool_file, &
                                    nproc_bgrp_file, nproc_image_file
   USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
   USE mp_world,             ONLY : nproc, mpime
+  USE mp_pools,             ONLY : inter_pool_comm
 
 
   USE, INTRINSIC :: ieee_arithmetic
@@ -154,16 +155,15 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 
     green  = (0.0d0, 0.0d0)
     h_diag = 0.d0
-
-    WRITE(6,*) nksq
-    WRITE(6,*) eprec(nbnd_occ(ikq),ikq)
-
+    !need to collect eprectot
+    !WRITE(1000+mpime,*) nksq, ikq, nbnd_occ(1)
+    !WRITE(1000+mpime,*) eprectot(nbnd_occ(1),ikq)
     do ig = 1, npwq
        if(g2kin(ig).le.ecutprec) then
           h_diag(ig,1) =  1.0d0
        else
          if(prec_shift) then
-            h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprec(nbnd_occ(ikq),ikq)))
+            h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
          else
             h_diag(ig,1) =  1.0d0
          endif
@@ -187,7 +187,8 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
           call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                 npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                 cw , niters(gveccount), .true.)
-          call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1),mu, gr_A_shift)
+          call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+          if (ig.eq.igstop) write(1000+mpime,*) niters(gveccount)
           if (niters(gveccount).ge.maxter_green) then
                 WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                 gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

@@ -158,10 +158,10 @@ SUBROUTINE sigma_c_im(ik0)
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 !endif
 #endif
-!   WRITE(6, '(5x, " nksq ", i4)') nksq
-!   WRITE(6, *) xk(:,1:nkstot)
-!   WRITE(6, '(5x, " nqs ", i4)') nqs
-!   WRITE(6, *) x_q(:,1:nqs)
+!  WRITE(6, '(5x, " nksq ", i4)') nksq
+!  WRITE(6, *) xk(:,1:nkstot)
+!  WRITE(6, '(5x, " nqs ", i4)') nqs
+!  WRITE(6, *) x_q(:,1:nqs)
    CALL para_img(nwsigma, iw0start, iw0stop)
    WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
    write(6,*) x_q(:,:)

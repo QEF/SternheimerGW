@@ -19,7 +19,7 @@ subroutine deallocate_gwq
                                    vsgga, segni
   USE gamma_gamma,           ONLY : with_symmetry, has_equivalent, equiv_atoms, &
                                     n_equiv_atoms
-  USE eqv,                   ONLY : dmuxc, vlocq, dpsi, dvpsi, evq, eprec
+  USE eqv,                   ONLY : dmuxc, vlocq, dpsi, dvpsi, evq, eprec, eprectot
   USE nlcc_gw,               ONLY : drc
   USE units_gw,              ONLY : this_dvkb3_is_on_file, this_pcxpsi_is_on_file
   USE control_gw,            ONLY : lgamma
@@ -34,6 +34,7 @@ subroutine deallocate_gwq
   if(allocated(vlocq)) deallocate (vlocq)
   if(allocated(dmuxc)) deallocate (dmuxc)
   if(allocated(eprec)) deallocate (eprec)
+  if(allocated(eprec)) deallocate (eprectot)
   if(allocated(ikks)) deallocate (ikks)
   if(allocated(ikqs)) deallocate (ikqs)
   if(allocated(eigqts)) deallocate (eigqts)

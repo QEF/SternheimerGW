@@ -22,10 +22,10 @@ SUBROUTINE gwq_init()
   USE becmod,               ONLY : calbec
   USE constants,            ONLY : eps8, tpi
   USE gvect,                ONLY : g, ngm
-  USE klist,                ONLY : xk
+  USE klist,                ONLY : xk, nkstot
   USE lsda_mod,             ONLY : lsda, current_spin, isk
   USE buffers,              ONLY : get_buffer
-  USE io_global,            ONLY : stdout
+  USE io_global,            ONLY : stdout, meta_ionode_id
   USE io_files,             ONLY : iunigk
   USE atom,                 ONLY : msh, rgrid
   USE vlocal,               ONLY : strf
@@ -35,13 +35,15 @@ SUBROUTINE gwq_init()
   USE noncollin_module,     ONLY : noncolin, npol
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf
-  USE eqv,                  ONLY : vlocq, evq, eprec
+  USE eqv,                  ONLY : vlocq, evq, eprec, eprectot
   USE nlcc_gw,              ONLY : nlcc_any
   USE control_gw,           ONLY : nbnd_occ, lgamma
   USE units_gw,             ONLY : lrwfc, iuwfc
   USE qpoint,               ONLY : xq, igkq, npwq, nksq, eigqts, ikks, ikqs
   USE mp_bands,            ONLY : intra_bgrp_comm
   USE mp,                  ONLY : mp_sum
+  USE mp_pools,            ONLY : inter_pool_comm, my_pool_id, npool, kunit
+  USE mp_world,             ONLY : nproc, mpime
   !
   IMPLICIT NONE
   !
@@ -61,6 +63,7 @@ SUBROUTINE gwq_init()
   COMPLEX(DP), ALLOCATABLE :: aux1(:,:)
     ! used to compute alphap
   COMPLEX(DP), EXTERNAL :: zdotc
+  INTEGER :: nbase, nks, rest
   !
   !
   !
@@ -81,7 +84,14 @@ SUBROUTINE gwq_init()
   !
   !IF ( nlcc_any ) WRITE(6, '(" NLCC ")')
   !IF ( nlcc_any ) CALL set_drhoc( xq )
+!BRUTAL WAY OF BROADCASTING
+  nks    = kunit * ( nkstot / kunit / npool )
+  rest = ( nkstot - nks * npool ) / kunit
+  IF ( ( my_pool_id + 1 ) <= rest ) nks = nks + kunit
+  nbase = nks * my_pool_id
+  IF ( ( my_pool_id + 1 ) > rest ) nbase = nbase + rest * kunit
 
+  eprectot(:,:) = 0.0d0
   IF ( nksq > 1 ) REWIND( iunigk )
   DO ik = 1, nksq
      ikk  = ikks(ik)
@@ -146,10 +156,15 @@ SUBROUTINE gwq_init()
      !
      DO ibnd=1,nbnd_occ(ikk)
         eprec (ibnd,ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
+        eprectot (ibnd, nbase+ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
+     !   write(1000+mpime,*) eprec(ibnd,ik), ik
+     !   write(1000+mpime,*) eprectot(ibnd, nbase+ik), nbase+ik
      END DO
      !
   END DO
-  CALL mp_sum ( eprec, intra_bgrp_comm )
+  !
+  CALL mp_sum (eprec, intra_bgrp_comm)
+  CALL mp_sum   ( eprectot, inter_pool_comm )
   !
   DEALLOCATE( aux1 )
   !

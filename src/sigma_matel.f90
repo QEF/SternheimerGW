@@ -1,6 +1,6 @@
 SUBROUTINE sigma_matel (ik0)
   USE io_global,            ONLY : stdout, ionode_id, ionode
-  USE io_files,             ONLY : prefix, iunigk
+  USE io_files,             ONLY : prefix, iunigk, wfc_dir
   USE buffers,              ONLY : get_buffer
   USE kinds,                ONLY : DP
   USE gvect,                ONLY : ngm, g, gl, igtongl
@@ -23,6 +23,8 @@ SUBROUTINE sigma_matel (ik0)
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
+  USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
+  USE mp_world,      ONLY : nproc, mpime
 IMPLICIT NONE
   INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
   REAL(DP)                  ::   w_ryd(nwsigma)
@@ -57,6 +59,16 @@ IMPLICIT NONE
   REAL(DP) :: zero(3)
   logical, external :: eqvect
   logical :: found_k
+  character (len=256) :: tempfile
+  character (len=256) :: poolnum
+  integer*8 :: unf_recl
+  INTEGER   :: iunwfc1
+  INTEGER   :: kpoolid(nkstot), iqrec1(nkstot)
+  INTEGER :: nbase, nksloc, rest, mypoolid
+  character (len=256) :: form_str
+
+#define DIRECT_IO_FACTOR 8
+
 
   ALLOCATE (igkq_tmp(npwx))
   ALLOCATE (igkq_ig(npwx))
@@ -84,9 +96,29 @@ IMPLICIT NONE
         iq = iq + 1
      endif
   enddo
+
+  kpoolid = 0
+  iqrec1  = 0
+  do mypoolid = 0, npool-1
+     nksloc = kunit * ( nkstot / kunit / npool )
+     rest = ( nkstot - nksloc * npool ) / kunit
+     IF ( ( mypoolid + 1 ) <= rest ) nksloc = nksloc + kunit
+     nbase = nksloc * mypoolid
+     IF ( ( mypoolid + 1 ) > rest ) nbase = nbase + rest * kunit
+     do iq = 1, nksloc
+       if(nbase.gt.0) then
+         kpoolid(nbase+iq) = mypoolid+1
+         iqrec1(nbase+iq) = iq
+       else
+         kpoolid(iq) = mypoolid + 1
+         iqrec1(iq) = iq
+       endif
+     enddo
+  enddo
+
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (x_q(ipol,ikq) , ipol = 1, 3)
-!write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk (ipol,ikq) , ipol = 1, 3)
+
   IF (ionode) THEN
       IF (nksq.gt.1) then
           CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -97,7 +129,17 @@ IMPLICIT NONE
         CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
                       npwq, igkq, g2kin )
       ENDIF
-  call get_buffer (evc, lrwfc, iuwfc, ikq)
+
+      write(poolnum, "(I4)"), kpoolid(ikq)
+      tempfile = trim(wfc_dir) // trim(prefix) // '.wfc'// trim(adjustl(poolnum))
+      write(1000+mpime,*) trim(tempfile)
+      unf_recl = DIRECT_IO_FACTOR * int(2*lrwfc, kind=kind(unf_recl))
+      open(iunwfc1, file = trim(adjustl(tempfile)), iostat = ios, &
+      form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+      CALL davcio(evq, 2*lrwfc, iunwfc1, iqrec1(ikq), -1)
+      close (iunwfc1, status = 'keep')
+!     call get_buffer (evc, lrwfc, iuwfc, ikq)
+
   zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
   WRITE(6,'("zcut ", f12.7)'), zcut
   WRITE(6,'("NBND ", i5)'), nbnd_sig

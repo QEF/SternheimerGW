@@ -34,7 +34,6 @@ SUBROUTINE openfilq()
   USE io_global,        ONLY : ionode
   USE buffers,          ONLY : open_buffer
   USE input_parameters, ONLY : nk1, nk2, nk3
-
   !
   IMPLICIT NONE
   !
@@ -54,10 +53,11 @@ SUBROUTINE openfilq()
   !     The file with the wavefunctions. In the lgamma case reads those
   !     written by pw.x. In the other cases those calculated by gw.x
   tmp_dir=tmp_dir_gw
+  !IF (lgamma)tmp_dir=tmp_dir_save
   iuwfc = 20
   lrwfc = nbnd * npwx * npol
   CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_gw)
-  IF (.NOT.exst) THEN
+  IF (.NOT.exst.AND..NOT.exst_mem) THEN
      CALL errore ('openfilq', 'file '//trim(prefix)//'.wfc not found', 1)
   END IF
   !

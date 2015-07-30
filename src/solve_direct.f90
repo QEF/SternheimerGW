@@ -258,7 +258,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! Apply -P_c^+.
 ! -P_c^ = - (1-P_v^):
         CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
-
         if(.not.prec_direct) dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
         dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
         dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
@@ -301,7 +300,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !transform solution vector x = E^{-T}x':
         do iw =1, nfs
            do ibnd =1, nbnd
-             call cg2_psi(npwx, npwq, 1, dpsi(1,ibnd,iw), h_diag(1,ibnd))
+              call cg2_psi(npwx, npwq, 1, dpsi(1,ibnd,iw), h_diag(1,ibnd))
            enddo
         enddo
 

@@ -4,7 +4,7 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d
   USE klist,         ONLY : wk, xk, nkstot, nks
-  USE io_files,      ONLY : prefix, iunigk
+  USE io_files,      ONLY : prefix, iunigk, wfc_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
@@ -16,8 +16,10 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE io_global,     ONLY : stdout, ionode_id, ionode
   USE gvect,         ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE mp,            ONLY : mp_sum, mp_barrier
-  USE mp_pools,      ONLY : inter_pool_comm
+  USE noncollin_module, ONLY : npol, nspin_mag
+  USE mp_pools,      ONLY : inter_pool_comm, npool, kunit, my_pool_id
   USE mp_world,      ONLY : nproc, mpime
+  USE save_gw,       ONLY : tmp_dir_save
 IMPLICIT NONE
 !ARRAYS to describe exchange operator.
   LOGICAL :: limit, lgamma
@@ -49,6 +51,15 @@ IMPLICIT NONE
   INTEGER     :: imq, isq(48), nqstar, nkpts
   INTEGER     :: nsq(48), i, ikstar
   INTEGER     :: isymop
+  character (len=256) :: tempfile
+  character (len=256) :: poolnum
+  integer*8 :: unf_recl
+  INTEGER   :: iunwfc1
+  INTEGER   :: kpoolid(nkstot), iqrec1(nkstot)
+  INTEGER :: nbase, nksloc, rest, mypoolid
+  character (len=256) :: form_str 
+
+#define DIRECT_IO_FACTOR 8
 ! Self-Energy grid:
 ! iGv
   CALL start_clock('sigma_exch')
@@ -64,12 +75,44 @@ IMPLICIT NONE
   do iq = 1, nksq
         wq(iq) = 0.5d0*wk(iq)
   enddo
-
   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
   WRITE(6,'("rcut ", f12.7)') rcut
+  !We need to access all the wavefunctions, these should be all collected on the
+  !ionode
+  iunwfc1 = 38
+  WRITE(1000+mpime,*) trim(wfc_dir)
+  WRITE(1000+mpime,*) trim(tmp_dir_save)
+  WRITE(1000+mpime,*) trim(prefix) 
 
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
+
+!Little code for determining which wavefxn files we need to access:
+  kpoolid = 0
+  iqrec1  = 0
+  do mypoolid = 0, npool-1
+     nksloc = kunit * ( nkstot / kunit / npool )
+     rest = ( nkstot - nksloc * npool ) / kunit
+     IF ( ( mypoolid + 1 ) <= rest ) nksloc = nksloc + kunit
+     nbase = nksloc * mypoolid
+     IF ( ( mypoolid + 1 ) > rest ) nbase = nbase + rest * kunit
+     do iq = 1, nksloc
+       if(nbase.gt.0) then
+         kpoolid(nbase+iq) = mypoolid+1
+         iqrec1(nbase+iq) = iq
+       else
+         kpoolid(iq) = mypoolid + 1
+         iqrec1(iq) = iq
+       endif
+     enddo
+  enddo
+  !WRITE(1000+mpime,*) my_pool_id
+  !do iq = 1, nqs
+  !   WRITE(1000+mpime,*) kpoolid(iq)
+  !enddo
+  !do iq = 1, nqs
+  !   WRITE(1000+mpime,*) iqrec1(iq)
+  !enddo
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
   !DO iq = 1, nqs
@@ -81,18 +124,28 @@ IMPLICIT NONE
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0  = 1
         call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
-        if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-        write(1000+mpime, '("xq point, iq")')
-        write(1000+mpime, '(3f11.7, i4)') xq(:), iq
-        write(1000+mpime, '("xk1 point, isymop")')
-        write(1000+mpime, '(3f11.7, i4)') xk1(:), isymop
+!        if(inv_q) write(1000+mpime, '("Need to use time reversal")')
+!        write(1000+mpime, '("xq point, iq")')
+!        write(1000+mpime, '(3f11.7, i4)') xq(:), iq
+!        write(1000+mpime, '("xk1 point, isymop")')
+!        write(1000+mpime, '(3f11.7, i4)') xk1(:), isymop
         write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
         write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
-        call get_buffer (evq, lrwfc, iuwfc, iqrec)
-        IF (nksq.gt.1) THEN
-            CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ),&
-                          npw, igk, g2kin )
-        ENDIF
+!Need to access wavefunctions on other processors!
+!Ground state is run with twfcollect so let's access those.
+       write(poolnum, "(I4)"), kpoolid(iqrec)
+       tempfile = trim(wfc_dir) // trim(prefix) // '.wfc'// trim(adjustl(poolnum))
+       write(1000+mpime,*) trim(tempfile)
+       unf_recl = DIRECT_IO_FACTOR * int(2*lrwfc, kind=kind(unf_recl))
+       open(iunwfc1, file = trim(adjustl(tempfile)), iostat = ios, &
+       form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+       CALL davcio(evq, 2*lrwfc, iunwfc1, iqrec1(iqrec), -1)
+       close (iunwfc1, status = 'keep')
+       IF (nksq.gt.1) THEN
+           CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ), &
+                        npw, igk, g2kin)
+       ENDIF
+       !call get_buffer (evq, lrwfc, iuwfc, iqrec)
         npwq = npw
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
@@ -111,7 +164,7 @@ IMPLICIT NONE
         greenf_na = (0.0d0, 0.0d0)
         do ig = 1, counter
            do igp = 1, counter
-              do ibnd = 1, nbnd_occ(iq)
+              do ibnd = 1, nbnd_occ(1)
                 greenf_na(igkq_tmp(ig), igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
                                                          tpi*(0.0d0, 1.0d0)*conjg(evq(igkq_ig(ig),ibnd))*(evq(igkq_ig(igp), ibnd))
              enddo

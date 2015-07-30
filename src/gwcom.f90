@@ -124,6 +124,7 @@ MODULE eqv
   ! the derivative of the xc potential
   ! the local potential at q+G
   REAL (DP), ALLOCATABLE :: eprec(:,:) ! needed for preconditioning
+  REAL (DP), ALLOCATABLE :: eprectot(:,:) ! needed for preconditioning
   !
 END MODULE eqv
 !
