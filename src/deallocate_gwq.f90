@@ -34,7 +34,7 @@ subroutine deallocate_gwq
   if(allocated(vlocq)) deallocate (vlocq)
   if(allocated(dmuxc)) deallocate (dmuxc)
   if(allocated(eprec)) deallocate (eprec)
-  if(allocated(eprec)) deallocate (eprectot)
+  if(allocated(eprectot)) deallocate (eprectot)
   if(allocated(ikks)) deallocate (ikks)
   if(allocated(ikqs)) deallocate (ikqs)
   if(allocated(eigqts)) deallocate (eigqts)

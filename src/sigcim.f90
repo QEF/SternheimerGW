@@ -178,24 +178,26 @@ DO iq = 1, nks
    found_qc = .false.
    iqcoul = 1
    do while(.not.found_qc)
-      found_qc  = (abs(xk(1,iq) - x_q(1,iqcoul)).le.eps).and. &
-                 (abs(xk(2,iq) - x_q(2,iqcoul)).le.eps).and. & 
-                 (abs(xk(3,iq) - x_q(3,iqcoul)).le.eps) 
+      !found_qc  = (abs(xk(1,iq) - x_q(1,iqcoul)).le.eps).and. &
+      !            (abs(xk(2,iq) - x_q(2,iqcoul)).le.eps).and. & 
+      !            (abs(xk(3,iq) - x_q(3,iqcoul)).le.eps) 
+      found_qc  = (abs( x_q(1,iqcoul) - xk(1,iq)).le.eps).and. &
+                  (abs( x_q(2,iqcoul) - xk(2,iq)).le.eps).and. & 
+                  (abs( x_q(3,iqcoul) - xk(3,iq)).le.eps) 
       if (found_qc) then
           xq = x_q(:,iqcoul)
           write(1000+mpime, '("xq point, iq, iuncoul")')
           write(1000+mpime, '(3f11.7, 2i4)') xq(:), iqcoul 
       else
-         iqcoul = iqcoul + 1
+          iqcoul = iqcoul + 1
       endif
    enddo
    if(.not.found_qc) WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqcoul, -1)
-
 !wk(iq) should be the correct weight for this q point.
    cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
- !cprefac = 0.50d0*wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+ ! cprefac = wq(iqcoul)*dcmplx(-1.0d0, 0.0d0)/tpi
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
 !zeroing wings of W again if xq = 0
    iqrec_k = 0
@@ -275,10 +277,10 @@ ENDDO!iq
  DEALLOCATE ( scrcoul_g, scrcoul_g_R )
  DEALLOCATE ( z,a,u )
 #ifdef __PARA
+  CALL mp_barrier(inter_pool_comm)
   CALL mp_sum(sigma, inter_pool_comm)
   CALL mp_barrier(inter_image_comm)
   CALL mp_sum(sigma, inter_image_comm)
-  CALL mp_barrier(inter_image_comm)
 #endif __PARA
   IF (ionode) THEN
     ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))

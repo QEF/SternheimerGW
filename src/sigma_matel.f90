@@ -82,6 +82,7 @@ IMPLICIT NONE
   iq = 1
   found_k = .false.
   !CALL xk_wk_collect(xk_collect, wk_collect, xk, wk, nkstot, nks)
+  iunwfc1 = 38
   do while(.not.found_k)
      !found_k  = (abs(xk_kpoints(1,ik0) - xk(1,iq)).le.eps).and. &
      !           (abs(xk_kpoints(2,ik0) - xk(2,iq)).le.eps).and. & 

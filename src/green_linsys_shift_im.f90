@@ -109,8 +109,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
    IF (nksq.gt.1) then
        CALL gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                      npw, igk, g2kin )
-       !CALL gk_sort( xk1(1), ngm, g, ( ecutwfc / tpiba2 ),&
-       !              npw, igk, g2kin )
    ENDIF
    npwq = npw
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.

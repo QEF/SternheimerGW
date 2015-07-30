@@ -79,7 +79,6 @@ IMPLICIT NONE
   WRITE(6,'("rcut ", f12.7)') rcut
   !We need to access all the wavefunctions, these should be all collected on the
   !ionode
-  iunwfc1 = 38
   WRITE(1000+mpime,*) trim(wfc_dir)
   WRITE(1000+mpime,*) trim(tmp_dir_save)
   WRITE(1000+mpime,*) trim(prefix) 
@@ -137,10 +136,13 @@ IMPLICIT NONE
        tempfile = trim(wfc_dir) // trim(prefix) // '.wfc'// trim(adjustl(poolnum))
        write(1000+mpime,*) trim(tempfile)
        unf_recl = DIRECT_IO_FACTOR * int(2*lrwfc, kind=kind(unf_recl))
+       iunwfc1 = 38
        open(iunwfc1, file = trim(adjustl(tempfile)), iostat = ios, &
        form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+       call errore ('sigma_exch', 'opening wfc', abs (ios) )
        CALL davcio(evq, 2*lrwfc, iunwfc1, iqrec1(iqrec), -1)
-       close (iunwfc1, status = 'keep')
+       close (unit = iunwfc1, status = 'keep')
+
        IF (nksq.gt.1) THEN
            CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ), &
                         npw, igk, g2kin)
