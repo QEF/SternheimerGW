@@ -28,7 +28,7 @@ SUBROUTINE sym_sigma_c_im(ik0)
   USE mp_world,      ONLY : nproc, mpime
   USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
                             me_image, nproc_image, inter_image_comm
-  USE mp,            ONLY : mp_sum, mp_barrier
+  USE mp,            ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_pools,      ONLY : inter_pool_comm
 
   IMPLICIT NONE
@@ -168,38 +168,41 @@ SUBROUTINE sym_sigma_c_im(ik0)
 !ONLY PROCESSORS WITH K points to process: 
   IF (nksq.gt.1) rewind (unit = iunigk)
 WRITE(6,'("Starting Frequency Integration")')
+
 !kpoints split between pools
 CALL get_homo_lumo (ehomo, elumo)
 mu = ehomo + 0.5d0*(elumo-ehomo)
-!mu = ehomo + 0.03
+call mp_barrier(inter_pool_comm)
+call mp_bcast(mu, ionode_id ,inter_pool_comm)
+call mp_barrier(inter_pool_comm)
 WRITE(6,'("mu", f12.7)'),mu*RYTOEV
-!DO iq = 1, nqs
+WRITE(1000+mpime,'("mu", f12.7)'),mu*RYTOEV
 DO iq = 1, nks
-   found_qc = .false.
    iqcoul = 1
-   do while(.not.found_qc)
-      !found_qc  = (abs(xk(1,iq) - x_q(1,iqcoul)).le.eps).and. &
-      !            (abs(xk(2,iq) - x_q(2,iqcoul)).le.eps).and. & 
-      !            (abs(xk(3,iq) - x_q(3,iqcoul)).le.eps) 
-      found_qc  = (abs( x_q(1,iqcoul) - xk(1,iq)).le.eps).and. &
-                  (abs( x_q(2,iqcoul) - xk(2,iq)).le.eps).and. & 
-                  (abs( x_q(3,iqcoul) - xk(3,iq)).le.eps) 
-      if (found_qc) then
-          xq = x_q(:,iqcoul)
-          write(1000+mpime, '("xq point, iq, iuncoul")')
-          write(1000+mpime, '(3f11.7, 2i4)') xq(:), iqcoul 
-      else
-          iqcoul = iqcoul + 1
-      endif
+   found_qc = .false.
+   iq1 = 0
+   DO while(.not.found_qc)
+      iq1 = iq1 + 1
+      found_qc  = (abs(xk(1,iq) - x_q(1,iq1)).le.eps).and. &
+                  (abs(xk(2,iq) - x_q(2,iq1)).le.eps).and. & 
+                  (abs(xk(3,iq) - x_q(3,iq1)).le.eps) 
    enddo
-   if(.not.found_qc) WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
+   IF (found_qc) THEN
+      iqcoul = iq1 
+      xq(:) = x_q(:,iqcoul)
+      !WRITE(1000+mpime, '("xq point, iq, iuncoul")')
+      !WRITE(1000+mpime, '(3f11.7, 2i4)') xq(:), iqcoul 
+   ELSE 
+      WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
+       CALL mp_global_end()
+       STOP
+   ENDIF
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqcoul, -1)
 !wk(iq) should be the correct weight for this q point.
-   cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
- ! cprefac = wq(iqcoul)*dcmplx(-1.0d0, 0.0d0)/tpi
+!   cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+   cprefac = wq(iqcoul)*dcmplx(-1.0d0, 0.0d0)/tpi
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
-!zeroing wings of W again if xq = 0
    iqrec_k = 0
    isym_k  = 0
    nig0_k  = 0
@@ -214,14 +217,14 @@ DO iq = 1, nks
       isym_k(isymop)  = isym
       nig0_k(isymop)  = nig0
       invq_k(isymop)  = inv_q
-      if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-      write(1000+mpime, '("xq point, iq, nksq")')
-      write(1000+mpime, '(3f11.7, 2i4)') xq(:), iq, isymop
-      write(1000+mpime, '("xk1 point, isym, nig0")')
-      write(1000+mpime, '(3f11.7, 2i4)') xk1(:), nig0, isym
-      write(1000+mpime, '("xk point, isym, iqrec")')
-      write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-      write(1000+mpime, *)
+      !if(inv_q) write(1000+mpime, '("Need to use time reversal")')
+      !write(1000+mpime, '("xq point, iq, nksq")')
+      !write(1000+mpime, '(3f11.7, 2i4)') xq(:), iq, isymop
+      !write(1000+mpime, '("xk1 point, isym, nig0")')
+      !write(1000+mpime, '(3f11.7, 2i4)') xk1(:), nig0, isym
+      !write(1000+mpime, '("xk point, isym, iqrec")')
+      !write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
+      !write(1000+mpime, *)
    ENDDO
    iqrec_old = 0
    DO isymop = 1, nsym
