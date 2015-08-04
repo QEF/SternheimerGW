@@ -1,7 +1,7 @@
 SUBROUTINE sym_sigma_c_im(ik0) 
 !G TIMES W PRODUCT
   USE kinds,         ONLY : DP
-  USE io_global,     ONLY : stdout, ionode_id, ionode
+  USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
   USE io_files,      ONLY : iunigk, prefix, tmp_dir
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
@@ -121,14 +121,12 @@ SUBROUTINE sym_sigma_c_im(ik0)
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
    w_ryd(:) = wcoul(:)/RYTOEV
    w_rydsig(:) = wsigma(:)/RYTOEV
-
    WRITE(6," ")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
    WRITE(6," ")
    WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
    zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-   !WRITE(6,'("zcut ", f12.7)'), zcut
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
    sigma(:,:,:) = (0.0d0, 0.0d0)
@@ -162,36 +160,33 @@ SUBROUTINE sym_sigma_c_im(ik0)
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 #endif
-   CALL para_img(nwsigma, iw0start, iw0stop)
-   WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
-   write(6,*) x_q(:,:)
+  CALL para_img(nwsigma, iw0start, iw0stop)
+  WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
+  WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !ONLY PROCESSORS WITH K points to process: 
   IF (nksq.gt.1) rewind (unit = iunigk)
-WRITE(6,'("Starting Frequency Integration")')
-
+  WRITE(6,'("Starting Frequency Integration")')
 !kpoints split between pools
-CALL get_homo_lumo (ehomo, elumo)
-mu = ehomo + 0.5d0*(elumo-ehomo)
-call mp_barrier(inter_pool_comm)
-call mp_bcast(mu, ionode_id ,inter_pool_comm)
-call mp_barrier(inter_pool_comm)
-WRITE(6,'("mu", f12.7)'),mu*RYTOEV
-WRITE(1000+mpime,'("mu", f12.7)'),mu*RYTOEV
+  CALL get_homo_lumo (ehomo, elumo)
+  mu = ehomo + 0.5d0*(elumo-ehomo)
+  call mp_barrier(inter_pool_comm)
+  call mp_bcast(mu, ionode_id ,inter_pool_comm)
+  call mp_barrier(inter_pool_comm)
+  WRITE(6,'("mu", f12.7)'),mu*RYTOEV
+  WRITE(1000+mpime,'("mu", f12.7)'),mu*RYTOEV
 DO iq = 1, nks
    iqcoul = 1
    found_qc = .false.
    iq1 = 0
-   DO while(.not.found_qc)
+   DO WHILE(.not.found_qc)
       iq1 = iq1 + 1
       found_qc  = (abs(xk(1,iq) - x_q(1,iq1)).le.eps).and. &
                   (abs(xk(2,iq) - x_q(2,iq1)).le.eps).and. & 
                   (abs(xk(3,iq) - x_q(3,iq1)).le.eps) 
-   enddo
+   ENDDO 
    IF (found_qc) THEN
       iqcoul = iq1 
       xq(:) = x_q(:,iqcoul)
-      !WRITE(1000+mpime, '("xq point, iq, iuncoul")')
-      !WRITE(1000+mpime, '(3f11.7, 2i4)') xq(:), iqcoul 
    ELSE 
       WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
        CALL mp_global_end()
@@ -228,9 +223,6 @@ DO iq = 1, nks
    ENDDO
    iqrec_old = 0
    DO isymop = 1, nsym
-!Generally we should only need to calculate green_linsys_shift once however 
-!it is possible for a really strange unit cell for this to become greater than
-!1:
      iqrec = iqrec_k (isymop) 
      if(iqrec_old.ne.iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
      if(iqrec_old.ne.iqrec) CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, iqrec, 2*nwcoul)
@@ -243,6 +235,7 @@ DO iq = 1, nks
      write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), isym, iqrec, nig0
 !Start integration over iw +/- wcoul.
 !Rotate W and initialize necessary quantities for pade_continuation or godby needs.
+  IF(iw0stop-iw0start+1.gt.0) THEN
      DO iw0 = iw0start, iw0stop
         DO iw = 1, nwcoul
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
@@ -269,9 +262,9 @@ DO iq = 1, nks
            endif
         ENDDO !on frequency convolution over w'
      ENDDO !on iw0  
+  ENDIF
    ENDDO!ISYMOP
 ENDDO!iq
-
  DEALLOCATE ( gmapsym          )
  DEALLOCATE ( greenfr          )
  DEALLOCATE ( greenf_g         )
@@ -285,7 +278,7 @@ ENDDO!iq
   CALL mp_barrier(inter_image_comm)
   CALL mp_sum(sigma, inter_image_comm)
 #endif __PARA
-  IF (ionode) THEN
+  IF (meta_ionode) THEN
     ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
     IF(allocated(sigma_g)) THEN
        WRITE(6,'(4x,"Sigma_g allocated")')

@@ -27,15 +27,33 @@ zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
 !from PRB 73, 205119
 rcut = -2*pi*zcut**2
 IF(opt.eq.1) then
-           DO ig = 1, ngm
-                 qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
-              IF (qg2 > 1.d-8) then
-                 qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
-                 qz   = sqrt((g(3,ig)+xqloc(3))**2)
-                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-                 dv_rho(nl(ig)) = dv_rho(nl(ig)) + dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
-              ENDIF 
-           ENDDO
+     DO ig = 1, ngm
+           qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
+        IF (qg2 > 1.d-8) then
+           qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
+           qz   = sqrt((g(3,ig)+xqloc(3))**2)
+           spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+           dv_rho(nl(ig)) = dv_rho(nl(ig)) + dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
+        ENDIF 
+     ENDDO
+!    DO ig = 1, ngm
+!       qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
+!       qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
+!       qz   = sqrt((g(3,ig) + xqloc(3))**2)
+!       IF(qxy.gt.eps8) then
+!          spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+!          DO igp = 1, sigma_c_st%ngmt
+!             dvaux(nl(ig)) = dvaux(nl(ig)) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+!          ENDDO
+!       ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+!          spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+!          DO igp = 1, sigma_c_st%ngmt
+!             dvaux(nl(ig)) = dvaux(nl(ig)) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+!          ENDDO
+!       ELSE
+!          dvaux(nl(ig)) = 0.0d0
+!       ENDIF
+!    ENDDO
 ELSE IF (opt.eq.2) then
      DO iw = 1, nfs
          DO ig = 1, sigma_c_st%ngmt

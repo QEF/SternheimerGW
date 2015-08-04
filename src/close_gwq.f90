@@ -28,8 +28,6 @@ SUBROUTINE close_gwq( flag )
   LOGICAL :: flag
   LOGICAL :: exst, opnd
   !
-  !HLF:
-  !IF (only_wfc) RETURN
   !
   IF ( twfcollect ) THEN
      !

@@ -116,10 +116,10 @@ IMPLICIT NONE
      xq_coul(:) = xk_kpoints(:,ik0) - xk(:,ikq)
      IF(.not.trunc_2d) THEN
        do ig = 1, sigma_x_st%ngmt
-           qg = sqrt((g(1,ig) + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
-                   + (g(3,ig) + xq_coul(3))**2.d0)
-          qg2 =      (g(1,ig) + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
-                   + ((g(3,ig)) + xq_coul(3))**2.d0
+          qg = sqrt((g(1,ig) + xq_coul(1))**2.d0 + (g(2,ig) + xq_coul(2))**2.d0   &
+                  + (g(3,ig) + xq_coul(3))**2.d0)
+          qg2 =     (g(1,ig) + xq_coul(1))**2.d0  + (g(2,ig) + xq_coul(2))**2.d0   &
+                  +((g(3,ig)) + xq_coul(3))**2.d0
           limit = (qg.lt.eps8)
           if(.not.limit) then
               spal = 1.0d0 - cos (rcut * tpiba * qg)

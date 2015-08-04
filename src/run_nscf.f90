@@ -73,6 +73,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   IF (.NOT.reduce_io.and.do_band) THEN
      twfcollect=.FALSE.
      CALL punch( 'all' )
+     !CALL punch1( 'all' )
   ENDIF
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )

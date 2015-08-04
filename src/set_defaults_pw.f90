@@ -118,6 +118,7 @@ SUBROUTINE setup_nscf_green(xq)
      !  In this case I keep the same points of the Charge density
      !  calculations
      !
+     WRITE(6,'("USING OLD KPOINT GRID")')
      nkstot = nks_start
      xk(:,1:nkstot) = xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)

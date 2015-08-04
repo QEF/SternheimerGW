@@ -1,7 +1,7 @@
 SUBROUTINE sym_sigma_c_im(ik0) 
 !G TIMES W PRODUCT
   USE kinds,         ONLY : DP
-  USE io_global,     ONLY : stdout, ionode_id, ionode
+  USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
   USE io_files,      ONLY : iunigk, prefix, tmp_dir
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
@@ -274,8 +274,10 @@ ENDDO
     DO iw = 1, nwsigma
        CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
     ENDDO
+
 !Now write Sigma in G space to file. 
-    CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
+    if(meta_ionode) CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
+
     WRITE(6,'(4x,"Sigma Written to File")')
     CALL stop_clock('sigmac')
     DEALLOCATE ( sigma_g  )

@@ -61,5 +61,6 @@ PROGRAM gw
   IF(do_sigma_exx)   CALL sym_sigma_exch(ik)
   IF(do_sigma_matel) CALL sigma_matel(ik)
   127 CONTINUE
+  CALL close_gwq(.TRUE.)
   CALL stop_gw( .TRUE. )
 END PROGRAM gw

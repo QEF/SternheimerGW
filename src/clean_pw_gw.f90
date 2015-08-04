@@ -38,7 +38,8 @@ SUBROUTINE clean_pw_gw(iq)
   !
   ! ... Close the files
   !
-  CALL close_gwq( .TRUE. )
+  !CALL close_gwq( .TRUE. )
+  CALL close_gwq( .FALSE. )
   !
   !
 RETURN

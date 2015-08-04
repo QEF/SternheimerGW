@@ -91,6 +91,7 @@ sigcim.o\
 rotate.o\
 coulpade.o\
 star_q.o\
+punch1.o\
 find_xk_uniq.o
 
 PWOBJS = ../../PW/src/libpw.a

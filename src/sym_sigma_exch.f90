@@ -6,6 +6,7 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk, wfc_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
+  USE wavefunctions_module, ONLY : evc
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
   USE eqv,           ONLY : evq, eprec
@@ -13,7 +14,7 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE qpoint,        ONLY : xq, npwq, igkq, nksq
   USE gwsigma,       ONLY : sigma_x_st, nbnd_sig
   USE buffers,       ONLY : save_buffer, get_buffer
-  USE io_global,     ONLY : stdout, ionode_id, ionode
+  USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
   USE gvect,         ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE mp,            ONLY : mp_sum, mp_barrier
   USE noncollin_module, ONLY : npol, nspin_mag
@@ -44,7 +45,7 @@ IMPLICIT NONE
   INTEGER, ALLOCATABLE  :: gmapsym(:,:)
   COMPLEX(DP), ALLOCATABLE  ::  eigv(:,:)
   REAL (DP)   :: xk1(3), aq(3)
-  INTEGER     :: iq1
+  INTEGER     :: iq1,ik1
   LOGICAL     :: found_q, inv_q
   INTEGER     :: iqrec, nig0, isym
   REAL(DP)    :: sxq(3,48), xqs(3,48)
@@ -58,6 +59,8 @@ IMPLICIT NONE
   INTEGER   :: kpoolid(nkstot), iqrec1(nkstot)
   INTEGER :: nbase, nksloc, rest, mypoolid
   character (len=256) :: form_str 
+  logical :: found_k
+  real(DP), parameter :: eps=1.e-5_dp
 
 #define DIRECT_IO_FACTOR 8
 ! Self-Energy grid:
@@ -70,11 +73,11 @@ IMPLICIT NONE
   CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
 !set appropriate weights for points in the brillouin zone. 
 !weights of all the k-points are in odd positions in list.  
-  wq(:) = 0.0d0
+!  wq(:) = 0.0d0
 !check if we're looking at k = gamma.
-  do iq = 1, nksq
-        wq(iq) = 0.5d0*wk(iq)
-  enddo
+!  do iq = 1, nksq
+!        wq(iq) = 0.5d0*wk(iq)
+!  enddo
   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
   WRITE(6,'("rcut ", f12.7)') rcut
   !We need to access all the wavefunctions, these should be all collected on the
@@ -85,6 +88,7 @@ IMPLICIT NONE
 
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
+  write(6,'(4x,"nksq,nks,kunit ",3i4)') nksq, nks, kunit
 
 !Little code for determining which wavefxn files we need to access:
   kpoolid = 0
@@ -114,11 +118,15 @@ IMPLICIT NONE
   !enddo
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
-  !DO iq = 1, nqs
-  DO iq = 1, nks
+ !DO iq = 1, nks
+ !xq(:) = xk(:,iq)
+!New pool parallel approach, we cycle if the kpoint isn't on the present
+!node, all nodes cycles over full brillouin zone for q.
+  DO iq = 1, nqs
+     xq(:) = x_q(:,iq)
+     write(1000+mpime, '("xq point, iq")')
+     write(1000+mpime, '(3f11.7, i4)') xq(:), iq
      DO isymop = 1, nsym
-        !xq(:) = x_q(:,iq)
-        xq(:) = xk(:,iq)
         CALL rotate(xq, aq, s, nsym, invs(isymop))
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0  = 1
@@ -130,103 +138,122 @@ IMPLICIT NONE
 !        write(1000+mpime, '(3f11.7, i4)') xk1(:), isymop
         write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
         write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
+!        write(1000+mpime, '(3i4)') iqrec, kpoolid(iqrec), iqrec1(iqrec)
 !Need to access wavefunctions on other processors!
 !Ground state is run with twfcollect so let's access those.
-       write(poolnum, "(I4)"), kpoolid(iqrec)
-       tempfile = trim(wfc_dir) // trim(prefix) // '.wfc'// trim(adjustl(poolnum))
-       write(1000+mpime,*) trim(tempfile)
-       unf_recl = DIRECT_IO_FACTOR * int(2*lrwfc, kind=kind(unf_recl))
-       iunwfc1 = 38
-       open(iunwfc1, file = trim(adjustl(tempfile)), iostat = ios, &
-       form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-       call errore ('sigma_exch', 'opening wfc', abs (ios) )
-       CALL davcio(evq, 2*lrwfc, iunwfc1, iqrec1(iqrec), -1)
-       close (unit = iunwfc1, status = 'keep')
-
-       IF (nksq.gt.1) THEN
-           CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ), &
-                        npw, igk, g2kin)
-       ENDIF
-       !call get_buffer (evq, lrwfc, iuwfc, iqrec)
-        npwq = npw
+!       write(poolnum, "(I4)"), kpoolid(iqrec)
+!       tempfile = trim(wfc_dir) // trim(prefix) // '.wfc'// trim(adjustl(poolnum))
+!       write(1000+mpime,*) trim(tempfile)
+!       unf_recl = DIRECT_IO_FACTOR * int(2*lrwfc, kind=kind(unf_recl))
+!       iunwfc1 = 38
+!       open(iunwfc1, file = trim(adjustl(tempfile)), iostat = ios, &
+!       form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+!       call errore ('sigma_exch', 'opening wfc', abs (ios) )
+!       CALL davcio(evc, 2*lrwfc, iunwfc1, iqrec1(iqrec), -1)
+!       close (unit = iunwfc1, status = 'keep')
+!       Check if this kpoint is on the node:
+    found_k = .false.
+    do ikstar = 1, nks 
+       found_k  = (abs(xk(1,ikstar) - x_q(1,iqrec)).le.eps).and. &
+                  (abs(xk(2,ikstar) - x_q(2,iqrec)).le.eps).and. & 
+                  (abs(xk(3,ikstar) - x_q(3,iqrec)).le.eps) 
+       if (found_k) then
+          ik1 = ikstar 
+          exit
+       endif
+    enddo
+    IF (found_k) then
+        call get_buffer (evc, lrwfc, iuwfc, ik1)
+    ELSE 
+        CYCLE
+    ENDIF
+    IF (nksq.gt.1) THEN
+         !CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ), &
+         !             npw, igk, g2kin)
+         CALL gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
+                      npw, igk, g2kin)
+    ENDIF
+    npwq = npw
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
-        counter  = 0
-        igkq_tmp = 0
-        igkq_ig  = 0
-        do ig = 1, npwq
-           if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
-               counter = counter + 1
-               igkq_tmp (counter) = igk(ig)
-               igkq_ig  (counter) = ig
-           endif
-        enddo
-        allocate ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
+    counter  = 0
+    igkq_tmp = 0
+    igkq_ig  = 0
+    do ig = 1, npwq
+       if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
+           counter = counter + 1
+           igkq_tmp (counter) = igk(ig)
+           igkq_ig  (counter) = ig
+       endif
+    enddo
+    allocate ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
 !psi_{k+q}(r)psi^{*}_{k+q}(r')
-        greenf_na = (0.0d0, 0.0d0)
-        do ig = 1, counter
-           do igp = 1, counter
-              do ibnd = 1, nbnd_occ(1)
-                greenf_na(igkq_tmp(ig), igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
-                                                         tpi*(0.0d0, 1.0d0)*conjg(evq(igkq_ig(ig),ibnd))*(evq(igkq_ig(igp), ibnd))
-             enddo
-           enddo
-        enddo
+    greenf_na = (0.0d0, 0.0d0)
+    do ig = 1, counter
+       do igp = 1, counter
+          do ibnd = 1, nbnd_occ(1)
+            greenf_na(igkq_tmp(ig), igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
+                                                     tpi*(0.0d0, 1.0d0)*conjg(evc(igkq_ig(ig),ibnd))*(evc(igkq_ig(igp), ibnd))
+         enddo
+       enddo
+    enddo
 !Fourier transform of green's function
-     ALLOCATE ( greenf_nar  (sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr)  )
-     greenf_nar(:,:) = czero
-     call fft6_g(greenf_na(1,1), greenf_nar(1,1), sigma_x_st, gmapsym, eigv(1,1), isym, nig0, 1)
-     DEALLOCATE(greenf_na)
-     ALLOCATE ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
-     rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-     barcoul(:,:) = (0.0d0,0.0d0)
-     IF(.not.trunc_2d) THEN
-        do ig = 1, sigma_x_st%ngmt
-          qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-                  + (g(3,ig)  + xq(3))**2.d0)
-          qg2 =     (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-                 + ((g(3,ig)) + xq(3))**2.d0
-          limit = (qg.lt.eps8)
-          if(.not.limit) then
-              spal = 1.0d0 - cos (rcut * tpiba * qg)
-              barcoul (gmapsym(ig, invs(isymop)), gmapsym(ig,invs(isymop))) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
-          else
-              barcoul(gmapsym(ig, invs(isymop)), gmapsym(ig, invs(isymop))) = (fpi*e2*(rcut**2))/2
-          endif
-        enddo
-     ELSE
-        zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-        rcut = -2*pi*zcut**2
-        DO ig = 1, sigma_x_st%ngmt
-                qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-                qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-                qz   = sqrt((g(3,ig) + xq(3))**2)
-         IF(qxy.gt.eps8) then
-                spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-                barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-         ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
-                spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-                barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-         ELSE  
-                barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(rcut, 0.0d0)
-         ENDIF
-        ENDDO
-     ENDIF
-     ALLOCATE (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
-     barcoulr(:,:) = (0.0d0, 0.0d0)
-     call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)
-     DEALLOCATE(barcoul)
-     if (.not.inv_q) sigma_ex = sigma_ex + 0.5*wk(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
-     if (inv_q)      sigma_ex = sigma_ex + 0.5*wk(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
-     DEALLOCATE(barcoulr)
-     DEALLOCATE(greenf_nar)
+    ALLOCATE ( greenf_nar  (sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr)  )
+    greenf_nar(:,:) = czero
+    call fft6_g(greenf_na(1,1), greenf_nar(1,1), sigma_x_st, gmapsym, eigv(1,1), isym, nig0, 1)
+    DEALLOCATE(greenf_na)
+    ALLOCATE ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
+    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+    barcoul(:,:) = (0.0d0,0.0d0)
+    IF(.not.trunc_2d) THEN
+       do ig = 1, sigma_x_st%ngmt
+         qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
+                 + (g(3,ig)  + xq(3))**2.d0)
+         qg2 =     (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
+                + ((g(3,ig)) + xq(3))**2.d0
+         limit = (qg.lt.eps8)
+         if(.not.limit) then
+             spal = 1.0d0 - cos (rcut * tpiba * qg)
+             barcoul (gmapsym(ig, invs(isymop)), gmapsym(ig,invs(isymop))) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
+         else
+             barcoul(gmapsym(ig, invs(isymop)), gmapsym(ig, invs(isymop))) = (fpi*e2*(rcut**2))/2
+         endif
+       enddo
+    ELSE
+       zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+       rcut = -2*pi*zcut**2
+       DO ig = 1, sigma_x_st%ngmt
+               qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+               qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+               qz   = sqrt((g(3,ig) + xq(3))**2)
+        IF(qxy.gt.eps8) then
+               spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+               barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+        ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+               spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
+               barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+        ELSE  
+               barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(rcut, 0.0d0)
+        ENDIF
+       ENDDO
+    ENDIF
+    ALLOCATE (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
+    barcoulr(:,:) = (0.0d0, 0.0d0)
+    call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)
+    DEALLOCATE(barcoul)
+    if (.not.inv_q) sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*(0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
+    if (inv_q)      sigma_ex = sigma_ex + wq(iq)*(1.0d0/dble(nsym))*conjg((0.0d0,1.0d0)/tpi*greenf_nar)*barcoulr
+    DEALLOCATE(barcoulr)
+    DEALLOCATE(greenf_nar)
    ENDDO!isym
   ENDDO!iq
   CALL mp_sum (sigma_ex, inter_pool_comm)  
   ALLOCATE ( sigma_g_ex  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
   sigma_g_ex(:,:) = (0.0d0,0.0d0)
-  call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
-  CALL davcio(sigma_g_ex, lrsex, iunsex, ik0,  1)
+  IF (meta_ionode) THEN
+      CALL fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
+      CALL davcio(sigma_g_ex, lrsex, iunsex, ik0,  1)
+  ENDIF
   DEALLOCATE(sigma_g_ex)
   DEALLOCATE (sigma_ex)
   CALL stop_clock('sigma_exch')
