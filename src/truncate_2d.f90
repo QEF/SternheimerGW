@@ -4,7 +4,7 @@ subroutine truncate_2D(scrcoul, xqloc, opt)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE gvect,         ONLY : g, ngm, nl
-  USE qpoint,        ONLY : xqloc, npwq, igkq, nksq, ikks, ikqs
+  USE qpoint,        ONLY : npwq, igkq, nksq, ikks, ikqs
   USE gwsigma,       ONLY : sigma_c_st
   USE fft_base,      ONLY : dfftp
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax

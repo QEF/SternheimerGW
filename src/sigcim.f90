@@ -101,7 +101,7 @@ SUBROUTINE sym_sigma_c_im(ik0)
   INTEGER     :: isym_k(nsym), nig0_k(nsym), iqrec_k(nsym)
   LOGICAL, EXTERNAL :: eqvect
   LOGICAL     :: invq_k(nsym), found_qc
-  LOGICAL     :: iqcoul
+  INTEGER     :: iqcoul
   real(DP), parameter :: eps=1.e-5_dp
 
 #define DIRECT_IO_FACTOR 8 

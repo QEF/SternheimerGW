@@ -102,11 +102,11 @@ SUBROUTINE setup_nscf_green(xq)
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
-    if (invsymq)      WRITE(6,'(\5x, "qpoint HAS inversion symmetry")')
-    if (.not.invsymq) WRITE(6,'(\5x, "qpoint does NOT have inversion symmetry")')
+    if (invsymq)      WRITE(6,'(/5x, "qpoint HAS inversion symmetry")')
+    if (.not.invsymq) WRITE(6,'(/5x, "qpoint does NOT have inversion symmetry")')
 
-    WRITE(6,'(\5x, "nsym, nsymq, nrot ", i4, i4, i4)') nsym,  nsymq, nrot 
-    WRITE(6,'(\5x, "nsym, nsymq, nrot ", i4, i4)') nks_start, nsymq, nkstot
+    WRITE(6,'(/5x, "nsym, nsymq, nrot ", i4, i4, i4)') nsym,  nsymq, nrot 
+    WRITE(6,'(/5x, "nsym, nsymq, nrot ", i4, i4)') nks_start, nsymq, nkstot
     WRITE(6,*) newgrid 
 
   ! Since the order of the s matrices is changed we need to recalculate:

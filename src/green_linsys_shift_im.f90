@@ -36,9 +36,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
   USE mp_world,             ONLY : nproc, mpime
   USE mp_pools,             ONLY : inter_pool_comm
 
-
-  USE, INTRINSIC :: ieee_arithmetic
-
   IMPLICIT NONE 
 
   !should be freq blocks...
