@@ -274,15 +274,13 @@ ENDDO
     DO iw = 1, nwsigma
        CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
     ENDDO
-
 !Now write Sigma in G space to file. 
     if(meta_ionode) CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
-
     WRITE(6,'(4x,"Sigma Written to File")')
     CALL stop_clock('sigmac')
     DEALLOCATE ( sigma_g  )
   ENDIF !ionode
-  CALL mp_barrier(inter_image_comm)
   DEALLOCATE ( sigma  )
+  CALL mp_barrier(inter_image_comm)
 RETURN
 END SUBROUTINE sym_sigma_c_im

@@ -21,6 +21,7 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE mp_pools,      ONLY : inter_pool_comm, npool, kunit, my_pool_id
   USE mp_world,      ONLY : nproc, mpime
   USE save_gw,       ONLY : tmp_dir_save
+  USE mp_images,     ONLY : nimage, my_image_id, inter_image_comm
 IMPLICIT NONE
 !ARRAYS to describe exchange operator.
   LOGICAL :: limit, lgamma
@@ -256,5 +257,7 @@ IMPLICIT NONE
   ENDIF
   DEALLOCATE(sigma_g_ex)
   DEALLOCATE (sigma_ex)
+  CALL mp_barrier(inter_pool_comm)!I think I need these after writes!
+  CALL mp_barrier(inter_image_comm)!I think I need these after writes!
   CALL stop_clock('sigma_exch')
 END SUBROUTINE sym_sigma_exch

@@ -58,8 +58,8 @@ PROGRAM gw
      CLOSE(UNIT = iunresid, STATUS = 'DELETE')
      CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
   ENDIF
-  IF(do_sigma_exx)   CALL sym_sigma_exch(ik)
-  IF(do_sigma_matel) CALL sigma_matel(ik)
+  IF(do_sigma_exx)   CALL sym_sigma_exch(1)
+  IF(do_sigma_matel) CALL sigma_matel(1)
   127 CONTINUE
   CALL close_gwq(.TRUE.)
   CALL stop_gw( .TRUE. )
