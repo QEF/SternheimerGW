@@ -159,7 +159,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
           !         dvaux(nl(ig)) = dvaux(nl(ig)) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
           !      ENDDO
           !   ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
-          !      spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+          !     spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
           !      DO igp = 1, sigma_c_st%ngmt
           !         dvaux(nl(ig)) = dvaux(nl(ig)) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
           !      ENDDO
