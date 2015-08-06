@@ -28,7 +28,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   USE save_gw,         ONLY : tmp_dir_save
   USE control_flags,   ONLY : iprint, io_level
   USE mp_bands,        ONLY : ntask_groups
-  USE disp,            ONLY : xk_kpoints
+  USE disp,            ONLY : xk_kpoints, nqs
   USE klist,           ONLY : xk, wk, nks, nkstot
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE wvfct,           ONLY : nbnd
@@ -75,6 +75,9 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
      CALL punch( 'all' )
      !CALL punch1( 'all' )
   ENDIF
+
+  IF(do_matel.and.nkstot.ne.nqs) WRITE(6,'("WARNING: Ground state calculation has different kpoint mesh! This probably wont work.")') 
+
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
   ext_restart=.FALSE.

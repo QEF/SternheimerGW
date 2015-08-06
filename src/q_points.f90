@@ -43,7 +43,7 @@ SUBROUTINE q_points ( )
   !call kpoint_grid( nrot, time_reversal, .false., s, t_rev, bg, nqmax,&
   !                        0,0,0, nq1,nq2,nq3, nqs, xq, wq )
   allocate(x_q(3,nqs))
-  x_q(:,:)=xq(:,1:nqs)
+  x_q(:,:) = xq(:,1:nqs)
   deallocate (xq)
   !
   ! Check if the Gamma point is one of the points and put

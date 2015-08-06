@@ -179,7 +179,7 @@ IMPLICIT NONE
       ALLOCATE (evc_tmp_j  (sigma_x_st%ngmt))
       sigma_g_ex(:,:) = (0.0d0, 0.0d0)
       ios = 0 
-      READ( UNIT = iunsex, REC = 1, IOSTAT = ios ) sigma_g_ex
+      READ( UNIT = iunsex, REC = ik0, IOSTAT = ios ) sigma_g_ex
       !CALL davcio(sigma_g_ex, lrsex, iunsex, 1, -1)
       IF(ios /= 0) THEN
         WRITE(1000+mpime, '(5x, "Could not read Sigma_X file. Have you calculated it?")') 
@@ -249,7 +249,7 @@ IMPLICIT NONE
          enddo
       else
 !let's us avoid crash if we haven't calculated one of these things yet:
-         READ( UNIT = iunsigma, REC = 1, IOSTAT = ios ) sigma
+         READ( UNIT = iunsigma, REC = ik0, IOSTAT = ios ) sigma
 !         CALL davcio(sigma, lrsigma, iunsigma, 1, -1)
          if(ios /= 0) then
             WRITE(1000+mpime, '("Could not read Sigma_C file. Have you calculated it?")')

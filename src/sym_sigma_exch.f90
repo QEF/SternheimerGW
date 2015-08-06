@@ -132,27 +132,8 @@ IMPLICIT NONE
         xk1 = xk_kpoints(:,ik0) - aq(:)
         nig0  = 1
         call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
-!        if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-!        write(1000+mpime, '("xq point, iq")')
-!        write(1000+mpime, '(3f11.7, i4)') xq(:), iq
-!        write(1000+mpime, '("xk1 point, isymop")')
-!        write(1000+mpime, '(3f11.7, i4)') xk1(:), isymop
-        write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
-        write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
-!        write(1000+mpime, '(3i4)') iqrec, kpoolid(iqrec), iqrec1(iqrec)
-!Need to access wavefunctions on other processors!
-!Ground state is run with twfcollect so let's access those.
-!       write(poolnum, "(I4)"), kpoolid(iqrec)
-!       tempfile = trim(wfc_dir) // trim(prefix) // '.wfc'// trim(adjustl(poolnum))
-!       write(1000+mpime,*) trim(tempfile)
-!       unf_recl = DIRECT_IO_FACTOR * int(2*lrwfc, kind=kind(unf_recl))
-!       iunwfc1 = 38
-!       open(iunwfc1, file = trim(adjustl(tempfile)), iostat = ios, &
-!       form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-!       call errore ('sigma_exch', 'opening wfc', abs (ios) )
-!       CALL davcio(evc, 2*lrwfc, iunwfc1, iqrec1(iqrec), -1)
-!       close (unit = iunwfc1, status = 'keep')
-!       Check if this kpoint is on the node:
+        !write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
+        !write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
     found_k = .false.
     do ikstar = 1, nks 
        found_k  = (abs(xk(1,ikstar) - x_q(1,iqrec)).le.eps).and. &

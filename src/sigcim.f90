@@ -132,13 +132,6 @@ SUBROUTINE sym_sigma_c_im(ik0)
    sigma(:,:,:) = (0.0d0, 0.0d0)
    CALL start_clock('sigmac')
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
-!   if(mpime.eq.1) then
-!    do isym=1,nsym
-!      do ig =1,sigma_c_st%ngmt
-!         write(3000+mpime,'("ig, gmapsym", i5, i5)') ig, gmapsym(ig,isym)
-!      enddo
-!    enddo 
-!   endif
    IF(allocated(sigma)) THEN
      WRITE(6,'(4x,"Sigma allocated")')
    ELSE
@@ -188,14 +181,12 @@ DO iq = 1, nks
       iqcoul = iq1 
       xq(:) = x_q(:,iqcoul)
    ELSE 
-      WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
+       WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
        CALL mp_global_end()
        STOP
    ENDIF
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqcoul, -1)
-!wk(iq) should be the correct weight for this q point.
-!   cprefac = 0.50d0*wk(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
    cprefac = wq(iqcoul)*dcmplx(-1.0d0, 0.0d0)/tpi
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
    iqrec_k = 0
@@ -212,14 +203,6 @@ DO iq = 1, nks
       isym_k(isymop)  = isym
       nig0_k(isymop)  = nig0
       invq_k(isymop)  = inv_q
-      !if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-      !write(1000+mpime, '("xq point, iq, nksq")')
-      !write(1000+mpime, '(3f11.7, 2i4)') xq(:), iq, isymop
-      !write(1000+mpime, '("xk1 point, isym, nig0")')
-      !write(1000+mpime, '(3f11.7, 2i4)') xk1(:), nig0, isym
-      !write(1000+mpime, '("xk point, isym, iqrec")')
-      !write(1000+mpime, '(3f11.7, 2i4)') x_q(:, iqrec), isym, iqrec
-      !write(1000+mpime, *)
    ENDDO
    iqrec_old = 0
    DO isymop = 1, nsym

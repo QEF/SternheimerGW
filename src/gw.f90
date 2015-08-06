@@ -13,6 +13,7 @@ PROGRAM gw
   USE io_files,        ONLY : diropn
   USE units_gw,        ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,           ONLY : nbnd
+  USE disp,            ONLY : num_k_pts
 
   IMPLICIT NONE
 
@@ -48,7 +49,9 @@ PROGRAM gw
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
   IF(do_imag) THEN
-    IF(do_sigma_c) CALL sym_sigma_c_im(1)
+  do ik = 1, num_k_pts
+     IF(do_sigma_c) CALL sym_sigma_c_im(ik)
+  enddo
   ELSE
     IF(do_green)   CALL green_linsys_shift(1)
     IF(do_sigma_c) CALL sigma_c(1)
@@ -58,8 +61,13 @@ PROGRAM gw
      CLOSE(UNIT = iunresid, STATUS = 'DELETE')
      CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
   ENDIF
-  IF(do_sigma_exx)   CALL sym_sigma_exch(1)
-  IF(do_sigma_matel) CALL sigma_matel(1)
+  do ik = 1, num_k_pts
+     IF(do_sigma_exx)   CALL sym_sigma_exch(ik)
+  enddo
+  do ik = 1, num_k_pts
+     IF(do_sigma_matel) CALL sigma_matel(ik)
+  enddo
+
   127 CONTINUE
   CALL close_gwq(.TRUE.)
   CALL stop_gw( .TRUE. )
