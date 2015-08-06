@@ -9,8 +9,8 @@ Screened Coulomb for the full mesh.
   nq1 = 5
   nq2 = 5
   nq3 = 5
-  tr2_gw=1.0d-9,
-  tr2_green=1.0d-6
+  tr2_gw=1.0d-5,
+  tr2_green=1.0d-5
   kpoints = .true.
   use_symm   = .true.
   modielec   = .false.
@@ -24,7 +24,7 @@ Screened Coulomb for the full mesh.
   multishift     = .true.
   do_sigma_exx   = .true.
   do_sigma_matel = .true.
-  maxter_green   = 120
+  maxter_green   = 150
   ecutsex     = 15.0
   ecutsco     = 2.5
   wsigmamin   =-40.0

@@ -9,7 +9,7 @@ si scf input card with monkhorst pack automesh
  /
  &system
     ibrav = 2, celldm(1) =10.26, nat=  2, ntyp= 1,
-    ecutwfc = 16.0
+    ecutwfc = 16.0, force_symmorphic=.true.
  /
  &electrons
     mixing_beta = 0.7
