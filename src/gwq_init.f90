@@ -40,9 +40,10 @@ SUBROUTINE gwq_init()
   USE control_gw,           ONLY : nbnd_occ, lgamma
   USE units_gw,             ONLY : lrwfc, iuwfc
   USE qpoint,               ONLY : xq, igkq, npwq, nksq, eigqts, ikks, ikqs
-  USE mp_bands,            ONLY : intra_bgrp_comm
-  USE mp,                  ONLY : mp_sum
-  USE mp_pools,            ONLY : inter_pool_comm, my_pool_id, npool, kunit
+  USE mp_bands,             ONLY : intra_bgrp_comm
+  USE mp,                   ONLY : mp_sum
+  USE mp_pools,             ONLY : inter_pool_comm, my_pool_id, npool, kunit
+  USE mp_images,            ONLY : nimage
   USE mp_world,             ONLY : nproc, mpime
   !
   IMPLICIT NONE
@@ -69,6 +70,15 @@ SUBROUTINE gwq_init()
   !
   CALL start_clock( 'gwq_init' )
   !
+  ! until g vector parallelism is implemented only pool and image parallelism
+  ! are available
+  IF ( npool * nimage /= nproc ) THEN
+    CALL errore("gwq_init", "number of processes must be equal to product "//&
+                "of number of bands and"//new_line('n')//"     number of "//&
+                "images"//new_line('n')//"     use -npool and -nimage "//&
+                "command line options", 1)
+  END IF
+
   ALLOCATE( aux1( npwx*npol, nbnd ) )    
 
 !HL structure factors
