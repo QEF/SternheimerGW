@@ -108,9 +108,9 @@ SUBROUTINE sigma_c(ik0)
    w_ryd(:) = wcoul(:)/RYTOEV
 
 
-   WRITE(6," ")
+   WRITE(6,"( )")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk(ipol, ik0), ipol=1,3)
-   WRITE(6," ")
+   WRITE(6,"( )")
    WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
    WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
 
