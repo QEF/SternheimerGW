@@ -35,9 +35,6 @@ SUBROUTINE green_linsys_shift (ik0)
   USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
   USE mp_world,      ONLY : nproc, mpime
 
-
-  USE, INTRINSIC :: ieee_arithmetic
-
   IMPLICIT NONE 
 
   !should be freq blocks...
@@ -89,8 +86,8 @@ SUBROUTINE green_linsys_shift (ik0)
 
 !tmp number of blocks
     INTEGER :: nblocks, block
-    LOGICAL :: conv_root
-    EXTERNAL cg_psi, ch_psi_all_green
+    LOGICAL :: conv_root, testnan
+    EXTERNAL cg_psi, ch_psi_all_green, testnan
 
      allocate  (h_diag (npwx, 1))
      allocate  (etc(nbnd_occ(ik0), nkstot))
@@ -193,7 +190,7 @@ do iq = 1, nksq
              endif
              do iw = 1, nwgreen
                 do igp = 1, counter
-                   if( ieee_is_nan(real(gr_A_shift(igkq_ig(igp),iw))).or.ieee_is_nan(aimag(gr_A_shift(igkq_ig(igp),iw)))) then
+                   if( testnan(real(gr_A_shift(igkq_ig(igp),iw))).or.testnan(aimag(gr_A_shift(igkq_ig(igp),iw)))) then
                        gr_A_shift (igkq_ig(igp), iw) = (0.0d0, 0.0d0)
                        write(1000+mpime, '("green nan")')
                    endif

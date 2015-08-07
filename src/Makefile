@@ -1,16 +1,18 @@
 # Makefile for GW. 
 #
-include ../../make.sys
+ESPRESSO=../..
+include $(ESPRESSO)/make.sys
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)../../iotk/src $(MOD_FLAG)../../Modules \
-          $(MOD_FLAG)../../PW/src $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \
+          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG).
 
 IFLAGS=
 
 GWOBJS = \
 gwcom.o\
 gw.o\
+testnan.o\
 save_gw_input.o\
 bcast_gw_input.o\
 gwq_readin.o\
@@ -94,9 +96,9 @@ star_q.o\
 punch1.o\
 find_xk_uniq.o
 
-PWOBJS = ../../PW/src/libpw.a
-QEMODS = ../../Modules/libqemod.a
-LIBOBJS	= ../../flib/ptools.a ../../flib/flib.a ../../clib/clib.a ../../iotk/src/libiotk.a
+PWOBJS = $(ESPRESSO)/PW/src/libpw.a
+QEMODS = $(ESPRESSO)/Modules/libqemod.a
+LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 TLDEPS= bindir mods libs pw-lib
 
 all : libgw.a gw.x
