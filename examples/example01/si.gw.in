@@ -1,0 +1,51 @@
+Screened Coulomb for the full mesh.
+ &inputgw
+  prefix='si',
+  amass(1) = 28.09,
+  outdir='./tmp'
+  fpol=.true.
+  ldisp=.true.
+  lrpa=.true.
+  nq1 = 5
+  nq2 = 5
+  nq3 = 5
+  tr2_gw=1.0d-4,
+  tr2_green=1.0d-5
+  kpoints = .true.
+  use_symm   = .true.
+  modielec   = .false.
+  w_of_q_start   = 1
+  do_q0_only     = .false.
+  do_imag        = .true.
+  solve_direct   = .true.
+  do_coulomb     = .true.
+  do_green       = .true.
+  do_sigma_c     = .true.
+  multishift     = .true.
+  do_sigma_exx   = .true.
+  do_sigma_matel = .true.
+  maxter_green   = 180
+  ecutsex     = 15.0
+  ecutsco     = 6.0
+  wsigmamin   = 0.0
+  wsigmamax   = 100.0
+  deltaw      = 10.0
+  eta         = 0.007
+  wcoulmax    = 200
+  nwcoul      = 35
+  nbnd_sig    = 8
+  double_grid = .false.
+  godbyneeds  = .true.
+  prec_shift  = .false.
+  padecont    = .false.
+  nmix_gw     = 4
+ /
+FREQUENCIES
+2
+0.0d0 0.0d0
+0.0d0 16.0d0
+/
+K_points
+1
+0.000000000  0.000000000   0.000000000
+/

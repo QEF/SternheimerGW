@@ -1,0 +1,161 @@
+Structure of the input data:
+===============================================================================
+&inputgw
+...
+/
+
+Frequencies
+...
+/
+
+K_points
+...
+/
+========================================================================
+NAMELIST: &inputgw
+   +--------------------------------------------------------------------
+	 Variable:	  do_coulomb, do_green, do_sigma_exx, do_sigma_c,
+		   	        do_sigma_matel.
+
+   Type:           LOGICAL
+   Default:        .false.
+   Description:	   control variables for determining which aspects of
+			        	   the calculation are to be run. In order: perform calculation
+        				   of screened coulomb interaction, the Green's function, exact
+        				   exchange component of the interaction, the correlation
+        			     energy, and the matrix elements of the single particle
+        				   states with the various operators.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+   Variable:       prefix
+   Type:           CHARACTER
+   Default:        'sgw'
+   Description:    prepended to input/output filenames:
+                   prefix.wfc, prefix.rho, etc. Must be the same
+        				   as the underlying scf calculation.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+   Variable:       use_symm
+   Type:           LOGICAL
+   Default:        .TRUE.
+   Description:   Logical variable to determine whether or not symmetry
+	        			  is used to reduced the number of independent solutions
+				          of the Sternheimer equation required. use_symm only
+         	        calculates electronic response to unique G vectors.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable:	  do_imag
+
+   Type:           LOGICAL
+   Default:        .false.
+   Description: Performs calculation along imaginary axis. Both the 
+                Green's function and the screened Coulomb interaction
+                are calculated along the imaginary, the convolution 
+                is performed using a Gauss-Legendre grid. Significant
+                saving in time and memory compared to real frequency 
+                integration.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable:	  ecutsco, ecutsex
+
+   Type:        REAL(DP)
+   Default:     5 Ry.
+   Description: Planewave energy cutoffs for the (co)rrelation energy and
+                the (ex)change energy. Typically a higher cutoff for the 
+                exchange energy is required.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable:	  godbyneeds, padecont, freq_gl
+   Type:        LOGICAL
+   Default:     godbyneeds
+   Description: Choice of screening model for the screened Coulomb
+                interaction. The Godby-Needs plasmon pole model 
+                requires fitting the dielectric function to two points
+                on the imaginary axis, typically at 0, and i\omega_{p}
+                where \omega_{p} is the classical plasmon frequency.
+                The padecont chooses analytic continuation of the frequency
+                dependence. freq_gl only calculates the screened Coulomb
+                interaction at the points required by the Gauss-Legendre grid.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable: maxter_green
+   Type:     INTEGER
+   Default:  200   
+   Description: Maximum number of conjugate gradient minimization steps.
+                A warning will be issued if the linear system does not 
+                converge for multishift. In this case you may have to
+                raise maxter_green or abandon the multishift linear system
+                solver.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable: nbnd_sig
+   Type:     INTEGER
+   Default:  number of occupied bands + 4
+   Description: Number of bands included in the final ouput. Typically
+                one is interested in the selfenergy, quasiparticle corrections,
+                and self-energy operator for the states around the band
+                gap or Fermi energy.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable: 
+   Type: 
+   Default: 
+   Description: 
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable: 
+   Type: 
+   Default: 
+   Description: 
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable: wcoulmax
+   Type: REAL
+   Default: 80 eV   
+   Description: The cutoff in eV of the frequency dependence of the Screened 
+                Coulomb interaction.
+   +--------------------------------------------------------------------
+   +--------------------------------------------------------------------
+	 Variable: wsigmamin, wsigmamax, deltaw
+   Type:  REAL 
+   Default: 0.0 eV, 20.0 eV, 5.0 eV  
+   Description: The minimum and maximum, and spacing, of the frequency points
+                for the selfenergy. In the case of do_imag, these are the
+                frequency points along the imaginary axis which are fitted 
+                to perform the analytic continuation. For real frequencies 
+                a much finer grid would be required.
+   +--------------------------------------------------------------------
+FREQUENCIES
+  Line of input:
+  nfs
+  w(1)  w(2)
+  ....
+  w(1)  w(2)
+   DESCRIPTION OF ITEMS:
+      +--------------------------------------------------------------------
+        Variable :    nfs
+        Type:         INTEGER
+        Description:  Number of frequency points in the calculation of W(iw).
+                      If the Godby-Needs plasmon-pole model is used only two
+                      frequency points are required. For the analytic
+                      continuation more points are required
+      +--------------------------------------------------------------------
+K_Points
+========================================================================
+Line of input:
+      nqs
+      xq(1)  xq(2)  xq(3)
+   DESCRIPTION OF ITEMS:
+      +--------------------------------------------------------------------
+      Variable :      nqs
+      Type:           INTEGER
+      Description:    number of q points 
+
+      Variables:      xq(1)  xq(2)  xq(3)
+
+      Type:           REAL
+      Description:    The electric field wavevectors, or the point at which
+                      Sigma_{q} is calculated in units of 2pi/a0
+                      (a0 = lattice parameter).
+      +--------------------------------------------------------------------
+===End of line-of-input=================================================

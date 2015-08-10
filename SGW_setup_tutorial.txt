@@ -1,0 +1,15 @@
+Checkout the latest version of espresso-5.1/
+  svn checkout http://qeforge.qe-forge.org/svn/q-e/trunk/espresso ./espresso-5.1/
+  username: anonymous
+  password: 
+
+Make all:
+  cd ./espresso-5.1/
+  ./config
+  make pw
+
+Checkout the latest version of SGW:
+  svn co https://rothery3.materials.ox.ac.uk/svn/sgw/branches/sgw-5.0/ ./SGW
+  cd ./SGW/src
+  make
+
