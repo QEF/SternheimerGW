@@ -7,6 +7,14 @@
 !
 !-----------------------------------------------------------------------
 subroutine star_q (xq, at, bg, nsym, s, invs, nq, sxq, isq, nsq, imq, verbosity )
+  !FROM DRESSELHAUS:
+  !The  irreducible representation D(S) of a space group S is
+  !characterized by the star of wave vectors nad the irreducible
+  !representation Gamma(H) of the point group H(K_{1}). Its dimension is
+  !m = qd where q is the index of the star of wave vectors (HL nqs), and
+  !d is the dimension of the representation \Gamma.  
+  !for instance the 0 0 0 kpoint has nqs = 1 and its representation is the
+  !same as the whole crystal.
   !-----------------------------------------------------------------------
   ! generate the star of q vectors that are equivalent to the input one
   ! NB: input s(:,:,1:nsym) must contain all crystal symmetries,
@@ -120,11 +128,3 @@ subroutine star_q (xq, at, bg, nsym, s, invs, nq, sxq, isq, nsq, imq, verbosity 
   return
 end subroutine star_q
 
-  !FROM DRESSELHAUS:
-  !The  irreducible representation D(S) of a space group S is
-  !characterized by the star of wave vectors nad the irreducible
-  !representation Gamma(H) of the point group H(K_{1}). Its dimension is
-  !m =qd where q is the index of the star of wave vectors (HL nqs), and
-  !d is the dimension of the representation \Gamma.  
-  !for instance the 0 0 0 kpoint has nqs = 1 and its representation is the
-  !same as the whole crystal.

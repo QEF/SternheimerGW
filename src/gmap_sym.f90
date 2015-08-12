@@ -20,7 +20,8 @@
   !  communication)
   !
   !  No ultrasoft now
-  !  HL: Is ftau properly re-ordered? I know the first fsym are but maybe not the others.
+  !  HL: Fractional rotations not applicable if FFT grid is different from full wave
+  !  function grid!
   !
   !
   !----------------------------------------------------------------------

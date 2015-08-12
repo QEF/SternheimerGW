@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE sigma_r2g(sigma, sigma_g)
 
 ! 6-D fourier transform used for taking Sigma back in to G space after the product has been formed in 

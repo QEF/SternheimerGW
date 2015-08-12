@@ -9,6 +9,7 @@
   subroutine gwq_setup
 !-----------------------------------------------------------------------
   !
+  ! MODIFIED Henry Lambert
   !  This subroutine prepares several variables which are needed in the
   !  GW !  program:
   !  1) computes the total local potential (external+scf) on the smooth
@@ -19,7 +20,7 @@
   !  6) computes alpha_pv
   !  9) set the variables needed to deal with nlcc
   !
-  ! LEGACY FROM THE PHONON STUFF
+  ! LEGACY FROM THE PHONON STUFF (SHOULD BE REMOVED)
   !
   !  7) computes the variables needed to pass to the pattern representation
   !     u      the patterns

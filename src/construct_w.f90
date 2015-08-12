@@ -1,7 +1,13 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
@@ -39,11 +45,12 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
                z(iwim) = fiu(iwim)
                a(iwim) = scrcoul_g (ig,igp,iwim)
            ENDDO
-           pade_catch=.false.
            IF (padecont) THEN
                call pade_eval ( nfs, z, a, dcmplx(0.0d0, w_ryd), scrcoul_pade_g (ig,igp))
-           ELSE IF (godbyneeds) THEN
+           ELSE IF (godbyneeds .and. do_imag) THEN
                scrcoul_pade_g(ig,igp) = -a(2)/(w_ryd**2+(a(1))**2)
+           ELSE IF (godbyneeds .and. .not. do_imag) THEN
+               scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
            ELSE
                 WRITE(6,'("No screening model chosen!")')
                 STOP

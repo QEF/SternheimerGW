@@ -1,7 +1,15 @@
+  !-----------------------------------------------------------------------
+  ! Sternheimer-GW code: Electronic structure code for 
+  ! performing Quasiparticle calculations.
+  ! Copyright (C) 2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !
 PROGRAM gw
   !-----------------------------------------------------------------------
-  ! ... This is the main driver of the Sternheimer-GW code. It
-  ! ... closely mirrors the construction of the PHonon code.
+  !... This is the main driver of the Sternheimer-GW code. It
+  !... closely mirrors the construction of the PHonon code.
   !-----------------------------------------------------------------------
   USE mp_global,       ONLY : mp_startup
   USE environment,     ONLY : environment_start
@@ -26,16 +34,16 @@ PROGRAM gw
   !
   CALL mp_startup ( start_images=.true. )
   CALL environment_start ( code )
-!Initialize GW calculation, Read Ground state information.
+  ! Initialize GW calculation, Read Ground state information.
   CALL gwq_readin()
   CALL check_stop_init()
   CALL check_initial_status(auxdyn)
-!Initialize frequency grids, FFT grids for correlation
-!and exchange operators, open relevant GW-files.
+  ! Initialize frequency grids, FFT grids for correlation
+  ! and exchange operators, open relevant GW-files.
   CALL freqbins()
   CALL sigma_grids()
   CALL opengwfil()
-!Calculation W
+  ! Calculation W
   IF(do_coulomb) CALL do_stern()
   do_iq=.TRUE.
   setup_pw = .TRUE.
@@ -45,18 +53,18 @@ PROGRAM gw
   if(do_q0_only) GOTO 127
   CALL run_nscf(do_band, do_matel, ik)
   CALL initialize_gw()
-!Calculation G
   IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
   IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
-  IF(do_imag) THEN
-  do ik = 1, num_k_pts
-     IF(do_sigma_c) CALL sym_sigma_c_im(ik)
-  enddo
+  ! Calculation \Sigma_{k}= \sum_{q}G_{k-q}W_{q}
+  IF (do_imag) THEN
+      DO ik = 1, num_k_pts
+         IF(do_sigma_c) CALL sigma_c_im(ik)
+      ENDDO
   ELSE
-    IF(do_green)   CALL green_linsys_shift(1)
-    IF(do_sigma_c) CALL sigma_c(1)
+      DO ik = 1, num_k_pts
+         IF(do_sigma_c) CALL sigma_c_re(ik)
+      ENDDO
   ENDIF
-
   IF(do_green.and.multishift) then
      CLOSE(UNIT = iunresid, STATUS = 'DELETE')
      CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
@@ -67,7 +75,6 @@ PROGRAM gw
   do ik = 1, num_k_pts
      IF(do_sigma_matel) CALL sigma_matel(ik)
   enddo
-
   127 CONTINUE
   CALL close_gwq(.TRUE.)
   CALL stop_gw( .TRUE. )

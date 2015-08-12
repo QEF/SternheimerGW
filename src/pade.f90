@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
   ! General note:
   ! Lebegue, Arnaud, Alouani, and Blochel [PRB 67, 155208 (2003)]
   ! state that when they use Pade of order N = 12 (resulting in

@@ -1,4 +1,10 @@
-SUBROUTINE sym_sigma_c_im(ik0) 
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
+SUBROUTINE sigma_c_im(ik0) 
 !G TIMES W PRODUCT
   USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
@@ -246,7 +252,7 @@ DO iq = 1, nks
         ENDDO !on frequency convolution over w'
      ENDDO !on iw0  
   ENDIF
-   ENDDO!ISYMOP
+ ENDDO!ISYMOP
 ENDDO!iq
  DEALLOCATE ( gmapsym          )
  DEALLOCATE ( greenfr          )
@@ -284,4 +290,4 @@ ENDDO!iq
   CALL mp_barrier(inter_image_comm)
   DEALLOCATE ( sigma  )
 RETURN
-END SUBROUTINE sym_sigma_c_im
+END SUBROUTINE sigma_c_im

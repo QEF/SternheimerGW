@@ -5,6 +5,8 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+!Modified by Henry Lambert to use v^{2D}(r'-r), i.e.
+!2D truncation of bare Coulomb interaction.
 !
 !-----------------------------------------------------------------------
 subroutine dv_of_drho (mode, dvscf, flag)
@@ -14,7 +16,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   !     due to the perturbation.
   !
   USE kinds,     ONLY : DP
-  USE constants, ONLY : e2, fpi
+  USE constants, ONLY : e2, fpi, eps8
   USE fft_base,  ONLY: dfftp
   USE fft_interfaces, ONLY: fwfft, invfft
   USE gvect,     ONLY : nl, ngm, g,nlm, gstart
@@ -28,7 +30,6 @@ subroutine dv_of_drho (mode, dvscf, flag)
   USE gc_gw,     ONLY : grho, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s
   USE control_gw, ONLY : lrpa, trunc_2d
   USE control_flags, only : gamma_only
-  !OBM: gamma_only is disregarded for phonon calculations, TDDFPT purposes only
 
   implicit none
 
@@ -139,34 +140,30 @@ subroutine dv_of_drho (mode, dvscf, flag)
             endif
          enddo
        ELSE
-           zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-           DO ig = 1, ngm
-                qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-             IF (qg2 > 1.d-8) then
-                qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-                qz   = sqrt((g(3,ig)+xq(3))**2)
-                spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-                dvaux(nl(ig), is) = dvaux(nl(ig), is) + dvscf(nl(ig), 1)*dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
-             ENDIF 
-           ENDDO
-          !DO ig = 1, ngm
-          !   qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
-          !   qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
-          !   qz   = sqrt((g(3,ig) + xqloc(3))**2)
-          !   IF(qxy.gt.eps8) then
-          !      spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-          !      DO igp = 1, sigma_c_st%ngmt
-          !         dvaux(nl(ig)) = dvaux(nl(ig)) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
-          !      ENDDO
-          !   ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
-          !     spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-          !      DO igp = 1, sigma_c_st%ngmt
-          !         dvaux(nl(ig)) = dvaux(nl(ig)) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
-          !      ENDDO
-          !   ELSE
-          !      dvaux(nl(ig)) = 0.0d0
-          !   ENDIF
+          zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+          ! DO ig = 1, ngm
+          !      qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+          !   IF (qg2 > 1.d-8) then
+          !      qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+          !      qz   = sqrt((g(3,ig)+xq(3))**2)
+          !      spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+          !      dvaux(nl(ig), is) = dvaux(nl(ig), is) + dvscf(nl(ig), 1)*dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
+          !   ENDIF 
           !ENDDO
+          DO ig = 1, ngm
+             qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+             qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+             qz   = sqrt((g(3,ig) + xq(3))**2)
+             IF(qxy.gt.eps8) then
+                spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+                dvaux(nl(ig),1) = dvaux(nl(ig),1) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+             ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+                spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
+                dvaux(nl(ig),1) = dvaux(nl(ig),1) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+             ELSE
+                dvaux(nl(ig),1) = 0.0d0
+             ENDIF
+          ENDDO
        ENDIF
        CALL invfft ('Dense', dvaux (:, is), dfftp)
     enddo

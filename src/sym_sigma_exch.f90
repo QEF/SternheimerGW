@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE sym_sigma_exch(ik0)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
@@ -90,8 +96,6 @@ IMPLICIT NONE
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
   write(6,'(4x,"nksq,nks,kunit ",3i4)') nksq, nks, kunit
-
-!Little code for determining which wavefxn files we need to access:
   kpoolid = 0
   iqrec1  = 0
   do mypoolid = 0, npool-1
@@ -110,23 +114,12 @@ IMPLICIT NONE
        endif
      enddo
   enddo
-  !WRITE(1000+mpime,*) my_pool_id
-  !do iq = 1, nqs
-  !   WRITE(1000+mpime,*) kpoolid(iq)
-  !enddo
-  !do iq = 1, nqs
-  !   WRITE(1000+mpime,*) iqrec1(iq)
-  !enddo
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
- !DO iq = 1, nks
- !xq(:) = xk(:,iq)
 !New pool parallel approach, we cycle if the kpoint isn't on the present
 !node, all nodes cycles over full brillouin zone for q.
   DO iq = 1, nqs
      xq(:) = x_q(:,iq)
-     write(1000+mpime, '("xq point, iq")')
-     write(1000+mpime, '(3f11.7, i4)') xq(:), iq
      DO isymop = 1, nsym
         CALL rotate(xq, aq, s, nsym, invs(isymop))
         xk1 = xk_kpoints(:,ik0) - aq(:)
@@ -134,51 +127,50 @@ IMPLICIT NONE
         call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
         !write(1000+mpime, '("xk point IBZ, iqrec, isym, nig0")')
         !write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), iqrec, isym, nig0
-    found_k = .false.
-    do ikstar = 1, nks 
-       found_k  = (abs(xk(1,ikstar) - x_q(1,iqrec)).le.eps).and. &
-                  (abs(xk(2,ikstar) - x_q(2,iqrec)).le.eps).and. & 
-                  (abs(xk(3,ikstar) - x_q(3,iqrec)).le.eps) 
-       if (found_k) then
-          ik1 = ikstar 
-          exit
-       endif
-    enddo
-    IF (found_k) then
-        call get_buffer (evc, lrwfc, iuwfc, ik1)
-    ELSE 
-        CYCLE
-    ENDIF
-    IF (nksq.gt.1) THEN
-         !CALL gk_sort(x_q(1,iqrec), ngm, g, ( ecutwfc / tpiba2 ), &
-         !             npw, igk, g2kin)
-         CALL gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
-                      npw, igk, g2kin)
-    ENDIF
-    npwq = npw
+        found_k = .false.
+        do ikstar = 1, nks 
+           found_k  = (abs(xk(1,ikstar) - x_q(1,iqrec)).le.eps).and. &
+                      (abs(xk(2,ikstar) - x_q(2,iqrec)).le.eps).and. & 
+                      (abs(xk(3,ikstar) - x_q(3,iqrec)).le.eps) 
+           if (found_k) then
+              ik1 = ikstar 
+              exit
+           endif
+        enddo
+        IF (found_k) then
+            call get_buffer (evc, lrwfc, iuwfc, ik1)
+        ELSE 
+            CYCLE
+        ENDIF
+        IF (nksq.gt.1) THEN
+            CALL gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
+                         npw, igk, g2kin)
+        ENDIF
+        npwq = npw
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
-    counter  = 0
-    igkq_tmp = 0
-    igkq_ig  = 0
-    do ig = 1, npwq
-       if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
-           counter = counter + 1
-           igkq_tmp (counter) = igk(ig)
-           igkq_ig  (counter) = ig
-       endif
-    enddo
-    allocate ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
+        counter  = 0
+        igkq_tmp = 0
+        igkq_ig  = 0
+        do ig = 1, npwq
+           if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
+               counter = counter + 1
+               igkq_tmp (counter) = igk(ig)
+               igkq_ig  (counter) = ig
+           endif
+        enddo
+        allocate ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
 !psi_{k+q}(r)psi^{*}_{k+q}(r')
-    greenf_na = (0.0d0, 0.0d0)
-    do ig = 1, counter
-       do igp = 1, counter
-          do ibnd = 1, nbnd_occ(1)
-            greenf_na(igkq_tmp(ig), igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
-                                                     tpi*(0.0d0, 1.0d0)*conjg(evc(igkq_ig(ig),ibnd))*(evc(igkq_ig(igp), ibnd))
-         enddo
-       enddo
-    enddo
+        greenf_na = (0.0d0, 0.0d0)
+        do ig = 1, counter
+           do igp = 1, counter
+              do ibnd = 1, nbnd_occ(1)
+                 greenf_na(igkq_tmp(ig), igkq_tmp(igp)) = greenf_na(igkq_tmp(ig), igkq_tmp(igp)) + &
+                                                          tpi*(0.0d0, 1.0d0)*conjg(evc(igkq_ig(ig),ibnd))*(evc(igkq_ig(igp), ibnd))
+              enddo
+           enddo
+        enddo
+
 !Fourier transform of green's function
     ALLOCATE ( greenf_nar  (sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr)  )
     greenf_nar(:,:) = czero

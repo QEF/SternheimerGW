@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE freqbins()
   !
   ! generate frequency bins
@@ -20,7 +26,7 @@ SUBROUTINE freqbins()
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
-  USE control_gw, ONLY : eta, godbyneeds, padecont, freq_gl
+  USE control_gw, ONLY : eta, godbyneeds, padecont, freq_gl, do_imag
            
 
   IMPLICIT NONE 
@@ -32,85 +38,56 @@ SUBROUTINE freqbins()
   INTEGER                :: n            !number of points
   REAL(DP), ALLOCATABLE  :: x(:), w(:)   !abcissa and weights
 
-
-
   IF(.not.freq_gl) THEN
    zero = 0.0d0
-   wgreenmin = wsigmamin-wcoulmax
-   wgreenmax = wsigmamax+wcoulmax
+   !wgreenmin = wsigmamin-wcoulmax
+   !wgreenmax = wsigmamax+wcoulmax
+!for change of variables in Green's function
+   wgreenmin = -wcoulmax
+   wgreenmax = wcoulmax
+
    nwalloc = 1 + ceiling( (wgreenmax-wgreenmin) / deltaw )
    allocate(wtmp(nwalloc), wcoul(nwalloc), wgreen(nwalloc), wsigma(nwalloc) )
    wcoul = zero
    wgreen = zero
    wsigma = zero
-
    do iw = 1, nwalloc
       wtmp(iw) = wgreenmin + (wgreenmax-wgreenmin)/float(nwalloc-1)*float(iw-1)
    enddo
-
    nwgreen = 0
    nwcoul = 0
    nwsigma = 0
-
    do iw = 1, nwalloc
-    if ( ( wtmp(iw) .ge. wgreenmin ) .and. ( wtmp(iw) .le. wgreenmax) ) then
-      nwgreen = nwgreen + 1
-      wgreen(nwgreen) = wtmp(iw)
-    endif
     if ( ( wtmp(iw) .ge. zero ) .and. ( wtmp(iw) .le. wcoulmax) ) then
       nwcoul = nwcoul + 1
       wcoul(nwcoul) = wtmp(iw)
     endif
-
     if ( ( wtmp(iw) .ge. wsigmamin ) .and. ( wtmp(iw) .le. wsigmamax) ) then
       nwsigma = nwsigma + 1
       wsigma(nwsigma) = wtmp(iw)
     endif
    enddo
-  ! now find the correspondence between the arrays
-  ! This is needed for the convolution G(w0-w)W(w) at the end
-   allocate ( ind_w0mw (nwsigma,nwcoul), ind_w0pw (nwsigma,nwcoul) )
-   do iw0 = 1, nwsigma
-     do iw = 1, nwcoul
-       w0mw = wsigma(iw0)-wcoul(iw)
-       w0pw = wsigma(iw0)+wcoul(iw)
-       foundp = .false.
-       foundm = .false.
-       do iwp = 1, nwgreen
-         if (abs(w0mw-wgreen(iwp)) .lt. 1.d-10 ) then
-           foundm = .true.
-           iw0mw = iwp
-         endif
-         if ( abs(w0pw-wgreen(iwp)) .lt. 1.d-10 ) then
-           foundp = .true.
-           iw0pw = iwp
-          endif
-        enddo
-       if ( ( .not. foundm ) .or. ( .not. foundp ) ) then
-          call errore ('gwhs','frequency correspondence not found',1)
-       else
-          ind_w0mw(iw0,iw) = iw0mw
-          ind_w0pw(iw0,iw) = iw0pw
-       endif
-     enddo
-    enddo
+
+   nwgreen = 2*nwcoul
+   allocate ( w0pmw (nwsigma, 2*nwcoul) )
+   DO iw0 = 1, 1
+     DO iw = 1, nwcoul
+        w0pmw(iw0, iw)        = wsigma(iw0) + wcoul(iw)
+        w0pmw(iw0, iw+nwcoul) = wsigma(iw0) - wcoul(iw)
+     ENDDO
+   ENDDO
   ELSE
 ! We generate Sigma on a uniform grid:
-
-    nwgreen = 2*nwcoul
-!   nwgreen = nwcoul !if we  use G(iw) = G^{*}(-iw)
+   nwgreen = 2*nwcoul
    nwsigma = 1 + ceiling( (wsigmamax-wsigmamin) / deltaw )
    allocate(wsigma(nwsigma))
    allocate(wcoul(nwcoul), wgtcoul(nwcoul))
-    
    wcoul   = zero
    wgtcoul = zero
    wsigma  = zero
-
    do iw = 1, nwsigma
       wsigma(iw) = wsigmamin + (wsigmamax-wsigmamin)/float(nwsigma-1)*float(iw-1)
    enddo
-
 ! We generate W(iw) on a gauss legendre grid:
    wcoul   = zero
    wgtcoul = zero

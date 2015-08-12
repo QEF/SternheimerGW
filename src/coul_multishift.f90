@@ -1,4 +1,10 @@
-SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, freq)
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
+SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, h_diag, freq)
    USE kinds,       ONLY : DP
    USE wvfct,       ONLY : nbnd
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
@@ -15,6 +21,7 @@ IMPLICIT NONE
 !pi coefficients for each frequency up to nfreqgreen.
   complex(kind=DP) :: pi_coeff (nbnd, nfreq), pi_coeff_old (nbnd, nfreq), pi_coeff_new(nbnd, nfreq)
   complex(DP)      :: w_ryd(nfreq)
+  REAL(DP)     :: h_diag(ndmx, nbnd)
 
 REAL(DP) :: anorm(nwgreen)
 
@@ -34,9 +41,7 @@ REAL(DP) :: anorm(nwgreen)
   integer :: ios
   integer :: niters(nbnd)
 
-! ALLOCATE(r(ndmx, nbnd))
   ALLOCATE(u_sig(ndmx, nbnd, nfreq), u_sig_old(ndmx, nbnd, nfreq))
-! w_ryd(:) = wgreen(:)/RYTOEV
   w_ryd(:) = freq(:)
 !coul shifted system.
   u_sig(:,:,:) = czero
@@ -90,7 +95,6 @@ REAL(DP) :: anorm(nwgreen)
            do ibnd = 1, nbnd
               if(iter.lt.niters(ibnd)) beta(ibnd) = alphabeta(2,ibnd,iter)
            enddo
-
 !update the u's for the shifted systems
            do iw = 1, nfreq
               do ibnd = 1, nbnd
@@ -111,15 +115,11 @@ REAL(DP) :: anorm(nwgreen)
               enddo
            enddo!iw
   enddo!iter
-
-!zero unconverged bands.
-!  do ibnd = 1, nbnd
-!     if (niters(ibnd).ge.maxter_green) then
-!         do iw = 1, nfreq
-!            x_sig(:,ibnd, iw) = (0.0d0, 0.0d0)
-!         enddo 
-!     endif
-!  enddo  
-
+!transform solution vector x = E^{-T}x':
+  do iw = 1, nfreq
+     do ibnd = 1, nbnd
+           call cg2_psi (ndmx, ndim, 1, x_sig(1,ibnd,iw), h_diag(1,ibnd))
+     enddo
+  enddo
   DEALLOCATE(u_sig, u_sig_old)
 END SUBROUTINE coul_multishift

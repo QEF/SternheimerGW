@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 subroutine truncate_2D(scrcoul, xqloc, opt)
   USE io_global,     ONLY : stdout, ionode_id, ionode
   USE kinds,         ONLY : DP
@@ -60,8 +66,6 @@ ELSE IF (opt.eq.2) then
                  qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
                  qz   = sqrt((g(3,ig)+xqloc(3))**2)
-                 !qxy  = sqrt((g(1,ig))**2 + (g(2,ig))**2)
-                 !qz   = sqrt((g(3,ig))**2)
                  limq = (qg2.lt.eps8) 
           IF(qxy.gt.eps8) then
                  spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))

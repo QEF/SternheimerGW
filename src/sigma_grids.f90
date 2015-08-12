@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE sigma_grids()
   USE kinds,            ONLY : DP
   USE cell_base,        ONLY : at, bg, tpiba2, tpiba
@@ -73,7 +79,7 @@ SUBROUTINE sigma_grids()
                   dfftp, sigma_x_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
   CALL gvec_init(sigma_x_st, sigma_x_st%ngmt, intra_comm)
-  sigma_x_st%initalized = .true.
+  sigma_x_st%initialized = .true.
   CALL ggent(sigma_x_st)
   WRITE(stdout, '(//5x,"Exchange Grid:")')
   WRITE(stdout, '(5x, "nr1, nr2, nr3")')
@@ -98,7 +104,7 @@ SUBROUTINE sigma_grids()
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
   CALL gvec_init(sigma_c_st, sigma_c_st%ngmt, intra_comm)
-  sigma_c_st%initalized = .true.
+  sigma_c_st%initialized = .true.
   CALL ggent(sigma_c_st)
 
   WRITE(stdout, '(//5x,"Correlation Grid:")')
@@ -119,9 +125,13 @@ SUBROUTINE sigma_grids()
       ((DBLE(sigma_c_st%ngmt)**2)*nfs)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
   WRITE( stdout, '(5x,"Sigma(r,rp,iw) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
       ((DBLE(sigma_c_st%dfftt%nnr)**2)*nwsigma)/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
-  WRITE( stdout, '(5x,"G(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+  WRITE( stdout, '(5x,"G^{c}(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
       ((DBLE(sigma_c_st%dfftt%nnr)**2))/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
-  WRITE( stdout, '(5x,"W(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+  WRITE( stdout, '(5x,"W^{c}(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
       ((DBLE(sigma_c_st%dfftt%nnr)**2))/Gb, sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr
+  WRITE( stdout, '(5x,"G^{ex}(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+      ((DBLE(sigma_x_st%dfftt%nnr)**2))/Gb, sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr
+  WRITE( stdout, '(5x,"v^{ex}(r,rp) fxn:   ", f10.2," Gb", 5x,"(",i7,",",i7,")")') &
+      ((DBLE(sigma_x_st%dfftt%nnr)**2))/Gb, sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr
   WRITE ( stdout, '("")' )
 END SUBROUTINE

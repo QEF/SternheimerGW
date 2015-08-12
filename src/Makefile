@@ -16,7 +16,6 @@ testnan.o\
 save_gw_input.o\
 bcast_gw_input.o\
 gwq_readin.o\
-save_gw_input.o\
 q_points.o\
 check_initial_status.o\
 opengwfil.o\
@@ -63,13 +62,11 @@ unfold_w.o\
 invert_epsilon.o\
 green_linsys_shift.o\
 green_linsys_shift_im.o\
+green_linsys_shift_re.o\
 h_psi_all.o\
 green_multishift.o\
 green_multishift_im.o\
 ch_psi_all_green.o\
-sigma_c.o\
-sigma_c_im.o\
-find_q_ibz.o\
 find_qg_ibz.o\
 godby_needs.o\
 mod_diel.o\
@@ -90,10 +87,10 @@ fft6.o\
 fft6_g.o\
 fft6_c.o\
 sigcim.o\
+sigcre.o\
 rotate.o\
 coulpade.o\
 star_q.o\
-punch1.o\
 find_xk_uniq.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
@@ -102,12 +99,10 @@ LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/cli
 TLDEPS= bindir mods libs pw-lib
 
 all : libgw.a gw.x
-
 #gw.x : gw.o $(PWOBJS) $(LIBOBJS)
 #	$(LD) $(LDFLAGS) -o gw.x gw.o \
 #		 $(PWOBJS) $(QEMODS) $(GWOBJS) $(LIBOBJS) $(LIBS)
 #	- ( cd ../bin ; ln -fs ../src/gw.x . )
-
 gw.x : gw.o libgw.a $(PWOBJS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o gw.x gw.o libgw.a \
 		 $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)

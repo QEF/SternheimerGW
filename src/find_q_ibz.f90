@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE find_q_ibz(xq_ibk, s, iq, isym, found_q, inv_q)
 ! Routine finds which symmetry operation folds xq to the required qpoint, xq_req.
 ! While it is true we can use the full symmetry group of the crystal for W

@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
            ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, niters, alphabeta,tprec)
 !-----------------------------------------------------------------------
@@ -108,19 +114,18 @@ IMPLICIT NONE
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
            if(tprec) call cg2_psi(ndmx, ndim, 1, g(1,ibnd), h_diag(1,ibnd) )
-           !dpsic(:, ibnd, iter) = d0psi(:,ibnd)
+        ! dpsic(:, ibnd, iter) = d0psi(:,ibnd)
            dpsic(:, ibnd, iter) = g(:,ibnd)
         ! p   =  inv(M) * r
         ! pt  =  conjg ( p )
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
         !  gt(:,ibnd) = conjg (g(:,ibnd) )
         !  ht(:,ibnd) = conjg( h(:,ibnd) )
-        !not necessary to choose tilde
+        !  not necessary to choose tilde
            gt(:,ibnd) =  (g(:,ibnd) )
            ht(:,ibnd) =  (h(:,ibnd) )
         enddo
      endif!iter.eq.1
-
      lbnd = 0
      do ibnd = 1, nbnd
         if (conv (ibnd).eq.0) then
@@ -128,9 +133,7 @@ IMPLICIT NONE
             rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
         endif
      enddo
-
      kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
-
      do ibnd = nbnd, 1, -1
         if (conv(ibnd).eq.0) then
             rho(ibnd) = rho(lbnd)
@@ -146,7 +149,6 @@ IMPLICIT NONE
      do ibnd = 1, nbnd
         conv_root = conv_root.and.(conv (ibnd).eq.1)
      enddo
-
      if (conv_root) goto 100
 ! compute t = A*h
 ! we only apply hamiltonian to unconverged bands.
@@ -179,7 +181,6 @@ IMPLICIT NONE
              call cg2_psi (ndmx, ndim, 1, tt(1,ibnd), h_diag(1,ibnd))
        enddo 
      endif
-
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
@@ -191,7 +192,6 @@ IMPLICIT NONE
             c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
         endif
     enddo
-
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
@@ -200,6 +200,7 @@ IMPLICIT NONE
            alphabeta(1,ibnd,iter) = alpha
         !  x  = x  + alpha        * u
          call ZAXPY (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
+        ! if(tprec) call cg3_psi (ndmx, ndim, 1, dpsi(1,ibnd), h_diag(1,ibnd))
         !  r  = r  - alpha       * Au
         !  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
          call ZAXPY (ndmx*npol, -alpha,        t  (1,lbnd), 1, g  (1,ibnd), 1)
@@ -211,9 +212,6 @@ IMPLICIT NONE
 !        nrec = iter+1
 !        call davcio (g(:,1), lrresid, iunresid, nrec, +1)
          dpsic(:, ibnd, iter+1) = g(:,ibnd)
-        ! if (mpime.eq.0) then
-        !     write(503,*)g(:,1)
-        ! endif
          a(lbnd) = ZDOTC (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
          beta = - a(lbnd) / c(lbnd)
 !        alphabeta(2) = beta

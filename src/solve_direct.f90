@@ -5,6 +5,8 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+! Significantly modified to use Multishift Linear System Solver
+! Henry Lambert
 !-------------------------------------------------------------------------------
 SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !-----------------------------------------------------------------------------
@@ -170,7 +172,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
   if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_green+1))
-
   iter0 = 0
   convt =.FALSE.
   where_rec='no_recover'
@@ -224,7 +225,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
 !MULTISHIFT No Preconditioning.
-        h_diag = 0.d0
+    h_diag = 0.d0
     IF(prec_direct) THEN
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
@@ -239,11 +240,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     ELSE IF (prec_shift) THEN
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              if(g2kin(ig).le.(ecutprec)) then
+              !if(g2kin(ig).le.(ecutprec)) then
                  h_diag(ig,ibnd) =  1.0d0
-              else
-                 h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
-              endif
+              !else
+              !   h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
+              !endif
            enddo
         enddo
     ELSE
@@ -269,17 +270,16 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
    IF(prec_direct) then
      do iw = 1, nfs
-        cw    = fiu(iw) 
+        cw    = fiu(iw)
         !first frequency in list should be zero.
         if((real(cw).eq.0.0d0).and.(aimag(cw).eq.0.0d0)) then
-                 CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, & 
+                 CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
         else
                  CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,1), h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
                  CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,2), h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-                !if((mod(ik,5)).eq.0) WRITE(1000+mpime, '(5x,"Gvec: ", i4, i4, f12.7)') ik, lter, anorm
                  dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsit(:,:,1) + dpsit(:,:,2))
         endif
      enddo
@@ -289,21 +289,15 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                              npol, niters, alphabeta, .true.)
         if(.not.conv_root)    WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
         if(.not.conv_root)    WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
+!reinflate before the multishift?
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, h_diag, fiu)
         dpsi(:,:,:)    = dpsit(:,:,:)
 !       dpsi = dpsi^{+} + dpsi^{-}
         dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu(:)))
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, h_diag, ((-1.0d0,0.0d0)*fiu(:)))
         dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
-!transform solution vector x = E^{-T}x':
-        do iw =1, nfs
-           do ibnd =1, nbnd
-              call cg2_psi(npwx, npwq, 1, dpsi(1,ibnd,iw), h_diag(1,ibnd))
-           enddo
-        enddo
-
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_green) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
@@ -374,7 +368,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   if(.not.prec_direct) deallocate(dpsic)
   deallocate (h_diag)
   deallocate (dvscfout)
-!  deallocate (drhoscfh)
   deallocate (dbecsum)
 
   call stop_clock ('solve_linter')

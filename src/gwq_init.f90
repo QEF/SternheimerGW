@@ -5,6 +5,7 @@
 ! in the root directory of the present distribution,
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
+! Modified Henry Lambert
 !
 !----------------------------------------------------------------------------
 SUBROUTINE gwq_init()

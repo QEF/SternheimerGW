@@ -1,3 +1,9 @@
+  !-----------------------------------------------------------------------
+  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+  ! This file is distributed under the terms of the GNU General Public         
+  ! License. See the file `LICENSE' in the root directory of the               
+  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+  !-----------------------------------------------------------------------
 SUBROUTINE sigma_c(ik0) 
 ! G TIMES W PRODUCT
   USE kinds,         ONLY : DP
@@ -381,22 +387,19 @@ IF(iqstop-iqstart+1.ne.0) THEN
          DO iw0 = 1, nwsigma
             iw0mw = ind_w0mw (iw0,iw)
             iw0pw = ind_w0pw (iw0,iw)
-
             rec0 = (iw0mw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio( greenf_g, lrgrn, iungreen, rec0, -1 )
             greenfr(:,:) = czero
             CALL fft6(greenf_g(1,1), greenfr(1,1), sigma_c_st, +1)
             sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
-
             rec0 = (iw0pw-1) * 1 * nksq + (iq-1) + 1
             CALL davcio(greenf_g, lrgrn, iungreen, rec0, -1)
             greenfr(:,:) = czero
             CALL fft6(greenf_g(1,1), greenfr(1,1),sigma_c_st,+1)
             sigma (:,:,iw0) = sigma (:,:,iw0) + cprefac * greenfr(:,:)*scrcoul(:,:)
         ENDDO !on iw0  
-    ENDDO ! on frequency convolution over w'
-  ENDDO ! end loop iqstart, iqstop 
-ENDIF
+    ENDDO 
+  ENDDO 
 
   DEALLOCATE ( gmapsym          )
   DEALLOCATE ( greenfr          )
@@ -407,12 +410,13 @@ ENDIF
   DEALLOCATE ( z,a,u )
 
 #ifdef __PARA
-      CALL mp_barrier(inter_image_comm)
-      CALL mp_sum(sigma, inter_image_comm)
-      CALL mp_barrier(inter_image_comm)
+  CALL mp_barrier(inter_pool_comm)
+  CALL mp_sum(sigma, inter_pool_comm)
+  CALL mp_barrier(inter_image_comm)
+  CALL mp_sum(sigma, inter_image_comm)
 #endif __PARA
 
-  IF (ionode) THEN
+  IF (meta_ionode) THEN
     ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
     IF(allocated(sigma_g)) THEN
        WRITE(6,'(4x,"Sigma_g allocated")')
