@@ -327,9 +327,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                dpsim(:,:) = dpsip(:,:)
                dpsi(:,:)  = dpsim(:,:)  
        ELSE
-               CALL cbcg_solve(ch_psi_all_nopv, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-               CALL cbcg_solve(ch_psi_all_nopv, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
                dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
        ENDIF

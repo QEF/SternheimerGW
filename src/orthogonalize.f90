@@ -110,10 +110,8 @@ END IF
 !
 ! dpsi is used as work space to store S|evc>
 !
-
 !HL NEWPARA
 call mp_sum(ps(:,1:nbnd_eff),intra_bgrp_comm)
-
 IF (okvan) CALL calbec ( npwq, vkb, evq, becp, nbnd_eff)
 CALL s_psi (npwx, npwq, nbnd_eff, evq, dpsi)
 !
