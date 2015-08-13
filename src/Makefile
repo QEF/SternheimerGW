@@ -54,7 +54,6 @@ mix_pot.o\
 truncate_2d.o\
 cg_psi.o\
 cg2_psi.o\
-ch_psi_all.o\
 h_psiq.o\
 dv_of_drho.o\
 dvqpsi_us.o\
@@ -66,6 +65,8 @@ green_linsys_shift_re.o\
 h_psi_all.o\
 green_multishift.o\
 green_multishift_im.o\
+ch_psi_all.o\
+ch_psi_all_nopv.o\
 ch_psi_all_green.o\
 find_qg_ibz.o\
 godby_needs.o\

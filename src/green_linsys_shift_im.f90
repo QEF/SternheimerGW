@@ -24,7 +24,8 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, current_iq, ext_recover, &
-                                   eta, tr2_green, maxter_green, prec_shift
+                                   eta, tr2_green, maxter_green, prec_shift,&
+                                   multishift
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprectot
@@ -44,8 +45,10 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 
   IMPLICIT NONE 
 
-  !should be freq blocks...
-  COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
+ !should be freq blocks...
+ !COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
+  COMPLEX(DP), ALLOCATABLE :: gr_A_shift(:,:)
+
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
   COMPLEX(DP) :: gr(npwx, 1), ci, cw 
   COMPLEX(DP) :: green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
@@ -94,19 +97,18 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     LOGICAL :: conv_root
     EXTERNAL cg_psi, ch_psi_all_green
 
-    allocate  (h_diag (npwx, 1))
-    allocate  (etc(nbnd_occ(1), nkstot))
+    ALLOCATE  (h_diag (npwx, 1))
+    ALLOCATE  (etc(nbnd_occ(1), nkstot))
+    IF(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
+
     ci = (0.0d0, 1.0d0)
 !Convert freq array generated in freqbins into rydbergs.
     do iw =1, nwgreen
-       !w_ryd(iw) = w0pmw(iw0,iw)/RYTOEV
        w_ryd(iw) = w0pmw(1,iw)/RYTOEV
     enddo
-
     CALL start_clock('greenlinsys')
     where_rec='no_recover'
-!This should ensure the Green's fxn has the correct -\delta for \omega <
-!\epsilon_{F}:
+!This should ensure the Green's fxn has the correct -\delta for \omega <!\epsilon_{F}:
 !This smooths out variations and I think makes sense
    ikq = iq
    IF (nksq.gt.1) then
@@ -117,7 +119,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
-!need to loop over...
     counter = 0
     igkq_tmp(:) = 0
     igkq_ig(:)  = 0 
@@ -130,7 +131,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     enddo
     igstart = 1
     igstop = counter
-!WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
 !allocate list to keep track of the number of residuals for each G-vector:
     ngvecs = igstop-igstart + 1
     if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
@@ -139,78 +139,87 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
     call init_us_2 (npwq, igkq, x_q (1, ikq), vkb)
-   !call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
-   !call init_us_2 (npwq, igkq, xk1 (1), vkb)
-
     DO ig = 1, npwq
        g2kin (ig) = ((x_q (1,ikq) + g (1, igkq(ig) ) ) **2 + &
                      (x_q (2,ikq) + g (2, igkq(ig) ) ) **2 + &
                      (x_q (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
-       !g2kin (ig) = ((xk (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-       !              (xk (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-       !              (xk (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
-       !g2kin (ig) = ((xk1 (1) + g (1, igkq(ig) ) ) **2 + &
-       !              (xk1 (2) + g (2, igkq(ig) ) ) **2 + &
-       !              (xk1 (3) + g (3, igkq(ig) ) ) **2 ) * tpiba2
     ENDDO
-
     green  = (0.0d0, 0.0d0)
     h_diag = 0.d0
-    !need to collect eprectot
-    !WRITE(1000+mpime,*) nksq, ikq, nbnd_occ(1)
-    !WRITE(1000+mpime,*) eprectot(nbnd_occ(1),ikq)
-    do ig = 1, npwq
-       if(g2kin(ig).le.ecutprec) then
-          h_diag(ig,1) =  1.0d0
-       else
-         if(prec_shift) then
-            h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
-         else
-            h_diag(ig,1) =  1.0d0
-         endif
-       endif
-    enddo
+    if(multishift) THEN
+      do ig = 1, npwq
+        if(g2kin(ig).le.ecutprec) then
+           h_diag(ig,1) =  1.0d0
+        else
+          if(prec_shift) then
+             h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
+          else
+             h_diag(ig,1) =  1.0d0
+          endif
+        endif
+      enddo
+    else
+      do ig = 1, npwq
+         h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
+      enddo
+    endif
 !On first frequency block we do the seed system with BiCG:
     gveccount = 1
     gr_A_shift = (0.0d0, 0.d0)
     niters(:) = 0
+!    write(3000+mpime,*) x_q(:,ikq)
     do ig = igstart, igstop
-          rhs(:,:)  = (0.0d0, 0.0d0)
-          rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
-          gr_A(:,:) = (0.0d0, 0.0d0)
-          lter = 0
-          etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-          cw = CMPLX( 0, 0.0d0, kind=DP) 
-          !cw = CMPLX( mu, 0.0d0, kind=DP) 
-          conv_root = .true.
-          anorm = 0.0d0
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
-         !IF(multishift) THEN
-            call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
-                                  npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-                                  cw , niters(gveccount), .true.)
-            call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
-            if (ig.eq.igstop) write(1000+mpime,*) niters(gveccount)
-            if (niters(gveccount).ge.maxter_green) then
-                  WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
-                  gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
-            endif
-            do iw = 1, nwgreen
-               do igp = 1, counter
-                  green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
-                                                           gr_A_shift(igkq_ig(igp),iw)
-               enddo
-            enddo
-            gveccount = gveccount + 1
-         !ELSE IF(multishift) THEN
-            !call cbcg_solve(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
-            !                      npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-            !                      cw , niters(gveccount), .true.)
-         !ENDIF
-    enddo !ig
-if(allocated(niters)) DEALLOCATE(niters)
-if(allocated(h_diag)) DEALLOCATE(h_diag)
-if(allocated(etc))    DEALLOCATE(etc)
+          IF(multishift) THEN
+             rhs(:,:)  = (0.0d0, 0.0d0)
+             rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
+             gr_A(:,:) = (0.0d0, 0.0d0)
+             lter = 0
+             etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
+             cw = CMPLX( mu, w_ryd(iw), kind=DP) 
+             conv_root = .true.
+             anorm = 0.0d0
+             call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
+                                   npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
+                                   cw , niters(gveccount), .true.)
+             call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+             if (ig.eq.igstop) write(1000+mpime,*) niters(gveccount)
+             if (niters(gveccount).ge.maxter_green) then
+                   WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
+                   gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
+             endif
+             do iw = 1, nwgreen
+                do igp = 1, counter
+                   green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
+                                                            gr_A_shift(igkq_ig(igp),iw)
+                enddo
+             enddo
+             gveccount = gveccount + 1
+          ELSE IF(.not.multishift) THEN
+             DO iw = 1, nwgreen
+                rhs(:,:)  = (0.0d0, 0.0d0)
+                rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
+                gr_A(:,:) = (0.0d0, 0.0d0)
+                lter = 0
+                etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
+                cw = CMPLX( mu, w_ryd(iw), kind=DP) 
+                conv_root = .true.
+                anorm = 0.0d0
+                call cbcg_solve(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
+                                npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
+                                cw, .true.)
+                DO igp = 1, counter
+                   green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
+                                                            gr_A(igkq_ig(igp),1)
+                ENDDO
+             ENDDO
+             gveccount = gveccount + 1
+          ENDIF
+    ENDDO !ig
+if(allocated(niters))     DEALLOCATE(niters)
+if(allocated(h_diag))     DEALLOCATE(h_diag)
+if(allocated(etc))        DEALLOCATE(etc)
+if(allocated(gr_A_shift)) DEALLOCATE(gr_A_shift)
 CALL stop_clock('greenlinsys')
 RETURN
 END SUBROUTINE green_linsys_shift_im

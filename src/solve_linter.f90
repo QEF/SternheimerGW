@@ -160,7 +160,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
  
-  external ch_psi_all, cg_psi, h_psi_all
+  external ch_psi_all, cg_psi, h_psi_all, ch_psi_all_nopv
   COMPLEX(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
 
   allocate (dpsi(npwx*npol, nbnd))
@@ -327,10 +327,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                dpsim(:,:) = dpsip(:,:)
                dpsi(:,:)  = dpsim(:,:)  
        ELSE
-               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+               CALL cbcg_solve(ch_psi_all_nopv, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+               CALL cbcg_solve(ch_psi_all_nopv, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
                dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
        ENDIF
 
@@ -362,7 +362,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          ENDIF
 
      enddo !on k-points
-
 !#ifdef __MPI
      !
      !  The calculation of dbecsum is distributed across processors (see addusdbec)
@@ -374,8 +373,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !        call mp_sum ( dbecsum, intra_pool_comm )
 !     ENDIF
 !#endif
-
-
      if (doublegrid) then
          do is = 1, nspin_mag
             call cinterpolate (drhoscfh(1,1), drhoscf(1,1), 1)

@@ -139,34 +139,21 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
              igpert,     & ! bare perturbation g vector.
              lmres         ! number of gmres iterations to include when using bicgstabl.
 
-  real(DP) :: tcpu, get_clock ! timing variables
-  real(DP) :: meandvb
-
+  REAL(DP) :: tcpu, get_clock ! timing variables
+  REAL(DP) :: meandvb
   INTEGER                   :: gveccount
-
-! COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:), dpsit(:,:,:), dpsi(:,:,:)
-! COMPLEX(DP), ALLOCATABLE :: alphabeta(:,:,:)
-! INTEGER, ALLOCATABLE     :: niters(:)
   INTEGER     :: niters(nbnd)
   COMPLEX(DP) :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
-  !COMPLEX(DP) :: dpsic(npwx,nbnd,maxter_green+1),
   COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:)
-
   COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
- 
   external cg_psi, ch_psi_all, h_psi_all
-  
   IF (rec_code_read > 20 ) RETURN
-
-  !HL- Allocate arrays for dV_scf (need to alter these from (dfftp%nnr, nspin_mag, npe) to just (dfftp%nnr, nspin_mag).
   irr    = 1
   ipert  = 1
   lter   = 0
   lmres  = 1
-
   call start_clock ('solve_linter')
   allocate (dvscfout ( dfftp%nnr , nfs))    
-!  allocate (drhoscfh ( dfftp%nnr , nfs))    
   allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))    
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
@@ -180,22 +167,16 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   do kter = 1, 1
      iter = kter + iter0
      ltaver = 0
-
      lintercall = 0
      drhoscf(:,:)   = (0.d0, 0.d0)
-!     drhoscfh(:,:)  = (0.d0, 0.d0)
      dbecsum(:,:,:) = (0.d0, 0.d0)
-
      if (nksq.gt.1) rewind (unit = iunigk)
-!start kpoints loop
      do ik = 1, nksq
         if (nksq.gt.1) then
            read (iunigk, err = 100, iostat = ios) npw, igk
 100        call errore ('solve_linter', 'reading igk', abs (ios) )
         endif
-! lgamma is a q=0 computation
         if (lgamma)  npwq = npw
-! k and k+q mesh defined in initialize_gw:
 !       ikks(ik) = 2 * ik - 1
 !       ikqs(ik) = 2 * ik
         ikk = ikks(ik)
@@ -224,7 +205,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                           (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
-!MULTISHIFT No Preconditioning.
     h_diag = 0.d0
     IF(prec_direct) THEN
         do ibnd = 1, nbnd_occ (ikk)
@@ -250,8 +230,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     ELSE
        h_diag = 1.0d0
     ENDIF
-
-!mode relic from phonon days:
         mode = 1
         nrec = ik
         call dvqpsi_us (dvbarein, ik, .false.)
@@ -316,7 +294,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
      do iw = 1, nfs
          call mp_sum ( drhoscf(:,iw), inter_pool_comm )
      enddo
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
       enddo

@@ -74,8 +74,8 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
     ENDIF
     IF(.NOT.modielec) THEN
         IF(godbyneeds) THEN
-        DO ig = 1, sigma_c_st%ngmt
-          DO igp = 1, sigma_c_st%ngmt 
+          DO ig = 1, sigma_c_st%ngmt
+            DO igp = 1, sigma_c_st%ngmt 
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
                DO iw = 1, nfs
@@ -88,24 +88,24 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
                   scrcoul_g (ig, igp, iw) = a(iw)
                ENDDO
           ENDDO
-        ENDDO
-        ELSE IF (padecont) THEN
-          DO igp = 1, sigma_c_st%ngmt
-           DO ig = 1, sigma_c_st%ngmt
+         ENDDO
+       ELSE IF (padecont) THEN
+         DO igp = 1, sigma_c_st%ngmt
+          DO ig = 1, sigma_c_st%ngmt
 !Pade input points on the imaginary axis
-              DO iw = 1, nfs
-                 z(iw) = fiu(iw)
-                 u(iw) = scrcoul_g (ig, igp, iw)
-              ENDDO
-              call pade_coeff ( nfs, z, u, a)
+             DO iw = 1, nfs
+                z(iw) = fiu(iw)
+                u(iw) = scrcoul_g (ig, igp, iw)
+             ENDDO
+             call pade_coeff ( nfs, z, u, a)
 !Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
              DO iw = 1, nfs 
                 scrcoul_g (ig, igp, iw) = a(iw)
              ENDDO
-           ENDDO !enddo on ig
-        ENDDO  !enddo on igp
-        ELSE IF(.not.padecont.and..not.godbyneeds) THEN
+          ENDDO !enddo on ig
+       ENDDO  !enddo on igp
+       ELSE IF(.not.padecont.and..not.godbyneeds) THEN
                  WRITE(6,'("No screening model chosen!")')
-        ENDIF
+       ENDIF
     ENDIF
 END SUBROUTINE coulpade

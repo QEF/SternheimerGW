@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-subroutine ch_psi_all (n, h, ah, e, cw, ik, m)
+subroutine ch_psi_all_nopv (n, h, ah, e, cw, ik, m)
   !-----------------------------------------------------------------------
   !
   ! This routine applies the operator ( H - \epsilon S + alpha_pv P_v)
@@ -71,7 +71,6 @@ subroutine ch_psi_all (n, h, ah, e, cw, ik, m)
         ah (ig, ibnd)= hpsi(ig, ibnd) - (e(ibnd) + cw)*spsi(ig, ibnd)
      enddo
   enddo
-
   IF (noncolin) THEN
      do ibnd = 1, m
         do ig = 1, n
@@ -79,43 +78,37 @@ subroutine ch_psi_all (n, h, ah, e, cw, ik, m)
         end do
      end do
   END IF
+!  Here we compute the projector in the valence band
+!  ikq = ikqs(ik)
+!  ps (:,:) = (0.d0, 0.d0)
+!  call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
+!       npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
+!  HL need to remember the projector should be double complex
+!  ps (:,:) = ps(:,:) * dcmplx(alpha_pv, 0.0d0)
 !
-!   Here we compute the projector in the valence band
-!
-! 
-  ikq = ikqs(ik)
-  ps (:,:) = (0.d0, 0.d0)
-
-  call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
-       npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
-!HL need to remember the projector should be double complex
-  ps (:,:) = ps(:,:) * dcmplx(alpha_pv, 0.0d0)
-
-  hpsi (:,:) = (0.d0, 0.d0)
-  call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
-       npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
-  spsi(:,:) = hpsi(:,:)
-
-!And apply S again
-  call calbec (n, vkb, hpsi, becp, m)
-  call s_psi (npwx, n, m, hpsi, spsi)
-  do ibnd = 1, m
-     do ig = 1, n
-        ah (ig, ibnd) = ah (ig, ibnd) + spsi (ig, ibnd)
-     enddo
-  enddo
-  IF (noncolin) THEN
-     do ibnd = 1, m
-        do ig = 1, n
-           ah (ig+npwx, ibnd) = ah (ig+npwx, ibnd) + spsi (ig+npwx, ibnd)
-        enddo
-     enddo
-  ENDIF
-
+!  hpsi (:,:) = (0.d0, 0.d0)
+!  call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+!       npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
+!  spsi(:,:) = hpsi(:,:)
+!  And apply S again
+!  call calbec (n, vkb, hpsi, becp, m)
+!  call s_psi (npwx, n, m, hpsi, spsi)
+!  do ibnd = 1, m
+!     do ig = 1, n
+!        ah (ig, ibnd) = ah (ig, ibnd) + spsi (ig, ibnd)
+!     enddo
+!  enddo
+!  IF (noncolin) THEN
+!     do ibnd = 1, m
+!        do ig = 1, n
+!           ah (ig+npwx, ibnd) = ah (ig+npwx, ibnd) + spsi (ig+npwx, ibnd)
+!        enddo
+!     enddo
+!  ENDIF
   deallocate (spsi)
   deallocate (hpsi)
   deallocate (ps)
   call stop_clock ('last')
   call stop_clock ('ch_psi')
   return
-end subroutine ch_psi_all
+end subroutine ch_psi_all_nopv

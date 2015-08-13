@@ -227,7 +227,8 @@ DO iq = 1, nks
   IF(iw0stop-iw0start+1.gt.0) THEN
      DO iw0 = iw0start, iw0stop
         DO iw = 1, nwcoul
-           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
+           !CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
+           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
@@ -238,7 +239,9 @@ DO iq = 1, nks
              CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
              sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
            endif
-           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
+!CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
+!FOR T.R. w/ pade can obtain extra numberical stability?
+           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero

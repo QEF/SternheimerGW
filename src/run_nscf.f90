@@ -76,7 +76,10 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
      !CALL punch1( 'all' )
   ENDIF
 
-  IF(do_matel.and.nkstot.ne.nqs) WRITE(6,'("WARNING: Ground state calculation has different kpoint mesh! This probably wont work.")') 
+  IF(do_matel.and.nkstot.ne.nqs) THEN
+  WRITE(stdout,'("WARNING: Ground state calculation has a &
+&  different kpoint mesh! This probably wont work.")') 
+  ENDIF
 
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
