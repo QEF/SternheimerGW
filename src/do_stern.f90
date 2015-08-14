@@ -39,7 +39,6 @@ IMPLICIT NONE
   do_matel = .TRUE.
 
   IF(lgauss) WRITE(stdout, '(//5x,"SYSTEM IS METALLIC")')
-
   if(.not.do_epsil) then
       iq1 = w_of_q_start
       iq2 = nqs
@@ -49,14 +48,25 @@ IMPLICIT NONE
       iq1 = w_of_q_start
       iq2 = num_k_pts
   endif
+!Perform head of dielectric matrix calculation.
+!   do iq = 1, 1
+!      scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
+!      CALL prepare_q0(do_band, do_iq, setup_pw, iq)
+!      do_matel = .FALSE.
+!      CALL run_nscf(do_band, do_matel, iq)
+!      CALL coulomb_q0G0(iq, 1, 1, eps_m)
+!      CALL initialize_gw()
+!      CALL mp_barrier(inter_image_comm)
+!      CALL clean_pw_gw(iq)
+!   enddo
     
    DO iq = iq1, iq2
     scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
+    CALL start_clock ('epsilq')
     CALL prepare_q(do_band, do_iq, setup_pw, iq)
     do_matel = .FALSE.
     CALL run_nscf(do_band, do_matel, iq)
     CALL initialize_gw()
-
     IF(use_symm) THEN
       WRITE(6,'("")')
       WRITE(6,'(5x, "SYMMETRIZING COULOMB Perturbations")')
@@ -76,11 +86,9 @@ IMPLICIT NONE
        endif
        WRITE(6, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)')iq, igstart, igstop
        CALL coulomb(iq, igstart, igstop, scrcoul_g)
-!HLIM
        IF(nimage.gt.1) THEN
           CALL mp_sum(scrcoul_g, inter_image_comm)
        ENDIF
-
 !Only the meta_image should write to file
        IF (meta_ionode) THEN
          CALL unfold_w(scrcoul_g,iq)
@@ -91,6 +99,8 @@ IMPLICIT NONE
        call mp_barrier(inter_image_comm)
        CALL clean_pw_gw(iq)
        if(do_q0_only) GOTO 126
+       CALL print_clock ('epsilq')
+       CALL stop_clock ('epsilq')
   ENDDO
 126 CONTINUE
    WRITE(stdout, '("Finished Calculating Screened Coulomb")')

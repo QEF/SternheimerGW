@@ -142,7 +142,7 @@ MODULE efield_mod
   !  
   SAVE
   !
-  REAL (DP) :: epsilon (3, 3)
+  REAL (DP) :: epsilon (3,3)
   REAL (DP), ALLOCATABLE :: &
        zstareu(:,:,:),       &! 3, 3, nat),
        zstarue(:,:,:)         ! 3, nat, 3)

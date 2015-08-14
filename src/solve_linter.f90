@@ -81,7 +81,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! input: the number of perturbation
   ! input: the position of the modes
 
-  complex(DP) :: drhoscf (dfftp%nnr, nspin_mag)
+  complex(DP) :: drhoscf (dffts%nnr, nspin_mag)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (dffts%nnr)
 
@@ -327,9 +327,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                dpsim(:,:) = dpsip(:,:)
                dpsi(:,:)  = dpsim(:,:)  
        ELSE
-               CALL cbcg_solve(ch_psi_all_nopv, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-               CALL cbcg_solve(ch_psi_all_nopv, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                     npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
                dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
        ENDIF
@@ -362,17 +362,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          ENDIF
 
      enddo !on k-points
-!#ifdef __MPI
-     !
-     !  The calculation of dbecsum is distributed across processors (see addusdbec)
-     !  Sum over processors the contributions coming from each slice of bands
-     !
-!     IF (noncolin) THEN
-!        call mp_sum ( dbecsum_nc, intra_pool_comm )
-!     ELSE
-!        call mp_sum ( dbecsum, intra_pool_comm )
-!     ENDIF
-!#endif
+
+     call mp_sum ( drhoscf, inter_pool_comm )
+!    call mp_sum ( drhoscfh, inter_pool_comm )
      if (doublegrid) then
          do is = 1, nspin_mag
             call cinterpolate (drhoscfh(1,1), drhoscf(1,1), 1)
@@ -394,8 +386,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !         IF ( noncolin.and.domag ) CALL psym_dmage(dvscfout)
 !    endif
 
-     call mp_sum ( drhoscf, inter_pool_comm )
-     call mp_sum ( drhoscfh, inter_pool_comm )
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
 
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
@@ -410,7 +400,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)
 !
      call dv_of_drho (1, dvscfout(1,1), .true.)
-
      nmix_gw = 4
      if (iw.eq.1) then
 !Density reponse in real space should be real at zero freq no matter what!

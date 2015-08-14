@@ -146,7 +146,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   COMPLEX(DP) :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
   COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:)
   COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
-  external cg_psi, ch_psi_all, h_psi_all
+  external cg_psi, ch_psi_all, h_psi_all, ch_psi_all_green
   IF (rec_code_read > 20 ) RETURN
   irr    = 1
   ipert  = 1
@@ -265,8 +265,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta, .false.)
-        if(.not.conv_root)    WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
-        if(.not.conv_root)    WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
+        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
+!        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
 !reinflate before the multishift?
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
@@ -291,9 +291,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                  dbecsum(1,1,current_spin), dpsi(:,:,iw))
         enddo
      enddo !kpoints
-!     do iw = 1, nfs
-!         call mp_sum ( drhoscf(:,iw), inter_pool_comm )
-!     enddo
 !should only sum once!
      call mp_sum ( drhoscf(:,:), inter_pool_comm )
      do iw = 1, nfs

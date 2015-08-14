@@ -8,6 +8,7 @@ SUBROUTINE invert_epsilon(scrcoul_g_in, iq)
 USE kinds,         ONLY : DP
 USE gwsigma,       ONLY : sigma_c_st
 USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
+!USE efield_mod,    ONLY : epsilon
 
 IMPLICIT NONE    
 
@@ -45,6 +46,9 @@ write(6,'(5x, "Done epsilon inversion.")')
 write(6,'(5x, "")') 
 
 if(iq.eq.1) then
+!do iw = 1, nfs
+!   scrcoul_g_in(1,1,iw,1) = epsilon(iw)
+!enddo
 do iw = 1, nfs
     do ig = 2, sigma_c_st%ngmt
        scrcoul_g_in(ig,1,iw,1) = dcmplx(0.0d0,0.0d0)
@@ -54,12 +58,10 @@ do iw = 1, nfs
     enddo
 enddo
 endif
-
 !do iw=1,nfs
 !    write(6,'(15f12.7)') real(scrcoul_g_in(1:15,1:15,iw,1))
 !    print*,""
 !enddo
-
 !We store epsilon-1 to disk:
 do iw = 1, nfs
    do ig = 1, sigma_c_st%ngmt
