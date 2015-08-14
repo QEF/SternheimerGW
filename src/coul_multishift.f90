@@ -4,7 +4,7 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, h_diag, freq)
+SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, freq)
    USE kinds,       ONLY : DP
    USE wvfct,       ONLY : nbnd
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
@@ -21,7 +21,7 @@ IMPLICIT NONE
 !pi coefficients for each frequency up to nfreqgreen.
   complex(kind=DP) :: pi_coeff (nbnd, nfreq), pi_coeff_old (nbnd, nfreq), pi_coeff_new(nbnd, nfreq)
   complex(DP)      :: w_ryd(nfreq)
-  REAL(DP)     :: h_diag(ndmx, nbnd)
+!  REAL(DP)     :: h_diag(ndmx, nbnd)
 
 REAL(DP) :: anorm(nwgreen)
 
@@ -116,10 +116,10 @@ REAL(DP) :: anorm(nwgreen)
            enddo!iw
   enddo!iter
 !transform solution vector x = E^{-T}x':
-  do iw = 1, nfreq
-     do ibnd = 1, nbnd
-           call cg2_psi (ndmx, ndim, 1, x_sig(1,ibnd,iw), h_diag(1,ibnd))
-     enddo
-  enddo
+!  do iw = 1, nfreq
+!     do ibnd = 1, nbnd
+!           call cg2_psi (ndmx, ndim, 1, x_sig(1,ibnd,iw), h_diag(1,ibnd))
+!     enddo
+!  enddo
   DEALLOCATE(u_sig, u_sig_old)
 END SUBROUTINE coul_multishift

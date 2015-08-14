@@ -227,7 +227,6 @@ DO iq = 1, nks
   IF(iw0stop-iw0start+1.gt.0) THEN
      DO iw0 = iw0start, iw0stop
         DO iw = 1, nwcoul
-           !CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)

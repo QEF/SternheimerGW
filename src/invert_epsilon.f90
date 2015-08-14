@@ -32,9 +32,11 @@ endif
 
 !Need block inversion routine if iq is gamma.
 do iw = 1, nfs
-   call ZGETRF (sigma_c_st%ngmt, sigma_c_st%ngmt, scrcoul_g_in(1:sigma_c_st%ngmt,1:sigma_c_st%ngmt,iw,1), sigma_c_st%ngmt, iwork, info)
+   call ZGETRF (sigma_c_st%ngmt, sigma_c_st%ngmt,&
+   scrcoul_g_in(1:sigma_c_st%ngmt,1:sigma_c_st%ngmt,iw,1), sigma_c_st%ngmt, iwork, info)
    call errore ('invert epsilon', 'factorization', info)
-   call ZGETRI (sigma_c_st%ngmt, scrcoul_g_in(1:sigma_c_st%ngmt,1:sigma_c_st%ngmt,iw,1), sigma_c_st%ngmt, iwork, work, sigma_c_st%ngmt, info)
+   call ZGETRI (sigma_c_st%ngmt, scrcoul_g_in(1:sigma_c_st%ngmt,1:sigma_c_st%ngmt,iw,1),& 
+   sigma_c_st%ngmt, iwork, work, sigma_c_st%ngmt, info)
    call errore ('invert epsilon', 'inversion', info)
 enddo
 

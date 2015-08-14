@@ -104,7 +104,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   ! change of rho / scf potential (output)
   ! change of scf potential (output)
   complex(DP), allocatable :: ldos (:,:), ldoss (:,:), mixin(:), mixout(:), &
-                              dbecsum (:,:,:), dbecsum_nc(:,:,:,:,:)
+                              dbecsum (:,:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
 
@@ -264,17 +264,17 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
    ELSE 
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
-                             npol, niters, alphabeta, .true.)
+                             npol, niters, alphabeta, .false.)
         if(.not.conv_root)    WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
         if(.not.conv_root)    WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
 !reinflate before the multishift?
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, h_diag, fiu)
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
         dpsi(:,:,:)    = dpsit(:,:,:)
 !       dpsi = dpsi^{+} + dpsi^{-}
         dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, h_diag, ((-1.0d0,0.0d0)*fiu(:)))
+        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
         dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_green) then
@@ -291,12 +291,14 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                  dbecsum(1,1,current_spin), dpsi(:,:,iw))
         enddo
      enddo !kpoints
+!     do iw = 1, nfs
+!         call mp_sum ( drhoscf(:,iw), inter_pool_comm )
+!     enddo
+!should only sum once!
+     call mp_sum ( drhoscf(:,:), inter_pool_comm )
      do iw = 1, nfs
-         call mp_sum ( drhoscf(:,iw), inter_pool_comm )
-     enddo
-      do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
-      enddo
+     enddo
 !!!!!!!NEED THIS FOR ULTRASOFT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     do iw = 1, nfs
 !        call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
@@ -325,7 +327,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     do iw = 1, nfs
        call dv_of_drho (1, dvscfout(1,iw), .true.)
     enddo
-
     averlt = DBLE (ltaver) / lintercall
     tcpu = get_clock ('GW')
     CALL flush_unit( stdout )
@@ -334,8 +335,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !   after this point drhoscf is dv_hartree(RPA)
 !   drhoscf(:,1) = dvscout(:,1)
 !  -vc*\Chi
-    drhoscf(:,:) = -dvscfout(:,:)
-
+  drhoscf(:,:) = -dvscfout(:,:)
   if (convt) then
    if (fildvscf.ne.' ') then
     write(6, '("fildvscf")') 
@@ -346,6 +346,5 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   deallocate (h_diag)
   deallocate (dvscfout)
   deallocate (dbecsum)
-
   call stop_clock ('solve_linter')
 END SUBROUTINE solve_lindir
