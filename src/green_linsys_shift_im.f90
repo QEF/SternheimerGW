@@ -129,12 +129,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
            igkq_ig  (counter) = ig
        endif
     enddo
-    igstart = 1
-    igstop = counter
-!allocate list to keep track of the number of residuals for each G-vector:
-    ngvecs = igstop-igstart + 1
-    if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
-    niters = 0 
 !Now the G-vecs up to the correlation cutoff have been divided between pools.
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
@@ -167,7 +161,11 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     gveccount = 1
     gr_A_shift = (0.0d0, 0.d0)
     niters(:) = 0
-!    write(3000+mpime,*) x_q(:,ikq)
+    CALL para_img(counter, igstart, igstop)
+!allocate list to keep track of the number of residuals for each G-vector:
+    ngvecs = igstop-igstart + 1
+    if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
+    niters = 0 
     do ig = igstart, igstop
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
           IF(multishift) THEN
@@ -183,16 +181,16 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)
              call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
-             if (niters(gveccount).ge.maxter_green) then
+             IF (niters(gveccount).ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                    gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
-             endif
-             do iw = 1, nwgreen
-                do igp = 1, counter
+             ENDIF
+             DO iw = 1, nwgreen
+               DO  igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
                                                             gr_A_shift(igkq_ig(igp),iw)
-                enddo
-             enddo
+               ENDDO
+             ENDDO
              gveccount = gveccount + 1
           ELSE IF(.not.multishift) THEN
              DO iw = 1, nwgreen
@@ -214,7 +212,11 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              ENDDO
              gveccount = gveccount + 1
           ENDIF
-    ENDDO !ig
+    ENDDO !igstart
+#ifdef __PARA
+    CALL mp_barrier(inter_image_comm)
+    CALL mp_sum(green, inter_image_comm)
+#endif __PARA
 if(allocated(niters))     DEALLOCATE(niters)
 if(allocated(h_diag))     DEALLOCATE(h_diag)
 if(allocated(etc))        DEALLOCATE(etc)

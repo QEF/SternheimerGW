@@ -13,6 +13,7 @@ SUBROUTINE opengwfil()
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st
   USE control_gw,      ONLY : multishift, do_serial
   USE wvfct,           ONLY : nbnd,npwx
+  USE io_global,       ONLY : meta_ionode
 
 IMPLICIT  NONE
   LOGICAL :: exst
@@ -20,12 +21,10 @@ IMPLICIT  NONE
 
     iuncoul = 28
     lrcoul = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt * nfs
-    CALL diropn (iuncoul, 'coul', lrcoul, exst)
-
+    if(meta_ionode) CALL diropn (iuncoul, 'coul', lrcoul, exst)
     iungreen = 31
     lrgrn  = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt
     CALL diropn (iungreen, 'green', lrgrn, exst)
-
 !\Sigma^{c}(\G,\G';\omega)
     iunsigma = 32
     if(do_serial) then
@@ -33,13 +32,11 @@ IMPLICIT  NONE
     else  
        lrsigma = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt * nwsigma
     endif
-    CALL diropn(iunsigma, 'sigma', lrsigma, exst)
-
+    if(meta_ionode) CALL diropn(iunsigma, 'sigma', lrsigma, exst)
 !\Sigma^{x}(\G,\G';\omega)
     iunsex = 33
     lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
-    CALL diropn(iunsex, 'sigma_ex', lrsex, exst)
-
+    if(meta_ionode) CALL diropn(iunsex, 'sigma_ex', lrsex, exst)
     if(multishift) then
        iunresid = 34
        lrresid  = 2*npwx

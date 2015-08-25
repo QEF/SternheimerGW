@@ -8,7 +8,7 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d
+  USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d, multishift
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk, wfc_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
@@ -195,7 +195,8 @@ IMPLICIT NONE
        enddo
     ELSE
        zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-       rcut = -2*pi*zcut**2
+       if(multishift) rcut = -2*pi*zcut**2
+       if(.not.multishift) rcut = 0.0d0
        DO ig = 1, sigma_x_st%ngmt
                qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
                qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)

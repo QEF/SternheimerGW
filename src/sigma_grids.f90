@@ -85,7 +85,7 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, "nr1, nr2, nr3")')
   WRITE(stdout, '(5x, 3i4)') sigma_x_st%nr1t, sigma_x_st%nr2t, sigma_x_st%nr3t
   WRITE(stdout, '(5x, "G-Vects Exx:")')
-  WRITE(stdout, '(5x, f6.2, i5)') sigma_x_st%ecutt, sigma_x_st%ngmt
+  WRITE(stdout, '(5x, f6.2, i8)') sigma_x_st%ecutt, sigma_x_st%ngmt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!! CORRELATION GRID !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -111,12 +111,11 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, "nr1, nr2, nr3")')
   WRITE(stdout, '(5x, 3i4)') sigma_c_st%nr1t, sigma_c_st%nr2t, sigma_c_st%nr3t
   WRITE(stdout, '(5x, "Ecut, Ngmsco:")')
-  WRITE(stdout, '(5x, f6.2, i5, //)') sigma_c_st%ecutt, sigma_c_st%ngmt
+  WRITE(stdout, '(5x, f6.2, i8, //)') sigma_c_st%ecutt, sigma_c_st%ngmt
 
   CALL realspace_grids_info(sigma_c_st%dfftt, sigma_c_st%dfftt, nproc_pool)
 
   Gb = (DBLE(2)**26)
- 
   WRITE ( stdout, '("MEMORY USAGE:")' )
   WRITE ( stdout, '("")' )
   WRITE( stdout, '(5x,"G(G,Gp;iw) fxn:   ", f10.2," Gb")') &
