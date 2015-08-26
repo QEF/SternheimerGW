@@ -160,12 +160,11 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !On first frequency block we do the seed system with BiCG:
     gveccount = 1
     gr_A_shift = (0.0d0, 0.d0)
-    niters(:) = 0
     CALL para_img(counter, igstart, igstop)
 !allocate list to keep track of the number of residuals for each G-vector:
     ngvecs = igstop-igstart + 1
     if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))
-    niters = 0 
+    niters(:) = 0
     do ig = igstart, igstop
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
           IF(multishift) THEN
@@ -174,7 +173,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              gr_A(:,:) = (0.0d0, 0.0d0)
              lter = 0
              etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-             cw = CMPLX( mu, w_ryd(iw), kind=DP) 
+             cw = CMPLX( 0.0d0, 0.0d0, kind=DP) 
              conv_root = .true.
              anorm = 0.0d0
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
@@ -213,6 +212,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              gveccount = gveccount + 1
           ENDIF
     ENDDO !igstart
+    WRITE(1000+mpime,*) niters
 #ifdef __PARA
     CALL mp_barrier(inter_image_comm)
     CALL mp_sum(green, inter_image_comm)
