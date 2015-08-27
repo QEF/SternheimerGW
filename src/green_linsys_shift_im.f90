@@ -212,6 +212,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              gveccount = gveccount + 1
           ENDIF
     ENDDO !igstart
+!    WRITE(1000+mpime,*) niters
 #ifdef __PARA
     CALL mp_barrier(inter_image_comm)
     CALL mp_sum(green, inter_image_comm)

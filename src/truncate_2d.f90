@@ -16,6 +16,7 @@ subroutine truncate_2D(scrcoul, xqloc, opt)
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE noncollin_module, ONLY : nspin_lsda, nspin_mag, nspin_gga
+  USE control_gw,  ONLY : multishift
 IMPLICIT NONE
   LOGICAL  :: limq
   INTEGER  :: ig, igp, iw, opt
@@ -32,6 +33,7 @@ IMPLICIT NONE
 zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
 !from PRB 73, 205119
 rcut = -2*pi*zcut**2
+
 IF(opt.eq.1) then
      DO ig = 1, ngm
            qg2 = (g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2 + (g(3,ig)+xqloc(3))**2
