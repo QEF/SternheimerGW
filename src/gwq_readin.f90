@@ -167,9 +167,9 @@ SUBROUTINE gwq_readin()
   tr2_green    = 1.D-4
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
-  alpha_mix(1) = 0.6D0
+  alpha_mix(1) = 0.7D0
   niter_gw     = maxter
-  nmix_gw      = 5
+  nmix_gw      = 4
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -215,7 +215,7 @@ SUBROUTINE gwq_readin()
   do_imag         = .FALSE.
   do_pade_coul    = .FALSE.
   double_grid     = .TRUE.
-  high_io    = .FALSE.
+  high_io    = .TRUE.
   freq_gl    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
   plasmon      = 17.0d0

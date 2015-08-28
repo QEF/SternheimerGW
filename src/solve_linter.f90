@@ -280,9 +280,21 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                  call cft_wave (dvpsi (1, ibnd), aux1, -1)
               enddo
               call stop_clock ('vpsifft')
+              !  In the case of US pseudopotentials there is an additional
+              !  selfconsist term which comes from the dependence of D on
+              !  V_{eff} on the bare change of the potential
+              !
+              !Need to check this for ultrasoft              
+              !HL THIS TERM PROBABLY NEEDS TO BE INCLUDED.
+              !KC: This term needs to be included for USPP.
+              !KC: add the augmentation charge term for dvscf
+            !!  call adddvscf (1, ik)
            else
                call dvqpsi_us (dvbarein, ik, .false.)
-               call save_buffer (dvpsi, lrbar, iubar, nrec)
+            ! USPP
+            ! add the augmentation charge term for dvext and dbext
+            ! call adddvscf (1, ik)
+              call save_buffer (dvpsi, lrbar, iubar, nrec)
            endif
         ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
         ! Apply -P_c^+.
@@ -305,10 +317,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              dpsi(:,:)      = (0.d0, 0.d0) 
              dpsim(:,:)     = (0.d0, 0.d0) 
              dpsip(:,:)     = (0.d0, 0.d0) 
-             if(iw.ge.2.and.high_io) then
-                call get_buffer( dpsip, lrdwf, iudwfp, ik)
-                call get_buffer( dpsim, lrdwf, iudwfm, ik)
-              endif
+              !if(iw.ge.2.and.high_io) then
+              !  call get_buffer( dpsip, lrdwf, iudwfp, ik)
+              !  call get_buffer( dpsim, lrdwf, iudwfm, ik)
+              !endif
               dvscfin(:, :)  = (0.d0, 0.d0)
               dvscfout(:, :) = (0.d0, 0.d0)
             !
@@ -320,7 +332,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
        cw        = fiu(iw) 
 
-       IF (iw.eq.1) THEN
+       IF (real(cw).eq.0.d0.and.aimag(cw).eq.0.d0) THEN
                CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                dpsim(:,:) = dpsip(:,:)
@@ -340,12 +352,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                   &              " solve_linter: root not converged ",e10.3)')  &
                   &                ik , ibnd, anorm
            nrec1 =  ik
-         ! calculates dvscf, sum over k => dvscf_q_ipert
-         ! incdrhoscf:  This routine computes the change of the charge density due to the
+         !calculates dvscf, sum over k => dvscf_q_ipert
+         !incdrhoscf:  This routine computes the change of the charge density due to the
          !HL low/io
           if(high_io) then
-           call save_buffer (dpsim, lrdwf, iudwfp, ik)
-           call save_buffer (dpsip, lrdwf, iudwfm, ik)
+             call save_buffer (dpsim, lrdwf, iudwfp, ik)
+             call save_buffer (dpsip, lrdwf, iudwfm, ik)
           endif
 
          ! perturbation. It is called at the end of the computation of the
@@ -363,7 +375,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      enddo !on k-points
 
      call mp_sum ( drhoscf, inter_pool_comm )
-!    call mp_sum ( drhoscfh, inter_pool_comm )
      if (doublegrid) then
          do is = 1, nspin_mag
             call cinterpolate (drhoscfh(1,1), drhoscf(1,1), 1)
@@ -407,14 +418,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
      else
     !Is the hermitian mixing scheme still okay?
-        call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin(1,1), &
-                             alpha_mix(kter), dr2, tr2_gw, iter, &
-                             nmix_gw, convt)
+        call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin(1,1), alpha_mix(kter),& 
+                           dr2, tr2_gw, iter, nmix_gw, convt)
+                             
      endif
  !if (lmetq0.and.convt) &
  !    call ef_shift (drhoscf, ldos, ldoss, dos_ef, irr, npe, .true.)
-     CALL check_all_convt(convt)
-     if (convt) goto 155
+ !    CALL check_all_convt(convt)
   !HL need this if we aren't dealing with electric fields:
   !lmetq0 = lgauss.and.lgamma
   !if (lmetq0) then
@@ -428,9 +438,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            enddo
      endif
 
+!    USPP:     
+!    call newdq (dvscfin, 1)  !KC: calculate int3 for dvscf
+
+
 #ifdef __PARA
      aux_avg (1) = DBLE (ltaver)
      aux_avg (2) = DBLE (lintercall)
+     call mp_sum ( aux_avg, inter_pool_comm )
      averlt = aux_avg (1) / aux_avg (2)
 #else
      averlt = DBLE (ltaver) / lintercall
@@ -439,20 +454,27 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      dr2 = dr2 
      CALL flush_unit( stdout )
      rec_code=10
+
+     WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+           "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+     WRITE(1000+mpime, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
+           &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
+     if (convt) goto 155
+
   enddo !loop on kter (iterations)
 
 155 iter0=0
 
-!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!         "secs av.it.:",f5.1)') iter, tcpu, averlt
-!   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
-!          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
-!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+         "secs av.it.:",f5.1)') iter, tcpu, averlt
+   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
+          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
+   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
   drhoscf(:,:) = dvscfin(:,:)
   
-  call mp_barrier(intra_image_comm)
+ !call mp_barrier(intra_image_comm)
  
   deallocate (h_diag)
   deallocate (aux1)

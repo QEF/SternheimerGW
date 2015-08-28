@@ -158,7 +158,6 @@ real(DP) :: &
         if (conv (ibnd).eq.0) then
             lbnd = lbnd+1
             rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, gp(1,ibnd), 1))
-            !rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
             if (iter.eq.1) rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
         endif
      enddo
@@ -217,7 +216,6 @@ real(DP) :: &
 !HLTIL
 ! xt  = xt  + conjg(alpha) * pt
 !           call ZAXPY (ndmx*npol,  dconjg(alpha), ht(1,ibnd), 1, dpsitil(1,ibnd), 1)
-
 ! r  = r  - alpha        * q
 ! rt = rt - conjg(alpha) * qt
            call ZAXPY (ndmx*npol, -alpha,        t  (1, lbnd), 1, g  (1,ibnd), 1)
