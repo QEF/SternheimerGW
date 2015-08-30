@@ -242,7 +242,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
         alphabeta(:,:,:) =  dcmplx(0.d0, 0.d0)
         niters(:)        = 0  
-
         thresh    = tr2_gw
         conv_root = .true.
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)

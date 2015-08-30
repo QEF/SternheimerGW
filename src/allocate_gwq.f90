@@ -38,7 +38,7 @@ subroutine allocate_gwq
   USE eqv,           ONLY : dpsi, evq, vlocq, dmuxc, dvpsi, eprec, dvbare, dpsim, dpsip, eprectot
   USE units_gw,      ONLY : this_pcxpsi_is_on_file, this_dvkb3_is_on_file
   USE control_gw,    ONLY : lgamma  
-  USE fft_base,      ONLY : dfftp
+  USE fft_base,      ONLY : dfftp, dffts
   USE disp,          ONLY : gmap, eval_occ
 
   IMPLICIT NONE
@@ -66,7 +66,7 @@ subroutine allocate_gwq
   allocate (eprectot ( nbnd, nkstot) )
   allocate (eigqts ( nat))
   allocate (dmuxc (dfftp%nnr , nspin_mag , nspin_mag))    
-  allocate (dvbare(dfftp%nnr))    
+  allocate (dvbare(dffts%nnr))    
 
   ALLOCATE (becp1(nksq))
   DO ik=1,nksq

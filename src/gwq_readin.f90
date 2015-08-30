@@ -280,10 +280,6 @@ SUBROUTINE gwq_readin()
   IF (tr2_gw <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_gw ', 1)
   IF (tr2_green <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_green ', 1)
 
-  !HL raman thresholds
-  !IF (eth_rps<= 0.D0) CALL errore ( 'gwq_readin', ' Wrong eth_rps', 1)
-  !IF (eth_ns <= 0.D0) CALL errore ( 'gwq_readin', ' Wrong eth_ns ', 1)
-
   DO iter = 1, maxter
      IF (alpha_mix (iter) .LT.0.D0.OR.alpha_mix (iter) .GT.1.D0) CALL &
           errore ('gwq_readin', ' Wrong alpha_mix ', iter)

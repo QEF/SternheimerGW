@@ -69,7 +69,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   CALL start_clock ('coulomb')
 
 if(solve_direct) then
-  ALLOCATE (drhoscfs(dfftp%nnr, nfs))    
+  ALLOCATE (drhoscfs(dffts%nnr, nfs))    
 else
 !for self-consistent solution we only consider one
 !frequency at a time. To save memory and time and lines of codes etc.
@@ -77,7 +77,7 @@ else
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
   WRITE(stdout, '(4x,4x,"nspinmag", i4)'), nspin_mag
-  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag))    
+  ALLOCATE (drhoscfs(dffts%nnr, nspin_mag))    
 endif
 
 irr=1
@@ -89,6 +89,7 @@ DO ig = igstart, igstop
 !     if (do_q0_only.and.ig.gt.1) CYCLE
       qg2 = (g(1,ig_unique(ig))+xq(1))**2+(g(2,ig_unique(ig))+xq(2))**2+(g(3,ig_unique(ig))+xq(3))**2
       IF(solve_direct) THEN
+        !if(qg2.lt.eps8) CYCLE 
          drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
          dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
@@ -96,15 +97,16 @@ DO ig = igstart, igstop
          CALL solve_lindir (dvbare, drhoscfs)
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
-            CALL fwfft ('Dense', drhoscfs(:,iw), dfftp)
-            if(ig.eq.1.or.mod(ig,10).eq.0) WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
+            CALL fwfft ('Dense', drhoscfs(:,iw), dffts)
+           !if(ig.eq.1.or.mod(ig,10).eq.0) WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
+            WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'), drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
             do igp = 1, sigma_c_st%ngmt
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw)
+                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw)
                else
 !diagonal elements eps(\G,\G') = \delta(G,G') - drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nl(igp), iw) + dvbare(nls(ig_unique(ig)))
+                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw) + dvbare(nls(ig_unique(ig)))
                endif
             enddo
          enddo !iw

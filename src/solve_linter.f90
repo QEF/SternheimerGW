@@ -331,8 +331,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        conv_root = .true.
        etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
        cw        = fiu(iw) 
-
-       IF (real(cw).eq.0.d0.and.aimag(cw).eq.0.d0) THEN
+       !IF (real(cw).eq.0.d0.and.aimag(cw).eq.0.d0) THEN
+       IF (iw.eq.1) THEN
                CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                dpsim(:,:) = dpsip(:,:)
@@ -416,10 +416,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !just using standard broyden for the zero freq. case.
         call mix_potential(2*dfftp%nnr*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
+                          !dr2, 1.d-2*(tr2_gw)**2, iter, nmix_gw, flmixdpot, convt)
      else
     !Is the hermitian mixing scheme still okay?
         call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin(1,1), alpha_mix(kter),& 
                            dr2, tr2_gw, iter, nmix_gw, convt)
+                          !dr2, 1.d-2*(tr2_gw)**2, iter, nmix_gw, convt)
                              
      endif
  !if (lmetq0.and.convt) &

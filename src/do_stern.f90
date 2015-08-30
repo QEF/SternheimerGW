@@ -27,6 +27,7 @@ IMPLICIT NONE
   INTEGER :: iq, ik, ig, igstart, igstop, ios, iq1, iq2
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
   LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel
+  COMPLEX(DP), ALLOCATABLE :: eps_m(:)
 
   ALLOCATE ( scrcoul_g( sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, nspin_mag))
   ALLOCATE ( ig_unique( sigma_c_st%ngmt) )
@@ -48,21 +49,25 @@ IMPLICIT NONE
       iq1 = w_of_q_start
       iq2 = num_k_pts
   endif
-!Perform head of dielectric matrix calculation.
-!   do iq = 1, 1
-!      scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
-!      CALL prepare_q0(do_band, do_iq, setup_pw, iq)
-!      do_matel = .FALSE.
-!      CALL run_nscf(do_band, do_matel, iq)
-!      CALL coulomb_q0G0(iq, 1, 1, eps_m)
-!      CALL initialize_gw()
-!      CALL mp_barrier(inter_image_comm)
-!      CALL clean_pw_gw(iq)
-!   enddo
     
-   DO iq = iq1, iq2
+  DO iq = iq1, iq2
+!Perform head of dielectric matrix calculation.
+     CALL start_clock ('epsilq')
+     IF (iq.eq.1) THEN
+        ALLOCATE(eps_m(nfs))
+        eps_m(:) = dcmplx(0.0d0,0.0d0)
+    !    IF(my_image_id.eq.0) THEN
+    !      scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
+    !      CALL prepare_q0(do_band, do_iq, setup_pw, iq)
+    !      do_matel = .FALSE.
+    !      CALL run_nscf(do_band, do_matel, iq)
+    !      CALL initialize_gw()
+    !      CALL coulomb_q0G0(iq, eps_m)
+    !      CALL clean_pw_gw(iq)
+    !    ENDIF
+    !    CALL mp_barrier(inter_image_comm)
+    ENDIF
     scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
-    CALL start_clock ('epsilq')
     CALL prepare_q(do_band, do_iq, setup_pw, iq)
     do_matel = .FALSE.
     CALL run_nscf(do_band, do_matel, iq)
@@ -93,9 +98,10 @@ IMPLICIT NONE
        IF (meta_ionode) THEN
          CALL unfold_w(scrcoul_g,iq)
          IF(solve_direct.and.tinvert) WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
-         IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq)
+         IF(solve_direct.and.tinvert) CALL invert_epsilon(scrcoul_g, iq, eps_m)
          CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
        ENDIF
+       if(allocated(eps_m)) DEALLOCATE(eps_m)
        call mp_barrier(inter_image_comm)
        CALL clean_pw_gw(iq)
        if(do_q0_only) GOTO 126

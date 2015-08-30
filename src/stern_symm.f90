@@ -45,13 +45,9 @@ if(loqua) then
    WRITE(6,*)
   enddo
 endif
-
-
 !Find number of unique vectors:
-
 ngmunique = 1
 ig_unique(1) = 1
-
 DO ig = 2, sigma_c_st%ngmt
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
