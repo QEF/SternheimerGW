@@ -74,7 +74,6 @@ mod_diel.o\
 clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
-sym_sigma_exch.o\
 sigma_exch.o\
 sigma_matel.o\
 print_matel.o\

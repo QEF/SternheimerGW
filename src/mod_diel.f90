@@ -13,7 +13,9 @@ SUBROUTINE mod_diel(ig, xq_ibk, w, inveps, screening)
 IMPLICIT NONE
 
   REAL(DP), INTENT(IN)    :: xq_ibk(3)
-  COMPLEX(DP) :: w, inveps
+  !COMPLEX(DP) :: w, inveps
+  COMPLEX(DP) ::  inveps
+  REAL(DP)    :: w
   REAL(DP)    :: wwp, eps0, q0, wwq, fac, z, xq(3)
   REAL(DP)    :: wwpi2, wwpj2, qxy, meff, invepsqg
   REAL(DP)    :: rhoi, rhoj , wwqi, wwji
@@ -31,9 +33,9 @@ IMPLICIT NONE
 !The 'magic dielectric function' Inkson 1972
 !Silicon parameters...
 !check resta for parameters Phys. Rev. B 16, 2717 2722 (1977)
-wwp    = 16.0/RYTOEV  ! plasma frequency in Ry
-eps0   = 11.4         ! static diel constant of Si
-q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
+!wwp    = 16.0/RYTOEV  ! plasma frequency in Ry
+!eps0   = 11.4         ! static diel constant of Si
+!q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
 !LiCL parameters
 !wwp    = 17.0/RYTOEV   ! plasma frequency in Ry
 !eps0   = 11.04         ! static diel constant of 
@@ -41,9 +43,9 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
 !MoS2 there are two well defined excitation for parallel and perpendicular.
 !this is an anisotropic material though!
 !should have (at least) 2 different plasmons!
-!     wwp    = 16.0/RYTOEV ! plasma frequency in Ry
-!     eps0   = 7.4         ! static diel constant of MoS2
-!     q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
+     wwp    = 12.0/RYTOEV ! plasma frequency in Ry
+     eps0   = 7.4         ! static diel constant of MoS2
+     q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
 !!!!!!
      fac    = 1.d0/(1.d0-1.d0/eps0)
 !effective mass annd density of electrons in layer i,j.
@@ -52,7 +54,7 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
      rhoi   = 1.0d0
      rhoj   = 1.0d0
 !z is interlayer distance.
-     z = 2.0d0
+     z = 8.5d0
  if(screening.eq.1) then
 !Standard 3D-bulk ppm:
 !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
@@ -62,7 +64,7 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
      qg     = sqrt(tpiba2*qg2)
      fac    = 1.d0/(1.d0-1.d0/eps0)
      wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
-     inveps =  - wwp**2.d0/(w**2.d0 + wwq**2.d0)
+     !inveps =  - wwp**2.d0/(w**2.d0 + wwq**2.d0)
 
  else if(screening.eq.2) then
  !Effective bi-layer plasmon model
@@ -83,7 +85,7 @@ q0     = 1.1          ! characteristic momentum of Si, a.u. from Resta
      polq    = (-2*kf*meff)/(pi*qg)*((epsq*meff)/(kf*x) - real(sqrt((epsq * meff/(kf*qg))-1)))
 !vq is screened coulomb, what is epsq?? need to look at dimensions.
 !looks like an energy actually.
-!     b       = cosh(qxy*d) - vq*polq*sinh(qxy*z) 
+     b       = cosh(qxy*d) - vq*polq*sinh(qxy*z) 
 !eps^{-1} = sinh(qd)/\sqrt(b^{2}-1)
      inveps  = sinh(qg*z)/sqrt(b**2 -1)
 !need to use inkson's relation here... wwq = alpha*(1-inveps(q,0))^{-1}
