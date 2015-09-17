@@ -86,10 +86,10 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
-    INTEGER     :: igkq_ig(npwx) 
-    INTEGER     :: igkq_tmp(npwx) 
-    INTEGER     :: counter
-    INTEGER :: igstart, igstop, ngpool, ngr, igs, ngvecs
+    INTEGER  :: igkq_ig(npwx) 
+    INTEGER  :: igkq_tmp(npwx) 
+    INTEGER  :: counter
+    INTEGER  :: igstart, igstop, ngpool, ngr, igs, ngvecs
 
     REAL(DP) :: gam(3)
     REAL(DP) :: xk1(3)

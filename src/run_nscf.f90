@@ -54,11 +54,11 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   if(do_matel) xq(3) = 0.0d0 
   !if(do_matel) xq(:) = xk_kpoints(:, ik)
   lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
-  !From now on, work only on the _gw virtual directory
+ !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw
   tmp_dir=tmp_dir_gw
-  !
-  !...Setting the values for the nscf run
+ !
+ !...Setting the values for the nscf run
   startingconfig    = 'input'
   starting_pot      = 'file'
   starting_wfc      = 'atomic'

@@ -85,7 +85,7 @@ IMPLICIT NONE
      polq    = (-2*kf*meff)/(pi*qg)*((epsq*meff)/(kf*x) - real(sqrt((epsq * meff/(kf*qg))-1)))
 !vq is screened coulomb, what is epsq?? need to look at dimensions.
 !looks like an energy actually.
-     b       = cosh(qxy*d) - vq*polq*sinh(qxy*z) 
+     !b       = cosh(qxy*d) - vq*polq*sinh(qxy*z) 
 !eps^{-1} = sinh(qd)/\sqrt(b^{2}-1)
      inveps  = sinh(qg*z)/sqrt(b**2 -1)
 !need to use inkson's relation here... wwq = alpha*(1-inveps(q,0))^{-1}

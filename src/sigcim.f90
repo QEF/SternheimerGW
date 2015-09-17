@@ -204,6 +204,7 @@ DO iq = 1, nks
       xk1 = xk_kpoints(:,ik0) - aq(:)
       nig0 = 1
       inv_q=.false.
+      found_q=.false.
       call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
       iqrec_k(isymop) = iqrec
       isym_k(isymop)  = isym
