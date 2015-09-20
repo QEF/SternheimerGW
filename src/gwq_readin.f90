@@ -144,7 +144,7 @@ SUBROUTINE gwq_readin()
   ! ... Read the first line of the input file
   !
      READ( 5, '(A)', IOSTAT = ios ) title
-     WRITE(6,*) nsx, maxter
+  !   WRITE(6,*) nsx, maxter
   !
   ENDIF
   !

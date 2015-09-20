@@ -292,6 +292,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
      enddo !kpoints
 !should only sum once!
      call mp_sum ( drhoscf(:,:), inter_pool_comm )
+!do iw =1,nfs
+!     call syme (drhoscf(1,iw))
+!enddo
+
+
      do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
      enddo

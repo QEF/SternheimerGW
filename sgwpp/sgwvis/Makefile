@@ -1,30 +1,30 @@
 # Makefile for dielectric postprocessing (PP)
-include ./make.sys
-
+include ../../../make.sys
 # location of needed modules
-MODFLAGS= $(MOD_FLAG)/iotk/src $(MOD_FLAG)/Modules \
-          $(MOD_FLAG)/EE $(MOD_FLAG)/PW $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)../../../iotk/src $(MOD_FLAG)../../../Modules \
+          $(MOD_FLAG)../../../PW/src $(MOD_FLAG).
 
-PPOBJS = \
-sigma_vis.o\
-extract.o \
-cube.o \
-openfil_pp.o
+SIGVISOBJS = \
+sigmapp.o\
+sigmadens.o
 
-HOME =/home/lambert/espresso-4.2
-PWOBJS =$(HOME)/PW/libpw.a
-EEOBJS=$(HOME)/EE/libee.a
-QEMODS =$(HOME)/Modules/libqemod.a
+PWOBJS = ../../../PW/src/libpw.a
+QEOBJS = ../../../Modules/libqemod.a
+PPOBJS = ../../../PP/src/libpp.a
 
+MODULES = $(PWOBJS) $(QEOBJS) $(PPOBJS)
 
-MODULES = $(PWOBJS) $(EEOBJS) $(QEOBJS) $(QEMODS)
+LIBOBJS = ../../../flib/ptools.a ../../../flib/flib.a ../../../clib/clib.a ../../../iotk/src/libiotk.a 
 
-TLDEPS= bindir mods libs pw
+all: sigvis.x
 
-diel_vis.x : sigma_vis.o $(PPOBJS) $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -g -traceback -o sigma_vis.x \
-	$(PPOBJS) $(MODULES) $(LIBOBJS) $(LIBS)
-	-cp ./sigma_vis.x ./SiFullSig
+libsigvis.a : $(SIGVISOBJS)
+	$(AR) $(ARFLAGS) $@ $?
+	$(RANLIB) $@
+
+sigvis.x : sigmapp.o libsigvis.a $(MODULES) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -g -traceback -o sigma_vis.x sigmapp.o libsigvis.a \
+	$(MODULES) $(LIBOBJS) $(LIBS)
 
 clean :
 	- /bin/rm -f *.x *.o *~ *.F90 *.d *.mod *.i *.L

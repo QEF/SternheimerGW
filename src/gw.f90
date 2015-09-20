@@ -6,7 +6,7 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !
-PROGRAM gw
+program gw
   !-----------------------------------------------------------------------
   !... This is the main driver of the Sternheimer-GW code. It
   !... closely mirrors the construction of the PHonon code.
@@ -32,50 +32,61 @@ PROGRAM gw
   !
   ! Initialize MPI, clocks, print initial messages
   !
-  CALL mp_startup ( start_images=.true. )
-  CALL environment_start ( code )
+  call mp_startup ( start_images=.true. )
+  call environment_start ( code )
+
   ! Initialize GW calculation, Read Ground state information.
-  CALL gwq_readin()
-  CALL check_stop_init()
-  CALL check_initial_status(auxdyn)
+  call gwq_readin()
+  call check_stop_init()
+  call check_initial_status(auxdyn)
+
   ! Initialize frequency grids, FFT grids for correlation
   ! and exchange operators, open relevant GW-files.
-  CALL freqbins()
-  CALL sigma_grids()
-  CALL opengwfil()
+  call freqbins()
+  call sigma_grids()
+  call opengwfil()
+
   ! Calculation W
-  IF(do_coulomb) CALL do_stern()
+  if(do_coulomb) call do_stern()
+
   do_iq=.TRUE.
   setup_pw = .TRUE.
   do_band  = .TRUE.
   do_matel = .TRUE.
   ik = 1
-  if(do_q0_only) GOTO 127
-  CALL run_nscf(do_band, do_matel, ik)
-  CALL initialize_gw()
-  IF(do_green.and.multishift) CALL diropn(iunresid, 'resid', lrresid, exst)
-  IF(do_green.and.multishift) CALL diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
-  ! Calculation \Sigma_{k}= \sum_{q}G_{k-q}W_{q}
-  IF (do_imag) THEN
-      DO ik = 1, num_k_pts
-         IF(do_sigma_c) CALL sigma_c_im(ik)
-      ENDDO
-  ELSE
-      DO ik = 1, num_k_pts
-         IF(do_sigma_c) CALL sigma_c_re(ik)
-      ENDDO
-  ENDIF
-  IF(do_green.and.multishift) then
-     CLOSE(UNIT = iunresid, STATUS = 'DELETE')
-     CLOSE(UNIT = iunalphabeta, STATUS = 'DELETE')
-  ENDIF
+
+  if (do_q0_only) goto 127
+  call run_nscf(do_band, do_matel, ik)
+  call initialize_gw()
+
+  if(do_green.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
+  if(do_green.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
+  ! Calculation of Correlation energy \Sigma^{c}_{k}= \sum_{q}G_{k-q}{W_{q}-v_{q}}
+  if (do_imag) then
+      do ik = 1, num_k_pts
+         if(do_sigma_c) call sigma_c_im(ik)
+      enddo
+  else
+      do ik = 1, num_k_pts
+         if(do_sigma_c) call sigma_c_re(ik)
+      enddo
+  endif
+  if(do_green.and.multishift) then
+     close(unit = iunresid, status = 'DELETE')
+     close(unit = iunalphabeta, status = 'DELETE')
+  endif
+
   do ik = 1, num_k_pts
-     IF(do_sigma_exx)   CALL sym_sigma_exch(ik)
+     if(do_sigma_exx)   call sym_sigma_exch(ik)
   enddo
+
+  ! Calculate <n\k| V^{xc}, \Sigma^{x}, Sigma^{c} |n\k>
   do ik = 1, num_k_pts
-     IF(do_sigma_matel) CALL sigma_matel(ik)
+     if(do_sigma_matel) call sigma_matel(ik)
   enddo
-  127 CONTINUE
-  CALL close_gwq(.TRUE.)
-  CALL stop_gw( .TRUE. )
-END PROGRAM gw
+
+  127 continue
+  call close_gwq(.TRUE.)
+  call stop_gw( .TRUE. )
+
+end program gw

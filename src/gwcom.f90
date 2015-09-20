@@ -281,7 +281,7 @@ MODULE control_gw
   !
   SAVE
   !
-  INTEGER, PARAMETER :: maxter = 100
+  INTEGER, PARAMETER :: maxter = 140
   ! maximum number of iterations
   INTEGER :: niter_gw, nmix_gw, nbnd_occ(npk), &
              start_irr, last_irr, current_iq, start_q, last_q

@@ -13,7 +13,6 @@ SUBROUTINE mod_diel(ig, xq_ibk, w, inveps, screening)
 IMPLICIT NONE
 
   REAL(DP), INTENT(IN)    :: xq_ibk(3)
-  !COMPLEX(DP) :: w, inveps
   COMPLEX(DP) ::  inveps
   REAL(DP)    :: w
   REAL(DP)    :: wwp, eps0, q0, wwq, fac, z, xq(3)
@@ -25,11 +24,12 @@ IMPLICIT NONE
   REAL(DP)    :: qg, qg2, kf2, kf, alpha
   REAL(DP)    :: expqxy, d, x 
   INTEGER     :: screening, ig
+!
 !Screening selects from one of the following model dielectric functions.
 !in all cases the dielectric function is diagonal in G space so we include no
 !local field effects. However the model is parameterized to include the possibility
 !of two modes occurring from coupling between two electron gases of different density.
-
+!
 !The 'magic dielectric function' Inkson 1972
 !Silicon parameters...
 !check resta for parameters Phys. Rev. B 16, 2717 2722 (1977)
@@ -43,38 +43,38 @@ IMPLICIT NONE
 !MoS2 there are two well defined excitation for parallel and perpendicular.
 !this is an anisotropic material though!
 !should have (at least) 2 different plasmons!
-     wwp    = 12.0/RYTOEV ! plasma frequency in Ry
-     eps0   = 7.4         ! static diel constant of MoS2
-     q0     = 1.90        ! characteristic momentum of MoS2 calculated from Resta paper..
+     wwp    = 12.0_dp/RYTOEV ! plasma frequency in Ry
+     eps0   =  7.4_dp         ! static diel constant of MoS2
+     q0     =  1.9_dp        ! characteristic momentum of MoS2 calculated from Resta paper..
 !!!!!!
-     fac    = 1.d0/(1.d0-1.d0/eps0)
+     fac    = 1.0_dp/(1.0_dp - 1.0_dp/eps0)
 !effective mass annd density of electrons in layer i,j.
-     meff   = 1.0d0
+     meff   = 1.0_dp
 !or should this be the fourier co-efficient of the density at the particular G vector?
-     rhoi   = 1.0d0
-     rhoj   = 1.0d0
+     rhoi   = 1.0_dp
+     rhoj   = 1.0_dp
 !z is interlayer distance.
      z = 8.5d0
- if(screening.eq.1) then
+ if (screening.eq.1) then
 !Standard 3D-bulk ppm:
 !drhoscfs (nl(ig), 1)  = 1.d0 - wwp**2.d0/((fiu(iw) + eta)**2.d0 + wwq**2.d0)
 !(W-v) = (inveps(w) - delta) v
 !Wave vector:
      qg2    = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
      qg     = sqrt(tpiba2*qg2)
-     fac    = 1.d0/(1.d0-1.d0/eps0)
-     wwq    = wwp * sqrt ( fac * (1.d0 + (qg/eps0/q0)**2.d0 ) )
+     fac    = 1.0_dp/(1.0_dp-1.0_dp/eps0)
+     wwq    = wwp * sqrt ( fac * (1.0_dp + (qg/eps0/q0)**2.0_dp ) )
      !inveps =  - wwp**2.d0/(w**2.d0 + wwq**2.d0)
 
- else if(screening.eq.2) then
+ else if (screening.eq.2) then
  !Effective bi-layer plasmon model
  !Inkson and White semicond. sci. technol. 4 1989
  !only xy screened and effective coupling along z...
      qg2     = (g(1,ig)+xq(1))*2 + (g(2,ig)+xq(2))**2
      qg      = sqrt(tpiba2*qg2)
 
-     wwpi2   = (2*pi)/(eps0*meff)*qg
-     wwpj2   = (2*pi)/(eps0*meff)*qg
+     wwpi2   = (2.0_dp*pi)/(eps0*meff)*qg
+     wwpj2   = (2.0_dp*pi)/(eps0*meff)*qg
 
      qxy     = sqrt(tpiba2*((xq(1)+g(1, ig))**2 + (xq(2)+g(2, ig))**2))
      alpha   = wwpi2 + wwpj2*exp(-qxy*z)
@@ -92,7 +92,7 @@ IMPLICIT NONE
      wwq2    = alpha/(1 - inveps)
 !Skip through frequencies.
      inveps  = alpha/(w**2 - wwq2)
- else if(screening.eq.3) then
+ else if (screening.eq.3) then
 !Bilayer plasmon model 
      qg2     = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2
      qg      = sqrt(tpiba2*qg2)

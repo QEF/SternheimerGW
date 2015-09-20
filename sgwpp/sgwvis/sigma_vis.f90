@@ -76,53 +76,29 @@ real(DP) :: e1(3), e2(3), e3(3), x0 (3), R(3), radius, m1, m2, m3, e(3)
   !    extracts and calculates the desired quantity (rho, V, ...)
   !    writes it to a file for further processing or plotting
   call extract (filplot, plot_num) 
-
-
 !!!!!!!!! SHOULD FORMULATE INPUT FILE !!!!!!!!!!!!!!!!!
-
 !ngmpol: number of G-vectors used to describe dielectric matrix.
 !nwim: number of imaginary frequencies
 !for Si:
   ngmpol    = 137
   ngmsex    = 411
   nwsigma   = 3
-
 !sigorcoul
   sigorcoul = .true.
   plot_rho  = .false.
-
 !output format
   output_format = 0
-
 !vectors for 
  !!! x0, e1, e2 are in alat units !!!
      e1(:) = (/1.0, 1.0, 0.0/) !!!
      e2(:) = (/0.0, 0.0, 1.0/) !!!
-
- !does this shift the unit cell:
- !    e1(:) = (/2.0, 2.0, 1.0/)
- !    e2(:) = (/1.0, 1.0, 2.0/)
-
-   !!!orthorhombic crystals the bond mid point should
-   !!!just be mid point of lattice vectors...
      e3(:) = (/0.0, 0.0, 0.0/)
-   !!!origin of plane!!!
-     !x0(:) = (/0.0, 0.0, 3.0/)
      x0(:) = (/0.0, 0.0, 0.0/)
-    ! x0(:) = (/0.0, 0.0, 0.0/)
-    ! x0(:) = (/0.0, 0.0, 0.0/)
-    ! x0(:) = (/0.0, 0.0, 0.0/)
-    ! x0(:) = (/0.0, 0.0, 0.0/)
-
 !number of points in the plane
 !     rho(i,j) = rho( x0 + e1 * (i-1)/(nx-1)
 !              + e2 * (j-1)/(ny-1) ), i=1, nx ; j=1, ny
-
      nx    = 80
      ny    = 40
-
-!     nx    = 40
-!     ny    = 40
 
      if (e1(1)**2 + e1(2)**2 + e1(3)**2 <  1d-6 .or. &
          e2(1)**2 + e2(2)**2 + e2(3)**2 <  1d-6)     &

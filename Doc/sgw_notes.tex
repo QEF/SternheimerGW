@@ -1,0 +1,379 @@
+\documentclass{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{default}
+\usepackage{graphicx}
+\usepackage[sort&compress]{natbib}
+
+\def\r{{\bf r}}
+\def\rp{{\bf r^\prime}}
+\def\k{{\bf k}}
+\def\q{{\bf q}}
+\def\G{{\bf G}}
+\def\R{{\bf R}}
+\def\Gp{{\bf G^\prime}}
+\def\sig{$\Sigma$}
+\def\inveps{\varepsilon^{-1}}
+\def\eps{\varepsilon}
+\def\symm{\left\{\mathcal{S}|\mathbf{v}\right\}}
+\def\S{\mathcal{S}}
+\def\rt{\tilde{r}}
+\def\pt{\tilde{p}}
+\def\T{\hat{T}}
+\def\bra{\langle}
+\def\ket{\rangle}
+\def\field{\hat{\psi}}
+\def\cfield{\hat{\psi}^{\dagger}}
+\def\I{\hat{I}}
+\def\E{\varepsilon}
+\def\H{\hat{H}}
+\def\v{\mathbf{v}}
+\def\Gs{\mathcal{G}}
+\def\P{\hat{P}_{\rm occ}}
+\def\w{\omega}
+
+\begin{document}
+
+\section{References in Other Codes}
+\subsection{Sax}
+In Sax the inversion routine to build $\epsilon^{-1}_{\q}(\G,\G')$ is in 
+\verb;pw_w_extern.f90;.
+
+\subsection{YAMBO}
+The structure \verb;X_mat; in \verb;qp/QP_ppa_cohsex.F; 
+contains $\epsilon^{-1}(\omega)$ for $\omega=0$ and $\omega=i\omega_{p}$. 
+
+In \verb;pol_function/O_driver X_epsilon; is calculated but that is only for a
+single element of the DM i.e. the head of the dielectric matrix.
+
+In Yambo, having consulted their rather useful user guide,
+I believe the inversion is done in \verb;pol_function/X_s.F;:
+%
+\begin{verbatim}
+   do i1=1,X%ng ! no Fxc [delta_(g1,g2)-Xo(g1,g2)*v(g2)]
+     tddftk(:,i1)=tddftk(:,i1)-Xo(:,i1)*4.*pi/bare_qpg(iq,i1)**2
+     tddftk(i1,i1)=tddftk(i1,i1)+1.
+   enddo
+   call mat_dia_inv(INV,INV_MODE,tddftk)}
+\end{verbatim}
+%
+which is very similar to how we do in SGW note it is more complicated
+to include the Fxc contribution so they only have Hartree screening.
+The inversion routine is defined in \verb;/src/modules/mod_matrix_operate.F; 
+
+\section{Exchange and Local Exchange-Correlation Potential}
+In YAMBO the routine \verb ;XCo_Hartree_Fock.F; calculates 
+the Fock exchange and the local XC
+for the quasiparticle states of interest.
+
+The matrix elements are calculated in $\G$-space so that only the dipole
+matrix elements need to be computed. 
+
+\begin{equation}
+\label{eq:yamboex}
+\bra n\k|\Sigma_{X}(\r,\r')|n\k\ket=-\sum_{m\in {\rm occ}}\sum_{\q \in {\rm BZ},\G}\frac{4\pi}{|\q+\G|^{2}}|\rho_{nm}(\k,\q,\G)|^{2}f_{m,\k-\q}
+\end{equation}
+
+\begin{equation}
+\rho_{nm}(\k,\q,\G) =  \bra n\k|e^{i(\q+\G')\r'}|m\k-\q\ket
+\end{equation}
+
+The routines for computing the dipole matrix elements and multiplying 
+by the bare Coulomb interaction
+are handled in \verb;/wf_and_fft/scatter_Bamp.F; and \verb;/wf_and_fft/scatter_Gamp.F;.
+Only wave vectors in the IBZ are required with the dipole 
+matrix elements being computed using
+symmetry rotations in \verb;wf_and_fft/WF_apply_symm(...);.
+
+\section{The Plasmon Pole Approximation}
+The first improvement to a static approximation to the screened Coulomb interaction
+is modeling the response function as a single pole.
+The dielectric function is then:
+%
+\begin{equation}
+\epsilon^{-1}_{\G\G'}(\q) = \delta_{\G\G'}-\frac{\Omega^{2}_{\G\G'}(\q)}{\omega'^{2}-\tilde{\omega}^{2}_{\G\G'}(\q)}.
+\end{equation}
+%
+Now if we isolate a term from the convolution $G(\omega+\omega')(W(\omega')-v)$ in 
+the sum over states expression for the self-energy:
+%
+\begin{equation}
+\int d\omega' \frac{1}{\omega+\omega'-\epsilon_{n}+i\eta{\rm sgn}(\mu-\epsilon_{n})}
+\frac{1}{\omega'-(\tilde{\omega}_{\G\G'}(\q)-i\eta)}\frac{1}{\omega' + \tilde{\omega}_{\G\G'}(\q)-i\eta}
+\end{equation}
+%
+If we close the contour in the upper half plane we find two sets of poles determined
+by whether $\epsilon_{n}$ is greater than or less than $\mu$.
+%
+\begin{equation}
+\omega' = -\omega +\epsilon_{n},\quad \omega' = -\tilde{\omega} \qquad \epsilon_{n} > \mu
+\end{equation}
+%
+If we let $a=\omega-\epsilon_{n}$ and $b=\tilde{\omega}$ we find:
+
+\begin{equation}
+= \left( \frac{-1}{2b} \frac{1}{a-b} + \frac{-1}{a+b}\frac{1}{b-a}\right)\\
+= -\frac{1}{2b}\frac{1}{a+b}
+\end{equation}
+
+In the case of $\epsilon<\mu$ there is only one pole in the upper contour
+at $\omega' = - \tilde{\omega}$.
+Thus we find:
+%
+\begin{equation}
+\int dw' = -2\pi i \left[ \frac{\Theta(\epsilon_{n} - \mu)}{\omega - \epsilon_{n} + \tilde{\omega}} 
++\frac{\Theta(\mu - \epsilon_{n})}{\omega -\epsilon_{n} - \tilde{\omega}}\right]
+\end{equation}
+%
+Also note that the $\Theta$ functions ensure that there are no 
+poles within an energy window of $2\tilde{\omega}$ around 
+the Fermi level.
+
+\section{Matrix Elements}
+Given the sign convention on the two points functions:
+%
+\begin{equation}\label{eq.fourier}
+  F(\r,\rp,\w) = \frac{1}{N_\k\Omega}  \sum_{\k,\G\Gp} 
+   {\rm e}^{-i(\k+\G)\cdot\r} 
+    f_{[\k,\G,\w]}(\Gp)
+   {\rm e}^{i(\k+\Gp)\cdot\rp}.
+\end{equation}
+%
+
+In order to take delta function when integrating over all space, or the BZ, it is more convenient
+to take matrix elements like
+%
+\begin{equation}
+\bra \psi_{nk}|F|\psi_{m\k} \ket = \int\int \psi_{n\k}(\r)F(\r,\r')\psi_{m\k}^{*}(\r')d\r d\r'
+\end{equation}
+%
+This just involves not conjugating the bra's and conjugating the Ket's instead. It does mean
+we also define the Green's function in a slightly different sense than usual:
+%
+\begin{equation}
+G(\r,\r';\omega) = \sum_{n\k}\frac{\psi^{*}_{nk}(\r)\psi_{n\k}(\r')}{\omega-\epsilon_{n\k} \pm i\delta}
+\end{equation}
+%
+In this manner we can preserve the property of the Green's function projecting out an eigenstate and
+integrating to one. It also means all the FFT's can be handled as normal.
+
+\section{$\Sigma$}
+To calculate the selfenergy matrix elements:
+%
+\begin{equation}
+\bra n\k'|\Sigma^{c}|n\k'\ket = \int \int u_{n\k}(\G_{1})\Sigma^{c}(\G,\G')u^{*}_{n\k'}(\G_{1}')e^{i\k\cdot\r}...d\r'd\r
+\end{equation}
+
+However we start from the full symmetry reduced expressions for W and G defined in the whole Brillouin zone.
+%
+\begin{equation}
+W(\r,\r';\omega) = \frac{1}{N_{\q}\Omega}\sum_{\q,\G,\G'}e^{-i(\q+\G)\cdot\r} \epsilon^{-1}_{\G\G'}(\q,\omega=0)\frac{4\pi e^{2}}{|\q+\G|^{2}} e^{i(\q+\G')\cdot\r'}
+\end{equation}
+%
+The symmetrized screened Coulomb interaction can be written:
+%
+\begin{equation}
+\label{eq:symmw2}
+W(\r,\r';\omega) = \frac{1}{\Omega}\sum_{\S}\frac{1}{N_{\rm group}}\sum_{\q\in {\rm IBZ}}{\rm w_{\q}}e^{-i(\q+\G)\cdot\S\r}\epsilon^{-1}_{\q}(\G,\G';\omega=0)v_{\q+\G}e^{i(\q+\G')\cdot\S\r'}e^{i(\G'-\G)\cdot\v}
+\end{equation}
+
+\subsection{Correlation Matrix Element}
+%
+The matrix element:
+%
+\begin{equation}
+\bra n\k'|\Sigma^{c}|n\k'\ket  = \bra n\k'|\sum_{\k} G_{\k}(\r,\r')\sum_{\S,\q\in{\rm IBZ}}W_{\q}(\S\r,\S\r')|n\k'\ket
+\end{equation}
+%
+The condition is then:
+%
+\begin{equation}
+\bra n\k'|\Sigma^{c}|n\k'\ket = \sum_{\S,\q} \frac{1}{\rm{N}_{\S}}\rm{w}(\q) G_{\k'-\S^{-1}\q}(\r,\r')W_{\q}(\G, \G')e^{i(-\S^{-1}\G\cdot\r+\S^{-1}\G'\cdot\r')}e^{i(-\G+\G')v}
+\end{equation}
+%
+Let $\k_{1}=\k'-\S^{-1}\q$. We want to find $\k_{1}$ in the IBZ.
+As coded we find the symmetry operation $\S(\k_{1}+\G_{1})= \k_{\rm IBZ}$.
+%
+\begin{equation}
+\bra n\k'|\Sigma^{c}|n\k'\ket = \sum_{\S,\q} \frac{1}{\rm{N}_{\S}}\rm{w}(\q) G_{\k'-\S^{-1}\q}(\r,\r')\epsilon^{-1}_{\q}(\G, \G')\frac{4\pi e^{2}}{|\q+\G|}e^{i(-\G+\G')v}e^{i(-\S^{-1}\G\cdot\r+\S^{-1}\G'\cdot\r')}
+\end{equation}
+%
+To restrict G to the IBZ we can use the following:
+%
+\begin{equation}
+G_{k_{1}}(\r,\r')=G_{\S^{-1}\k_{\rm IBZ}}(\r,\r')=\sum_{n}\frac{\psi^{*}_{n \S^{-1}k_{\rm IBZ}}(\r)\psi_{n \S^{-1}\k_{IBZ}}(\r')}{\omega - \epsilon_{n\S^{-1}\k}\pm i\eta}
+\end{equation}
+%
+We can then use the standard relation,$\psi_{S^{-1}\k}(\r) = \psi_{\k}(\S\r)$  ,to find:
+\begin{equation}
+G_{\S^{-1}\k_{\rm IBZ}}(\r,\r')=\sum_{n}\frac{\psi^{*}_{n \k_{\rm IBZ}}(\S\r)\psi_{n \k_{IBZ}}(\S\r')}{\omega - \epsilon_{n\S^{-1}\k}\pm i\eta}
+\end{equation}
+
+\subsection{Exchange Matrix Element}
+The exchange matrix element can be written (again we assume a sum over the full Brillouin zone for the Green's function).
+%
+\begin{equation}
+\bra n\k'|\Sigma^{{\rm ex}}|n\k'\ket = \sum_{\S,\q} \frac{1}{\rm{N}_{\S}}\rm{w}(\q)G_{\k'-\S^{-1}\q}(\r,\r')v_{\q}(\G)e^{i(\S^{-1}(G))(r'-r)}
+\end{equation}
+%
+The integral over the interaction cell gives us the condition $\k'-\S^{-1}\q = \k$.
+%
+Let $\k_{1}=\k'-\S^{-1}\q$. We want to find $\k_{1}$ in the IBZ.
+%
+As coded we find the symmetry operation $\S(\k_{1}+\G_{1})= \k_{\rm IBZ}$.
+%
+Then use the following elegantly derived and logically unimpeachable syllogism (actually I have never convinced
+myself of the sign of $\G_{1}$ but it works in the code for all crystals, si, sic, gaas,mos2 mono, etc. even without inversion):
+%
+\begin{equation}
+\psi_{\k_{1}}(\r) = e^{-i\G_{1}\cdot\r}\psi_{\k_{1}+\G_{1}}(\r) = \psi_{\S^{-1}\k_{IBZ}}(\r)
+\end{equation}
+%
+Which leads to that which is what is coded:
+%
+\begin{equation}
+\psi_{\k_{1}}(\r) = e^{i\G_{1}\cdot\r}\psi_{\S^{-1}\k_{IBZ}}(\r)
+\end{equation}
+%
+\section{Crystals without Inversion Symmetry}
+%
+In the case where the crystal doesn't have inversion symmetry we might require $G{-\q}$. 
+This is not included in the ${\rm IBZ}$ because the points have been selected assuming 
+time reversal symmetry. In this case the routine for finding the point in the ${\rm IBZ}$ will fail.
+We can recover the point using time reversal. This is interesting!
+%
+\begin{equation}
+G_{-\q}(\r,\r';i\omega) = \sum_{n} \frac{\phi_{-n\q}^{*}(\r)\phi_{-n\q}(\r')}{i\omega - \epsilon_{n\q}}
+\end{equation}
+%
+If we use time reversal on both eigenvectors we find and conjugate we find:
+%
+\begin{equation}
+G^{*}_{-\q}(\r,\r';i\omega) = (\sum_{n} \frac{\phi_{n\q}(\r)\phi_{n\q}^{*}(\r')}{i\omega - \epsilon_{n\q}})^{*}
+\end{equation}
+%
+By inspection we see then that
+%
+\begin{equation}
+G^{*}_{-\q}(\r,\r';i\omega) = G_{\q}(\r,\r';-i\omega) 
+\end{equation}
+%
+And then finally:
+%
+\begin{equation}
+G_{-\q}(\r,\r';i\omega) = G^{*}_{\q}(\r,\r';-i\omega) 
+\end{equation}
+%
+The procedure is then to find the $\k_{IBZ}$ and obtain $G_{-\q}$ using the above relation i.e.
+swapping the frequency argument and conjugating the result. 
+
+\section{Symmetries}
+\section{Time Reversal Symmetry}
+If the system has time reversal symmetry but not spatial inversion:
+%
+\begin{equation}
+X(-\q,\G,\G') = X(\q,-\G,-\G')
+\end{equation}
+%
+Time reversal symmetry means we can always choose:
+%
+\begin{equation}
+\psi_{-\k}(\r) = \psi^{*}_{\k}(\r)
+\end{equation}
+%
+We can also explain:
+%
+\begin{equation}
+\sum_{\G} u_{n-\k}(\G) e^{i(-\k+\G)\cdot\r} = \sum_{\G} u^{*}_{nk}(\G)e^{-i(\k+\G)\cdot\r}
+\end{equation}
+
+On the R.H.S. we relabel $\G$ to  $-\G$ to obtain the equality $u_{n-\k}(G)=u^{*}_{n\k}(-\G)$
+Furthermore if the system has inversion symmetry $u_{n\k}(G)=u^{*}_{n\k}(\G)$ which means
+the Bloch functions can always be chosen to be real.
+
+Now since we have chosen an odd convention for the doing the Fourier 
+transforms we need to be a little careful how we take matrix elements 
+and perform the convolutions at the end. 
+
+\section{The Frequency Integration}
+The frequency integral on the imaginary axis is written:
+%
+\begin{equation}
+\Sigma(i\omega_{0}) = \int_{-\infty}^{\infty}\frac{-1}{2\pi}G(i(\omega + \omega'))W(i\omega') d\omega'
+\end{equation}
+%
+For numerical convenience we want to map the whole integral to $\int_{0}^{\omega_{c}}$ and also do
+a change of variables so that we only need to calculate the green's function on a predefined grid once,
+and we can generate$ W(i\omega')$. This is because we require a linear system solution and the multishift
+solver to construct $G(i\omega')$ whereas we have $W$ already stored as a PPM or a Pad\'e approximant and can
+generate its value for any frequency argument quite easily.  
+
+To do this we split the integral:
+%
+\begin{equation}
+\Sigma(i\omega_{0}) = \int_{0}^{\infty}\frac{-1}{2\pi}G(i(\omega + \omega'))W(i\omega') d\omega'
+                    + \int_{-\infty}^{0}\frac{-1}{2\pi}G(i(\omega + \omega'))W(i\omega') d\omega'
+\end{equation}
+%
+Then let $\tilde{\omega}=\omega_{0}+\omega'$:
+%
+\begin{equation}
+\Sigma(i\omega_{0}) = \int_{0}^{\infty}\frac{-1}{2\pi}G(i(\tilde{\omega}))W(i(\tilde{\omega}-\omega'))d\tilde{\omega}
+                    + \int_{-\infty}^{0}\frac{-1}{2\pi}G(i(\tilde{\omega}))W(i(\tilde{\omega}-\omega'))d\tilde{\omega}
+\end{equation}
+%
+Finally we swap the sign in the second integration to arrive at:
+\begin{equation}
+\Sigma(i\omega_{0}) = \int_{0}^{\infty}\frac{-1}{2\pi}G(i(\tilde{\omega}))W(i(\tilde{\omega}-\omega'))d\tilde{\omega}
+                    + \int_{0}^{\infty}\frac{-1}{2\pi}G(i(-\tilde{\omega}))W(i(-\tilde{\omega}-\omega'))d\tilde{\omega}
+\end{equation}
+
+In practice we use a Gauss-Legendre grid:
+%
+\begin{equation}
+\Sigma(i\omega_{0}) \approx \sum_{i} w(i) G(i(\tilde{\omega})_{i}) W(i(\tilde{\omega}_{i}-\omega_{0}))
++ w(i) G(i(-\tilde{\omega}_{i})) W(i(-\tilde{\omega}_{i}-\omega_{0}))
+\end{equation}
+%
+For the semiconducting systems I have found a frequency grid cut off at ~20 Ry sampled at 35-40 points
+enough to stabilize the integral. This could easily rise for more complex systems.
+%
+\section{Symmetrization of G-vectors}
+%
+\begin{equation}
+\left[ H - \epsilon_{\k} \pm i\omega \right] \Delta\psi_{\k}_{[\r, i\omega]}(\r') =  -\hat{P}_{c} \Delta V_{\r}(\r') \psi_{\k}(\r')
+\end{equation}
+%
+\begin{equation}
+\left[ H - \epsilon_{\k} \pm i\omega \right] \Delta\psi_{\k}_{[\S\r, i\omega]}(\S\r') =  -\hat{P}_{c} \Delta V_{\S\r}(\S\r') \psi_{\k}(\S\r')
+\end{equation}
+%
+Since we solve for the planewave perturbation $V(\r) = e^{i(\q+\G)\cdot\r}$ we can seek any vector that $(\q+\G) = S^{-1}(\q_{1}+\G_{1})$
+and then the rotated Sternheimer equation is equivalent to the original one reducing the number of unique equations that we are required to solve.
+The symmetry operations $\S \in \mathcal{G}_{\q}$ can then be applied to all the planewave perturbations $\G$ to find the unique wave vectors.
+
+\section{Flow Chart Equations}
+
+{\tt Quantum Espresso}, Ground State Eigenvectors and Density: $\psi_{nk}$, $n(\r)$.
+
+
+\section{Preconditioned Multishift Solver}
+Now we get to a politically sensitive issue. The multishift solver 
+needs to be preconditioned in more extreme cases. 
+We want to get to a point where the `preconditioned multishift solver' 
+firstly returns \emph{exactly} the same answer 
+for the $\omega=0$ case (as it should straightforwardly).
+
+Follow the original Sternheimer paper we know the linear system solver can be transformed:
+%
+\begin{equation}
+E^{-1}AE^{-T}E^{T}x = E^{-1}b
+\end{equation}
+%
+Performing all these transformation the conjugate gradients can proceed as normal
+%
+\begin{equation}
+A'x' =b'
+\end{equation}
+
+
+\end{document}

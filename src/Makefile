@@ -1,5 +1,5 @@
 # Makefile for GW. 
-#
+
 ESPRESSO=../..
 include $(ESPRESSO)/make.sys
 
@@ -31,6 +31,7 @@ do_stern.o\
 stern_symm.o\
 gmap_sym.o\
 gwq_init.o\
+syme.o\
 set_defaults_pw.o\
 run_nscf.o\
 coulomb.o\
@@ -99,10 +100,6 @@ LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/cli
 TLDEPS= bindir mods libs pw-lib
 
 all : libgw.a gw.x
-#gw.x : gw.o $(PWOBJS) $(LIBOBJS)
-#	$(LD) $(LDFLAGS) -o gw.x gw.o \
-#		 $(PWOBJS) $(QEMODS) $(GWOBJS) $(LIBOBJS) $(LIBS)
-#	- ( cd ../bin ; ln -fs ../src/gw.x . )
 gw.x : gw.o libgw.a $(PWOBJS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o gw.x gw.o libgw.a \
 		 $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)

@@ -81,7 +81,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! input: the number of perturbation
   ! input: the position of the modes
 
-  complex(DP) :: drhoscf (dffts%nnr, nspin_mag)
+  complex(DP) :: drhoscf (dfftp%nnr, nspin_mag)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (dffts%nnr)
 
@@ -375,6 +375,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      enddo !on k-points
 
      call mp_sum ( drhoscf, inter_pool_comm )
+     !call syme (drhoscf)
+ 
      if (doublegrid) then
          do is = 1, nspin_mag
             call cinterpolate (drhoscfh(1,1), drhoscf(1,1), 1)
@@ -392,14 +394,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !HL NEED FOR ULTRASOFT:
 !    call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
 !    if (.not.lgamma_gamma) then
-!         call psyme (dvscfout)
+          !call psyme (dvscfout)
 !         IF ( noncolin.and.domag ) CALL psym_dmage(dvscfout)
 !    endif
 
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
 
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
-     if (meandvb.lt.1.d-8) then 
+     if (meandvb.lt.1.d-10) then 
          CALL fwfft ('Dense', dvscfout(:,1), dfftp)
          dvscfout ( nl(1), current_spin ) = (0.d0, 0.0d0)
          CALL invfft ('Dense', dvscfout(:,1), dfftp)
@@ -471,8 +473,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !         "secs av.it.:",f5.1)') iter, tcpu, averlt
 !   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
 !          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
-!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
   drhoscf(:,:) = dvscfin(:,:)
   
