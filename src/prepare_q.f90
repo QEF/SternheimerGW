@@ -48,6 +48,9 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
         if (do_epsil) xq(:) = xk_kpoints(:, iq)
         lgamma = (xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0)
   ENDIF
+  do_band=.true.
+  setup_pw=.true.
+  do_iq=.true.
   !
   !
   ! ... In the case of q != 0, we make first a non selfconsistent run
