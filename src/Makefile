@@ -31,7 +31,6 @@ do_stern.o\
 stern_symm.o\
 gmap_sym.o\
 gwq_init.o\
-syme.o\
 set_defaults_pw.o\
 run_nscf.o\
 coulomb.o\
