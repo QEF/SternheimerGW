@@ -142,15 +142,15 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     h_diag = 0.d0
     if(multishift) then
       do ig = 1, npwq
-        if(g2kin(ig).le.ecutprec) then
+         !if(g2kin(ig).le.ecutprec) then
            h_diag(ig,1) =  1.0d0
-        else
-          if(prec_shift) then
-             h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
-          else
-             h_diag(ig,1) =  1.0d0
-          endif
-        endif
+         !else
+         !if(prec_shift) then
+         !h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
+         !else
+         !h_diag(ig,1) =  1.0d0
+         !endif
+         !endif
       enddo
     else
       do ig = 1, npwq
@@ -178,7 +178,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              anorm = 0.0d0
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
-                                   cw , niters(gveccount), .true.)
+                                   cw , niters(gveccount), .false.)
              call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
              if (niters(gveccount).ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
@@ -190,9 +190,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
                                                             gr_A_shift(igkq_ig(igp),iw)
                enddo
              enddo
-
              gveccount = gveccount + 1
-
           else if(.not.multishift) then
              do iw = 1, nwgreen
                 rhs(:,:)  = (0.0d0, 0.0d0)
@@ -206,12 +204,10 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
                 call cbcg_solve(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
                                 npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                 cw, .true.)
-
                 if (lter.ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                    gr_A = dcmplx(0.0d0,0.0d0)
                 endif
-
                 do igp = 1, counter
                    green (igkq_tmp(ig), igkq_tmp(igp),iw) = green (igkq_tmp(ig), igkq_tmp(igp),iw) + &
                                                             gr_A(igkq_ig(igp),1)
@@ -220,8 +216,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              gveccount = gveccount + 1
           endif
     enddo !igstart
-
-!   WRITE(1000+mpime,*) niters
 #ifdef __PARA
     call mp_barrier(inter_image_comm)
     call mp_sum(green, inter_image_comm)
