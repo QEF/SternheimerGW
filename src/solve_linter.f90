@@ -375,7 +375,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      enddo !on k-points
 
      call mp_sum ( drhoscf, inter_pool_comm )
-     !call syme (drhoscf)
+!     call syme (drhoscf)
  
      if (doublegrid) then
          do is = 1, nspin_mag

@@ -265,7 +265,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta, .false.)
         if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
-!        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
+!       if(.not.conv_root)   WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
 !reinflate before the multishift?
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
