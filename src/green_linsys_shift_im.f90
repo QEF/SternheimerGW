@@ -160,7 +160,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !On first frequency block we do the seed system with BiCG:
     gveccount = 1
     if(multishift) gr_A_shift = (0.0d0, 0.d0)
-
     call para_img(counter, igstart, igstop)
 !allocate list to keep track of the number of residuals for each G-vector:
     ngvecs = igstop-igstart + 1

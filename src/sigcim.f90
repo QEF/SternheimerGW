@@ -5,7 +5,7 @@
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
 SUBROUTINE sigma_c_im(ik0) 
-!G TIMES W PRODUCT
+!G TIMES W PRODUCT sigma_correlation_imaginary frequency.
   USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
   USE io_files,      ONLY : iunigk, prefix, tmp_dir
@@ -187,7 +187,8 @@ DO iq = 1, nks
       iqcoul = iq1 
       xq(:) = x_q(:,iqcoul)
    ELSE 
-       WRITE(6,'("WARNING Q POINT NOT FOUND IN IBZ")')
+       WRITE(stdout,'("WARNING Q POINT NOT FOUND IN IBZ")')
+       WRITE(1000+mpime,'("WARNING Q POINT NOT FOUND IN IBZ")')
        CALL mp_global_end()
        STOP
    ENDIF
