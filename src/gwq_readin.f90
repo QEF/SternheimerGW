@@ -252,7 +252,7 @@ SUBROUTINE gwq_readin()
   wsigmamax      = 20.0d0
   deltaw         =  2.0d0 
   wcoulmax       = 80.0d0   
-  wsigmin   = -30.0
+  wsigmin   = -50.0
   wsigmax   =  30.0
   deltaws   =   0.1
 
