@@ -121,6 +121,7 @@ IMPLICIT NONE
   unf_recl = DIRECT_IO_FACTOR * int(lrsigma, kind=kind(unf_recl))
   open(iunsigma, file = trim(adjustl(tempfile)), iostat = ios, &
   form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+  WRITE(1000+mpime,*) tempfile, ios
 
   filename = trim(prefix)//"."//"sigma_ex1"
   tempfile = trim(tmp_dir_coul) // trim(filename)
@@ -231,12 +232,13 @@ IMPLICIT NONE
           sigma_c_ngm = sigma_c_st%ngmt
       ELSEIF(corr_conv.lt.sigma_c_st%ecutt) THEN
         DO ng = 1, ngm
-           IF ( gl( igtongl (ng) ) .le. corr_conv ) sigma_c_ngm = ng
+           IF ( gl( igtongl (ng) ) .le. (corr_conv/tpiba2)) sigma_c_ngm = ng
         ENDDO
       ELSE
         WRITE(6, '("Corr Conv cannot be greater than ecut_sco")')
         STOP
       ENDIF
+
       WRITE(1000+mpime, *)
       WRITE(1000+mpime, '(5x, "G-Vects CORR_CONV:")')
       WRITE(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
@@ -257,6 +259,7 @@ IMPLICIT NONE
 !let's us avoid crash if we haven't calculated one of these things yet:
          READ( UNIT = iunsigma, REC = ik0, IOSTAT = ios ) sigma
 !         CALL davcio(sigma, lrsigma, iunsigma, 1, -1)
+         WRITE(1000+mpime, *) ios
          if(ios /= 0) then
             WRITE(1000+mpime, '("Could not read Sigma_C file. Have you calculated it?")')
             sigma_band_c (:,:,:) = czero
