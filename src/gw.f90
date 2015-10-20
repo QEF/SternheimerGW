@@ -77,7 +77,7 @@ program gw
   endif
 
   do ik = 1, num_k_pts
-     if(do_sigma_exx)   call sym_sigma_exch(ik)
+     if(do_sigma_exx)   call sigma_exch(ik)
   enddo
 
   ! Calculate <n\k| V^{xc}, \Sigma^{x}, Sigma^{c} |n\k>

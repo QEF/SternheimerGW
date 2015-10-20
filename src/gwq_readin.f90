@@ -240,7 +240,7 @@ SUBROUTINE gwq_readin()
   do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
-  do_sigma_exxG   = .FALSE.
+  do_sigma_exxG  = .FALSE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.

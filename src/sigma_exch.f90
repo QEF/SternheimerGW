@@ -4,7 +4,7 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE sym_sigma_exch(ik0)
+SUBROUTINE sigma_exch(ik0)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
@@ -240,4 +240,4 @@ IMPLICIT NONE
   CALL mp_barrier(inter_pool_comm)!I think I need these after writes!
   CALL mp_barrier(inter_image_comm)!I think I need these after writes!
   CALL stop_clock('sigma_exch')
-END SUBROUTINE sym_sigma_exch
+END SUBROUTINE sigma_exch

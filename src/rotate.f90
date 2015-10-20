@@ -26,5 +26,5 @@ SUBROUTINE rotate(xq, raq, s, nsym, isym)
         raq (ipol) = raq (ipol) + DBLE (s (ipol, jpol, isym) )*aq (jpol)
      enddo
   enddo
-  call cryst_to_cart (1, raq, bg,  1)
+  call cryst_to_cart (1, raq, bg, +1)
 END SUBROUTINE
