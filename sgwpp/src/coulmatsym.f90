@@ -103,11 +103,11 @@ IMPLICIT NONE
   N0 = DOSofE(1)/2.d0
   degaussw0 = degauss
   if(degaussw0.eq.0.0d0) call errore('coulmatsym','degauss is 0!',1)
-  En      = ef
+  En         = ef
   mu         = 0.0d0
   munnp(:,:) = 0.0d0
-  dosnnp(:) = 0.0d0
-  kcut = 0.33333
+  dosnnp(:)  = 0.0d0
+  kcut       = 0.33333
 
   !write(stdout, * )  nbnd
   !write(stdout, '(5X, 6f12.5)' ) munnp(1:nbnd,1:nbnd)
