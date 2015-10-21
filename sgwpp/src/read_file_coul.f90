@@ -99,7 +99,7 @@ SUBROUTINE read_xml_file_coul()
   USE cellmd,               ONLY : cell_factor, lmovecell
   USE fft_base,             ONLY : dfftp
   USE fft_interfaces,       ONLY : fwfft
-  USE grid_subroutines,     ONLY : realspace_grids_init
+  USE grid_subroutines,     ONLY : realspace_grid_init
   USE recvec_subs,          ONLY : ggen
   USE gvect,                ONLY : gg, ngm, g, gcutm, &
                                    eigts1, eigts2, eigts3, nl, gstart
@@ -122,7 +122,7 @@ SUBROUTINE read_xml_file_coul()
   USE control_flags,        ONLY : gamma_only
   USE funct,                ONLY : get_inlc, get_dft_name
   USE kernel_table,         ONLY : initialize_kernel_table
-  USE esm,                  ONLY : do_comp_esm, esm_ggen_2d
+  USE esm,                  ONLY : do_comp_esm
   !
   IMPLICIT NONE
   INTEGER  :: i, is, ik, ibnd, nb, nt, ios, isym, ierr, inlc
@@ -173,7 +173,9 @@ SUBROUTINE read_xml_file_coul()
   ALLOCATE( tetra( 4, MAX( ntetra, 1 ) ) )
   !
   CALL set_dimensions()
-  CALL realspace_grids_init ( dfftp, dffts, at, bg, gcutm, gcutms )
+ !CALL realspace_grid_init ( dfftp, dffts, at, bg, gcutm, gcutms )
+  CALL realspace_grid_init ( dfftp, at, bg, gcutm )
+  CALL realspace_grid_init ( dffts, at, bg, gcutms)
 
   !
   ! ... check whether LSDA
