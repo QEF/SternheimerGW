@@ -182,7 +182,7 @@ SUBROUTINE gwq_readin()
   prec_direct  = .FALSE.
   prec_shift  = .FALSE.
   IF ( TRIM(outdir) == './') THEN
-     CALL get_env( 'ESPRESSO_TMPDIR', outdir )
+     CALL get_environment_variable( 'ESPRESSO_TMPDIR', outdir )
      IF ( TRIM( outdir ) == ' ' ) outdir = './'
   ENDIF
   prefix       = 'pwscf'

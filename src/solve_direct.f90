@@ -330,7 +330,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     enddo
     averlt = DBLE (ltaver) / lintercall
     tcpu = get_clock ('GW')
-    CALL flush_unit( stdout )
+    CALL FLUSH( stdout )
     rec_code=10
   enddo !loop on kter (iterations)
 !   after this point drhoscf is dv_hartree(RPA)
