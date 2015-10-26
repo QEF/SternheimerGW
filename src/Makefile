@@ -75,6 +75,7 @@ clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
 sigma_exch.o\
+sigma_exchG.o\
 sigma_matel.o\
 print_matel.o\
 para_img.o\
@@ -91,6 +92,7 @@ sigcre.o\
 rotate.o\
 coulpade.o\
 star_q.o\
+wavecut.o\
 find_xk_uniq.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a

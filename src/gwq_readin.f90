@@ -71,7 +71,7 @@ SUBROUTINE gwq_readin()
   USE paw_variables, ONLY : okpaw
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
                             greenzero, nwcoul, wsigmin, wsigmax, deltaws
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv
+  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
   !
   !
@@ -106,14 +106,15 @@ SUBROUTINE gwq_readin()
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, fpol, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
-                       ecutsco, ecutsex, corr_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
+                       ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr, nwcoul, double_grid, wsigmin, wsigmax, deltaws
+                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
+                       nwcoul, double_grid, wsigmin, wsigmax, deltaws
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -378,7 +379,8 @@ SUBROUTINE gwq_readin()
              TRIM(card)=='K_points') THEN
            DO i = 1, num_k_pts
               !should be in units of 2pi/a0 cartesian co-ordinates
-              READ (5, *, iostat = ios) xk_kpoints(1,i), xk_kpoints(2,i), xk_kpoints(3,i)
+              READ (5, *, iostat = ios) xk_kpoints(1,i),& 
+                         xk_kpoints(2,i), xk_kpoints(3,i)
            END DO
         END IF
      END IF

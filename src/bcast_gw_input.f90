@@ -18,15 +18,16 @@ subroutine bcast_gw_input ( )
   use mp_world,    ONLY : world_comm
   USE io_global,   ONLY : meta_ionode_id
   USE control_gw,  ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
-                         niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
-                         ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
-                         lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
-                         do_sigma_exx, do_sigma_exxG, do_green, do_sigma_matel, tr2_green,&
-                         do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
-                         multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
-                         coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
-                         do_imag, do_pade_coul, newgrid, high_io, freq_gl, prec_direct, tmp_dir_coul, prec_shift, just_corr,&
-                         double_grid
+                          niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
+                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
+                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
+                          do_sigma_exx, do_sigma_exxG, do_green, do_sigma_matel, tr2_green,&
+                          do_q0_only, maxter_green, godbyneeds, cohsex, padecont,&
+                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
+                          coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
+                          do_imag, do_pade_coul, newgrid, high_io, freq_gl,&
+                          prec_direct, tmp_dir_coul, prec_shift, just_corr,&
+                          double_grid
   USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial,  ONLY : nat_todo, nrapp
   USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul, wsigmin, wsigmax, deltaws
@@ -37,7 +38,8 @@ subroutine bcast_gw_input ( )
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
   USE ions_base,        ONLY : amass
   USE run_info, ONLY : title
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv
+  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv,&
+                            exch_conv
   USE gwsymm,        ONLY : use_symm
  
   implicit none
@@ -88,6 +90,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (ecutsex, meta_ionode_id, world_comm)
   call mp_bcast (ecutsco, meta_ionode_id, world_comm)
   call mp_bcast (corr_conv, meta_ionode_id, world_comm)
+  call mp_bcast (exch_conv, meta_ionode_id, world_comm)
   call mp_bcast (ecutprec, meta_ionode_id, world_comm)
   call mp_bcast (nbnd_sig, meta_ionode_id, world_comm)
   call mp_bcast (modielec, meta_ionode_id, world_comm)

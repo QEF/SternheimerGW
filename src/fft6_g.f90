@@ -16,19 +16,18 @@ subroutine fft6_g(f_g, f_r, fc, gmapsym, eigv, isym, nig0, conv)
 IMPLICIT NONE
 
 TYPE(fft_cus) fc 
-COMPLEX(DP)  :: f_g(fc%ngmt, fc%ngmt)
-COMPLEX(DP)  :: f_r(fc%dfftt%nnr, fc%dfftt%nnr)
-COMPLEX(DP)  :: aux (fc%dfftt%nnr)
-COMPLEX(DP)  :: ci, czero
-INTEGER :: ig, igp, irr, icounter, ir, irp
-INTEGER :: conv
-
-INTEGER     :: isym
-INTEGER     :: gmapsym  (ngm, nrot) 
+COMPLEX(DP) :: f_g(fc%ngmt, fc%ngmt)
+COMPLEX(DP) :: f_r(fc%dfftt%nnr, fc%dfftt%nnr)
+COMPLEX(DP) :: aux (fc%dfftt%nnr)
+COMPLEX(DP) :: ci, czero
 COMPLEX(DP) :: eigv     (ngm, nrot)  
 COMPLEX(DP) :: phase
-INTEGER     :: nig0
 COMPLEX(DP) :: pwg0(fc%dfftt%nnr)
+INTEGER   :: nig0
+INTEGER   :: ig, igp, irr, icounter, ir, irp
+INTEGER   :: conv
+INTEGER   :: isym
+INTEGER   :: gmapsym  (ngm, nrot) 
 
 ci = dcmplx(0.0d0, 1.d0)
 czero = dcmplx(0.0d0, 0.0d0)
@@ -66,8 +65,7 @@ if(conv.eq.1) then
             do irp = 1, fc%dfftt%nnr 
                aux = czero
                do ig = 1, fc%ngmt
-!                 phase = eigv(ig, isym)
-                  aux(fc%nlt(gmapsym(ig,invs(isym)))) = conjg(f_r(ig,irp))!*conjg(phase)
+                  aux(fc%nlt(gmapsym(ig,invs(isym)))) = conjg(f_r(ig,irp))
                enddo
                call invfft('Custom', aux, fc%dfftt)
                f_r(1:fc%dfftt%nnr,irp) = conjg ( aux )

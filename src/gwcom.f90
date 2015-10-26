@@ -1,9 +1,9 @@
-  !-----------------------------------------------------------------------
-  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
-  ! This file is distributed under the terms of the GNU General Public         
-  ! License. See the file `LICENSE' in the root directory of the               
-  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
-  !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
+! This file is distributed under the terms of the GNU General Public         
+! License. See the file `LICENSE' in the root directory of the               
+! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
+!-----------------------------------------------------------------------
 !
 ! Copyright (C) 2001-2004 PWSCF group
 ! This file is distributed under the terms of the
@@ -13,7 +13,7 @@
 !
 !----------------------------------------------------------------------------
 !
-! ... Common variables for the GW program
+!... Common variables for the GW program
 !  
 MODULE modes
   USE kinds,  ONLY : DP
@@ -72,14 +72,6 @@ MODULE dynmat
   ! omega^2
   !
 END MODULE dynmat
-!
-
-! MODULE gwconst
-!  USE kinds, ONLY : DP
-!  SAVE
-!  COMPLEX(DP),PARAMETER :: ci = (0.000000D0, 1.0000000D0)
-!  COMPLEX(DP),PARAMETER :: czero = (0.000000D0, 0.0000000D0)
-! END MODULE gwconst
 
 MODULE qpoint
   USE kinds, ONLY :  DP
@@ -414,7 +406,6 @@ MODULE units_gw
        iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex, lrsex, &
        lrresid, lralphabeta, iunresid, iunalphabeta, iunsigext, lrsigext
 
-
   ! iunit with the wavefunctions
   ! the length of wavefunction record
   ! unit with vkb
@@ -434,10 +425,8 @@ MODULE units_gw
   ! the unit of the bare commutator in US case
   ! the length  of the bare commutator in US case
   ! the screened coulomb potential
-
   logical, ALLOCATABLE :: this_dvkb3_is_on_file(:), &
                           this_pcxpsi_is_on_file(:,:)
-  !
 END MODULE units_gw
 !
 !
@@ -515,17 +504,22 @@ MODULE gwsigma
   TYPE(fft_cus) sigma_x_st   ! Grid for \Sigma^{x} -> real space
   TYPE(fft_cus) sigma_c_st   ! Grid for real space -> restricted G space
 
+  COMPLEX(DP), ALLOCATABLE :: sigma_band_exg(:)
+
 ! HL self energy is a huge quantity!
   INTEGER  :: nbnd_sig
 ! Cutoff for the sigma + exchange/correlation.
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
   REAL(DP) :: ecutprec
-  REAL(DP) :: corr_conv
-!OLD FFT ROUTINES
-!Real space mesh for description of self-energy.
-  REAL(DP) :: gcutmsig
-  INTEGER  :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
+! To easily test convergence at the end 
+! of the calculation.
+  REAL(DP)    :: corr_conv
+  REAL(DP)    :: exch_conv
+! Old FFT routines
+! Real space mesh for description of self-energy.
+  REAL(DP)    :: gcutmsig
+  INTEGER     :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
 END MODULE gwsigma
 
 

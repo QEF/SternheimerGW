@@ -43,8 +43,9 @@ SUBROUTINE q_points ( )
 
   allocate (wq(nqmax))
   allocate (xq(3,nqmax))
-  call kpoint_grid( nsym, time_reversal, skip_equivalence, s, t_rev, bg, nqmax,&
-                         0,0,0, nq1,nq2,nq3, nqs, xq, wq )
+  call kpoint_grid(nsym, time_reversal, skip_equivalence, s, t_rev,& 
+                      bg, nqmax, 0,0,0, nq1,nq2,nq3, nqs, xq, wq )
+                         
   !so that it is equivalent with set_defaults_pw.f90
   !call kpoint_grid( nrot, time_reversal, .false., s, t_rev, bg, nqmax,&
   !                        0,0,0, nq1,nq2,nq3, nqs, xq, wq )

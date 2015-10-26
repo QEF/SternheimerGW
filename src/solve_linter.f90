@@ -71,44 +71,19 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE fft_interfaces,  ONLY : invfft, fwfft
 
   implicit none
-
-  ! counter on frequencies.
-
-  integer :: iw, ir 
-  integer :: irr, imode0, npe
-
   ! input: the irreducible representation
   ! input: the number of perturbation
   ! input: the position of the modes
-
   complex(DP) :: drhoscf (dfftp%nnr, nspin_mag)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (dffts%nnr)
-
-! HL prec
-! HL careful now... complexifying preconditioner:
-  real(DP) , allocatable :: h_diag (:,:)
-! h_diag: diagonal part of the Hamiltonian
-  real(DP) :: thresh, anorm, averlt, dr2
-
-  ! thresh: convergence threshold
-  ! anorm : the norm of the error
-  ! averlt: average number of iterations
-  ! dr2   : self-consistency error
-  real(DP) :: dos_ef, weight, aux_avg (2)
-
-  ! Misc variables for metals
-  ! dos_ef: density of states at Ef
-  real(DP), external :: w0gauss, wgauss
-
   ! functions computing the delta and theta function
   complex(DP), allocatable, target :: dvscfin(:,:)
-
   ! change of the scf potential 
   complex(DP), pointer :: dvscfins (:,:)
-
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
+  complex(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
 
   ! change of rho / scf potential (output)
   ! change of scf potential (output)
@@ -116,6 +91,16 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
+  ! Misc variables for metals
+  ! dos_ef: density of states at Ef
+  real(DP), external :: w0gauss, wgauss
+  real(DP) , allocatable :: h_diag (:,:)
+  real(DP) :: thresh, anorm, averlt, dr2
+  ! thresh: convergence threshold
+  ! anorm : the norm of the error
+  ! averlt: average number of iterations
+  ! dr2   : self-consistency error
+  real(DP) :: dos_ef, weight, aux_avg (2)
 
 
   !HL dbecsum (:,:,:,:), dbecsum_nc(:,:,:,:,:), aux1 (:,:)
@@ -124,10 +109,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! ldoss: as above, without augmentation charges
   ! dbecsum: the derivative of becsum
   ! becsum1 PAW array.
-  REAL(DP), allocatable :: becsum1(:,:,:)
-
-  !For approx, mixing scheme.
-  real(kind=DP) :: DZNRM2
+  real(DP), allocatable :: becsum1(:,:,:)
+  real(DP) :: tcpu, get_clock ! timing variables
+  real(DP) :: meandvb
+  real(kind=DP)    :: DZNRM2
   complex(kind=DP) :: ZDOTC
   external ZDOTC, DZNRM2
 
@@ -156,12 +141,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              mode,       & ! mode index
              igpert,     & ! bare perturbation g vector.
              lmres         ! number of gmres iterations to include when using bicgstabl.
+  integer :: iw, ir 
+  integer :: irr, imode0, npe
 
-  real(DP) :: tcpu, get_clock ! timing variables
-  real(DP) :: meandvb
  
   external ch_psi_all, cg_psi, h_psi_all, ch_psi_all_nopv
-  COMPLEX(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
 
   allocate (dpsi(npwx*npol, nbnd))
  
