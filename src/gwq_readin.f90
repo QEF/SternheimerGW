@@ -42,7 +42,7 @@ SUBROUTINE gwq_readin()
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, tmp_dir_coul, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
-                            do_coulomb, do_sigma_c, do_sigma_exx,do_sigma_exxG,&
+                            do_coulomb, do_sigma_c, do_sigma_exx,  do_sigma_exxG,&
                             do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, godbyneeds, padecont,&
                             cohsex, multishift, do_sigma_extra, &
