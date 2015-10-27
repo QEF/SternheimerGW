@@ -136,10 +136,8 @@ IMPLICIT NONE
 
   if (found_k) THEN
       write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
-      if (nksq.gt.1) then
-          CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-                        npw, igk, g2kin )
-      endif
+      CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                    npw, igk, g2kin )
       if(lgamma) npwq = npw
       call get_buffer (evc, lrwfc, iuwfc, ikq)
       zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
