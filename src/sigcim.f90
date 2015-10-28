@@ -171,7 +171,6 @@ SUBROUTINE sigma_c_im(ik0)
   call mp_barrier(inter_pool_comm)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
-  WRITE(6,'("mu", f12.7)'),mu*RYTOEV
   WRITE(1000+mpime,'("mu", f12.7)'),mu*RYTOEV
 DO iq = 1, nks
    iqcoul = 1

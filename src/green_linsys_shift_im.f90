@@ -111,10 +111,8 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
 !This should ensure the Green's fxn has the correct -\delta for \omega <!\epsilon_{F}:
 !This smooths out variations and I think makes sense
    ikq = iq
-   if (nksq.gt.1) then
-       call gk_sort( x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-                     npw, igk, g2kin )
-   endif
+   call gk_sort(x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                 npw, igk, g2kin )
    npwq = npw
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
