@@ -15,28 +15,46 @@ USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsigma,       ONLY : sigma_c_st
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm
-USE modes,         ONLY : nsymq, invsymq 
 USE control_gw,    ONLY : loqua
+USE cell_base,     ONLY : at, bg
+USE qpoint,        ONLY : xq
+USE io_global,     ONLY : stdout
+USE symm_base,     ONLY : s, t_rev, irt, ftau, nrot, nsym, &
+                          time_reversal, copy_sym, inverse_s, s_axis_to_cart
 
 IMPLICIT NONE
 
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
 INTEGER      :: isym
 INTEGER      :: gmapsym(ngm,48)
+INTEGER      :: nsymq
 COMPLEX(DP)  :: eigv(ngm,48)
-LOGICAL      :: unique_g
+LOGICAL      :: unique_g, invsymq
+LOGICAL      :: minus_q, magnetic_sym, sym(48)
+
+  ig_unique(:)  = 0
+  gmapsym(:,:)  = 0
+  sym_ig(:)     = 0
+  sym_friend(:) = 0
 
 
-ig_unique(:)  = 0
-gmapsym(:,:)  = 0
-sym_ig(:)     = 0
-sym_friend(:) = 0
-
-CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
-
-ngmunique = 0
-
-if(loqua) then
+  ngmunique = 0
+  minus_q=.false.
+  sym(1:nsym)=.true.
+  call smallg_q (xq, 1, at, bg, nsym, s, ftau, sym, minus_q)
+  IF ( .not. time_reversal ) minus_q = .false.
+ ! Here we re-order all rotations in such a way that true sym.ops.
+ ! are the first nsymq; rotations that are not sym.ops. follow
+  nsymq = copy_sym ( nsym, sym )
+  call inverse_s ( )
+ !check if inversion (I) is a symmetry. If so, there should be nsymq/2
+ !symmetries without inversion, followed by nsymq/2 with inversion
+ !Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
+  invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
+  if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
+  if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')
+  WRITE(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4)') nsym,  nsymq
+  CALL s_axis_to_cart () 
   do isym = 1, nsymq
    WRITE(6,'(3i4)') s(:,:,isym)
    WRITE(6,*)
@@ -44,7 +62,8 @@ if(loqua) then
    WRITE(6,*)
    WRITE(6,*)
   enddo
-endif
+  CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+
 !Find number of unique vectors:
 ngmunique = 1
 ig_unique(1) = 1

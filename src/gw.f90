@@ -57,8 +57,8 @@ program gw
   call run_nscf(do_band, do_matel, ik)
   call initialize_gw()
 
-  if(do_green.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
-  if(do_green.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
+  if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
+  if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
 
 ! Calculation of Correlation energy \Sigma^{c}_{k}= \sum_{q}G_{k-q}{W_{q}-v_{q}}
   if (do_imag) then
@@ -70,7 +70,7 @@ program gw
          if(do_sigma_c) call sigma_c_re(ik)
       enddo
   endif
-  if(do_green.and.multishift) then
+  if(do_sigma_c.and.multishift) then
      close(unit = iunresid, status = 'DELETE')
      close(unit = iunalphabeta, status = 'DELETE')
   endif

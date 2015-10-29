@@ -7,25 +7,22 @@
 !
 !----------------------------------------------------------------------------
 
-SUBROUTINE setup_nscf_green(xq)
+SUBROUTINE setup_nscf_green(xq, do_matel)
 
   !----------------------------------------------------------------------------
   !
   ! ... This routine initializes variables for the non-scf calculations at k 
   ! ... and k+q required by the linear response calculation at finite q.
-
-  ! I think I can just use the monkhorst pack generated q-mesh to do a run.
-  ! This approach means doing an nscf step for each of the unique q-points to generate
-  ! the full k, k+q grid with all the weights and nice symmetry reduction properties built in.
   ! ... Here we find the symmetry group of the crystal that leaves
-  ! ... the GW q-vector (xq) unchanged; determines the k- and k+q points in the irreducible BZ
-  ! ... Needed on input (read from data file):
+  ! ... the GW q-vector (xq) unchanged. 
   ! ... "nsym" crystal symmetries s, ftau, t_rev, "nrot" lattice symetries "s"
   ! ... "nkstot" k-points in the irreducible BZ wrt lattice symmetry
   ! ... Produced on output:
   ! ... symmetries ordered with the "nsymq" GW symmetries first
   ! ... "nkstot" k- and k+q-points in the IBZ calculated for the GW symmetries.)
   ! ... Misc. data needed for running the non-scf calculation
+  !
+  !----------------------------------------------------------------------------
 
   USE kinds,              ONLY : DP
   USE parameters,         ONLY : npk
@@ -58,10 +55,9 @@ SUBROUTINE setup_nscf_green(xq)
   IMPLICIT NONE
   !
   REAL (DP), INTENT(IN) :: xq(3)
-  !
-  LOGICAL  :: minus_q, magnetic_sym, sym(48)
-  !
   INTEGER   :: ik
+  LOGICAL  :: minus_q, magnetic_sym, sym(48)
+  LOGICAL  :: do_matel
   !
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
@@ -87,15 +83,21 @@ SUBROUTINE setup_nscf_green(xq)
 
   magnetic_sym = noncolin .AND. domag 
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
-  sym(1:nsym)=.true.
   minus_q=.false.
 
-  call smallg_q (xq, modenum, at, bg, nsym, s, ftau, sym, minus_q)
-  IF ( .not. time_reversal ) minus_q = .false.
+  if(do_matel) then
+    sym(1:nsym)=.true.
+    call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
+  else
+    time_reversal = .false.
+    sym(1:1)   = .true.
+    sym(2:nsym)= .false.
+    call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
+  endif
+  if ( .not. time_reversal ) minus_q = .false.
   ! Here we re-order all rotations in such a way that true sym.ops.
   ! are the first nsymq; rotations that are not sym.ops. follow
    nsymq = copy_sym ( nsym, sym )
-
    call inverse_s ( )
 
   ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
@@ -114,14 +116,18 @@ SUBROUTINE setup_nscf_green(xq)
      !  In this case I keep the same points of the Charge density
      !  calculations
      !
-     WRITE(6,'("USING OLD KPOINT GRID")')
      nkstot = nks_start
      xk(:,1:nkstot) = xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)
   else
      !In this case I generate a new set of k-points
+    if(do_matel) then
      CALL kpoint_grid ( nsym, time_reversal, .false., s, t_rev, &
                         bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
+    else
+      CALL kpoint_grid ( nsym, .false., .false., s, t_rev, &
+                        bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
+    endif
      !CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
      !                   bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
   endif

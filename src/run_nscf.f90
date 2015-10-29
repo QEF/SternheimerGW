@@ -66,7 +66,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   conv_ions=.true.
 ! Generate all eigenvectors in IBZ_{k} for Green's function or IBZ_{q} otherwise.
   if(do_matel) nbnd = nbnd_sig
-  CALL setup_nscf_green (xq)
+  CALL setup_nscf_green (xq, do_matel)
   CALL init_run()
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
   IF (do_band) CALL non_scf ( )

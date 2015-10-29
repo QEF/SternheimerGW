@@ -9,57 +9,69 @@ USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsymm,        ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm, nl
-USE modes,         ONLY : nsymq, invsymq 
 USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
 USE control_gw,    ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont
 USE qpoint,        ONLY : xq
 USE cell_base,     ONLY : at
-USE gwsigma,      ONLY : sigma_c_st
+USE gwsigma,       ONLY : sigma_c_st
 USE noncollin_module, ONLY : noncolin, nspin_mag
+USE io_global,        ONLY : stdout
+USE symm_base,        ONLY : s, t_rev, irt, ftau, nrot, nsym, &
+                             time_reversal, copy_sym, inverse_s, s_axis_to_cart
+USE cell_base,        ONLY : at, bg
 
 IMPLICIT NONE
 
 COMPLEX(DP)  :: scrcoul_g_in(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, nspin_mag)
 COMPLEX(DP)  :: scrcoul_g_tmp(sigma_c_st%ngmt, nfs)
 COMPLEX(DP)  :: phase
-
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
-!counter
 INTEGER      :: isym, iwim, iq, iw
 INTEGER      :: done, ngmdone, isp
 INTEGER      :: ngmdonelist(sigma_c_st%ngmt)
 INTEGER      :: gmapsym(ngm,48)
 COMPLEX(DP)  :: eigv(ngm,48)
-LOGICAL      :: not_unique
+LOGICAL      :: not_unique 
 REAL(DP)     :: xq_loc(3)
+INTEGER      :: nsymq
+LOGICAL      :: sym(48), minus_q, invsymq
 
-!unpacks the symmetry reduced list of G vectors to fill the whole W 
+!Unpacks the symmetry reduced list of G vectors to fill the whole W 
 !matrix before writing this to file, alternatively could just 
 !write the symmetry reduced matrix to file... but right now this isn't necessary.
-
-gmapsym(:,:) = 0
-CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
-!do isym = 1, nsymq
-!   WRITE(6,'(3i4)') s(:,:,isym) 
-!   WRITE(6,*)
-!   WRITE(6,'(3i4)') s(:,:,invs(isym)) 
-!   WRITE(6,*)
-!   WRITE(6,*)
-!enddo
+!Again a local smallg_q so it doesn't conflict with solver_linter.
+  minus_q=.false.
+  sym(1:nsym)=.true.
+  call smallg_q (xq, 1, at, bg, nsym, s, ftau, sym, minus_q)
+  IF ( .not. time_reversal ) minus_q = .false.
+!Here we re-order all rotations in such a way that true sym.ops.
+!are the first nsymq; rotations that are not sym.ops. follow
+  nsymq = copy_sym ( nsym, sym )
+  call inverse_s ( )
+!check if inversion (I) is a symmetry. If so, there should be nsymq/2
+!symmetries without inversion, followed by nsymq/2 with inversion
+!Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
+  invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
+  if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
+  if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')
+  WRITE(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4)') nsym,  nsymq
+  ! Since the order of the s matrices is changed we need to recalculate:
+  CALL s_axis_to_cart () 
+  gmapsym(:,:) = 0
+  CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 !Cases where no unfolding needs to be done:
-if(.not.use_symm)GOTO 126
-if(nsymq.eq.1)GOTO 126
+  if(.not.use_symm)GOTO 126
+  if(nsymq.eq.1)GOTO 126
 !end Cases
 !stack ngmdone list with vectors that aren't unique:
-   xq_loc = xq
-   CALL cryst_to_cart(1, xq_loc(:), at, -1)
-ngmdonelist(:) = 0
-ngmdone = 0
-do ig = 1, ngmunique
-   ngmdone = ngmdone + 1
-   ngmdonelist(ngmdone) = ig_unique(ig)
-enddo
-
+  xq_loc = xq
+  CALL cryst_to_cart(1, xq_loc(:), at, -1)
+  ngmdonelist(:) = 0
+  ngmdone = 0
+  do ig = 1, ngmunique
+     ngmdone = ngmdone + 1
+     ngmdonelist(ngmdone) = ig_unique(ig)
+  enddo
 IF(modielec) then
 !only diagonal needs unfolding:
       DO ig = 1, ngmunique
