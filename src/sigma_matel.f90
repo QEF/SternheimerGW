@@ -12,7 +12,7 @@ SUBROUTINE sigma_matel (ik0)
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsigmin, wsigmax, deltaws
+  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws
   USE klist,                ONLY : xk, wk, nkstot, nks
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
@@ -319,10 +319,10 @@ endif
   if(meta_ionode) THEN
      if(do_imag) then 
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-        nwsigwin  = 1 + ceiling((wsigmax - wsigmin)/deltaws)
+        nwsigwin  = 1 + ceiling((wsig_wind_max - wsig_wind_min)/deltaws)
         allocate (wsigwin(nwsigwin))
         do iw = 1, nwsigwin
-            wsigwin(iw) = wsigmin + (wsigmax-wsigmin)/float(nwsigwin-1)*float(iw-1)
+            wsigwin(iw) = wsig_wind_min + (wsig_wind_max-wsig_wind_min)/float(nwsigwin-1)*float(iw-1)
         enddo
         allocate (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
 !print selfenergy on the imaginary axis.

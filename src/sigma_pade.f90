@@ -72,7 +72,6 @@ ELSE
             DO iw = 1, nwsigma
                z(iw) = dcmplx(mu, w_ryd(iw))
                u(iw) = sigma_band_c (ibnd, jbnd, iw)
-              !u(iw) = conjg(sigma_band_c (ibnd, jbnd, iw))
             ENDDO
             call pade_coeff(nwsigma, z, u, a)
             DO iw = 1, nwsigwin

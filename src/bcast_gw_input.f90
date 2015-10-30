@@ -30,7 +30,7 @@ subroutine bcast_gw_input ( )
                           double_grid
   USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
   USE partial,  ONLY : nat_todo, nrapp
-  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul, wsigmin, wsigmax, deltaws
+  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE output,   ONLY : fildvscf, fildyn, fildrho
   use io_files, ONLY : tmp_dir, prefix
   USE control_flags,    ONLY: iverbosity, modenum
@@ -125,8 +125,8 @@ subroutine bcast_gw_input ( )
 !Frequency grid
   call mp_bcast (wsigmamin, meta_ionode_id, world_comm)
   call mp_bcast (wsigmamax, meta_ionode_id, world_comm)
-  call mp_bcast (wsigmin, meta_ionode_id, world_comm)
-  call mp_bcast (wsigmax, meta_ionode_id, world_comm)
+  call mp_bcast (wsig_wind_min, meta_ionode_id, world_comm)
+  call mp_bcast (wsig_wind_max, meta_ionode_id, world_comm)
   call mp_bcast (deltaws, meta_ionode_id, world_comm)
   call mp_bcast (wcoulmax,  meta_ionode_id, world_comm)
   call mp_bcast (deltaw,    meta_ionode_id, world_comm)

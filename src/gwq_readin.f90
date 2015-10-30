@@ -70,7 +70,7 @@ SUBROUTINE gwq_readin()
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
-                            greenzero, nwcoul, wsigmin, wsigmax, deltaws
+                            greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
   !
@@ -114,7 +114,7 @@ SUBROUTINE gwq_readin()
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
-                       nwcoul, double_grid, wsigmin, wsigmax, deltaws
+                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -253,8 +253,8 @@ SUBROUTINE gwq_readin()
   wsigmamax      = 20.0d0
   deltaw         =  2.0d0 
   wcoulmax       = 80.0d0   
-  wsigmin   = -50.0
-  wsigmax   =  30.0
+  wsig_wind_min   = -50.0
+  wsig_wind_max   =  30.0
   deltaws   =   0.1
 
 !Symmetry Default:yes!, which q, point to start on.

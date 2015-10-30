@@ -86,6 +86,7 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   minus_q=.false.
 
   if(do_matel) then
+    time_reversal = .true.
     sym(1:nsym)=.true.
     call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
   else
@@ -99,14 +100,13 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   ! are the first nsymq; rotations that are not sym.ops. follow
    nsymq = copy_sym ( nsym, sym )
    call inverse_s ( )
-
   ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
     if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
     if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')
-    WRITE(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4, i4)') nsym,  nsymq, nrot 
+    write(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4, i4)') nsym,  nsymq, nrot 
   ! Since the order of the s matrices is changed we need to recalculate:
     call s_axis_to_cart () 
   ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
@@ -128,8 +128,6 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
       CALL kpoint_grid ( nsym, .false., .false., s, t_rev, &
                         bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
     endif
-     !CALL kpoint_grid ( nrot, time_reversal, .false., s, t_rev, &
-     !                   bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
   endif
 
   ! ... If some symmetries of the lattice no longer apply for this kpoint
