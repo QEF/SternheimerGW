@@ -1,0 +1,14 @@
+&inputpp
+  prefix = 'mgb2',
+  outdir = './tmp',
+  kf  = 1.06,
+  qtf = 1.16,
+  nbndmin= 3
+  nbndmax= 5
+  do_coulmat = .false.,
+  do_dosband = .true.,
+  do_fsavg   = .false.
+  ngcoul     = 100
+  do_lind    =.true.
+  do_diag    =.false.
+/

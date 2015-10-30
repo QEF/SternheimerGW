@@ -13,3 +13,11 @@ example03:
 
 example04:
     Do an imaginary frequency calculation for MoS2, using analytic continuation.
+
+example05:
+    Do a calculation of W (screened Coulomb interaction) and \mu, \mu*
+    for MgB2 (This example is underconverged with respect to kpoints and 
+    planewaves wavevectors).
+
+
+  
