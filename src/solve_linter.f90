@@ -426,10 +426,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            enddo
      endif
 
-!    USPP:     
-!    call newdq (dvscfin, 1)  !KC: calculate int3 for dvscf
-
-
 #ifdef __PARA
      aux_avg (1) = DBLE (ltaver)
      aux_avg (2) = DBLE (lintercall)
@@ -443,10 +439,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      CALL FLUSH( stdout )
      rec_code=10
 
-     !WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-     !      "secs   av.it.: ",f5.1)') iter, tcpu, averlt
-     !WRITE(1000+mpime, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
-     !      &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
+!     WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!           "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+!     WRITE(1000+mpime, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
+!           &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
      if (convt) goto 155
 
   enddo !loop on kter (iterations)

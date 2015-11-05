@@ -504,7 +504,7 @@ MODULE gwsigma
   TYPE(fft_cus) sigma_x_st   ! Grid for \Sigma^{x} -> real space
   TYPE(fft_cus) sigma_c_st   ! Grid for real space -> restricted G space
 
-  COMPLEX(DP), ALLOCATABLE :: sigma_band_exg(:)
+  COMPLEX(DP), ALLOCATABLE :: sigma_band_exg(:,:)
 
 ! HL self energy is a huge quantity!
   INTEGER  :: nbnd_sig

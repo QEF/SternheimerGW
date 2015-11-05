@@ -23,7 +23,7 @@ IMPLICIT  NONE
     if(meta_ionode) CALL diropn (iuncoul, 'coul', lrcoul, exst)
     iungreen = 31
     lrgrn  = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt
-    CALL diropn (iungreen, 'green', lrgrn, exst)
+!    CALL diropn (iungreen, 'green', lrgrn, exst)
 !\Sigma^{c}(\G,\G';\omega)
     iunsigma = 32
     if(do_serial) then

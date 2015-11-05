@@ -25,7 +25,7 @@ SUBROUTINE openfilq()
                              lrdrhous, lrebar, lrdrho, iudwfm, iudwfp, iuncoul, lrgrn, iungreen
   USE io_files,       ONLY : tmp_dir, diropn, seqopn, wfc_dir
   USE freq_gw,        ONLY : nfs, nwgreen
-  USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw, lgamma
+  USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw, lgamma, do_coulomb
   USE save_gw,        ONLY : tmp_dir_save
   USE qpoint,         ONLY : nksq
   USE output,         ONLY : fildyn, fildvscf
@@ -60,43 +60,46 @@ SUBROUTINE openfilq()
   !     The file with the wavefunctions. In the lgamma case reads those
   !     written by pw.x. In the other cases those calculated by gw.x
   tmp_dir=tmp_dir_gw
-  IF (lgamma)tmp_dir=tmp_dir_save
+  IF (lgamma) tmp_dir=tmp_dir_save
   iuwfc = 20
   lrwfc = nbnd * npwx * npol
-  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_gw)
 
+
+  CALL open_buffer (iuwfc, 'wfc', lrwfc, io_level, exst_mem, exst, tmp_dir_gw)
   IF (.NOT.exst.AND..NOT.exst_mem) THEN
      CALL errore ('openfilq', 'file '//trim(prefix)//'.wfc not found', 1)
   END IF
   !
   ! From now on all files are written with the _gw prefix
   !
-  !
   tmp_dir=tmp_dir_gw
   !
   !    The file with deltaV_{bare} * psi
   !
-  iubar = 21
-  lrbar = nbnd * npwx * npol
-  CALL open_buffer (iubar, 'bar', lrbar, io_level, exst_mem, exst, tmp_dir)
-
-  IF (ext_recover.AND..NOT.exst) &
-     CALL errore ('openfilq','file '//trim(prefix)//'.bar not found', 1)
+  if(do_coulomb) then
+    iubar = 21
+    lrbar = nbnd * npwx * npol
+    CALL open_buffer (iubar, 'bar', lrbar, io_level, exst_mem, exst, tmp_dir)
+    IF (ext_recover.AND..NOT.exst) &
+       CALL errore ('openfilq','file '//trim(prefix)//'.bar not found', 1)
   !
   !    The file with the solution delta psi
   !
-  iudwf = 22
-  lrdwf =  nbnd * npwx * npol
-  CALL open_buffer (iudwf, 'dwf', lrdwf, io_level, exst_mem, exst, tmp_dir)
-  IF (ext_recover.AND..NOT.exst) &
-     CALL errore ('openfilq','file '//trim(prefix)//'.dwf not found', 1)
+    iudwf = 22
+    lrdwf =  nbnd * npwx * npol
+    CALL open_buffer (iudwf, 'dwf', lrdwf, io_level, exst_mem, exst, tmp_dir)
+    IF (ext_recover.AND..NOT.exst) &
+    CALL errore ('openfilq','file '//trim(prefix)//'.dwf not found', 1)
+
+    iudwfm = 29 
+    iudwfp = 30
+    CALL open_buffer (iudwfp, 'dwfp', lrwfc, io_level, exst_mem, exst, tmp_dir)
+    CALL open_buffer (iudwfm, 'dwfm', lrwfc, io_level, exst_mem, exst, tmp_dir)
+  endif
   !
   !   open a file with the static change of the charge
   !
-  IF (okvan) THEN
-     !iudrhous = 25
-     !lrdrhous = 2 * nrxx * nspin_mag
-     !CALL diropn (iudrhous, 'prd', lrdrhous, exst)
+    IF (okvan) THEN
      iudrhous = 25
      lrdrhous =  dfftp%nnr * nspin_mag
      CALL open_buffer (iudrhous, 'prd', lrdrhous, io_level, exst_mem, exst,tmp_dir)
@@ -109,19 +112,11 @@ SUBROUTINE openfilq()
   !
   iudrho = 23
   lrdrho = 2 * dfftp%nr1x * dfftp%nr2x * dfftp%nr3x * nspin_mag
-  !
-  !
   !   Here the sequential files
-  !
   !   The igk at a given k (and k+q if q!=0)
   !
-  iunigk = 24
   IF (nksq > 1) CALL seqopn (iunigk, 'igk', 'unformatted', exst)
 
 !HL write files for \Delta\psi^{\pm}
-  iudwfm = 29 
-  iudwfp = 30
-  CALL open_buffer (iudwfp, 'dwfp', lrwfc, io_level, exst_mem, exst, tmp_dir)
-  CALL open_buffer (iudwfm, 'dwfm', lrwfc, io_level, exst_mem, exst, tmp_dir)
   RETURN
 END SUBROUTINE openfilq

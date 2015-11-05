@@ -74,7 +74,6 @@ program gw
      close(unit = iunresid, status = 'DELETE')
      close(unit = iunalphabeta, status = 'DELETE')
   endif
-
   do ik = 1, num_k_pts
      if(do_sigma_exx .and. .not.do_sigma_exxG) then   
         call sigma_exch(ik)
@@ -82,8 +81,7 @@ program gw
         call sigma_exchg(ik)
      endif
   enddo
-
-! Calculate <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>
+!Calculate <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>
   do ik = 1, num_k_pts
      if(do_sigma_matel) call sigma_matel(ik)
   enddo

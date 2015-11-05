@@ -72,7 +72,8 @@ IMPLICIT NONE
 
   allocate ( gmapsym  (ngm, nrot)       )
   allocate ( eigv     (ngm, nrot)       )
-  allocate ( sigma_band_exg(nbnd_sig)   )
+  if (.not.allocated(sigma_band_exg)) allocate(sigma_band_exg(nbnd_sig,num_k_pts))
+
   allocate ( psi(sigma_x_st%dfftt%nnr)  )
   allocate ( dpsic(sigma_x_st%dfftt%nnr))
   allocate ( miv(sigma_x_st%dfftt%nnr), mvj(sigma_x_st%dfftt%nnr))
@@ -87,10 +88,8 @@ IMPLICIT NONE
   limit =.false.
   wgt = 1.0/omega
   nsymm1  = 1.0/(float(nsym))
-  sigma_band_exg(:) = (0.0d0, 0.0d0)
-
+  sigma_band_exg(:,ik0) = (0.0d0, 0.0d0)
   ik1old = 0
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! <nk | \Sum_{q} nk-q nk-q |nk>                !
 ! Need to collect k-point on all processors    !
@@ -114,8 +113,6 @@ IMPLICIT NONE
   call mp_barrier(inter_pool_comm)
   call mp_sum(psik, inter_pool_comm)
   call mp_barrier(inter_pool_comm)
-  !call gk_sort(xk_kpoints(1,ik0), ngm, g, ( ecutwfc / tpiba2 ), &
-  !             npw, igk, g2kin)
   call gk_sort(xk_kpoints(1,ik0), ngm, g, ( ecutwfc / tpiba2 ), &
                npw, igk, g2kin)
   npwq = npw
@@ -234,7 +231,7 @@ IMPLICIT NONE
                  miv(ig) = dipole(sigma_x_st%nlt(ig))
               enddo
               do ig = 1, sigma_x_st%ngmt
-                 sigma_band_exg(ibnd) = sigma_band_exg(ibnd) - &
+                 sigma_band_exg(ibnd,ik0) = sigma_band_exg(ibnd,ik0) - &
 &                wq(iq)*dconjg(miv(ig))*(miv(ig))*barcoul(ig)
               enddo 
            enddo !ibnd
@@ -243,13 +240,13 @@ IMPLICIT NONE
  enddo ! on q
 
  call mp_barrier(inter_pool_comm)
- call mp_sum (sigma_band_exg, inter_pool_comm)  
- sigma_band_exg = wgt*nsymm1*sigma_band_exg
+ call mp_sum (sigma_band_exg(:,ik0), inter_pool_comm)
+ sigma_band_exg(:, ik0) = wgt*nsymm1*sigma_band_exg(:, ik0)
 
  write(stdout,'(4x,"Sigma_ex (eV)")')
- write(stdout,*) real(sigma_band_exg(:))*RYTOEV
- write(stdout,*) aimag(sigma_band_exg(:))*RYTOEV
- write(stdout,'(4x,"Sigma_ex val (eV)", 8(1x,f7.2))')  real(sigma_band_exg(1:8))*RYTOEV
+ write(stdout,*) real(sigma_band_exg(:, ik0))*RYTOEV
+ write(stdout,*) aimag(sigma_band_exg(:, ik0))*RYTOEV
+ write(stdout,'(4x,"Sigma_ex val (eV)", 8(1x,f7.2))')  real(sigma_band_exg(1:8, ik0))*RYTOEV
 
  call stop_clock('sigma_exch')
  9000 format(8(1x,f7.2))

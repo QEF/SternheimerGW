@@ -32,7 +32,7 @@ INTEGER   :: gmapsym  (ngm, nrot)
 ci = dcmplx(0.0d0, 1.d0)
 czero = dcmplx(0.0d0, 0.0d0)
 if(conv.eq.1) then
-            if(nig0.gt.1) then
+            if((nig0.gt.1) .and. (nig0.le.fc%ngmt)) then
                pwg0(:) = dcmplx(0.0d0, 0.0d0)
                phase = eigv(nig0, isym)
                pwg0(fc%nlt(nig0)) = dcmplx(1.0d0, 0.0d0)
@@ -49,14 +49,14 @@ if(conv.eq.1) then
                   f_r(ig, irp) = aux(irp) / omega
                enddo
             enddo
-            if(nig0.gt.1) then
+            if((nig0.gt.1) .and. (nig0.le.fc%ngmt)) then
               do ig=1, fc%ngmt
                 do ir = 1, fc%dfftt%nnr  
                    f_r(ig,ir) = f_r(ig,ir)*pwg0(ir) 
                 enddo
               enddo
             endif              
-            if(nig0.gt.1) then
+            if((nig0.gt.1) .and. (nig0.le.fc%ngmt)) then
                pwg0(:) = dcmplx(0.0d0, 0.0d0)
                pwg0(fc%nlt(nig0)) = dcmplx(1.0d0, 0.0d0)
                CALL invfft('Custom', pwg0(:), fc%dfftt)
@@ -70,7 +70,7 @@ if(conv.eq.1) then
                call invfft('Custom', aux, fc%dfftt)
                f_r(1:fc%dfftt%nnr,irp) = conjg ( aux )
             enddo
-            if(nig0.gt.1) then
+            if((nig0.gt.1) .and. (nig0.le.fc%ngmt)) then
               do irp=1, fc%dfftt%nnr
                 do ir = 1, fc%dfftt%nnr  
                    f_r(ir, irp) = f_r(ir,irp)*pwg0(ir) 

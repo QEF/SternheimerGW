@@ -233,7 +233,7 @@ if(.not.do_sigma_exxG) then
       deallocate(evc_tmp_j)
 else
     do ibnd = 1, nbnd_sig
-       sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd)
+       sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd, ik0)
     enddo
 endif
 !MATRIX ELEMENTS OF SIGMA_C:
