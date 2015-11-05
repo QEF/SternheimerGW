@@ -45,7 +45,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta, maxter_green, prec_direct, &
+                                   ext_recover, eta, maxter_coul, maxter_green, prec_direct, &
                                    prec_shift
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
@@ -145,7 +145,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   INTEGER     :: niters(nbnd)
   COMPLEX(DP) :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
   COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:)
-  COMPLEX(DP) :: alphabeta(2,nbnd,maxter_green+1)
+  COMPLEX(DP) :: alphabeta(2,nbnd,maxter_coul+1)
   external cg_psi, ch_psi_all, h_psi_all, ch_psi_all_green
   IF (rec_code_read > 20 ) RETURN
   irr    = 1
@@ -158,7 +158,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
-  if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_green+1))
+  if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_coul+1))
   iter0 = 0
   convt =.FALSE.
   where_rec='no_recover'
@@ -278,7 +278,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         call zaxpy (npwx*npol*nbnd*nfs, dcmplx(0.5d0,0.0d0), dpsit(1,1,1), 1, dpsi(1,1,1), 1)
 
         do ibnd=1, nbnd 
-           if (niters(ibnd).ge.maxter_green) then
+           if (niters(ibnd).ge.maxter_coul) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
            endif
         enddo

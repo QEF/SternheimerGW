@@ -44,7 +44,7 @@ SUBROUTINE gwq_readin()
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
                             do_coulomb, do_sigma_c, do_sigma_exx,  do_sigma_exxG,&
                             do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green, godbyneeds, padecont,&
+                            do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
                             cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift,&
                             trunc_2d, do_epsil, do_serial, &
@@ -109,7 +109,7 @@ SUBROUTINE gwq_readin()
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
                        wsigmamax, deltaw, wcoulmax,&
-                       use_symm, maxter_green, w_of_q_start, godbyneeds,& 
+                       use_symm, maxter_green, maxter_coul, w_of_q_start, godbyneeds,& 
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
@@ -199,12 +199,13 @@ SUBROUTINE gwq_readin()
   nogg         = .FALSE.
   recover      = .FALSE.
   start_irr    = 0
-  last_irr     = -1000
+  last_irr     =-1000
   start_q      = 1
   last_q       =-1000
-  ldisp        = .FALSE.
-  lrpa         = .FALSE.
-  maxter_green  = 220
+  ldisp        =.FALSE.
+  lrpa         =.FALSE.
+  maxter_coul  = 120
+  maxter_green = 220
   w_green_start = 1
 
   do_serial       = .FALSE.

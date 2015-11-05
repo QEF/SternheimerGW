@@ -298,7 +298,7 @@ MODULE control_gw
   INTEGER :: rec_code, &   ! code for recover
              rec_code_read=-1000 ! code for recover. Not changed during the run
 
-  INTEGER :: maxter_green, w_green_start
+  INTEGER :: maxter_coul, maxter_green, w_green_start
 
   LOGICAL :: lgamma,      &! if .TRUE. this is a q=0 computation
              lgamma_gamma,&! if .TRUE. this is a q=0 computation with k=0 only 
