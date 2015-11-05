@@ -301,32 +301,33 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              dpsi(:,:)      = (0.d0, 0.d0) 
              dpsim(:,:)     = (0.d0, 0.d0) 
              dpsip(:,:)     = (0.d0, 0.d0) 
-              !if(iw.ge.2.and.high_io) then
-              !  call get_buffer( dpsip, lrdwf, iudwfp, ik)
-              !  call get_buffer( dpsim, lrdwf, iudwfm, ik)
-              !endif
+            !if(iw.ge.2.and.high_io) then
+            !  call get_buffer( dpsip, lrdwf, iudwfp, ik)
+            !  call get_buffer( dpsim, lrdwf, iudwfm, ik)
+            !endif
               dvscfin(:, :)  = (0.d0, 0.d0)
               dvscfout(:, :) = (0.d0, 0.d0)
-            !
-            ! starting threshold for iterative solution of the linear system
+            !starting threshold for iterative solution of the linear system
               thresh = 1.0d-2
            endif
-
        conv_root = .true.
        etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
        cw        = fiu(iw) 
-       !IF (real(cw).eq.0.d0.and.aimag(cw).eq.0.d0) THEN
        IF (iw.eq.1) THEN
                CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
-               dpsim(:,:) = dpsip(:,:)
-               dpsi(:,:)  = dpsim(:,:)  
+              do ibnd = 1, nbnd_occ(ikk)
+                 call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsim(1, ibnd), 1)
+                 call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsi(1, ibnd), 1)
+              enddo
        ELSE
-               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
-               CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
-               dpsi(:,:) = dcmplx(0.5d0,0.0d0)*(dpsim(:,:) + dpsip(:,:) ) 
+              CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+              CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+              do ibnd =1 , nbnd_occ(ikk)
+                 call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsim(1,ibnd), 1, dpsip(1,ibnd), 1)
+              enddo
        ENDIF
 
        ltaver = ltaver + lter
@@ -407,12 +408,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
     !Is the hermitian mixing scheme still okay?
         call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin(1,1), alpha_mix(kter),& 
                            dr2, tr2_gw, iter, nmix_gw, convt)
-                          !dr2, 1.d-2*(tr2_gw)**2, iter, nmix_gw, convt)
                              
      endif
- !if (lmetq0.and.convt) &
- !    call ef_shift (drhoscf, ldos, ldoss, dos_ef, irr, npe, .true.)
- !    CALL check_all_convt(convt)
   !HL need this if we aren't dealing with electric fields:
   !lmetq0 = lgauss.and.lgamma
   !if (lmetq0) then

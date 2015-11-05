@@ -147,8 +147,11 @@ external cg_psi      ! input: the routine computing cg_psi
         !p   =  inv(M) * r
         !pt  =  conjg ( p )
            call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
-           gt(:,ibnd) = g(:,ibnd) 
-           ht(:,ibnd) = h(:,ibnd)
+!           gt(:,ibnd) = g(:,ibnd) 
+!           ht(:,ibnd) = h(:,ibnd)
+           call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gt  (1, ibnd), 1)
+           call ZCOPY (ndmx*npol, h  (1, ibnd), 1, ht  (1, ibnd), 1)
+
         enddo
         IF (npol==2) THEN
            do ibnd = 1, nbnd

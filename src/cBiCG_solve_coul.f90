@@ -106,24 +106,26 @@ IMPLICIT NONE
      if (iter .eq. 1) then
         !r = b - A* x
         !rt = conjg (r) 
-        call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
+         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
         do ibnd = 1, nbnd
 !initial residual should be r = b
-           !call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
-           !dpsic(:, ibnd, iter) = d0psi(:,ibnd)
-           call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
-           call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-           if(tprec) call cg2_psi(ndmx, ndim, 1, g(1,ibnd), h_diag(1,ibnd) )
-        ! dpsic(:, ibnd, iter) = d0psi(:,ibnd)
-           dpsic(:, ibnd, iter) = g(:,ibnd)
+        !call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
+        !dpsic(:, ibnd, iter) = d0psi(:,ibnd)
+         call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
+         call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
+         if(tprec) call cg2_psi(ndmx, ndim, 1, g(1,ibnd), h_diag(1,ibnd) )
+        ! dpsic(:, ibnd, iter) = g(:,ibnd)
+         call ZCOPY (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter), 1)
         ! p   =  inv(M) * r
         ! pt  =  conjg ( p )
-           call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
+         call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
         !  gt(:,ibnd) = conjg (g(:,ibnd) )
         !  ht(:,ibnd) = conjg( h(:,ibnd) )
         !  not necessary to choose tilde
-           gt(:,ibnd) =  (g(:,ibnd) )
-           ht(:,ibnd) =  (h(:,ibnd) )
+        !  gt(:,ibnd) =  (g(:,ibnd) )
+        !  ht(:,ibnd) =  (h(:,ibnd) )
+         call ZCOPY (ndmx*npol, g (1, ibnd), 1, gt(1, ibnd), 1)
+         call ZCOPY (ndmx*npol, h (1, ibnd), 1, ht(1, ibnd), 1)
         enddo
      endif!iter.eq.1
      lbnd = 0
@@ -211,7 +213,10 @@ IMPLICIT NONE
          call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
 !        nrec = iter+1
 !        call davcio (g(:,1), lrresid, iunresid, nrec, +1)
-         dpsic(:, ibnd, iter+1) = g(:,ibnd)
+         !dpsic(:, ibnd, iter+1) = g(:,ibnd)
+         call ZCOPY (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter+1), 1)
+
+
          a(lbnd) = ZDOTC (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
          beta = - a(lbnd) / c(lbnd)
 !        alphabeta(2) = beta

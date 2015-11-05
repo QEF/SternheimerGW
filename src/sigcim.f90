@@ -54,7 +54,7 @@ SUBROUTINE sigma_c_im(ik0)
   COMPLEX(DP), ALLOCATABLE :: scrcoul(:,:)
 !G arrays:
   COMPLEX(DP), ALLOCATABLE :: greenf_g(:,:,:), greenfr(:,:)
-  COMPLEX(DP) :: cprefac
+  COMPLEX(DP) :: cprefac, dz
   COMPLEX(DP), ALLOCATABLE  ::  eigv(:,:)
 !v array
 !COMPLEX(DP), ALLOCATABLE ::  barcoul(:,:), barcoulr(:,:), barcoul_R(:,:)
@@ -69,7 +69,12 @@ SUBROUTINE sigma_c_im(ik0)
 !For dirac delta fxn.
   REAL(DP)     :: dirac, x, support, zcut
   REAL(DP) :: ehomo, elumo, mu
+  REAL (DP)   :: xk1(3), aq(3)
+  REAL(DP)    :: sxq(3,48), xqs(3,48)
+  REAL(DP)    :: nsymm1
+  REAL(DP)    :: wgt(nsym), xk_un(3,nsym)
 !FREQUENCY GRIDS/COUNTERS
+  INTEGER, ALLOCATABLE  :: gmapsym(:,:)
   INTEGER  :: iwim, iw, ikq
   INTEGER  :: iw0, iw0mw, iw0pw
 !COUNTERS
@@ -82,32 +87,30 @@ SUBROUTINE sigma_c_im(ik0)
   INTEGER :: inversym, screening
 !SYMMETRY
   INTEGER               :: isym, jsym, isymop, nig0
-  INTEGER, ALLOCATABLE  :: gmapsym(:,:)
 !For G^NA
   INTEGER     :: igkq_ig(npwx) 
   INTEGER     :: igkq_tmp(npwx) 
   INTEGER     :: ss(3,3)
   INTEGER     :: ibnd
   INTEGER     :: iw0start, iw0stop
+!Complete file name
+  INTEGER     :: iq1
+  INTEGER     :: imq, isq(48), nqstar, nkpts
+  INTEGER     :: i, ikstar
+  INTEGER     :: ixk1, iqrec_old
+  INTEGER     :: isym_k(nsym), nig0_k(nsym), iqrec_k(nsym)
+  INTEGER     :: iqcoul
+  INTEGER     :: nnr
+  INTEGER*8 :: unf_recl
 !For running PWSCF need some variables 
   LOGICAL             :: pade_catch
   LOGICAL             :: found_q
   LOGICAL             :: limq, inv_q, found
-!File related:
-  character(len=256) :: tempfile, filename
-!Complete file name
-  integer*8 :: unf_recl
-  REAL (DP)   :: xk1(3), aq(3)
-  INTEGER     :: iq1
-  REAL(DP)    :: sxq(3,48), xqs(3,48)
-  INTEGER     :: imq, isq(48), nqstar, nkpts
-  INTEGER     :: i, ikstar
-  REAL(DP)    :: wgt(nsym), xk_un(3,nsym)
-  INTEGER     :: ixk1, iqrec_old
-  INTEGER     :: isym_k(nsym), nig0_k(nsym), iqrec_k(nsym)
   LOGICAL, EXTERNAL :: eqvect
   LOGICAL     :: invq_k(nsym), found_qc
-  INTEGER     :: iqcoul
+!File related:
+  character(len=256) :: tempfile, filename
+  real(DP)    :: wgtcoulry(nwcoul)
   real(DP), parameter :: eps=1.e-5_dp
 
 #define DIRECT_IO_FACTOR 8 
@@ -125,6 +128,10 @@ SUBROUTINE sigma_c_im(ik0)
 !This is a memory hog...
    ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
+
+   nnr = sigma_c_st%dfftt%nnr
+   wgtcoulry(:) = wgtcoul(:)/RYTOEV
+
    w_ryd(:) = wcoul(:)/RYTOEV
    w_rydsig(:) = wsigma(:)/RYTOEV
    WRITE(6,"( )")
@@ -161,7 +168,7 @@ SUBROUTINE sigma_c_im(ik0)
 #endif
   CALL para_img(nwsigma, iw0start, iw0stop)
   WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
-  WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
+!  WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !ONLY PROCESSORS WITH K points to process: 
   IF (nksq.gt.1) rewind (unit = iunigk)
   WRITE(6,'("Starting Frequency Integration")')
@@ -171,7 +178,7 @@ SUBROUTINE sigma_c_im(ik0)
   call mp_barrier(inter_pool_comm)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
-  WRITE(1000+mpime,'("mu", f12.7)'),mu*RYTOEV
+  nsymm1 = 1.0d0/dble(nsym)
 DO iq = 1, nks
    iqcoul = 1
    found_qc = .false.
@@ -214,15 +221,15 @@ DO iq = 1, nks
    iqrec_old = 0
    DO isymop = 1, nsym
      iqrec = iqrec_k (isymop) 
-     if(iqrec_old.ne.iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
+!     if(iqrec_old.ne.iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
      if(iqrec_old.ne.iqrec) CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, iqrec, 2*nwcoul)
      iqrec_old = iqrec
      isym   = isym_k(isymop)
      nig0   = nig0_k(isymop)
      inv_q  = invq_k(isymop)
      if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-     write(1000+mpime, '("xk point, isym, iqrec, nig0")')
-     write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), isym, iqrec, nig0
+!     write(1000+mpime, '("xk point, isym, iqrec, nig0")')
+!     write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), isym, iqrec, nig0
 !Start integration over iw +/- wcoul.
 !Rotate W and initialize necessary quantities for pade_continuation or godby needs.
   IF(iw0stop-iw0start+1.gt.0) THEN
@@ -232,25 +239,27 @@ DO iq = 1, nks
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
+           dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
            if(.not.inv_q) then
-             CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+              call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+              sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
            else
-             CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
+!              write(1000+mpime,'("conjg G")')
+              call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+              sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
            endif
-!CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
+!call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
 !FOR T.R. w/ pade can obtain extra numberical stability?
-           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
-           scrcoul = czero
-           CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-           greenfr(:,:) = czero
+             call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
+             scrcoul = czero
+             call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+             greenfr(:,:) = czero
            if(.not.inv_q) then
-             CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*greenfr(:,:)*scrcoul(:,:)
+             call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
            else
-             CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*(wgtcoul(iw)/RYTOEV)*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
+             call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
            endif
         ENDDO !on frequency convolution over w'
      ENDDO !on iw0  
@@ -264,33 +273,35 @@ ENDDO!iq
  DEALLOCATE ( scrcoul_pade_g   )
  DEALLOCATE ( scrcoul_g, scrcoul_g_R )
  DEALLOCATE ( z,a,u )
+
+
 #ifdef __PARA
-  CALL mp_barrier(inter_pool_comm)
-  CALL mp_sum(sigma, inter_pool_comm)
-  CALL mp_barrier(inter_image_comm)
-  CALL mp_sum(sigma, inter_image_comm)
+ CALL mp_barrier(inter_pool_comm)
+ CALL mp_sum(sigma, inter_pool_comm)
+ CALL mp_barrier(inter_image_comm)
+ CALL mp_sum(sigma, inter_image_comm)
 #endif __PARA
-  IF (meta_ionode) THEN
-    ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
-    IF(allocated(sigma_g)) THEN
-       WRITE(6,'(4x,"Sigma_g allocated")')
-    ELSE
-       WRITE(6,'(4x,"Sigma_g too large!")')
-       CALL mp_global_end()
-       STOP
-    ENDIF
-    WRITE(6,'(4x,"Sigma in G-Space")')
-    sigma_g = (0.0d0,0.0d0)
-    DO iw = 1, nwsigma
-       CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
-    ENDDO
+ IF (meta_ionode) THEN
+   ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
+   IF(allocated(sigma_g)) THEN
+      WRITE(6,'(4x,"Sigma_g allocated")')
+   ELSE
+      WRITE(6,'(4x,"Sigma_g too large!")')
+      CALL mp_global_end()
+      STOP
+   ENDIF
+   WRITE(6,'(4x,"Sigma in G-Space")')
+   sigma_g = (0.0d0,0.0d0)
+   DO iw = 1, nwsigma
+      CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
+   ENDDO
 !Now write Sigma in G space to file. 
-    CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
-    WRITE(6,'(4x,"Sigma Written to File")')
-    CALL stop_clock('sigmac')
-    DEALLOCATE ( sigma_g  )
-  ENDIF !ionode
-  CALL mp_barrier(inter_image_comm)
-  DEALLOCATE ( sigma  )
+   CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
+   WRITE(6,'(4x,"Sigma Written to File")')
+   CALL stop_clock('sigmac')
+   DEALLOCATE ( sigma_g  )
+ ENDIF !ionode
+ CALL mp_barrier(inter_image_comm)
+ DEALLOCATE ( sigma  )
 RETURN
 END SUBROUTINE sigma_c_im

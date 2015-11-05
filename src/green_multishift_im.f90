@@ -59,8 +59,10 @@ IMPLICIT NONE
               x_sig(:,:)        = czero
               call davcio (r, lrresid, iunresid, iter, -1)
               do iw = 1, nfreq 
-                 u_sig(:,iw) = r(:)
-                 r_sig(:,iw) = r(:)
+                 !u_sig(:,iw) = r(:)
+                 !r_sig(:,iw) = r(:)
+                 call ZCOPY (ndim, r (1), 1, u_sig (1, iw), 1)
+                 call ZCOPY (ndim, r (1), 1, r_sig (1, iw), 1)
               enddo
               alpha_old         = (1.d0,0.0d0)
               beta_old          = (1.d0,0.0d0)
@@ -78,7 +80,8 @@ IMPLICIT NONE
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
             alpha_sig(iw)    = (pi_coeff(iw)/pi_coeff_new(iw))*alpha
 ! x_sig = x_sig + alpha_sig*u_sig
-            x_sig(:,iw)      =  x_sig(:,iw) + alpha_sig(iw) * u_sig(:,iw)
+            !x_sig(:,iw)      =  x_sig(:,iw) + alpha_sig(iw) * u_sig(:,iw)
+            call ZAXPY (ndim, alpha_sig(iw), u_sig(1,iw), 1, x_sig (1,iw), 1)
          enddo!iw
 !update residuals:
          nrec = iter + 1

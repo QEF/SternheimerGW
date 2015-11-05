@@ -265,16 +265,18 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta, .false.)
         if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
-!       if(.not.conv_root)   WRITE(1000+mpime, '(5x,"niters", 10i4)') niters
-!reinflate before the multishift?
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
         call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
-        dpsi(:,:,:)    = dpsit(:,:,:)
+!       dpsi(:,:,:)    = dpsit(:,:,:)
+        call zcopy(npwx*nbnd*nfs, dpsit(1,1,1), 1, dpsi(1,1,1), 1)
 !       dpsi = dpsi^{+} + dpsi^{-}
         dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
         call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
-        dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
+!       dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
+        call zscal (npwx*npol*nbnd*nfs, dcmplx(0.5d0, 0.0d0), dpsi(1,1,1), 1)
+        call zaxpy (npwx*npol*nbnd*nfs, dcmplx(0.5d0,0.0d0), dpsit(1,1,1), 1, dpsi(1,1,1), 1)
+
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_green) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
@@ -295,8 +297,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !do iw =1,nfs
 !     call syme (drhoscf(1,iw))
 !enddo
-
-
      do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
      enddo

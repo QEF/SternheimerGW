@@ -40,6 +40,5 @@ INTEGER :: ir
   DO ir = 1, dffts%nnr
      aux1(ir,1)=aux1(ir,1)*dvscfins(ir,current_spin)
   ENDDO
-! ENDIF
 RETURN
 END SUBROUTINE apply_dpot

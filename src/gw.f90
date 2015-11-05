@@ -85,7 +85,6 @@ program gw
   do ik = 1, num_k_pts
      if(do_sigma_matel) call sigma_matel(ik)
   enddo
-
   127 continue
   call close_gwq(.TRUE.)
   call stop_gw( .TRUE. )

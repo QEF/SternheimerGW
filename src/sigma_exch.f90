@@ -128,7 +128,7 @@ IMPLICIT NONE
            endif
         enddo
         if (found_k) then
-            write(1000+mpime,'("KPOINT FOUND")')
+           ! write(1000+mpime,'("KPOINT FOUND")')
             call get_buffer (evc, lrwfc, iuwfc, ik1)
         else 
             CYCLE
