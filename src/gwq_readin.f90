@@ -55,7 +55,8 @@ SUBROUTINE gwq_readin()
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
   USE output,        ONLY : fildyn, fildvscf, fildrho
-  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, kpoints, num_k_pts, w_of_q_start
+  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, kpoints, num_k_pts, w_of_q_start,&
+                            w_of_k_start, w_of_k_stop
   USE io_files,      ONLY : outdir, tmp_dir, prefix
   USE noncollin_module, ONLY : i_cons, noncolin
   USE ldaU,          ONLY : lda_plus_u
@@ -109,7 +110,7 @@ SUBROUTINE gwq_readin()
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
                        wsigmamax, deltaw, wcoulmax,&
-                       use_symm, maxter_green, maxter_coul, w_of_q_start, godbyneeds,& 
+                       use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
@@ -262,6 +263,8 @@ SUBROUTINE gwq_readin()
 !can be used in conjunction with do_q0_only.
   use_symm       = .TRUE.
   w_of_q_start   = 1
+  w_of_k_start   = 1
+  w_of_k_stop    = 1 
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
@@ -391,6 +394,11 @@ SUBROUTINE gwq_readin()
  ELSE
      num_k_pts = 1
  ENDIF
+ if (w_of_k_stop.eq.1) then
+    w_of_k_stop = num_k_pts
+  endif
+   
+
   !   Here we finished the reading of the input file.
   !   Now allocate space for pwscf variables, read and check them.
   !   amass will also be read from file:

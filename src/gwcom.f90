@@ -488,7 +488,7 @@ MODULE disp
    LOGICAL  :: kpoints 
    REAL(DP) :: xk_kpoints(3, 2000)
    INTEGER  :: num_k_pts
-   INTEGER  :: w_of_q_start
+   INTEGER  :: w_of_q_start, w_of_k_start, w_of_k_stop
   
 
 END MODULE disp

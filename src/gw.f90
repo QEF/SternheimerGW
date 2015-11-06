@@ -20,7 +20,7 @@ program gw
   USE io_files,        ONLY : diropn
   USE units_gw,        ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,           ONLY : nbnd
-  USE disp,            ONLY : num_k_pts
+  USE disp,            ONLY : num_k_pts, w_of_k_start, w_of_k_stop
 
   IMPLICIT NONE
 
@@ -62,11 +62,11 @@ program gw
 
 ! Calculation of Correlation energy \Sigma^{c}_{k}= \sum_{q}G_{k-q}{W_{q}-v_{q}}
   if (do_imag) then
-      do ik = 1, num_k_pts
+      do ik = w_of_k_start, num_k_pts
          if(do_sigma_c) call sigma_c_im(ik)
       enddo
   else
-      do ik = 1, num_k_pts
+      do ik = w_of_k_start, num_k_pts
          if(do_sigma_c) call sigma_c_re(ik)
       enddo
   endif
@@ -74,7 +74,7 @@ program gw
      close(unit = iunresid, status = 'DELETE')
      close(unit = iunalphabeta, status = 'DELETE')
   endif
-  do ik = 1, num_k_pts
+  do ik = w_of_k_start, num_k_pts
      if(do_sigma_exx .and. .not.do_sigma_exxG) then   
         call sigma_exch(ik)
      else if(do_sigma_exx .and. do_sigma_exxG) then
@@ -82,7 +82,7 @@ program gw
      endif
   enddo
 !Calculate <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>
-  do ik = 1, num_k_pts
+  do ik = w_of_k_start, w_of_k_stop
      if(do_sigma_matel) call sigma_matel(ik)
   enddo
   127 continue

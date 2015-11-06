@@ -28,7 +28,8 @@ subroutine bcast_gw_input ( )
                           do_imag, do_pade_coul, newgrid, high_io, freq_gl,&
                           prec_direct, tmp_dir_coul, prec_shift, just_corr,&
                           double_grid
-  USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start
+  USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
+                       w_of_k_start, w_of_k_stop
   USE partial,  ONLY : nat_todo, nrapp
   USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE output,   ONLY : fildvscf, fildyn, fildrho
@@ -146,6 +147,8 @@ subroutine bcast_gw_input ( )
 
   call mp_bcast (use_symm, meta_ionode_id, world_comm)
   call mp_bcast (w_of_q_start, meta_ionode_id, world_comm)
+  call mp_bcast (w_of_k_start, meta_ionode_id, world_comm)
+  call mp_bcast (w_of_k_stop, meta_ionode_id, world_comm)
   call mp_bcast (w_green_start, meta_ionode_id, world_comm)
   call mp_bcast (maxter_green, meta_ionode_id, world_comm)
   call mp_bcast (maxter_coul, meta_ionode_id, world_comm)
