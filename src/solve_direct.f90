@@ -254,9 +254,9 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
         else
                  CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,1), h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, .true.)
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw,maxter_coul, .true.)
                  CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,2), h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, .true.)
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw,maxter_coul, .true.)
                  dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsit(:,:,1) + dpsit(:,:,2))
         endif
      enddo
@@ -264,7 +264,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta, .false.)
-        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint", i4)') ik
+        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
 !       dpsi = dpsi^{+}
         dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
         call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)

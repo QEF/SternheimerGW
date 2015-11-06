@@ -5,7 +5,7 @@
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
 SUBROUTINE cbcg_solve(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
-     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, tprec)
+     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, maxter, tprec)
 !
 !-----------------------------------------------------------------------
 !
@@ -18,7 +18,6 @@ SUBROUTINE cbcg_solve(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   real scalar, x and b are complex vectors
 
 USE kinds,       ONLY: DP
-USE control_gw,  ONLY: maxter_green
 USE mp,          ONLY : mp_sum
 USE io_global,   ONLY : stdout, ionode
 USE mp_global,   ONLY : intra_pool_comm
@@ -41,12 +40,9 @@ real(DP) :: &
              ethr,    & ! input: the required precision
              h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
 
-!COMPLEX(DP) :: h_diag(ndmx*npol,nbnd) ! input: an estimate of ( H - \epsilon )
-
   complex(DP) :: &
              dpsi    (ndmx*npol, nbnd), & ! output: the solution of the linear syst
              d0psi   (ndmx*npol, nbnd)    ! input: the known term
-!             dpsitil (ndmx*npol, nbnd)   ! output: the conjugate solution!
 
   logical :: conv_root ! output: if true the root is converged
 
@@ -57,12 +53,7 @@ real(DP) :: &
   !
   !  here the local variables
   !
-
-!HL upping iterations to get convergence with green_linsys?
-
-  !integer, parameter :: maxter = 200
-  !integer, parameter :: maxter = 600
-  !the maximum number of iterations
+  !  the maximum number of iterations
   integer :: iter, ibnd, lbnd
   ! counters on iteration, bands
   integer , allocatable :: conv (:)
@@ -76,6 +67,8 @@ real(DP) :: &
   !  work space
 
   COMPLEX(DP)  :: cw
+
+  INTEGER :: maxter
 
 !HL need to introduce gt tt ht htold for BICON
 ! also gp grp for preconditioned systems
@@ -130,7 +123,7 @@ real(DP) :: &
 
   call start_clock ('cbcgsolve')
 
-  do iter = 1, maxter_green
+  do iter = 1, maxter
     ! kter = kter + 1
     ! g    = (-PcDv\Psi) - (H \Delta\Psi)
     ! gt   = conjg( g)

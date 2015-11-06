@@ -193,6 +193,7 @@ IMPLICIT NONE
     ELSE
        zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
        rcut = -2*pi*zcut**2
+       !rcut = 0.0d0
        DO ig = 1, sigma_x_st%ngmt
                qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
                qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)

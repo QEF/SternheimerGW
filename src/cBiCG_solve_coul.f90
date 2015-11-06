@@ -16,7 +16,7 @@ SUBROUTINE cbcg_solve_coul(h_psi, cg_psi, e, d0psi, dpsi, dpsic, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 USE kinds,       ONLY: DP
-USE control_gw,  ONLY: maxter_green
+USE control_gw,  ONLY: maxter_coul
 USE units_gw,    ONLY: iunresid, lrresid, iunalphabeta, lralphabeta
 
 IMPLICIT NONE
@@ -39,8 +39,8 @@ IMPLICIT NONE
   COMPLEX(DP)    :: beta_old 
   complex(DP)    :: dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
                     d0psi (ndmx*npol, nbnd)   ! input: the known term
-  COMPLEX(DP)    :: alphabeta(2, nbnd, maxter_green+1)
-  COMPLEX(DP)    :: dpsic(ndmx, nbnd, maxter_green+1)
+  COMPLEX(DP)    :: alphabeta(2, nbnd, maxter_coul+1)
+  COMPLEX(DP)    :: dpsic(ndmx, nbnd, maxter_coul+1)
   logical :: conv_root ! output: if true the root is converged
   external h_psi       ! input: the routine computing h_psi
   external cg_psi      ! input: the routine computing cg_psi
@@ -97,7 +97,7 @@ IMPLICIT NONE
 
 !seed frequency should be cw=0
   cw = (0.0d0, 0.0d0)
-  do iter = 1, maxter_green
+  do iter = 1, maxter_coul
         ! kter = kter + 1
         ! g    = (-PcDv\Psi) - (H \Delta\Psi)
         ! gt   = conjg( g)
