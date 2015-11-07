@@ -5,7 +5,6 @@
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
 SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
-!SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
    USE kinds,       ONLY : DP
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
    USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen

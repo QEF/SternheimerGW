@@ -46,29 +46,30 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
   IMPLICIT NONE 
 
  !should be freq blocks...
- !COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
-  COMPLEX(DP), ALLOCATABLE :: gr_A_shift(:,:)
+ !complex(DP) :: gr_A_shift(npwx, nwgreen)
+  complex(DP), ALLOCATABLE :: gr_A_shift(:,:)
 
-  COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
-  COMPLEX(DP) :: gr(npwx, 1), ci, cw 
-  COMPLEX(DP) :: green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
-  COMPLEX(DP), ALLOCATABLE :: etc(:,:)
+  complex(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
+  complex(DP) :: gr(npwx, 1), ci, cw 
+  complex(DP) :: green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
+  complex(DP), ALLOCATABLE :: etc(:,:)
 
-  REAL(DP) :: dirac, x, delta, support
-  REAL(DP) :: k0mq(3) 
-  REAL(DP) :: w_ryd(nwgreen)
-  REAL(DP) , allocatable :: h_diag (:,:)
-  REAL(DP)               :: eprec_gamma
-  REAL(DP) :: thresh, anorm, averlt, dr2, sqrtpi
-  REAL(DP) :: tr_cgsolve = 1.0d-4
-  REAL(DP) :: ehomo, elumo, mu
+  real(DP) :: dirac, x, delta, support
+  real(DP) :: k0mq(3) 
+  real(DP) :: w_ryd(nwgreen)
+  real(DP) , allocatable :: h_diag (:,:)
+  real(DP)               :: eprec_gamma
+  real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
+  real(DP) :: ehomo, elumo, mu
+  real(DP) :: gam(3)
+  real(DP) :: xk1(3)
 
-  INTEGER :: nwgreen
-  INTEGER :: iw, igp, iw0
-  INTEGER :: iq, ik0
-  INTEGER :: rec0, n1, gveccount
-  INTEGER, ALLOCATABLE      :: niters(:)
-  INTEGER :: kter,       & ! counter on iterations
+  integer :: nwgreen
+  integer :: iw, igp, iw0
+  integer :: iq, ik0
+  integer :: rec0, n1, gveccount
+  integer, ALLOCATABLE      :: niters(:)
+  integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
              ipert,      & ! counter on perturbations
              ibnd,       & ! counter on bands
@@ -86,28 +87,25 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
-    INTEGER  :: igkq_ig(npwx) 
-    INTEGER  :: igkq_tmp(npwx) 
-    INTEGER  :: counter
-    INTEGER  :: igstart, igstop, ngpool, ngr, igs, ngvecs
+  integer  :: igkq_ig(npwx) 
+  integer  :: igkq_tmp(npwx) 
+  integer  :: counter
+  integer  :: igstart, igstop, ngpool, ngr, igs, ngvecs
 
-  REAL(DP) :: gam(3)
-  REAL(DP) :: xk1(3)
+  logical :: conv_root
+  external   cg_psi, ch_psi_all_green
 
-  LOGICAL :: conv_root
-  EXTERNAL cg_psi, ch_psi_all_green
+  ALLOCATE  (h_diag (npwx, 1))
+  ALLOCATE  (etc(nbnd_occ(1), nkstot))
+  if(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
 
-    ALLOCATE  (h_diag (npwx, 1))
-    ALLOCATE  (etc(nbnd_occ(1), nkstot))
-    if(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
-
-    ci = (0.0d0, 1.0d0)
+  ci = (0.0d0, 1.0d0)
 !Convert freq array generated in freqbins into rydbergs.
-    do iw =1, nwgreen
-       w_ryd(iw) = w0pmw(1,iw)/RYTOEV
-    enddo
-    call start_clock('greenlinsys')
-    where_rec='no_recover'
+  do iw =1, nwgreen
+     w_ryd(iw) = w0pmw(1,iw)/RYTOEV
+  enddo
+  call start_clock('greenlinsys')
+  where_rec='no_recover'
 !This should ensure the Green's fxn has the correct -\delta for \omega <!\epsilon_{F}:
 !This smooths out variations and I think makes sense
    ikq = iq
@@ -140,16 +138,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     h_diag = 0.d0
     if(multishift) then
       do ig = 1, npwq
-         !if(g2kin(ig).le.ecutprec) then
            h_diag(ig,1) =  1.0d0
-         !else
-         !if(prec_shift) then
-         !h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
-         !else
-         !h_diag(ig,1) =  1.0d0
-         !endif
-         !endif
-      enddo
     else
       do ig = 1, npwq
          h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
@@ -218,12 +207,10 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     call mp_barrier(inter_image_comm)
     call mp_sum(green, inter_image_comm)
 #endif __PARA
-
 if(allocated(niters))     deallocate(niters)
 if(allocated(h_diag))     deallocate(h_diag)
 if(allocated(etc))        deallocate(etc)
 if(allocated(gr_A_shift)) deallocate(gr_A_shift)
-
 call stop_clock('greenlinsys')
 return
 END SUBROUTINE green_linsys_shift_im

@@ -21,10 +21,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   !   Currently symmetrized in terms of mode etc. Might need to strip this out
   !   and check PW for how it stores/symmetrizes charge densities.
 !----------------------------------------------------------------------------
-!------------------------------------------------------------------------------
 ! grep @10TION for all the instances where I've turned off the regular
 ! PH parallelism which always assumes we have split k-points across processors.
 ! Each processor has a full slice of k-points. 
+!------------------------------------------------------------------------------
 
 
   USE kinds,                ONLY : DP

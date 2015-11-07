@@ -4,53 +4,55 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd,mu, x_sig)
-   USE kinds,       ONLY : DP
-   USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-   USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
-   USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
-   USE control_gw,  ONLY : eta, tr2_green
-   USE ener,        ONLY : ef
+SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_sig)
+  USE kinds,       ONLY : dp
+  USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
+  USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
+  USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
+  USE control_gw,  ONLY : eta, tr2_green
+  USE ener,        ONLY : ef
+  USE gwsigma,     ONLY : sigma_x_st, sigma_c_st
 
-IMPLICIT NONE
+  implicit none
+
 !coefficient of quadratic form
-  COMPLEX(DP)   :: alpha, beta
-!complex(kind=DP), allocatable, INTENT(OUT) :: x_sig (:,:)
-  COMPLEX(DP), INTENT(OUT) :: x_sig (ndmx,nfreq)
-  COMPLEX(kind=DP), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:), r_sig(:,:)
-  COMPLEX(kind=DP) :: alpha_old, beta_old , beta_sig(nfreq), alpha_sig(nfreq)
+  complex(dp)   :: alpha, beta
+  complex(dp), INTENT(OUT) :: x_sig (ndmx,nfreq)
+  complex(kind=dp), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:), r_sig(:,:)
+  complex(kind=dp) :: alpha_old, beta_old , beta_sig(nfreq), alpha_sig(nfreq)
 !pi coefficients for each frequency up to nfreqgreen.
-  COMPLEX(kind=DP) :: pi_coeff (nfreq), pi_coeff_old (nfreq), pi_coeff_new(nfreq)
+  complex(kind=dp) :: pi_coeff (nfreq), pi_coeff_old (nfreq), pi_coeff_new(nfreq)
 !variable for reading in the stored alpha beta coefficients.
-  COMPLEX(DP)                 :: alphabeta(2)
-  COMPLEX(DP), PARAMETER      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
-  COMPLEX(DP), external       :: zdotc
-  REAL(DP) :: w_ryd(nwgreen)
-  REAL(DP) :: mu
-  REAL(DP) :: anorm(nwgreen)
+  complex(dp)                 :: alphabeta(2)
+  complex(dp), parameter      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
+  complex(dp), external       :: zdotc
 
-  INTEGER  :: nfreq, iw, iwp
-  INTEGER  :: ndmx, & ! input: the maximum dimension of the vectors
+  real(dp) :: w_ryd(nwgreen)
+  real(dp) :: mu
+  real(dp) :: anorm(nwgreen)
+
+  integer  :: nfreq, iw, iwp
+  integer  :: ndmx, & ! input: the maximum dimension of the vectors
               ndim, & ! input: the actual dimension of the vectors
               ngvecs,&
               niters,&
               iter,&
               nrec 
-  INTEGER  :: ios
+  integer  :: ios
 
-!ALLOCATE(x_sig(ndmx,nfreq), r(ndmx))
-  ALLOCATE(r(ndmx))
-  ALLOCATE(u_sig(ndmx,nfreq), u_sig_old(ndmx,nfreq), r_sig(ndmx,nfreq))
-!Green shifted system.
-     u_sig(:,:) = czero
-     x_sig(:,:) = czero
-     r(:)       = czero
-     u_sig_old(:,:) = czero
-     nrec = 0
-     alpha = czero
-     beta = czero
+  allocate(r(sigma_st_c%ngmt))
+  allocate(u_sig(sigma_st_c%ngmt,nfreq), u_sig_old(sigma_st_c%ngmt,nfreq), r_sig(sigma_st_c%ngmt,nfreq))
 
-     do iter = 1, niters-1
+!green shifted system.
+  u_sig(:,:) = czero
+  x_sig(:,:) = czero
+  r(:)       = czero
+  u_sig_old(:,:) = czero
+  nrec = 0
+  alpha = czero
+  beta = czero
+
+  do iter = 1, niters-1
 !now need to read residual vectors which have been written to disk in green_linsys:
            call davcio (alphabeta, lralphabeta, iunalphabeta, iter, -1)
            alpha = alphabeta(1)
@@ -74,8 +76,7 @@ IMPLICIT NONE
          do iw = 1, nfreq
 !-alpha because we are solve (H-w^{+}):
 ! conjg means something...
-            !pi_coeff_new(iw) = (cone - alpha*(DCMPLX(0.0d0 , w_ryd(iw))))*pi_coeff(iw) - &
-             pi_coeff_new(iw) = (cone - alpha*(DCMPLX(mu , w_ryd(iw))))*pi_coeff(iw) - &
+            pi_coeff_new(iw) = (cone - alpha*(DCMPLX(mu , w_ryd(iw))))*pi_coeff(iw) - &
                               ((alpha*beta_old)/(alpha_old))*(pi_coeff_old(iw) - pi_coeff(iw))
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
             alpha_sig(iw)    = (pi_coeff(iw)/pi_coeff_new(iw))*alpha
@@ -104,9 +105,8 @@ IMPLICIT NONE
           pi_coeff     (iw) = pi_coeff_new(iw)
         enddo!iw
      enddo!iter
-
-  DEALLOCATE(r)
-  DEALLOCATE(u_sig)
-  DEALLOCATE(u_sig_old) 
-  DEALLOCATE(r_sig)
+  deallocate(r)
+  deallocate(u_sig)
+  deallocate(u_sig_old) 
+  deallocate(r_sig)
 END SUBROUTINE green_multishift_im
