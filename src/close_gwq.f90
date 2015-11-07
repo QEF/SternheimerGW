@@ -44,15 +44,8 @@ SUBROUTINE close_gwq( flag )
      CALL close_buffer(iuwfc,'keep')
      !
   END IF
-  !
   IF (flag) THEN
-     CALL close_buffer(iudwf,  'delete')
-     CALL close_buffer(iudwfp, 'delete')
-     CALL close_buffer(iudwfm, 'delete')
-     CALL close_buffer(iubar,  'delete')
-     !
-     IF ( okvan ) CALL close_buffer(iudrhous,'delete')
-     !
+    continue
   ELSE
      CALL close_buffer(iudwf,  'keep')
      CALL close_buffer(iudwfp, 'keep')

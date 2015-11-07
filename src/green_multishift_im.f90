@@ -17,7 +17,6 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
 
 !coefficient of quadratic form
   complex(dp)   :: alpha, beta
-  complex(dp), INTENT(OUT) :: x_sig (ndmx,nfreq)
   complex(kind=dp), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:), r_sig(:,:)
   complex(kind=dp) :: alpha_old, beta_old , beta_sig(nfreq), alpha_sig(nfreq)
 !pi coefficients for each frequency up to nfreqgreen.
@@ -26,6 +25,7 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
   complex(dp)                 :: alphabeta(2)
   complex(dp), parameter      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
   complex(dp), external       :: zdotc
+  complex(dp), INTENT(OUT) :: x_sig (ndmx,nfreq)
 
   real(dp) :: w_ryd(nwgreen)
   real(dp) :: mu
@@ -40,8 +40,8 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
               nrec 
   integer  :: ios
 
-  allocate(r(sigma_st_c%ngmt))
-  allocate(u_sig(sigma_st_c%ngmt,nfreq), u_sig_old(sigma_st_c%ngmt,nfreq), r_sig(sigma_st_c%ngmt,nfreq))
+  allocate(r(ndim))
+  allocate(u_sig(ndim,nfreq), u_sig_old(ndim,nfreq), r_sig(ndim,nfreq))
 
 !green shifted system.
   u_sig(:,:) = czero

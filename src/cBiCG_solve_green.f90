@@ -98,7 +98,7 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
         do ibnd = 1, nbnd
 !initial residual should be r = b
 !          call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
-           call davcio (d0psi(1:sigma_c_st%ngmt,1), lrresid, iunresid, iter, +1)
+           call davcio (d0psi(1:(2*sigma_c_st%ngmt),1), lrresid, iunresid, iter, +1)
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
 !p   =  inv(M) * r
@@ -152,7 +152,7 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
         call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
 !Transformed:
          nrec = iter+1
-         call davcio (g(1:sigma_c_st%ngmt, 1), lrresid, iunresid, nrec, +1)
+         call davcio (g(1:(2*sigma_c_st%ngmt), 1), lrresid, iunresid, nrec, +1)
          a(ibnd) = ZDOTC (ndmx*npol, tt(1,ibnd), 1, gp(1,ibnd), 1)
          beta = - a(ibnd) / c(ibnd)
          alphabeta(2) = beta

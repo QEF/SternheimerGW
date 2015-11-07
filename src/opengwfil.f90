@@ -41,8 +41,10 @@ IMPLICIT  NONE
     if(multishift) then
        iunresid = 34
 !!!!!This only needs to be the same as ngmsco!!!
-       lrresid  = 2*npwx
-!      lrresid  = 2*sigma_c_st%ngmt
+!      lrresid  = 2*npwx
+! Factor of 2 for complex and second factor so we don't
+! throw away g sphere
+       lrresid  = 2*2*sigma_c_st%ngmt
        iunalphabeta = 35
        lralphabeta  = 4
     endif

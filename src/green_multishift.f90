@@ -80,7 +80,7 @@ REAL(DP) :: anorm(nwgreen)
 !beta = (pi_old/pi)**2 *beta, alpha = (pi/pi_new)*alpha
             alpha_sig(iw)    = (pi_coeff(iw)/pi_coeff_new(iw))*alpha
 ! x_sig = x_sig + alpha_sig*u_sig
-            x_sig(:,iw)      =  x_sig(:,iw) + alpha_sig(iw) * u_sig(:,iw)
+            x_sig(1:ndim,iw)      =  x_sig(1:ndim,iw) + alpha_sig(iw) * u_sig(1:ndim,iw)
          enddo!iw
 !update residuals:
          nrec = iter + 1

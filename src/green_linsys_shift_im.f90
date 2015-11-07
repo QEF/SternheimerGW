@@ -139,6 +139,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
     if(multishift) then
       do ig = 1, npwq
            h_diag(ig,1) =  1.0d0
+      enddo
     else
       do ig = 1, npwq
          h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
@@ -166,7 +167,8 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)
-             call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+            !call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+             call green_multishift_im(npwx, 2*sigma_c_st%ngmt, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
              if (niters(gveccount).ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                    gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)
