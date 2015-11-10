@@ -338,8 +338,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
        lintercall = lintercall + 1
 
        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
-                  &              " solve_linter: root not converged ",e10.3)')  &
-                  &                ik , ibnd, anorm
+                  &              " solve_linter: root not converged ", e10.3 , "iter ", i4)')  &
+                  &                ik , ibnd, anorm, iter
            nrec1 =  ik
          !calculates dvscf, sum over k => dvscf_q_ipert
          !incdrhoscf:  This routine computes the change of the charge density due to the
@@ -348,7 +348,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              call save_buffer (dpsim, lrdwf, iudwfp, ik)
              call save_buffer (dpsip, lrdwf, iudwfm, ik)
           endif
-
          ! perturbation. It is called at the end of the computation of the
          ! change of the wavefunction for a given k point.
            weight = wk (ikk)
