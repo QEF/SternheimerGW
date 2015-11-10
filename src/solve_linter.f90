@@ -310,25 +310,29 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
             !starting threshold for iterative solution of the linear system
               thresh = 1.0d-2
            endif
+
        conv_root = .true.
        etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
        cw        = fiu(iw) 
-       IF (iw.eq.1) THEN
-               CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+
+       if (iw.eq.1) then
+               call cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
-              do ibnd = 1, nbnd_occ(ikk)
-                 call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsim(1, ibnd), 1)
-                 call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsi(1, ibnd), 1)
-              enddo
-       ELSE
-              CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, maxter_coul, .true.)
-              CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, maxter_coul, .true.)
+               do ibnd = 1, nbnd_occ(ikk)
+                  call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsim(1, ibnd), 1)
+                  call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsi(1, ibnd), 1)
+               enddo
+       else 
+              call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, maxter_coul, .true.)
+              call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, maxter_coul, .true.)
+              dpsi(:,:) = dcmplx(0.0d0, 0.0d0)
               do ibnd =1 , nbnd_occ(ikk)
-                 call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsim(1,ibnd), 1, dpsip(1,ibnd), 1)
+                 call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsim(1,ibnd), 1, dpsi(1,ibnd), 1)
+                 call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsip(1,ibnd), 1, dpsi(1,ibnd), 1)
               enddo
-       ENDIF
+       endif
 
        ltaver = ltaver + lter
        lintercall = lintercall + 1
@@ -397,13 +401,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)
 !
      call dv_of_drho (1, dvscfout(1,1), .true.)
-     nmix_gw = 4
+!    nmix_gw = 4
      if (iw.eq.1) then
 !Density reponse in real space should be real at zero freq no matter what!
 !just using standard broyden for the zero freq. case.
         call mix_potential(2*dfftp%nnr*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
-                          !dr2, 1.d-2*(tr2_gw)**2, iter, nmix_gw, flmixdpot, convt)
      else
     !Is the hermitian mixing scheme still okay?
         call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin(1,1), alpha_mix(kter),& 
