@@ -169,6 +169,9 @@ SUBROUTINE gwq_readin()
   tr2_green    = 1.D-4
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
+  !for bulk systems alpha_mix = 0.7 is standard
+  !for slab systems more rapid convergence can
+  !be obtained with alpha_mix = 0.3.
   alpha_mix(1) = 0.7D0
   niter_gw     = maxter
   nmix_gw      = 4
