@@ -71,26 +71,21 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE fft_interfaces,  ONLY : invfft, fwfft
 
   implicit none
-  ! input: the irreducible representation
-  ! input: the number of perturbation
-  ! input: the position of the modes
+
   complex(DP) :: drhoscf (dfftp%nnr, nspin_mag)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (dffts%nnr)
-  ! functions computing the delta and theta function
   complex(DP), allocatable, target :: dvscfin(:,:)
   ! change of the scf potential 
   complex(DP), pointer :: dvscfins (:,:)
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
   complex(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
-
-  ! change of rho / scf potential (output)
-  ! change of scf potential (output)
   complex(DP), allocatable :: ldos (:,:), ldoss (:,:), mixin(:), mixout(:), &
-      dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
+                              dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
+  complex(kind=DP) :: ZDOTC
   ! Misc variables for metals
   ! dos_ef: density of states at Ef
   real(DP), external :: w0gauss, wgauss
@@ -101,8 +96,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! averlt: average number of iterations
   ! dr2   : self-consistency error
   real(DP) :: dos_ef, weight, aux_avg (2)
-
-
   !HL dbecsum (:,:,:,:), dbecsum_nc(:,:,:,:,:), aux1 (:,:)
   ! Misc work space
   ! ldos : local density of states af Ef
@@ -112,15 +105,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(DP), allocatable :: becsum1(:,:,:)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
-  real(kind=DP)    :: DZNRM2
-  complex(kind=DP) :: ZDOTC
-  external ZDOTC, DZNRM2
 
-  logical :: conv_root,  & ! true if linear system is converged
-             exst,       & ! used to open the recover file
-             lmetq0,     & ! true if xq=(0,0,0) in a metal
-             cgsolver          
-  
   integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
              ipert,      & ! counter on perturbations
@@ -144,8 +129,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   integer :: iw, ir 
   integer :: irr, imode0, npe
 
- 
   external ch_psi_all, cg_psi, h_psi_all, ch_psi_all_nopv
+  real(kind=DP)    :: DZNRM2
+  external ZDOTC, DZNRM2
+
+  logical :: conv_root,  & ! true if linear system is converged
+             exst,       & ! used to open the recover file
+             lmetq0,     & ! true if xq=(0,0,0) in a metal
+             cgsolver          
 
   allocate (dpsi(npwx*npol, nbnd))
  
@@ -301,8 +292,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           dpsip(:,:)     = (0.d0, 0.d0) 
           dvscfin(:, :)  = (0.d0, 0.d0)
           dvscfout(:, :) = (0.d0, 0.d0)
-         !starting threshold for iterative solution of the linear system
-           thresh = 1.0d-2
+          thresh         =  1.0d-2
         endif
 
         conv_root = .true.
@@ -311,7 +301,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
         if (iw.eq.1) then
                call cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
-                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
+                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
+                      npol)
                do ibnd = 1, nbnd_occ(ikk)
                   call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsi(1, ibnd), 1)
                enddo
@@ -319,11 +310,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
               conv_root = .true.
               call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, maxter_coul, .true.)
+                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
+                   npol, cw, maxter_coul, .true.)
 
               conv_root = .true.
-              call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
-                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, maxter_coul, .true.)
+              call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag,     &
+                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, &
+                  -cw, maxter_coul, .true.)
 
               dpsi(:,:) = dcmplx(0.0d0, 0.0d0)
               do ibnd =1 , nbnd_occ(ikk)

@@ -67,56 +67,49 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 
   implicit none
   !
-  ! counter on frequencies.
-  !
-  integer :: iw, allocatestatus
-  integer :: irr
-  !
   ! input: the irreducible representation
   ! input: the number of perturbation
   ! input: the position of the modes
   complex(DP) :: drhoscf (dfftp%nnr, nfs)
   ! output: the change of the scf charge
   complex(DP) :: dvbarein (dffts%nnr)
+  ! change of the scf potential (smooth part only)
+  complex(DP), allocatable  ::  dvscfout (:,:)
+  complex(DP)               :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
+  complex(DP), allocatable  :: dpsic(:,:,:)
+  complex(DP)               :: alphabeta(2,nbnd,maxter_coul+1)
+  ! change of rho / scf potential (output)
+  ! change of scf potential (output)
+  complex(DP), allocatable  :: ldos (:,:), ldoss (:,:), mixin(:), mixout(:), &
+                               dbecsum (:,:,:)
+  complex(kind=DP)         :: ZDOTC
+  complex(DP)              :: cw
+  complex(DP), allocatable :: etc(:,:)
 
-! HL prec
-! HL careful now... complexifying preconditioner:
+  ! HL careful now... complexifying preconditioner:
   real(DP) , allocatable :: h_diag (:,:)
-! h_diag: diagonal part of the Hamiltonian
-! complex(DP) , allocatable :: h_diag (:,:)
+  ! h_diag: diagonal part of the Hamiltonian
+  ! complex(DP) , allocatable :: h_diag (:,:)
   real(DP) :: thresh, anorm, averlt, dr2
-  real(DP) :: x, a, b, norm
-  real(DP) :: xkloc(3)
-
+  real(DP) :: x, a, b
   ! thresh: convergence threshold
   ! anorm : the norm of the error
   ! averlt: average number of iterations
   ! dr2   : self-consistency error
   real(DP) :: dos_ef, weight, aux_avg (2)
-
   ! Misc variables for metals
   ! dos_ef: density of states at Ef
   real(DP), external :: w0gauss, wgauss
-  ! change of the scf potential (smooth part only)
-  complex(DP), allocatable  ::  dvscfout (:,:)
-! complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
-
-  ! change of rho / scf potential (output)
-  ! change of scf potential (output)
-  complex(DP), allocatable :: ldos (:,:), ldoss (:,:), mixin(:), mixout(:), &
-                              dbecsum (:,:,:)
-  complex(DP) :: cw
-  complex(DP), allocatable :: etc(:,:)
-
-  !For approx, mixing scheme.
+  ! For approx, mixing scheme.
   real(kind=DP) :: DZNRM2
-  complex(kind=DP) :: ZDOTC
-  external ZDOTC, DZNRM2
+  real(DP) :: tcpu, get_clock ! timing variables
+  real(DP) :: meandvb
+  !
+  ! counter on frequencies.
+  !
+  integer :: iw, allocatestatus
+  integer :: irr
 
-  logical :: conv_root,  & ! true if linear system is converged
-             exst,       & ! used to open the recover file
-             lmetq0,     & ! true if xq=(0,0,0) in a metal
-             cgsolver          
   
   integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
@@ -139,15 +132,17 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
              igpert,     & ! bare perturbation g vector.
              lmres         ! number of gmres iterations to include when using bicgstabl.
 
-  REAL(DP) :: tcpu, get_clock ! timing variables
-  REAL(DP) :: meandvb
-  INTEGER                   :: gveccount
-  INTEGER     :: niters(nbnd)
-  COMPLEX(DP) :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
-  COMPLEX(DP), ALLOCATABLE :: dpsic(:,:,:)
-  COMPLEX(DP) :: alphabeta(2,nbnd,maxter_coul+1)
+  integer  :: gveccount
+  integer  :: niters(nbnd)
+
+  logical :: conv_root,  & ! true if linear system is converged
+             exst,       & ! used to open the recover file
+             lmetq0      ! true if xq=(0,0,0) in a metal
+
+  external ZDOTC, DZNRM2
   external cg_psi, ch_psi_all, h_psi_all, ch_psi_all_green
-  IF (rec_code_read > 20 ) RETURN
+
+  if (rec_code_read > 20 ) RETURN
   irr    = 1
   ipert  = 1
   lter   = 0
@@ -162,7 +157,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   iter0 = 0
   convt =.FALSE.
   where_rec='no_recover'
-  IF (iter0==-1000) iter0=0
+  if (iter0==-1000) iter0=0
 !No self-consistency:
   do kter = 1, 1
      iter = kter + iter0
@@ -206,18 +201,18 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
     h_diag = 0.d0
-    IF(prec_direct) THEN
+    if(prec_direct) THEN
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
               h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
            enddo
-           IF (noncolin) THEN
+           if (noncolin) THEN
               do ig = 1, npwq
                  h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
               enddo
-           END IF
+           END if
         enddo
-    ELSE IF (prec_shift) THEN
+    else if (prec_shift) THEN
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
               !if(g2kin(ig).le.(ecutprec)) then
@@ -227,9 +222,9 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
               !endif
            enddo
         enddo
-    ELSE
+    else
        h_diag = 1.0d0
-    ENDIF
+    endif
         mode = 1
         nrec = ik
         call dvqpsi_us (dvbarein, ik, .false.)
@@ -245,7 +240,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         thresh    = tr2_gw
         conv_root = .true.
         etc(:,:)  = CMPLX(et(:,:), 0.0d0 , kind=DP)
-   IF(prec_direct) then
+   if(prec_direct) then
      do iw = 1, nfs
         cw    = fiu(iw)
         !first frequency in list should be zero.
@@ -254,13 +249,15 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
         else
                  CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,1), h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw,maxter_coul, .true.)
+                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),          &
+                      npol, cw,maxter_coul, .true.)
                  CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,2), h_diag, &
-                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw,maxter_coul, .true.)
+                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol,   &
+                      -cw,maxter_coul, .true.)
                  dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsit(:,:,1) + dpsit(:,:,2))
         endif
      enddo
-   ELSE 
+   else 
         call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
                              npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
                              npol, niters, alphabeta, .false.)
@@ -276,49 +273,47 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !       dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
         call zscal (npwx*npol*nbnd*nfs, dcmplx(0.5d0, 0.0d0), dpsi(1,1,1), 1)
         call zaxpy (npwx*npol*nbnd*nfs, dcmplx(0.5d0,0.0d0), dpsit(1,1,1), 1, dpsi(1,1,1), 1)
-
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_coul) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
            endif
         enddo
-   ENDIF
-        ltaver = ltaver + lter
-        lintercall = lintercall + 1
-        nrec1 =  ik
-        weight = wk (ikk)
-        do iw = 1 , nfs
-              call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
-                                 dbecsum(1,1,current_spin), dpsi(:,:,iw))
-        enddo
-     enddo !kpoints
-!should only sum once!
+   endif
+      ltaver = ltaver + lter
+      lintercall = lintercall + 1
+      nrec1 =  ik
+      weight = wk (ikk)
+      do iw = 1 , nfs
+            call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
+                               dbecsum(1,1,current_spin), dpsi(:,:,iw))
+      enddo
+   enddo !kpoints
+
      call mp_sum ( drhoscf(:,:), inter_pool_comm )
-!do iw =1,nfs
-!     call syme (drhoscf(1,iw))
-!enddo
+
      do iw = 1, nfs
         call zcopy (dfftp%nnr*nspin_mag, drhoscf(1,iw),1, dvscfout(1,iw),1)
      enddo
 !!!!!!!NEED THIS FOR ULTRASOFT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     do iw = 1, nfs
-!        call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
-!        call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
-!        call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw),1, dvscfout(1,iw),1)
-!     enddo
+!    do iw = 1, nfs
+!       call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,iw), 1, drhoscfh(1,iw), 1)
+!       call addusddens (drhoscfh(1,iw), dbecsum, imode0, npe, 0)
+!       call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,iw),1, dvscfout(1,iw),1)
+!    enddo
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! SGW: here we enforce zero average variation of the charge density
 ! if the bare perturbation does not have a constant term
 ! (otherwise the numerical error, coupled with a small denominator
 ! in the Coulomb term, gives rise to a spurious dvscf response)
 ! One wing of the dielectric matrix is particularly badly behaved 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0) / float(dffts%nnr)
     do iw = 1, nfs 
-          if (meandvb.lt.1.d-8) then 
-             CALL fwfft  ('Dense', dvscfout(:,iw), dfftp)
-             dvscfout  (nl(1), iw) = dcmplx(0.d0, 0.0d0)
-             CALL invfft ('Dense', dvscfout(:,iw), dfftp)
-          endif
+       if (meandvb.lt.1.d-8) then 
+          CALL fwfft  ('Dense', dvscfout(:,iw), dfftp)
+          dvscfout  (nl(1), iw) = dcmplx(0.d0, 0.0d0)
+          CALL invfft ('Dense', dvscfout(:,iw), dfftp)
+       endif
     enddo
     !
     !   After the loop over the perturbations we have the linear change
