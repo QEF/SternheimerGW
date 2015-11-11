@@ -1,30 +1,33 @@
 # Makefile for dielectric postprocessing (PP)
-include ../../../make.sys
+#
+ESPRESSO=../../..
+include $(ESPRESSO)/make.sys
+
 # location of needed modules
-MODFLAGS= $(MOD_FLAG)../../../iotk/src $(MOD_FLAG)../../../Modules \
-          $(MOD_FLAG)../../../PW/src $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \
+          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG).
+
+IFLAGS=
 
 SIGVISOBJS = \
 sigmapp.o\
 sigmadens.o
 
-PWOBJS = ../../../PW/src/libpw.a
-QEOBJS = ../../../Modules/libqemod.a
-PPOBJS = ../../../PP/src/libpp.a
+PWOBJS = $(ESPRESSO)/PW/src/libpw.a
+QEMODS = $(ESPRESSO)/Modules/libqemod.a
+LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
+TLDEPS= bindir mods libs pw-lib
 
-MODULES = $(PWOBJS) $(QEOBJS) $(PPOBJS)
+all: libsigvis.a sigvis.x
 
-LIBOBJS = ../../../flib/ptools.a ../../../flib/flib.a ../../../clib/clib.a ../../../iotk/src/libiotk.a 
+sigvis.x : sigmapp.o libsigvis.a $(PWOBJS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -g -traceback -o sigma_vis.x sigmapp.o libsigvis.a \
+		$(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
 
-all: sigvis.x
-
-libsigvis.a : $(SIGVISOBJS)
+libsigvis.a : $(SIGVISOBJS) 
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
 
-sigvis.x : sigmapp.o libsigvis.a $(MODULES) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -g -traceback -o sigma_vis.x sigmapp.o libsigvis.a \
-	$(MODULES) $(LIBOBJS) $(LIBS)
 
 clean :
 	- /bin/rm -f *.x *.o *~ *.F90 *.d *.mod *.i *.L

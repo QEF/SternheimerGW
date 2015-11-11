@@ -51,9 +51,11 @@ subroutine ch_psi_all (n, h, ah, e, cw, ik, m)
   ! the product of the S matrix and h
 
   call start_clock ('ch_psi')
+
   allocate (ps  ( nbnd , m))    
-  allocate (hpsi( npwx , m))    
-  allocate (spsi( npwx , m))    
+  allocate (hpsi( npwx*npol , m))    
+  allocate (spsi( npwx*npol , m))    
+
   hpsi (:,:) = (0.d0, 0.d0)
   spsi (:,:) = (0.d0, 0.d0)
   !
@@ -86,17 +88,29 @@ subroutine ch_psi_all (n, h, ah, e, cw, ik, m)
   ikq = ikqs(ik)
   ps (:,:) = (0.d0, 0.d0)
 
-  call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
-       npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
-!HL need to remember the projector should be double complex
+  IF (noncolin) THEN
+      CALL zgemm ('C', 'N', nbnd_occ (ikq) , m, npwx*npol, (1.d0, 0.d0) , evq, &
+           npwx*npol, spsi, npwx*npol, (0.d0, 0.d0) , ps, nbnd)
+  ELSE
+     call zgemm ('C', 'N', nbnd_occ (ikq) , m, n, (1.d0, 0.d0) , evq, &
+          npwx, spsi, npwx, (0.d0, 0.d0) , ps, nbnd)
+  ENDIF
   ps (:,:) = ps(:,:) * dcmplx(alpha_pv, 0.0d0)
 
-  hpsi (:,:) = (0.d0, 0.d0)
-  call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
-       npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
-  spsi(:,:) = hpsi(:,:)
+  CALL mp_sum ( ps, intra_bgrp_comm )
 
-!And apply S again
+  hpsi (:,:) = (0.d0, 0.d0)
+  IF (noncolin) THEN
+      CALL zgemm ('N', 'N', npwx*npol, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+           npwx*npol, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx*npol)
+  ELSE
+      call zgemm ('N', 'N', n, m, nbnd_occ (ikq) , (1.d0, 0.d0) , evq, &
+           npwx, ps, nbnd, (1.d0, 0.d0) , hpsi, npwx)
+  ENDIF
+  spsi(:,:) = hpsi(:,:)
+  !
+  !And apply S again
+  !
   call calbec (n, vkb, hpsi, becp, m)
   call s_psi (npwx, n, m, hpsi, spsi)
   do ibnd = 1, m

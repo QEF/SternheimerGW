@@ -220,7 +220,7 @@
         do ibnd = 1, nbnd
            if (et (ibnd, ik) .lt.target) nbnd_occ (ik) = ibnd
         enddo
-        if (nbnd_occ (ik) .eq.nbnd) WRITE( stdout, '(5x,/,&
+        if (nbnd_occ (ik) .eq. nbnd) WRITE( stdout, '(5x,/,&
              &"Possibly too few bands at point ", i4,3f10.5)') &
              ik,  (xk (ipol, ik) , ipol = 1, 3)
      enddo

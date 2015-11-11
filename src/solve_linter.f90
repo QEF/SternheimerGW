@@ -160,7 +160,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   lter   = 0
   lmres  = 1
 
-!HLallocate (hpsi(npwx*npol, 4)) ! Test array for whether linear system is being properly solved
   call start_clock ('solve_linter')
 
   allocate (dvscfout ( dfftp%nnr , nspin_mag))    
@@ -250,102 +249,106 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
            END IF
         enddo
 !HL indices freezing perturbations.
-           nrec = ik
+        nrec = ik
 !and now adds the contribution of the self consistent term
-           if (where_rec =='solve_lint'.or.iter>1) then
-             ! After the first iteration dvbare_q*psi_kpoint is read from file
-              call get_buffer (dvpsi, lrbar, iubar, nrec)
-             ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
-             ! dvscf_q from previous iteration (mix_potential)
-              call start_clock ('vpsifft')
-              do ibnd = 1, nbnd_occ (ikk)
-                 call cft_wave (evc (1, ibnd), aux1, +1)
-                 call apply_dpot(aux1, dvscfins(1,1), current_spin)
-                 call cft_wave (dvpsi (1, ibnd), aux1, -1)
-              enddo
-              call stop_clock ('vpsifft')
-              !  In the case of US pseudopotentials there is an additional
-              !  selfconsist term which comes from the dependence of D on
-              !  V_{eff} on the bare change of the potential
-              !
-              !Need to check this for ultrasoft              
-              !HL THIS TERM PROBABLY NEEDS TO BE INCLUDED.
-              !KC: This term needs to be included for USPP.
-              !KC: add the augmentation charge term for dvscf
-            !!  call adddvscf (1, ik)
-           else
-               call dvqpsi_us (dvbarein, ik, .false.)
-            ! USPP
-            ! add the augmentation charge term for dvext and dbext
-            ! call adddvscf (1, ik)
-              call save_buffer (dvpsi, lrbar, iubar, nrec)
-           endif
+        if (where_rec =='solve_lint'.or.iter>1) then
+          ! After the first iteration dvbare_q*psi_kpoint is read from file
+           call get_buffer (dvpsi, lrbar, iubar, nrec)
+
+           call start_clock ('vpsifft')
+           do ibnd = 1, nbnd_occ (ikk)
+              call cft_wave (evc (1, ibnd), aux1, +1)
+              call apply_dpot(aux1, dvscfins(1,1), current_spin)
+              call cft_wave (dvpsi (1, ibnd), aux1, -1)
+           enddo
+           call stop_clock ('vpsifft')
+           !  In the case of US pseudopotentials there is an additional
+           !  selfconsist term which comes from the dependence of D on
+           !  V_{eff} on the bare change of the potential
+           !
+           !Need to check this for ultrasoft              
+           !HL THIS TERM PROBABLY NEEDS TO BE INCLUDED.
+           !KC: This term needs to be included for USPP.
+           !KC: add the augmentation charge term for dvscf
+         !!  call adddvscf (1, ik)
+        else
+            call dvqpsi_us (dvbarein, ik, .false.)
+         ! USPP
+         ! add the augmentation charge term for dvext and dbext
+         ! call adddvscf (1, ik)
+           call save_buffer (dvpsi, lrbar, iubar, nrec)
+        endif
         ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
         ! Apply -P_c^+.
         !-P_c^ = - (1-P_v^):
-           CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
+        CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi)
         
-           if(where_rec=='solve_lint'.or.iter > 1) then
-              if(high_io) then
-                 call get_buffer( dpsip, lrdwf, iudwfp, ik)
-                 call get_buffer( dpsim, lrdwf, iudwfm, ik)
-              else
-                 dpsim(:,:)     = (0.d0, 0.d0) 
-                 dpsip(:,:)     = (0.d0, 0.d0) 
-              endif
-              thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+        if(where_rec=='solve_lint'.or.iter > 1) then
+           if(high_io) then
+              call get_buffer( dpsip, lrdwf, iudwfp, ik)
+              if(iw.gt.1) call get_buffer( dpsim, lrdwf, iudwfm, ik)
            else
-            !
-            ! At the first iteration dpsi and dvscfin are set to zero
-            !
-             dpsi(:,:)      = (0.d0, 0.d0) 
-             dpsim(:,:)     = (0.d0, 0.d0) 
-             dpsip(:,:)     = (0.d0, 0.d0) 
-            !if(iw.ge.2.and.high_io) then
-            !  call get_buffer( dpsip, lrdwf, iudwfp, ik)
-            !  call get_buffer( dpsim, lrdwf, iudwfm, ik)
-            !endif
-              dvscfin(:, :)  = (0.d0, 0.d0)
-              dvscfout(:, :) = (0.d0, 0.d0)
-            !starting threshold for iterative solution of the linear system
-              thresh = 1.0d-2
+              dpsim(:,:)     = (0.d0, 0.d0) 
+              dpsip(:,:)     = (0.d0, 0.d0) 
            endif
+           thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
+        else
+         !
+         ! At the first iteration dpsi and dvscfin are set to zero
+         !
+          dpsi(:,:)      = (0.d0, 0.d0) 
+          dpsim(:,:)     = (0.d0, 0.d0) 
+          dpsip(:,:)     = (0.d0, 0.d0) 
+          dvscfin(:, :)  = (0.d0, 0.d0)
+          dvscfout(:, :) = (0.d0, 0.d0)
+         !starting threshold for iterative solution of the linear system
+           thresh = 1.0d-2
+        endif
 
-       conv_root = .true.
-       etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
-       cw        = fiu(iw) 
+        conv_root = .true.
+        etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
+        cw        = fiu(iw) 
 
-       if (iw.eq.1) then
+        if (iw.eq.1) then
                call cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
                do ibnd = 1, nbnd_occ(ikk)
-                  call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsim(1, ibnd), 1)
                   call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsi(1, ibnd), 1)
                enddo
-       else 
+        else 
+
+              conv_root = .true.
               call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, cw, maxter_coul, .true.)
+
+              conv_root = .true.
               call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, -cw, maxter_coul, .true.)
+
               dpsi(:,:) = dcmplx(0.0d0, 0.0d0)
               do ibnd =1 , nbnd_occ(ikk)
                  call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsim(1,ibnd), 1, dpsi(1,ibnd), 1)
                  call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsip(1,ibnd), 1, dpsi(1,ibnd), 1)
               enddo
-       endif
+        endif
 
-       ltaver = ltaver + lter
-       lintercall = lintercall + 1
+        ltaver = ltaver + lter
+        lintercall = lintercall + 1
 
-       IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
-                  &              " solve_linter: root not converged ", e10.3 , "iter ", i4)')  &
-                  &                ik , ibnd, anorm, iter
+!        WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
+!          &               " solve_linter:  ", e10.3 , "iter ", i4)')  &
+!          &                 ik , nbnd_occ(ikk), anorm, iter
+
+!        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
+!                  &              " solve_linter: root not converged ", e10.3 , "iter ", i4)')  &
+!                  &                ik , ibnd, anorm, iter
+
            nrec1 =  ik
          !calculates dvscf, sum over k => dvscf_q_ipert
          !incdrhoscf:  This routine computes the change of the charge density due to the
          !HL low/io
           if(high_io) then
-             call save_buffer (dpsim, lrdwf, iudwfp, ik)
+             if(iw.gt.1) call save_buffer (dpsim, lrdwf, iudwfp, ik)
              call save_buffer (dpsip, lrdwf, iudwfm, ik)
           endif
          ! perturbation. It is called at the end of the computation of the
@@ -363,8 +366,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      enddo !on k-points
 
      call mp_sum ( drhoscf, inter_pool_comm )
-!     call syme (drhoscf)
- 
+
      if (doublegrid) then
          do is = 1, nspin_mag
             call cinterpolate (drhoscfh(1,1), drhoscf(1,1), 1)
@@ -372,20 +374,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      else
             call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,1), 1, drhoscfh(1,1), 1)
      endif
-     !
-     !In the noncolinear, spin-orbit case rotate dbecsum
-     !
-     !IF (noncolin.and.okvan) CALL set_dbecsum_nc(dbecsum_nc, dbecsum, npe)
-     !
-     !Now we compute for all perturbations the total charge and potential
-     !
-!HL NEED FOR ULTRASOFT:
-!    call addusddens (drhoscfh, dbecsum, imode0, npe, 0)
-!    if (.not.lgamma_gamma) then
-          !call psyme (dvscfout)
-!         IF ( noncolin.and.domag ) CALL psym_dmage(dvscfout)
-!    endif
-
+!
+! In the noncolinear, spin-orbit case rotate dbecsum
+! IF (noncolin.and.okvan) CALL set_dbecsum_nc(dbecsum_nc, dbecsum, npe)
+! Now we compute for all perturbations the total charge and potential
+!
+! HL NEED FOR ULTRASOFT:
+!    call addusddens (drhoscfh, dbecsum, 0)
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
 
      meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
@@ -398,7 +393,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
 ! for q->0 the Fermi level can shift.
 ! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)
-!
      call dv_of_drho (1, dvscfout(1,1), .true.)
 !    nmix_gw = 4
      if (iw.eq.1) then

@@ -52,10 +52,12 @@ subroutine h_psi_all (n, h, ah, e, ik, m)
   ! the product of the Hamiltonian and h
   ! the product of the S matrix and h
 
-  call start_clock ('ch_psi')
+  call start_clock ('h_psi')
+
   allocate (ps  ( nbnd , m))    
   allocate (hpsi( npwx*npol , m))    
   allocate (spsi( npwx*npol , m))    
+
   hpsi (:,:) = (0.d0, 0.d0)
   spsi (:,:) = (0.d0, 0.d0)
   !
@@ -131,6 +133,6 @@ subroutine h_psi_all (n, h, ah, e, ik, m)
   deallocate (hpsi)
   deallocate (ps)
   call stop_clock ('last')
-  call stop_clock ('ch_psi')
+  call stop_clock ('h_psi')
   return
 end subroutine h_psi_all

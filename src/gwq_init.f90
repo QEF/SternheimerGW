@@ -83,9 +83,6 @@ SUBROUTINE gwq_init()
   !
   ! ... a0) compute rhocore for each atomic-type if needed for nlcc
   !
-  !IF ( nlcc_any ) WRITE(6, '(" NLCC ")')
-  !IF ( nlcc_any ) CALL set_drhoc( xq )
-!BRUTAL WAY OF BROADCASTING
   nks    = kunit * ( nkstot / kunit / npool )
   rest = ( nkstot - nks * npool ) / kunit
   IF ( ( my_pool_id + 1 ) <= rest ) nks = nks + kunit
@@ -135,14 +132,16 @@ SUBROUTINE gwq_init()
      !
      CALL get_buffer( evq, lrwfc, iuwfc, ikq )
      !
+     !
+     ! diagonal elements of the unperturbed Hamiltonian,
+     ! needed for preconditioning
+     !
      do ig = 1, npwq
         g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
                        (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                        (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
      enddo
-     !
      aux1 = (0.d0,0.d0)
-     !
      DO ig = 1, npwq
         aux1 (ig,1:nbnd_occ(ikk)) = g2kin (ig) * evq (ig, 1:nbnd_occ(ikk))
      END DO
@@ -155,7 +154,7 @@ SUBROUTINE gwq_init()
         END DO
      END IF
      !
-     DO ibnd=1,nbnd_occ(ikk)
+     DO ibnd= 1, nbnd_occ(ikk)
         eprec (ibnd,ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
         eprectot (ibnd, nbase+ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
      !   write(1000+mpime,*) eprec(ibnd,ik), ik
@@ -165,6 +164,7 @@ SUBROUTINE gwq_init()
   END DO
   !
   CALL mp_sum (eprec, intra_bgrp_comm)
+  !CALL mp_sum (eprec, intra_pool_comm)
   CALL mp_sum   ( eprectot, inter_pool_comm )
   !
   DEALLOCATE( aux1 )

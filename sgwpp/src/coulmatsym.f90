@@ -83,11 +83,11 @@ IMPLICIT NONE
   CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
   ALLOCATE(vc(ngcoul,ngcoul))
-!  First calculate dosef: 
-!  dosef = dos_ef (ngaussw, degaussw0, ef0, etf, wkf, nksf, nbndsub)
-!  N(Ef) in the equation for lambda is the DOS per spin
-!  dosef = dosef / two
-!  CALCULATE Dos at Fermi Level gaussian:
+! First calculate dosef: 
+! dosef = dos_ef (ngaussw, degaussw0, ef0, etf, wkf, nksf, nbndsub)
+! N(Ef) in the equation for lambda is the DOS per spin
+! dosef = dosef / two
+! CALCULATE Dos at Fermi Level gaussian:
   if(ltetra) then
    WRITE( stdout,'(/5x,"USING TETRAHEDRAL INTEGRATION")')
    CALL dos_t(et,nspin,nbnd, nks,ntetra,tetra, ef, DOSofE)
@@ -158,14 +158,17 @@ IMPLICIT NONE
           CALL invfft ('Wave', psink(:,ibnd), dffts)
 !MODIFYING FOR STAR Q
           do isymop = 1, nsym
-!        x_k' = x_k-S^-1*xq
+!x_k' = x_k-S^-1*xq
             xq(:) = xk(:,iq)
             CALL rotate(xq, aq, s, nsym, invs(isymop))
             xkp(:) = xk(:, ik)-aq(:)
-!        Find symmop what gives us k'
+!Find symmop what gives us k'
             inv_q=.false.
             call find_qG_ibz(xkp, s, iqrec, isym, nig0, found_q, inv_q)
-            if(iqrec.gt.nks) call errore('coulmatsym','COULD NOT MAP k+q to IBZ',1)
+            if(iqrec.gt.nks) then
+               write(1000+mpime,*) xkp
+               call errore('coulmatsym','COULD NOT MAP k+q to IBZ',1)
+            endif
             ikp = iqrec
             psinpkp(:,:) = (0.0d0,0.0d0)
             CALL gk_sort (xk(1,iqrec), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
@@ -195,10 +198,8 @@ IMPLICIT NONE
 !Eigenvalues
              enk = (et(ibnd, ik) - ef)
              enpkp = (et(jbnd, ikp) - ef)
-
              w0g1 = w0gauss ( enk / degaussw0,  ngauss) / degaussw0
              w0g2 = w0gauss ( enpkp / degaussw0, ngauss) / degaussw0
-
 !Again we want per spin.
              vcnknpkp = 0.0d0
              if(.not.do_lind) then
