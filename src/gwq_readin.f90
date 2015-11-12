@@ -166,7 +166,7 @@ SUBROUTINE gwq_readin()
   ! ... set default values for variables in namelist
   !
   tr2_gw       = 1.D-4
-  tr2_green    = 1.D-4
+  tr2_green    = 1.D-3
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
   !for bulk systems alpha_mix = 0.7 is standard
@@ -174,7 +174,7 @@ SUBROUTINE gwq_readin()
   !be obtained with alpha_mix = 0.3.
   alpha_mix(1) = 0.7D0
   niter_gw     = maxter
-  nmix_gw      = 4
+  nmix_gw      = 3
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -208,7 +208,7 @@ SUBROUTINE gwq_readin()
   last_q       =-1000
   ldisp        =.FALSE.
   lrpa         =.FALSE.
-  maxter_coul  = 120
+  maxter_coul  = 160
   maxter_green = 220
   w_green_start = 1
 

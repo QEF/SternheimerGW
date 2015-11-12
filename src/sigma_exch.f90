@@ -200,8 +200,8 @@ IMPLICIT NONE
                barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = &
 &              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
         else  
-               !barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(rcut, 0.0d0)
-               barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(0.0d0, 0.0d0)
+               barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(rcut, 0.0d0)
+!              barcoul(gmapsym(ig,invs(isymop)), gmapsym(ig, invs(isymop))) = dcmplx(0.0d0, 0.0d0)
         endif
        enddo
      endif

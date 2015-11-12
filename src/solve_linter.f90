@@ -341,8 +341,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
          !incdrhoscf:  This routine computes the change of the charge density due to the
          !HL low/io
           if(high_io) then
-             if(iw.gt.1) call save_buffer (dpsim, lrdwf, iudwfp, ik)
-             call save_buffer (dpsip, lrdwf, iudwfm, ik)
+             if(iw.gt.1) call save_buffer (dpsim, lrdwf, iudwfm, ik)
+             call save_buffer (dpsip, lrdwf, iudwfp, ik)
           endif
          ! perturbation. It is called at the end of the computation of the
          ! change of the wavefunction for a given k point.
@@ -439,8 +439,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !         "secs av.it.:",f5.1)') iter, tcpu, averlt
 !   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
 !          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
-   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
   drhoscf(:,:) = dvscfin(:,:)
   
