@@ -212,18 +212,12 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
               enddo
            END if
         enddo
-    else if (prec_shift) THEN
+    else
         do ibnd = 1, nbnd_occ (ikk)
            do ig = 1, npwq
-              !if(g2kin(ig).le.(ecutprec)) then
                  h_diag(ig,ibnd) =  1.0d0
-              !else
-              !   h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
-              !endif
            enddo
         enddo
-    else
-       h_diag = 1.0d0
     endif
         mode = 1
         nrec = ik

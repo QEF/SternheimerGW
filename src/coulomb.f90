@@ -127,7 +127,7 @@ DO ig = igstart, igstop
               CALL fwfft('Dense', drhoscfs(:,isp), dffts)
            ENDDO
            IF(ionode) THEN
-             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nls(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
+             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)'), drhoscfs(nls(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
              DO isp = 1, nspin_mag
                DO igp = 1, sigma_c_st%ngmt
                   scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp)

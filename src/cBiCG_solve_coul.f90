@@ -142,7 +142,7 @@ IMPLICIT NONE
             lbnd = lbnd-1
             anorm = sqrt(rho(ibnd))
             if (anorm.lt.ethr) conv (ibnd) = 1
-        !band dependent number of iterations
+        !   band dependent number of iterations
             niters(ibnd) = iter
         endif
      enddo
