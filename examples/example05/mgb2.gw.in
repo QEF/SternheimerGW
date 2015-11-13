@@ -20,7 +20,7 @@ Screened Coulomb for the full mesh.
   modielec  = .false.
   multishift    = .true.
   w_of_q_start  = 1
-  do_epsil      = .true.
+  do_epsil      = .false.
   solve_direct  = .false.
   do_imag       = .true.
   do_coulomb    = .true.
