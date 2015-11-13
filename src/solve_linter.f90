@@ -332,9 +332,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !          &               " solve_linter:  ", e10.3 , "iter ", i4)')  &
 !          &                 ik , nbnd_occ(ikk), anorm, iter
 
-!        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
-!                  &              " solve_linter: root not converged ", e10.3 , "iter ", i4)')  &
-!                  &                ik , ibnd, anorm, iter
+        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
+                  &              " solve_linter: root not converged ", e10.3 , "iter ", i4)')  &
+                  &                ik , nbnd_occ(ikk), anorm, iter
 
            nrec1 =  ik
          !calculates dvscf, sum over k => dvscf_q_ipert
@@ -385,7 +385,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !
 ! IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
 ! for q->0 the Fermi level can shift.
-! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss,dos_ef,irr,npe,.false.)
+! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss, dos_ef, irr,npe,.false.)
      call dv_of_drho (1, dvscfout(1,1), .true.)
 !    nmix_gw = 4
      if (iw.eq.1) then
@@ -435,8 +435,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 155 iter0=0
 
-!   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!         "secs av.it.:",f5.1)') iter, tcpu, averlt
+   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+         "secs av.it.:",f5.1)') iter, tcpu, averlt
 !   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
 !          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
 !   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
