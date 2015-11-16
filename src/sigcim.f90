@@ -13,7 +13,7 @@ SUBROUTINE sigma_c_im(ik0)
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul
-  USE klist,         ONLY : wk, xk, nkstot, nks
+  USE klist,         ONLY : wk, xk, nkstot, nks, lgauss
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE eqv,           ONLY : evq, eprec
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
@@ -29,6 +29,7 @@ SUBROUTINE sigma_c_im(ik0)
   USE modes,         ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
   USE wavefunctions_module, ONLY : evc
   USE control_flags,        ONLY : noinv
+  USE ener,          ONLY : ef
   USE gwsigma,       ONLY : sigma_c_st
   USE mp_global,     ONLY : mp_global_end
   USE mp_world,      ONLY : nproc, mpime
@@ -174,7 +175,13 @@ SUBROUTINE sigma_c_im(ik0)
   WRITE(6,'("Starting Frequency Integration")')
 !kpoints split between pools
   CALL get_homo_lumo (ehomo, elumo)
-  mu = ehomo + 0.5d0*(elumo-ehomo)
+
+  if(.not.lgauss) then
+    mu = ehomo + 0.5d0*(elumo-ehomo)
+  else
+    mu = ef
+  endif
+
   call mp_barrier(inter_pool_comm)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)

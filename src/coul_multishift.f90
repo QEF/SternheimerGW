@@ -15,21 +15,21 @@ SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, f
 IMPLICIT NONE
 !coefficient of quadratic form
   INTEGER :: nfreq, iw, iwp
-  COMPLEX(DP)   :: alpha(nbnd), beta(nbnd)
+  complex(DP)   :: alpha(nbnd), beta(nbnd)
   complex(kind=DP), allocatable :: u_sig (:,:,:), u_sig_old(:,:,:), r(:,:)
   complex(kind=DP) :: alpha_old(nbnd), beta_old(nbnd) , beta_sig(nbnd, nfreq), alpha_sig(nbnd, nfreq)
 !pi coefficients for each frequency up to nfreqgreen.
   complex(kind=DP) :: pi_coeff (nbnd, nfreq), pi_coeff_old (nbnd, nfreq), pi_coeff_new(nbnd, nfreq)
   complex(DP)      :: w_ryd(nfreq)
-!  REAL(DP)     :: h_diag(ndmx, nbnd)
+!  real(DP)     :: h_diag(ndmx, nbnd)
 
-REAL(DP) :: anorm(nwgreen)
+  real(DP) :: anorm(nwgreen)
 
 !variable for reading in the stored alpha beta coefficients.
-  COMPLEX(DP)                 :: alphabeta(2, nbnd, maxter_green+1)
-  COMPLEX(DP)                 :: dpsic(ndmx, nbnd, maxter_green+1)
-  COMPLEX(DP)                 :: x_sig (ndmx, nbnd, nfreq)
-  COMPLEX(DP), PARAMETER      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
+  complex(DP)                 :: alphabeta(2, nbnd, maxter_green+1)
+  complex(DP)                 :: dpsic(ndmx, nbnd, maxter_green+1)
+  complex(DP)                 :: x_sig (ndmx, nbnd, nfreq)
+  complex(DP), PARAMETER      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
   complex(DP), external       :: zdotc
   complex(DP)                 :: freq(nfreq)
   integer :: ndmx, & ! input: the maximum dimension of the vectors
@@ -115,11 +115,5 @@ REAL(DP) :: anorm(nwgreen)
               enddo
            enddo!iw
   enddo!iter
-!transform solution vector x = E^{-T}x':
-!  do iw = 1, nfreq
-!     do ibnd = 1, nbnd
-!           call cg2_psi (ndmx, ndim, 1, x_sig(1,ibnd,iw), h_diag(1,ibnd))
-!     enddo
-!  enddo
-  DEALLOCATE(u_sig, u_sig_old)
+  deallocate(u_sig, u_sig_old)
 END SUBROUTINE coul_multishift

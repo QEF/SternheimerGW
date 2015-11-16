@@ -100,6 +100,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
   if(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
 
   ci = (0.0d0, 1.0d0)
+  WRITE(1000+mpime, *) mu
 !Convert freq array generated in freqbins into rydbergs.
   do iw =1, nwgreen
      w_ryd(iw) = w0pmw(1,iw)/RYTOEV
@@ -167,7 +168,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                    npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)
-            !call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
              call green_multishift_im(npwx, 2*sigma_c_st%ngmt, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
              if (niters(gveccount).ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
