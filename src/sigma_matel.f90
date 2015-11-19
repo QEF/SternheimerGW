@@ -287,7 +287,7 @@ endif
             do ibnd = 1, nbnd_sig
                evc_tmp_i(:) = czero
              do jbnd = 1, nbnd_sig
-               evc_tmp_j(:) = czero
+                evc_tmp_j(:) = czero
               do iw = 1, nwsigma
                  do ig = 1, counter
                     evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)

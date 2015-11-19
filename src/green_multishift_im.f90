@@ -17,15 +17,15 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
 
 !coefficient of quadratic form
   complex(dp)   :: alpha, beta
-  complex(kind=dp), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:), r_sig(:,:)
+  complex(kind=dp), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:)!, r_sig(:,:)
   complex(kind=dp) :: alpha_old, beta_old , beta_sig(nfreq), alpha_sig(nfreq)
 !pi coefficients for each frequency up to nfreqgreen.
-  complex(kind=dp) :: pi_coeff (nfreq), pi_coeff_old (nfreq), pi_coeff_new(nfreq)
+  complex(kind=dp)          :: pi_coeff (nfreq), pi_coeff_old (nfreq), pi_coeff_new(nfreq)
 !variable for reading in the stored alpha beta coefficients.
-  complex(dp)                 :: alphabeta(2)
-  complex(dp), parameter      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
-  complex(dp), external       :: zdotc
-  complex(dp), INTENT(OUT) :: x_sig (ndmx,nfreq)
+  complex(dp)               :: alphabeta(2)
+  complex(dp), parameter    :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
+  complex(dp), external     :: zdotc
+  complex(dp), intent(out)  :: x_sig (ndmx,nfreq)
 
   real(dp) :: w_ryd(nwgreen)
   real(dp) :: mu
@@ -40,8 +40,8 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
               nrec 
   integer  :: ios
 
-  allocate(r(ndim))
-  allocate(u_sig(ndim,nfreq), u_sig_old(ndim,nfreq), r_sig(ndim,nfreq))
+  allocate (r(ndim))
+  allocate (u_sig(ndim,nfreq), u_sig_old(ndim,nfreq)) !, r_sig(ndim,nfreq))
 
 !green shifted system.
   u_sig(:,:) = czero
@@ -64,7 +64,7 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
                  !u_sig(:,iw) = r(:)
                  !r_sig(:,iw) = r(:)
                  call ZCOPY (ndim, r (1), 1, u_sig (1, iw), 1)
-                 call ZCOPY (ndim, r (1), 1, r_sig (1, iw), 1)
+                 !call ZCOPY (ndim, r (1), 1, r_sig (1, iw), 1)
               enddo
               alpha_old         = (1.d0,0.0d0)
               beta_old          = (1.d0,0.0d0)
@@ -108,5 +108,5 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
   deallocate(r)
   deallocate(u_sig)
   deallocate(u_sig_old) 
-  deallocate(r_sig)
+  !deallocate(r_sig)
 END SUBROUTINE green_multishift_im

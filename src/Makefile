@@ -93,7 +93,8 @@ rotate.o\
 coulpade.o\
 star_q.o\
 wavecut.o\
-find_xk_uniq.o
+find_xk_uniq.o\
+coul_multi.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a

@@ -75,8 +75,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   complex(DP) :: dvbarein (dffts%nnr)
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable  ::  dvscfout (:,:)
-  complex(DP)               :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
-  complex(DP), allocatable  :: dpsic(:,:,:)
   complex(DP)               :: alphabeta(2,nbnd,maxter_coul+1)
   ! change of rho / scf potential (output)
   ! change of scf potential (output)
@@ -142,6 +140,11 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   external ZDOTC, DZNRM2
   external cg_psi, ch_psi_all, h_psi_all, ch_psi_all_green
 
+  !complex(DP)              :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
+  !complex(DP), allocatable  :: dpsic(:,:,:)
+  complex(DP)               :: dpsi(npwx,nbnd,nfs)
+  complex(DP)               :: dpsipm(npwx, nbnd, 2*nfs-1)
+
   if (rec_code_read > 20 ) RETURN
   irr    = 1
   ipert  = 1
@@ -153,7 +156,14 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
-  if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_coul+1))
+
+
+
+!  if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_coul+1))
+
+
+
+
   iter0 = 0
   convt =.FALSE.
   where_rec='no_recover'
@@ -189,10 +199,10 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
        !Reads unperturbed wavefuctions psi(k) and psi(k+q)
         if (nksq.gt.1) then
            if (lgamma) then
-              call get_buffer (evc, lrwfc, iuwfc, ikk)
+               call get_buffer (evc, lrwfc, iuwfc, ikk)
            else
-              call get_buffer (evc, lrwfc, iuwfc, ikk)
-              call get_buffer (evq, lrwfc, iuwfc, ikq)
+               call get_buffer (evc, lrwfc, iuwfc, ikk)
+               call get_buffer (evq, lrwfc, iuwfc, ikq)
            endif
         endif
         do ig = 1, npwq
@@ -226,8 +236,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! Apply -P_c^+.
 ! -P_c^ = - (1-P_v^):
         CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
-        if(.not.prec_direct) dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
-        dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
+!        if(.not.prec_direct) dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
+!        dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
         dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)
         alphabeta(:,:,:) =  dcmplx(0.d0, 0.d0)
         niters(:)        = 0  
@@ -242,31 +252,39 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                  CALL cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(:,:,1), h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol)
         else
-                 CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,1), h_diag, &
+                 CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsipm(:,:,1), h_diag, &
                       npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),          &
                       npol, cw,maxter_coul, .true.)
-                 CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsit(:,:,2), h_diag, &
+                 CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsipm(:,:,2), h_diag, &
                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol,   &
                       -cw,maxter_coul, .true.)
-                 dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsit(:,:,1) + dpsit(:,:,2))
+                 dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsipm(:,:,1) + dpsipm(:,:,2))
         endif
      enddo
    else 
-        call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
-                             npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
-                             npol, niters, alphabeta, .false.)
-        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
+!       call cbcg_solve_coul(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi, dpsic(1,1,1), h_diag, &
+!                            npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
+!                            npol, niters, alphabeta, .false.)
 !       dpsi = dpsi^{+}
-        dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
+!       dpsi(:,:,:)    =  dcmplx(0.d0, 0.d0)
+!       call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, fiu)
 !       dpsi(:,:,:)    = dpsit(:,:,:)
-        call zcopy(npwx*nbnd*nfs, dpsit(1,1,1), 1, dpsi(1,1,1), 1)
+!       call zcopy(npwx*nbnd*nfs, dpsit(1,1,1), 1, dpsi(1,1,1), 1)
 !       dpsi = dpsi^{+} + dpsi^{-}
-        dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
-        call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
+!       dpsit(:,:,:) = dcmplx(0.0d0, 0.0d0)
+!       call coul_multishift(npwx, npwq, nfs, niters, dpsit, dpsic, alphabeta, ((-1.0d0,0.0d0)*fiu))
 !       dpsi(:,:,:) = dcmplx(0.5d0,0.0d0)*(dpsi(:,:,:) + dpsit(:,:,:))
-        call zscal (npwx*npol*nbnd*nfs, dcmplx(0.5d0, 0.0d0), dpsi(1,1,1), 1)
-        call zaxpy (npwx*npol*nbnd*nfs, dcmplx(0.5d0,0.0d0), dpsit(1,1,1), 1, dpsi(1,1,1), 1)
+!       call zaxpy (npwx*npol*nbnd*nfs, dcmplx(0.5d0,0.0d0), dpsit(1,1,1), 1, dpsi(1,1,1), 1)
+        dpsipm(:,:,:) = dcmplx(0.0d0,0.0d0)
+        call coul_multi(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsipm, h_diag, fiu(1), 2*nfs-1, &
+                        npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),          &
+                        npol, niters, .false.)
+        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
+        dpsi(:,:,:)    = dcmplx(0.d0, 0.d0)
+        dpsi(:,:,1)    = dpsipm(:,:,1)
+        do iw = 2, nfs
+           dpsi(:,:,iw) = dcmplx(0.5d0,0.0d0)*(dpsipm(:,:,iw) + dpsipm(:,:,iw+nfs-1))
+        enddo
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_coul) then
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
@@ -278,8 +296,8 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
       nrec1 =  ik
       weight = wk (ikk)
       do iw = 1 , nfs
-            call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
-                               dbecsum(1,1,current_spin), dpsi(:,:,iw))
+         call incdrhoscf_w (drhoscf(1, iw) , weight, ik, &
+                            dbecsum(1,1,current_spin), dpsi(:,:,iw))
       enddo
    enddo !kpoints
 
@@ -332,7 +350,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
    end if
   endif
 
-  if(.not.prec_direct) deallocate(dpsic)
+!  if(.not.prec_direct) deallocate(dpsic)
   deallocate (h_diag)
   deallocate (dvscfout)
   deallocate (dbecsum)

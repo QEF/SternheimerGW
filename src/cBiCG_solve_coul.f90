@@ -98,34 +98,27 @@ IMPLICIT NONE
 !seed frequency should be cw=0
   cw = (0.0d0, 0.0d0)
   do iter = 1, maxter_coul
-        ! kter = kter + 1
-        ! g    = (-PcDv\Psi) - (H \Delta\Psi)
-        ! gt   = conjg( g)
-        ! r    = b - Ax 
-        ! rt   = conjg ( r )
+   ! kter = kter + 1
+   ! g    = (-PcDv\Psi) - (H \Delta\Psi)
+   ! gt   = conjg( g)
+   ! r    = b - Ax 
+   ! rt   = conjg ( r )
      if (iter .eq. 1) then
-        !r = b - A* x
-        !rt = conjg (r) 
-         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
+   ! r = b - A* x
+   ! rt = conjg (r) 
+        call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
         do ibnd = 1, nbnd
-!initial residual should be r = b
-        !call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
-        !dpsic(:, ibnd, iter) = d0psi(:,ibnd)
+   ! initial residual should be r = b
+   ! call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
+   ! dpsic(:, ibnd, iter) = d0psi(:,ibnd)
          call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
          call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-         if(tprec) call cg2_psi(ndmx, ndim, 1, g(1,ibnd), h_diag(1,ibnd) )
-        ! dpsic(:, ibnd, iter) = g(:,ibnd)
-         call ZCOPY (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter), 1)
-        ! p   =  inv(M) * r
-        ! pt  =  conjg ( p )
+         call zcopy (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter), 1)
+   ! p   =  inv(M) * r
+   ! pt  =  conjg ( p )
          call zcopy (ndmx*npol, g (1, ibnd), 1, h (1, ibnd), 1)
-        !  gt(:,ibnd) = conjg (g(:,ibnd) )
-        !  ht(:,ibnd) = conjg( h(:,ibnd) )
-        !  not necessary to choose tilde
-        !  gt(:,ibnd) =  (g(:,ibnd) )
-        !  ht(:,ibnd) =  (h(:,ibnd) )
-         call ZCOPY (ndmx*npol, g (1, ibnd), 1, gt(1, ibnd), 1)
-         call ZCOPY (ndmx*npol, h (1, ibnd), 1, ht(1, ibnd), 1)
+         call zcopy (ndmx*npol, g (1, ibnd), 1, gt(1, ibnd), 1)
+         call zcopy (ndmx*npol, h (1, ibnd), 1, ht(1, ibnd), 1)
         enddo
      endif!iter.eq.1
      lbnd = 0
@@ -166,8 +159,8 @@ IMPLICIT NONE
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
      if(tprec) then
         do ibnd =1, lbnd
-             call ZCOPY (ndmx*npol, hold  (1, ibnd), 1, gp  (1, ibnd), 1)
-             call ZCOPY (ndmx*npol, htold (1, ibnd), 1, gtp (1, ibnd), 1)
+             call zcopy (ndmx*npol, hold  (1, ibnd), 1, gp  (1, ibnd), 1)
+             call zcopy (ndmx*npol, htold (1, ibnd), 1, gtp (1, ibnd), 1)
              call cg2_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd))
              call cg2_psi (ndmx, ndim, 1, gtp(1,ibnd), h_diag(1,ibnd))
         enddo 
@@ -189,7 +182,7 @@ IMPLICIT NONE
             lbnd=lbnd+1
         !alpha = <\tilde{r}|M^{-1}r>/<\tilde{u}|A{u}>
         ![ the denominator is stored for subsequent use in beta ]
-            call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+            call zcopy (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
             a(lbnd) = ZDOTC (ndim, gt(1,ibnd), 1, gp(1,ibnd), 1)
             c(lbnd) = ZDOTC (ndim, ht(1,ibnd), 1, t (1,lbnd), 1)
         endif
@@ -200,39 +193,37 @@ IMPLICIT NONE
            lbnd=lbnd+1 
            alpha = a(lbnd)/c(lbnd)
            alphabeta(1,ibnd,iter) = alpha
-        !  x  = x  + alpha        * u
-         call ZAXPY (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
-        ! if(tprec) call cg3_psi (ndmx, ndim, 1, dpsi(1,ibnd), h_diag(1,ibnd))
-        !  r  = r  - alpha       * Au
-        !  \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
-         call ZAXPY (ndmx*npol, -alpha,        t  (1,lbnd), 1, g  (1,ibnd), 1)
-         call ZAXPY (ndmx*npol, -conjg(alpha), tt (1,lbnd), 1, gt (1,ibnd), 1)
-        !rp  = inv(M) * r
-        !rtp = inv(M) * rt
-         call ZCOPY (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
-         call ZCOPY (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
+!       x  = x  + alpha        * u
+         call zaxpy (ndmx*npol,  alpha,        h  (1,ibnd), 1, dpsi  (1,ibnd), 1)
+!       if(tprec) call cg3_psi (ndmx, ndim, 1, dpsi(1,ibnd), h_diag(1,ibnd))
+!       r  = r  - alpha       * Au
+!       \tilde{r} = \tilde{r} - conjg(alpha) * A^{H}\tilde{u}
+         call zaxpy (ndmx*npol, -alpha,        t  (1,lbnd), 1, g  (1,ibnd), 1)
+         call zaxpy (ndmx*npol, -conjg(alpha), tt (1,lbnd), 1, gt (1,ibnd), 1)
+!        rp  = inv(M) * r
+!        rtp = inv(M) * rt
+         call zcopy (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+         call zcopy (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
 !        nrec = iter+1
 !        call davcio (g(:,1), lrresid, iunresid, nrec, +1)
-         !dpsic(:, ibnd, iter+1) = g(:,ibnd)
-         call ZCOPY (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter+1), 1)
-
-
+!        dpsic(:, ibnd, iter+1) = g(:,ibnd)
+         call zcopy (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter+1), 1)
          a(lbnd) = ZDOTC (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
          beta = - a(lbnd) / c(lbnd)
 !        alphabeta(2) = beta
 !        call davcio (alphabeta, lralphabeta, iunalphabeta, iter, +1)
          alphabeta(2,ibnd,iter) = beta
-        ! u_{old}  = u
-        ! \tilde{u}_{old} = \tilde{u}
-         call ZCOPY (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
-         call ZCOPY (ndmx*npol, ht (1, ibnd), 1, htold (1, ibnd), 1)
+!        u_{old}  = u
+!       \tilde{u}_{old} = \tilde{u}
+         call zcopy (ndmx*npol, h  (1, ibnd), 1, hold  (1, ibnd), 1)
+         call zcopy (ndmx*npol, ht (1, ibnd), 1, htold (1, ibnd), 1)
         !new search directions
         !  u  = M^{-1}r  +  beta  * u_old
         !  \tilde{u} = M^{-1}\tilde{r} + conjg(beta) * \tilde{u}_old
-         call ZCOPY (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
-         call ZCOPY (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
-         call ZAXPY (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
-         call ZAXPY (ndmx*npol, conjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
+         call zcopy (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
+         call zcopy (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
+         call zaxpy (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
+         call zaxpy (ndmx*npol, conjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
         endif
      enddo!do ibnd
   enddo!iter

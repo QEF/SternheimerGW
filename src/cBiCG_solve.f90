@@ -129,20 +129,18 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
     ! r    = b - Ax 
     ! rt   = conjg ( r )
      if (iter .eq. 1) then
-        !r = b - A* x
         !rt = conjg (r) 
         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
         do ibnd = 1, nbnd
+        !r = A*x -b:
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
+        !r = -(A*x - b) = b - A*x
            call zscal (ndim, (-1.0d0, 0.0d0), g(1,ibnd), 1)
-           !gt(:,ibnd) = dconjg ( g(:,ibnd) )
-           !call ZCOPY (ndim, dconjg(g  (1, ibnd)), 1, gt  (1, ibnd), 1)
-           call ZCOPY (ndim, g(1, ibnd), 1, gt  (1, ibnd), 1)
-        !  p   =  inv(M) * r
-        !  pt  =  conjg ( p )
+           call zcopy (ndim, g(1, ibnd), 1, gt  (1, ibnd), 1)
+        !p   =  inv(M) * r
+        !pt  =  conjg ( p )
            call zcopy (ndim, g (1, ibnd), 1, h (1, ibnd), 1)
            if(tprec) call cg_psi(ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd) )
-           !call zcopy (ndim, dconjg(h(1,ibnd)), 1, ht(1, ibnd), 1)
            call zcopy (ndim, h(1,ibnd), 1, ht(1, ibnd), 1)
         enddo
      endif
