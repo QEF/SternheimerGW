@@ -34,7 +34,7 @@ IMPLICIT NONE
 
   complex(DP), allocatable  :: g (:,:), t (:,:), h (:,:), hold (:,:)
   complex(DP), allocatable  :: gt (:,:), tt (:,:), ht (:,:), htold (:,:)
-  complex(DP), allocatable  :: gp (:,:), gtp (:,:)
+!  complex(DP), allocatable  :: gp (:,:), gtp (:,:)
   complex(DP), allocatable  :: u_sig (:,:,:), u_sig_old(:,:,:)
   complex(DP)               :: alphabeta(2, nbnd)
 
@@ -78,7 +78,7 @@ IMPLICIT NONE
              hold(ndmx*npol ,nbnd) )
   allocate ( gt(ndmx*npol,nbnd), tt(ndmx*npol,nbnd), ht(ndmx*npol,nbnd), &
              htold(ndmx*npol, nbnd) )
-  allocate ( gp(ndmx*npol,nbnd), gtp(ndmx*npol,nbnd))
+!  allocate ( gp(ndmx*npol,nbnd), gtp(ndmx*npol,nbnd))
   allocate (a(nbnd), c(nbnd))
   allocate (conv ( nbnd))
   allocate (rho(nbnd))
@@ -93,15 +93,16 @@ IMPLICIT NONE
 
   conv_root = .false.
   g    = (0.d0,0.d0)
-  t    = (0.d0,0.d0)
-  h    = (0.d0,0.d0)
-  hold = (0.d0,0.d0)
   gt   = (0.d0,0.d0)
+  t    = (0.d0,0.d0)
   tt   = (0.d0,0.d0)
+  h    = (0.d0,0.d0)
   ht   = (0.d0,0.d0)
+  hold = (0.d0,0.d0)
   htold = (0.d0,0.d0)
-  gp(:,:)  = (0.d0, 0.0d0)
-  gtp(:,:) = (0.d0, 0.0d0)
+ ! gp(:,:)  = (0.d0, 0.0d0)
+!  gtp(:,:) = (0.d0, 0.0d0)
+  pi_coeff_new(:,:) = (0.0d0,0.0d0)
 
   x_sig(:,:,:) = czero
   u_sig(:,:,:) = czero
@@ -234,11 +235,11 @@ IMPLICIT NONE
            call zaxpy (ndmx*npol, -conjg(alpha), tt (1,lbnd), 1, gt (1,ibnd), 1)
 ! rp  = inv(M) * r
 ! rtp = inv(M) * rt
-           call zcopy (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
-           call zcopy (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
+!           call zcopy (ndmx*npol, g  (1, ibnd), 1, gp  (1, ibnd), 1)
+!           call zcopy (ndmx*npol, gt (1, ibnd), 1, gtp (1, ibnd), 1)
 ! MERGE
 ! call zcopy (ndmx*npol, g (1, ibnd), 1, dpsic(1, ibnd, iter+1), 1)
-           a(lbnd) = zdotc (ndmx*npol, tt(1,lbnd), 1, gp(1,ibnd), 1)
+           a(lbnd) = zdotc (ndmx*npol, tt(1,lbnd), 1, g(1,ibnd), 1)
            beta = - a(lbnd) / c(lbnd)
 ! MERGE
 ! alphabeta(2,ibnd,iter) = beta
@@ -262,8 +263,8 @@ IMPLICIT NONE
 ! new search directions
 ! u  = M^{-1}r  +  beta  * u_old
 ! \tilde{u} = M^{-1}\tilde{r} + conjg(beta) * \tilde{u}_old
-           call zcopy (ndmx*npol, gp  (1, ibnd), 1, h  (1, ibnd), 1)
-           call zcopy (ndmx*npol, gtp (1, ibnd), 1, ht (1, ibnd), 1)
+           call zcopy (ndmx*npol, g  (1, ibnd), 1, h  (1, ibnd), 1)
+           call zcopy (ndmx*npol, gt (1, ibnd), 1, ht (1, ibnd), 1)
            call zaxpy (ndmx*npol,       beta,  hold  (1,ibnd), 1, h (1,ibnd), 1)
            call zaxpy (ndmx*npol, conjg(beta), htold (1,ibnd), 1, ht(1,ibnd), 1)
         endif
@@ -276,7 +277,7 @@ IMPLICIT NONE
   deallocate (a,c)
   deallocate (g, t, h, hold)
   deallocate (gt, tt, ht, htold)
-  deallocate (gtp, gp)
+!  deallocate (gtp, gp)
   deallocate(u_sig, u_sig_old)
 
   call stop_clock ('cgsolve')

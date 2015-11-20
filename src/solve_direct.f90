@@ -129,22 +129,17 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
              mode,       & ! mode index
              igpert,     & ! bare perturbation g vector.
              lmres         ! number of gmres iterations to include when using bicgstabl.
-
   integer  :: gveccount
   integer  :: niters(nbnd)
-
   logical :: conv_root,  & ! true if linear system is converged
              exst,       & ! used to open the recover file
              lmetq0      ! true if xq=(0,0,0) in a metal
-
   external ZDOTC, DZNRM2
   external cg_psi, ch_psi_all, h_psi_all, ch_psi_all_green
-
-  !complex(DP)              :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
+  !complex(DP)               :: dpsit(npwx, nbnd, nfs), dpsi(npwx,nbnd,nfs)
   !complex(DP), allocatable  :: dpsic(:,:,:)
   complex(DP)               :: dpsi(npwx,nbnd,nfs)
   complex(DP)               :: dpsipm(npwx, nbnd, 2*nfs-1)
-
   if (rec_code_read > 20 ) RETURN
   irr    = 1
   ipert  = 1
@@ -156,14 +151,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 !Complex eigenvalues:
   allocate (etc(nbnd, nkstot))
   allocate (h_diag ( npwx*npol, nbnd))    
-
-
-
-!  if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_coul+1))
-
-
-
-
+! if(.not.prec_direct) ALLOCATE (dpsic(npwx,nbnd,maxter_coul+1))
   iter0 = 0
   convt =.FALSE.
   where_rec='no_recover'
