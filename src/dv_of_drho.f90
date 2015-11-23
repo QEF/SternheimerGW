@@ -30,6 +30,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   USE gc_gw,     ONLY : grho, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s
   USE control_gw, ONLY : lrpa, trunc_2d
   USE control_flags, only : gamma_only
+  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3
 
   implicit none
 
@@ -131,7 +132,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   else
     do is = 1, nspin_lsda
        CALL fwfft ('Dense', dvaux (:, is), dfftp)
-       IF(.not.trunc_2d) then
+       IF((.not.trunc_2d).or.(nq3.gt.1)) then
          do ig = 1, ngm
             qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
             if (qg2 > 1.d-8) then
