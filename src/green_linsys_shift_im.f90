@@ -4,7 +4,7 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
+SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
@@ -109,31 +109,43 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
   where_rec='no_recover'
 !This should ensure the Green's fxn has the correct -\delta for \omega <!\epsilon_{F}:
 !This smooths out variations and I think makes sense
-   ikq = iq
-   call gk_sort(x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+   !ikq = iq
+   !call gk_sort(x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+   !              npw, igk, g2kin )
+!HL arb k
+
+
+   call gk_sort(xk1(1), ngm, g, ( ecutwfc / tpiba2 ),&
                  npw, igk, g2kin )
    npwq = npw
+
 !Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 !igkq_tmp is gamma centered index up to ngmsco,
 !igkq_ig  is the linear index for looping up to npwq.
     counter = 0
     igkq_tmp(:) = 0
     igkq_ig(:)  = 0 
-    do ig = 1, npwx
-       if((igkq(ig).le.sigma_c_st%ngmt).and.((igkq(ig)).gt.0)) then
+    do ig = 1, npw
+       if((igk(ig).le.sigma_c_st%ngmt).and.((igk(ig)).gt.0)) then
            counter = counter + 1
-           igkq_tmp (counter) = igkq(ig)
+           igkq_tmp (counter) = igk(ig)
            igkq_ig  (counter) = ig
        endif
     enddo
 !Now the G-vecs up to the correlation cutoff have been divided between pools.
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
-    call init_us_2 (npwq, igkq, x_q (1, ikq), vkb)
+!call init_us_2 (npwq, igkq, x_q (1, ikq), vkb)
+!HL arb k 
+    call init_us_2 (npw, igk, xk1(1), vkb)
+
     do ig = 1, npwq
-       g2kin (ig) = ((x_q (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-                     (x_q (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-                     (x_q (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+!       g2kin (ig) = ((x_q (1,ikq) + g (1, igkq(ig) ) ) **2 + &
+!                     (x_q (2,ikq) + g (2, igkq(ig) ) ) **2 + &
+!                     (x_q (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+       g2kin (ig) = ((xk1 (1) + g (1, igk(ig) ) ) **2 + &
+                     (xk1 (2) + g (2, igk(ig) ) ) **2 + &
+                     (xk1 (3) + g (3, igk(ig) ) ) **2 ) * tpiba2
     enddo
     green  = (0.0d0, 0.0d0)
     h_diag = 0.d0
@@ -143,7 +155,9 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
       enddo
     else
       do ig = 1, npwq
-         h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
+        !h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
+!HL arbk
+         h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/eprectot(nbnd_occ(1), 1))
       enddo
     endif
 !On first frequency block we do the seed system with BiCG:
@@ -165,8 +179,8 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
              cw = CMPLX( 0.0d0, 0.0d0, kind=DP) 
              conv_root = .true.
              anorm = 0.0d0
-             call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
-                                   npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
+             call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
+                                   npwx, npw, tr2_green, 1, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)
              call green_multishift_im(npwx, 2*sigma_c_st%ngmt, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
              if (niters(gveccount).ge.maxter_green) then
@@ -191,7 +205,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, iq, nwgreen)
                 conv_root = .true.
                 anorm = 0.0d0
                 call cbcg_solve(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
-                                npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
+                                npwx, npwq, tr2_green, 1, lter, conv_root, anorm, 1, npol, &
                                 cw, maxter_green, .true.)
                 if (lter.ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig

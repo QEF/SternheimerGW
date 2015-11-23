@@ -6,7 +6,7 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !-----------------------------------------------------------------------
-SUBROUTINE clean_pw_gw(iq)
+SUBROUTINE clean_pw_gw(iq, flag)
   !-----------------------------------------------------------------------
   !
   ! This routine deallocates all the variables of pwscf and of the
@@ -26,6 +26,7 @@ SUBROUTINE clean_pw_gw(iq)
   INTEGER, INTENT(IN) :: iq
   !
   INTEGER :: irr
+  LOGICAL :: flag
   !
   done_bands=.FALSE.
 
@@ -38,7 +39,7 @@ SUBROUTINE clean_pw_gw(iq)
   !
   ! ... Close the files
   !
-  CALL close_gwq( .FALSE. )
+  CALL close_gwq( flag )
   !
   !
 RETURN

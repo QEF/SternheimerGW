@@ -88,24 +88,7 @@ IMPLICIT NONE
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
   write(6,'(4x,"nksq,nks,kunit ",3i4)') nksq, nks, kunit
-  kpoolid = 0
-  iqrec1  = 0
-  do mypoolid = 0, npool-1
-     nksloc = kunit * ( nkstot / kunit / npool )
-     rest = ( nkstot - nksloc * npool ) / kunit
-     if ( ( mypoolid + 1 ) <= rest ) nksloc = nksloc + kunit
-     nbase = nksloc * mypoolid
-     if ( ( mypoolid + 1 ) > rest ) nbase = nbase + rest * kunit
-     do iq = 1, nksloc
-       if(nbase.gt.0) then
-         kpoolid(nbase+iq) = mypoolid+1
-         iqrec1(nbase+iq) = iq
-       else
-         kpoolid(iq) = mypoolid + 1
-         iqrec1(iq) = iq
-       endif
-     enddo
-  enddo
+
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
 !New pool parallel approach, we cycle if the kpoint isn't on the present

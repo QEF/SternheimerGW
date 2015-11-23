@@ -99,6 +99,12 @@ IMPLICIT NONE
      endif
   enddo
 
+  if((xk_kpoints(1,ik0).eq.0.0).and.(xk_kpoints(2,ik0).eq.0.0).and.(xk_kpoints(3,ik0).eq.0.0))then 
+     ikq_head = 1
+  else
+     ikq_head = 2
+  endif
+
   do iq = 1, nks
      found_k  = (abs(xk_kpoints(1,ik0) - xk(1,iq)).le.eps).and. &
                 (abs(xk_kpoints(2,ik0) - xk(2,iq)).le.eps).and. &
@@ -138,7 +144,7 @@ IMPLICIT NONE
       write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                     npw, igk, g2kin )
-      if(lgamma) npwq = npw
+      npwq = npw
       call get_buffer (evc, lrwfc, iuwfc, ikq)
       zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
 ! generate v_xc(r) in real space:
@@ -150,7 +156,7 @@ IMPLICIT NONE
       do jbnd = 1, nbnd_sig
          psic = czero
          do ig = 1, npwq
-            psic ( nls (igkq(ig)) ) = evc(ig, jbnd)
+            psic ( nls (igk(ig)) ) = evc(ig, jbnd)
          enddo
 !Need to do this fft according to igkq arrays and switching between serial/parallel routines. 
          CALL invfft ('Wave', psic(:), dffts)
@@ -159,7 +165,7 @@ IMPLICIT NONE
          enddo
          CALL fwfft ('Wave', psic(:), dffts)
          do ig = 1, npwq
-            vpsi(ig) = psic(nls(igkq(ig)))
+            vpsi(ig) = psic(nls(igk(ig)))
          enddo
          do ibnd = 1, nbnd_sig
             vxc(ibnd,jbnd) = ZdoTC (npwq, evc (1, ibnd), 1, vpsi, 1)
@@ -192,9 +198,9 @@ if(.not.do_sigma_exxG) then
       igkq_ig(:)  = 0
 
       do ig = 1, npwq
-         if((igkq(ig).le.sigma_x_ngm).and.((igkq(ig)).gt.0)) then
+         if((igk(ig).le.sigma_x_ngm).and.((igk(ig)).gt.0)) then
           counter = counter + 1
-          igkq_tmp (counter) = igkq(ig)
+          igkq_tmp (counter) = igk(ig)
           igkq_ig  (counter) = ig
          endif
       enddo
@@ -263,9 +269,9 @@ endif
       write(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
       write(1000+mpime, *)
       do ig = 1, npwq
-         if((igkq(ig).le.sigma_c_ngm).and.((igkq(ig)).gt.0)) then
+         if((igk(ig).le.sigma_c_ngm).and.((igk(ig)).gt.0)) then
              counter = counter + 1
-             igkq_tmp (counter) = igkq(ig)
+             igkq_tmp (counter) = igk(ig)
              igkq_ig  (counter) = ig
          endif
       enddo
@@ -327,12 +333,15 @@ endif
         allocate (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
 !print selfenergy on the imaginary axis.
         call print_matel_im(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+        !call print_matel_im(2, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
 !do analytic continuation and print selfenergy on the real axis.
         sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
         call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
         call print_matel(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
+        !call print_matel(2, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
      else
         call print_matel(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+        !call print_matel(2, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
      endif
   endif
   if(allocated(sigma_band_con)) deallocate(sigma_band_con)

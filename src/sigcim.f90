@@ -70,7 +70,7 @@ SUBROUTINE sigma_c_im(ik0)
 !For dirac delta fxn.
   REAL(DP)     :: dirac, x, support, zcut
   REAL(DP) :: ehomo, elumo, mu
-  REAL (DP)   :: xk1(3), aq(3)
+  REAL (DP)   :: xk1(3), aq(3), xk1_old(3)
   REAL(DP)    :: sxq(3,48), xqs(3,48)
   REAL(DP)    :: nsymm1
   REAL(DP)    :: wgt(nsym), xk_un(3,nsym)
@@ -78,6 +78,7 @@ SUBROUTINE sigma_c_im(ik0)
   INTEGER, ALLOCATABLE  :: gmapsym(:,:)
   INTEGER  :: iwim, iw, ikq
   INTEGER  :: iw0, iw0mw, iw0pw
+  INTEGER  :: iqstart, iqstop
 !COUNTERS
   INTEGER :: ig, igp, irr, icounter, ir, irp
   INTEGER :: iqs, nkr
@@ -95,12 +96,10 @@ SUBROUTINE sigma_c_im(ik0)
   INTEGER     :: ibnd
   INTEGER     :: iw0start, iw0stop
 !Complete file name
-  INTEGER     :: iq1
   INTEGER     :: imq, isq(48), nqstar, nkpts
   INTEGER     :: i, ikstar
   INTEGER     :: ixk1, iqrec_old
   INTEGER     :: isym_k(nsym), nig0_k(nsym), iqrec_k(nsym)
-  INTEGER     :: iqcoul
   INTEGER     :: nnr
   INTEGER*8 :: unf_recl
 !For running PWSCF need some variables 
@@ -108,7 +107,7 @@ SUBROUTINE sigma_c_im(ik0)
   LOGICAL             :: found_q
   LOGICAL             :: limq, inv_q, found
   LOGICAL, EXTERNAL :: eqvect
-  LOGICAL     :: invq_k(nsym), found_qc
+  LOGICAL     :: invq_k(nsym)
 !File related:
   character(len=256) :: tempfile, filename
   real(DP)    :: wgtcoulry(nwcoul)
@@ -171,116 +170,93 @@ SUBROUTINE sigma_c_im(ik0)
   WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !  WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !ONLY PROCESSORS WITH K points to process: 
-  IF (nksq.gt.1) rewind (unit = iunigk)
+! IF (nksq.gt.1) rewind (unit = iunigk)
   WRITE(6,'("Starting Frequency Integration")')
 !kpoints split between pools
   CALL get_homo_lumo (ehomo, elumo)
-
   if(.not.lgauss) then
     mu = ehomo + 0.5d0*(elumo-ehomo)
   else
     mu = ef
   endif
-
   call mp_barrier(inter_pool_comm)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
+
   nsymm1 = 1.0d0/dble(nsym)
-DO iq = 1, nks
-   iqcoul = 1
-   found_qc = .false.
-   iq1 = 0
-   DO WHILE(.not.found_qc)
-      iq1 = iq1 + 1
-      found_qc  = (abs(xk(1,iq) - x_q(1,iq1)).le.eps).and. &
-                  (abs(xk(2,iq) - x_q(2,iq1)).le.eps).and. & 
-                  (abs(xk(3,iq) - x_q(3,iq1)).le.eps) 
-   ENDDO 
-   IF (found_qc) THEN
-      iqcoul = iq1 
-      xq(:) = x_q(:,iqcoul)
-   ELSE 
-       WRITE(stdout,'("WARNING Q POINT NOT FOUND IN IBZ")')
-       WRITE(1000+mpime,'("WARNING Q POINT NOT FOUND IN IBZ")')
+  call para_pool(nqs,iqstart,iqstop)
+  xk1_old(:) =  -400.0
+  WRITE(1000+mpime,*),'iqstart, stop ', iqstart, iqstop
+DO iq = iqstart, iqstop
+   IF(iq.gt.nqs) THEN
+       WRITE(stdout,'("WARNING Q POINT OUTSIDE OF BZ BAD POOLING")')
+       WRITE(1000+mpime,'("WARNING Q POINT OUTSIDE OF BZ BAD POOLING")')
        CALL mp_global_end()
        STOP
    ENDIF
-   scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
-   if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iqcoul, -1)
-   cprefac = wq(iqcoul)*dcmplx(-1.0d0, 0.0d0)/tpi
+   xq(:) = x_q(:,iq)
+   scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
+   if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
+   cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
-   iqrec_k = 0
-   isym_k  = 0
-   nig0_k  = 0
-   invq_k  = .false.
    DO isymop = 1, nsym
+      WRITE(1000+mpime,'("isymop", i4)'),isymop
       CALL rotate(xq, aq, s, nsym, invs(isymop))
       xk1 = xk_kpoints(:,ik0) - aq(:)
-      nig0 = 1
-      inv_q=.false.
-      found_q=.false.
-      call find_qG_ibz(xk1, s, iqrec, isym, nig0, found_q, inv_q)
-      iqrec_k(isymop) = iqrec
-      isym_k(isymop)  = isym
-      nig0_k(isymop)  = nig0
-      invq_k(isymop)  = inv_q
-   ENDDO
-   iqrec_old = 0
-   DO isymop = 1, nsym
-     iqrec = iqrec_k (isymop) 
-!     if(iqrec_old.ne.iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
-     if(iqrec_old.ne.iqrec) CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, iqrec, 2*nwcoul)
-     iqrec_old = iqrec
-     isym   = isym_k(isymop)
-     nig0   = nig0_k(isymop)
-     inv_q  = invq_k(isymop)
-     if(inv_q) write(1000+mpime, '("Need to use time reversal")')
-!     write(1000+mpime, '("xk point, isym, iqrec, nig0")')
-!     write(1000+mpime, '(3f11.7, 3i4)') x_q(:, iqrec), isym, iqrec, nig0
-!Start integration over iw +/- wcoul.
-!Rotate W and initialize necessary quantities for pade_continuation or godby needs.
-  IF(iw0stop-iw0start+1.gt.0) THEN
-     DO iw0 = iw0start, iw0stop
-        DO iw = 1, nwcoul
-           CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
-           scrcoul = czero
-           CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-           greenfr(:,:) = czero
-           dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
-           if(.not.inv_q) then
-              call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-              sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
-           else
-!              write(1000+mpime,'("conjg G")')
-              call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-              sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
-           endif
-!call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
-!FOR T.R. w/ pade can obtain extra numberical stability?
-             call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
-             scrcoul = czero
-             call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-             greenfr(:,:) = czero
-           if(.not.inv_q) then
-             call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
-           else
-             call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
-           endif
-        ENDDO !on frequency convolution over w'
-     ENDDO !on iw0  
-  ENDIF
- ENDDO!ISYMOP
+      if( (xk1(1) .ne. xk1_old(1)) .and.  &
+          (xk1(2) .ne. xk1_old(2)) .and.  &
+          (xk1(3) .ne. xk1_old(3))) then
+          WRITE(1000+mpime,'("Running Greens fxn:")')
+          CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
+      endif
+      xk1_old = xk1
+      WRITE(1000+mpime,*), xk1_old
+      isym     = 1
+      nig0     = 1
+      inv_q   = .false.
+      if(inv_q) write(1000+mpime, '("Need to use time reversal")')
+!    Start integration over iw +/- wcoul.
+!    Rotate W and initialize necessary quantities for 
+!    pade_continuation or godby needs.
+      IF(iw0stop-iw0start+1.gt.0) THEN
+        DO iw0 = iw0start, iw0stop
+           DO iw = 1, nwcoul
+              CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
+              scrcoul = czero
+              CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+              greenfr(:,:) = czero
+              dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
+              if(.not.inv_q) then
+                 call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                 sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+              else
+                 call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                 sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
+              endif
+!We use Time Reversal on W here.
+                call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
+                scrcoul = czero
+                call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+                greenfr(:,:) = czero
+              if(.not.inv_q) then
+                call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+              else
+                call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
+              endif
+           ENDDO !on frequency convolution over w'
+        ENDDO !on iw0  
+     ENDIF
+    ENDDO!ISYMOP
 ENDDO!iq
- DEALLOCATE ( gmapsym          )
- DEALLOCATE ( greenfr          )
- DEALLOCATE ( greenf_g         )
- DEALLOCATE ( scrcoul          )
- DEALLOCATE ( scrcoul_pade_g   )
- DEALLOCATE ( scrcoul_g, scrcoul_g_R )
- DEALLOCATE ( z,a,u )
-
+DEALLOCATE ( gmapsym          )
+DEALLOCATE ( greenfr          )
+DEALLOCATE ( greenf_g         )
+DEALLOCATE ( scrcoul          )
+DEALLOCATE ( scrcoul_pade_g   )
+DEALLOCATE ( scrcoul_g, scrcoul_g_R )
+DEALLOCATE ( z,a,u )
 
 #ifdef __PARA
  CALL mp_barrier(inter_pool_comm)
@@ -288,6 +264,7 @@ ENDDO!iq
  CALL mp_barrier(inter_image_comm)
  CALL mp_sum(sigma, inter_image_comm)
 #endif __PARA
+
  IF (meta_ionode) THEN
    ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
    IF(allocated(sigma_g)) THEN

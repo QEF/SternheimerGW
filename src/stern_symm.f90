@@ -63,7 +63,6 @@ LOGICAL      :: minus_q, magnetic_sym, sym(48)
    WRITE(6,*)
   enddo
   CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
-
 !Find number of unique vectors:
 ngmunique = 1
 ig_unique(1) = 1
@@ -86,7 +85,6 @@ DO ig = 2, sigma_c_st%ngmt
       ngmunique = ngmunique + 1
       ig_unique(ngmunique) = ig
    ENDIF
-
 ENDDO
 write(6,'(/5x, "Number of symmops in Small G_q: ", i4)'), nsymq
 write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)'), sigma_c_st%ngmt, ngmunique

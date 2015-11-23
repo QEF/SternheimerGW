@@ -97,6 +97,7 @@ IMPLICIT NONE
   write(6,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
   kpoolid = 0
   iqrec1  = 0
+
   do mypoolid = 0, npool-1
      nksloc = kunit * ( nkstot / kunit / npool )
      rest = ( nkstot - nksloc * npool ) / kunit
@@ -113,6 +114,7 @@ IMPLICIT NONE
        endif
      enddo
   enddo
+
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
 !New pool parallel approach, we cycle if the kpoint isn't on the present

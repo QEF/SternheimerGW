@@ -103,7 +103,7 @@ IMPLICIT NONE
        ENDIF
        if(allocated(eps_m)) DEALLOCATE(eps_m)
        call mp_barrier(inter_image_comm)
-       CALL clean_pw_gw(iq)
+       CALL clean_pw_gw(iq, .FALSE.)
        if(do_q0_only) GOTO 126
        CALL print_clock ('epsilq')
        CALL stop_clock ('epsilq')

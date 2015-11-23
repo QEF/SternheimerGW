@@ -49,10 +49,10 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   CALL close_files( .true. )
   !
-  !if(do_matel) xq(:) = xk_kpoints(:, ik)
-  if(do_matel) xq(1) = 0.0d0 
-  if(do_matel) xq(2) = 0.0d0 
-  if(do_matel) xq(3) = 0.0d0 
+  if(do_matel) xq(:) = xk_kpoints(:, ik)
+  !if(do_matel) xq(1) = 0.0d0 
+  !if(do_matel) xq(2) = 0.0d0 
+  !if(do_matel) xq(3) = 0.0d0 
   lgamma = ( (ABS(xq(1))<1.D-12).AND.(ABS(xq(2))<1.D-12).AND.(ABS(xq(3))<1.D-12) )
  !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw
@@ -73,13 +73,12 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   IF (.NOT.reduce_io.and.do_band) THEN
      twfcollect=.FALSE.
      CALL punch( 'all' )
-     !CALL punch1( 'all' )
   ENDIF
 
   IF(do_matel.and.nkstot.ne.nqs) THEN
-    WRITE(stdout,'("WARNING: Ground state calculation has a &
-&   different kpoint mesh! This probably wont work.")') 
-    CALL errore( 'run_nscf', 'gs/excited different kmesh', 1 )
+    WRITE(stdout,'("WARNING: You have given a kpoint not in original BZ. This&
+could mean full symmetry is not exploited.")') 
+!    CALL errore( 'run_nscf', 'gs/excited different kmesh', 1 )
   ENDIF
 
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )

@@ -226,7 +226,6 @@ do iq = 1, nksq
          enddo!iw
        enddo !blocks
      enddo !ig
-
 #ifdef __PARA
     CALL mp_barrier(inter_image_comm)
     CALL mp_sum(green, inter_image_comm)
