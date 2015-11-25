@@ -69,7 +69,6 @@ ch_psi_all.o\
 ch_psi_all_nopv.o\
 ch_psi_all_green.o\
 find_qg_ibz.o\
-find_qgex.o\
 godby_needs.o\
 mod_diel.o\
 clean_pw_gw.o\
