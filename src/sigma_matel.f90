@@ -115,6 +115,7 @@ IMPLICIT NONE
      endif
   enddo
 
+  ikq = ikq_head
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
   kpoolid = 0
@@ -304,7 +305,8 @@ endif
                        evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
                     enddo
                     do igp = 1, sigma_c_ngm
-                       sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) + evc_tmp_j(ig)*sigma(ig,igp,iw)*conjg(evc_tmp_i(igp))
+                       sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) +  &
+                                 evc_tmp_j(ig)*sigma(ig,igp,iw)*conjg(evc_tmp_i(igp))
                     enddo
                  enddo
              enddo
@@ -342,10 +344,8 @@ endif
         sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
         call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
         call print_matel(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-        !call print_matel(2, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
      else
         call print_matel(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
-        !call print_matel(2, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
      endif
   endif
   if(allocated(sigma_band_con)) deallocate(sigma_band_con)

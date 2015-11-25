@@ -209,6 +209,7 @@ IMPLICIT NONE
   sigma_g_ex(:,:) = (0.0d0,0.0d0)
   if (meta_ionode) THEN
       call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
+      write(1000+mpime,*)"kcounter: ", ik0
       call davcio(sigma_g_ex, lrsex, iunsex, ik0,  1)
   endif
   deallocate(sigma_g_ex)

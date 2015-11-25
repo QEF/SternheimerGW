@@ -103,6 +103,7 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
   ! symmetries without inversion, followed by nsymq/2 with inversion
   ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
+
     invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
     if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
     if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')

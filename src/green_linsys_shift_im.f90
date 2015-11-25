@@ -62,7 +62,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   real(DP) :: ehomo, elumo, mu
   real(DP) :: gam(3)
-  real(DP) :: xk1(3)
+  real(DP), INTENT(IN) :: xk1(3)
 
   integer :: nwgreen
   integer :: iw, igp, iw0
@@ -107,9 +107,11 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   enddo
   call start_clock('greenlinsys')
   where_rec='no_recover'
+
 ! HL arb k
-  call gk_sort(xk1(1), ngm, g, ( ecutwfc / tpiba2 ), &
-                npw, igk, g2kin )
+  call gk_sort(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
+                npw, igk, g2kin)
+  igkq = igk
   npwq = npw
 ! Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 ! igkq_tmp is gamma centered index up to ngmsco,
@@ -144,7 +146,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
       enddo
     else
       do ig = 1, npw
-        !h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
+!h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
 !HL arbk
          h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/eprectot(nbnd_occ(1), 1))
       enddo
