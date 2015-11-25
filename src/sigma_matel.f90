@@ -89,6 +89,7 @@ IMPLICIT NONE
   lgamma=.true.
   ikq = 1
   found_k = .false.
+
   do iq = 1, nqs
      found_k  = (abs(xk_kpoints(1,ik0) - x_q(1,iq)).le.eps).and. &
                 (abs(xk_kpoints(2,ik0) - x_q(2,iq)).le.eps).and. &
@@ -98,7 +99,6 @@ IMPLICIT NONE
         exit
      endif
   enddo
-
   if((xk_kpoints(1,ik0).eq.0.0).and.(xk_kpoints(2,ik0).eq.0.0).and.(xk_kpoints(3,ik0).eq.0.0))then 
      ikq_head = 1
   else
@@ -116,6 +116,7 @@ IMPLICIT NONE
   enddo
 
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
+  write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
   kpoolid = 0
   iqrec1  = 0
 
@@ -140,7 +141,8 @@ IMPLICIT NONE
   sigma_band_ex (:, :) = czero
   sigma_band_c (:,:,:) = czero
 
-  if (found_k) THEN
+!  if (found_k) THEN
+  if (meta_ionode) THEN
       write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                     npw, igk, g2kin )
@@ -175,7 +177,6 @@ IMPLICIT NONE
       write(1000+mpime, '(8(1x,f7.3))') real(vxc(:,:))*RYTOEV
       write(1000+mpime, '("Max number Plane Waves WFC ", i4)') npwx
       write(1000+mpime, '("Sigma_Ex Matrix Element")') 
-
 
 if(.not.do_sigma_exxG) then
       allocate (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
@@ -322,6 +323,9 @@ endif
   call mp_sum(sigma_band_c, inter_pool_comm)
   call mp_sum(sigma_band_ex, inter_pool_comm)
   call mp_barrier(inter_pool_comm)
+
+!Now first pool should always have
+!the kpoint we are looking for.
   if(meta_ionode) THEN
      if(do_imag) then 
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:

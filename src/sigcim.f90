@@ -134,11 +134,11 @@ SUBROUTINE sigma_c_im(ik0)
 
    w_ryd(:) = wcoul(:)/RYTOEV
    w_rydsig(:) = wsigma(:)/RYTOEV
-   WRITE(6,"( )")
-   WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
-   WRITE(6,"( )")
-   WRITE(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
-   WRITE(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
+   write(6,"( )")
+   write(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
+   write(6,"( )")
+   write(6,'(4x, "ngmsco, ", i4, " nwsigma, ", i4)') sigma_c_st%ngmt, nwsigma
+   write(6,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
    zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
@@ -146,13 +146,13 @@ SUBROUTINE sigma_c_im(ik0)
    CALL start_clock('sigmac')
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
    IF(allocated(sigma)) THEN
-     WRITE(6,'(4x,"Sigma allocated")')
+     write(6,'(4x,"Sigma allocated")')
    ELSE
-     WRITE(6,'(4x,"Sigma too large!")')
+     write(6,'(4x,"Sigma too large!")')
      CALL mp_global_end()
      STOP
    ENDIF
-   WRITE(6,'("nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
+   write(6,'("nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
@@ -167,11 +167,11 @@ SUBROUTINE sigma_c_im(ik0)
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 #endif
   CALL para_img(nwsigma, iw0start, iw0stop)
-  WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
-!  WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
+  write(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
+!  write(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !ONLY PROCESSORS WITH K points to process: 
 ! IF (nksq.gt.1) rewind (unit = iunigk)
-  WRITE(6,'("Starting Frequency Integration")')
+  write(6,'("Starting Frequency Integration")')
 !kpoints split between pools
   CALL get_homo_lumo (ehomo, elumo)
   if(.not.lgauss) then
@@ -182,73 +182,74 @@ SUBROUTINE sigma_c_im(ik0)
   call mp_barrier(inter_pool_comm)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
-
   nsymm1 = 1.0d0/dble(nsym)
   call para_pool(nqs,iqstart,iqstop)
   xk1_old(:) =  -400.0
-  WRITE(1000+mpime,*),'iqstart, stop ', iqstart, iqstop
-DO iq = iqstart, iqstop
-   IF(iq.gt.nqs) THEN
-       WRITE(stdout,'("WARNING Q POINT OUTSIDE OF BZ BAD POOLING")')
-       WRITE(1000+mpime,'("WARNING Q POINT OUTSIDE OF BZ BAD POOLING")')
-       CALL mp_global_end()
-       STOP
-   ENDIF
-   xq(:) = x_q(:,iq)
-   scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
-   if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
-   cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
-   CALL coulpade(scrcoul_g(1,1,1), xq(1))
-   DO isymop = 1, nsym
-      WRITE(1000+mpime,'("isymop", i4)'),isymop
-      CALL rotate(xq, aq, s, nsym, invs(isymop))
-      xk1 = xk_kpoints(:,ik0) - aq(:)
-      if( (xk1(1) .ne. xk1_old(1)) .and.  &
-          (xk1(2) .ne. xk1_old(2)) .and.  &
-          (xk1(3) .ne. xk1_old(3))) then
-          WRITE(1000+mpime,'("Running Greens fxn:")')
-          CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
-      endif
-      xk1_old = xk1
-      WRITE(1000+mpime,*), xk1_old
-      isym     = 1
-      nig0     = 1
-      inv_q   = .false.
-      if(inv_q) write(1000+mpime, '("Need to use time reversal")')
+  write(1000+mpime,*),'iqstart, stop ', iqstart, iqstop
+  DO iq = iqstart, iqstop
+     IF(iq.gt.nqs) THEN
+        write(stdout,'("WARNING Q POINT OUTSIDE OF BZ BAD POOLING")')
+        write(1000+mpime,'("WARNING Q POINT OUTSIDE OF BZ BAD POOLING")')
+        CALL mp_global_end()
+        STOP
+     ENDIF
+     xq(:) = x_q(:,iq)
+     scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
+     if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
+     cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+     CALL coulpade(scrcoul_g(1,1,1), xq(1))
+     DO isymop = 1, nsym
+        write(1000+mpime,'("isymop", i4)'),isymop
+
+        CALL rotate(xq, aq, s, nsym, invs(isymop))
+        xk1 = xk_kpoints(:,ik0) - aq(:)
+
+        if( (xk1(1) .ne. xk1_old(1)) .and.  &
+            (xk1(2) .ne. xk1_old(2)) .and.  &
+            (xk1(3) .ne. xk1_old(3))) then
+            write(1000+mpime,'("Running Greens fxn:")')
+            CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
+        endif
+        xk1_old = xk1
+        write(1000+mpime,*), xk1_old
+        isym     = 1
+        nig0     = 1
+        inv_q   = .false.
+        if(inv_q) write(1000+mpime, '("Need to use time reversal")')
 !    Start integration over iw +/- wcoul.
 !    Rotate W and initialize necessary quantities for 
 !    pade_continuation or godby needs.
-      IF(iw0stop-iw0start+1.gt.0) THEN
-        DO iw0 = iw0start, iw0stop
-           DO iw = 1, nwcoul
-              CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
-              scrcoul = czero
-              CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-              greenfr(:,:) = czero
-              dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
-              if(.not.inv_q) then
-                 call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-                 sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
-              else
-                 call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-                 sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
-              endif
-!We use Time Reversal on W here.
-                call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
+        IF(iw0stop-iw0start+1.gt.0) THEN
+          DO iw0 = iw0start, iw0stop
+             DO iw = 1, nwcoul
+                CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
                 scrcoul = czero
-                call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+                CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
                 greenfr(:,:) = czero
-              if(.not.inv_q) then
-                call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-                sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
-              else
-                call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
-                sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
-              endif
-           ENDDO !on frequency convolution over w'
-        ENDDO !on iw0  
-     ENDIF
-    ENDDO!ISYMOP
+                dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
+                if(.not.inv_q) then
+                   call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                   sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+                else
+                   call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                   sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
+                endif
+!We use Time Reversal on W here.
+                  call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
+                  scrcoul = czero
+                  call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+                  greenfr(:,:) = czero
+                if(.not.inv_q) then
+                  call fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                  sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+                else
+                  call fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
+                  sigma (:,:,iw0) = sigma (:,:,iw0) + dz*conjg(greenfr(:,:))*scrcoul(:,:)
+                endif
+             ENDDO !on frequency convolution over w'
+          ENDDO !on iw0  
+       ENDIF
+      ENDDO!ISYMOP
 ENDDO!iq
 DEALLOCATE ( gmapsym          )
 DEALLOCATE ( greenfr          )
@@ -268,20 +269,20 @@ DEALLOCATE ( z,a,u )
  IF (meta_ionode) THEN
    ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
    IF(allocated(sigma_g)) THEN
-      WRITE(6,'(4x,"Sigma_g allocated")')
+      write(6,'(4x,"Sigma_g allocated")')
    ELSE
-      WRITE(6,'(4x,"Sigma_g too large!")')
+      write(6,'(4x,"Sigma_g too large!")')
       CALL mp_global_end()
       STOP
    ENDIF
-   WRITE(6,'(4x,"Sigma in G-Space")')
+   write(6,'(4x,"Sigma in G-Space")')
    sigma_g = (0.0d0,0.0d0)
    DO iw = 1, nwsigma
       CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
    ENDDO
 !Now write Sigma in G space to file. 
    CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
-   WRITE(6,'(4x,"Sigma Written to File")')
+   write(6,'(4x,"Sigma Written to File")')
    CALL stop_clock('sigmac')
    DEALLOCATE ( sigma_g  )
  ENDIF !ionode

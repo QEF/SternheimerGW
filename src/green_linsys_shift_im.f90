@@ -101,37 +101,29 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 
   ci = (0.0d0, 1.0d0)
   WRITE(1000+mpime, *) mu
-!Convert freq array generated in freqbins into rydbergs.
+! Convert freq array generated in freqbins into rydbergs.
   do iw =1, nwgreen
      w_ryd(iw) = w0pmw(1,iw)/RYTOEV
   enddo
   call start_clock('greenlinsys')
   where_rec='no_recover'
-!This should ensure the Green's fxn has the correct -\delta for \omega <!\epsilon_{F}:
-!This smooths out variations and I think makes sense
-   !ikq = iq
-   !call gk_sort(x_q(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-   !              npw, igk, g2kin )
-!HL arb k
-
-
-   call gk_sort(xk1(1), ngm, g, ( ecutwfc / tpiba2 ),&
-                 npw, igk, g2kin )
-   npwq = npw
-
-!Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
-!igkq_tmp is gamma centered index up to ngmsco,
-!igkq_ig  is the linear index for looping up to npwq.
-    counter = 0
-    igkq_tmp(:) = 0
-    igkq_ig(:)  = 0 
-    do ig = 1, npw
-       if((igk(ig).le.sigma_c_st%ngmt).and.((igk(ig)).gt.0)) then
-           counter = counter + 1
-           igkq_tmp (counter) = igk(ig)
-           igkq_ig  (counter) = ig
-       endif
-    enddo
+! HL arb k
+  call gk_sort(xk1(1), ngm, g, ( ecutwfc / tpiba2 ), &
+                npw, igk, g2kin )
+  npwq = npw
+! Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
+! igkq_tmp is gamma centered index up to ngmsco,
+! igkq_ig  is the linear index for looping up to npwq.
+  counter = 0
+  igkq_tmp(:) = 0
+  igkq_ig(:)  = 0 
+  do ig = 1, npw
+     if((igk(ig).le.sigma_c_st%ngmt).and.((igk(ig)).gt.0)) then
+         counter = counter + 1
+         igkq_tmp (counter) = igk(ig)
+         igkq_ig  (counter) = ig
+     endif
+  enddo
 !Now the G-vecs up to the correlation cutoff have been divided between pools.
 !Calculates beta functions (Kleinman-Bylander projectors), with
 !structure factor, for all atoms, in reciprocal space
@@ -139,10 +131,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 !HL arb k 
     call init_us_2 (npw, igk, xk1(1), vkb)
 
-    do ig = 1, npwq
-!       g2kin (ig) = ((x_q (1,ikq) + g (1, igkq(ig) ) ) **2 + &
-!                     (x_q (2,ikq) + g (2, igkq(ig) ) ) **2 + &
-!                     (x_q (3,ikq) + g (3, igkq(ig) ) ) **2 ) * tpiba2
+    do ig = 1, npw
        g2kin (ig) = ((xk1 (1) + g (1, igk(ig) ) ) **2 + &
                      (xk1 (2) + g (2, igk(ig) ) ) **2 + &
                      (xk1 (3) + g (3, igk(ig) ) ) **2 ) * tpiba2
@@ -150,11 +139,11 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
     green  = (0.0d0, 0.0d0)
     h_diag = 0.d0
     if(multishift) then
-      do ig = 1, npwq
+      do ig = 1, npw
            h_diag(ig,1) =  1.0d0
       enddo
     else
-      do ig = 1, npwq
+      do ig = 1, npw
         !h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/(eprectot(nbnd_occ(1),ikq)))
 !HL arbk
          h_diag(ig,1)= 1.d0/max(1.0d0, g2kin(ig)/eprectot(nbnd_occ(1), 1))

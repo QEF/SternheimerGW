@@ -67,6 +67,8 @@ program gw
          else if(do_sigma_exx .and. do_sigma_exxG) then
             call sigma_exchg(ik)
          endif
+!Calculate <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>
+         if(do_sigma_matel) call sigma_matel(ik)
          CALL clean_pw_gw(ik, .TRUE.)
       enddo
   else
@@ -82,10 +84,6 @@ program gw
      close(unit = iunresid, status = 'DELETE')
      close(unit = iunalphabeta, status = 'DELETE')
   endif
-!Calculate <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>
-  do ik = w_of_k_start, w_of_k_stop
-     if(do_sigma_matel) call sigma_matel(ik)
-  enddo
   127 continue
   call close_gwq(.TRUE.)
   call stop_gw( .TRUE. )

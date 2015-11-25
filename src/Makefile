@@ -31,7 +31,7 @@ do_stern.o\
 stern_symm.o\
 gmap_sym.o\
 gwq_init.o\
-set_defaults_pw.o\
+setup_nscf_green.o\
 run_nscf.o\
 coulomb.o\
 solve_direct.o\
@@ -69,12 +69,13 @@ ch_psi_all.o\
 ch_psi_all_nopv.o\
 ch_psi_all_green.o\
 find_qg_ibz.o\
+find_qgex.o\
 godby_needs.o\
 mod_diel.o\
 clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
-sigma_exch.o\
+sigma_exchq.o\
 sigma_exchG.o\
 sigma_matel.o\
 print_matel.o\
