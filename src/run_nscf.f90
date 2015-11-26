@@ -73,8 +73,8 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   ENDIF
 
   IF(do_matel.and.nkstot.ne.nqs) THEN
-    WRITE(stdout,'("WARNING: You have given a kpoint not in original BZ. This&
-could mean full symmetry is not exploited.")') 
+    WRITE(stdout,'("WARNING: You have given a kpoint not in original BZ. &
+                    This could mean full symmetry is not exploited.")') 
   ENDIF
 
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )

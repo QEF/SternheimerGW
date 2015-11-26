@@ -112,6 +112,8 @@ IMPLICIT NONE
 
         call gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
                       npw, igk, g2kin )
+        npwq = npw
+        igkq = igk
 !igkq = igk
         do ig = 1, npw
            if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
