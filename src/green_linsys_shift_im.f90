@@ -100,7 +100,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   if(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
 
   ci = (0.0d0, 1.0d0)
-  WRITE(1000+mpime, *) mu
+ !WRITE(1000+mpime, *) mu
 ! Convert freq array generated in freqbins into rydbergs.
   do iw =1, nwgreen
      w_ryd(iw) = w0pmw(1,iw)/RYTOEV

@@ -75,7 +75,7 @@ clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
 sigma_exchq.o\
-sigma_exchG.o\
+sigma_exchGq.o\
 sigma_matel.o\
 print_matel.o\
 para_img.o\

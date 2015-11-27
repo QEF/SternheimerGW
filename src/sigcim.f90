@@ -235,6 +235,7 @@ SUBROUTINE sigma_c_im(ik0)
        ENDIF
       ENDDO ! isymop
 ENDDO!iq
+DEALLOCATE ( eigv             )
 DEALLOCATE ( gmapsym          )
 DEALLOCATE ( greenfr          )
 DEALLOCATE ( greenf_g         )

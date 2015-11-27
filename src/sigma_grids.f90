@@ -24,7 +24,7 @@ SUBROUTINE sigma_grids()
                                fft_dlay_set, fft_dlay_scalar
   USE io_global,        ONLY :  stdout, ionode, ionode_id
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st
-  USE gwsigma,          ONLY : ecutsex, ecutsco
+  USE gwsigma,          ONLY : ecutsex, ecutsco, gexcut
   USE grid_subroutines, ONLY : realspace_grids_info 
   USE freq_gw,          ONLY : nwgreen, nwcoul, nfs, nwsigma
 
@@ -64,13 +64,15 @@ SUBROUTINE sigma_grids()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!! EXCHANGE GRID !!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   sigma_x_st%ecutt  = ecutsex
-  sigma_x_st%gcutmt  = ecutsex/tpiba2
+  sigma_x_st%gcutmt = ecutsex/tpiba2
   gkcut = (SQRT (sigma_x_st%ecutt) / tpiba + gkcut)**2
 !Generate auxilliary exchange grid.
   do ng = 1, ngm
      if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) sigma_x_st%ngmt = ng
      if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) sigma_x_st%ngmt_g = ng
+     if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt/4 ) gexcut = ng
   enddo
   CALL set_custom_grid(sigma_x_st)
 !  CALL realspace_grid_init_custom(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt)

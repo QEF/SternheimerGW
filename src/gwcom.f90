@@ -512,6 +512,7 @@ MODULE gwsigma
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
   REAL(DP) :: ecutprec
+  INTEGER :: gexcut
 ! To easily test convergence at the end 
 ! of the calculation.
   REAL(DP)    :: corr_conv

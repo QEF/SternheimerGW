@@ -77,8 +77,8 @@ CPPFLAGS       = -P -traditional $(DFLAGS) $(IFLAGS)
 
 CFLAGS         = $(DFLAGS) $(IFLAGS)
 F90FLAGS       = $(FFLAGS) -nomodule -fpp $(FDFLAGS) $(IFLAGS) $(MODFLAGS)
-FFLAGS         = -O3 -assume byterecl
-#FFLAGS         = -O0 -debug -g -traceback -assume byterecl -fpe:0
+#FFLAGS         = -O3 -assume byterecl
+FFLAGS         = -O0 -CB -debug -g -traceback -assume byterecl -fpe:0
 
 # compiler flags without optimization for fortran-77
 # the latter is NEEDED to properly compile dlamch.f, used by lapack
@@ -89,8 +89,8 @@ FFLAGS_NOOPT   =
 # Typically LD coincides with F90 or MPIF90, LD_LIBS is empty
 
 LD             = mpif90
-#LDFLAGS        = -O0 -debug -g -traceback -assume-byterecl -static-intel -fpe:0
-LDFLAGS        = -O3 -assume-byterecl -static-intel
+LDFLAGS        = -O0 -CB -debug -g -traceback -assume-byterecl -static-intel -fpe:0
+#LDFLAGS       = -O3 -assume-byterecl -static-intel
 LD_LIBS        = 
 
 # External Libraries (if any) : blas, lapack, fft, MPI

@@ -25,7 +25,7 @@ COMPLEX (DP)             :: sigma_band_c(nbnd_sig, nbnd_sig, nwsigma)
 COMPLEX (DP)             :: sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin)
 COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
 COMPLEX(DP), ALLOCATABLE :: z2(:), u2(:), a2(:)
-REAL(DP)                 :: w_ryd(nwsigwin), w_ryd2(nwsigwin), wsigwin(nwsigwin)
+REAL(DP)                 :: w_ryd(nwsigma), w_ryd2(nwsigwin), wsigwin(nwsigwin)
 REAL(DP) :: ehomo, elumo, mu
 
 !nwsigma is the number of points we have calculated sigma at.
@@ -43,7 +43,7 @@ REAL(DP) :: ehomo, elumo, mu
     endif
    !mu = ehomo
    !write(6, '(f14.7)'), mu 
-   ! mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
+   !mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
 IF(double_grid) THEN

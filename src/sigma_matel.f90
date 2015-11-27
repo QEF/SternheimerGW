@@ -40,7 +40,7 @@ IMPLICIT NONE
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_g_ex(:,:)
   COMPLEX(DP)               ::   czero, temp
-  COMPLEX(DP)               ::   aux(sigma_x_st%ngmt), psic(dfftp%nnr), vpsi(ngm), auxsco(sigma_c_st%ngmt)
+  COMPLEX(DP)               ::   aux(sigma_x_st%ngmt), psic(dffts%nnr), vpsi(ngm), auxsco(sigma_c_st%ngmt)
   COMPLEX(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                  sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
   COMPLEX(DP), ALLOCATABLE  ::   sigma(:,:,:)
@@ -90,30 +90,11 @@ IMPLICIT NONE
   ikq = 1
   found_k = .false.
 
-  do iq = 1, nqs
-     found_k  = (abs(xk_kpoints(1,ik0) - x_q(1,iq)).le.eps).and. &
-                (abs(xk_kpoints(2,ik0) - x_q(2,iq)).le.eps).and. &
-                (abs(xk_kpoints(3,ik0) - x_q(3,iq)).le.eps)
-     if (found_k) then
-        ikq_head = iq
-        exit
-     endif
-  enddo
   if((xk_kpoints(1,ik0).eq.0.0).and.(xk_kpoints(2,ik0).eq.0.0).and.(xk_kpoints(3,ik0).eq.0.0))then 
      ikq_head = 1
   else
      ikq_head = 2
   endif
-
-  do iq = 1, nks
-     found_k  = (abs(xk_kpoints(1,ik0) - xk(1,iq)).le.eps).and. &
-                (abs(xk_kpoints(2,ik0) - xk(2,iq)).le.eps).and. &
-                (abs(xk_kpoints(3,ik0) - xk(3,iq)).le.eps)
-     if (found_k) then
-        ikq = iq
-        exit
-     endif
-  enddo
 
   ikq = ikq_head
   write(stdout,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ik0, (xk_kpoints(ipol,ik0) , ipol = 1, 3)
@@ -135,6 +116,7 @@ IMPLICIT NONE
      unf_recl = DIRECT_IO_FACTOR * int(lrsex, kind=kind(unf_recl))
      open(iunsex, file = trim(adjustl(tempfile)), iostat = ios, &
      form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+     write(1000+mpime,*) tempfile, ios
   endif
 
 !ONLY THE POOL WITH THIS KPOINT CALCULATES THE CORRECT MATRIX ELEMENT.
@@ -142,7 +124,6 @@ IMPLICIT NONE
   sigma_band_ex (:, :) = czero
   sigma_band_c (:,:,:) = czero
 
-!  if (found_k) THEN
   if (meta_ionode) THEN
       write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
@@ -179,7 +160,7 @@ IMPLICIT NONE
       write(1000+mpime, '("Max number Plane Waves WFC ", i4)') npwx
       write(1000+mpime, '("Sigma_Ex Matrix Element")') 
 
-if(.not.do_sigma_exxG) then
+    if(.not.do_sigma_exxG) then
       allocate (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
       allocate (evc_tmp_i  (sigma_x_st%ngmt))
       allocate (evc_tmp_j  (sigma_x_st%ngmt))
@@ -240,14 +221,16 @@ if(.not.do_sigma_exxG) then
       deallocate(evc_tmp_i)
       deallocate(evc_tmp_j)
 else
+  if(allocated(sigma_band_exg)) then
     do ibnd = 1, nbnd_sig
        sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd, ik0)
     enddo
+  endif
 endif
 !MATRIX ELEMENTS OF SIGMA_C:
       write(1000+mpime,*) 
       write(1000+mpime, '("Sigma_C Matrix Element")') 
-      allocate (sigma(sigma_c_st%ngmt,sigma_c_st%ngmt,nwsigma)) 
+      allocate (sigma(sigma_c_st%ngmt, sigma_c_st%ngmt,nwsigma)) 
       allocate (evc_tmp_i(sigma_c_st%ngmt))
       allocate (evc_tmp_j(sigma_c_st%ngmt))
       counter     = 0
@@ -320,11 +303,7 @@ endif
       endif
 !Need to broadcast from the current pool to all the nodes
   endif!on pool with K-point
-  call mp_barrier(inter_pool_comm)
-  call mp_sum(vxc, inter_pool_comm)
-  call mp_sum(sigma_band_c, inter_pool_comm)
-  call mp_sum(sigma_band_ex, inter_pool_comm)
-  call mp_barrier(inter_pool_comm)
+call mp_barrier(inter_pool_comm)
 
 !Now first pool should always have
 !the kpoint we are looking for.

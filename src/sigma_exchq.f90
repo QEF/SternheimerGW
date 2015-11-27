@@ -18,7 +18,7 @@ SUBROUTINE sigma_exch(ik0)
   USE eqv,           ONLY : evq, eprec
   USE units_gw,      ONLY : iunsex, lrsex, lrwfc, iuwfc
   USE qpoint,        ONLY : npwq, igkq, nksq
-  USE gwsigma,       ONLY : sigma_x_st, nbnd_sig
+  USE gwsigma,       ONLY : sigma_x_st, nbnd_sig, gexcut
   USE buffers,       ONLY : save_buffer, get_buffer
   USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
   USE gvect,         ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
@@ -86,7 +86,7 @@ IMPLICIT NONE
   write(1000+mpime,*) trim(prefix) 
   write(6,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
   write(6,'(4x,"Occupied bands at k: ",i3)') nbnd_occ(ik0)
-  write(6,*)"   lgamma ", lgamma
+  write(6,*)"   lgamma, gexcut ", lgamma, gexcut
   write(6,'(4x,"nksq,nks,nkstot,kunit ",4i4)') nksq, nks,nkstot, kunit
   kcounter = 0
   czero = (0.0d0, 0.0d0)
@@ -100,9 +100,9 @@ IMPLICIT NONE
      call get_buffer (evc, lrwfc, iuwfc, ik1)
      npwq = npw
      do isymop = 1, nsym
-        nig0  = 1
 !Need a loop to find all plane waves below ecutsco when igkq 
 !takes us outside of this sphere.  
+        nig0  = 1
         counter  = 0
         igkq_tmp = 0
         igkq_ig  = 0
@@ -116,12 +116,14 @@ IMPLICIT NONE
         igkq = igk
 !igkq = igk
         do ig = 1, npw
-           if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
+           !if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
+           if((igk(ig).le.gexcut).and.((igk(ig)).gt.0)) then
                counter = counter + 1
                igkq_tmp (counter) = igk(ig)
                igkq_ig  (counter) = ig
            endif
         enddo
+        WRITE(1000+mpime,*) counter
         allocate ( greenf_na   (sigma_x_st%ngmt, sigma_x_st%ngmt) )
 !psi_{k+q}(r)psi^{*}_{k+q}(r')
         greenf_na = (0.0d0, 0.0d0)
@@ -143,7 +145,8 @@ IMPLICIT NONE
         rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
         barcoul(:,:) = (0.0d0,0.0d0)
         if(.not.trunc_2d) THEN
-           do ig = 1, sigma_x_st%ngmt
+           !do ig = 1, sigma_x_st%ngmt
+           do ig = 1, gexcut
               qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
                       + (g(3,ig)  + xq(3))**2.d0)
               qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
@@ -155,7 +158,7 @@ IMPLICIT NONE
               else
                 !barcoul(gmapsym(ig, invs(isymop)), gmapsym(ig, invs(isymop))) = (fpi*e2*(rcut**2))/2
                 barcoul(ig, ig) = (fpi*e2*(rcut**2))/2
-               endif
+              endif
            enddo
         else
             zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
