@@ -26,10 +26,10 @@ SUBROUTINE gwq_readin()
   USE ions_base,     ONLY : nat, ntyp => nsp
   USE io_global,     ONLY : ionode_id
   USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
-  USE mp,            ONLY : mp_bcast
-  USE mp_world,      ONLY : world_comm
-  USE start_k,       ONLY : reset_grid, nks_start
-  USE input_parameters, ONLY : max_seconds
+  USE mp,               ONLY : mp_bcast
+  USE mp_world,         ONLY : world_comm
+  USE start_k,          ONLY : reset_grid, nks_start
+  USE input_parameters, ONLY : max_seconds, force_symmorphic
   USE ions_base,     ONLY : amass, atm
   USE klist,         ONLY : xk, nks, nkstot, lgauss, two_fermi_energies
   USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir
@@ -57,9 +57,9 @@ SUBROUTINE gwq_readin()
   USE output,        ONLY : fildyn, fildvscf, fildrho
   USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, kpoints, num_k_pts, w_of_q_start,&
                             w_of_k_start, w_of_k_stop
-  USE io_files,      ONLY : outdir, tmp_dir, prefix
+  USE io_files,         ONLY : outdir, tmp_dir, prefix
   USE noncollin_module, ONLY : i_cons, noncolin
-  USE ldaU,          ONLY : lda_plus_u
+  USE ldaU,             ONLY : lda_plus_u
   USE control_flags, ONLY : iverbosity, modenum
   USE io_global,     ONLY : meta_ionode, meta_ionode_id, ionode, ionode_id, stdout
   USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
@@ -241,12 +241,12 @@ SUBROUTINE gwq_readin()
   padecont     = .FALSE.
   multishift   = .FALSE.
 !Imaginary component added to linear system should be in Rydberg
-  eta            = 0.02
+  eta            =  0.02
   kpoints        = .FALSE.
   do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
-  do_sigma_exxG  = .FALSE.
+  do_sigma_exxG  = .TRUE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.
@@ -272,6 +272,11 @@ SUBROUTINE gwq_readin()
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
+
+  IF(.not.force_symmorphic) then
+      CALL errore( 'FORCE_SYMMORPHIC must be true in GROUND STATE CALCULATIONS!', 'gwq_readin', 1)
+  ENDIF
+
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
   if(corr_conv.eq.0) corr_conv = ecutsco
