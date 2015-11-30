@@ -1,6 +1,4 @@
 PROGRAM diel_vis
-! diel_vis reads in the dielectric matrix, or the self-energy, stored in
-! G-space and transforms it in to real space.
   USE environment,ONLY : environment_start
   USE io_global,  ONLY : stdout, ionode, ionode_id
   USE mp_global,  ONLY : nproc_pool
@@ -194,9 +192,6 @@ real(DP) :: e1(3), e2(3), e3(3), x0 (3), R(3), radius, m1, m2, m3, e(3)
      else
         READ ( iuncoul,  rec = iq, iostat = ios) scrcoul_g
      endif
-
-     write(6,*) ios
-
 
      if(.not.sigorcoul) then
     !add one back since we store: \epsilon^{-1} - 1.

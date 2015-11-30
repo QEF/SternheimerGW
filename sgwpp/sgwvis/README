@@ -1,0 +1,26 @@
+To plot Silicon Charge density (example01):
+
+1) make a self-consistent calculation (input=si.scf.in,
+   output=si.scf.out)
+
+2) run the postprocessing program pp.x (input=si.pp_rho.in, 
+   output=si.pp_rho.out) in order to extract a 2D cut of 
+   the charge density. See INPUT_PP for details of the input.
+
+3) run plotrho.x program (input=si.plotrho.in, output=si.plotrho.out)
+   in order to produce a postscript file: si.rho.ps.
+
+
+To plot self-energy functional (example06).
+
+1) make a self-consistent calculation (input=si.scf.in,
+   output=si.scf.out)
+
+2) Run a GW calculation obtaining Sigma in a full wedge of the IBZ of 
+	 a Monkhorst-Pack grid.
+
+3) Run sgwpp/sgwvis.x to generate either a 2d contour plot of the
+	 charge density or a full xsf struct file for visualization in 
+	 Vesta.
+
+

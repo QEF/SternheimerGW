@@ -15,27 +15,30 @@ SUBROUTINE sigmadens (filplot,plot_num)
   !
   !      DESCRIPTION of the INPUT: see file INPUT_PP in Doc/
   !
-  USE kinds,      ONLY : dp
-  USE io_global,  ONLY : stdout, ionode, ionode_id
-  USE io_files,   ONLY : nd_nmbr
-  USE mp_pools,   ONLY : nproc_pool
-  USE mp_world,   ONLY : world_comm
-  USE mp,         ONLY : mp_bcast
-  USE parameters, ONLY : ntypx
-  USE constants,  ONLY : pi, fpi
-  USE cell_base,  ONLY : at, bg, celldm, ibrav, alat, omega, tpiba, tpiba2
-  USE ions_base,  ONLY : nat, ityp, atm, ntyp => nsp, tau, zv
-  USE lsda_mod,   ONLY : nspin
-  USE fft_base,   ONLY : scatter_grid, dfftp, dffts
-  USE fft_interfaces,  ONLY : fwfft
-  USE grid_subroutines,ONLY : realspace_grid_init
-  USE gvect,      ONLY : ngm, nl, g, gcutm
-  USE gvecs,      ONLY : gcutms, doublegrid, dual, ecuts 
-  USE recvec_subs,ONLY: ggen 
-  USE wvfct,      ONLY: ecutwfc
-  USE run_info,   ONLY: title
+  USE kinds,       ONLY : dp
+  USE io_global,   ONLY : stdout, ionode, ionode_id
+  USE io_files,    ONLY : nd_nmbr
+  USE mp_pools,    ONLY : nproc_pool
+  USE mp_world,    ONLY : world_comm
+  USE mp,          ONLY : mp_bcast
+  USE parameters,  ONLY : ntypx
+  USE constants,   ONLY : pi, fpi
+  USE cell_base,   ONLY : at, bg, celldm, ibrav, alat, omega, tpiba, tpiba2
+  USE ions_base,   ONLY : nat, ityp, atm, ntyp => nsp, tau, zv
+  USE lsda_mod,    ONLY : nspin
+  USE fft_base,    ONLY : scatter_grid, dfftp, dffts
+  USE fft_interfaces,   ONLY : fwfft, invfft
+  USE grid_subroutines, ONLY : realspace_grid_init
+  USE gvect,         ONLY: ngm, nl, g, gcutm
+  USE gvecs,         ONLY: gcutms, doublegrid, dual, ecuts 
+  USE recvec_subs,   ONLY: ggen 
+  USE wvfct,         ONLY: ecutwfc
+  USE run_info,      ONLY: title
   USE control_flags, ONLY: gamma_only
   USE wavefunctions_module,  ONLY: psic
+! SGW vis stuff
+  USE symm_base,  ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+
 
   IMPLICIT NONE
   CHARACTER (len=256), INTENT(in) :: filplot
@@ -91,12 +94,23 @@ SUBROUTINE sigmadens (filplot,plot_num)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:), sigma(:,:), sigma_g(:,:,:), &
                               sigma_q(:,:,:), sigma_ex(:,:)
   COMPLEX(DP), ALLOCATABLE :: sigmar(:)
-!Complete file name
+
+!SIGMADENS
   INTEGER   :: ngmpol, nwsigma, iunsigma, iqs, ir
   INTEGER   :: isym, nqs
-  INTEGER*8 :: unf_recl
   INTEGER   :: iq, lrcoul
+  INTEGER*8 :: unf_recl
+  INTEGER, ALLOCATABLE     :: gmapsym(:,:)
+  COMPLEX(DP), ALLOCATABLE ::  eigv(:,:)
+  COMPLEX(DP), ALLOCATABLE :: eigx (:), eigy (:), eigz (:)
+  COMPLEX(DP), ALLOCATABLE:: sigmag (:)
+
 #define DIRECT_IO_FACTOR 8 
+
+  ALLOCATE ( gmapsym  (ngm, nrot)   )
+  ALLOCATE ( eigv     (ngm, nrot)   )
+
+
 
 
   NAMELIST /plot/  &
@@ -178,7 +192,7 @@ SUBROUTINE sigmadens (filplot,plot_num)
   IF (nfile < 1 .or. nfile > nfilemax) &
        CALL errore ('chdens ', 'nfile is wrong ', 1)
 
-  ! check for iflag
+  ! check for iflag make sure input parameters are logical
 
   IF (iflag <= 1) THEN
 
@@ -223,6 +237,7 @@ SUBROUTINE sigmadens (filplot,plot_num)
 
   ENDIF
 
+  !END INPUT CHECK
   ! check interpolation
   if (trim(interpolation) /= 'fourier' .and. trim(interpolation) /= 'bspline') &
      call errore('chdens', 'wrong interpolation: ' // trim(interpolation), 1)
@@ -238,7 +253,6 @@ SUBROUTINE sigmadens (filplot,plot_num)
          CALL errore('isostm','direction not equal to +- 1',1)
      ENDIF
   END IF
-
   !
   ! Read the header and allocate objects
   !
@@ -271,7 +285,6 @@ SUBROUTINE sigmadens (filplot,plot_num)
      CALL latgen (ibrav, celldm, at(1,1), at(1,2), at(1,3), omega )
      alat = celldm (1) ! define alat
      at = at / alat    ! bring at in units of alat
-
      tpiba = 2.d0 * pi / alat
      tpiba2 = tpiba**2
      doublegrid = dual>4.0d0
@@ -408,25 +421,43 @@ SUBROUTINE sigmadens (filplot,plot_num)
         ALLOCATE  (sigma_g(ngmpol, ngmpol, nwsigma))
 
         lrcoul = 2*ngmpol*ngmpol*nwsigma
+
         unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
         open ( iunsigma, file = "./tmp/gw0/si.sigma1", iostat = ios, form ='unformatted', & 
         status = 'unknown', access = 'direct', recl = unf_recl)
 
+       ! filename = trim(prefix)//"."//"coul1"
+       ! tempfile = trim(tmp_dir_coul) // trim(filename)
+       ! unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
+       ! open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
+       ! form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
+       ! time for a slow FFT!
+       ! choose point ir.
+       !!! x0 and e1 are in alat units !!!
+        allocate (rhog   ( ngm ))
+        allocate (sigmag ( ngm ))
         do iq = 1, nqs 
            sigma_q = dcmplx(0.0,0.0)
            read( iunsigma, rec = iq, iostat = ios) sigma_g
            do isym = 1, nsym
-              sigma_g = 1
+           !"single_point FFT to get \Sigma_{x0}(\r'; omega)
+              do ig = 1, ngmpol
+                 eigx0 = exp( (0.d0, -1.d0)*2.d0*pi*(&
+                        (x0(1)*(g(1,gmapsym(ig, isym))+ xk(1,iq))+ x0(2)*(g(2,gmapsym(ig,isym)) + xk(2,ik)) 
+                       + x0(3)*(g(3,gmapsym(ig,isym)) + xk(3,ik)))))
+           !reduce r co-ordinate
+                 sigmag(:) = wk(iq)*eigx0*sigma_g(gmapsym(ig,isym), gmapsym(:,isym))
+              enddo
+              CALL plot_3d_sig (celldm (1), at, nat, tau, atm, ityp, ngm, g, sigmag,&
+                   nx, ny, nz, m1, m2, m3, xk(:,iq), e1, e2, e3, output_format, &
+                   ounit, rhotot, gmapsym, sigmar)
            enddo
-           sigma(:,:)  = sigma(:,:) + sigma_q(:,:,:)
         enddo
-
-        sigmar(:) = sigma(ir, :)
-
+        sigmar = (1.0/float(nsym))*sigmar
         CALL xsf_struct (alat, at, nat, tau, atm, ityp, ounit)
         CALL xsf_fast_datagrid_3d &
-             (sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x, dfftp%nr2x, dfftp%nr3x, at, alat, ounit)
-
+             (sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x,
+              dfftp%nr2x, dfftp%nr3x, at, alat, ounit)
      ENDIF
   ELSE
 
@@ -443,3 +474,129 @@ SUBROUTINE sigmadens (filplot,plot_num)
   DEALLOCATE(ityp)
 
 END SUBROUTINE sigmadens
+
+SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
+     nx, ny, nz, m1, m2, m3, xk, e1, e2, e3, output_format, ounit, &
+     rhotot, carica)
+  !-----------------------------------------------------------------------
+  !
+  USE kinds, ONLY : DP
+  USE constants, ONLY:  pi
+  USE io_global, ONLY : stdout, ionode
+  USE mp_bands,  ONLY : intra_bgrp_comm
+  USE mp,         ONLY : mp_sum
+  USE symm_base,  ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  IMPLICIT NONE
+  INTEGER :: nat, ityp (nat), ngm, nx, ny, nz, output_format, ounit
+  ! number of atoms
+  ! type of atoms
+  ! number of G vectors
+  ! number of points along x, y, z
+  ! output format
+  ! output unit
+  CHARACTER(len=3) :: atm(*)
+
+  real(DP) :: alat, tau(3,nat), at(3,3), g(3,ngm), xk(3), &
+                   e1(3), e2(3), e3(3), m1, m2, m3
+  ! lattice parameter
+  ! atomic positions
+  ! lattice vectors
+  ! G-vectors
+  ! origin
+  ! vectors e1,e2,e3 defining the parallelepiped
+  ! moduli of e1,e2,e3
+
+  COMPLEX(DP) :: rhog (ngm)
+  ! rho or polarization in G space
+  INTEGER :: i, j, k, ig
+
+  real(DP) :: rhomin, rhomax, rhotot, rhoabs, deltax, deltay, deltaz
+  ! min, max value of the charge, total charge, total absolute charge
+  ! steps along e1, e2, e3
+  COMPLEX(DP), ALLOCATABLE :: eigx (:), eigy (:), eigz (:)
+  INTEGER  :: gmapsym(ngm,nrot)
+  real(DP) :: omega
+!HL
+! real(DP), ALLOCATABLE :: carica (:,:,:)
+  real(DP), allocatable  :: carica (nx,ny,nz)
+! HL:
+! ALLOCATE (carica( nx , ny , nz))
+  ALLOCATE (eigx(  nx))
+  ALLOCATE (eigy(  ny))
+  ALLOCATE (eigz(  nz))
+
+  deltax = m1 / nx
+  deltay = m2 / ny
+  deltaz = m3 / nz
+
+ !HL want to accumulate sum
+ !carica = 0.d0
+  DO ig = 1, ngm
+     !
+     ! eigx=exp(iG*e1+iGx0), eigy=exp(iG*e2), eigz=exp(iG*e3)
+     ! These factors are calculated and stored in order to save CPU time
+     !
+     DO i = 1, nx
+        eigx (i) = exp( (0.d0,1.d0) * 2.d0 * pi * ( (i-1) * deltax * &
+             (e1(1)*(g(1,gmapsym(ig,isym)) +  xk(1)) + e1(2)*(g(2,gmapsym(ig,isym)) + 
+              xk(2)) + e1(3)*(g(3,gmapsym(ig,isym)) + xk(3))))
+     ENDDO
+     DO j = 1, ny
+        eigy (j) = exp( (0.d0,1.d0) * 2.d0 * pi * (j-1) * deltay * &
+             (e2(1)*(g(1,gmapsym(ig,isym))+xk(1)) + e2(2)*(g(2,gmapsym(ig,isym))+xk(2)) + 
+              e2(3)*(g(3,gmapsym(ig,isym))+xk(3))))
+     ENDDO
+     DO k = 1, nz
+        eigz (k) = exp((0.d0,1.d0)*2.d0*pi*(k-1)*deltaz* &
+             (e3(1)*(g(1,gmapsym(ig,isym))+xk(1)) + e3(2)*(g(2,gmapsym(ig,isym))+xk(2)) + 
+              e3(3)*(g(3,gmapsym(ig,isym))+xk(3))))
+     ENDDO
+     DO k = 1, nz
+        DO j = 1, ny
+           DO i = 1, nx
+              carica (i, j, k) = carica (i, j, k) + &
+                    dble (rhog (ig) * eigz (k) * eigy (j) * eigx (i) )
+           ENDDO
+        ENDDO
+     ENDDO
+  ENDDO
+  !
+  !
+  CALL mp_sum( carica, intra_bgrp_comm )
+  !
+  ! HL:
+  ! Here we check the value of the resulting exchange correlation 
+  ! potential.
+  !
+  CALL volume(alat,e1(1),e2(1),e3(1),omega)
+
+  rhomin = max    ( minval (carica), 1.d-10 )
+  rhomax = maxval (carica)
+  rhotot = sum (carica(:,:,:)) * omega * deltax * deltay * deltaz
+  rhoabs = sum (abs(carica(:,:,:))) * omega * deltax * deltay * deltaz
+
+  WRITE(stdout, '(/5x,"Min, Max, Total, Abs charge: ",2f10.6,2x, 2f10.4)')&
+     rhomin, rhomax, rhotot, rhoabs
+!
+!  IF (ionode) THEN
+!     IF (output_format == 4) THEN
+!       "gOpenMol" file
+!        CALL write_openmol_file (alat, at, nat, tau, atm, ityp, x0, &
+!             m1, m2, m3, nx, ny, nz, rhomax, carica, ounit)
+!     ELSE
+        ! user has calculated for very long, be nice and write some output even
+        ! if the output_format is wrong; use XSF format as default
+        !
+        ! XCRYSDEN's XSF format
+        !
+!        CALL xsf_struct      (alat, at, nat, tau, atm, ityp, ounit)
+!        CALL xsf_datagrid_3d &
+!             (carica, nx, ny, nz, m1, m2, m3, x0, e1, e2, e3, alat, ounit)
+!     ENDIF
+!  ENDIF
+  DEALLOCATE (carica)
+  DEALLOCATE (eigz)
+  DEALLOCATE (eigy)
+  DEALLOCATE (eigx)
+  RETURN
+END SUBROUTINE plot_3d_sig
