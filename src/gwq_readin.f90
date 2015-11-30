@@ -273,9 +273,6 @@ SUBROUTINE gwq_readin()
   just_corr = .FALSE.
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
 
-  IF(.not.force_symmorphic) then
-      CALL errore( 'FORCE_SYMMORPHIC must be true in GROUND STATE CALCULATIONS!', 'gwq_readin', 1)
-  ENDIF
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
@@ -426,6 +423,11 @@ SUBROUTINE gwq_readin()
 1001 continue
 
   CALL read_file ( )
+  force_symmorphic = .true.
+  CALL mp_bcast(force_symmorphic, meta_ionode_id, world_comm )
+  IF(.not.force_symmorphic) then
+      CALL errore( 'FORCE_SYMMORPHIC must be true in GROUND STATE CALCULATIONS!', 'gwq_readin', 1)
+  ENDIF
 
   newgrid = reset_grid (nk1, nk2, nk3, k1, k2, k3)
   tmp_dir=tmp_dir_save

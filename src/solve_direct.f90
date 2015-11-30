@@ -275,7 +275,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         enddo
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_coul) then
-               WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
+               !WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
            endif
         enddo

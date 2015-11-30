@@ -21,6 +21,7 @@ program gw
   USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,            ONLY : nbnd
   USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop
+  USE input_parameters, ONLY : max_seconds, force_symmorphic
 
   IMPLICIT NONE
 
@@ -37,6 +38,7 @@ program gw
   call gwq_readin()
   call check_stop_init()
   call check_initial_status(auxdyn)
+
 
 ! Initialize frequency grids, FFT grids for correlation
 ! and exchange operators, open relevant GW-files.
@@ -62,6 +64,10 @@ program gw
          if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
          if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
          if(do_sigma_c) call sigma_c_im(ik)
+         if(do_sigma_c.and.multishift) then
+            close(unit = iunresid, status = 'DELETE')
+            close(unit = iunalphabeta, status = 'DELETE')
+         endif
          if(do_sigma_exx .and. .not.do_sigma_exxG) then   
             call sigma_exch(ik)
          else if(do_sigma_exx .and. do_sigma_exxG) then
@@ -79,10 +85,6 @@ program gw
          if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
          if(do_sigma_c) call sigma_c_re(ik)
       enddo
-  endif
-  if(do_sigma_c.and.multishift) then
-     close(unit = iunresid, status = 'DELETE')
-     close(unit = iunalphabeta, status = 'DELETE')
   endif
   127 continue
   call close_gwq(.TRUE.)

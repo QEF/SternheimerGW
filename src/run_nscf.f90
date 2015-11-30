@@ -18,7 +18,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn
   USE io_global,      ONLY : stdout
   USE lsda_mod,        ONLY : nspin
-  USE input_parameters,ONLY : pseudo_dir
+  USE input_parameters,ONLY : pseudo_dir, force_symmorphic
   USE control_flags,   ONLY : restart
   USE fft_base,        ONLY : dffts
   USE qpoint,          ONLY : xq
@@ -71,6 +71,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
      twfcollect=.FALSE.
      CALL punch( 'all' )
   ENDIF
+
 
   IF(do_matel.and.nkstot.ne.nqs) THEN
     WRITE(stdout,'("WARNING: You have given a kpoint not in original BZ. &
