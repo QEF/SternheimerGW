@@ -4,7 +4,7 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE sigma_c_im(ik0) 
+SUBROUTINE sigma_c_im_mod(ik0) 
 !G TIMES W PRODUCT sigma_correlation_imaginary frequency.
   USE kinds,         ONLY : DP
   USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
@@ -216,13 +216,13 @@ SUBROUTINE sigma_c_im(ik0)
               dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
 !             call fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, 1)
 !             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
-              CALL sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw), sigma_g)
+              CALL sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw), sigma_g(1,1,iw0), gmapsym(1,1))
 !We use Time Reversal on W here.
               call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
 !call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
 !             call fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, 1)
 !             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
-              CALL sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw+nwcoul),sigma_g)
+              CALL sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw+nwcoul), sigma_g(1,1,iw0), gmapsym(1,1))
            ENDDO ! on frequency convolution over w'
         ENDDO ! on iw0  
       ENDIF
@@ -236,9 +236,9 @@ DEALLOCATE ( scrcoul_g      )
 DEALLOCATE ( z, a, u        )
 #ifdef __PARA
  CALL mp_barrier(inter_pool_comm)
- CALL mp_sum(sigma, inter_pool_comm)
+ CALL mp_sum(sigma_g, inter_pool_comm)
  CALL mp_barrier(inter_image_comm)
- CALL mp_sum(sigma, inter_image_comm)
+ CALL mp_sum(sigma_g, inter_image_comm)
 #endif __PARA
  IF (meta_ionode) THEN
 !Now write Sigma in G space to file. 
@@ -250,4 +250,4 @@ DEALLOCATE ( z, a, u        )
  CALL mp_barrier(inter_image_comm)
  DEALLOCATE ( sigma  )
 RETURN
-END SUBROUTINE sigma_c_im
+END SUBROUTINE sigma_c_im_mod

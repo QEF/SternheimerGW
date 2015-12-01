@@ -23,7 +23,7 @@ SUBROUTINE sigma_grids()
   USE fft_types,        ONLY : fft_dlay_descriptor, fft_dlay_allocate, &
                                fft_dlay_set, fft_dlay_scalar
   USE io_global,        ONLY :  stdout, ionode, ionode_id
-  USE gwsigma,          ONLY : sigma_x_st, sigma_c_st
+  USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, gcutcorr
   USE gwsigma,          ONLY : ecutsex, ecutsco, gexcut
   USE grid_subroutines, ONLY : realspace_grids_info 
   USE freq_gw,          ONLY : nwgreen, nwcoul, nfs, nwsigma
@@ -99,13 +99,13 @@ SUBROUTINE sigma_grids()
   gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
 !Generate auxilliary correlation grid.
   do ng = 1, ngm
-    !if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt/4 ) gcutcorr = ng
+     if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) gcutcorr  = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt_g = ng
   enddo
   CALL set_custom_grid(sigma_c_st)
   CALL realspace_grid_init(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
- ! CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
+! CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
   CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_c_st%gcutmt, &
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
