@@ -42,7 +42,6 @@ SUBROUTINE sigma_c_im(ik0)
 
   COMPLEX(DP)         :: ci, czero
   COMPLEX(DP)         :: phase
-  COMPLEX(DP)         :: aux (sigma_c_st%dfftt%nnr)
 !Sigma arrays
   COMPLEX (DP), ALLOCATABLE :: sigma(:,:,:)
   COMPLEX (DP), ALLOCATABLE :: sigma_g(:,:,:)
@@ -50,7 +49,6 @@ SUBROUTINE sigma_c_im(ik0)
   COMPLEX(DP), ALLOCATABLE :: z(:), u(:), a(:)
 !W arrays 
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g (:,:,:)
-  COMPLEX(DP), ALLOCATABLE :: scrcoul_g_R (:,:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul_pade_g (:,:)
   COMPLEX(DP), ALLOCATABLE :: scrcoul(:,:)
 !G arrays:
@@ -115,19 +113,17 @@ SUBROUTINE sigma_c_im(ik0)
 
 #define DIRECT_IO_FACTOR 8 
 ! iG(W-v)
-   ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
-   ALLOCATE ( scrcoul_g_R     (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
-   ALLOCATE ( scrcoul_pade_g  (sigma_c_st%ngmt, sigma_c_st%ngmt)         )
-   ALLOCATE ( greenf_g        (sigma_c_st%ngmt, sigma_c_st%ngmt, 2*nwcoul) )
+   ALLOCATE ( greenf_g        (sigma_c_st%ngmt, sigma_c_st%ngmt, 2*nwcoul))
+   ALLOCATE ( sigma_g         (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma) )
+   ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)     )
+   ALLOCATE ( scrcoul_pade_g  (sigma_c_st%ngmt, sigma_c_st%ngmt)          )
+
 !These go on the big grid...
-   ALLOCATE ( scrcoul        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
-   ALLOCATE ( greenfr        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
 !Technically only need gmapsym up to sigma_c_st%ngmt or ngmgrn...
    ALLOCATE ( gmapsym  (ngm, nrot)   )
    ALLOCATE ( eigv     (ngm, nrot)   )
 !This is a memory hog...
-   ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
-   ALLOCATE  (z(nfs), a(nfs), u(nfs))
+   ALLOCATE (z(nfs), a(nfs), u(nfs))
 
    nnr = sigma_c_st%dfftt%nnr
    wgtcoulry(:) = wgtcoul(:)/RYTOEV
@@ -207,7 +203,7 @@ SUBROUTINE sigma_c_im(ik0)
         isym     = 1
         nig0     = 1
         inv_q   = .false.
-!        if(inv_q) write(1000+mpime, '("Need to use time reversal")')
+!    if(inv_q) write(1000+mpime, '("Need to use time reversal")')
 !    Start integration over iw +/- wcoul.
 !    Rotate W and initialize necessary quantities for 
 !    pade_continuation or godby needs.
@@ -216,61 +212,41 @@ SUBROUTINE sigma_c_im(ik0)
            DO iw = 1, nwcoul
               CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
               scrcoul = czero
-              CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-              greenfr(:,:) = czero
+!call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
               dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
-              call fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, 1)
-!call fft6_g(greenf_g(1,1,iw),greenfr(1,1),sigma_c_st,gmapsym(1,1),eigv(1,1),invs(isym),nig0,+1)
-              sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+!             call fft6(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, 1)
+!             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+              CALL sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw), sigma_g)
 !We use Time Reversal on W here.
               call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
-              scrcoul = czero
-              call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
-              greenfr(:,:) = czero
-              call fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, 1)
-!call fft6_g(greenf_g(1,1,iw+nwcoul),greenfr(1,1),sigma_c_st,gmapsym(1,1),eigv(1,1),invs(isym),nig0,+1)
-              sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+!call fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
+!             call fft6(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, 1)
+!             sigma (:,:,iw0) = sigma (:,:,iw0) + dz*greenfr(:,:)*scrcoul(:,:)
+              CALL sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw+nwcoul),sigma_g)
            ENDDO ! on frequency convolution over w'
         ENDDO ! on iw0  
       ENDIF
     ENDDO ! isymop
 ENDDO!iq
-DEALLOCATE ( eigv             )
-DEALLOCATE ( gmapsym          )
-DEALLOCATE ( greenfr          )
-DEALLOCATE ( greenf_g         )
-DEALLOCATE ( scrcoul          )
-DEALLOCATE ( scrcoul_pade_g   )
-DEALLOCATE ( scrcoul_g, scrcoul_g_R )
-DEALLOCATE ( z,a,u )
-
+DEALLOCATE ( eigv           )
+DEALLOCATE ( gmapsym        )
+DEALLOCATE ( greenf_g       )
+DEALLOCATE ( scrcoul_pade_g )
+DEALLOCATE ( scrcoul_g      )
+DEALLOCATE ( z, a, u        )
 #ifdef __PARA
  CALL mp_barrier(inter_pool_comm)
  CALL mp_sum(sigma, inter_pool_comm)
  CALL mp_barrier(inter_image_comm)
  CALL mp_sum(sigma, inter_image_comm)
 #endif __PARA
-
  IF (meta_ionode) THEN
-   ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
-   IF(allocated(sigma_g)) THEN
-      write(6,'(4x,"Sigma_g allocated")')
-   ELSE
-      write(6,'(4x,"Sigma_g too large!")')
-      CALL mp_global_end()
-      STOP
-   ENDIF
-   write(6,'(4x,"Sigma in G-Space")')
-   sigma_g = (0.0d0,0.0d0)
-   DO iw = 1, nwsigma
-      CALL fft6(sigma_g(1,1,iw), sigma(1,1,iw), sigma_c_st, -1)
-   ENDDO
 !Now write Sigma in G space to file. 
    CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
    write(6,'(4x,"Sigma Written to File")')
    CALL stop_clock('sigmac')
-   DEALLOCATE ( sigma_g  )
  ENDIF !ionode
+ DEALLOCATE ( sigma_g  )
  CALL mp_barrier(inter_image_comm)
  DEALLOCATE ( sigma  )
 RETURN

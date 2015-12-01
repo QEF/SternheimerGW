@@ -94,9 +94,12 @@ SUBROUTINE sigma_grids()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   sigma_c_st%ecutt   = ecutsco
   sigma_c_st%gcutmt  = ecutsco/tpiba2
+ !sigma_c_st%ecutt   = 4*ecutsco
+ !sigma_c_st%gcutmt  = 4*ecutsco/tpiba2
   gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
 !Generate auxilliary correlation grid.
   do ng = 1, ngm
+    !if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt/4 ) gcutcorr = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt_g = ng
   enddo

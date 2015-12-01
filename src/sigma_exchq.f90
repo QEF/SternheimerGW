@@ -116,8 +116,8 @@ IMPLICIT NONE
         igkq = igk
 !igkq = igk
         do ig = 1, npw
-           !if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
-           if((igk(ig).le.gexcut).and.((igk(ig)).gt.0)) then
+           if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
+           !if((igk(ig).le.gexcut).and.((igk(ig)).gt.0)) then
                counter = counter + 1
                igkq_tmp (counter) = igk(ig)
                igkq_ig  (counter) = ig
@@ -145,8 +145,8 @@ IMPLICIT NONE
         rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
         barcoul(:,:) = (0.0d0,0.0d0)
         if(.not.trunc_2d) THEN
-           !do ig = 1, sigma_x_st%ngmt
-           do ig = 1, gexcut
+           do ig = 1, sigma_x_st%ngmt
+           !do ig = 1, gexcut
               qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
                       + (g(3,ig)  + xq(3))**2.d0)
               qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
