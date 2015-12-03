@@ -6,18 +6,18 @@
   !-----------------------------------------------------------------------
 SUBROUTINE invert_epsilon(scrcoul_g_in, iq, eps_m)
 USE kinds,         ONLY : DP
-USE gwsigma,       ONLY : sigma_c_st
+USE gwsigma,       ONLY : sigma_c_st, gcutcorr
 USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
-USE control_gw,        ONLY : solve_direct
+USE control_gw,    ONLY : solve_direct
 
 IMPLICIT NONE    
 
-COMPLEX(DP)       :: scrcoul_g_in(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, 1)
-COMPLEX(DP)       :: work(sigma_c_st%ngmt)
+COMPLEX(DP)       :: scrcoul_g_in(gcutcorr, gcutcorr, nfs, 1)
+COMPLEX(DP)       :: work(gcutcorr)
 COMPLEX(DP)       :: eps_m(nfs)
 INTEGER           :: ig, igp, npe, irr, icounter, ir, irp
 INTEGER           :: isym, iwim, iq, iw
-INTEGER           :: iwork(sigma_c_st%ngmt), info
+INTEGER           :: iwork(gcutcorr), info
 
 !Overwrite with eps_m calculated using q0G0.
 !Place hold with 1/epsilon^{-1}_{00}(q=0
@@ -33,21 +33,21 @@ INTEGER           :: iwork(sigma_c_st%ngmt), info
 !at Gamma wings of \Chi are 0.
 if(iq.eq.1) then
   do iw = 1, nfs
-    do ig = 2, sigma_c_st%ngmt
+    do ig = 2, gcutcorr
        scrcoul_g_in(ig,1,iw,1)  = dcmplx(0.0d0,0.0d0)
     enddo
-    do igp = 2, sigma_c_st%ngmt
+    do igp = 2, gcutcorr
        scrcoul_g_in(1,igp,iw,1) = dcmplx(0.0d0,0.0d0)
     enddo
   enddo
 endif
 !Need block inversion routine if iq is gamma.
 do iw = 1, nfs
-   call ZGETRF (sigma_c_st%ngmt, sigma_c_st%ngmt,&
-   scrcoul_g_in(1:sigma_c_st%ngmt,1:sigma_c_st%ngmt,iw,1), sigma_c_st%ngmt, iwork, info)
+   call ZGETRF (gcutcorr, gcutcorr,&
+   scrcoul_g_in(1:gcutcorr,1:gcutcorr,iw,1), gcutcorr, iwork, info)
    call errore ('invert epsilon', 'factorization', info)
-   call ZGETRI (sigma_c_st%ngmt, scrcoul_g_in(1:sigma_c_st%ngmt,1:sigma_c_st%ngmt,iw,1),& 
-   sigma_c_st%ngmt, iwork, work, sigma_c_st%ngmt, info)
+   call ZGETRI (gcutcorr, scrcoul_g_in(1:gcutcorr,1:gcutcorr,iw,1),& 
+   gcutcorr, iwork, work, gcutcorr, info)
    call errore ('invert epsilon', 'inversion', info)
 enddo
 
@@ -63,10 +63,10 @@ if(iq.eq.1) then
   !  enddo
   !endif
   do iw = 1, nfs
-     do ig = 2, sigma_c_st%ngmt
+     do ig = 2, gcutcorr
         scrcoul_g_in(ig,1,iw,1) = dcmplx(0.0d0,0.0d0)
      enddo
-     do igp = 2, sigma_c_st%ngmt
+     do igp = 2, gcutcorr
         scrcoul_g_in(1,igp,iw,1) = dcmplx(0.0d0,0.0d0)
      enddo
   enddo
@@ -74,7 +74,7 @@ endif
 
 !We store epsilon-1 to disk:
 do iw = 1, nfs
-   do ig = 1, sigma_c_st%ngmt
+   do ig = 1, gcutcorr
       scrcoul_g_in(ig,ig,iw,1) = scrcoul_g_in(ig,ig,iw,1) - dcmplx(1.0d0,0.0d0)
    enddo
 enddo

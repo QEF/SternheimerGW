@@ -11,6 +11,7 @@ IFLAGS=
 
 GWOBJS = \
 gwcom.o\
+version.o\
 gw.o\
 testnan.o\
 save_gw_input.o\
@@ -74,8 +75,8 @@ mod_diel.o\
 clean_pw_gw.o\
 deallocate_gwq.o\
 pade.o\
-sigma_exchq.o\
-sigma_exchGq.o\
+sigma_exch.o\
+sigma_exchG.o\
 sigma_matel.o\
 print_matel.o\
 para_img.o\
@@ -95,14 +96,21 @@ coulpade.o\
 star_q.o\
 wavecut.o\
 find_xk_uniq.o\
-coul_multi.o
+coul_multi.o\
+sigprodIII.o\
+sgw_opening.o\
+sigcimmod.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a
 LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 TLDEPS= bindir mods libs pw-lib
 
-all : libgw.a gw.x
+all : version libgw.a gw.x
+
+version : 
+	sh update_version
+
 gw.x : gw.o libgw.a $(PWOBJS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o gw.x gw.o libgw.a \
 		 $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)

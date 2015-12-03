@@ -12,7 +12,7 @@ SUBROUTINE stern_symm()
 
 USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
-USE gwsigma,       ONLY : sigma_c_st
+USE gwsigma,       ONLY : sigma_c_st, gcutcorr
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm
 USE control_gw,    ONLY : loqua
@@ -66,7 +66,7 @@ LOGICAL      :: minus_q, magnetic_sym, sym(48)
 !Find number of unique vectors:
 ngmunique = 1
 ig_unique(1) = 1
-DO ig = 2, sigma_c_st%ngmt
+DO ig = 2, gcutcorr
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
    DO isym = 1, nsymq
@@ -87,5 +87,5 @@ DO ig = 2, sigma_c_st%ngmt
    ENDIF
 ENDDO
 write(6,'(/5x, "Number of symmops in Small G_q: ", i4)'), nsymq
-write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)'), sigma_c_st%ngmt, ngmunique
+write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)'), gcutcorr, ngmunique
 END SUBROUTINE stern_symm

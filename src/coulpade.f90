@@ -12,7 +12,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax
-  USE gwsigma,       ONLY : sigma_c_st
+  USE gwsigma,       ONLY : sigma_c_st, gcutcorr
   USE gvect,         ONLY : g, ngm, nl
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
@@ -21,7 +21,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
 
   IMPLICIT NONE
 
-  COMPLEX(DP)         ::  scrcoul_g   (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
+  COMPLEX(DP)         ::  scrcoul_g   (gcutcorr, gcutcorr, nfs)
   COMPLEX(DP)         :: z(nfs), u(nfs), a(nfs)
   COMPLEX(DP) :: phase
 
@@ -47,22 +47,22 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
 !SPHERICAL SCREENING
     IF(.not.trunc_2d) THEN
        DO iw = 1, nfs
-         DO ig = 1, sigma_c_st%ngmt
+         DO ig = 1, gcutcorr
          qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
          qg = sqrt(qg2)
          limq = (qg2.lt.eps8) 
          IF(.not.limq) THEN
             spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-            DO igp = 1, sigma_c_st%ngmt
+            DO igp = 1, gcutcorr
                scrcoul_g(ig, igp, iw) = scrcoul_g(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
             ENDDO
          ELSE
             scrcoul_g(ig, ig, iw) = scrcoul_g(ig,ig,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
 !zero wings of matrix for xq+G = 0
-            DO igp = 2, sigma_c_st%ngmt
+            DO igp = 2, gcutcorr
                scrcoul_g(1, igp, iw) = 0.0d0
             ENDDO
-            DO igp = 2, sigma_c_st%ngmt
+            DO igp = 2, gcutcorr
                scrcoul_g(igp, 1, iw) = 0.0d0
             ENDDO
          ENDIF
@@ -74,8 +74,8 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
     ENDIF
     IF(.NOT.modielec) THEN
         IF(godbyneeds) THEN
-          DO ig = 1, sigma_c_st%ngmt
-            DO igp = 1, sigma_c_st%ngmt 
+          DO ig = 1, gcutcorr
+            DO igp = 1, gcutcorr 
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
                DO iw = 1, nfs
@@ -90,8 +90,8 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
           ENDDO
          ENDDO
        ELSE IF (padecont) THEN
-         DO igp = 1, sigma_c_st%ngmt
-          DO ig = 1, sigma_c_st%ngmt
+         DO igp = 1, gcutcorr
+          DO ig = 1, gcutcorr
 !Pade input points on the imaginary axis
              DO iw = 1, nfs
                 z(iw) = fiu(iw)

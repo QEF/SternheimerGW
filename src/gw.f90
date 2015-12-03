@@ -25,61 +25,57 @@ program gw
 
   IMPLICIT NONE
 
-  INTEGER :: iq, ik, ierr
-  LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel
-  CHARACTER (LEN=9)   :: code = 'SGW'
-  CHARACTER (LEN=256) :: auxdyn
+  integer             :: iq, ik, ierr
+  character (LEN=9)   :: codepw = 'PW'
+  character (LEN=9)   :: code = 'SGW'
+  character (LEN=256) :: auxdyn
+  logical             :: do_band, do_iq, setup_pw, exst, do_matel
 
 ! Initialize MPI, clocks, print initial messages
   call mp_startup ( start_images=.true. )
   call environment_start ( code )
-
+  call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
   call gwq_readin()
   call check_stop_init()
   call check_initial_status(auxdyn)
-
-
 ! Initialize frequency grids, FFT grids for correlation
 ! and exchange operators, open relevant GW-files.
   call freqbins()
   call sigma_grids()
   call opengwfil()
-
 ! Calculation W
   if(do_coulomb) call do_stern()
-
   do_iq=.TRUE.
   setup_pw = .TRUE.
   do_band  = .TRUE.
   do_matel = .TRUE.
   ik = 1
-
   if (do_q0_only) goto 127
-! Calculation of Correlation energy \Sigma^{c}_{k}= \sum_{q}G_{k-q}{W_{q}-v_{q}}
+! Calculation of CORRELATION energy \Sigma^{c}_{k}=\sum_{q}G_{k-q}{W_{q}-v_{q}}:
   if (do_imag) then
-      do ik = w_of_k_start, num_k_pts
+      do ik = w_of_k_start, w_of_k_stop
          call run_nscf(do_band, do_matel, ik)
          call initialize_gw()
-         if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
-         if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
-         !if(do_sigma_c) call sigma_c_im(ik)
-         if(do_sigma_c) call sigma_c_im_mod(ik)
-         if(do_sigma_c.and.multishift) then
+         if (do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
+         if (do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
+         if (do_sigma_c) call sigma_c_im_mod(ik)
+         if (do_sigma_c.and.multishift) then
             close(unit = iunresid, status = 'DELETE')
             close(unit = iunalphabeta, status = 'DELETE')
          endif
-         if(do_sigma_exx .and. .not.do_sigma_exxG) then   
-            call sigma_exch(ik)
+! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
+         if (do_sigma_exx .and. .not.do_sigma_exxG) then   
+             call sigma_exch(ik)
          else if(do_sigma_exx .and. do_sigma_exxG) then
-            call sigma_exchg(ik)
+             call sigma_exchg(ik)
          endif
-!Calculate <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>
-         if(do_sigma_matel) call sigma_matel(ik)
-         CALL clean_pw_gw(ik, .TRUE.)
+! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
+         if (do_sigma_matel) call sigma_matel(ik)
+         call clean_pw_gw(ik, .TRUE.)
       enddo
   else
-      do ik = w_of_k_start, num_k_pts
+      do ik = w_of_k_start, w_of_k_stop
          call run_nscf(do_band, do_matel, ik)
          call initialize_gw()
          if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)

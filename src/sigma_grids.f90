@@ -72,7 +72,7 @@ SUBROUTINE sigma_grids()
   do ng = 1, ngm
      if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) sigma_x_st%ngmt = ng
      if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) sigma_x_st%ngmt_g = ng
-     if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt/4 ) gexcut = ng
+     if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) gexcut = ng
   enddo
   CALL set_custom_grid(sigma_x_st)
 !  CALL realspace_grid_init_custom(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt)
@@ -92,26 +92,27 @@ SUBROUTINE sigma_grids()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!! CORRELATION GRID !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  sigma_c_st%ecutt   = ecutsco
-  sigma_c_st%gcutmt  = ecutsco/tpiba2
- !sigma_c_st%ecutt   = 4*ecutsco
- !sigma_c_st%gcutmt  = 4*ecutsco/tpiba2
-  gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
+   !sigma_c_st%ecutt   = ecutsco
+   !sigma_c_st%gcutmt  = ecutsco/tpiba2
+   sigma_c_st%ecutt   = ecutsco
+   sigma_c_st%gcutmt  = ecutsco/tpiba2
+   gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
 !Generate auxilliary correlation grid.
   do ng = 1, ngm
+     !if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) gcutcorr  = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) gcutcorr  = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt = ng
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt_g = ng
   enddo
   CALL set_custom_grid(sigma_c_st)
   CALL realspace_grid_init(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
-! CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
+!  CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
   CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_c_st%gcutmt, &
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
   CALL gvec_init(sigma_c_st, sigma_c_st%ngmt, intra_comm)
   sigma_c_st%initialized = .true.
-  !sigma_c_st%initalized = .true.
+!  sigma_c_st%initalized = .true.
   CALL ggent(sigma_c_st)
 
   WRITE(stdout, '(//5x,"Correlation Grid:")')

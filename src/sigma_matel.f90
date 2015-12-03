@@ -20,7 +20,7 @@ SUBROUTINE sigma_matel (ik0)
   USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG, tmp_dir_coul
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
-                                   sigma_band_exg
+                                   sigma_band_exg, gcutcorr
   USE disp,                 ONLY : xk_kpoints, x_q, nqs
   USE noncollin_module,     ONLY : nspin_mag
   USE eqv,                  ONLY : dmuxc, eprec
@@ -40,7 +40,7 @@ IMPLICIT NONE
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP), ALLOCATABLE  :: sigma_g_ex(:,:)
   COMPLEX(DP)               ::   czero, temp
-  COMPLEX(DP)               ::   aux(sigma_x_st%ngmt), psic(dffts%nnr), vpsi(ngm), auxsco(sigma_c_st%ngmt)
+  COMPLEX(DP)               ::   aux(sigma_x_st%ngmt), psic(dffts%nnr), vpsi(ngm), auxsco(gcutcorr)
   COMPLEX(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                  sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
   COMPLEX(DP), ALLOCATABLE  ::   sigma(:,:,:)
@@ -221,25 +221,23 @@ IMPLICIT NONE
       deallocate(evc_tmp_i)
       deallocate(evc_tmp_j)
 else
-  if(allocated(sigma_band_exg)) then
-    do ibnd = 1, nbnd_sig
-       sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd, ik0)
-    enddo
-  endif
+  do ibnd = 1, nbnd_sig
+     sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd)
+  enddo
 endif
 !MATRIX ELEMENTS OF SIGMA_C:
       write(1000+mpime,*) 
       write(1000+mpime, '("Sigma_C Matrix Element")') 
-      allocate (sigma(sigma_c_st%ngmt, sigma_c_st%ngmt,nwsigma)) 
-      allocate (evc_tmp_i(sigma_c_st%ngmt))
-      allocate (evc_tmp_j(sigma_c_st%ngmt))
+      allocate (sigma(gcutcorr, gcutcorr,nwsigma)) 
+      allocate (evc_tmp_i(gcutcorr))
+      allocate (evc_tmp_j(gcutcorr))
       counter     = 0
       igkq_tmp(:) = 0
       igkq_ig(:)  = 0
 !For convergence tests corr_conv can be set at input lower than ecutsco.
 !This allows you to calculate the correlation energy at lower energy cutoffs
       if (corr_conv.eq.sigma_c_st%ecutt) THEN
-          sigma_c_ngm = sigma_c_st%ngmt
+          sigma_c_ngm = gcutcorr
       else if(corr_conv .lt. sigma_c_st%ecutt .and. corr_conv.gt.0.0) THEN
         do ng = 1, ngm
            if ( gl( igtongl (ng) ) .le. (corr_conv/tpiba2)) sigma_c_ngm = ng
@@ -329,6 +327,8 @@ call mp_barrier(inter_pool_comm)
   endif
   if(allocated(sigma_band_con)) deallocate(sigma_band_con)
   if(allocated(igkq_tmp)) deallocate(igkq_tmp)
-  if(allocated(igkq_ig)) deallocate(igkq_ig)
+  if(allocated(igkq_ig))  deallocate(igkq_ig)
+  if(allocated(sigma_band_exg)) deallocate(sigma_band_exg)
+
 return
 end SUBROUTINE sigma_matel

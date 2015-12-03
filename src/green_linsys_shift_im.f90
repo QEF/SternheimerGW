@@ -32,7 +32,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs, x_q
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, w0pmw
-  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
+  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec, gcutcorr
   USE gvect,                ONLY : g, ngm
   USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
@@ -51,7 +51,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 
   complex(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
   complex(DP) :: gr(npwx, 1), ci, cw 
-  complex(DP) :: green(sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen)
+  complex(DP) :: green(gcutcorr, gcutcorr, nwgreen)
   complex(DP), ALLOCATABLE :: etc(:,:)
 
   real(DP) :: dirac, x, delta, support
@@ -120,7 +120,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   igkq_tmp(:) = 0
   igkq_ig(:)  = 0 
   do ig = 1, npw
-     if((igk(ig).le.sigma_c_st%ngmt).and.((igk(ig)).gt.0)) then
+     if((igk(ig).le.gcutcorr).and.((igk(ig)).gt.0)) then
          counter = counter + 1
          igkq_tmp (counter) = igk(ig)
          igkq_ig  (counter) = ig
@@ -173,7 +173,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
                                    npwx, npw, tr2_green, 1, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)
-             call green_multishift_im(npwx, 2*sigma_c_st%ngmt, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+             call green_multishift_im(npwx, 2*gcutcorr, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
              if (niters(gveccount).ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                    gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

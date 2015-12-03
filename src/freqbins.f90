@@ -27,6 +27,7 @@ SUBROUTINE freqbins()
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV
   USE control_gw, ONLY : eta, godbyneeds, padecont, freq_gl, do_imag
+  USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop, xk_kpoints
            
 
   IMPLICIT NONE 
@@ -38,8 +39,8 @@ SUBROUTINE freqbins()
   INTEGER                :: n            !number of points
   REAL(DP), ALLOCATABLE  :: x(:), w(:)   !abcissa and weights
 
+  zero = 0.0d0
   IF(.not.freq_gl) THEN
-   zero = 0.0d0
    !wgreenmin = wsigmamin-wcoulmax
    !wgreenmax = wsigmamax+wcoulmax
 !for change of variables in Green's function
@@ -114,15 +115,21 @@ SUBROUTINE freqbins()
   WRITE(stdout, '(5x, "nwcoul:", i5)'), nwcoul
   WRITE(stdout,'(//5x, "Dynamic Screening Model:")')
   IF(godbyneeds) then
-      WRITE(stdout, '(6x, "Godby Needs Plasmon-Pole")')
+      WRITE(stdout, '(/6x, "Godby Needs Plasmon-Pole")')
   else if (padecont) then
-      WRITE(stdout, '(6x, "Analytic Continuation")')
+      WRITE(stdout, '(/6x, "Analytic Continuation")')
   else if (.not.padecont.and..not.godbyneeds) then
-      WRITE(stdout, '(6x, "No screening model chosen!")')
+      WRITE(stdout, '(/6x, "No screening model chosen!")')
   ENDIF
-  WRITE(stdout, '(7x, "Imag. Frequencies: ")')
+  WRITE(stdout, '(/7x, "Imag. Frequencies: ")')
   DO i = 1, nfs
        WRITE(stdout,'(8x, i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
   ENDDO
-  WRITE(stdout, '(5x, "Broadening: ", 1f10.4)'), eta
+  WRITE(stdout, '(/5x, "Broadening: ", 1f10.4)'), eta
+
+  WRITE(stdout, '(/7x, "K-points: ", i4)') num_k_pts
+  DO i = 1, num_k_pts
+       WRITE(stdout,'(8x, i4, 4x, 3f9.4)')i, xk_kpoints(:, i)
+  ENDDO
+
 END SUBROUTINE freqbins

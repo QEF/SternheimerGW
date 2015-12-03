@@ -55,8 +55,9 @@ SUBROUTINE gwq_readin()
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
   USE output,        ONLY : fildyn, fildvscf, fildrho
-  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, kpoints, num_k_pts, w_of_q_start,&
-                            w_of_k_start, w_of_k_stop
+  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
+                            xk_kpoints, kpoints, num_k_pts, & 
+                            w_of_q_start, w_of_k_start, w_of_k_stop
   USE io_files,         ONLY : outdir, tmp_dir, prefix
   USE noncollin_module, ONLY : i_cons, noncolin
   USE ldaU,             ONLY : lda_plus_u
@@ -267,7 +268,7 @@ SUBROUTINE gwq_readin()
   use_symm       = .TRUE.
   w_of_q_start   = 1
   w_of_k_start   = 1
-  w_of_k_stop    = 1 
+  w_of_k_stop    = -2
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
@@ -399,9 +400,16 @@ SUBROUTINE gwq_readin()
  ELSE
      num_k_pts = 1
  ENDIF
- if (w_of_k_stop.eq.1) then
+
+ if (w_of_k_stop==-2) then
     w_of_k_stop = num_k_pts
-  endif
+ endif
+
+ if (w_of_k_stop.lt.w_of_k_start) then
+     CALL errore ('gwq_readin', 'w_of_k_stop less than w_of_k_start', ABS(ios) )
+ else if ((w_of_k_stop.lt.1) .or. (w_of_k_start.lt.1)) then
+     CALL errore ('gwq_readin', 'w_of_k_stop or w_of_k_start cannot be less than 1', ABS(ios) )
+ endif
    
 
   !   Here we finished the reading of the input file.

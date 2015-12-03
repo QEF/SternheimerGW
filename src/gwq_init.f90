@@ -157,14 +157,11 @@ SUBROUTINE gwq_init()
      DO ibnd= 1, nbnd_occ(ikk)
         eprec (ibnd,ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
         eprectot (ibnd, nbase+ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
-     !   write(1000+mpime,*) eprec(ibnd,ik), ik
-     !   write(1000+mpime,*) eprectot(ibnd, nbase+ik), nbase+ik
      END DO
      !
   END DO
   !
   CALL mp_sum (eprec, intra_bgrp_comm)
-  !CALL mp_sum (eprec, intra_pool_comm)
   CALL mp_sum   ( eprectot, inter_pool_comm )
   !
   DEALLOCATE( aux1 )

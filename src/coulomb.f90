@@ -26,7 +26,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE eqv,        ONLY : drhoscfs, dvbare
   USE paw_variables,    ONLY : okpaw
   USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE gwsigma,     ONLY : sigma_c_st
+  USE gwsigma,     ONLY : sigma_c_st, gcutcorr
   USE qpoint,      ONLY : xq
   USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
   USE units_gw,    ONLY : iuncoul, lrcoul
@@ -60,7 +60,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   INTEGER :: iq, screening 
   LOGICAL :: exst
 !again should decide if this should be allocated globally. 
-  COMPLEX(DP) :: scrcoul(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, 1)
+  COMPLEX(DP) :: scrcoul(gcutcorr, gcutcorr, nfs, 1)
 !modeps and spencer-alavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
@@ -100,7 +100,7 @@ DO ig = igstart, igstop
          do iw = 1, nfs
             CALL fwfft ('Dense', drhoscfs(:,iw), dffts)
             WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'), drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
-            do igp = 1, sigma_c_st%ngmt
+            do igp = 1, gcutcorr
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
                   scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw)
@@ -129,7 +129,7 @@ DO ig = igstart, igstop
            IF(ionode) THEN
              WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)'), drhoscfs(nls(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
              DO isp = 1, nspin_mag
-               DO igp = 1, sigma_c_st%ngmt
+               DO igp = 1, gcutcorr
                   scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp)
                ENDDO
              ENDDO

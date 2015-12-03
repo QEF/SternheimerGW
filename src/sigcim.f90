@@ -193,7 +193,7 @@ SUBROUTINE sigma_c_im(ik0)
      xq(:) = x_q(:,iq)
      CALL coulpade(scrcoul_g(1,1,1), xq(1))
      DO isymop = 1, nsym
-!        write(1000+mpime,'("isymop", i4)'),isymop
+!       write(1000+mpime,'("isymop", i4)'),isymop
         CALL rotate(xq, aq, s, nsym, invs(isymop))
         xk1 = xk_kpoints(:,ik0) - aq(:)
 
