@@ -33,7 +33,8 @@ SUBROUTINE sigma_matel (ik0)
   USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
   USE mp_world,      ONLY : nproc, mpime
   USE save_gw,       ONLY : tmp_dir_save
-  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm
+  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,&
+                            inter_image_comm
   USE mp,            ONLY : mp_bcast, mp_barrier, mp_sum
 
 IMPLICIT NONE
@@ -330,5 +331,7 @@ call mp_barrier(inter_pool_comm)
   if(allocated(igkq_ig))  deallocate(igkq_ig)
   if(allocated(sigma_band_exg)) deallocate(sigma_band_exg)
 
+call mp_barrier(inter_pool_comm)
+call mp_barrier(inter_image_comm)
 return
 end SUBROUTINE sigma_matel

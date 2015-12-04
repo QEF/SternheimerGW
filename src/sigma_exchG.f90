@@ -44,7 +44,7 @@ IMPLICIT NONE
   COMPLEX(DP) :: pwg0(sigma_x_st%dfftt%nnr)
   COMPLEX(DP) :: phase
   COMPLEX(DP) :: ZdoTC
-  REAL(DP)   :: dvoxel, wgt,nsymm1, sigma_ex_tr
+  REAL(DP)   :: dvoxel, wgt, nsymm1, sigma_ex_tr
   REAL(DP)   :: qg2, qg, qxy, qz
   REAL(DP)   :: rcut, spal, zcut
   REAL(DP)   :: xq_coul(3)
@@ -84,13 +84,14 @@ IMPLICIT NONE
 
   write(stdout,'(4x,"Sigma exchange for k",i3, 3f12.7)') ik0,&
       &(xk_kpoints(ipol, ik0), ipol=1,3)
-  write(stdout,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik0)
+  !write(stdout,'(4x,"Occupied bands at Gamma: ",i3)') nbnd_occ(ik1)
   write(stdout,'(4x,"nksq,nks,kunit ",3i4)') nksq, nks, kunit
   write(stdout,'(4x,"nsym ",i4)') nsym
   write(stdout,'(4x,"Running Sigma_exchgq")')
 
 
   call gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
+
   czero = (0.0d0, 0.0d0)
   limit =.false.
   wgt = 1.0/omega
@@ -119,6 +120,7 @@ IMPLICIT NONE
     IF(my_pool_id==0) CALL get_buffer(psikp, lrwfc, iuwfc, 2)
   endif
 
+
   CALL mp_barrier (inter_pool_comm)
   CALL mp_bcast   (psikp, 0, inter_pool_comm)
   CALL mp_barrier (inter_pool_comm)
@@ -129,12 +131,11 @@ IMPLICIT NONE
      if(.not.lgamma) ik1 = 2*ik-1
      psik(:,:)  = dcmplx(0.0d0,0.0d0)
      call get_buffer (psik, lrwfc, iuwfc, ik1)
+
      call gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
                   npw, igk, g2kin)
      npwq = npw 
      igkq = igk
-     write(1000+mpime,*) npw, npwq, ik1
-     write(1000+mpime,*) sum(psik(:,1)*dconjg(psik(:,1)))
 
      do isymop = 1, nsym
         nig0  = 1
@@ -184,7 +185,7 @@ IMPLICIT NONE
             enddo
         endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        do vbnd = 1, nbnd_occ(ik0)
+        do vbnd = 1, nbnd_occ(ik1)
            psi (:) = (0.d0, 0.d0)
            do ig = 1, npw 
               psi(nls(gmapsym(igkq(ig), invs(isymop)))) = psik(ig, vbnd)
@@ -210,16 +211,19 @@ IMPLICIT NONE
            enddo !ibnd
         enddo !v\inocc
       enddo !isym
+!      write(1000+mpime,*) wk(ik1), nbnd_occ(ik0), npw, nbnd_sig
+!      write(1000+mpime,*) sigma_band_exg
  enddo ! on q
 
  call mp_barrier(inter_pool_comm)
  call mp_sum (sigma_band_exg, inter_pool_comm)
+ call mp_barrier(inter_pool_comm)
  sigma_band_exg(:) = wgt*nsymm1*sigma_band_exg(:)
 
  write(stdout,'(4x,"Sigma_ex (eV)")')
  write(stdout,*) real(sigma_band_exg(:))*RYTOEV
  write(stdout,*) aimag(sigma_band_exg(:))*RYTOEV
- !write(stdout,'(4x,"Sigma_ex val (eV)", 8(1x,f7.2))')  real(sigma_band_exg(1:8, ik0))*RYTOEV
+!write(stdout,'(4x,"Sigma_ex val (eV)", 8(1x,f7.2))')  real(sigma_band_exg(1:8, ik0))*RYTOEV
 
  deallocate ( gmapsym  )
  deallocate ( eigv     )
