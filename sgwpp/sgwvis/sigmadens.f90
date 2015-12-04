@@ -17,7 +17,7 @@ SUBROUTINE sigmadens (filplot,plot_num)
   !
   USE kinds,       ONLY : dp
   USE io_global,   ONLY : stdout, ionode, ionode_id
-  USE io_files,    ONLY : nd_nmbr
+  USE io_files,    ONLY : nd_nmbr, prefix, diropn, tmp_dir
   USE mp_pools,    ONLY : nproc_pool
   USE mp_world,    ONLY : world_comm
   USE mp,          ONLY : mp_bcast
@@ -36,32 +36,32 @@ SUBROUTINE sigmadens (filplot,plot_num)
   USE run_info,      ONLY: title
   USE control_flags, ONLY: gamma_only
   USE wavefunctions_module,  ONLY: psic
-! SGW vis stuff
   USE symm_base,  ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  USE klist,         ONLY : wk, xk, nkstot, nks, lgauss
 
 
   IMPLICIT NONE
-  CHARACTER (len=256), INTENT(in) :: filplot
+  character (len=256), INTENT(in) :: filplot
   !
   ! If plot_num=-1 the dimensions and structural data are read from the charge
   ! or potential file, otherwise it uses the data already read from
   ! the files in outdir.
   !
-  INTEGER, INTENT(in) :: plot_num
+  integer, INTENT(in) :: plot_num
   !
-  INTEGER, PARAMETER :: nfilemax = 7
+  integer, PARAMETER :: nfilemax = 7
   ! maximum number of files with charge
 
-  INTEGER :: ounit, iflag, ios, ipol, nfile, ifile, nx, ny, nz, &
+  integer :: ounit, iflag, ios, ipol, nfile, ifile, nx, ny, nz, &
        na, i, output_format, idum, direction
 
   real(DP) :: e1(3), e2(3), e3(3), x0 (3), radius, m1, m2, m3, &
        weight (nfilemax), isovalue,heightmin,heightmax
 
-  real(DP), ALLOCATABLE :: aux(:)
+  real(DP), allocatable :: aux(:)
 
-  CHARACTER (len=256) :: fileout
-  CHARACTER (len=13), DIMENSION(0:7) :: formatname = &
+  character (len=256) :: fileout
+  character (len=13), DIMENSION(0:7) :: formatname = &
        (/ 'gnuplot      ', &
           'contour.x    ', &
           'plotrho.x    ', &
@@ -70,7 +70,7 @@ SUBROUTINE sigmadens (filplot,plot_num)
           'XCrySDen     ', &
           'Gaussian cube', & 
           'gnuplot x,y,f' /)
-  CHARACTER (len=20), DIMENSION(0:4) :: plotname = &
+  character (len=20), DIMENSION(0:4) :: plotname = &
        (/ '1D spherical average', &
           '1D along a line     ', &
           '2D contour          ', &
@@ -78,37 +78,42 @@ SUBROUTINE sigmadens (filplot,plot_num)
           '2D polar on a sphere'/)
 
   real(DP) :: celldms (6), gcutmsa, duals, zvs(ntypx), ats(3,3)
-  real(DP), ALLOCATABLE :: taus (:,:), rhor(:), rhos(:)
+  real(DP), allocatable :: taus (:,:), rhor(:), rhos(:)
 
-  INTEGER :: ibravs, nr1sxa, nr2sxa, nr3sxa, nr1sa, nr2sa, nr3sa, &
+  integer :: ibravs, nr1sxa, nr2sxa, nr3sxa, nr1sa, nr2sa, nr3sa, &
        ntyps, nats
-  INTEGER, ALLOCATABLE :: ityps (:)
-  CHARACTER (len=3) :: atms(ntypx)
-  CHARACTER (len=256) :: filepp(nfilemax)
-  CHARACTER (len=20) :: interpolation
+  integer, allocatable :: ityps (:)
+  character (len=3) :: atms(ntypx)
+  character (len=256) :: filepp(nfilemax)
+  character (len=20) :: interpolation
   real(DP) :: rhotot
-  COMPLEX(DP), ALLOCATABLE:: rhog (:)
+  complex(DP), allocatable:: rhog (:)
 !rho or polarization in G space
-  LOGICAL :: fast3d, isostm_flag
+  logical :: fast3d, isostm_flag
 !\Sigma(\r,\r';\omega) variables.
-  COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:), sigma(:,:), sigma_g(:,:,:), &
+  complex(DP), allocatable :: scrcoul_g(:,:,:), sigma(:,:), sigma_g(:,:,:), &
                               sigma_q(:,:,:), sigma_ex(:,:)
-  COMPLEX(DP), ALLOCATABLE :: sigmar(:)
+  complex(DP), allocatable :: sigmar(:)
 
 !SIGMADENS
-  INTEGER   :: ngmpol, nwsigma, iunsigma, iqs, ir
-  INTEGER   :: isym, nqs
-  INTEGER   :: iq, lrcoul
-  INTEGER*8 :: unf_recl
-  INTEGER, ALLOCATABLE     :: gmapsym(:,:)
-  COMPLEX(DP), ALLOCATABLE ::  eigv(:,:)
-  COMPLEX(DP), ALLOCATABLE :: eigx (:), eigy (:), eigz (:)
-  COMPLEX(DP), ALLOCATABLE:: sigmag (:)
+  integer   :: ngmpol, nwsigma, iunsigma, iqs, ir
+  integer   :: isym, nqs, ig
+  integer   :: iq, lrcoul
+  integer*8 :: unf_recl
+  integer, allocatable     :: gmapsym(:,:)
+  complex(DP), allocatable ::  eigv(:,:)
+  complex(DP), allocatable :: eigx (:), eigy (:), eigz (:)
+  complex(DP), allocatable:: sigmag (:)
+  complex(DP)   :: eigx0
+  real(DP)      :: aq(3)
+  character(len=256) :: tempfile, filename
+!  USE disp,  ONLY : nq1, nq2, nq3, x_q, nqs, wq
+  real(DP)      :: xq(3,64), wq(9)
 
 #define DIRECT_IO_FACTOR 8 
 
-  ALLOCATE ( gmapsym  (ngm, nrot)   )
-  ALLOCATE ( eigv     (ngm, nrot)   )
+  allocate ( gmapsym  (ngm, nrot)   )
+  allocate ( eigv     (ngm, nrot)   )
 
 
 
@@ -128,6 +133,7 @@ SUBROUTINE sigmadens (filplot,plot_num)
   radius        = 1.0d0
   output_format = -1
   fileout       = ' '
+
   e1(:)         = 0.d0
   e2(:)         = 0.d0
   e3(:)         = 0.d0
@@ -146,21 +152,21 @@ SUBROUTINE sigmadens (filplot,plot_num)
   !
   ! reading the namelist 'plot'
   !
-  IF (ionode) READ (5, plot, iostat = ios)
+  if (ionode) READ (5, plot, iostat = ios)
   !
   CALL mp_bcast( ios, ionode_id, world_comm )
   CALL mp_bcast( nfile, ionode_id, world_comm )
 
-  IF (ios /= 0) THEN
-     IF (nfile > nfilemax) THEN
+  if (ios /= 0) THEN
+     if (nfile > nfilemax) THEN
         ! if this happens the reading of the namelist will fail
         ! tell to user why
         CALL infomsg('chdens ', 'nfile is too large, exiting')
      ELSE
         CALL infomsg ('chdens', 'namelist plot not found or invalid, exiting')
-     ENDIF
-     RETURN
-  ENDIF
+     ENDif
+     return
+  ENDif
 
   CALL mp_bcast( filepp, ionode_id, world_comm )
   CALL mp_bcast( weight, ionode_id, world_comm )
@@ -182,60 +188,60 @@ SUBROUTINE sigmadens (filplot,plot_num)
   CALL mp_bcast( heightmax, ionode_id, world_comm )
   CALL mp_bcast( direction, ionode_id, world_comm )  
 
-  IF (output_format == -1 .or. iflag == -1) THEN
+  if (output_format == -1 .or. iflag == -1) THEN
      CALL infomsg ('chdens', 'output format not set, exiting' )
-     RETURN
-  ENDIF
+     return
+  ENDif
   !
   ! check for number of files
   !
-  IF (nfile < 1 .or. nfile > nfilemax) &
+  if (nfile < 1 .or. nfile > nfilemax) &
        CALL errore ('chdens ', 'nfile is wrong ', 1)
 
   ! check for iflag make sure input parameters are logical
 
-  IF (iflag <= 1) THEN
+  if (iflag <= 1) THEN
 
      ! 1D plot : check variables
 
-     IF (e1(1)**2 + e1(2)**2 + e1(3)**2 < 1d-6) &
+     if (e1(1)**2 + e1(2)**2 + e1(3)**2 < 1d-6) &
          CALL errore ('chdens', 'missing e1 vector', 1)
-     IF (nx <= 0 )   CALL errore ('chdens', 'wrong nx', 1)
+     if (nx <= 0 )   CALL errore ('chdens', 'wrong nx', 1)
 
-  ELSEIF (iflag == 2) THEN
+  ELSEif (iflag == 2) THEN
 
      ! 2D plot : check variables
 
-     IF (e1(1)**2 + e1(2)**2 + e1(3)**2 <  1d-6 .or. &
+     if (e1(1)**2 + e1(2)**2 + e1(3)**2 <  1d-6 .or. &
          e2(1)**2 + e2(2)**2 + e2(3)**2 <  1d-6)     &
          CALL errore ('chdens', 'missing e1/e2 vectors', 1)
-     IF (abs(e1(1)*e2(1) + e1(2)*e2(2) + e1(3)*e2(3)) > 1d-6) &
+     if (abs(e1(1)*e2(1) + e1(2)*e2(2) + e1(3)*e2(3)) > 1d-6) &
          CALL errore ('chdens', 'e1 and e2 are not orthogonal', 1)
-     IF (nx <= 0 .or. ny <= 0 )   CALL errore ('chdens', 'wrong nx/ny', 2)
+     if (nx <= 0 .or. ny <= 0 )   CALL errore ('chdens', 'wrong nx/ny', 2)
 
-  ELSEIF (iflag == 3) THEN
+  ELSEif (iflag == 3) THEN
 
      ! 3D plot : check variables
 
-     IF ( abs(e1(1)*e2(1) + e1(2)*e2(2) + e1(3)*e2(3)) > 1d-6 .or. &
+     if ( abs(e1(1)*e2(1) + e1(2)*e2(2) + e1(3)*e2(3)) > 1d-6 .or. &
           abs(e1(1)*e3(1) + e1(2)*e3(2) + e1(3)*e3(3)) > 1d-6 .or. &
           abs(e2(1)*e3(1) + e2(2)*e3(2) + e2(3)*e3(3)) > 1d-6 )    &
          CALL errore ('chdens', 'e1, e2, e3 are not orthogonal', 1)
 
-     IF ((iflag==3) .and.(output_format < 3 .or. output_format > 6)) &
+     if ((iflag==3) .and.(output_format < 3 .or. output_format > 6)) &
         CALL errore ('chdens', 'incompatible iflag/output_format', 1)
-     IF ((iflag/=3) .and. ((output_format == 5) .or. (output_format == 6))) &
+     if ((iflag/=3) .and. ((output_format == 5) .or. (output_format == 6))) &
         CALL errore ('chdens', 'output_format=5/6, iflag<>3', 1)
 
-  ELSEIF (iflag  == 4) THEN
+  ELSEif (iflag  == 4) THEN
 
-     IF (nx <= 0 .or. ny <= 0 )   CALL errore ('chdens', 'wrong nx/ny', 4)
+     if (nx <= 0 .or. ny <= 0 )   CALL errore ('chdens', 'wrong nx/ny', 4)
 
   ELSE
 
      CALL errore ('chdens', 'iflag not implemented', 1)
 
-  ENDIF
+  ENDif
 
   !END INPUT CHECK
   ! check interpolation
@@ -243,21 +249,21 @@ SUBROUTINE sigmadens (filplot,plot_num)
      call errore('chdens', 'wrong interpolation: ' // trim(interpolation), 1)
 
   ! if isostm_flag checks whether the input variables are set
-  IF (isostm_flag) THEN
-     IF (heightmax > 1.0 .or. heightmin > 1.0 .or. heightmin < 0.0 &
+  if (isostm_flag) THEN
+     if (heightmax > 1.0 .or. heightmin > 1.0 .or. heightmin < 0.0 &
                .or. heightmax < 0.0 ) THEN
          CALL errore('isostm','problem with heightmax/min',1)
-     ENDIF
+     ENDif
       
-     IF (direction /= 1 .and. direction /= -1) THEN
+     if (direction /= 1 .and. direction /= -1) THEN
          CALL errore('isostm','direction not equal to +- 1',1)
-     ENDIF
-  END IF
+     ENDif
+  END if
   !
   ! Read the header and allocate objects
   !
-  IF (plot_num==-1) THEN
-     IF (ionode) &
+  if (plot_num==-1) THEN
+     if (ionode) &
         CALL read_io_header(filepp (1), title, dfftp%nr1x, dfftp%nr2x, &
                 dfftp%nr3x, dfftp%nr1, dfftp%nr2, dfftp%nr3, nat, ntyp,&
                 ibrav, celldm, at, gcutm, dual, ecutwfc, idum )
@@ -279,8 +285,8 @@ SUBROUTINE sigmadens (filplot,plot_num)
      !
      ! ... see comment above
      !
-     ALLOCATE(tau (3, nat))
-     ALLOCATE(ityp(nat))
+     allocate(tau (3, nat))
+     allocate(ityp(nat))
      !
      CALL latgen (ibrav, celldm, at(1,1), at(1,2), at(1,3), omega )
      alat = celldm (1) ! define alat
@@ -288,11 +294,11 @@ SUBROUTINE sigmadens (filplot,plot_num)
      tpiba = 2.d0 * pi / alat
      tpiba2 = tpiba**2
      doublegrid = dual>4.0d0
-     IF (doublegrid) THEN
+     if (doublegrid) THEN
         gcutms = 4.d0 * ecutwfc / tpiba2
      ELSE
         gcutms = gcutm
-     ENDIF
+     ENDif
 
      nspin = 1
 
@@ -300,98 +306,98 @@ SUBROUTINE sigmadens (filplot,plot_num)
      CALL volume (alat, at(1,1), at(1,2), at(1,3), omega)
      CALL realspace_grid_init ( dfftp, at, bg, gcutm )
      CALL realspace_grid_init ( dffts, at, bg, gcutms)
-  ENDIF
+  ENDif
 
-  ALLOCATE  (rhor(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
+  allocate  (rhor(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
 
-  ALLOCATE  (rhos(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
-  ALLOCATE  (taus( 3 , nat))
-  ALLOCATE  (ityps( nat))
+  allocate  (rhos(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
+  allocate  (taus( 3 , nat))
+  allocate  (ityps( nat))
   !
   rhor (:) = 0.0_DP
   !
   ! Read files, verify consistency
   ! Note that only rho is read; all other quantities are discarded
   !
-  DO ifile = 1, nfile
+  do ifile = 1, nfile
      !
      CALL plot_io (filepp (ifile), title, nr1sxa, nr2sxa, nr3sxa, &
           nr1sa, nr2sa, nr3sa, nats, ntyps, ibravs, celldms, ats, gcutmsa, &
           duals, ecuts, idum, atms, ityps, zvs, taus, rhos, - 1)
 
-     IF (ifile==1.and.plot_num==-1) THEN
+     if (ifile==1.and.plot_num==-1) THEN
         atm=atms
         ityp=ityps
         zv=zvs
         tau=taus
-     ENDIF
+     ENDif
      !
-     IF (nats>nat) CALL errore ('chdens', 'wrong file order? ', 1)
-     IF (dfftp%nr1x/=nr1sxa.or.dfftp%nr2x/=nr2sxa) CALL &
+     if (nats>nat) CALL errore ('chdens', 'wrong file order? ', 1)
+     if (dfftp%nr1x/=nr1sxa.or.dfftp%nr2x/=nr2sxa) CALL &
           errore ('chdens', 'incompatible nr1x or nr2x', 1)
-     IF (dfftp%nr1/=nr1sa.or.dfftp%nr2/=nr2sa.or.dfftp%nr3/=nr3sa) CALL &
+     if (dfftp%nr1/=nr1sa.or.dfftp%nr2/=nr2sa.or.dfftp%nr3/=nr3sa) CALL &
           errore ('chdens', 'incompatible nr1 or nr2 or nr3', 1)
-     IF (ibravs/=ibrav) CALL errore ('chdens', 'incompatible ibrav', 1)
-     IF (abs(gcutmsa-gcutm)>1.d-8.or.abs(duals-dual)>1.d-8.or.&
+     if (ibravs/=ibrav) CALL errore ('chdens', 'incompatible ibrav', 1)
+     if (abs(gcutmsa-gcutm)>1.d-8.or.abs(duals-dual)>1.d-8.or.&
          abs(ecuts-ecutwfc)>1.d-8) &
           CALL errore ('chdens', 'incompatible gcutm or dual or ecut', 1)
-     IF (ibravs /= 0 ) THEN
-        DO i = 1, 6
-           IF (abs( celldm (i)-celldms (i) ) > 1.0d-7 ) &
+     if (ibravs /= 0 ) THEN
+        do i = 1, 6
+           if (abs( celldm (i)-celldms (i) ) > 1.0d-7 ) &
               CALL errore ('chdens', 'incompatible celldm', 1)
-        ENDDO
-     ENDIF
+        enddo
+     ENDif
      !
      rhor (:) = rhor (:) + weight (ifile) * rhos (:)
-  ENDDO
-  DEALLOCATE (ityps)
-  DEALLOCATE (taus)
-  DEALLOCATE (rhos)
+  enddo
+  deallocate (ityps)
+  deallocate (taus)
+  deallocate (rhos)
   !
   ! open output file, i.e., "fileout"
   !
-  IF (ionode) THEN
-     IF (fileout /= ' ') THEN
+  if (ionode) THEN
+     if (fileout /= ' ') THEN
         ounit = 1
         OPEN (unit=ounit, file=fileout, form='formatted', status='unknown')
-        WRITE( stdout, '(/5x,"Writing data to be plotted to file ",a)') &
+        write( stdout, '(/5x,"Writing data to be plotted to file ",a)') &
              trim(fileout)
      ELSE
         ounit = 6
-     ENDIF
-  ENDIF
+     ENDif
+  ENDif
   ! the isostm subroutine is called only when isostm_flag is true and the
   ! charge density is related to an STM image (5) or is read from a file 
-  IF ( (isostm_flag) .AND. ( (plot_num == -1) .OR. (plot_num == 5) ) ) THEN
-     IF ( .NOT. (iflag == 2))&
+  if ( (isostm_flag) .AND. ( (plot_num == -1) .OR. (plot_num == 5) ) ) THEN
+     if ( .NOT. (iflag == 2))&
         CALL errore ('chdens', 'isostm should have iflag = 2', 1)
         CALL isostm_plot(rhor, dfftp%nr1x, dfftp%nr2x, dfftp%nr3x, &
              isovalue, heightmin, heightmax, direction)     
-  END IF
+  END if
   !
   !    At this point we start the calculations, first we normalize the
   !    vectors defining the plotting region.
   !    If these vectors have 0 length, replace them with crystal axis
   !
   m1 = sqrt (e1 (1)**2 + e1 (2)**2 + e1 (3)**2)
-  IF (abs(m1) < 1.d-6) THEN
+  if (abs(m1) < 1.d-6) THEN
      e1 (:) = at(:,1)
      m1 = sqrt (e1 (1)**2 + e1 (2)**2 + e1 (3)**2)
-  ENDIF
+  ENDif
   e1 (:) = e1 (:) / m1
   !
   m2 = sqrt (e2 (1)**2 + e2 (2)**2 + e2 (3)**2)
-  IF (abs(m2) < 1.d-6) THEN
+  if (abs(m2) < 1.d-6) THEN
      e2 (:) = at(:,2)
      m2 = sqrt (e2 (1)**2 + e2 (2)**2 + e2 (3)**2)
-  ENDIF
+  ENDif
   e2 (:) = e2 (:) / m2
   !
   m3 = sqrt (e3 (1)**2 + e3 (2)**2 + e3 (3)**2)
-  IF (abs(m3) < 1.d-6) THEN
+  if (abs(m3) < 1.d-6) THEN
      e3 (:) = at(:,3)
      m3 = sqrt (e3 (1)**2 + e3 (2)**2 + e3 (3)**2)
-  ENDIF
+  ENDif
   e3 (:) = e3 (:) / m3
   !
   ! are vectors defining the plotting region aligned along xyz ?
@@ -409,22 +415,51 @@ SUBROUTINE sigmadens (filplot,plot_num)
 
      fast3d = fast3d .and. (trim(interpolation) == 'fourier')
 
-     IF (output_format == 5.and.ionode) THEN
+     if (output_format == 5.and.ionode) THEN
 
         CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
-        ngmpol = 221
-        nwsigma = 11
+!Si Correlation grid (should be set on input
+        ngmpol   = 2451
+        nwsigma  = 2
         iunsigma = 32
+!Si exchange grid (should be set on input)
+!        ngmpol   = 283
+!        nwsigma  = 1
+!        iunsigma = 32
+!        ngmpol   = 59
+!        nwsigma  = 7
+!        iunsigma = 32
+!        CALL q_points()
 
-        ALLOCATE  (sigmar(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
-        ALLOCATE  (sigma_g(ngmpol, ngmpol, nwsigma))
+     call kpoint_grid(nsym, time_reversal, .false., s, t_rev,& 
+                      bg, 9, 0,0,0, 3,3,1, nqs, xq, wq )
 
+      xq(:,1) = 0.0d0
+
+      do iq = 1, nqs
+         write(stdout, '(5x,i3, 3f14.9)') iq, xq(1,iq), xq(2,iq), xq(3,iq)
+      end do
+
+
+        allocate (sigmar(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
+        allocate (sigma_g(ngmpol, ngmpol, nwsigma))
+
+!FOR INPUT FILE
+        !filename = trim(prefix)//"."//"sigma1"
+        filename = trim(prefix)//"."//"coul1"
+        !filename = trim(prefix)//"."//"sigma_ex1"
+
+        tempfile = trim(tmp_dir) //"_gw0/"// trim(filename)
         lrcoul = 2*ngmpol*ngmpol*nwsigma
-
         unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
-        open ( iunsigma, file = "./tmp/gw0/si.sigma1", iostat = ios, form ='unformatted', & 
+        open ( iunsigma, file = trim(adjustl(tempfile)), iostat = ios, form ='unformatted', & 
         status = 'unknown', access = 'direct', recl = unf_recl)
+        write(stdout, '("iostat ", i4)'), ios
+        !call diropn(iuncoul, 'sigma1', lrcoul, exst)
+
+!        open ( iunsigma, file = "./tmp/gw0/si.sigma_ex1", iostat = ios, form ='unformatted', & 
+!        status = 'unknown', access = 'direct', recl = unf_recl)
 
        ! filename = trim(prefix)//"."//"coul1"
        ! tempfile = trim(tmp_dir_coul) // trim(filename)
@@ -436,48 +471,67 @@ SUBROUTINE sigmadens (filplot,plot_num)
        !!! x0 and e1 are in alat units !!!
         allocate (rhog   ( ngm ))
         allocate (sigmag ( ngm ))
-        do iq = 1, nqs 
+        sigmag = dcmplx(0.0d0, 0.0d0)
+        rhog   = dcmplx(0.0d0, 0.0d0)
+        sigmar = dcmplx(0.0d0, 0.0d0)
+
+        nx = dfftp%nr1x
+        ny = dfftp%nr2x
+        nz = dfftp%nr3x
+
+        write(stdout, '(/5x, "ngmpol ", i4, " nwsigma", i4 )') ngmpol, nwsigma
+        write(stdout, '(/5x, "nsym ", i4, " nks", i4, "omega, " f12.4 )')   nsym,   nks , omega
+        write(stdout, '(/5x, "x0(1) ", f7.4, " x0(2) ", f7.4, " x0(3) ", f7.4)') x0(1), x0(2), x0(3) 
+        write(stdout, '(/5x, "e1(1) ", f7.4, " e1(2) ", f7.4, " e1(3) ", f7.4)') e1(1), e1(2), e1(3) 
+        write(stdout, '(/5x, "e2(1) ", f7.4, " e2(2) ", f7.4, " e2(3) ", f7.4)') e2(1), e2(2), e2(3) 
+        write(stdout, '(/5x, "e3(1) ", f7.4, " e3(2) ", f7.4, " e3(3) ", f7.4)') e3(1), e3(2), e3(3) 
+
+        do iq = 1, nks 
            sigma_q = dcmplx(0.0,0.0)
-           read( iunsigma, rec = iq, iostat = ios) sigma_g
+           !read( iunsigma, rec = iq, iostat = ios) sigma_g
+           call davcio( sigma_g, lrcoul, iunsigma, iq, -1) 
+           write(stdout, '(/5x, "ios ", i4)') ios
+           if(iq.eq.1) sigma_g(1,1,:) = dcmplx(0.0d0,0.0d0)
+           do ig = 1, ngmpol
+              sigma_g(ig,ig,:) = 1.0 + sigma_g(ig,ig,:)
+           enddo
+           write(stdout, '(/5x, "Mag Sig ", f12.7)') sum(sigma_g(:,:,:))
            do isym = 1, nsym
            !"single_point FFT to get \Sigma_{x0}(\r'; omega)
+           !CALL rotate(xk(1,iq), aq, s, nsym, isym)
+              CALL rotate(xq(1,iq), aq, s, nsym, isym)
               do ig = 1, ngmpol
-                 eigx0 = exp( (0.d0, -1.d0)*2.d0*pi*(&
-                        (x0(1)*(g(1,gmapsym(ig, isym))+ xk(1,iq))+ x0(2)*(g(2,gmapsym(ig,isym)) + xk(2,ik)) 
-                       + x0(3)*(g(3,gmapsym(ig,isym)) + xk(3,ik)))))
+                 eigx0 = exp((0.d0, -1.d0)*2.d0*pi*(&
+                              x0(1)*(g(1,gmapsym(ig, isym)) + aq(1)) + &
+                              x0(2)*(g(2,gmapsym(ig,isym))  + aq(2)) + &
+                              x0(3)*(g(3,gmapsym(ig,isym))  + aq(3))))
            !reduce r co-ordinate
-                 sigmag(:) = wk(iq)*eigx0*sigma_g(gmapsym(ig,isym), gmapsym(:,isym))
+                 sigmag(1:ngmpol) = sigmag(1:ngmpol) + (1.0/omega)*wk(iq)*eigx0*sigma_g(gmapsym(ig,isym), 1:ngmpol, 1)
               enddo
               CALL plot_3d_sig (celldm (1), at, nat, tau, atm, ityp, ngm, g, sigmag,&
-                   nx, ny, nz, m1, m2, m3, xk(:,iq), e1, e2, e3, output_format, &
-                   ounit, rhotot, gmapsym, sigmar)
+                   nx, ny, nz, m1, m2, m3, aq, e1, e2, e3, output_format, &
+                   ounit, rhotot, gmapsym(1,1), isym, sigmar)
            enddo
         enddo
         sigmar = (1.0/float(nsym))*sigmar
         CALL xsf_struct (alat, at, nat, tau, atm, ityp, ounit)
         CALL xsf_fast_datagrid_3d &
-             (sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x,
+             (sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x,&
               dfftp%nr2x, dfftp%nr3x, at, alat, ounit)
-     ENDIF
-  ELSE
-
-     CALL errore ('chdens', 'wrong iflag', 1)
-
-  ENDIF
+     ENDif
   !
-  WRITE(stdout, '(5x,"Plot Type: ",a,"   Output format: ",a)') &
+  write(stdout, '(5x,"Plot Type: ",a,"   Output format: ",a)') &
        plotname(iflag), formatname(output_format)
   !
-  IF (allocated(rhog)) DEALLOCATE(rhog)
-  DEALLOCATE(rhor)
-  DEALLOCATE(tau)
-  DEALLOCATE(ityp)
-
+  if (allocated(rhog)) deallocate(rhog)
+  deallocate(rhor)
+  deallocate(tau)
+  deallocate(ityp)
 END SUBROUTINE sigmadens
 
 SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
      nx, ny, nz, m1, m2, m3, xk, e1, e2, e3, output_format, ounit, &
-     rhotot, carica)
+     rhotot, gmapsym, isym, carica)
   !-----------------------------------------------------------------------
   !
   USE kinds, ONLY : DP
@@ -487,17 +541,16 @@ SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
   USE mp,         ONLY : mp_sum
   USE symm_base,  ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   IMPLICIT NONE
-  INTEGER :: nat, ityp (nat), ngm, nx, ny, nz, output_format, ounit
+  integer :: nat, ityp (nat), ngm, nx, ny, nz, output_format, ounit
   ! number of atoms
   ! type of atoms
   ! number of G vectors
   ! number of points along x, y, z
   ! output format
   ! output unit
-  CHARACTER(len=3) :: atm(*)
-
-  real(DP) :: alat, tau(3,nat), at(3,3), g(3,ngm), xk(3), &
-                   e1(3), e2(3), e3(3), m1, m2, m3
+  character(len=3) :: atm(*)
+  real(DP) :: alat,  tau(3,nat), at(3,3), g(3,ngm), xk(3), &
+              e1(3), e2(3), e3(3), m1, m2, m3
   ! lattice parameter
   ! atomic positions
   ! lattice vectors
@@ -505,25 +558,24 @@ SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
   ! origin
   ! vectors e1,e2,e3 defining the parallelepiped
   ! moduli of e1,e2,e3
-
-  COMPLEX(DP) :: rhog (ngm)
+  complex(DP) :: rhog (ngm)
   ! rho or polarization in G space
-  INTEGER :: i, j, k, ig
-
-  real(DP) :: rhomin, rhomax, rhotot, rhoabs, deltax, deltay, deltaz
+  integer :: i, j, k, ig
   ! min, max value of the charge, total charge, total absolute charge
   ! steps along e1, e2, e3
-  COMPLEX(DP), ALLOCATABLE :: eigx (:), eigy (:), eigz (:)
-  INTEGER  :: gmapsym(ngm,nrot)
+  complex(DP), allocatable :: eigx (:), eigy (:), eigz (:)
+  integer  :: gmapsym(ngm, nrot), isym
+  real(DP) :: rhomin, rhomax, rhotot, rhoabs, deltax, deltay, deltaz
   real(DP) :: omega
 !HL
-! real(DP), ALLOCATABLE :: carica (:,:,:)
-  real(DP), allocatable  :: carica (nx,ny,nz)
+! real(DP), allocatable :: carica (:,:,:)
+  real(DP)  :: carica (nx,ny,nz)
+
 ! HL:
-! ALLOCATE (carica( nx , ny , nz))
-  ALLOCATE (eigx(  nx))
-  ALLOCATE (eigy(  ny))
-  ALLOCATE (eigz(  nz))
+! allocate (carica( nx , ny , nz))
+  allocate (eigx(  nx))
+  allocate (eigy(  ny))
+  allocate (eigz(  nz))
 
   deltax = m1 / nx
   deltay = m2 / ny
@@ -531,35 +583,36 @@ SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
 
  !HL want to accumulate sum
  !carica = 0.d0
-  DO ig = 1, ngm
+  do ig = 1, ngm
      !
      ! eigx=exp(iG*e1+iGx0), eigy=exp(iG*e2), eigz=exp(iG*e3)
      ! These factors are calculated and stored in order to save CPU time
      !
-     DO i = 1, nx
+     do i = 1, nx
         eigx (i) = exp( (0.d0,1.d0) * 2.d0 * pi * ( (i-1) * deltax * &
-             (e1(1)*(g(1,gmapsym(ig,isym)) +  xk(1)) + e1(2)*(g(2,gmapsym(ig,isym)) + 
-              xk(2)) + e1(3)*(g(3,gmapsym(ig,isym)) + xk(3))))
-     ENDDO
-     DO j = 1, ny
+             (e1(1)*(g(1,gmapsym(ig,isym)) +  xk(1)) +  &
+              e1(2)*(g(2,gmapsym(ig,isym)) + xk(2))  +  &
+              e1(3)*(g(3,gmapsym(ig,isym)) + xk(3)))))
+     enddo
+     do j = 1, ny
         eigy (j) = exp( (0.d0,1.d0) * 2.d0 * pi * (j-1) * deltay * &
-             (e2(1)*(g(1,gmapsym(ig,isym))+xk(1)) + e2(2)*(g(2,gmapsym(ig,isym))+xk(2)) + 
+             (e2(1)*(g(1,gmapsym(ig,isym))+xk(1)) + e2(2)*(g(2,gmapsym(ig,isym))+xk(2)) + &
               e2(3)*(g(3,gmapsym(ig,isym))+xk(3))))
-     ENDDO
-     DO k = 1, nz
+     enddo
+     do k = 1, nz
         eigz (k) = exp((0.d0,1.d0)*2.d0*pi*(k-1)*deltaz* &
-             (e3(1)*(g(1,gmapsym(ig,isym))+xk(1)) + e3(2)*(g(2,gmapsym(ig,isym))+xk(2)) + 
+             (e3(1)*(g(1,gmapsym(ig,isym))+xk(1)) + e3(2)*(g(2,gmapsym(ig,isym))+xk(2)) + &
               e3(3)*(g(3,gmapsym(ig,isym))+xk(3))))
-     ENDDO
-     DO k = 1, nz
-        DO j = 1, ny
-           DO i = 1, nx
+     enddo
+     do k = 1, nz
+        do j = 1, ny
+           do i = 1, nx
               carica (i, j, k) = carica (i, j, k) + &
-                    dble (rhog (ig) * eigz (k) * eigy (j) * eigx (i) )
-           ENDDO
-        ENDDO
-     ENDDO
-  ENDDO
+                    dble (rhog (gmapsym(ig,isym)) * eigz (k) * eigy (j) * eigx (i) )
+           enddo
+        enddo
+     enddo
+  enddo
   !
   !
   CALL mp_sum( carica, intra_bgrp_comm )
@@ -572,14 +625,15 @@ SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
 
   rhomin = max    ( minval (carica), 1.d-10 )
   rhomax = maxval (carica)
-  rhotot = sum (carica(:,:,:)) * omega * deltax * deltay * deltaz
+  rhotot = sum (carica(:,:,:))      * omega * deltax * deltay * deltaz
   rhoabs = sum (abs(carica(:,:,:))) * omega * deltax * deltay * deltaz
 
-  WRITE(stdout, '(/5x,"Min, Max, Total, Abs charge: ",2f10.6,2x, 2f10.4)')&
+  write(stdout, '(/5x, "RUNNING THIS ROUTINE!")')
+  write(stdout, '(/5x,"Min, Max, Total, Abs charge: ",2f10.6,2x, 2f10.4)')&
      rhomin, rhomax, rhotot, rhoabs
 !
-!  IF (ionode) THEN
-!     IF (output_format == 4) THEN
+!  if (ionode) THEN
+!     if (output_format == 4) THEN
 !       "gOpenMol" file
 !        CALL write_openmol_file (alat, at, nat, tau, atm, ityp, x0, &
 !             m1, m2, m3, nx, ny, nz, rhomax, carica, ounit)
@@ -592,11 +646,11 @@ SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
 !        CALL xsf_struct      (alat, at, nat, tau, atm, ityp, ounit)
 !        CALL xsf_datagrid_3d &
 !             (carica, nx, ny, nz, m1, m2, m3, x0, e1, e2, e3, alat, ounit)
-!     ENDIF
-!  ENDIF
-  DEALLOCATE (carica)
-  DEALLOCATE (eigz)
-  DEALLOCATE (eigy)
-  DEALLOCATE (eigx)
-  RETURN
+!     ENDif
+!  ENDif
+!  deallocate (carica)
+  deallocate (eigz)
+  deallocate (eigy)
+  deallocate (eigx)
+  return
 END SUBROUTINE plot_3d_sig
