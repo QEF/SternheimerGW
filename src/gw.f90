@@ -81,6 +81,10 @@ program gw
          if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
          if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
          if(do_sigma_c) call sigma_c_re(ik)
+         if (do_sigma_c.and.multishift) then
+            close(unit = iunresid, status = 'DELETE')
+            close(unit = iunalphabeta, status = 'DELETE')
+         endif
       enddo
   endif
   127 continue

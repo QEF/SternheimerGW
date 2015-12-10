@@ -28,6 +28,7 @@ SUBROUTINE close_gwq( flag )
   USE units_gw,      ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iuebar, iudrho, &
                             iudvscf
   USE output,        ONLY : fildrho, fildvscf
+  USE control_gw,    ONLY : do_coulomb
   !
   IMPLICIT NONE
   !
@@ -45,7 +46,13 @@ SUBROUTINE close_gwq( flag )
      !
   END IF
   IF (flag) THEN
-    continue
+    IF (do_coulomb) THEN
+     CALL close_buffer(iudwf,  'keep')
+     CALL close_buffer(iudwfp, 'keep')
+     CALL close_buffer(iudwfm, 'keep')
+     CALL close_buffer(iubar,  'keep')
+    ENDIF
+    CONTINUE
   ELSE
      CALL close_buffer(iudwf,  'keep')
      CALL close_buffer(iudwfp, 'keep')
