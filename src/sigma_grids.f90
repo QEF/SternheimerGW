@@ -16,13 +16,13 @@ SUBROUTINE sigma_grids()
   USE klist,            ONLY : xk, nks
   USE gvect,            ONLY : gcutm
   USE stick_set,        ONLY : pstickset_custom
+  USE fft_types,        ONLY : fft_dlay_descriptor, fft_dlay_allocate,&
+                               fft_dlay_set, fft_dlay_scalar
   USE mp,               ONLY : mp_sum, mp_max,mp_barrier
   USE mp_pools,         ONLY : inter_pool_comm, nproc_pool
   USE mp_bands,         ONLY : me_bgrp, nproc_bgrp, inter_bgrp_comm, &
                                intra_bgrp_comm, root_bgrp, ntask_groups
-  USE fft_types,        ONLY : fft_dlay_descriptor, fft_dlay_allocate, &
-                               fft_dlay_set, fft_dlay_scalar
-  USE io_global,        ONLY :  stdout, ionode, ionode_id
+  USE io_global,        ONLY : stdout, ionode, ionode_id
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, gcutcorr
   USE gwsigma,          ONLY : ecutsex, ecutsco, gexcut
   USE grid_subroutines, ONLY : realspace_grids_info 

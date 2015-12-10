@@ -25,7 +25,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, current_iq, ext_recover, &
                                    eta, tr2_green, maxter_green, prec_shift,&
-                                   multishift
+                                   multishift, high_io
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
   USE eqv,                  ONLY : evq, eprectot
@@ -53,7 +53,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   complex(DP) :: gr(npwx, 1), ci, cw 
   complex(DP) :: green(gcutcorr, gcutcorr, nwgreen)
   complex(DP), ALLOCATABLE :: etc(:,:)
-
   real(DP) :: dirac, x, delta, support
   real(DP) :: k0mq(3) 
   real(DP) :: w_ryd(nwgreen)
@@ -63,7 +62,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   real(DP) :: ehomo, elumo, mu
   real(DP) :: gam(3)
   real(DP), INTENT(IN) :: xk1(3)
-
   integer :: nwgreen
   integer :: iw, igp, iw0
   integer :: iq, ik0

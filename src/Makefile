@@ -5,7 +5,7 @@ include $(ESPRESSO)/make.sys
 
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \
-          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG).
+          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG).
 
 IFLAGS=
 
@@ -97,9 +97,9 @@ star_q.o\
 wavecut.o\
 find_xk_uniq.o\
 coul_multi.o\
-sigprodIII.o\
+sigprod.o\
 sgw_opening.o\
-sigcimmod.o
+sigcim.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a

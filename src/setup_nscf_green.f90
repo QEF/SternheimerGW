@@ -48,7 +48,8 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   USE disp,               ONLY : xk_kpoints
   USE uspp_param,         ONLY : n_atom_wfc
   USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &
-                                 time_reversal, copy_sym, inverse_s, s_axis_to_cart
+                                 time_reversal, copy_sym, inverse_s, s_axis_to_cart, &
+                                 invsym
   USE control_gw,         ONLY : newgrid, lgamma
 
   !
@@ -87,7 +88,13 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
 
   if(do_matel) then
     time_reversal = .true.
-    sym(1:nsym)=.true.
+!   For systems without inversion symmetry we
+!   must recover -q via time reversal this
+!   ensures the k list generates negative q
+!   W_{q} is still generated with time_reversal.
+    if(.not.invsym) time_reversal = .false.
+    if(.not.invsym) WRITE(stdout, '("Generating klist without time reversal.")')
+    sym(1:nsym)   = .true.
     call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
   else
     time_reversal = .false.
