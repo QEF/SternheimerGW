@@ -22,7 +22,8 @@ subroutine sigma_c_im(ik0)
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
                             w0pmw, wgtcoul
-  USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
+  USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma,&
+                            lrcoul, lrgrn, iuwfc, lrwfc
   USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE gvect,         ONLY : g, ngm, nl
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at,bg
@@ -117,14 +118,9 @@ subroutine sigma_c_im(ik0)
    allocate ( scrcoul_g       (gcutcorr, gcutcorr, nfs)     )
    allocate ( scrcoul_pade_g  (gcutcorr, gcutcorr)          )
 
-   if (.not.high_io) then
-      allocate ( greenf_g        (gcutcorr, gcutcorr, 2*nwcoul))
-      allocate ( sigma_g         (gcutcorr, gcutcorr, nwsigma))
-   else
+   allocate ( greenf_g        (gcutcorr, gcutcorr, 2*nwcoul))
+   allocate ( sigma_g         (gcutcorr, gcutcorr, nwsigma))
 !Writing these to disk
-      allocate ( greenf_g        (gcutcorr, gcutcorr,1))
-      allocate ( sigma_g         (gcutcorr, gcutcorr,1))
-   endif
 !These go on the big grid...
 !Technically only need gmapsym up to gcutcorr or ngmgrn...
 !   allocate ( gmapsym  (ngm, nrot)   )
@@ -150,7 +146,7 @@ subroutine sigma_c_im(ik0)
 !2D Truncation
    zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
    CALL start_clock('sigmac')
-   CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
+   CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
