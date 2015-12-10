@@ -103,7 +103,7 @@ sigcim.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a
-LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
+LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a $(ESPRESSO)/FFTXlib/libqefft.a
 TLDEPS= bindir mods libs pw-lib
 
 all : version libgw.a gw.x
