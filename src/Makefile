@@ -6,6 +6,7 @@ include $(ESPRESSO)/make.sys
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \
           $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG).
+#          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG).
 
 IFLAGS=
 
@@ -105,6 +106,7 @@ find_trev.o
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a
 LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a $(ESPRESSO)/FFTXlib/libqefft.a
+#LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a 
 TLDEPS= bindir mods libs pw-lib
 
 all : version libgw.a gw.x
