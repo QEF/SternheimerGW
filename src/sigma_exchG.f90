@@ -126,6 +126,8 @@ IMPLICIT NONE
   CALL mp_barrier (inter_pool_comm)
   CALL gk_sort    (xk_kpoints(1,ik0), ngm, g, ( ecutwfc / tpiba2 ), &
                    npwkp, igkp, g2kin)
+
+
   do ik = 1, nksq
      if(lgamma) ik1 = ik
      if(.not.lgamma) ik1 = 2*ik-1
@@ -141,7 +143,6 @@ IMPLICIT NONE
         nig0  = 1
         igkq_tmp = 0
         igkq_ig  = 0
-
         call rotate(xk(1,ik1), aq, s, nsym, invs(isymop))
         xq  = xk_kpoints(:, ik0) - aq(:)
         write(1000+mpime,'(4f10.5)') wk(ik1), aq(1:3)
@@ -185,7 +186,6 @@ IMPLICIT NONE
                endif
             enddo
         endif
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         do vbnd = 1, nbnd_occ(ik1)
            psi (:) = (0.d0, 0.d0)
            do ig = 1, npw 
@@ -204,7 +204,6 @@ IMPLICIT NONE
                  dipole (ir) = dipole (ir) + dconjg(psi (ir))*dpsic (ir)
               enddo
               call fwfft('Wave', dipole(:), dffts)
-              !do ig = 1, sigma_x_st%ngmt
               do ig = 1, npw
                  sigma_band_exg(ibnd) = sigma_band_exg(ibnd) - &
 &                0.5d0*wk(ik1)*dconjg(dipole(nls(ig)))*(dipole(nls(ig)))*barcoul(ig)
@@ -212,8 +211,6 @@ IMPLICIT NONE
            enddo !ibnd
         enddo !v\inocc
       enddo !isym
-!      write(1000+mpime,*) wk(ik1), nbnd_occ(ik0), npw, nbnd_sig
-!      write(1000+mpime,*) sigma_band_exg
  enddo ! on q
 
  call mp_barrier(inter_pool_comm)

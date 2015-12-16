@@ -1,27 +1,31 @@
-subroutine sigprod(isymop, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
-  USE kinds,          ONLY : DP
-  USE cell_base,      ONLY : tpiba2, tpiba, omega, alat, at
-  USE gwsigma,        ONLY : sigma_c_st, gcutcorr
-  USE fft_interfaces, ONLY : invfft, fwfft
-  USE fft_custom,     ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE gvect,          ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
-  USE symm_base,      ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE mp_world,      ONLY : nproc, mpime
-  IMPLICIT NONE
-  COMPLEX(DP)              :: dz
-  COMPLEX(DP)              :: sigma_r   (sigma_c_st%dfftt%nnr, gcutcorr)
-  COMPLEX(DP)              :: greenf_r  (sigma_c_st%dfftt%nnr, gcutcorr)
-  COMPLEX(DP)              :: scrcoul_r (sigma_c_st%dfftt%nnr, gcutcorr)
-  COMPLEX(DP)              :: greenfr   (sigma_c_st%dfftt%nnr)
-  COMPLEX(DP)              :: scrcoulr  (sigma_c_st%dfftt%nnr)
-  COMPLEX(DP)              :: aux       (sigma_c_st%dfftt%nnr)
-  COMPLEX(DP)              :: greenf_g  (gcutcorr, gcutcorr)
-  COMPLEX(DP)              :: scrcoul_g (gcutcorr, gcutcorr)
-  COMPLEX(DP)              :: sigma_g   (gcutcorr, gcutcorr)
-  INTEGER                  :: gmapsym(ngm, nrot), isymop 
-  INTEGER                  :: ig, igp, ir
-  INTEGER                  :: ig1, ig1p, igw
-  REAL(DP), PARAMETER      :: eps=1.0d-5
+subroutine sigprod(isymop, trev, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
+  use kinds,          only : DP
+  use cell_base,      only : tpiba2, tpiba, omega, alat, at
+  use gwsigma,        only : sigma_c_st, gcutcorr
+  use fft_interfaces, only : invfft, fwfft
+  use fft_custom,     only : fft_cus, set_custom_grid, ggent, gvec_init
+  use gvect,          only : nl, ngm, g, nlm, gstart, gl, igtongl
+  use symm_base,      only : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  use mp_world,       only : nproc, mpime
+
+  implicit none
+
+  complex(DP)              :: dz
+  complex(DP)              :: sigma_r   (sigma_c_st%dfftt%nnr, gcutcorr)
+  complex(DP)              :: greenf_r  (sigma_c_st%dfftt%nnr, gcutcorr)
+  complex(DP)              :: scrcoul_r (sigma_c_st%dfftt%nnr, gcutcorr)
+  complex(DP)              :: greenfr   (sigma_c_st%dfftt%nnr)
+  complex(DP)              :: scrcoulr  (sigma_c_st%dfftt%nnr)
+  complex(DP)              :: aux       (sigma_c_st%dfftt%nnr)
+  complex(DP)              :: greenf_g  (gcutcorr, gcutcorr)
+  complex(DP)              :: scrcoul_g (gcutcorr, gcutcorr)
+  complex(DP)              :: sigma_g   (gcutcorr, gcutcorr)
+  integer                  :: gmapsym(ngm, nrot), isymop, isym 
+  integer                  :: ig, igp, ir
+  integer                  :: ig1, ig1p, igw
+  real(DP), parameter      :: eps=1.0d-5
+  logical                  :: trev
+
 ! G_{1}
   do igp = 1, gcutcorr
      scrcoulr(:) = (0.0d0,0.0d0)
@@ -41,7 +45,11 @@ subroutine sigprod(isymop, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
      greenfr (sigma_c_st%nlt(1:gcutcorr)) = greenf_r (ir, 1:gcutcorr)
      call invfft('Custom', scrcoulr, sigma_c_st%dfftt)
      call invfft('Custom', greenfr, sigma_c_st%dfftt)
-     aux         = dz*greenfr(:)*scrcoulr(:)/omega
+     if(.not.trev) then
+       aux         = dz*greenfr(:)*scrcoulr(:)/omega
+     else
+       aux         = dz*greenfr(:)*conjg(scrcoulr(:))/omega
+     endif
      call fwfft('Custom', aux, sigma_c_st%dfftt)
      greenfr(:)  = (0.0d0,0.d0)
      greenfr(1:gcutcorr)  = aux(sigma_c_st%nlt(1:gcutcorr))

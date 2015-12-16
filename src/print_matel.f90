@@ -6,30 +6,32 @@
   !-----------------------------------------------------------------------
 subroutine print_matel(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma) 
 
-  USE kinds,                ONLY : DP
-  USE gwsigma,              ONLY : ngmsig, nbnd_sig
-  USE io_global,            ONLY : stdout, ionode_id, ionode
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
+use kinds,                only : DP
+use cell_base,            only : at, bg
+use gwsigma,              only : ngmsig, nbnd_sig
+use klist,                only : xk, wk, nkstot, nks
+use constants,            only : e2, fpi, RYTOEV, tpi, pi
+use io_global,            only : stdout, ionode_id, ionode
+use wvfct,                only : nbnd, npw, npwx, igk, g2kin, et
 
 implicit none
 
-COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
+complex(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
-COMPLEX(DP)               ::   czero, temp
-REAL(DP)                  ::   wsigma(nwsigma) 
-REAL(DP)                  ::   w_ryd(nwsigma)
-REAL(DP)                  ::   one
-REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
+complex(DP)               ::   czero, temp
+real(DP)                  ::   wsigma(nwsigma) 
+real(DP)                  ::   w_ryd(nwsigma), xkcryst(3)
+real(DP)                  ::   one
+real(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
                                et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
-REAL(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
+real(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
                                sigma_ex_tr, sigma_ex_diag(nbnd_sig)
-REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
+real(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                et_qp_tr, z_tr, z(nbnd_sig)
-INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
-INTEGER                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
-INTEGER                   ::   nwsigma
-LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
+integer                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
+integer                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
+integer                   ::   nwsigma
+logical                   ::   do_band, do_iq, setup_pw, exst, single_line
 
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)
@@ -107,6 +109,8 @@ LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
   if(nbnd_sig.le.8) single_line=.true.
   if(nbnd_sig.gt.8) single_line=.false.
 
+  xkcryst(:) = xk(:, ikq)
+  call cryst_to_cart(1, xkcryst, at, -1)
   if(single_line) then
      write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))')  et(1:8, ikq)*RYTOEV
   else
@@ -120,6 +124,9 @@ LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
      if(ideg+7.ge.nbnd_sig) write(stdout,9000)  et(ideg:nbnd_sig, ikq)*RYTOEV
   enddo
   endif
+
+  write(stdout,'(/4x,"GWKpoint cart :", 3(1x,f8.4))') xk(:,ikq)
+  write(stdout,'(/4x,"GWKpoint cryst:", 3(1x,f8.4))') xkcryst(:)
 
   if(single_line) then
      write(stdout, '(4x,"GW qp energy (eV)",8(1x,f7.2))')  et_qp(1:8)*RYTOEV
@@ -241,8 +248,8 @@ end subroutine print_matel
   SUBROUTINE  qp_eigval ( nw, w, sig, et, et_qp, z )
 !----------------------------------------------------------------
 !
-  USE kinds,         ONLY : DP
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, pi
+  use kinds,         only : DP
+  use constants,     only : e2, fpi, RYTOEV, tpi, pi
 
   IMPLICIT NONE
 

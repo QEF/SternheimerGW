@@ -25,19 +25,21 @@ SUBROUTINE freqbins()
                          wgreenmax, fiu, nfs, greenzero, w0pmw, wgtcoul
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
-  USE constants,  ONLY : RYTOEV
+  USE constants,  ONLY : RYTOEV, pi
   USE control_gw, ONLY : eta, godbyneeds, padecont, freq_gl, do_imag
-  USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop, xk_kpoints
+  USE disp,       ONLY : num_k_pts, w_of_k_start, w_of_k_stop, xk_kpoints,& 
+                         nq1, nq2, nq3
+  USE cell_base,  ONLY : omega, tpiba2, at, bg, tpiba, alat
            
 
   IMPLICIT NONE 
 
-  LOGICAL  :: foundp, foundm
-  REAL(DP) :: zero, w0mw, w0pw
-  INTEGER  :: iw, iw0, iwp, iw0mw, iw0pw, i
-  REAL(DP)               :: x1, x2       !ranges
-  INTEGER                :: n            !number of points
+  REAL(DP)  :: zero, w0mw, w0pw, rcut
+  REAL(DP)  :: x1, x2       !ranges
   REAL(DP), ALLOCATABLE  :: x(:), w(:)   !abcissa and weights
+  INTEGER  :: n            !number of points
+  INTEGER  :: iw, iw0, iwp, iw0mw, iw0pw, i
+  LOGICAL  :: foundp, foundm
 
   zero = 0.0d0
   IF(.not.freq_gl) THEN
@@ -126,6 +128,9 @@ SUBROUTINE freqbins()
        WRITE(stdout,'(8x, i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
   ENDDO
   WRITE(stdout, '(/5x, "Broadening: ", 1f10.4)'), eta
+
+  rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+  WRITE(stdout, '(/5x, "Spherical Cutoff: ", 1f10.4)'), rcut
 
   WRITE(stdout, '(/7x, "K-points: ", i4)') num_k_pts
   DO i = 1, num_k_pts

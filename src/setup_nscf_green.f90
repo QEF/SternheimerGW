@@ -68,10 +68,10 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   ! ... variables for iterative diagonalization (Davidson is assumed)
   !
   isolve = 0
-  david = 4
-  nbndx = david*nbnd
-  max_cg_iter=20
-  natomwfc = n_atom_wfc( nat, ityp, noncolin )
+  david  = 4
+  nbndx  = david*nbnd
+  max_cg_iter = 20
+  natomwfc    = n_atom_wfc( nat, ityp, noncolin )
   !
 #ifdef __PARA
   IF ( use_para_diag )  CALL check_para_diag( nbnd )
@@ -133,7 +133,7 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
      CALL kpoint_grid ( nsym, time_reversal, .false., s, t_rev, &
                         bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
     else
-      CALL kpoint_grid ( nsym, .false., .false., s, t_rev, &
+     CALL kpoint_grid ( nsym, .false., .false., s, t_rev, &
                         bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
     endif
   endif

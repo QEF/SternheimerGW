@@ -5,36 +5,36 @@
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
 SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
-  USE kinds,         ONLY : DP
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
+  use kinds,         only : DP
+  use constants,     only : e2, fpi, RYTOEV, tpi, eps8, pi
+  use control_gw,    only : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
+  use freq_gw,       only : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax
-  USE gwsigma,       ONLY : sigma_c_st, gcutcorr
-  USE gvect,         ONLY : g, ngm, nl
-  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
-  USE mp_global,     ONLY : mp_global_end
+  use gwsigma,       only : sigma_c_st, gcutcorr
+  use gvect,         only : g, ngm, nl
+  use disp,          only : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
+  use cell_base,     only : tpiba2, tpiba, omega, alat, at
+  use mp_global,     only : mp_global_end
 
-  IMPLICIT NONE
+  implicit none
 
-  COMPLEX(DP) :: scrcoul_pade_g (gcutcorr, gcutcorr)
-  COMPLEX(DP) :: z(nfs), u(nfs), a(nfs)
-  COMPLEX(DP)  :: scrcoul_g    (gcutcorr, gcutcorr, nfs) 
+  complex(DP) :: scrcoul_pade_g (gcutcorr, gcutcorr)
+  complex(DP) :: z(nfs), u(nfs), a(nfs)
+  complex(DP)  :: scrcoul_g    (gcutcorr, gcutcorr, nfs) 
 
-  REAL(DP) :: qg2, qg, qxy, qz
-  REAL(DP) :: w_ryd
-  REAL(DP) :: rcut, spal, zcut
-  REAL(DP) :: xq_ibk(3), xq_ibz(3)
+  real(DP) :: qg2, qg, qxy, qz
+  real(DP) :: w_ryd
+  real(DP) :: rcut, spal, zcut
+  real(DP) :: xq_ibk(3), xq_ibz(3)
 
-  INTEGER :: ig, igp, irr, icounter, ir, irp
-  INTEGER  :: iwim, iw, ikq
+  integer :: ig, igp, irr, icounter, ir, irp
+  integer  :: iwim, iw, ikq
 
-  LOGICAL             :: pade_catch
-  LOGICAL             :: found_q
-  LOGICAL             :: limq, inv_q, found
+  logical             :: pade_catch
+  logical             :: found_q
+  logical             :: limq, inv_q, found, trev
 
    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
@@ -52,9 +52,9 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
            else if (godbyneeds .and. .not. do_imag) then
                scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
            else
-                WRITE(6,'("No screening model chosen!")')
-                STOP
-                CALL mp_global_end()
+                write(6,'("No screening model chosen!")')
+                stop
+                call mp_global_end()
            endif
         enddo
      enddo

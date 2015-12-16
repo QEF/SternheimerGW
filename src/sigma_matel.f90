@@ -38,36 +38,36 @@ SUBROUTINE sigma_matel (ik0)
   USE mp,            ONLY : mp_bcast, mp_barrier, mp_sum
 
 IMPLICIT NONE
-  COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
-  COMPLEX(DP), ALLOCATABLE  :: sigma_g_ex(:,:)
-  COMPLEX(DP)               ::   czero, temp
-  COMPLEX(DP)               ::   aux(sigma_x_st%ngmt), psic(dffts%nnr), vpsi(ngm), auxsco(gcutcorr)
-  COMPLEX(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
+  complex(DP), allocatable  :: sigma_band_con(:,:,:)
+  complex(DP), allocatable  :: sigma_g_ex(:,:)
+  complex(DP)               ::   czero, temp
+  complex(DP)               ::   aux(sigma_x_st%ngmt), psic(dffts%nnr), vpsi(ngm), auxsco(gcutcorr)
+  complex(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                  sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
-  COMPLEX(DP), ALLOCATABLE  ::   sigma(:,:,:)
-  COMPLEX(DP), ALLOCATABLE  ::   evc_tmp_j(:), evc_tmp_i(:)
-  REAL(DP), ALLOCATABLE     ::   wsigwin(:)
-  REAL(DP)                  ::   w_ryd(nwsigma)
-  REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
+  complex(DP), allocatable  ::   sigma(:,:,:)
+  complex(DP), allocatable  ::   evc_tmp_j(:), evc_tmp_i(:)
+  real(DP), allocatable     ::   wsigwin(:)
+  real(DP)                  ::   w_ryd(nwsigma)
+  real(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
                                  et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
-  REAL(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
+  real(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
                                  sigma_ex_tr, sigma_ex_diag(nbnd_sig)
-  REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
+  real(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                  et_qp_tr, z_tr, z(nbnd_sig)
-  REAL(DP)                  ::   one, zcut
-  REAL(DP)    :: xk_collect(nkstot), wk_collect(nkstot)
-  REAL(DP)    :: vtxc, etxc, ehart, eth, charge
-  REAL(DP)    :: zero(3)
-  INTEGER, ALLOCATABLE      ::   igkq_ig(:) 
-  INTEGER, ALLOCATABLE      ::   igkq_tmp(:) 
-  INTEGER                   ::   iq, ikq, ikq_head
-  INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
-  INTEGER                   ::   nwsigwin, ierr, ng
-  INTEGER     :: sigma_c_ngm, sigma_x_ngm
-  INTEGER     :: iunwfc1
-  INTEGER     :: kpoolid(nkstot), iqrec1(nkstot)
-  INTEGER     :: nbase, nksloc, rest, mypoolid
-  LOGICAL     ::   do_band, do_iq, setup_pw, exst, single_line
+  real(DP)                  ::   one, zcut
+  real(DP)    :: xk_collect(nkstot), wk_collect(nkstot)
+  real(DP)    :: vtxc, etxc, ehart, eth, charge
+  real(DP)    :: zero(3)
+  integer, allocatable      ::   igkq_ig(:) 
+  integer, allocatable      ::   igkq_tmp(:) 
+  integer                   ::   iq, ikq, ikq_head
+  integer                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
+  integer                   ::   nwsigwin, ierr, ng
+  integer     :: sigma_c_ngm, sigma_x_ngm
+  integer     :: iunwfc1
+  integer     :: kpoolid(nkstot), iqrec1(nkstot)
+  integer     :: nbase, nksloc, rest, mypoolid
+  logical    ::   do_band, do_iq, setup_pw, exst, single_line
   integer*8 :: unf_recl
   logical, external :: eqvect
   logical :: found_k
@@ -174,13 +174,11 @@ IMPLICIT NONE
         enddo
       else
         write(6, '("Exch Conv must be greater than zero and less than ecut_sco")')
-        STOP
+        stop
       endif
-
       counter  = 0
       igkq_tmp(:) = 0
       igkq_ig(:)  = 0
-
       do ig = 1, npwq
          if((igk(ig).le.sigma_x_ngm).and.((igk(ig)).gt.0)) then
           counter = counter + 1
@@ -214,7 +212,7 @@ IMPLICIT NONE
         enddo
       endif
       write(1000+mpime,*) 
-      write(1000+mpime,'(4x,"Sigma_ex (eV)")')
+      write(1000+mpime,'(4x,"sigma_ex (eV)")')
       write(1000+mpime,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
       write(1000+mpime,*) 
       write(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
@@ -228,7 +226,7 @@ else
 endif
 !MATRIX ELEMENTS OF SIGMA_C:
       write(1000+mpime,*) 
-      write(1000+mpime, '("Sigma_C Matrix Element")') 
+      write(1000+mpime, '("sigma_c matrix element")') 
       allocate (sigma(gcutcorr, gcutcorr,nwsigma)) 
       allocate (evc_tmp_i(gcutcorr))
       allocate (evc_tmp_j(gcutcorr))

@@ -12,17 +12,17 @@
 ! or http://www.gnu.org/copyleft/gpl.txt .
 !
 !------------------------------------------------
-SUBROUTINE q_points ( )
+subroutine q_points ( )
 !---------------------------------------------------------
 
-  USE kinds, only : dp
-  USE io_global,  ONLY :  stdout, ionode, ionode_id
-  USE disp,  ONLY : nq1, nq2, nq3, x_q, nqs, wq
-  USE output, ONLY : fildyn
-  USE symm_base, ONLY : nsym, s, time_reversal, t_rev, invs, nrot
-  USE cell_base, ONLY : at, bg
-  USE mp_images,  ONLY : intra_image_comm
-  USE mp,         ONLY : mp_bcast
+  use kinds,      only : dp
+  use io_global,  only :  stdout, ionode, ionode_id
+  use disp,       only : nq1, nq2, nq3, x_q, nqs, wq
+  use output,     only : fildyn
+  use symm_base,  only : nsym, s, time_reversal, t_rev, invs, nrot
+  use cell_base,  only : at, bg
+  use mp_images,  only : intra_image_comm
+  use mp,         only : mp_bcast
 
   implicit none
 

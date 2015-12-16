@@ -4,7 +4,7 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
+subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
@@ -47,12 +47,11 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 
  !should be freq blocks...
  !complex(DP) :: gr_A_shift(npwx, nwgreen)
-  complex(DP), ALLOCATABLE :: gr_A_shift(:,:)
-
+  complex(DP), allocatable :: gr_A_shift(:,:)
   complex(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
   complex(DP) :: gr(npwx, 1), ci, cw 
   complex(DP) :: green(gcutcorr, gcutcorr, nwgreen)
-  complex(DP), ALLOCATABLE :: etc(:,:)
+  complex(DP), allocatable :: etc(:,:)
   real(DP) :: dirac, x, delta, support
   real(DP) :: k0mq(3) 
   real(DP) :: w_ryd(nwgreen)
@@ -61,12 +60,12 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   real(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   real(DP) :: ehomo, elumo, mu
   real(DP) :: gam(3)
-  real(DP), INTENT(IN) :: xk1(3)
+  real(DP), intent(in) :: xk1(3)
   integer :: nwgreen
   integer :: iw, igp, iw0
   integer :: iq, ik0
   integer :: rec0, n1, gveccount
-  integer, ALLOCATABLE      :: niters(:)
+  integer, allocatable      :: niters(:)
   integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
              ipert,      & ! counter on perturbations
@@ -96,17 +95,15 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   ALLOCATE  (h_diag (npwx, 1))
   ALLOCATE  (etc(nbnd_occ(1), nkstot))
   if(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
-
   ci = (0.0d0, 1.0d0)
- !WRITE(1000+mpime, *) mu
+! write(1000+mpime, *) mu
 ! Convert freq array generated in freqbins into rydbergs.
   do iw =1, nwgreen
      w_ryd(iw) = w0pmw(1,iw)/RYTOEV
   enddo
   call start_clock('greenlinsys')
   where_rec='no_recover'
-
-! HL arb k
+! hl arb k.
   call gk_sort(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
                 npw, igk, g2kin)
   igkq = igk
@@ -117,6 +114,13 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   counter = 0
   igkq_tmp(:) = 0
   igkq_ig(:)  = 0 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!! TODO: Should only do Unique G-vectors same as in W       !!!
+!!!!!!!       G_{Sk}(G,G')= G_{k}(S^-1G,S^-1G') where Sk = k     !!!
+!!!!!!!       This was not implemented on move from 4.2.1 to 5.0 !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   do ig = 1, npw
      if((igk(ig).le.gcutcorr).and.((igk(ig)).gt.0)) then
          counter = counter + 1
@@ -130,7 +134,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 !call init_us_2 (npwq, igkq, x_q (1, ikq), vkb)
 !HL arb k 
     call init_us_2 (npw, igk, xk1(1), vkb)
-
     do ig = 1, npw
        g2kin (ig) = ((xk1 (1) + g (1, igk(ig) ) ) **2 + &
                      (xk1 (2) + g (2, igk(ig) ) ) **2 + &
@@ -218,4 +221,4 @@ if(allocated(etc))        deallocate(etc)
 if(allocated(gr_A_shift)) deallocate(gr_A_shift)
 call stop_clock('greenlinsys')
 return
-END SUBROUTINE green_linsys_shift_im
+end subroutine green_linsys_shift_im

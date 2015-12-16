@@ -99,7 +99,8 @@ find_xk_uniq.o\
 coul_multi.o\
 sigprod.o\
 sgw_opening.o\
-sigcim.o
+sigcim.o\
+find_trev.o
 
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a
