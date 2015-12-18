@@ -267,7 +267,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         call coul_multi(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsipm, h_diag, fiu(1), 2*nfs-1, &
                         npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),          &
                         npol, niters, .false.)
-        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
+        if(.not.conv_root)   WRITE(1000+mpime, '(5x,"kpoint NC increase maxiter!", i4)') ik
         dpsi(:,:,:)    = dcmplx(0.d0, 0.d0)
         dpsi(:,:,1)    = dpsipm(:,:,1)
         do iw = 2, nfs
@@ -275,7 +275,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
         enddo
         do ibnd=1, nbnd 
            if (niters(ibnd).ge.maxter_coul) then
-               !WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
+              !WRITE(1000+mpime, '(5x,"kpoint NC", i4)') ik
                dpsi(:,ibnd,:) = dcmplx(0.0d0,0.0d0)
            endif
         enddo

@@ -99,6 +99,7 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   else
     time_reversal = .false.
     sym(1:1)   = .true.
+!Symmetry is applied by hand in stern_symm
     sym(2:nsym)= .false.
     call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
   endif
@@ -137,14 +138,11 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
                         bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
     endif
   endif
-
   ! ... If some symmetries of the lattice no longer apply for this kpoint
   ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
   ! ... symmetry operations. 
-
   CALL irreducible_BZ (nsym, s, nsymq, minus_q, magnetic_sym, &
                        at, bg, npk, nkstot, xk, wk, t_rev)
-
   !wk(contains weights 
   CALL set_kplusq( xk, wk, xq, nkstot, npk )
   !

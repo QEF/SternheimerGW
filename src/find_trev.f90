@@ -54,26 +54,34 @@ subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
    if(.not. found_q) then
       xq_ibk_loc(:) = -xq_ibk 
       call cryst_to_cart(1, xq_ibk_loc(:), at, -1)
+      write(6, '(5x, "xk_ibk ", 3f14.9)') xq_ibk_loc(1), xq_ibk_loc(2), xq_ibk_loc(3)
       do iq = 1, nqs
          x_q_loc(:) = x_q(:,iq)
          call cryst_to_cart(1, x_q_loc(:), at, -1)
          do isym = 1, nsym
-           xq_ibk_locr(1)=s(1,1,isym)*(xq_ibk_loc(1))+s(1,2,isym)*(xq_ibk_loc(2))+s(1,3,isym)*(xq_ibk_loc(3))
-           xq_ibk_locr(2)=s(2,1,isym)*(xq_ibk_loc(1))+s(2,2,isym)*(xq_ibk_loc(2))+s(2,3,isym)*(xq_ibk_loc(3))
-           xq_ibk_locr(3)=s(3,1,isym)*(xq_ibk_loc(1))+s(3,2,isym)*(xq_ibk_loc(2))+s(3,3,isym)*(xq_ibk_loc(3))
-           found_q  = (abs(x_q_loc(1)-xq_ibk_locr(1)).le.eps).and. &
-                      (abs(x_q_loc(2)-xq_ibk_locr(2)).le.eps).and. & 
-                      (abs(x_q_loc(3)-xq_ibk_locr(3)).le.eps) 
-           if(found_q) then
-              iqtr = iq
-              isymcoul = isym
-              trev = .true.
-              exit
-           endif
+           xq_ibk_locr(1)= s(1,1,isym)*(xq_ibk_loc(1))+s(1,2,isym)*(xq_ibk_loc(2))+s(1,3,isym)*(xq_ibk_loc(3))
+           xq_ibk_locr(2)= s(2,1,isym)*(xq_ibk_loc(1))+s(2,2,isym)*(xq_ibk_loc(2))+s(2,3,isym)*(xq_ibk_loc(3))
+           xq_ibk_locr(3)= s(3,1,isym)*(xq_ibk_loc(1))+s(3,2,isym)*(xq_ibk_loc(2))+s(3,3,isym)*(xq_ibk_loc(3))
+           do i = -1, 1
+            do j = -1, 1
+             do k = -1, 1
+                found_q  = (abs(x_q_loc(1)-(xq_ibk_locr(1)+float(i))).le.eps).and. &
+                           (abs(x_q_loc(2)-(xq_ibk_locr(2)+float(j))).le.eps).and. & 
+                           (abs(x_q_loc(3)-(xq_ibk_locr(3)+float(k))).le.eps) 
+                if(found_q) then
+                   iqtr = iq
+                   isymcoul = isym
+                   trev = .true.
+                   write(6, '(5x, "TR", 3i3, 3f14.9)') i,j,k, isym, x_q_loc(1), x_q_loc(2), x_q_loc(3)
+                   GOTO 125
+                endif
+             enddo
+            enddo
+           enddo
         enddo
-        if(found_q) exit
       enddo
-endif
+  125 CONTINUE
+  endif
 if (.not.found_q) CALL errore( 'find_trev', 'cant find qpoint in IBZ', 1 )
 return
 end subroutine

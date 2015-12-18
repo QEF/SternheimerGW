@@ -148,18 +148,17 @@ subroutine sigma_c_im(ik0)
        nqstr = nqs
    endif
    write(stdout,'(4x, "num of q points in convolution: ", i4 )') nqstr
-
-       !do iq = 1, nqstr
-       !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
-       !end do
-       !do iq = 1, nqstr
-       !   xq(:) = xqtr(:, iq)
-       !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
-       !   trev = .false.
-       !   call find_trev(xq, s, invs, iqtr,isym,trev)
-       !   write(stdout,*) trev
-       !   write(stdout, '(5x,i3, 4f14.9)') iqtr, x_q(1,iqtr), x_q(2,iqtr), x_q(3,iqtr), wq(iqtr)
-       !enddo
+   !do iq = 1, nqstr
+   !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
+   !end do
+   !do iq = 1, nqstr
+   !   xq(:) = xqtr(:, iq)
+   !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
+   !   trev = .false.
+   !   call find_trev(xq, s, invs, iqtr,isym,trev)
+   !   write(stdout,*) trev
+   !   write(stdout, '(5x,i3, 4f14.9)') iqtr, x_q(1,iqtr), x_q(2,iqtr), x_q(3,iqtr), wq(iqtr)
+   !enddo
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
 !2D Truncation
