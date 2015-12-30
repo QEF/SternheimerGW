@@ -490,6 +490,6 @@ SUBROUTINE gwq_readin()
      CALL mp_bcast(list, meta_ionode_id, world_comm )
   ENDIF
   IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
-      CALL errore('phq_readin','nq1, nq2, and nq3 must be greater than 0',1)
+      CALL errore('gwq_readin','nq1, nq2, and nq3 must be greater than 0',1)
   RETURN
 END SUBROUTINE gwq_readin

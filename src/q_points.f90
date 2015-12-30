@@ -17,7 +17,7 @@ subroutine q_points ( )
 
   use kinds,      only : dp
   use io_global,  only :  stdout, ionode, ionode_id
-  use disp,       only : nq1, nq2, nq3, x_q, nqs, wq
+  use disp,       only : nq1, nq2, nq3, x_q, nqs, wq, iq1, iq2, iq3
   use output,     only : fildyn
   use symm_base,  only : nsym, s, time_reversal, t_rev, invs, nrot
   use cell_base,  only : at, bg
@@ -44,7 +44,7 @@ subroutine q_points ( )
   allocate (wq(nqmax))
   allocate (xq(3,nqmax))
   call kpoint_grid(nsym, time_reversal, skip_equivalence, s, t_rev,& 
-                      bg, nqmax, 0,0,0, nq1,nq2,nq3, nqs, xq, wq )
+                      bg, nqmax, iq1,iq2,iq3, nq1,nq2,nq3, nqs, xq, wq )
                          
   !so that it is equivalent with set_defaults_pw.f90
   !call kpoint_grid( nrot, time_reversal, .false., s, t_rev, bg, nqmax,&
