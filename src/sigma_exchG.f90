@@ -139,8 +139,8 @@ IMPLICIT NONE
      npwq = npw 
      igkq = igk
 
-     do isymop = 1, nsym
-        nig0  = 1
+     do isymop   = 1, nsym
+        nig0     = 1
         igkq_tmp = 0
         igkq_ig  = 0
         call rotate(xk(1,ik1), aq, s, nsym, invs(isymop))
@@ -150,8 +150,9 @@ IMPLICIT NONE
 !!!!!!!!!!!!!!!!!!! Construct v(q;G;G'): !!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
+        barcoul(:) = dcmplx(0.0d0,0.0d0)
         if(.not.trunc_2d) THEN
-           do ig = 1, npw
+           do ig = 1, npwx
               qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
                       + (g(3,ig)  + xq(3))**2.d0)
               qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
@@ -166,25 +167,21 @@ IMPLICIT NONE
               endif
            enddo
         else
-            zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
-            rcut = -2*pi*zcut**2
-            do ig = 1, npw
-               qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-               qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-               qz   = sqrt((g(3,ig) + xq(3))**2)
-               spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-               if(qxy.gt.eps8) then
-                  spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-                  barcoul(ig) = &
-&                 dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-               else if(qxy.lt.eps8.and.qz.gt.eps8) then
-                  spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-                  barcoul(ig) = &
-&                 dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-               else  
-                  barcoul(ig) = dcmplx(rcut, 0.0d0)
-               endif
-            enddo
+           zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
+           rcut = -2*pi*zcut**2
+           do ig = 1, npwx
+              qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+              qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+              qz   = sqrt((g(3,ig) + xq(3))**2)
+              spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+              if(qg2.gt.eps8) then
+                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*(cos(tpiba*qz*zcut))
+                 barcoul(ig) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+              else  
+                 barcoul(ig) = dcmplx(rcut, 0.0d0)
+                ! barcoul(ig) = dcmplx(0.0d0, 0.0d0)
+              endif
+           enddo
         endif
         do vbnd = 1, nbnd_occ(ik1)
            psi (:) = (0.d0, 0.d0)

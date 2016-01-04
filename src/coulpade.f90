@@ -21,91 +21,90 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
 
   IMPLICIT NONE
 
-  COMPLEX(DP)         ::  scrcoul_g   (gcutcorr, gcutcorr, nfs)
-  COMPLEX(DP)         :: z(nfs), u(nfs), a(nfs)
-  COMPLEX(DP) :: phase
+  complex(DP) ::  scrcoul_g   (gcutcorr, gcutcorr, nfs)
+  complex(DP) :: z(nfs), u(nfs), a(nfs)
+  complex(DP) :: phase
+  complex(DP) :: eigv     (ngm, nrot)  
 
-  INTEGER     :: gmapsym  (ngm, nrot) 
-  COMPLEX(DP) :: eigv     (ngm, nrot)  
+  real(DP) :: qg2, qg, qxy, qz
+  real(DP) :: rcut, spal, zcut
+  real(DP) :: xq_ibk(3), xq_ibz(3)
 
-  REAL(DP) :: qg2, qg, qxy, qz
-  REAL(DP) :: rcut, spal, zcut
-  REAL(DP) :: xq_ibk(3), xq_ibz(3)
+  integer :: gmapsym  (ngm, nrot) 
+  integer :: ig, igp, irr, icounter, ir, irp
+  integer :: iwim, iw, ikq
+  integer :: iqstart, iqstop, iqs, nkr
+  integer :: iq, ipol, iqrec, isym
 
-  INTEGER :: ig, igp, irr, icounter, ir, irp
-  INTEGER :: iwim, iw, ikq
-  INTEGER :: iqstart, iqstop, iqs, nkr
-  INTEGER :: iq, ipol, iqrec, isym
-
-  LOGICAL             :: pade_catch
-  LOGICAL             :: found_q
-  LOGICAL             :: limq, inv_q, found
+  logical :: pade_catch
+  logical :: found_q
+  logical :: limq, inv_q, found
 
 !Rotate G_vectors for FFT.
    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-   IF(.not.modielec) THEN
+   if(.not.modielec) THEN
 !SPHERICAL SCREENING
-    IF(.not.trunc_2d) THEN
-       DO iw = 1, nfs
-         DO ig = 1, gcutcorr
+    if(.not.trunc_2d) THEN
+       do iw = 1, nfs
+         do ig = 1, gcutcorr
          qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
          qg = sqrt(qg2)
          limq = (qg2.lt.eps8) 
-         IF(.not.limq) THEN
+         if(.not.limq) THEN
             spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-            DO igp = 1, gcutcorr
+            do igp = 1, gcutcorr
                scrcoul_g(ig, igp, iw) = scrcoul_g(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-            ENDDO
-         ELSE
+            enddo
+         else
             scrcoul_g(ig, ig, iw) = scrcoul_g(ig,ig,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
 !zero wings of matrix for xq+G = 0
-            DO igp = 2, gcutcorr
+            do igp = 2, gcutcorr
                scrcoul_g(1, igp, iw) = 0.0d0
-            ENDDO
-            DO igp = 2, gcutcorr
+            enddo
+            do igp = 2, gcutcorr
                scrcoul_g(igp, 1, iw) = 0.0d0
-            ENDDO
-         ENDIF
-        ENDDO!ig
-       ENDDO!nfs
-       ELSE
-            CALL truncate_2d(scrcoul_g(1,1,1), xq_ibk, 2)
-      ENDIF
-    ENDIF
-    IF(.NOT.modielec) THEN
-        IF(godbyneeds) THEN
-          DO ig = 1, gcutcorr
-            DO igp = 1, gcutcorr 
+            enddo
+         endif
+        enddo!ig
+       enddo!nfs
+       else
+            call truncate_2d(scrcoul_g(1,1,1), xq_ibk, 2)
+      endif
+    endif
+    if(.not.modielec) THEN
+        if(godbyneeds) THEN
+          do ig = 1, gcutcorr
+            do igp = 1, gcutcorr 
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
-               DO iw = 1, nfs
+               do iw = 1, nfs
                   z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
                   u(iw) = scrcoul_g(ig, igp, iw)
-               ENDDO
-               CALL godby_needs_coeffs(nfs, z, u, a)
-               DO iw = 1, nfs 
+               enddo
+               call godby_needs_coeffs(nfs, z, u, a)
+               do iw = 1, nfs 
 !Just overwrite scrcoul_g with godby-needs coefficients.
                   scrcoul_g (ig, igp, iw) = a(iw)
-               ENDDO
-          ENDDO
-         ENDDO
-       ELSE IF (padecont) THEN
-         DO igp = 1, gcutcorr
-          DO ig = 1, gcutcorr
+               enddo
+          enddo
+         enddo
+       else if (padecont) THEN
+         do igp = 1, gcutcorr
+          do ig = 1, gcutcorr
 !Pade input points on the imaginary axis
-             DO iw = 1, nfs
+             do iw = 1, nfs
                 z(iw) = fiu(iw)
                 u(iw) = scrcoul_g (ig, igp, iw)
-             ENDDO
+             enddo
              call pade_coeff ( nfs, z, u, a)
 !Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
-             DO iw = 1, nfs 
+             do iw = 1, nfs 
                 scrcoul_g (ig, igp, iw) = a(iw)
-             ENDDO
-          ENDDO !enddo on ig
-       ENDDO  !enddo on igp
-       ELSE IF(.not.padecont.and..not.godbyneeds) THEN
+             enddo
+          enddo !enddo on ig
+       enddo  !enddo on igp
+       else if(.not.padecont.and..not.godbyneeds) THEN
                  WRITE(6,'("No screening model chosen!")')
-       ENDIF
-    ENDIF
-END SUBROUTINE coulpade
+       endif
+    endif
+end SUBROUTINE coulpade

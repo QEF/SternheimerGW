@@ -69,21 +69,31 @@ ELSE IF (opt.eq.2) then
                  qxy  = sqrt((g(1,ig) + xqloc(1))**2 + (g(2,ig) + xqloc(2))**2)
                  qz   = sqrt((g(3,ig)+xqloc(3))**2)
                  limq = (qg2.lt.eps8) 
-          IF(qxy.gt.eps8) then
-                 spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-                 DO igp = 1, sigma_c_st%ngmt
-                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
-                 ENDDO
-          ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
-                 spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-                 DO igp = 1, sigma_c_st%ngmt
-                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
-                 ENDDO
-          ELSE  
-                 do igp=1,sigma_c_st%ngmt
-                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx(rcut,0.0d0)
-                 enddo
-          ENDIF
+                 if(qg2.gt.eps8) then
+                    spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*(cos(tpiba*qz*zcut))
+                    do igp = 1, sigma_c_st%ngmt
+                       scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+                    enddo
+                 else  
+                    do igp=1,sigma_c_st%ngmt
+                       scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx(rcut,0.0d0)
+                    enddo
+                 endif
+!          IF(qxy.gt.eps8) then
+!                 spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+!                 DO igp = 1, sigma_c_st%ngmt
+!                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+!                 ENDDO
+!          ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+!                 spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
+!                 DO igp = 1, sigma_c_st%ngmt
+!                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+!                 ENDDO
+!          ELSE  
+!                 do igp=1,sigma_c_st%ngmt
+!                    scrcoul(ig, igp, iw) = scrcoul(ig,igp,iw)*dcmplx(rcut,0.0d0)
+!                 enddo
+!          ENDIF
          ENDDO
      ENDDO
 ENDIF
