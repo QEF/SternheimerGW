@@ -40,8 +40,6 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
   IF ( ldisp ) THEN
      ! ... set the name for the output file
      ! ... set the q point
-     !For convolution we calculate  W_{-\q}
-     !  xq(1:3)  = -x_q(1:3,iq)
         xq(1:3)  = x_q(1:3,iq)
         if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = 0.001d0
      !In case we want to calulate eps(q) where q is given in the input file:

@@ -4,16 +4,17 @@
   ! License. See the file `LICENSE' in the root directory of the               
   ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
   !-----------------------------------------------------------------------
-SUBROUTINE sigma_exchG(ik0)
-  USE kinds,                ONLY : DP
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE disp,                 ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,           ONLY : eta, nbnd_occ, trunc_2d, multishift, lgamma
-  USE klist,                ONLY : wk, xk, nkstot, nks
-  USE io_files,             ONLY : prefix, iunigk, wfc_dir
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
+subroutine sigma_exchG(ik0)
+  USE kinds,            ONLY : DP
+  USE constants,        ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE disp,             ONLY : nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
+  USE control_gw,       ONLY : eta, nbnd_occ, trunc_2d, multishift, lgamma
+  USE klist,            ONLY : wk, xk, nkstot, nks
+  USE io_files,         ONLY : prefix, iunigk, wfc_dir
+  USE wvfct,            ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
   USE wavefunctions_module, ONLY : evc
-  USE symm_base,        ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  USE symm_base,        ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot,&
+                               copy_sym, inverse_s, s_axis_to_cart
   USE cell_base,        ONLY : omega, tpiba2, at, bg, tpiba, alat
   USE eqv,              ONLY : evq, eprec
   USE units_gw,         ONLY : iunsex, lrsex, lrwfc, iuwfc
@@ -33,45 +34,46 @@ SUBROUTINE sigma_exchG(ik0)
   USE gvecs,            ONLY : nls
 IMPLICIT NONE
 !ARRAYS to describe exchange operator.
-  COMPLEX(DP), ALLOCATABLE :: eigv(:,:)
-  COMPLEX(DP), ALLOCATABLE :: barcoul(:)
-  COMPLEX(DP), ALLOCATABLE :: miv(:), mvj(:)
-  COMPLEX(DP), ALLOCATABLE :: psi(:), dpsic(:)
-  COMPLEX(DP) :: czero, exch_element
-  COMPLEX(DP) :: psik(npwx*npol, nbnd_sig)
-  COMPLEX(DP) :: psikp(npwx*npol, nbnd_sig)
-  COMPLEX(DP) :: dipole(dffts%nnr), matel
-  COMPLEX(DP) :: pwg0(sigma_x_st%dfftt%nnr)
-  COMPLEX(DP) :: phase
-  COMPLEX(DP) :: ZdoTC
-  REAL(DP)   :: dvoxel, wgt, nsymm1, sigma_ex_tr
-  REAL(DP)   :: qg2, qg, qxy, qz
-  REAL(DP)   :: rcut, spal, zcut
-  REAL(DP)   :: xq_coul(3)
-  REAL(DP)   :: xq_old(3)
-  REAL(DP)   :: voxel
-  REAL(DP)   :: sigma_ex_diag(nbnd_sig)
-  REAL(DP)   :: xk1(3), aq(3)
-  REAL(DP)   :: fac
-  REAL(DP), parameter :: eps=1.e-5_dp
-  INTEGER    :: ikmq, ik0, ik, igkdim
-  INTEGER    :: ig, igp, npe, irr, icounter, ir, irp
-  INTEGER    :: iq, ipol, ibnd, jbnd, vbnd
-  INTEGER    :: rec0, ios
-  INTEGER    :: iman, nman, ndeg(nbnd_sig), ideg, ikq
-  INTEGER    :: igkp(npwx) 
-  INTEGER    :: igk_ig(npwx) 
-  INTEGER    :: igk_tmp(npwx) 
-  INTEGER    :: igkq_ig(npwx) 
-  INTEGER    :: igkq_tmp(npwx) 
-  INTEGER, ALLOCATABLE  :: gmapsym(:,:)
-  INTEGER    :: isym, isymop
-  INTEGER    :: iqrec, nig0
-  INTEGER    :: ik1old, npwkp
-  INTEGER    :: ik1, ikstar, iq1
-  LOGICAL    :: do_band, do_iq, setup_pw, exst, limit, single_line
-  LOGICAL    :: found_q, inv_q
-  LOGICAL    :: found_k
+  complex(DP), allocatable :: eigv(:,:)
+  complex(DP), allocatable :: barcoul(:)
+  complex(DP), allocatable :: psi(:), dpsic(:)
+  complex(DP) :: czero, exch_element
+  complex(DP) :: psik(npwx*npol, nbnd_sig)
+  complex(DP) :: psikp(npwx*npol, nbnd_sig)
+  complex(DP) :: dipole(dffts%nnr), matel
+  complex(DP) :: pwg0(sigma_x_st%dfftt%nnr)
+  complex(DP) :: phase
+  complex(DP) :: ZdoTC
+  real(DP)   :: wgt, nsymm1, sigma_ex_tr
+  real(DP)   :: qg2, qg, qxy, qz
+  real(DP)   :: rcut, spal, zcut
+  real(DP)   :: xq_coul(3)
+  real(DP)   :: xq_old(3)
+  real(DP)   :: sigma_ex_diag(nbnd_sig)
+  real(DP)   :: xk1(3), aq(3)
+  real(DP)   :: fac
+  real(DP), parameter :: eps=1.e-5_dp
+  integer    :: ikmq, ik0, ik, igkdim, nsymq
+  integer    :: ig, igp, npe, irr, icounter, ir, irp
+  integer    :: iq, ipol, ibnd, jbnd, vbnd
+  integer    :: rec0, ios
+  integer    :: iman, nman, ndeg(nbnd_sig), ideg, ikq
+  integer    :: igkp(npwx) 
+  integer    :: igk_ig(npwx) 
+  integer    :: igk_tmp(npwx) 
+  integer    :: igkq_ig(npwx) 
+  integer    :: igkq_tmp(npwx) 
+  integer, allocatable  :: gmapsym(:,:)
+  integer    :: isym, isymop
+  integer    :: iqrec, nig0
+  integer    :: npwkp
+  integer    :: ik1, ikstar, iq1
+  logical    :: limit
+  logical    :: found_q, inv_q, minus_q, sym(48)
+!For Star of q.
+  real(DP) :: sxq(3,48), xqs(3,48)
+  integer  :: imq, isq(48), nqstar, nqs
+  integer  :: nsq(48), i, nsymrot
 
   call start_clock('sigma_exch')
 
@@ -89,22 +91,20 @@ IMPLICIT NONE
   write(stdout,'(4x,"nsym ",i4)') nsym
   write(stdout,'(4x,"Running Sigma_exchgq")')
 
-
-  call gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
+  call gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
   czero = (0.0d0, 0.0d0)
   limit =.false.
   wgt = 1.0/omega
   nsymm1  = 1.0/(float(nsym))
+  !nsymm1  = 1.0/(float(nq1*nq2*nq3))
   sigma_band_exg(:) = (0.0d0, 0.0d0)
-  ik1old = 0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! <nk | \Sum_{q} nk-q nk-q |nk>                !
 ! Need to collect k-point on all processors    !
 ! Then they loop over all local k-q points     !
 ! and sum matrix element over pools at the end !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  found_k    = .false.
   psikp(:,:) = dcmplx(0.0d0,0.0d0)
   barcoul(:) = dcmplx(0.0d0,0.0d0)
   npwkp   = 0 
@@ -112,40 +112,64 @@ IMPLICIT NONE
   igkq(:) = 0
   igkp(:) = 0
   aq(:)   = 0.0d0
-
 ! pick up psikp we are interested in !
   if(lgamma) then
-    IF(my_pool_id==0) CALL get_buffer(psikp, lrwfc, iuwfc, 1)
+    IF(my_pool_id==0) call get_buffer(psikp, lrwfc, iuwfc, 1)
   else
-    IF(my_pool_id==0) CALL get_buffer(psikp, lrwfc, iuwfc, 2)
+    IF(my_pool_id==0) call get_buffer(psikp, lrwfc, iuwfc, 2)
   endif
-
-
-  CALL mp_barrier (inter_pool_comm)
-  CALL mp_bcast   (psikp, 0, inter_pool_comm)
-  CALL mp_barrier (inter_pool_comm)
-  CALL gk_sort    (xk_kpoints(1,ik0), ngm, g, ( ecutwfc / tpiba2 ), &
+  call mp_barrier (inter_pool_comm)
+  call mp_bcast   (psikp, 0, inter_pool_comm)
+  call mp_barrier (inter_pool_comm)
+  call gk_sort    (xk_kpoints(1,ik0), ngm, g, ( ecutwfc / tpiba2 ), &
                    npwkp, igkp, g2kin)
 
-
+  call gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
   do ik = 1, nksq
      if(lgamma) ik1 = ik
      if(.not.lgamma) ik1 = 2*ik-1
      psik(:,:)  = dcmplx(0.0d0,0.0d0)
      call get_buffer (psik, lrwfc, iuwfc, ik1)
-
      call gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
                   npw, igk, g2kin)
      npwq = npw 
      igkq = igk
-
-     do isymop   = 1, nsym
+!only sum over small group of q
+!sym(1:nsym) = .true.
+!call smallg_q (xk(1,ik1), 1, at, bg, 1, s, ftau, sym, minus_q)
+!nsymq       = copy_sym ( nsym, sym )
+!call inverse_s()    
+!call s_axis_to_cart()
+!call gmap_sym(nsymq, s, ftau, gmapsym, eigv, invs)
+     CALL star_q(xk(1,ik1), at, bg, nsym, s, invs, nqs, sxq, isq, nsq, imq, .false. )
+!     write( 1000+mpime, * )
+!     write( 1000+mpime, '(5x,a,i4)') 'Number of q in the star = ', nqs
+!     write( 1000+mpime, '(5x,a)') 'List of q in the star:'
+!     write( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqs)
+!     write( 1000+mpime, '(7x,i4,i4)') (iq1, isq(iq1), iq1=1,nsym)
+     do iq1 = 1, nqs
+        nsymrot=0
+        do isym=1,nsym
+           if (isq(isym) == iq1) then
+               nsymrot=nsymrot+1
+               if (nsymrot == 1) isymop=isym
+           endif
+        enddo
+        if(nsymrot == 0) then
+          call errore('dfile_star','no symmetry relates q at star(q)',iq)
+        endif
         nig0     = 1
         igkq_tmp = 0
         igkq_ig  = 0
-        call rotate(xk(1,ik1), aq, s, nsym, invs(isymop))
-        xq  = xk_kpoints(:, ik0) - aq(:)
-!        write(1000+mpime,'(4f10.5)') wk(ik1), aq(1:3)
+!       call rotate(xk(1,ik1), aq, s, nsym, invs(isymop))
+!       xq  = xk_kpoints(:, ik0) - aq(:)
+        xq  = xk_kpoints(:, ik0) - sxq(:,iq1)
+!into crystal
+        !xk1 = aq
+        !call cryst_to_cart(1, xk1, at, -1)
+        !write(2000+mpime,'(4f10.5)') wk(ik1), aq(1:3)
+        !write(1000+mpime,'("isymop, ", i4)') isymop
+        !write(1000+mpime,'(4f10.5)') wk(ik1), aq(1:3)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!! Construct v(q;G;G'): !!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -179,7 +203,6 @@ IMPLICIT NONE
                  barcoul(ig) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
               else  
                  barcoul(ig) = dcmplx(rcut, 0.0d0)
-                ! barcoul(ig) = dcmplx(0.0d0, 0.0d0)
               endif
            enddo
         endif
@@ -203,7 +226,8 @@ IMPLICIT NONE
               call fwfft('Wave', dipole(:), dffts)
               do ig = 1, npw
                  sigma_band_exg(ibnd) = sigma_band_exg(ibnd) - &
-&                0.5d0*wk(ik1)*dconjg(dipole(nls(ig)))*(dipole(nls(ig)))*barcoul(ig)
+&                0.5d0*wk(ik1)*float(nsq(iq1))*dconjg(dipole(nls(ig)))*(dipole(nls(ig)))*barcoul(ig)
+!&                0.5d0*wk(ik1)*dconjg(dipole(nls(ig)))*(dipole(nls(ig)))*barcoul(ig)
               enddo 
            enddo !ibnd
         enddo !v\inocc
@@ -214,6 +238,7 @@ IMPLICIT NONE
  call mp_sum (sigma_band_exg, inter_pool_comm)
  call mp_barrier(inter_pool_comm)
  sigma_band_exg(:) = wgt*nsymm1*sigma_band_exg(:)
+ !sigma_band_exg(:) = wgt*sigma_band_exg(:)
 
  write(stdout,'(4x,"Sigma_ex (eV)")')
  write(stdout,*) real(sigma_band_exg(:))*RYTOEV
@@ -229,4 +254,4 @@ IMPLICIT NONE
  call stop_clock('sigma_exch')
  9000 format(8(1x,f7.2))
  9005 format(8(1x,f14.7))
-END SUBROUTINE sigma_exchG
+end subroutine sigma_exchG

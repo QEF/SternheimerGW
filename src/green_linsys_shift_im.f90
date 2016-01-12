@@ -139,7 +139,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
                      (xk1 (2) + g (2, igk(ig) ) ) **2 + &
                      (xk1 (3) + g (3, igk(ig) ) ) **2 ) * tpiba2
     enddo
-    green  = (0.0d0, 0.0d0)
+    green  = dcmplx(0.0d0, 0.0d0)
     h_diag = 0.d0
     if(multishift) then
       do ig = 1, npw

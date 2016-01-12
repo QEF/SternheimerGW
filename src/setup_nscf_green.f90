@@ -92,10 +92,10 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
 !   must recover -q via time reversal this
 !   ensures the k list generates negative q
 !   W_{q} is still generated with time_reversal.
-    if(.not.invsym) time_reversal = .false.
+   ! if(.not.invsym) time_reversal = .false.
     if(.not.invsym) WRITE(stdout, '("Generating klist without time reversal.")')
     sym(1:nsym)   = .true.
-    call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
+    !call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
   else
     time_reversal = .false.
     sym(1:1)   = .true.

@@ -32,7 +32,7 @@ subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
 !This routine finds index of 
 !a q-point related via time 
 !reversal symmetry.
-   xq_ibk_loc(:) = xq_ibk 
+   xq_ibk_loc(:) = xq_ibk(:)
    call cryst_to_cart(1, xq_ibk_loc(:), at, -1)
    found_q=.false.
    isymcoul = 1
@@ -72,7 +72,7 @@ subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
                    iqtr = iq
                    isymcoul = isym
                    trev = .true.
-                   write(6, '(5x, "TR", 3i3, 3f14.9)') i,j,k, isym, x_q_loc(1), x_q_loc(2), x_q_loc(3)
+ !                 write(6, '(5x, "TR", 3i3, 3f14.9)') i,j,k, isym, x_q_loc(1), x_q_loc(2), x_q_loc(3)
                    GOTO 125
                 endif
              enddo

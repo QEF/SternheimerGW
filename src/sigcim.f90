@@ -66,12 +66,11 @@ subroutine sigma_c_im(ik0)
   real(DP) :: xq_coul(3)
   real(DP) :: rcut, spal
 !CHECK FOR NAN's
-  real(DP)     :: ar, ai
+  real(DP)    :: ar, ai
 !For dirac delta fxn.
-  real(DP)     :: dirac, x, support, zcut
-  real(DP) :: ehomo, elumo, mu
+  real(DP)    :: dirac, x, support, zcut
+  real(DP)    :: ehomo, elumo, mu
   real (DP)   :: xk1(3), aq(3), xk1_old(3)
-  real(DP)    :: sxq(3,48), xqs(3,48)
   real(DP)    :: nsymm1
   real(DP)    :: wgt(nsym), xk_un(3,nsym)
   real(DP)            :: wgtcoulry(nwcoul)
@@ -84,7 +83,7 @@ subroutine sigma_c_im(ik0)
   integer  :: iqstart, iqstop
 !COUNTERS
   integer :: ig, igp, irr, icounter, ir, irp
-  integer :: iqs, nkr, iqtr
+  integer :: iqs, nkr
   integer :: iq, ipol, iqrec
   integer :: ikmq, ik0, ik, nkpool
   integer :: rec0, ios
@@ -95,14 +94,8 @@ subroutine sigma_c_im(ik0)
 !For G^NA
   integer     :: igkq_ig(npwx) 
   integer     :: igkq_tmp(npwx) 
-  integer     :: ss(3,3)
   integer     :: ibnd
   integer     :: iw0start, iw0stop
-!Complete file name
-  integer     :: imq, isq(48), nqstar, nkpts
-  integer     :: i, ikstar
-  integer     :: ixk1, iqrec_old
-  integer     :: isym_k(nsym), nig0_k(nsym), iqrec_k(nsym)
   integer     :: nnr, nqstr
   integer*8   :: unf_recl
 !For running PWSCF need some variables 
@@ -113,6 +106,10 @@ subroutine sigma_c_im(ik0)
   logical             :: invq_k(nsym)
 !File related:
   character(len=256)  :: tempfile, filename
+!Star of q:
+  real(DP) :: sxq(3,48), xqs(3,48)
+  integer  :: imq, isq(48), nqstar
+  integer  :: nsq(48), i, nsymrot, iq1
 
 #define DIRECT_IO_FACTOR 8 
 ! iG(W-v)
@@ -140,14 +137,14 @@ subroutine sigma_c_im(ik0)
    write(stdout,'(4x, "gcutcorr", i4 )') gcutcorr
    allocate (wqtr(nq1*nq2*nq3))
    allocate (xqtr(3, nq1*nq2*nq3))
-   if (.not.invsym) then
+   !if (.not.invsym) then
 !Generate grid of kpoints with inversion symmetry.
-       call kpoint_grid(nsym, .false., .false., s, t_rev,& 
-                        bg, nq1*nq2*nq3, 0,0,0, nq1, nq2, nq3, nqstr, xqtr, wqtr)
-   else
-       nqstr = nqs
-   endif
-   write(stdout,'(4x, "num of q points in convolution: ", i4 )') nqstr
+   !    call kpoint_grid(nsym, .false., .false., s, t_rev,& 
+   !                     bg, nq1*nq2*nq3, 0,0,0, nq1, nq2, nq3, nqstr, xqtr, wqtr)
+   !else
+   !    nqstr = nqs
+   !endif
+   write(stdout,'(4x, "num of q points in convolution: ", i4 )') nqs
    !do iq = 1, nqstr
    !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
    !end do
@@ -191,76 +188,58 @@ subroutine sigma_c_im(ik0)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
   nsymm1 = 1.0d0/dble(nsym)
-  call para_pool(nqstr,iqstart,iqstop)
-  xk1_old(:) =  -400.0
+  call para_pool(nqs,iqstart,iqstop)
   do iq = iqstart, iqstop
      trev = .false.
-     if(.not.invsym) then 
-        CALL find_trev(xqtr, s, invs, iqtr, isym, trev)
-     else
-!   iqtr is the index of the q_point 
-!   on the grid using time 
-!   reversal symmetry.
-       iqtr = iq 
-       isym = 1
-     endif
-
-     if (invsym) then
-        xq(:) = x_q(:,iq)
-     else
-        xq(:) = xqtr(:,iq)
-     endif
-     scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
-     if(.not.modielec) call davcio(scrcoul_g, lrcoul, iuncoul, iqtr, -1)
-     if(.not.invsym) then
-        cprefac = wqtr(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
-     else
-        cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
-     endif
-     call coulpade(scrcoul_g(1,1,1), xq(1))
-     if (trev) then
-       ! Going to use rotation plus time reversal to 
-       ! recover the qpoint we want.
-       ! W_{-q} = W_{S^{1}q_{ibz}
-       ! W^{*}_{-q}(r,-w)  = W_{q}(r,w)
-         do iw = 1, nfs
-            scrcoul_pade_g(:,:) = scrcoul_g(:,:,iw)
-            do ig = 1, gcutcorr
-               do igp = 1, gcutcorr
-                  scrcoul_g(ig,igp,iw) = scrcoul_pade_g(gmapsym(ig,isym),gmapsym(igp,isym))
-               enddo
-            enddo
-         enddo
-     endif
-     do isymop = 1, nsym
-        call rotate(xq, aq, s, nsym, invs(isymop))
-        xk1 = xk_kpoints(:,ik0) - aq(:)
-        if (.not.(abs(xk1(1)-xk1_old(1)).lt.eps .and.   &
-                  abs(xk1(2)-xk1_old(2)).lt.eps .and. & 
-                  abs(xk1(3)-xk1_old(3)).lt.eps)) THEN
-                  call green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
+     xq(:) = x_q(:,iq)
+     CALL star_q(xq(1), at, bg, nsym, s, invs, nqstar, sxq, isq, nsq, imq, .false. )
+   !  write( 1000+mpime, * )
+   !  write( 1000+mpime, '(5x,a,i4)') 'Number of q in the star = ', nqstar
+   !  write( 1000+mpime, '(5x,a)') 'List of q in the star:'
+   !  write( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqstar)
+   !  write( 1000+mpime, '(7x,i4,i4)') (iq1, isq(iq1), iq1=1,nsym)
+     cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
+     do iq1 = 1, nqstar
+        scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
+        if(.not.modielec) call davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
+        nsymrot=0
+        do isym=1,nsym
+           if (isq(isym) == iq1) then
+               nsymrot=nsymrot+1
+               if (nsymrot == 1) isymop=isym
+           endif
+        enddo
+        !do iw = 1, nfs
+        !   scrcoul_pade_g(:,:) = scrcoul_g(:,:,iw)
+        !   do ig = 1, gcutcorr
+        !      do igp = 1, gcutcorr
+!\eps^-1_{Sq}(\G,\G') = \eps^{-1}{q}(s^{-1}G,S^{-1}G')
+                 !scrcoul_g(gmapsym(ig,invs(isymop)), gmapsym(igp,invs(isymop)), iw) = scrcoul_pade_g(ig,igp)
+                 !scrcoul_g(gmapsym(ig,invs(isymop)), gmapsym(igp,invs(isymop)), iw) = scrcoul_pade_g(ig,igp)
+        !         scrcoul_g(ig, igp, iw) = scrcoul_pade_g(gmapsym(ig,isymop),gmapsym(igp,isymop))
+        !      enddo
+        !   enddo
+        !enddo
+        if(nsymrot == 0) then
+           call errore('dfile_star','no symmetry relates q at star(q)',iq)
         endif
-        nig0     = 1
+       !call rotate(xq(1), aq, s, nsym, invs(isymop))
+        xk1 = xk_kpoints(:,ik0) - sxq(:,iq1) 
+        call coulpade(scrcoul_g(1,1,1), xq(:))
+        call green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
+        nig0    = 1
         if(iw0stop-iw0start+1.gt.0) THEN
            do iw0 = iw0start, iw0stop
               do iw = 1, nwcoul
-                 if(.not.trev) then
-                    call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
-                 else
-                    call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), -abs(w_ryd(iw)-w_rydsig(iw0)))
-                 endif
-                 dz = dcmplx(nsymm1*wgtcoulry(iw),0.0d0)*cprefac
-                 call sigprod(isymop, trev, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw), sigma_g(1,1,iw0), gmapsym(1,1))
-                 if(.not.trev) then
-                    call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_rydsig(iw0)+w_ryd(iw)))
-                 else
-                    call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), -(w_rydsig(iw0)+w_ryd(iw)))
-                 endif
-                    call sigprod(isymop, trev, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw+nwcoul), sigma_g(1,1,iw0), gmapsym(1,1))
+                 dz =  dcmplx(float(nsq(iq1))*nsymm1*wgtcoulry(iw),0.0d0)*cprefac
+                 call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)) )
+                 call sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw), sigma_g(1,1,iw0), gmapsym(1,1))
+                 call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_rydsig(iw0)+w_ryd(iw)))
+                 call sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw+nwcoul), sigma_g(1,1,iw0), gmapsym(1,1))
               enddo ! on frequency convolution over w'
            enddo ! on iw0
         endif
-     enddo ! isymop
+     enddo ! star_q
   enddo ! iq
   deallocate ( eigv           )
   deallocate ( gmapsym        )

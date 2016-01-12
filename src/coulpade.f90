@@ -47,30 +47,30 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
     if(.not.trunc_2d) THEN
        do iw = 1, nfs
          do ig = 1, gcutcorr
-         qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-         qg = sqrt(qg2)
-         limq = (qg2.lt.eps8) 
-         if(.not.limq) THEN
-            spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-            do igp = 1, gcutcorr
-               scrcoul_g(ig, igp, iw) = scrcoul_g(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-            enddo
-         else
-            scrcoul_g(ig, ig, iw) = scrcoul_g(ig,ig,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
+            qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
+            qg = sqrt(qg2)
+            limq = (qg2.lt.eps8) 
+            if(.not.limq) THEN
+               spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
+               do igp = 1, gcutcorr
+                  scrcoul_g(ig, igp, iw) = scrcoul_g(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+               enddo
+            else
+               scrcoul_g(ig, ig, iw) = scrcoul_g(ig,ig,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
 !zero wings of matrix for xq+G = 0
-            do igp = 2, gcutcorr
-               scrcoul_g(1, igp, iw) = 0.0d0
-            enddo
-            do igp = 2, gcutcorr
-               scrcoul_g(igp, 1, iw) = 0.0d0
-            enddo
-         endif
-        enddo!ig
+               do igp = 2, gcutcorr
+                  scrcoul_g(1, igp, iw) = 0.0d0
+               enddo
+               do igp = 2, gcutcorr
+                  scrcoul_g(igp, 1, iw) = 0.0d0
+               enddo
+            endif
+         enddo!ig
        enddo!nfs
-       else
-            call truncate_2d(scrcoul_g(1,1,1), xq_ibk, 2)
-      endif
+    else
+       call truncate_2d(scrcoul_g(1,1,1), xq_ibk, 2)
     endif
+  endif
     if(.not.modielec) THEN
         if(godbyneeds) THEN
           do ig = 1, gcutcorr
