@@ -163,14 +163,14 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
     do ig = igstart, igstop
 !Doing Linear System with Wavefunction cutoff (full density) for each perturbation. 
           if(multishift) then
-             rhs(:,:)  = (0.0d0, 0.0d0)
+             rhs(:,:)            = (0.0d0, 0.0d0)
              rhs(igkq_ig(ig), 1) = -(1.0d0, 0.0d0)
-             gr_A(:,:) = (0.0d0, 0.0d0)
-             lter = 0
-             etc(:, :) = CMPLX( 0.0d0, 0.0d0, kind=DP)
-             cw = CMPLX( 0.0d0, 0.0d0, kind=DP) 
-             conv_root = .true.
-             anorm = 0.0d0
+             gr_A(:,:)           = (0.0d0, 0.0d0)
+             lter                = 0
+             etc(:, :)           = CMPLX( 0.0d0, 0.0d0, kind=DP)
+             cw                  = CMPLX( 0.0d0, 0.0d0, kind=DP) 
+             conv_root           = .true.
+             anorm               = 0.0d0
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
                                    npwx, npw, tr2_green, 1, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)

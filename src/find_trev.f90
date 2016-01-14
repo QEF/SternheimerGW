@@ -6,6 +6,7 @@
   !-----------------------------------------------------------------------!
 subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
   use kinds,         only : DP
+  use io_global,     only : stdout, ionode_id, ionode, meta_ionode
   use cell_base,     only : at, bg
   use disp,          only : nqs, nq1, nq2, nq3, wq, x_q
   use modes,         only : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
@@ -27,7 +28,7 @@ subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
 !dummy variable for routine to find Sq = -q + G
   integer                 :: iqtr, isymcoul
   integer                 :: s(3,3,48), invs(48), ism1
-  integer                 :: i, j, k, invsym, iq, isym
+  integer                 :: i, j, k, invsym, iq, isym, ni
 
 !This routine finds index of 
 !a q-point related via time 
@@ -83,5 +84,6 @@ subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
   125 CONTINUE
   endif
 if (.not.found_q) CALL errore( 'find_trev', 'cant find qpoint in IBZ', 1 )
+!if (.not.found_q) write(stdout, '("Cant find qpoint")')
 return
 end subroutine
