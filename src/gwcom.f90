@@ -52,26 +52,6 @@ MODULE modes
   CHARACTER(15), ALLOCATABLE :: name_rap_mode(:) ! symmetry type of each mode
   !     
 END MODULE modes
- 
-MODULE dynmat
-  USE kinds, ONLY :  DP
-  !
-  ! ... The dynamical matrix 
-  !
-  SAVE
-  !
-  COMPLEX (DP), ALLOCATABLE :: &
-       dyn00(:,:),           &! 3 * nat, 3 * nat),
-       dyn(:,:),             &! 3 * nat, 3 * nat)
-       dyn_rec(:,:)           ! 3 * nat, 3 * nat)
-  ! the initial dynamical matrix
-  ! the dynamical matrix
-  ! the contribution of each representation to the dynamical matrix
-  REAL (DP), ALLOCATABLE :: &
-       w2(:)                  ! 3 * nat)
-  ! omega^2
-  !
-END MODULE dynmat
 !
 !
 MODULE eqv_gw
@@ -441,7 +421,6 @@ END MODULE gwsymm
 
 MODULE gwcom
   USE modes
-  USE dynmat
   USE qpoint
   USE eqv_gw
   USE efield_mod

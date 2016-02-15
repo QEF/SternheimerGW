@@ -83,7 +83,6 @@
   USE modes,         ONLY : u, ubar, npertx, npert, gi, gimq, nirr, &
                             t, tmq, irotmq, irgq, minus_q, &
                             nsymq, nmodes, rtau
-  USE dynmat,        ONLY : dyn, dyn_rec, dyn00
   USE efield_mod,    ONLY : epsilon, zstareu
   USE qpoint,        ONLY : xq
   USE partial,       ONLY : comp_irr, atomo, nat_todo, list, nrapp, all_comp, &
