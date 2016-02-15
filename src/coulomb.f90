@@ -21,7 +21,6 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
                          solve_direct, do_epsil, do_q0_only
   USE partial,    ONLY : done_irr, comp_irr
-  USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
   USE eqv_gw,     ONLY : drhoscfs, dvbare
   USE paw_variables,    ONLY : okpaw

@@ -23,17 +23,10 @@
   ! LEGACY FROM THE PHONON STUFF (SHOULD BE REMOVED)
   !
   !  7) computes the variables needed to pass to the pattern representation
-  !     u      the patterns
-  !     t      the matrices of the small group of q on the pattern basis
-  !     tmq    the matrix of the symmetry which sends q -> -q + G
   !     gi     the G associated to each symmetry operation
   !     gimq   the G of the q -> -q+G symmetry
   !     irgq   the small group indices
   !     nsymq  the order of the small group of q
-  !     irotmq the index of the q->-q+G symmetry
-  !     nirr   the number of irreducible representation
-  !     npert  the dimension of each irreducible representation
-  !     nmodes the number of modes
   !     minus_q true if there is a symmetry sending q -> -q+G
   !  8) for testing purposes it sets ubar
   !  10) set the variables needed for the partial computation
@@ -80,9 +73,7 @@
                             nbnd_occ, flmixdpot, reduce_io, rec_code_read, &
                             done_epsil, zeu, done_zeu, current_iq, just_corr
   USE output,        ONLY : fildrho
-  USE modes,         ONLY : u, ubar, npertx, npert, gi, gimq, nirr, &
-                            t, tmq, irotmq, irgq, minus_q, &
-                            nsymq, nmodes, rtau
+  USE modes,         ONLY : gi, gimq, irgq, minus_q, nsymq, rtau
   USE efield_mod,    ONLY : epsilon, zstareu
   USE qpoint,        ONLY : xq
   USE partial,       ONLY : comp_irr, atomo, nat_todo, list, nrapp, all_comp, &

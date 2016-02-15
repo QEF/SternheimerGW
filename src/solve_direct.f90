@@ -53,7 +53,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE output,               ONLY : fildrho, fildvscf
   USE eqv,                  ONLY : dvpsi, evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE modes,                ONLY : irotmq, tmq, minus_q, irgq, nsymq, rtau 
+  USE modes,                ONLY : minus_q, irgq, nsymq, rtau 
   USE freq_gw,         ONLY : fpol, fiu, nfs, nfsmax
   USE gvect,           ONLY : ngm, g, nl
   USE gvecs,           ONLY : nls

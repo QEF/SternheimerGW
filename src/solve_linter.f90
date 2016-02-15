@@ -56,8 +56,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE output,               ONLY : fildrho, fildvscf
   USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE modes,                ONLY : npertx, npert, u, t, irotmq, tmq, &
-                                   minus_q, irgq, nsymq, rtau 
+  USE modes,                ONLY : minus_q, irgq, nsymq, rtau 
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
   USE mp,                   ONLY : mp_sum, mp_barrier
   USE buffers,              ONLY : save_buffer, get_buffer
