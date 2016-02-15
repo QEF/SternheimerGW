@@ -28,7 +28,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
                                    eta, tr2_green, maxter_green, prec_shift
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
-  USE eqv,                  ONLY : evq, eprectot
+  USE eqv_gw,               ONLY : evq, eprectot
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs, x_q
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, &

@@ -37,7 +37,7 @@ SUBROUTINE gwq_init()
   USE noncollin_module,     ONLY : noncolin, npol
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf
-  USE eqv,                  ONLY : vlocq, evq, eprec, eprectot
+  USE eqv_gw,               ONLY : vlocq, evq, eprec, eprectot
   USE nlcc_gw,              ONLY : nlcc_any
   USE control_gw,           ONLY : nbnd_occ, lgamma
   USE units_gw,             ONLY : lrwfc, iuwfc

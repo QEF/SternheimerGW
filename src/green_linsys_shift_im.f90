@@ -29,7 +29,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
                                    multishift, high_io
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
-  USE eqv,                  ONLY : evq, eprectot
+  USE eqv_gw,               ONLY : evq, eprectot
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs, x_q
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, w0pmw

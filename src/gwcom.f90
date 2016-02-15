@@ -74,33 +74,25 @@ MODULE dynmat
 END MODULE dynmat
 !
 !
-MODULE eqv
+MODULE eqv_gw
   USE kinds, ONLY :  DP
+  USE eqv
   !
   ! ... The wavefunctions at point k+q 
   !
   SAVE
   !
-  COMPLEX (DP), POINTER :: evq(:,:)
-  !
   ! ... The variable describing the linear response problem 
   !
-  COMPLEX (DP), ALLOCATABLE :: dvpsi(:,:), dpsi(:,:), drhoscfs (:,:), dpsip(:,:), dpsim(:,:)
-  ! the product of dV psi
-  ! dpsi the change of the wavefunction
+  COMPLEX (DP), ALLOCATABLE :: dpsip(:,:), dpsim(:,:)
   ! dpsip change of wavefunction for positive frequency
   ! dpsim change of wavefunction for negative frequency
 
   COMPLEX (DP), ALLOCATABLE :: dvbare(:)
 
-  REAL (DP), ALLOCATABLE :: dmuxc(:,:,:)        ! nrxx, nspin, nspin),
-  REAL (DP), ALLOCATABLE, TARGET :: vlocq(:,:)  ! ngm, ntyp)
-  ! the derivative of the xc potential
-  ! the local potential at q+G
-  REAL (DP), ALLOCATABLE :: eprec(:,:) ! needed for preconditioning
   REAL (DP), ALLOCATABLE :: eprectot(:,:) ! needed for preconditioning
   !
-END MODULE eqv
+END MODULE eqv_gw
 !
 !
 MODULE efield_mod
@@ -451,7 +443,7 @@ MODULE gwcom
   USE modes
   USE dynmat
   USE qpoint
-  USE eqv
+  USE eqv_gw
   USE efield_mod
   USE nlcc_gw
   USE partial

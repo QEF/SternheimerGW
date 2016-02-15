@@ -25,11 +25,11 @@ subroutine deallocate_gwq
                                    vsgga, segni
   USE gamma_gamma,           ONLY : with_symmetry, has_equivalent, equiv_atoms, &
                                     n_equiv_atoms
-  USE eqv,                   ONLY : dmuxc, vlocq, dpsi, dvpsi, evq, eprec, eprectot
+  USE eqv_gw,                ONLY : dmuxc, vlocq, dpsi, dvpsi, evq, eprec, eprectot, &
+                                    dpsim, dpsip, dvbare
   USE nlcc_gw,               ONLY : drc
   USE units_gw,              ONLY : this_dvkb3_is_on_file, this_pcxpsi_is_on_file
   USE control_gw,            ONLY : lgamma
-  USE eqv,                   ONLY: dpsim, dpsip, dvbare
   USE lrus,                  ONLY : becp1
 
   IMPLICIT NONE

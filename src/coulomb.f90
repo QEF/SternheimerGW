@@ -23,7 +23,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE partial,    ONLY : done_irr, comp_irr
   USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
-  USE eqv,        ONLY : drhoscfs, dvbare
+  USE eqv_gw,     ONLY : drhoscfs, dvbare
   USE paw_variables,    ONLY : okpaw
   USE noncollin_module, ONLY : noncolin, nspin_mag
   USE gwsigma,     ONLY : sigma_c_st, gcutcorr
@@ -69,7 +69,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   CALL start_clock ('coulomb')
 
 if(solve_direct) then
-  ALLOCATE (drhoscfs(dffts%nnr, nfs))    
+  ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
 else
 !for self-consistent solution we only consider one
 !frequency at a time. To save memory and time and lines of codes etc.
@@ -77,7 +77,7 @@ else
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
   WRITE(stdout, '(4x,4x,"nspinmag", i4)'), nspin_mag
-  ALLOCATE (drhoscfs(dffts%nnr, nspin_mag))    
+  ALLOCATE (drhoscfs(dffts%nnr, nspin_mag, 1))    
 endif
 
 irr=1
@@ -91,22 +91,23 @@ DO ig = igstart, igstop
       qg2 = (g(1,ig_unique(ig))+xq(1))**2+(g(2,ig_unique(ig))+xq(2))**2+(g(3,ig_unique(ig))+xq(3))**2
       IF(solve_direct) THEN
         !if(qg2.lt.eps8) CYCLE 
-         drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+         drhoscfs = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
          dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
          CALL invfft('Smooth', dvbare, dffts)
-         CALL solve_lindir (dvbare, drhoscfs)
+         CALL solve_lindir (dvbare, drhoscfs(:,:,1))
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
-            CALL fwfft ('Dense', drhoscfs(:,iw), dffts)
-            WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'), drhoscfs(nls(ig_unique(ig)),iw)+dvbare(nls(ig_unique(ig)))
+            CALL fwfft ('Dense', drhoscfs(:,iw,1), dffts)
+            WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') &
+              drhoscfs(nls(ig_unique(ig)),iw,1)+dvbare(nls(ig_unique(ig)))
             do igp = 1, gcutcorr
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw)
+                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw, 1)
                else
 !diagonal elements eps(\G,\G') = \delta(G,G') - drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw) + dvbare(nls(ig_unique(ig)))
+                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw, 1) + dvbare(nls(ig_unique(ig)))
                endif
             enddo
          enddo !iw
@@ -117,20 +118,21 @@ DO ig = igstart, igstop
           CYCLE
         endif
         DO iw = 1, nfs
-           drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+           drhoscfs = dcmplx(0.0d0, 0.0d0)
            dvbare(:)     = dcmplx(0.0d0, 0.0d0)
            dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
            CALL invfft('Smooth', dvbare, dffts)
-           CALL solve_linter (dvbare, iw, drhoscfs)
+           CALL solve_linter (dvbare, iw, drhoscfs(:,:,1))
            CALL fwfft('Smooth', dvbare, dffts)
            DO isp =1 , nspin_mag
-              CALL fwfft('Dense', drhoscfs(:,isp), dffts)
+              CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)
            ENDDO
            IF(ionode) THEN
-             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)'), drhoscfs(nls(ig_unique(ig)), 1) + dvbare(nls(ig_unique(ig)))
+             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)') &
+               drhoscfs(nls(ig_unique(ig)), 1, 1) + dvbare(nls(ig_unique(ig)))
              DO isp = 1, nspin_mag
                DO igp = 1, gcutcorr
-                  scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp)
+                  scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp, 1)
                ENDDO
              ENDDO
            ENDIF
