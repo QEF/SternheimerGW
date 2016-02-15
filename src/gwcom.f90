@@ -72,30 +72,6 @@ MODULE dynmat
   ! omega^2
   !
 END MODULE dynmat
-
-MODULE qpoint
-  USE kinds, ONLY :  DP
-  USE parameters, ONLY : npk
-  !
-  ! ... The q point
-  !
-  SAVE
-  !
-  INTEGER, POINTER :: igkq(:)     ! npwx
-  ! correspondence k+q+G <-> G
-  INTEGER :: nksq, npwq
-  ! the real number of k points
-  ! the number of plane waves for q
-  INTEGER, ALLOCATABLE :: ikks(:), ikqs(:)
-  ! the index of k point in the list of k
-  ! the index of k+q point in the list of k
-  REAL (DP) :: xq(3)
-  ! the coordinates of the q point
-  COMPLEX (DP), ALLOCATABLE :: eigqts(:) ! nat)
-  ! the phases associated to the q
-
-  !
-END MODULE qpoint
 !
 !
 MODULE eqv
