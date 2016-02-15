@@ -44,7 +44,7 @@ SUBROUTINE setup_nscf_green(xq, do_matel)
   USE start_k,            ONLY : nks_start, xk_start, wk_start, nk1, nk2, nk3,&
                                  k1, k2, k3
   USE paw_variables,      ONLY : okpaw
-  USE modes,              ONLY : nsymq, invsymq
+  USE lr_symm_base,       ONLY : nsymq, invsymq
   USE disp,               ONLY : xk_kpoints
   USE uspp_param,         ONLY : n_atom_wfc
   USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &

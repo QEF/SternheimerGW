@@ -28,7 +28,7 @@ subroutine sigma_c_im(ik0)
   use gvect,         only : g, ngm, nl
   use cell_base,     only : tpiba2, tpiba, omega, alat, at,bg
   use symm_base,     only : nsym, s, time_reversal, t_rev, ftau, invs, nrot, invsym
-  use modes,         only : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  use lr_symm_base,  only : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
   use wavefunctions_module, only : evc
   use control_flags,        only : noinv
   use ener,          only : ef

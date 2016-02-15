@@ -9,7 +9,7 @@ subroutine find_trev(xq_ibk, s, invs, iqtr, isymcoul, trev)
   use io_global,     only : stdout, ionode_id, ionode, meta_ionode
   use cell_base,     only : at, bg
   use disp,          only : nqs, nq1, nq2, nq3, wq, x_q
-  use modes,         only : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  use lr_symm_base,  only : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
   use symm_base,     only : t_rev, irt, ftau, nrot, nsym, &
                             time_reversal, sname, d1, d2, d3, &
                             copy_sym, s_axis_to_cart

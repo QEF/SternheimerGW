@@ -15,46 +15,6 @@
 !
 !... Common variables for the GW program
 !  
-MODULE modes
-  USE kinds,  ONLY : DP
-  USE lr_symm_base
-  ! ... The variables needed to describe the modes and the small group of q
-  SAVE
-  !
-!  INTEGER :: irgq(48), nsymq, irotmq, nirr, nmodes
-!  ! selects the operations of the small group
-!  ! the number of symmetry of the small group
-!  ! selects the symmetry sending q <-> -q+G
-!  ! number of irreducible representations contained in the dynamical matrix
-!  ! number of modes
-!  ! number of crystal sym.ops. for q=0 
-!  INTEGER, ALLOCATABLE, TARGET :: npert(:) !3 * nat )
-!  ! the number of perturbations per IR
-!  INTEGER :: npertx
-!  ! max number of perturbations per IR
-!  REAL (DP), ALLOCATABLE :: rtau(:,:,:) !3, 48, nat)
-!  ! coordinates of direct translations
-!  REAL (DP) :: gi(3,48), gimq(3)
-!  ! the possible G associated to each symmetry
-!  ! the G associated to the symmetry q<->-q+G
-!  COMPLEX (DP), POINTER :: &
-!       u(:,:),                     &!  3 * nat, 3 * nat),
-!       ubar(:),                    &!  3 * nat), &
-!       t(:,:,:,:),                 &! npertx, npertx, 48,3 * nat),
-!       tmq(:,:,:)                   ! npertx, npertx, 3 * nat)
-!  ! the transformation modes patterns
-!  ! the mode for deltarho
-!  ! the symmetry in the base of the pattern
-!  ! the symmetry q<->-q in the base of the pa
-!  LOGICAL :: &
-!       minus_q,  &    !  if .TRUE. there is the symmetry sending q<->-q
-!       invsymq        !  if .TRUE. the small group of q has inversion
-!
-!  CHARACTER(15), ALLOCATABLE :: name_rap_mode(:) ! symmetry type of each mode
-!  !     
-END MODULE modes
-!
-!
 MODULE eqv_gw
   USE kinds, ONLY :  DP
   USE eqv
@@ -421,7 +381,6 @@ END MODULE gwsymm
 
 
 MODULE gwcom
-  USE modes
   USE qpoint
   USE eqv_gw
   USE efield_mod

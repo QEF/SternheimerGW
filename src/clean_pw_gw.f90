@@ -16,7 +16,7 @@ SUBROUTINE clean_pw_gw(iq, flag)
   !
   USE kinds,           ONLY : DP
   USE control_flags,   ONLY : twfcollect
-  USE modes,           ONLY : nsymq
+  USE lr_symm_base,    ONLY : nsymq
   USE disp,            ONLY : done_iq
   USE control_gw,      ONLY : done_bands, rec_code_read
   USE save_gw,         ONLY : restore_gw_input_variables

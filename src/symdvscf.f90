@@ -18,13 +18,13 @@ subroutine symdvscf (nper, irr, dvtosym)
   ! symmetrize the self-consistent potential of the perturbations
   ! belonging to an irreproducible representation
   !
-  USE kinds, only : DP
-  USE constants, ONLY: tpi
-  USE gvect, ONLY: nr1, nr2, nr3, nrx1, nrx2, nrx3
-  USE cell_base, ONLY : at
-  USE symm_base, ONLY : s, ftau
+  USE kinds,            ONLY : DP
+  USE constants,        ONLY : tpi
+  USE gvect,            ONLY : nr1, nr2, nr3, nrx1, nrx2, nrx3
+  USE cell_base,        ONLY : at
+  USE symm_base,        ONLY : s, ftau
   USE noncollin_module, ONLY : nspin_lsda, nspin_mag
-  USE modes,   ONLY : minus_q, irotmq, nsymq, irgq, gi, t, tmq, gimq
+  USE lr_symm_base,     ONLY : minus_q, irotmq, nsymq, irgq, gi, t, tmq, gimq
   implicit none
 
   integer :: nper, irr

@@ -73,7 +73,7 @@
                             nbnd_occ, flmixdpot, reduce_io, rec_code_read, &
                             done_epsil, zeu, done_zeu, current_iq, just_corr
   USE output,        ONLY : fildrho
-  USE modes,         ONLY : gi, gimq, irgq, minus_q, nsymq, rtau
+  USE lr_symm_base,  ONLY : gi, gimq, irgq, minus_q, nsymq, rtau
   USE efield_mod,    ONLY : epsilon, zstareu
   USE qpoint,        ONLY : xq
   USE partial,       ONLY : comp_irr, atomo, nat_todo, list, nrapp, all_comp, &

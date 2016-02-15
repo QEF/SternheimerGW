@@ -17,7 +17,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE modes,         ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  USE lr_symm_base,  ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
 
   IMPLICIT NONE
 

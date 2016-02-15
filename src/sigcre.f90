@@ -29,7 +29,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE gvect,         ONLY : g, ngm, nl
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at,bg
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE modes,         ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  USE lr_symm_base,  ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
   USE wavefunctions_module, ONLY : evc
   USE control_flags,        ONLY : noinv
   USE gwsigma,       ONLY : sigma_c_st
