@@ -21,7 +21,7 @@ subroutine deallocate_gwq
   USE becmod,                ONLY: bec_type, becp, deallocate_bec_type
   USE wavefunctions_module,  ONLY: evc
   USE qpoint,                ONLY: eigqts, igkq, ikks, ikqs, nksq
-  USE gc_gw,                 ONLY: grho, gmag, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s, &
+  USE gc_lr,                 ONLY: grho, gmag, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s, &
                                    vsgga, segni
   USE gamma_gamma,           ONLY : with_symmetry, has_equivalent, equiv_atoms, &
                                     n_equiv_atoms

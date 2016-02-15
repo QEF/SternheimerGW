@@ -27,7 +27,7 @@ subroutine dv_of_drho (mode, dvscf, flag)
   USE eqv,       ONLY : dmuxc
   USE nlcc_gw,   ONLY : nlcc_any
   USE qpoint,    ONLY : xq
-  USE gc_gw,     ONLY : grho, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s
+  USE gc_lr,     ONLY : grho, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s
   USE control_gw, ONLY : lrpa, trunc_2d
   USE control_flags, only : gamma_only
   USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3
