@@ -14,7 +14,8 @@ SUBROUTINE sigma_matel (ik0)
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
   USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws
   USE klist,                ONLY : xk, wk, nkstot, nks
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
+  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE gvecw,                ONLY : ecutwfc
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
   USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG, tmp_dir_coul

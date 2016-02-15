@@ -16,7 +16,8 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   USE ener,                 ONLY : ef
   USE klist,                ONLY : xk, wk, nkstot
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et, ecutwfc
+  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE gvecw,                ONLY : ecutwfc
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf, nhm, nh
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag

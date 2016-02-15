@@ -4,10 +4,8 @@ ESPRESSO=../..
 include $(ESPRESSO)/make.sys
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \
-          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG).
-#          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG).
-#          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_FLAG)$(ESPRESSO)/LAXlib \
+          $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG) $(ESPRESSO)/LR_Modules $(MOD_FLAG).
 
 IFLAGS=
 
@@ -104,21 +102,21 @@ sgw_opening.o\
 sigcim.o\
 find_trev.o
 
+LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
-QEMODS = $(ESPRESSO)/Modules/libqemod.a
-LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
-#LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a $(ESPRESSO)/FFTXlib/libqefft.a
-#LIBOBJS	= $(ESPRESSO)/flib/ptools.a $(ESPRESSO)/flib/flib.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a 
-TLDEPS= bindir mods libs pw-lib
+QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESSO)/LAXlib/libqela.a
+LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
+
+TLDEPS= bindir mods libs pw-lib lr-lib
 
 all : version libgw.a gw.x
 
 version : 
 	sh update_version
 
-gw.x : gw.o libgw.a $(PWOBJS) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o gw.x gw.o libgw.a \
-		 $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
+gw.x : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ gw.o libgw.a \
+		 $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( cd ../bin ; ln -fs ../src/gw.x . )
 
 libgw.a : $(GWOBJS)

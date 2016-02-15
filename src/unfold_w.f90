@@ -83,7 +83,8 @@ IF(modielec) then
          ENDDO
          DO iwim = 1, nfs
             DO isym = 1, nsymq
-               scrcoul_g_in(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim,1) = scrcoul_g_in(ig_unique(ig), ig_unique(ig), iwim, 1)
+               scrcoul_g_in(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim,1) = &
+                 scrcoul_g_in(ig_unique(ig), ig_unique(ig), iwim, 1)
             ENDDO
          ENDDO
       ENDDO

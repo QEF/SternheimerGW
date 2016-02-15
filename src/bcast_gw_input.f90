@@ -31,7 +31,8 @@ subroutine bcast_gw_input ( )
   USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
                        w_of_k_start, w_of_k_stop
   USE partial,  ONLY : nat_todo, nrapp
-  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
+  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul,&
+                       wsig_wind_min, wsig_wind_max, deltaws
   USE output,   ONLY : fildvscf, fildyn, fildrho
   use io_files, ONLY : tmp_dir, prefix
   USE control_flags,    ONLY: iverbosity, modenum

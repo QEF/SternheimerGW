@@ -1,7 +1,8 @@
 subroutine wavecut(npwq, counter, igk, igkq_tmp, igkq_ig)
 
   USE gwsigma,       ONLY : sigma_x_st, nbnd_sig
-  USE wvfct,         ONLY : nbnd, npw, npwx, g2kin, et, ecutwfc
+  USE wvfct,         ONLY : nbnd, npw, npwx, g2kin, et
+  USE gvecw,         ONLY : ecutwfc
 
 IMPLICIT NONE
 

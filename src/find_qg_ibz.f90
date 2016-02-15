@@ -64,9 +64,15 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
           call cryst_to_cart(1, g_loc, at, -1)
         DO isym = 1, nsym
            ism1 = invs(isym)
-           xq_ibk_locr(1) = s (1, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (1, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (1, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
-           xq_ibk_locr(2) = s (2, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (2, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (2, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
-           xq_ibk_locr(3) = s (3, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (3, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (3, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+           xq_ibk_locr(1) = s (1, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
+                          + s (1, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
+                          + s (1, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+           xq_ibk_locr(2) = s (2, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
+                          + s (2, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
+                          + s (2, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+           xq_ibk_locr(3) = s (3, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
+                          + s (3, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
+                          + s (3, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
            found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
                       (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
                       (abs(x_q_loc(3) - xq_ibk_locr(3)).le.eps) 
@@ -96,9 +102,15 @@ IF (.not.found_q) then
          call cryst_to_cart(1, g_loc, at, -1)
          DO isym = 1, nsym
             ism1 = invs(isym)
-            xq_ibk_locr(1) = s (1, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (1, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (1, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
-            xq_ibk_locr(2) = s (2, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (2, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (2, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
-            xq_ibk_locr(3) = s (3, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) + s (3, 2, isym) * (xq_ibk_loc(2) + g_loc(2))  + s (3, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+            xq_ibk_locr(1) = s (1, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
+                           + s (1, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
+                           + s (1, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+            xq_ibk_locr(2) = s (2, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
+                           + s (2, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
+                           + s (2, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
+            xq_ibk_locr(3) = s (3, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
+                           + s (3, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
+                           + s (3, 3, isym) * (xq_ibk_loc(3) + g_loc(3))
             found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1)).le.eps).and. &
                        (abs(x_q_loc(2) - xq_ibk_locr(2)).le.eps).and. & 
                        (abs(x_q_loc(3) - xq_ibk_locr(3)).le.eps) 

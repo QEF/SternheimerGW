@@ -31,7 +31,8 @@ SUBROUTINE gwq_init()
   USE atom,                 ONLY : msh, rgrid
   USE vlocal,               ONLY : strf
   USE spin_orb,             ONLY : lspinorb
-  USE wvfct,                ONLY : igk, g2kin, npwx, npw, nbnd, ecutwfc
+  USE wvfct,                ONLY : igk, g2kin, npwx, npw, nbnd
+  USE gvecw,                ONLY : ecutwfc
   USE wavefunctions_module, ONLY : evc
   USE noncollin_module,     ONLY : noncolin, npol
   USE uspp,                 ONLY : okvan, vkb
