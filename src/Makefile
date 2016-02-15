@@ -37,7 +37,6 @@ run_nscf.o\
 coulomb.o\
 solve_direct.o\
 solve_linter.o\
-cft_wave.o\
 incdrhoscf_w.o\
 dgradcorr.o\
 coul_multishift.o\
