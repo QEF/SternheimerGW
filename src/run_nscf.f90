@@ -15,7 +15,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   USE kinds,              ONLY : DP
   USE control_flags,   ONLY : conv_ions, twfcollect
   USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
-  USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn
+  USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn, iunwfc
   USE io_global,      ONLY : stdout
   USE lsda_mod,        ONLY : nspin
   USE input_parameters,ONLY : pseudo_dir, force_symmorphic
@@ -41,7 +41,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   LOGICAL, INTENT(IN) :: do_band, do_matel
   !
-  LOGICAL :: exst
+  LOGICAL :: exst, opend
   !
   CALL start_clock( 'PWSCF' )
   !
@@ -68,6 +68,9 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
   IF (do_band) CALL non_scf ( )
   IF (.NOT.reduce_io.and.do_band) THEN
+     ! punch opens the wavefunction file, so we need to close them if they are open
+     INQUIRE(UNIT=iunwfc,OPENED=opend)
+     IF (opend .and. nks == 1) CLOSE (UNIT=iunwfc, STATUS='keep')
      twfcollect=.FALSE.
      CALL punch( 'all' )
   ENDIF
