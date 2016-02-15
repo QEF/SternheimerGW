@@ -178,8 +178,6 @@
      END IF
   endif
 
-  ! 3.1) Setup all gradient correction stuff
-  ! call setup_dgc
   ! 4) Computes the inverse of each matrix of the crystal symmetry group
   !HL-
    call inverse_s ( )
