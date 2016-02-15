@@ -51,7 +51,6 @@ cgsolve_all.o\
 mix_pot_c.o\
 mix_pot.o\
 truncate_2d.o\
-cg2_psi.o\
 h_psiq.o\
 dv_of_drho.o\
 dvqpsi_us.o\

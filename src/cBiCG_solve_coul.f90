@@ -32,9 +32,11 @@ IMPLICIT NONE
                nrec   ! for composite rec numbers
 
   integer :: niters(nbnd)
-  real(DP) :: anorm,   &        ! output: the norm of the error in the solution
-              ethr,    &        ! input: the required precision
-              h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
+  real(DP) :: anorm,   &          ! output: the norm of the error in the solution
+              ethr,    &          ! input: the required precision
+              h_diag(ndmx,nbnd), &! input: an estimate of ( H - \epsilon )
+              sh_diag(ndmx,nbnd)  ! sqrt of h_diag
+
 !Frommer paper defines beta as \frac{\rho_{k}}{\rho_{k-1}}
   COMPLEX(DP)    :: beta_old 
   complex(DP)    :: dpsi (ndmx*npol, nbnd), & ! output: the solution of the linear syst
@@ -94,6 +96,9 @@ IMPLICIT NONE
   htold = (0.d0,0.d0)
   gp(:,:) = (0.d0, 0.0d0)
   gtp(:,:) = (0.d0, 0.0d0)
+
+  ! evaluate square root of h_diag
+  sh_diag = sqrt(h_diag)
 
 !seed frequency should be cw=0
   cw = (0.0d0, 0.0d0)
@@ -161,8 +166,8 @@ IMPLICIT NONE
         do ibnd =1, lbnd
              call zcopy (ndmx*npol, hold  (1, ibnd), 1, gp  (1, ibnd), 1)
              call zcopy (ndmx*npol, htold (1, ibnd), 1, gtp (1, ibnd), 1)
-             call cg2_psi (ndmx, ndim, 1, gp(1,ibnd), h_diag(1,ibnd))
-             call cg2_psi (ndmx, ndim, 1, gtp(1,ibnd), h_diag(1,ibnd))
+             call cg_psi (ndmx, ndim, 1, gp(1,ibnd), sh_diag(1,ibnd))
+             call cg_psi (ndmx, ndim, 1, gtp(1,ibnd), sh_diag(1,ibnd))
         enddo 
         call h_psi (ndim, gp,   t, eu(1), cw, ik, lbnd)
         call h_psi (ndim, gtp, tt, eu(1), conjg(cw), ik, lbnd)
@@ -172,8 +177,8 @@ IMPLICIT NONE
      endif
      if(tprec) then
        do ibnd =1, lbnd
-             call cg2_psi (ndmx, ndim, 1, t(1,ibnd),  h_diag(1,ibnd))
-             call cg2_psi (ndmx, ndim, 1, tt(1,ibnd), h_diag(1,ibnd))
+             call cg_psi (ndmx, ndim, 1, t(1,ibnd),  sh_diag(1,ibnd))
+             call cg_psi (ndmx, ndim, 1, tt(1,ibnd), sh_diag(1,ibnd))
        enddo 
      endif
      lbnd=0
