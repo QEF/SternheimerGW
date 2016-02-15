@@ -174,6 +174,7 @@ END MODULE gamma_gamma
 MODULE control_gw
   USE kinds, ONLY :  DP
   USE parameters, ONLY: npk
+  USE control_lr
   !
   ! ... the variables controlling the GW run
   !
@@ -181,7 +182,7 @@ MODULE control_gw
   !
   INTEGER, PARAMETER :: maxter = 140
   ! maximum number of iterations
-  INTEGER :: niter_gw, nmix_gw, nbnd_occ(npk), &
+  INTEGER :: niter_gw, nmix_gw, &
              start_irr, last_irr, current_iq, start_q, last_q
   ! maximum number of iterations (read from input)
   ! mixing type
@@ -195,7 +196,7 @@ MODULE control_gw
   !
   real(DP) :: eta
   ! threshold for gw calculation
-  REAL (DP) :: alpha_mix(maxter), time_now, alpha_pv
+  REAL (DP) :: alpha_mix(maxter), time_now
   ! the mixing parameter
   ! CPU time up to now
   ! the alpha value for shifting the bands
@@ -206,8 +207,7 @@ MODULE control_gw
 
   INTEGER :: maxter_coul, maxter_green, w_green_start
 
-  LOGICAL :: lgamma,      &! if .TRUE. this is a q=0 computation
-             lgamma_gamma,&! if .TRUE. this is a q=0 computation with k=0 only 
+  LOGICAL :: lgamma_gamma,&! if .TRUE. this is a q=0 computation with k=0 only 
              convt,       &! if .TRUE. the GW has converged
              epsil,       &! if .TRUE. computes dielec. const and eff. charges
              done_epsil=.FALSE.,  &! .TRUE. when diel. constant is available
