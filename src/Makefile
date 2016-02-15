@@ -47,7 +47,6 @@ construct_w.o\
 rotate_w.o\
 incdrhoscf.o\
 orthogonalize.o\
-cgsolve_all.o\
 mix_pot_c.o\
 mix_pot.o\
 truncate_2d.o\
