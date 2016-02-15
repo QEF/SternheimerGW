@@ -50,7 +50,6 @@ orthogonalize.o\
 mix_pot_c.o\
 mix_pot.o\
 truncate_2d.o\
-h_psiq.o\
 dv_of_drho.o\
 dvqpsi_us.o\
 unfold_w.o\
@@ -62,7 +61,6 @@ h_psi_all.o\
 green_multishift.o\
 green_multishift_im.o\
 ch_psi_all.o\
-ch_psi_all_nopv.o\
 ch_psi_all_green.o\
 find_qg_ibz.o\
 godby_needs.o\
