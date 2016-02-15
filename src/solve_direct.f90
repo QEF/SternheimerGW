@@ -223,7 +223,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
 ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
 ! Apply -P_c^+.
 ! -P_c^ = - (1-P_v^):
-        CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1))
+        CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi(:,:,1), npwq)
 !        if(.not.prec_direct) dpsic(:,:,:)     =  dcmplx(0.d0, 0.d0)
 !        dpsit(:,:,:)     =  dcmplx(0.d0, 0.d0)
         dpsi(:,:,:)      =  dcmplx(0.d0, 0.d0)

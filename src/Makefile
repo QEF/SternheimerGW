@@ -46,7 +46,6 @@ cBiCG_solve.o\
 construct_w.o\
 rotate_w.o\
 incdrhoscf.o\
-orthogonalize.o\
 mix_pot_c.o\
 mix_pot.o\
 truncate_2d.o\
