@@ -33,7 +33,7 @@ subroutine allocate_gwq
   USE uspp_param,     ONLY : nhm
   USE freq_gw,        ONLY : fpol, fiu, nfs, nfsmax
   USE ions_base,      ONLY : nat, ntyp => nsp
-  USE gwus,          ONLY : becp1
+  USE lrus,          ONLY : becp1
   USE qpoint,        ONLY : nksq, eigqts, igkq
   USE eqv,           ONLY : dpsi, evq, vlocq, dmuxc, dvpsi, eprec, &
                             dvbare, dpsim, dpsip, eprectot

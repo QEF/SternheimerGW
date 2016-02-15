@@ -141,39 +141,6 @@ MODULE nlcc_gw
 END MODULE nlcc_gw
 !
 !
-MODULE gwus
-  USE kinds, ONLY :  DP
-  USE becmod, ONLY : bec_type
-  !
-  ! ... These are additional variables needed for the linear response
-  ! ... program with the US pseudopotentials
-  !
-  SAVE
-  !
-  REAL (DP), ALLOCATABLE :: &
-       alphasum(:,:,:,:),   &! nhm*(nhm+1)/2,3,nat,nspin)
-                             ! used to compute modes
-       dpqq(:,:,:,:)         ! (nhm, nhm, 3, ntyp) 
-! alphasum contains \sum_i <psi_i| d/du (|\beta_n><beta_m|) | psi_i> + (m-n)
-! dipole moment of each Q 
-!
-!  becsum contains \sum_i <\psi_i | \beta_n><\beta_m| \psi_i > + (m-n)
-!  besumort contains alphasum+\sum_i <\psi_i | \beta_n><\beta_m| \delta \psi_i >
-!  dpqq_so dipole moment of each Q multiplied by the fcoef factors
-!
-  type (bec_type),  ALLOCATABLE, TARGET :: &
-       becp1(:)              ! (nksq); (nkbtot, nbnd)
-  !
-  ! becp1 contains < beta_n | \psi_i > 
-  !
-  type (bec_type),  ALLOCATABLE, TARGET :: &
-       alphap(:,:)           ! nkbtot, nbnd, 3, nksq)
-  !
-  ! alphap contains < d\du (\beta_n) | psi_i> 
-  !
-END MODULE gwus
-!
-!
 MODULE partial
   USE kinds, ONLY :  DP
   !
@@ -487,7 +454,6 @@ MODULE gwcom
   USE eqv
   USE efield_mod
   USE nlcc_gw
-  USE gwus
   USE partial
   USE control_gw
   USE freq_gw

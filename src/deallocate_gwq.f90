@@ -30,7 +30,7 @@ subroutine deallocate_gwq
   USE units_gw,              ONLY : this_dvkb3_is_on_file, this_pcxpsi_is_on_file
   USE control_gw,            ONLY : lgamma
   USE eqv,                   ONLY: dpsim, dpsip, dvbare
-  USE gwus,                  ONLY : becp1
+  USE lrus,                  ONLY : becp1
 
   IMPLICIT NONE
   INTEGER :: ik, ipol
