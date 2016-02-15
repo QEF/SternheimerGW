@@ -41,7 +41,6 @@ cft_wave.o\
 incdrhoscf_w.o\
 dgradcorr.o\
 coul_multishift.o\
-apply_dpot.o\
 cBiCG_solve_green.o\
 cBiCG_solve_coul.o\
 cBiCG_solve.o\
