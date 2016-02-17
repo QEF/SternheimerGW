@@ -121,7 +121,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   call start_clock('greenlinsys')
   where_rec='no_recover'
 ! hl arb k.
-  call gk_sort(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
+  call gk_sort_safe(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
                 npw, igk, g2kin)
   igkq = igk
   npwq = npw
