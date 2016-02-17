@@ -7,8 +7,12 @@ if [ $? = 0 ] ; then
 # svn info available: get svn revision
    svn_rev=$(svnversion -n)
 else
-# svn info available: revert to no info
-   svn_rev=unknown
+# try git svn
+   svn_rev=$(git log 2> /dev/null | grep git-svn-id | awk -F"[@ ]*" '{ print $4; exit }')
+   if [ -z "$svn_rev" ] ; then
+# no svn info available: revert to no info
+     svn_rev=unknown
+   fi
 fi
 
 # write svn into file version_tmp.f90
