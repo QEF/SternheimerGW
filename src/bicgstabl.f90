@@ -1,9 +1,25 @@
-  !-----------------------------------------------------------------------
-  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
-  ! This file is distributed under the terms of the GNU General Public         
-  ! License. See the file `LICENSE' in the root directory of the               
-  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
-  !-----------------------------------------------------------------------
+!------------------------------------------------------------------------------
+!
+! This file is part of the Sternheimer-GW code.
+! 
+! Copyright (C) 2010 - 2016 
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! Sternheimer-GW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Sternheimer-GW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Sternheimer-GW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
 SUBROUTINE cbicgstabl(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, lmresloc, tprec)
 !

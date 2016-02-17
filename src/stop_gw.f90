@@ -1,17 +1,27 @@
-  !-----------------------------------------------------------------------
-  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
-  ! This file is distributed under the terms of the GNU General Public         
-  ! License. See the file `LICENSE' in the root directory of the               
-  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
-  !-----------------------------------------------------------------------
+!------------------------------------------------------------------------------
 !
-! Copyright (C) 2001-2004 PWSCF group
-! This file is distributed under the terms of the
-! GNU General Public License. See the file `License'
-! in the root directory of the present distribution,
-! or http://www.gnu.org/copyleft/gpl.txt .
+! This file is part of the Sternheimer-GW code.
+! Parts of this file are taken from the Quantum ESPRESSO software
+! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
-!----------------------------------------------------------------------------
+! Copyright (C) 2010 - 2016 Quantum ESPRESSO group,
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! Sternheimer-GW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Sternheimer-GW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Sternheimer-GW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
 SUBROUTINE stop_gw( flag )
   !----------------------------------------------------------------------------
   !
