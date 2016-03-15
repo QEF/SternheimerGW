@@ -34,7 +34,7 @@ MODULE sigma_expect_mod
 
 CONTAINS
 
-  !> Evaluate expectation value of \f$\Sigma\f$.
+  !> Evaluate expectation value of \f$\Sigma\f$ for single wave function.
   !!
   !! \f{equation}{
   !!   \bigl\langle \phi_\text{l} \bigl\lvert \Sigma \bigr\rvert \phi_\text{r} \bigr\rangle
@@ -60,5 +60,33 @@ CONTAINS
     energy = dot_product( left_wavef, matmul( sigma, right_wavef ) )
 
   END FUNCTION expectation
+
+  !> Evaluate expectation value of \f$\Sigma\f$ at multiple frequencies and wave functions.
+  !!
+  !! \f{equation}{
+  !!   \bigl\langle \phi_n \bigl\lvert \Sigma(\omega) \bigr\rvert \phi_m \bigr\rangle
+  !! \f}
+  !! \param sigma self-energy \f$\Sigma(\omega)\f$
+  !! \param wavef set of wave functions \f$\phi_n\f$
+  !! \return matrix element \f$\langle \phi_n \lvert \Sigma(\omega) \rvert \phi_m \rangle\f$
+  FUNCTION sigma_expect(sigma,wavef) RESULT (energy)
+
+    COMPLEX(dp), INTENT(IN) :: sigma(:,:,:)
+    COMPLEX(dp), INTENT(IN) :: wavef(:,:)
+
+    COMPLEX(dp)             :: energy(size(wavef,2),size(wavef,2),size(sigma,3))
+
+    INTEGER iband, jband, ifreq
+
+    ! loop over all bands
+    DO ifreq = 1, size(sigma,3)
+      DO jband = 1, size(wavef,2)
+        DO iband = 1, size(wavef,2)
+          energy(iband,jband,ifreq) = expectation(wavef(:,iband),sigma(:,:,ifreq),wavef(:,jband))
+        END DO ! iband
+      END DO ! jband
+    END DO ! nband
+
+  END FUNCTION sigma_expect
 
 END MODULE sigma_expect_mod
