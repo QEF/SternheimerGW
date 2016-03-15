@@ -32,6 +32,10 @@ MODULE sigma_expect_mod
 
   IMPLICIT NONE
 
+  INTERFACE sigma_expect
+    MODULE PROCEDURE sigma_expect_2d, sigma_expect_3d
+  END INTERFACE sigma_expect
+
 CONTAINS
 
   !> Evaluate expectation value of \f$\Sigma\f$ for single wave function.
@@ -61,6 +65,32 @@ CONTAINS
 
   END FUNCTION expectation
 
+  !> Evaluate expectation value of \f$\Sigma\f$ for multiple wave functions.
+  !!
+  !! \f{equation}{
+  !!   \bigl\langle \phi_n \bigl\lvert \Sigma \bigr\rvert \phi_m \bigr\rangle
+  !! \f}
+  !! \param sigma self-energy \f$\Sigma\f$
+  !! \param wavef set of wave functions \f$\phi_n\f$
+  !! \return matrix element \f$\langle \phi_n \lvert \Sigma \rvert \phi_m \rangle\f$
+  FUNCTION sigma_expect_2d(sigma,wavef) RESULT (energy)
+
+    COMPLEX(dp), INTENT(IN) :: sigma(:,:)
+    COMPLEX(dp), INTENT(IN) :: wavef(:,:)
+
+    COMPLEX(dp)             :: energy(size(wavef,2),size(wavef,2))
+
+    INTEGER iband, jband
+
+    ! loop over all bands
+    DO jband = 1, size(wavef,2)
+      DO iband = 1, size(wavef,2)
+        energy(iband,jband) = expectation(wavef(:,iband),sigma,wavef(:,jband))
+      END DO ! iband
+    END DO ! jband
+
+  END FUNCTION sigma_expect_2d
+
   !> Evaluate expectation value of \f$\Sigma\f$ at multiple frequencies and wave functions.
   !!
   !! \f{equation}{
@@ -69,7 +99,7 @@ CONTAINS
   !! \param sigma self-energy \f$\Sigma(\omega)\f$
   !! \param wavef set of wave functions \f$\phi_n\f$
   !! \return matrix element \f$\langle \phi_n \lvert \Sigma(\omega) \rvert \phi_m \rangle\f$
-  FUNCTION sigma_expect(sigma,wavef) RESULT (energy)
+  FUNCTION sigma_expect_3d(sigma,wavef) RESULT (energy)
 
     COMPLEX(dp), INTENT(IN) :: sigma(:,:,:)
     COMPLEX(dp), INTENT(IN) :: wavef(:,:)
@@ -87,6 +117,6 @@ CONTAINS
       END DO ! jband
     END DO ! nband
 
-  END FUNCTION sigma_expect
+  END FUNCTION sigma_expect_3d
 
 END MODULE sigma_expect_mod
