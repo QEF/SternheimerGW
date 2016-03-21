@@ -21,76 +21,62 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE sigma_matel (ik0)
-  USE io_global,            ONLY : stdout, ionode_id, ionode, meta_ionode
-  USE io_files,             ONLY : prefix, iunigk, wfc_dir
+  USE io_global,            ONLY : stdout, meta_ionode
+  USE io_files,             ONLY : prefix
   USE buffers,              ONLY : get_buffer, close_buffer
   USE kinds,                ONLY : DP
   USE kinds_gw,             ONLY : i8b
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
-  USE klist,                ONLY : xk, wk, nkstot, nks
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE freq_gw,              ONLY : nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
+  USE klist,                ONLY : xk, nkstot
+  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin
   USE gvecw,                ONLY : ecutwfc
-  USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma,lrsex, iunsex, iunsigext, lrsigext
-  USE control_gw,           ONLY : nbnd_occ, lgamma, do_imag, do_serial, do_sigma_exxG, tmp_dir_coul
+  USE qpoint,               ONLY : npwq
+  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
+  USE control_gw,           ONLY : lgamma, do_imag, do_serial, do_sigma_exxG, tmp_dir_coul
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
                                    sigma_band_exg, gcutcorr
-  USE disp,                 ONLY : xk_kpoints, x_q, nqs
-  USE noncollin_module,     ONLY : nspin_mag
-  USE eqv,                  ONLY : dmuxc
+  USE disp,                 ONLY : xk_kpoints
   USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
-  USE cell_base,            ONLY : omega, tpiba2, at, bg, alat
+  USE cell_base,            ONLY : tpiba2, at, alat
   USE buiol,                ONLY : buiol_check_unit
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
-  USE mp_world,      ONLY : nproc, mpime
-  USE save_gw,       ONLY : tmp_dir_save
-  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,&
-                            inter_image_comm
-  USE mp,            ONLY : mp_bcast, mp_barrier, mp_sum
+  USE mp_pools,             ONLY : inter_pool_comm
+  USE mp_world,             ONLY : mpime
+  USE mp_images,            ONLY : my_image_id, inter_image_comm
+  USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
+  USE reorder_mod,          ONLY : reorder
+  USE sigma_expect_mod,     ONLY : sigma_expect
 
 IMPLICIT NONE
   complex(DP), allocatable  :: sigma_band_con(:,:,:)
   complex(DP), allocatable  :: sigma_g_ex(:,:)
-  complex(DP)               ::   czero, temp
-  complex(DP)               ::   aux(sigma_x_st%ngmt), psic(dffts%nnr), vpsi(ngm), auxsco(gcutcorr)
+  complex(DP)               ::   czero
+  complex(DP)               ::   psic(dffts%nnr), vpsi(ngm)
   complex(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                  sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
   complex(DP), allocatable  ::   sigma(:,:,:)
   complex(DP), allocatable  ::   evc_tmp_j(:), evc_tmp_i(:)
   real(DP), allocatable     ::   wsigwin(:)
   real(DP)                  ::   w_ryd(nwsigma)
-  real(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
-                                 et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
-  real(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(nbnd_sig),&
-                                 sigma_ex_tr, sigma_ex_diag(nbnd_sig)
-  real(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
-                                 et_qp_tr, z_tr, z(nbnd_sig)
   real(DP)                  ::   one, zcut
-  real(DP)    :: xk_collect(nkstot), wk_collect(nkstot)
-  real(DP)    :: vtxc, etxc, ehart, eth, charge
+  real(DP)    :: vtxc, etxc
   real(DP)    :: zero(3)
   integer, allocatable      ::   igkq_ig(:) 
   integer, allocatable      ::   igkq_tmp(:) 
-  integer                   ::   iq, ikq, ikq_head
-  integer                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
-  integer                   ::   ierr, ng
+  integer                   ::   ikq, ikq_head
+  integer                   ::   ig, igp, iw, ibnd, jbnd, ios, ipol, ik0, ir, counter
+  integer                   ::   ng
   integer     :: sigma_c_ngm, sigma_x_ngm
-  integer     :: iunwfc1
   integer     :: kpoolid(nkstot), iqrec1(nkstot)
-  integer     :: nbase, nksloc, rest, mypoolid
-  logical    ::   do_band, do_iq, setup_pw, exst, single_line
   integer(i8b) :: unf_recl
   logical, external :: eqvect
   logical :: found_k
-  character (len=256) :: poolnum
-  character (len=256) :: form_str
   character(len=256) :: tempfile, filename
   real(DP), parameter :: eps=1.e-5_dp
 
@@ -179,69 +165,57 @@ IMPLICIT NONE
       write(1000+mpime, '("Max number Plane Waves WFC ", i4)') npwx
       write(1000+mpime, '("Sigma_Ex Matrix Element")') 
 
-    if(.not.do_sigma_exxG) then
-      allocate (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
-      allocate (evc_tmp_i  (sigma_x_st%ngmt))
-      allocate (evc_tmp_j  (sigma_x_st%ngmt))
+    IF( .NOT. do_sigma_exxG) THEN
 
-      if ((exch_conv.eq.sigma_x_st%ecutt) .or. (exch_conv.eq.0.0)) THEN
+      ALLOCATE (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
+
+      IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
           sigma_x_ngm = sigma_x_st%ngmt
-      else if((exch_conv .lt. sigma_x_st%ecutt) .and. (exch_conv.gt.0.0)) THEN
-        do ng = 1, ngm
-           if ( gl( igtongl (ng) ) .le. (exch_conv/tpiba2)) sigma_x_ngm = ng
-        enddo
-      else
-        write(6, '("Exch Conv must be greater than zero and less than ecut_sco")')
-        stop
-      endif
-      counter  = 0
-      igkq_tmp(:) = 0
-      igkq_ig(:)  = 0
-      do ig = 1, npwq
-         if((igk(ig).le.sigma_x_ngm).and.((igk(ig)).gt.0)) then
-          counter = counter + 1
-          igkq_tmp (counter) = igk(ig)
-          igkq_ig  (counter) = ig
-         endif
-      enddo
-      sigma_g_ex(:,:) = (0.0d0, 0.0d0)
+      ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
+        DO ng = 1, ngm
+           IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
+        END DO
+      ELSE
+        CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
+      END IF
+
+      ! read sigma_x from file
       ios = 0 
       READ( UNIT = iunsex, REC = ik0, IOSTAT = ios ) sigma_g_ex
-      if(ios /= 0) then
-        write(1000+mpime, '(5x, "Could not read Sigma_X file. Have you calculated it?")') 
-      else
-        do ibnd = 1, nbnd_sig
-           evc_tmp_i(:) = czero
-          do jbnd = 1, nbnd_sig
-             evc_tmp_j(:) = czero
-             do ig = 1, counter
-                evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd) 
-             enddo
-             do ig = 1, sigma_x_ngm
-                do igp = 1, counter
-                   evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-                enddo
-                do igp = 1, sigma_x_ngm
-                   sigma_band_ex (ibnd, jbnd) = sigma_band_ex (ibnd, jbnd) + &
-&                  evc_tmp_j (igp)*sigma_g_ex(igp,ig)*conjg(evc_tmp_i(ig))
-                enddo
-             enddo
-          enddo
-        enddo
-      endif
-      write(1000+mpime,*) 
-      write(1000+mpime,'(4x,"sigma_ex (eV)")')
-      write(1000+mpime,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
-      write(1000+mpime,*) 
-      write(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
-      deallocate(sigma_g_ex)
-      deallocate(evc_tmp_i)
-      deallocate(evc_tmp_j)
-else
-  do ibnd = 1, nbnd_sig
-     sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd)
-  enddo
-endif
+
+      ! if reading failed
+      IF (ios /= 0) THEN
+        WRITE(1000+mpime, '(5x, "Could not read Sigma_X file. Have you calculated it?")') 
+        sigma_band_ex = 0.0
+
+      ! evaluate expectation value of wave function
+      ELSE
+
+        ! reorder evc array so that it is compatible with current igk
+        CALL reorder(evc,igk,sigma_x_st%ngmt)
+        ! evaluate the expectation value
+        sigma_band_ex = sigma_expect( sigma_g_ex, evc(:sigma_x_st%ngmt,:) )
+
+        WRITE(1000+mpime,*) 
+        WRITE(1000+mpime,'(4x,"sigma_ex (eV)")')
+        WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
+        WRITE(1000+mpime,*) 
+        WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
+
+        CALL get_buffer (evc, lrwfc, iuwfc, ikq)
+
+      END IF
+
+      DEALLOCATE(sigma_g_ex)
+
+    ELSE ! do_sigma_exxG = .true.
+
+      DO ibnd = 1, nbnd_sig
+        sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd)
+      END DO
+
+    END IF
+
 !MATRIX ELEMENTS OF SIGMA_C:
       write(1000+mpime,*) 
       write(1000+mpime, '("sigma_c matrix element")') 
