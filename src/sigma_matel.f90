@@ -61,7 +61,6 @@ IMPLICIT NONE
   complex(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                  sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
   complex(DP), allocatable  ::   sigma(:,:,:)
-  complex(DP), allocatable  ::   evc_tmp_j(:), evc_tmp_i(:)
   real(DP), allocatable     ::   wsigwin(:)
   real(DP)                  ::   w_ryd(nwsigma)
   real(DP)                  ::   one, zcut
@@ -71,7 +70,7 @@ IMPLICIT NONE
   integer, allocatable      ::   igkq_ig(:) 
   integer, allocatable      ::   igkq_tmp(:) 
   integer                   ::   ikq, ikq_head
-  integer                   ::   ig, igp, iw, ibnd, jbnd, ios, ipol, ik0, ir, counter
+  integer                   ::   ig, iw, ibnd, jbnd, ios, ipol, ik0, ir
   integer                   ::   ng
   integer     :: sigma_c_ngm, sigma_x_ngm
   integer     :: kpoolid(nkstot), iqrec1(nkstot)
@@ -207,8 +206,6 @@ IMPLICIT NONE
         WRITE(1000+mpime,*) 
         WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
 
-        CALL get_buffer (evc, lrwfc, iuwfc, ikq)
-
       END IF
 
       DEALLOCATE(sigma_g_ex)
@@ -222,82 +219,69 @@ IMPLICIT NONE
     END IF
 
 !MATRIX ELEMENTS OF SIGMA_C:
-      write(1000+mpime,*) 
-      write(1000+mpime, '("sigma_c matrix element")') 
-      allocate (sigma(gcutcorr, gcutcorr,nwsigma)) 
-      allocate (evc_tmp_i(gcutcorr))
-      allocate (evc_tmp_j(gcutcorr))
-      counter     = 0
-      igkq_tmp(:) = 0
-      igkq_ig(:)  = 0
+    WRITE(1000+mpime,*) 
+    WRITE(1000+mpime, '("sigma_c matrix element")') 
+    ALLOCATE (sigma(gcutcorr, gcutcorr,nwsigma)) 
+
 !For convergence tests corr_conv can be set at input lower than ecutsco.
 !This allows you to calculate the correlation energy at lower energy cutoffs
-      if (corr_conv.eq.sigma_c_st%ecutt) THEN
-          sigma_c_ngm = gcutcorr
-      else if(corr_conv .lt. sigma_c_st%ecutt .and. corr_conv.gt.0.0) THEN
-        do ng = 1, ngm
-           if ( gl( igtongl (ng) ) .le. (corr_conv/tpiba2)) sigma_c_ngm = ng
-        enddo
-      else
-        write(6, '("Corr Conv must be greater than zero and less than ecut_sco")')
-        stop
-      endif
+    IF (corr_conv == sigma_c_st%ecutt) THEN
+      sigma_c_ngm = gcutcorr
+    ELSE IF(corr_conv < sigma_c_st%ecutt .AND. corr_conv > 0.0) THEN
+      DO ng = 1, ngm
+        IF (gl( igtongl (ng) ) <= (corr_conv/tpiba2)) sigma_c_ngm = ng
+      END DO
+    ELSE
+      CALL errore("sigma_matel", "Corr Conv must be greater than zero and less than ecut_sco", 1)
+    END IF
 
-      write(1000+mpime, *)
-      write(1000+mpime, '(5x, "G-Vects CORR_CONV:")')
-      write(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
-      write(1000+mpime, *)
-      do ig = 1, npwq
-         if((igk(ig).le.sigma_c_ngm).and.((igk(ig)).gt.0)) then
-             counter = counter + 1
-             igkq_tmp (counter) = igk(ig)
-             igkq_ig  (counter) = ig
-         endif
-      enddo
-      sigma = dcmplx(0.0d0, 0.0d0)
-      if(do_serial) then
-         do iw = 1, nwsigma
-            CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
-         enddo
-      else
-!let's us avoid crash if we haven't calculated one of these things yet:
-         READ( UNIT = iunsigma, REC = ik0, IOSTAT = ios ) sigma
-!         CALL davcio(sigma, lrsigma, iunsigma, 1, -1)
-         write(1000+mpime, *) ios
-         if(ios /= 0) then
-            write(1000+mpime, '("Could not read Sigma_C file. Have you calculated it?")')
-            sigma_band_c (:,:,:) = czero
-         else
-            sigma_band_c (:,:,:) = czero
-            do ibnd = 1, nbnd_sig
-               evc_tmp_i(:) = czero
-             do jbnd = 1, nbnd_sig
-                evc_tmp_j(:) = czero
-              do iw = 1, nwsigma
-                 do ig = 1, counter
-                    evc_tmp_i(igkq_tmp(ig)) = evc(igkq_ig(ig), ibnd)
-                 enddo
-                 do ig = 1, sigma_c_ngm
-                    do igp = 1, counter
-                       evc_tmp_j(igkq_tmp(igp)) = evc(igkq_ig(igp), jbnd)
-                    enddo
-                    do igp = 1, sigma_c_ngm
-                       sigma_band_c (ibnd, jbnd, iw) = sigma_band_c (ibnd, jbnd, iw) +  &
-                                 evc_tmp_j(ig)*sigma(ig,igp,iw)*conjg(evc_tmp_i(igp))
-                    enddo
-                 enddo
-             enddo
-            enddo
-           enddo
-           deallocate (sigma)
-           deallocate (evc_tmp_i)
-           deallocate (evc_tmp_j)
-           write (1000+mpime,'("Finished Sigma_c")')
-         endif
-      endif
+    WRITE(1000+mpime, *)
+    WRITE(1000+mpime, '(5x, "G-Vects CORR_CONV:")')
+    WRITE(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
+    WRITE(1000+mpime, *)
+
+    ! read sigma from file
+    sigma = 0.0
+
+    IF(do_serial) THEN
+      DO iw = 1, nwsigma
+        CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
+      END DO
+    ELSE
+      ! let's us avoid crash if we haven't calculated one of these things yet:
+      READ( UNIT = iunsigma, REC = ik0, IOSTAT = ios ) sigma
+      WRITE(1000+mpime, *) ios
+
+      ! if reading sigma failed
+      IF (ios /= 0) THEN
+        WRITE(1000+mpime, '("Could not read Sigma_C file. Have you calculated it?")')
+        sigma_band_c (:,:,:) = czero
+
+      ! evaluate expectation value of wave function
+      ELSE
+
+        ! create map for reordering
+        map = create_map(igk,sigma_c_ngm)
+
+        ! read evc
+        CALL get_buffer (evc, lrwfc, iuwfc, ikq)
+
+        ! reorder evc array so that it is compatible with current igk
+        CALL reorder(evc,map)
+
+        ! evaluate the expectation value
+        sigma_band_c = sigma_expect( sigma, evc(:sigma_c_ngm,:) )
+
+        DEALLOCATE (sigma)
+        write (1000+mpime,'("Finished Sigma_c")')
+
+      END IF
+
+    END IF
 !Need to broadcast from the current pool to all the nodes
-  endif!on pool with K-point
-call mp_barrier(inter_pool_comm)
+
+  END If !on pool with K-point
+  CALL mp_barrier(inter_pool_comm)
 
 !Now first pool should always have
 !the kpoint we are looking for.
