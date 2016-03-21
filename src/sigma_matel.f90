@@ -50,7 +50,7 @@ SUBROUTINE sigma_matel (ik0)
   USE mp_world,             ONLY : mpime
   USE mp_images,            ONLY : my_image_id, inter_image_comm
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
-  USE reorder_mod,          ONLY : reorder
+  USE reorder_mod,          ONLY : reorder, create_map
   USE sigma_expect_mod,     ONLY : sigma_expect
 
 IMPLICIT NONE
@@ -67,6 +67,7 @@ IMPLICIT NONE
   real(DP)                  ::   one, zcut
   real(DP)    :: vtxc, etxc
   real(DP)    :: zero(3)
+  integer, allocatable      ::   map(:) 
   integer, allocatable      ::   igkq_ig(:) 
   integer, allocatable      ::   igkq_tmp(:) 
   integer                   ::   ikq, ikq_head
@@ -82,7 +83,7 @@ IMPLICIT NONE
 
 #define DIRECT_IO_FACTOR 8
 
-
+  ALLOCATE( map(npwx) )
   allocate (igkq_tmp(npwx))
   allocate (igkq_ig(npwx))
 
@@ -191,8 +192,12 @@ IMPLICIT NONE
       ! evaluate expectation value of wave function
       ELSE
 
+        ! create map for reordering
+        map = create_map(igk,sigma_x_st%ngmt)
+
         ! reorder evc array so that it is compatible with current igk
-        CALL reorder(evc,igk,sigma_x_st%ngmt)
+        CALL reorder(evc,map)
+
         ! evaluate the expectation value
         sigma_band_ex = sigma_expect( sigma_g_ex, evc(:sigma_x_st%ngmt,:) )
 
@@ -319,6 +324,7 @@ call mp_barrier(inter_pool_comm)
   if(allocated(igkq_tmp)) deallocate(igkq_tmp)
   if(allocated(igkq_ig))  deallocate(igkq_ig)
   if(allocated(sigma_band_exg)) deallocate(sigma_band_exg)
+  IF(ALLOCATED(map)) DEALLOCATE(map)
 
 call mp_barrier(inter_pool_comm)
 call mp_barrier(inter_image_comm)

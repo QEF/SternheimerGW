@@ -37,12 +37,50 @@ MODULE reorder_mod
 
 CONTAINS
 
+  !> create map from igk for reorder
+  !!
+  !! \param igk list that maps g vector of new k-points
+  !! \param max_indx skip elements larger than max_indx (optional, default: no limit)
+  !! \return map with new order
+  FUNCTION create_map(igk, max_indx) RESULT (map)
+
+    INTEGER, INTENT(IN) :: igk(:)
+    INTEGER, INTENT(IN), OPTIONAL :: max_indx
+    INTEGER             :: map(SIZE(igk))
+
+    INTEGER ii, iigk, upper
+
+    ! determine the upper limit
+    IF (present(max_indx)) THEN
+      upper = max_indx
+    ELSE
+      upper = size(igk)
+    END IF
+
+    ! default value is zero
+    map = 0
+
+    ! create map according to igk
+    DO ii = 1, SIZE(igk)
+
+      ! current value
+      iigk = igk(ii)
+
+      ! use the values in bounds
+      IF ( iigk > 0 .AND. iigk <= upper ) THEN
+        map(iigk) = ii
+      END IF
+
+    END DO
+
+  END FUNCTION create_map
+
   !> reorder a one dimensional real array
   !!
   !! \param array on entry: array with old order; on exit: array with order
   !!              according to map
   !! \param map new order for array
-  !! \param max_indx skip elements larger that max_indx (optional default: no limit)
+  !! \param max_indx skip elements larger than max_indx (optional, default: no limit)
   SUBROUTINE reorder_r1d(array, map, max_indx)
 
     REAL(dp), INTENT(INOUT) :: array(:)
@@ -75,7 +113,7 @@ CONTAINS
   !! \param array on entry: array with old order; on exit: array with order
   !!              according to map
   !! \param map new order for array
-  !! \param max_indx skip elements larger that max_indx (optional default: no limit)
+  !! \param max_indx skip elements larger than max_indx (optional, default: no limit)
   SUBROUTINE reorder_r2d(array, map, max_indx)
 
     REAL(dp), INTENT(INOUT) :: array(:,:)
@@ -95,7 +133,7 @@ CONTAINS
   !! \param array on entry: array with old order; on exit: array with order
   !!              according to map
   !! \param map new order for array
-  !! \param max_indx skip elements larger that max_indx (optional default: no limit)
+  !! \param max_indx skip elements larger than max_indx (optional, default: no limit)
   SUBROUTINE reorder_c1d(array, map, max_indx)
 
     COMPLEX(dp), INTENT(INOUT) :: array(:)
@@ -128,7 +166,7 @@ CONTAINS
   !! \param array on entry: array with old order; on exit: array with order
   !!              according to map
   !! \param map new order for array
-  !! \param max_indx skip elements larger that max_indx (optional default: no limit)
+  !! \param max_indx skip elements larger than max_indx (optional, default: no limit)
   SUBROUTINE reorder_c2d(array, map, max_indx)
 
     COMPLEX(dp), INTENT(INOUT) :: array(:,:)
