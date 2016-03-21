@@ -85,7 +85,7 @@ CONTAINS
     ! loop over all bands
     DO jband = 1, size(wavef,2)
       DO iband = 1, size(wavef,2)
-        energy(iband,jband) = expectation(wavef(:,iband),sigma,wavef(:,jband))
+        energy(iband,jband) = expectation(wavef(:,jband),sigma,wavef(:,iband))
       END DO ! iband
     END DO ! jband
 
@@ -112,7 +112,7 @@ CONTAINS
     DO ifreq = 1, size(sigma,3)
       DO jband = 1, size(wavef,2)
         DO iband = 1, size(wavef,2)
-          energy(iband,jband,ifreq) = expectation(wavef(:,iband),sigma(:,:,ifreq),wavef(:,jband))
+          energy(iband,jband,ifreq) = expectation(wavef(:,jband),sigma(:,:,ifreq),wavef(:,iband))
         END DO ! iband
       END DO ! jband
     END DO ! nband
