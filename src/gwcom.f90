@@ -205,7 +205,6 @@ MODULE control_gw
              solve_direct,&
              tinvert,&
              coul_multishift,&
-             do_serial,&
              trunc_2d,&
              do_diag_w,&
              do_diag_g,&

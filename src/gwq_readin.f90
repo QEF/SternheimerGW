@@ -58,7 +58,7 @@ SUBROUTINE gwq_readin()
                             do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
                             cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift,&
-                            trunc_2d, do_epsil, do_serial, &
+                            trunc_2d, do_epsil, &
                             do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                             high_io, freq_gl, prec_direct, prec_shift, just_corr,&
                             double_grid, name_length, output, &
@@ -145,7 +145,7 @@ SUBROUTINE gwq_readin()
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, plasmon, do_sigma_extra,&
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
+                       do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation, &
                        filsigx, filsigc, filcoul
@@ -254,7 +254,6 @@ SUBROUTINE gwq_readin()
   maxter_green = 220
   w_green_start = 1
 
-  do_serial       = .FALSE.
   coul_multishift = .FALSE.
   trunc_2d        = .FALSE.
   do_epsil        = .FALSE.

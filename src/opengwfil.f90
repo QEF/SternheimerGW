@@ -27,7 +27,7 @@ SUBROUTINE opengwfil()
   USE io_files,        ONLY : tmp_dir, diropn, seqopn
   USE freq_gw,         ONLY : nfs, nwsigma
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, gcutcorr
-  USE control_gw,      ONLY : multishift, do_serial, do_sigma_exxG
+  USE control_gw,      ONLY : multishift, do_sigma_exxG
   USE wvfct,           ONLY : nbnd,npwx
   USE io_global,       ONLY : meta_ionode
   USE output_mod,      ONLY : filcoul, filsigx, filsigc
