@@ -297,7 +297,7 @@ MODULE output_mod
   !
   SAVE
   !
-  CHARACTER (LEN=256) :: fildyn, fildvscf, fildrho
+  CHARACTER (LEN=256) :: fildyn, fildvscf, fildrho, filsigc, filsigx, filcoul
   ! output file for the dynamical matrix
   ! output file for deltavscf
   ! output file for deltarho

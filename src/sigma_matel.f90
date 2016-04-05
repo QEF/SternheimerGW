@@ -50,6 +50,7 @@ SUBROUTINE sigma_matel (ik0)
   USE mp_images,            ONLY : my_image_id
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
   USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
+  USE output_mod,           ONLY : filsigx, filsigc
 
 IMPLICIT NONE
   complex(DP), allocatable  :: sigma_band_con(:,:,:)
@@ -99,7 +100,7 @@ IMPLICIT NONE
   iqrec1  = 0
 
 !All pools need access to sigma file now:
-  filename = trim(prefix)//"."//"sigma1"
+  filename = trim(prefix)//"."//trim(filsigc)//"1"
   tempfile = trim(tmp_dir_coul) // trim(filename)
   unf_recl = DIRECT_IO_FACTOR * int(lrsigma, kind=kind(unf_recl))
   open(iunsigma, file = trim(adjustl(tempfile)), iostat = ios, &
@@ -107,7 +108,7 @@ IMPLICIT NONE
   write(1000+mpime,*) tempfile, ios
 
   if(.not. do_sigma_exxG) then
-     filename = trim(prefix)//"."//"sigma_ex1"
+     filename = trim(prefix)//"."//trim(filsigx)//"1"
      tempfile = trim(tmp_dir_coul) // trim(filename)
      unf_recl = DIRECT_IO_FACTOR * int(lrsex, kind=kind(unf_recl))
      open(iunsex, file = trim(adjustl(tempfile)), iostat = ios, &

@@ -66,7 +66,7 @@ SUBROUTINE gwq_readin()
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
-  USE output_mod,    ONLY : fildyn, fildvscf, fildrho
+  USE output_mod,    ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
   USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
                             xk_kpoints, kpoints, num_k_pts, & 
                             w_of_q_start, w_of_k_start, w_of_k_stop
@@ -147,7 +147,8 @@ SUBROUTINE gwq_readin()
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
-                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation
+                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation, &
+                       filsigx, filsigc, filcoul
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
                        file_spec, file_spec_iw, directory
@@ -163,6 +164,9 @@ SUBROUTINE gwq_readin()
   ! prefix       : the prefix of files produced by pwscf
   ! fildvscf     : output file containing deltavsc
   ! fildrho      : output file containing deltarho
+  ! filsigx      : output file containing exchange part of sigma
+  ! filsigc      : output file containing correlation part of sigma
+  ! filcoul      : output file containing screened coulomb
   ! eth_rps      : threshold for calculation of  Pc R |psi> (Raman)
   ! eth_ns       : threshold for non-scf wavefunction calculation (Raman)
   ! recover      : recover=.true. to restart from an interrupted run
@@ -229,6 +233,9 @@ SUBROUTINE gwq_readin()
   fildyn       = 'matdyn'
   fildrho      = ' '
   fildvscf     = ' '
+  filsigx      = 'sigma_x'
+  filsigc      = 'sigma_c'
+  filcoul      = 'coulomb'
   nq1          = 0
   nq2          = 0
   nq3          = 0

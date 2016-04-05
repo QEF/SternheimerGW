@@ -56,6 +56,7 @@ SUBROUTINE sigma_c_re(ik0)
                             me_image, nproc_image, inter_image_comm
   USE mp,            ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_pools,      ONLY : inter_pool_comm
+  USE output_mod,    ONLY : filcoul
 
   IMPLICIT NONE
 
@@ -175,7 +176,7 @@ SUBROUTINE sigma_c_re(ik0)
    call mp_barrier(inter_image_comm)
 #ifdef __PARA
 !OPEN coulomb file (only written to by head node).
-   filename = trim(prefix)//"."//"coul1"
+   filename = trim(prefix)//"."//trim(filcoul)//"1"
    tempfile = trim(tmp_dir_coul) // trim(filename)
    unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &

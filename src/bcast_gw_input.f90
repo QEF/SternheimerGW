@@ -49,7 +49,7 @@ subroutine bcast_gw_input ( )
   USE partial,     ONLY : nat_todo, nrapp
   USE freq_gw,     ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul,&
                           wsig_wind_min, wsig_wind_max, deltaws
-  USE output_mod,  ONLY : fildvscf, fildyn, fildrho
+  USE output_mod,  ONLY : fildvscf, fildyn, fildrho, filsigx, filsigc, filcoul
   use io_files,    ONLY : tmp_dir, prefix
   USE control_flags,    ONLY: iverbosity, modenum
   USE input_parameters, ONLY: max_seconds
@@ -100,6 +100,9 @@ subroutine bcast_gw_input ( )
   call mp_bcast (fildyn, meta_ionode_id, world_comm )
   call mp_bcast (fildvscf, meta_ionode_id, world_comm )
   call mp_bcast (fildrho, meta_ionode_id, world_comm )
+  call mp_bcast (filsigx, meta_ionode_id, world_comm )
+  call mp_bcast (filsigc, meta_ionode_id, world_comm )
+  call mp_bcast (filcoul, meta_ionode_id, world_comm )
   call mp_bcast (tmp_dir, meta_ionode_id, world_comm )
   call mp_bcast (tmp_dir_coul, meta_ionode_id, world_comm )
   call mp_bcast (prefix, meta_ionode_id, world_comm )
