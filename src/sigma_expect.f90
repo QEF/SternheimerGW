@@ -38,6 +38,82 @@ MODULE sigma_expect_mod
 
 CONTAINS
 
+  !> evaluate matrix elements of \f$\Sigma\f$ stored on file
+  !!
+  !! For a given set of wave functions, read the corresponding \f$\Sigma\f$ from the
+  !! specified file and evaluate the matrix elements with it
+  !! \param iunit unit pointing to the file in which \f$\Sigma\f$ is stored
+  !! \param irec record which contains \f$\Sigma\f$
+  !! \param wavef multiple wave functions for which the expectation value is computed
+  !! \param ngm maximum G allowed
+  !! \param igk map from G's to local k-point
+  !! \param matel output the resulting matrix elements
+  !! \param ndim third array dimension (optional: default = 1)
+  SUBROUTINE sigma_expect_file(iunit,irec,wavef,ngm,igk,matel,ndim)
+
+    USE reorder_mod, ONLY : reorder, create_map
+
+    INTEGER,           INTENT(IN)  :: iunit
+    INTEGER,           INTENT(IN)  :: irec
+    COMPLEX(dp),       INTENT(IN)  :: wavef(:,:)
+    INTEGER,           INTENT(IN)  :: ngm
+    INTEGER,           INTENT(IN)  :: igk(:)
+    COMPLEX(dp),       INTENT(OUT) :: matel(:,:,:)
+    INTEGER, OPTIONAL, INTENT(IN)  :: ndim
+
+    INTEGER ii, ndim_loc
+
+    INTEGER,     ALLOCATABLE :: map(:)
+    COMPLEX(dp), ALLOCATABLE :: wavef_ordered(:,:), sigma(:,:,:)
+
+    ! use ndim or default to 1
+    IF ( PRESENT(ndim) ) THEN
+      ndim_loc = ndim
+    ELSE
+      ndim_loc = 1
+    END IF
+
+    ! test array sizes
+    CALL errore("sigma_expect_mod->sigma_expect_file", "array size mismatch", &
+                size(matel) /= size(wavef,2)**2 * ndim_loc)
+
+    !
+    ! read sigma from file
+    !
+
+    ! allocate array to contain sigma
+    ALLOCATE( sigma(ngm,ngm,ndim_loc) )
+
+    ! read from file (factor 2 for complex)
+    CALL davcio( sigma, 2*ngm*ngm*ndim_loc, iunit, irec, -1 )
+
+    !
+    ! reorder wave function
+    !
+
+    ! create copy of wavef
+    ALLOCATE( wavef_ordered(SIZE(wavef,1),SIZE(wavef,2)) )
+    wavef_ordered = wavef
+
+    ! create map to order wavef
+    ALLOCATE( map(size(igk)) )
+    map = create_map(igk,ngm)
+
+    ! reorder wavef so that it is compatible with igk
+    CALL reorder(wavef_ordered,map)
+    
+    !
+    ! evaluate the expectation value
+    !
+    matel = sigma_expect( sigma, wavef_ordered(:ngm,:) )
+
+    ! deallocate arrays
+    DEALLOCATE( sigma )
+    DEALLOCATE( wavef_ordered )
+    DEALLOCATE( map )
+
+  END SUBROUTINE sigma_expect_file
+
   !> Evaluate expectation value of \f$\Sigma\f$ for single wave function.
   !!
   !! \f{equation}{
