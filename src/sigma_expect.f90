@@ -61,7 +61,7 @@ CONTAINS
     COMPLEX(dp),       INTENT(OUT) :: matel(:,:,:)
     INTEGER, OPTIONAL, INTENT(IN)  :: ndim
 
-    INTEGER ii, ndim_loc
+    INTEGER ndim_loc
 
     INTEGER,     ALLOCATABLE :: map(:)
     COMPLEX(dp), ALLOCATABLE :: wavef_ordered(:,:), sigma(:,:,:)

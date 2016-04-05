@@ -50,25 +50,19 @@ SUBROUTINE sigma_matel (ik0)
   USE mp_world,             ONLY : mpime
   USE mp_images,            ONLY : my_image_id, inter_image_comm
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
-  USE reorder_mod,          ONLY : reorder, create_map
   USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
 
 IMPLICIT NONE
   complex(DP), allocatable  :: sigma_band_con(:,:,:)
-  complex(DP), allocatable  :: sigma_g_ex(:,:)
   complex(DP)               ::   czero
   complex(DP)               ::   psic(dffts%nnr), vpsi(ngm)
   complex(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                  sigma_band_x(nbnd_sig, nbnd_sig, 1), vxc(nbnd_sig,nbnd_sig)
-  complex(DP), allocatable  ::   sigma(:,:,:)
   real(DP), allocatable     ::   wsigwin(:)
   real(DP)                  ::   w_ryd(nwsigma)
   real(DP)                  ::   one, zcut
   real(DP)    :: vtxc, etxc
   real(DP)    :: zero(3)
-  integer, allocatable      ::   map(:) 
-  integer, allocatable      ::   igkq_ig(:) 
-  integer, allocatable      ::   igkq_tmp(:) 
   integer                   ::   ikq, ikq_head
   integer                   ::   ig, iw, ibnd, jbnd, ios, ipol, ik0, ir
   integer                   ::   ng
@@ -81,10 +75,6 @@ IMPLICIT NONE
   real(DP), parameter :: eps=1.e-5_dp
 
 #define DIRECT_IO_FACTOR 8
-
-  ALLOCATE( map(npwx) )
-  allocate (igkq_tmp(npwx))
-  allocate (igkq_ig(npwx))
 
   one   = 1.0d0 
   czero = (0.0d0, 0.0d0)
@@ -243,10 +233,7 @@ IMPLICIT NONE
      endif
   endif
   if(allocated(sigma_band_con)) deallocate(sigma_band_con)
-  if(allocated(igkq_tmp)) deallocate(igkq_tmp)
-  if(allocated(igkq_ig))  deallocate(igkq_ig)
   if(allocated(sigma_band_exg)) deallocate(sigma_band_exg)
-  IF(ALLOCATED(map)) DEALLOCATE(map)
 
 call mp_barrier(inter_pool_comm)
 call mp_barrier(inter_image_comm)
