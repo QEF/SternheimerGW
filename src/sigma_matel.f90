@@ -51,7 +51,7 @@ SUBROUTINE sigma_matel (ik0)
   USE mp_images,            ONLY : my_image_id, inter_image_comm
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
   USE reorder_mod,          ONLY : reorder, create_map
-  USE sigma_expect_mod,     ONLY : sigma_expect
+  USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
 
 IMPLICIT NONE
   complex(DP), allocatable  :: sigma_band_con(:,:,:)
@@ -59,7 +59,7 @@ IMPLICIT NONE
   complex(DP)               ::   czero
   complex(DP)               ::   psic(dffts%nnr), vpsi(ngm)
   complex(DP)               ::   ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
-                                 sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
+                                 sigma_band_x(nbnd_sig, nbnd_sig, 1), vxc(nbnd_sig,nbnd_sig)
   complex(DP), allocatable  ::   sigma(:,:,:)
   real(DP), allocatable     ::   wsigwin(:)
   real(DP)                  ::   w_ryd(nwsigma)
@@ -126,10 +126,10 @@ IMPLICIT NONE
 
 !ONLY THE POOL WITH THIS KPOINT CALCULATES THE CORRECT MATRIX ELEMENT.
   vxc(:,:) = czero
-  sigma_band_ex (:, :) = czero
-  sigma_band_c (:,:,:) = czero
+  sigma_band_x = czero
+  sigma_band_c = czero
 
-  if (meta_ionode) THEN
+  IF (meta_ionode) THEN
       write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
                     npw, igk, g2kin )
@@ -167,8 +167,6 @@ IMPLICIT NONE
 
     IF( .NOT. do_sigma_exxG) THEN
 
-      ALLOCATE (sigma_g_ex (sigma_x_st%ngmt, sigma_x_st%ngmt))
-
       IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
           sigma_x_ngm = sigma_x_st%ngmt
       ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
@@ -179,41 +177,18 @@ IMPLICIT NONE
         CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
       END IF
 
-      ! read sigma_x from file
-      ios = 0 
-      READ( UNIT = iunsex, REC = ik0, IOSTAT = ios ) sigma_g_ex
-
-      ! if reading failed
-      IF (ios /= 0) THEN
-        WRITE(1000+mpime, '(5x, "Could not read Sigma_X file. Have you calculated it?")') 
-        sigma_band_ex = 0.0
-
-      ! evaluate expectation value of wave function
-      ELSE
-
-        ! create map for reordering
-        map = create_map(igk,sigma_x_st%ngmt)
-
-        ! reorder evc array so that it is compatible with current igk
-        CALL reorder(evc,map)
-
-        ! evaluate the expectation value
-        sigma_band_ex = sigma_expect( sigma_g_ex, evc(:sigma_x_st%ngmt,:) )
-
-        WRITE(1000+mpime,*) 
-        WRITE(1000+mpime,'(4x,"sigma_ex (eV)")')
-        WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_ex(:,:))*RYTOEV
-        WRITE(1000+mpime,*) 
-        WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_ex(:,:))*RYTOEV
-
-      END IF
-
-      DEALLOCATE(sigma_g_ex)
+      ! evaluate matrix elements for exchange
+      CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
+      WRITE(1000+mpime,*) 
+      WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
+      WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
+      WRITE(1000+mpime,*) 
+      WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
 
     ELSE ! do_sigma_exxG = .true.
 
       DO ibnd = 1, nbnd_sig
-        sigma_band_ex(ibnd,ibnd) = sigma_band_exg(ibnd)
+        sigma_band_x(ibnd,ibnd,1) = sigma_band_exg(ibnd)
       END DO
 
     END IF
@@ -221,7 +196,6 @@ IMPLICIT NONE
 !MATRIX ELEMENTS OF SIGMA_C:
     WRITE(1000+mpime,*) 
     WRITE(1000+mpime, '("sigma_c matrix element")') 
-    ALLOCATE (sigma(gcutcorr, gcutcorr,nwsigma)) 
 
 !For convergence tests corr_conv can be set at input lower than ecutsco.
 !This allows you to calculate the correlation energy at lower energy cutoffs
@@ -240,47 +214,11 @@ IMPLICIT NONE
     WRITE(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
     WRITE(1000+mpime, *)
 
-    ! read sigma from file
-    sigma = 0.0
+    ! evaluate expectation value of wave function
+    CALL sigma_expect_file(iunsigma,ik0,evc,sigma_c_ngm,igk,sigma_band_c,nwsigma)
+    WRITE (1000+mpime,'("Finished Sigma_c")')
 
-    IF(do_serial) THEN
-      DO iw = 1, nwsigma
-        CALL davcio (sigma(:,:, iw), lrsigma, iunsigma, iw, -1)
-      END DO
-    ELSE
-      ! let's us avoid crash if we haven't calculated one of these things yet:
-      READ( UNIT = iunsigma, REC = ik0, IOSTAT = ios ) sigma
-      WRITE(1000+mpime, *) ios
-
-      ! if reading sigma failed
-      IF (ios /= 0) THEN
-        WRITE(1000+mpime, '("Could not read Sigma_C file. Have you calculated it?")')
-        sigma_band_c (:,:,:) = czero
-
-      ! evaluate expectation value of wave function
-      ELSE
-
-        ! create map for reordering
-        map = create_map(igk,sigma_c_ngm)
-
-        ! read evc
-        CALL get_buffer (evc, lrwfc, iuwfc, ikq)
-
-        ! reorder evc array so that it is compatible with current igk
-        CALL reorder(evc,map)
-
-        ! evaluate the expectation value
-        sigma_band_c = sigma_expect( sigma, evc(:sigma_c_ngm,:) )
-
-        DEALLOCATE (sigma)
-        write (1000+mpime,'("Finished Sigma_c")')
-
-      END IF
-
-    END IF
-!Need to broadcast from the current pool to all the nodes
-
-  END If !on pool with K-point
+  END IF !on pool with K-point
   CALL mp_barrier(inter_pool_comm)
 
 !Now first pool should always have
@@ -294,14 +232,14 @@ IMPLICIT NONE
         enddo
         allocate (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
 !print selfenergy on the imaginary axis.
-        call print_matel_im(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
-        !call print_matel_im(2, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+        call print_matel_im(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+        !call print_matel_im(2, vxc(1,1), sigma_band_x(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
 !do analytic continuation and print selfenergy on the real axis.
         sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
         call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-        call print_matel(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
+        call print_matel(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
      else
-        call print_matel(ikq_head, vxc(1,1), sigma_band_ex(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+        call print_matel(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
      endif
   endif
   if(allocated(sigma_band_con)) deallocate(sigma_band_con)
