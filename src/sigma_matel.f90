@@ -46,9 +46,8 @@ SUBROUTINE sigma_matel (ik0)
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE mp_pools,             ONLY : inter_pool_comm
   USE mp_world,             ONLY : mpime
-  USE mp_images,            ONLY : my_image_id, inter_image_comm
+  USE mp_images,            ONLY : my_image_id
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
   USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
 
@@ -75,6 +74,8 @@ IMPLICIT NONE
   real(DP), parameter :: eps=1.e-5_dp
 
 #define DIRECT_IO_FACTOR 8
+
+  IF ( .NOT. meta_ionode ) RETURN
 
   one   = 1.0d0 
   czero = (0.0d0, 0.0d0)
@@ -119,123 +120,111 @@ IMPLICIT NONE
   sigma_band_x = czero
   sigma_band_c = czero
 
-  IF (meta_ionode) THEN
-      write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
-      CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-                    npw, igk, g2kin )
-      npwq = npw
-      call get_buffer (evc, lrwfc, iuwfc, ikq)
-      zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+  write(1000+mpime,'(/4x,"k0(",i3," ) = (", 3f7.3, " )")') ikq, (xk(ipol,ikq) , ipol = 1, 3)
+  CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
+                npw, igk, g2kin )
+  npwq = npw
+  call get_buffer (evc, lrwfc, iuwfc, ikq)
+  zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
 ! generate v_xc(r) in real space:
-      v%of_r(:,:) = (0.0d0)
-      CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
-      write(1000+mpime, '("Taking Matels.")')
-      write(1000+mpime, '("Taking NPWQ.", i4)') npwq
-      write(1000+mpime, '("my_image_id", i4)') my_image_id
-      do jbnd = 1, nbnd_sig
-         psic = czero
-         do ig = 1, npwq
-            psic ( nls (igk(ig)) ) = evc(ig, jbnd)
-         enddo
+  v%of_r(:,:) = (0.0d0)
+  CALL v_xc( rho, rho_core, rhog_core, etxc, vtxc, v%of_r )
+  write(1000+mpime, '("Taking Matels.")')
+  write(1000+mpime, '("Taking NPWQ.", i4)') npwq
+  write(1000+mpime, '("my_image_id", i4)') my_image_id
+  do jbnd = 1, nbnd_sig
+     psic = czero
+     do ig = 1, npwq
+        psic ( nls (igk(ig)) ) = evc(ig, jbnd)
+     enddo
 !Need to do this fft according to igkq arrays and switching between serial/parallel routines. 
-         CALL invfft ('Wave', psic(:), dffts)
-         do ir = 1, dfftp%nnr
-            psic (ir) = psic(ir) * v%of_r (ir,1)
-         enddo
-         CALL fwfft ('Wave', psic(:), dffts)
-         do ig = 1, npwq
-            vpsi(ig) = psic(nls(igk(ig)))
-         enddo
-         do ibnd = 1, nbnd_sig
-            vxc(ibnd,jbnd) = ZdoTC (npwq, evc (1, ibnd), 1, vpsi, 1)
-         enddo
-      enddo
-      write(1000+mpime, '(4x,"VXC (eV)")')
-      write(1000+mpime, '(8(1x,f7.3))') real(vxc(:,:))*RYTOEV
-      write(1000+mpime, '("Max number Plane Waves WFC ", i4)') npwx
-      write(1000+mpime, '("Sigma_Ex Matrix Element")') 
+     CALL invfft ('Wave', psic(:), dffts)
+     do ir = 1, dfftp%nnr
+        psic (ir) = psic(ir) * v%of_r (ir,1)
+     enddo
+     CALL fwfft ('Wave', psic(:), dffts)
+     do ig = 1, npwq
+        vpsi(ig) = psic(nls(igk(ig)))
+     enddo
+     do ibnd = 1, nbnd_sig
+        vxc(ibnd,jbnd) = ZdoTC (npwq, evc (1, ibnd), 1, vpsi, 1)
+     enddo
+  enddo
+  write(1000+mpime, '(4x,"VXC (eV)")')
+  write(1000+mpime, '(8(1x,f7.3))') real(vxc(:,:))*RYTOEV
+  write(1000+mpime, '("Max number Plane Waves WFC ", i4)') npwx
+  write(1000+mpime, '("Sigma_Ex Matrix Element")') 
 
-    IF( .NOT. do_sigma_exxG) THEN
+  IF( .NOT. do_sigma_exxG) THEN
 
-      IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
-          sigma_x_ngm = sigma_x_st%ngmt
-      ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
-        DO ng = 1, ngm
-           IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
-        END DO
-      ELSE
-        CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
-      END IF
-
-      ! evaluate matrix elements for exchange
-      CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
-      WRITE(1000+mpime,*) 
-      WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
-      WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
-      WRITE(1000+mpime,*) 
-      WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
-
-    ELSE ! do_sigma_exxG = .true.
-
-      DO ibnd = 1, nbnd_sig
-        sigma_band_x(ibnd,ibnd,1) = sigma_band_exg(ibnd)
+    IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
+        sigma_x_ngm = sigma_x_st%ngmt
+    ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
+      DO ng = 1, ngm
+         IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
       END DO
-
+    ELSE
+      CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
     END IF
 
-!MATRIX ELEMENTS OF SIGMA_C:
+    ! evaluate matrix elements for exchange
+    CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
     WRITE(1000+mpime,*) 
-    WRITE(1000+mpime, '("sigma_c matrix element")') 
+    WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
+    WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
+    WRITE(1000+mpime,*) 
+    WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
+
+  ELSE ! do_sigma_exxG = .true.
+
+    DO ibnd = 1, nbnd_sig
+      sigma_band_x(ibnd,ibnd,1) = sigma_band_exg(ibnd)
+    END DO
+
+  END IF
+
+!MATRIX ELEMENTS OF SIGMA_C:
+  WRITE(1000+mpime,*) 
+  WRITE(1000+mpime, '("sigma_c matrix element")') 
 
 !For convergence tests corr_conv can be set at input lower than ecutsco.
 !This allows you to calculate the correlation energy at lower energy cutoffs
-    IF (corr_conv == sigma_c_st%ecutt) THEN
-      sigma_c_ngm = gcutcorr
-    ELSE IF(corr_conv < sigma_c_st%ecutt .AND. corr_conv > 0.0) THEN
-      DO ng = 1, ngm
-        IF (gl( igtongl (ng) ) <= (corr_conv/tpiba2)) sigma_c_ngm = ng
-      END DO
-    ELSE
-      CALL errore("sigma_matel", "Corr Conv must be greater than zero and less than ecut_sco", 1)
-    END IF
+  IF (corr_conv == sigma_c_st%ecutt) THEN
+    sigma_c_ngm = gcutcorr
+  ELSE IF(corr_conv < sigma_c_st%ecutt .AND. corr_conv > 0.0) THEN
+    DO ng = 1, ngm
+      IF (gl( igtongl (ng) ) <= (corr_conv/tpiba2)) sigma_c_ngm = ng
+    END DO
+  ELSE
+    CALL errore("sigma_matel", "Corr Conv must be greater than zero and less than ecut_sco", 1)
+  END IF
 
-    WRITE(1000+mpime, *)
-    WRITE(1000+mpime, '(5x, "G-Vects CORR_CONV:")')
-    WRITE(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
-    WRITE(1000+mpime, *)
+  WRITE(1000+mpime, *)
+  WRITE(1000+mpime, '(5x, "G-Vects CORR_CONV:")')
+  WRITE(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
+  WRITE(1000+mpime, *)
 
-    ! evaluate expectation value of wave function
-    CALL sigma_expect_file(iunsigma,ik0,evc,sigma_c_ngm,igk,sigma_band_c,nwsigma)
-    WRITE (1000+mpime,'("Finished Sigma_c")')
+  ! evaluate expectation value of wave function
+  CALL sigma_expect_file(iunsigma,ik0,evc,sigma_c_ngm,igk,sigma_band_c,nwsigma)
+  WRITE (1000+mpime,'("Finished Sigma_c")')
 
-  END IF !on pool with K-point
-  CALL mp_barrier(inter_pool_comm)
-
-!Now first pool should always have
-!the kpoint we are looking for.
-  if(meta_ionode) THEN
-     if(do_imag) then 
+  if(do_imag) then 
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-        allocate (wsigwin(nwsigwin))
-        do iw = 1, nwsigwin
-            wsigwin(iw) = wsig_wind_min + (wsig_wind_max-wsig_wind_min)/float(nwsigwin-1)*float(iw-1)
-        enddo
-        allocate (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
+    allocate (wsigwin(nwsigwin))
+    do iw = 1, nwsigwin
+        wsigwin(iw) = wsig_wind_min + (wsig_wind_max-wsig_wind_min)/float(nwsigwin-1)*float(iw-1)
+    enddo
+    allocate (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
 !print selfenergy on the imaginary axis.
-        call print_matel_im(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
-        !call print_matel_im(2, vxc(1,1), sigma_band_x(1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+    call print_matel_im(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
 !do analytic continuation and print selfenergy on the real axis.
-        sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
-        call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-        call print_matel(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-     else
-        call print_matel(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
-     endif
+    sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
+    call sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
+    call print_matel(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
+  else
+    call print_matel(ikq_head, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
   endif
   if(allocated(sigma_band_con)) deallocate(sigma_band_con)
   if(allocated(sigma_band_exg)) deallocate(sigma_band_exg)
 
-call mp_barrier(inter_pool_comm)
-call mp_barrier(inter_image_comm)
-return
 end SUBROUTINE sigma_matel
