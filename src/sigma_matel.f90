@@ -22,7 +22,7 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE sigma_matel (ik0)
   USE io_global,            ONLY : stdout, meta_ionode
-  USE io_files,             ONLY : prefix
+  USE io_files,             ONLY : diropn 
   USE buffers,              ONLY : get_buffer, close_buffer
   USE kinds,                ONLY : DP
   USE kinds_gw,             ONLY : i8b
@@ -35,7 +35,7 @@ SUBROUTINE sigma_matel (ik0)
   USE gvecw,                ONLY : ecutwfc
   USE qpoint,               ONLY : npwq
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
-  USE control_gw,           ONLY : lgamma, do_imag, do_serial, do_sigma_exxG, tmp_dir_coul
+  USE control_gw,           ONLY : lgamma, do_imag, do_sigma_exxG !, tmp_dir_coul
   USE wavefunctions_module, ONLY : evc
   USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
                                    sigma_band_exg, gcutcorr
@@ -64,17 +64,13 @@ IMPLICIT NONE
   real(DP)    :: vtxc, etxc
   real(DP)    :: zero(3)
   integer                   ::   ikq, ikq_head
-  integer                   ::   ig, iw, ibnd, jbnd, ios, ipol, ik0, ir
+  integer                   ::   ig, iw, ibnd, jbnd, ipol, ik0, ir
   integer                   ::   ng
   integer     :: sigma_c_ngm, sigma_x_ngm
   integer     :: kpoolid(nkstot), iqrec1(nkstot)
-  integer(i8b) :: unf_recl
   logical, external :: eqvect
-  logical :: found_k
-  character(len=256) :: tempfile, filename
+  logical :: found_k, exst, opnd
   real(DP), parameter :: eps=1.e-5_dp
-
-#define DIRECT_IO_FACTOR 8
 
   IF ( .NOT. meta_ionode ) RETURN
 
@@ -99,24 +95,6 @@ IMPLICIT NONE
   kpoolid = 0
   iqrec1  = 0
 
-!All pools need access to sigma file now:
-  filename = trim(prefix)//"."//trim(filsigc)//"1"
-  tempfile = trim(tmp_dir_coul) // trim(filename)
-  unf_recl = DIRECT_IO_FACTOR * int(lrsigma, kind=kind(unf_recl))
-  open(iunsigma, file = trim(adjustl(tempfile)), iostat = ios, &
-  form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-  write(1000+mpime,*) tempfile, ios
-
-  if(.not. do_sigma_exxG) then
-     filename = trim(prefix)//"."//trim(filsigx)//"1"
-     tempfile = trim(tmp_dir_coul) // trim(filename)
-     unf_recl = DIRECT_IO_FACTOR * int(lrsex, kind=kind(unf_recl))
-     open(iunsex, file = trim(adjustl(tempfile)), iostat = ios, &
-     form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-     write(1000+mpime,*) tempfile, ios
-  endif
-
-!ONLY THE POOL WITH THIS KPOINT CALCULATES THE CORRECT MATRIX ELEMENT.
   vxc(:,:) = czero
   sigma_band_x = czero
   sigma_band_c = czero
@@ -158,6 +136,11 @@ IMPLICIT NONE
 
   IF( .NOT. do_sigma_exxG) THEN
 
+    ! open file containing exchange part of sigma
+    INQUIRE( UNIT=iunsex, OPENED=opnd )
+    IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
+
+    ! sanity check
     IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
         sigma_x_ngm = sigma_x_st%ngmt
     ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
@@ -187,6 +170,10 @@ IMPLICIT NONE
 !MATRIX ELEMENTS OF SIGMA_C:
   WRITE(1000+mpime,*) 
   WRITE(1000+mpime, '("sigma_c matrix element")') 
+
+  ! open file containing correlation part of sigma
+  INQUIRE( UNIT=iunsigma, OPENED=opnd )
+  IF (.NOT. opnd) CALL diropn( iunsigma, filsigc, lrsigma, exst )
 
 !For convergence tests corr_conv can be set at input lower than ecutsco.
 !This allows you to calculate the correlation energy at lower energy cutoffs
