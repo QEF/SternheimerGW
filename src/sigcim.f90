@@ -32,7 +32,7 @@ subroutine sigma_c_im(ik0)
   use control_gw,    only : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
                             trunc_2d, tmp_dir_coul, high_io
   use klist,         only : wk, xk, nkstot, nks, lgauss
-  use wvfct,         only : nbnd, npw, npwx, igk, g2kin, et
+  use wvfct,         only : nbnd, npw, npwx, igk, g2kin
   use eqv,           only : evq
   use freq_gw,       only : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &

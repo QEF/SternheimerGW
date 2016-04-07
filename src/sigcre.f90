@@ -34,7 +34,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul
   USE klist,         ONLY : wk, xk, nkstot, nks
-  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin
   USE eqv,           ONLY : evq
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
