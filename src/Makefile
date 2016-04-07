@@ -59,7 +59,6 @@ dv_of_drho.o\
 dvqpsi_us.o\
 unfold_w.o\
 invert_epsilon.o\
-green_linsys_shift.o\
 green_linsys_shift_im.o\
 green_linsys_shift_re.o\
 h_psi_all.o\
