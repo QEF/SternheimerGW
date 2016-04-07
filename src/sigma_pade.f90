@@ -28,7 +28,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   use gwsigma,              only : ngmsig, nbnd_sig
   use ener,                 only : ef
   use freq_gw,              only : fpol, fiu, nfs, nwsigma, wsigma
-  use wvfct,                only : nbnd, npw, npwx, igk, g2kin, et
+  use wvfct,                only : nbnd, npw, npwx, igk, g2kin
   use gvecw,                only : ecutwfc
   use klist,                only : lgauss
   use control_gw,           only : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
@@ -60,7 +60,6 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
     endif
    !mu = ehomo
    !write(6, '(f14.7)'), mu 
-   !mu = et(nbnd_occ(1), 1) + 0.5d0*(et(nbnd_occ(1)+1, 1) - et(nbnd_occ(1), 1))
     w_ryd(:)  = wsigma(:)/RYTOEV
     w_ryd2(:) = wsigwin(:)/RYTOEV
 if (double_grid) then
