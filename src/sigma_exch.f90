@@ -28,7 +28,7 @@ SUBROUTINE sigma_exch(ik0)
   USE control_gw,    ONLY : eta, nbnd_occ, truncation, multishift, lgamma
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk, wfc_dir
-  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin
   USE gvecw,         ONLY : ecutwfc
   USE wavefunctions_module, ONLY : evc
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
