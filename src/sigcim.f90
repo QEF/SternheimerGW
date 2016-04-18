@@ -40,7 +40,7 @@ subroutine sigma_c_im(ik0)
                             w0pmw, wgtcoul
   use units_gw,      only : iuncoul, iungreen, iunsigma, lrsigma,&
                             lrcoul, lrgrn, iuwfc, lrwfc
-  use qpoint,        only : xq, npwq, igkq, nksq, ikks, ikqs
+  use qpoint,        only : xq, npwq, nksq, ikks, ikqs
   use gvect,         only : g, ngm, nl
   use cell_base,     only : tpiba2, tpiba, omega, alat, at,bg
   use symm_base,     only : nsym, s, time_reversal, t_rev, ftau, invs, nrot, invsym
@@ -105,6 +105,7 @@ subroutine sigma_c_im(ik0)
   integer :: rec0, ios
   integer :: counter, ierr
   integer :: inversym, screening
+  integer :: kpt
 !SYMMETRY
   integer     :: isym, jsym, isymop, nig0
 !For G^NA
@@ -153,24 +154,16 @@ subroutine sigma_c_im(ik0)
    write(stdout,'(4x, "gcutcorr", i4 )') gcutcorr
    allocate (wqtr(nq1*nq2*nq3))
    allocate (xqtr(3, nq1*nq2*nq3))
+<<<<<<< .mine
+=======
 !Generate grid of kpoints with inversion symmetry.
    !    call kpoint_grid(nsym, .false., .false., s, t_rev,& 
    !                     bg, nq1*nq2*nq3, 0,0,0, nq1, nq2, nq3, nqstr, xqtr, wqtr)
    !else
    !    nqstr = nqs
    !endif
+>>>>>>> .r806
    write(stdout,'(4x, "num of q points in convolution: ", i4 )') nqs
-   !do iq = 1, nqstr
-   !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
-   !end do
-   !do iq = 1, nqstr
-   !   xq(:) = xqtr(:, iq)
-   !   write(stdout, '(5x,i3, 4f14.9)') iq, xqtr(1,iq), xqtr(2,iq), xqtr(3,iq), wqtr(iq)
-   !   trev = .false.
-   !   call find_trev(xq, s, invs, iqtr,isym,trev)
-   !   write(stdout,*) trev
-   !   write(stdout, '(5x,i3, 4f14.9)') iqtr, x_q(1,iqtr), x_q(2,iqtr), x_q(3,iqtr), wq(iqtr)
-   !enddo
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
 !2D Truncation
@@ -209,10 +202,10 @@ subroutine sigma_c_im(ik0)
      xq(:) = x_q(:,iq)
      CALL star_q(xq(1), at, bg, nsym, s, invs, nqstar, sxq, isq, nsq, imq, .false. )
    !  write( 1000+mpime, * )
-   !  write( 1000+mpime, '(5x,a,i4)') 'Number of q in the star = ', nqstar
-   !  write( 1000+mpime, '(5x,a)') 'List of q in the star:'
-   !  write( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqstar)
-   !  write( 1000+mpime, '(7x,i4,i4)') (iq1, isq(iq1), iq1=1,nsym)
+     write( 1000+mpime, '(5x,a,i4)') 'Number of q in the star = ', nqstar
+     write( 1000+mpime, '(5x,a)') 'List of q in the star:'
+     write( 1000+mpime, '(7x,i4,i4,i4,3f14.9)') (iq1, nsq(iq1), isq(iq1), (sxq(i,iq1), i=1,3), iq1=1,nqstar)
+     write( 1000+mpime, '(7x,i4,i4)') (iq1, isq(iq1), iq1=1,nsym)
      cprefac = wq(iq)*dcmplx(-1.0d0, 0.0d0)/tpi
      do iq1 = 1, nqstar
         scrcoul_g(:,:,:) = dcmplx(0.0d0, 0.0d0)
@@ -224,30 +217,19 @@ subroutine sigma_c_im(ik0)
                if (nsymrot == 1) isymop=isym
            endif
         enddo
-        !do iw = 1, nfs
-        !   scrcoul_pade_g(:,:) = scrcoul_g(:,:,iw)
-        !   do ig = 1, gcutcorr
-        !      do igp = 1, gcutcorr
-!\eps^-1_{Sq}(\G,\G') = \eps^{-1}{q}(s^{-1}G,S^{-1}G')
-                 !scrcoul_g(gmapsym(ig,invs(isymop)), gmapsym(igp,invs(isymop)), iw) = scrcoul_pade_g(ig,igp)
-                 !scrcoul_g(gmapsym(ig,invs(isymop)), gmapsym(igp,invs(isymop)), iw) = scrcoul_pade_g(ig,igp)
-        !         scrcoul_g(ig, igp, iw) = scrcoul_pade_g(gmapsym(ig,isymop),gmapsym(igp,isymop))
-        !      enddo
-        !   enddo
-        !enddo
         if(nsymrot == 0) then
-           call errore('dfile_star','no symmetry relates q at star(q)',iq)
+           call errore('dfile_star','no symmetry relates q at star(q)', iq)
         endif
        !call rotate(xq(1), aq, s, nsym, invs(isymop))
-        xk1 = xk_kpoints(:,ik0) - sxq(:,iq1) 
+        xk1  = xk_kpoints(:,ik0) - sxq(:,iq1) 
         call coulpade(scrcoul_g(1,1,1), xq(:))
-        call green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
-        nig0    = 1
+        call green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul, iq)
+        nig0 = 1
         if(iw0stop-iw0start+1.gt.0) THEN
-           do iw0 = iw0start, iw0stop
+           do iw0   = iw0start, iw0stop
               do iw = 1, nwcoul
-                 dz =  dcmplx(float(nsq(iq1))*nsymm1*wgtcoulry(iw),0.0d0)*cprefac
-                 call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)) )
+                 dz = dcmplx(float(nsq(iq1))*nsymm1*wgtcoulry(iw),0.0d0)*cprefac
+                 call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_ryd(iw)-w_rydsig(iw0)))
                  call sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw), sigma_g(1,1,iw0), gmapsym(1,1))
                  call construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), abs(w_rydsig(iw0)+w_ryd(iw)))
                  call sigprod(isymop, dz, scrcoul_pade_g(1,1), greenf_g(1,1,iw+nwcoul), sigma_g(1,1,iw0), gmapsym(1,1))

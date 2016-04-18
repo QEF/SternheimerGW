@@ -113,6 +113,8 @@ SUBROUTINE sigma_grids()
    sigma_c_st%ecutt   = ecutsco
    sigma_c_st%gcutmt  = ecutsco/tpiba2
    gkcut = (SQRT (sigma_c_st%ecutt) / tpiba + gkcut)**2
+   CALL mp_max (gkcut, inter_pool_comm )
+
 !Generate auxilliary correlation grid.
   do ng = 1, ngm
      !if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) gcutcorr  = ng

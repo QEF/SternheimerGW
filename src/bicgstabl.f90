@@ -38,9 +38,9 @@ USE mp_global,   ONLY: intra_pool_comm
 USE mp,          ONLY: mp_sum
 USE control_gw,  ONLY: maxter_green
 USE units_gw,    ONLY: iunresid, lrresid, iunalphabeta, lralphabeta
-USE mp_global,   ONLY: inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
-                        nproc_pool, nproc, me_pool, my_pool_id, npool
-USE mp,          ONLY : mp_barrier, mp_bcast, mp_sum
+!USE mp_global,   ONLY: inter_pool_comm, intra_pool_comm, mp_global_end, mpime, &
+!                        nproc_pool, nproc, me_pool, my_pool_id, npool
+!USE mp,          ONLY : mp_barrier, mp_bcast, mp_sum
 
 implicit none
 
@@ -360,7 +360,7 @@ external cg_psi      ! input: the routine computing cg_psi
 100 continue
 
   niters =  iter
-  kter   =  kter_eff
+  kter   =  iter !kter_eff
   deallocate (conv)
   deallocate (a,c)
   deallocate (g, t, h, hold)

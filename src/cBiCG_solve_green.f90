@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
+SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, &
     ndmx, ndim, ethr, ik, kter, conv_root, anorm, nbnd, npol, cw, niters, tprec)
 !-----------------------------------------------------------------------
 !
@@ -62,8 +62,7 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   real(DP),    allocatable :: rho (:), rhoold (:), a(:), c(:), astar(:), cstar(:)
   real(DP) :: kter_eff
   real(DP)  :: anorm,   &        ! output: the norm of the error in the solution
-               ethr,    &        ! input: the required precision
-               h_diag(ndmx,nbnd) ! input: an estimate of ( H - \epsilon )
+               ethr              ! input: the required precision
 
   integer :: iter, ibnd, lbnd
   integer , allocatable :: conv (:)
@@ -129,7 +128,7 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
         IF (npol==2) THEN
            do ibnd = 1, nbnd
               call zaxpy (ndim, (-1.d0,0.d0), d0psi(ndmx+1,ibnd), 1, &
-                                              g(ndmx+1,ibnd), 1)
+                          g(ndmx+1,ibnd), 1)
               gt(:,ibnd) = dconjg ( g(:,ibnd) )
            enddo
         END IF

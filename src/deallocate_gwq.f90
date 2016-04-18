@@ -45,6 +45,16 @@ subroutine deallocate_gwq
   IMPLICIT NONE
   INTEGER :: ik, ipol
 
+
+  !IMPORTANT igk arrays need to be nullified/deallocated???
+  if (lgamma) then
+     if(associated(evq)) nullify(evq)
+     if(associated(igkq)) nullify(igkq)
+  else
+     if(associated(evq)) deallocate(evq)
+     if(associated(igkq)) deallocate(igkq)
+  end if
+
   if(allocated(dvpsi)) deallocate (dvpsi)    
   if(allocated(dpsi)) deallocate ( dpsi)    
   if(allocated(vlocq)) deallocate (vlocq)
