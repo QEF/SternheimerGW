@@ -154,12 +154,15 @@ subroutine sigma_c_im(ik0)
    write(stdout,'(4x, "gcutcorr", i4 )') gcutcorr
    allocate (wqtr(nq1*nq2*nq3))
    allocate (xqtr(3, nq1*nq2*nq3))
+<<<<<<< .mine
+=======
 !Generate grid of kpoints with inversion symmetry.
    !    call kpoint_grid(nsym, .false., .false., s, t_rev,& 
    !                     bg, nq1*nq2*nq3, 0,0,0, nq1, nq2, nq3, nqstr, xqtr, wqtr)
    !else
    !    nqstr = nqs
    !endif
+>>>>>>> .r806
    write(stdout,'(4x, "num of q points in convolution: ", i4 )') nqs
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
