@@ -1,9 +1,25 @@
-  !-----------------------------------------------------------------------
-  ! Copyright (C) 2010-2015 Henry Lambert, Feliciano Giustino
-  ! This file is distributed under the terms of the GNU General Public         
-  ! License. See the file `LICENSE' in the root directory of the               
-  ! present distribution, or http://www.gnu.org/copyleft.gpl.txt .
-  !-----------------------------------------------------------------------
+!------------------------------------------------------------------------------
+!
+! This file is part of the Sternheimer-GW code.
+! 
+! Copyright (C) 2010 - 2016 
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! Sternheimer-GW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Sternheimer-GW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Sternheimer-GW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
 SUBROUTINE coulomb_q0G0(iq, eps_m) 
 !-----------------------------------------------------------------------
 ! This subroutine is the main driver of the COULOMB self consistent cycle
@@ -21,9 +37,8 @@ SUBROUTINE coulomb_q0G0(iq, eps_m)
   USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
                          solve_direct, do_epsil, do_q0_only
   USE partial,    ONLY : done_irr, comp_irr
-  USE modes,      ONLY : nirr, npert, npertx
   USE uspp_param, ONLY : nhm
-  USE eqv,        ONLY : drhoscfs, dvbare
+  USE eqv_gw,           ONLY : drhoscfs, dvbare
   USE paw_variables,    ONLY : okpaw
   USE noncollin_module, ONLY : noncolin, nspin_mag
   USE gwsigma,     ONLY : sigma_c_st
@@ -70,7 +85,7 @@ SUBROUTINE coulomb_q0G0(iq, eps_m)
   CALL start_clock ('coulomb')
 
 if(solve_direct) then
-  ALLOCATE (drhoscfs(dfftp%nnr, nfs))    
+  ALLOCATE (drhoscfs(dfftp%nnr, nfs, 1))    
 else
 !for self-consistent solution we only consider one
 !frequency at a time. To save memory and time and lines of codes etc.
@@ -78,7 +93,7 @@ else
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
   WRITE(stdout, '(4x,4x,"nspinmag", i4)'), nspin_mag
-  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag))    
+  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, 1))    
 endif
 irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
@@ -94,7 +109,7 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        RETURN
     endif
     IF(solve_direct) THEN
-       drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+       drhoscfs      = dcmplx(0.0d0, 0.0d0)
        dvbare(:)     = dcmplx(0.0d0, 0.0d0)
        dvbare (nls(1)) = dcmplx(1.d0, 0.d0)
        CALL invfft('Smooth', dvbare, dffts)
@@ -102,27 +117,27 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        CALL fwfft('Smooth', dvbare, dffts)
        CALL fwfft('Smooth', dvbare, dffts)
        DO iw = 1, nfs
-          CALL fwfft('Dense', drhoscfs(:,iw), dffts)
-          WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(1),iw) &
+          CALL fwfft('Dense', drhoscfs(:,iw,1), dffts)
+          WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(1),iw,1) &
 &                                                           + dvbare(nls(1))
-          eps_m(iw) = drhoscfs(nls(1),iw) + 1.0d0
+          eps_m(iw) = drhoscfs(nls(1),iw,1) + 1.0d0
        ENDDO
     ELSE
      DO iw = 1, nfs
-       drhoscfs(:,:) = dcmplx(0.0d0, 0.0d0)
+       drhoscfs      = dcmplx(0.0d0, 0.0d0)
        dvbare(:)     = dcmplx(0.0d0, 0.0d0)
        dvbare (nls(1)) = dcmplx(1.d0, 0.d0)
        CALL invfft('Smooth', dvbare, dffts)
        CALL solve_linter (dvbare, iw, drhoscfs)
        CALL fwfft('Smooth', dvbare, dffts)
        DO isp =1 , nspin_mag
-          CALL fwfft('Dense', drhoscfs(:,isp), dffts)
+          CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)
        ENDDO
        IF(ionode) THEN
-         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nls(1), 1) + dvbare(nls(1))
+         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nls(1), 1, 1) + dvbare(nls(1))
        ENDIF
      !(eps_{M}^{-1} - 1)
-       eps_m(iw) = drhoscfs(nls(1),1)
+       eps_m(iw) = drhoscfs(nls(1),1,1)
      ENDDO
     ENDIF
 545 CONTINUE
