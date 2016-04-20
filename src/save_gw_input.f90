@@ -57,8 +57,8 @@ MODULE save_gw
       !
       nat_todo=nat_todo_save
       nrapp=nrapp_save
-      list=list_save
-      atomo=atomo_save
+!      list=list_save
+!      atomo=atomo_save
       tmp_dir=tmp_dir_save
 
       RETURN
