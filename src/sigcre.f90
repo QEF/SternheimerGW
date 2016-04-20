@@ -26,6 +26,7 @@ SUBROUTINE sigma_c_re(ik0)
 !Requires access to the occupied staets \psi_{n\k}(\r)
 !Therefore we use the same tricks as for sigma_exch.f90
   USE kinds,         ONLY : DP
+  USE kinds_gw,      ONLY : i8b
   USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
   USE io_files,      ONLY : iunigk, prefix, tmp_dir
   USE lsda_mod,      ONLY : nspin
@@ -115,7 +116,7 @@ SUBROUTINE sigma_c_re(ik0)
 !File related:
   character(len=256) :: tempfile, filename
 !Complete file name
-  integer*8 :: unf_recl
+  integer(i8b) :: unf_recl
   REAL (DP)   :: xk1(3), aq(3)
   REAL(DP)    :: sxq(3,48), xqs(3,48)
   INTEGER     :: imq, isq(48), nqstar, nkpts

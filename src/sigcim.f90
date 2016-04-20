@@ -23,6 +23,7 @@
 subroutine sigma_c_im(ik0) 
 !G TIMES W PRODUCT sigma_correlation_imaginary frequency.
   use kinds,         only : DP
+  use kinds_gw,      only : i8b
   use io_global,     only : stdout, ionode_id, ionode, meta_ionode
   use io_files,      only : iunigk, prefix, tmp_dir
   use lsda_mod,      only : nspin
@@ -113,7 +114,7 @@ subroutine sigma_c_im(ik0)
   integer     :: ibnd
   integer     :: iw0start, iw0stop
   integer     :: nnr, nqstr
-  integer*8   :: unf_recl
+  integer(i8b):: unf_recl
 !For running PWSCF need some variables 
   logical             :: pade_catch
   logical             :: found_q, trev

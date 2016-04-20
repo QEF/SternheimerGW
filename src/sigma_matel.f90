@@ -25,6 +25,7 @@ SUBROUTINE sigma_matel (ik0)
   USE io_files,             ONLY : prefix, iunigk, wfc_dir
   USE buffers,              ONLY : get_buffer, close_buffer
   USE kinds,                ONLY : DP
+  USE kinds_gw,             ONLY : i8b
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
@@ -85,7 +86,7 @@ IMPLICIT NONE
   integer     :: kpoolid(nkstot), iqrec1(nkstot)
   integer     :: nbase, nksloc, rest, mypoolid
   logical    ::   do_band, do_iq, setup_pw, exst, single_line
-  integer*8 :: unf_recl
+  integer(i8b) :: unf_recl
   logical, external :: eqvect
   logical :: found_k
   character (len=256) :: poolnum

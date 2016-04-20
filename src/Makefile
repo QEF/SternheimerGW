@@ -10,6 +10,7 @@ MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_F
 IFLAGS=
 
 GWOBJS = \
+kind_gw.o\
 gwcom.o\
 version.o\
 gw.o\

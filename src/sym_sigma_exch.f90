@@ -22,6 +22,7 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE sym_sigma_exch(ik0)
   USE kinds,         ONLY : DP
+  USE kinds_gw,      ONLY : i8b
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d, multishift
@@ -77,7 +78,7 @@ IMPLICIT NONE
   INTEGER     :: isymop
   character (len=256) :: tempfile
   character (len=256) :: poolnum
-  integer*8 :: unf_recl
+  integer(i8b) :: unf_recl
   INTEGER   :: iunwfc1
   INTEGER   :: kpoolid(nkstot), iqrec1(nkstot)
   INTEGER :: nbase, nksloc, rest, mypoolid

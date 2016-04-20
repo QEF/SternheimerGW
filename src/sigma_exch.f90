@@ -22,6 +22,7 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE sigma_exch(ik0)
   USE kinds,         ONLY : DP
+  USE kinds_gw,      ONLY : i8b
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d, multishift, lgamma
@@ -81,7 +82,7 @@ IMPLICIT NONE
   LOGICAL    :: limit
   LOGICAL    :: found_k
   LOGICAL    :: found_q, inv_q
-  INTEGER*8  :: unf_recl
+  INTEGER(i8b) :: unf_recl
   CHARACTER (len=256) :: form_str 
   CHARACTER (len=256) :: tempfile
   CHARACTER (len=256) :: poolnum
