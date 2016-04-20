@@ -106,6 +106,8 @@ all : version libgw.a gw.x
 version : 
 	sh update_version
 
+version.f90 : version
+
 gw.x : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ gw.o libgw.a \
 		 $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
@@ -117,6 +119,8 @@ libgw.a : $(GWOBJS)
 
 clean :
 	- rm *.x *.o *.a *.mod
+
+.PHONY: all version clean
 
 #include make.depend
 # DO NOT DELETE
