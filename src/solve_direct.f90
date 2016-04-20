@@ -82,6 +82,9 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE mp_world,        ONLY : mpime
   USE mp_pools,             ONLY : inter_pool_comm
   USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
+#ifdef __NAG
+  USE f90_unix_io,     ONLY : flush
+#endif
 
   implicit none
   !

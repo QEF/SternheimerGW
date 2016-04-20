@@ -84,6 +84,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE gvecs,           ONLY : nls, doublegrid
   USE fft_base,        ONLY : dfftp, dffts
   USE fft_interfaces,  ONLY : invfft, fwfft
+#ifdef __NAG
+  USE f90_unix_io,     ONLY : flush
+#endif
 
   implicit none
 
