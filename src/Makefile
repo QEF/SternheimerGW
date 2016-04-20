@@ -28,7 +28,6 @@ allocate_gwq.o\
 openfilq.o\
 gwq_setup.o\
 prepare_q.o\
-prepare_q0.o\
 do_stern.o\
 stern_symm.o\
 gmap_sym.o\
@@ -36,13 +35,11 @@ gwq_init.o\
 setup_nscf_green.o\
 run_nscf.o\
 coulomb.o\
-coulomb_q0G0.o\
 solve_direct.o\
 solve_linter.o\
 incdrhoscf_w.o\
 dgradcorr.o\
 coul_multishift.o\
-bicgstabl.o\
 cBiCG_solve_green.o\
 cBiCG_solve_coul.o\
 cBiCG_solve.o\
@@ -109,8 +106,6 @@ all : version libgw.a gw.x
 version : 
 	sh update_version
 
-version.f90 : version
-
 gw.x : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ gw.o libgw.a \
 		 $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
@@ -122,8 +117,6 @@ libgw.a : $(GWOBJS)
 
 clean :
 	- rm *.x *.o *.a *.mod
-
-.PHONY: all version clean
 
 #include make.depend
 # DO NOT DELETE

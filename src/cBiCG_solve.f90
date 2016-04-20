@@ -144,7 +144,7 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
     ! gt   = conjg( g)
     ! r    = b - Ax 
     ! rt   = conjg ( r )
-    if (iter .eq. 1) then
+     if (iter .eq. 1) then
         !rt = conjg (r) 
         call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
         do ibnd = 1, nbnd
@@ -159,7 +159,8 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
            if(tprec) call cg_psi(ndmx, ndim, 1, h(1,ibnd), h_diag(1,ibnd) )
            call zcopy (ndim, h(1,ibnd), 1, ht(1, ibnd), 1)
         enddo
-    endif
+     endif
+
 !HL: Convergence check... 
     lbnd = 0
     do ibnd = 1, nbnd
@@ -169,7 +170,9 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
            if (iter.eq.1) rho(lbnd) = abs(ZDOTC (ndim, g(1,ibnd), 1, g(1,ibnd), 1))
        endif
     enddo
+
     kter_eff = kter_eff + DBLE (lbnd) / DBLE (nbnd)
+
     do ibnd = nbnd, 1, -1
        if (conv(ibnd).eq.0) then
            rho(ibnd) = rho(lbnd)
@@ -178,10 +181,12 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
            if (anorm.lt.ethr) conv (ibnd) = 1
        endif
     enddo
+
     conv_root = .true.
     do ibnd = 1, nbnd
         conv_root = conv_root.and.(conv (ibnd).eq.1)
     enddo
+
     if (conv_root) goto 100
 ! compute t = A*h
 ! we only apply hamiltonian to unconverged bands.
@@ -196,7 +201,8 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
     enddo
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
     call h_psi (ndim, hold, t, eu(1), cw, ik, lbnd)
-    call h_psi (ndim, htold, tt, eu(1), conjg(cw), ik, lbnd)
+    call h_psi (ndim, htold, tt, eu(1), dconjg(cw), ik, lbnd)
+
     lbnd=0
     do ibnd = 1, nbnd
        if (conv (ibnd) .eq.0) then
@@ -247,9 +253,9 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
         endif
      enddo
   enddo
+
 100 continue
-  !kter = kter_eff
-  kter = iter
+  kter = kter_eff
   deallocate (rho)
   deallocate (conv)
   deallocate (a,c)

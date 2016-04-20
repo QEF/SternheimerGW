@@ -41,7 +41,7 @@ program gw
 
   integer             :: iq, ik, ierr
   character (LEN=9)   :: codepw = 'PW'
-  character (LEN=9)   :: code   = 'SGW'
+  character (LEN=9)   :: code = 'SGW'
   character (LEN=256) :: auxdyn
   logical             :: do_band, do_iq, setup_pw, exst, do_matel
 
@@ -60,15 +60,15 @@ program gw
   call opengwfil()
 ! Calculation W
   if(do_coulomb) call do_stern()
+  do_iq=.TRUE.
+  setup_pw = .TRUE.
+  do_band  = .TRUE.
+  do_matel = .TRUE.
   ik = 1
   if (do_q0_only) goto 127
 ! Calculation of CORRELATION energy \Sigma^{c}_{k}=\sum_{q}G_{k-q}{W_{q}-v_{q}}:
   if (do_imag) then
       do ik = w_of_k_start, w_of_k_stop
-         setup_pw = .TRUE.
-         do_band  = .TRUE.
-         do_matel = .TRUE.
-         do_iq=.TRUE.
          call run_nscf(do_band, do_matel, ik)
          call initialize_gw()
          if (do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
@@ -99,13 +99,6 @@ program gw
             close(unit = iunresid, status = 'DELETE')
             close(unit = iunalphabeta, status = 'DELETE')
          endif
-         if (do_sigma_exx .and. .not.do_sigma_exxG) then   
-             call sigma_exch(ik)
-         else if(do_sigma_exx .and. do_sigma_exxG) then
-             call sigma_exchg(ik)
-         endif
-         if (do_sigma_matel) call sigma_matel(ik)
-         call clean_pw_gw(ik, .TRUE.)
       enddo
   endif
   127 continue
