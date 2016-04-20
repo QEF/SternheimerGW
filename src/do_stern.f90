@@ -23,11 +23,11 @@
 SUBROUTINE do_stern()
   USE io_global,  ONLY : stdout, ionode_id, meta_ionode
   USE kinds,      ONLY : DP
-  USE disp,       ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start
+  USE disp,       ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start, x_q
   USE gwsigma,    ONLY : sigma_c_st, gcutcorr
   USE gwsymm,     ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
   USE control_gw, ONLY : done_bands, reduce_io, recover, tmp_dir_gw,&
-                          ext_restart, bands_computed, bands_computed, nbnd_occ, lgamma,&
+                          ext_restart, bands_computed, bands_computed, nbnd_occ, &
                           do_q0_only, solve_direct, tinvert, lrpa, do_epsil
   USE freq_gw,    ONLY : nfs
   USE units_gw,   ONLY : lrcoul, iuncoul
@@ -42,7 +42,7 @@ IMPLICIT NONE
 
   INTEGER :: iq, ik, ig, igstart, igstop, ios, iq1, iq2
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
-  LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel
+  LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel, lgamma
   COMPLEX(DP), ALLOCATABLE :: eps_m(:)
 
   allocate ( scrcoul_g( gcutcorr, gcutcorr, nfs, nspin_mag))
@@ -69,7 +69,8 @@ IMPLICIT NONE
   do iq = iq1, iq2
 !Perform head of dielectric matrix calculation.
      call start_clock ('epsilq')
-     if (iq.eq.1) THEN
+     lgamma = ALL(x_q(:,iq) == 0)
+     if (lgamma) THEN
         allocate(eps_m(nfs))
         eps_m(:) = dcmplx(0.0d0,0.0d0)
         if(my_image_id.eq.0) THEN
@@ -116,7 +117,7 @@ IMPLICIT NONE
        if (meta_ionode) THEN
          call unfold_w(scrcoul_g,iq)
          if(solve_direct.and.tinvert) write(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
-         if(solve_direct.and.tinvert) call invert_epsilon(scrcoul_g, iq, eps_m)
+         if(solve_direct.and.tinvert) call invert_epsilon(scrcoul_g, lgamma, eps_m)
          call davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
        endif
        if(allocated(eps_m)) deallocate(eps_m)
