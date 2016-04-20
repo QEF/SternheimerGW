@@ -167,7 +167,7 @@ SUBROUTINE sigma_c_re(ik0)
      CALL mp_global_end()
      STOP
    ENDIF
-   WRITE(6,'(4x, "nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
+   WRITE(6,'(4x, "nsym, nsymq, nsymbrav ", 3i4)') nsym, nsymq, nrot 
 !Set appropriate weights for points in the brillouin zone.
 !Weights of all the k-points are in odd positions in list.
 !nksq is number of k points not including k+q.
@@ -193,8 +193,8 @@ SUBROUTINE sigma_c_re(ik0)
   call mp_barrier(inter_pool_comm)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
-  WRITE(6,'("mu", f12.7)'),mu*RYTOEV
-  WRITE(1000+mpime,'("mu", f12.7)'),mu*RYTOEV
+  WRITE(6,'("mu", f12.7)') mu*RYTOEV
+  WRITE(1000+mpime,'("mu", f12.7)') mu*RYTOEV
 
 DO iq = 1, nqs
    iqcoul = 1

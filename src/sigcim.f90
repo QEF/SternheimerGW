@@ -150,7 +150,7 @@ subroutine sigma_c_im(ik0)
    write(stdout,'(/4x,"Direct product GW for k0(",i3," ) = (", 3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
    write(stdout,'(4x, "nfs, ", i4, " nwsigma, ", i4)') nfs, nwsigma
    write(stdout,'(4x, "nrsco, ", i4, " nfs, ", i4)') sigma_c_st%dfftt%nnr, nfs
-   write(stdout,'(4x, "nsym, nsymq, nsymbrav ", 3i4)'), nsym, nsymq, nrot 
+   write(stdout,'(4x, "nsym, nsymq, nsymbrav ", 3i4)') nsym, nsymq, nrot 
    write(stdout,'(4x, "gcutcorr", i4 )') gcutcorr
    allocate (wqtr(nq1*nq2*nq3))
    allocate (xqtr(3, nq1*nq2*nq3))

@@ -128,9 +128,9 @@ SUBROUTINE freqbins()
   WRITE(stdout, '(//5x,"Frequency Grids (eV):")')
   WRITE(stdout, '(/5x, "wsigmamin, wsigmamax, deltaw")')
   WRITE(stdout, '(5x, 3f10.4 )') wsigmamin, wsigmamax, deltaw 
-  WRITE(stdout, '(/5x, "wcoulmax:", 1f10.4, " eV")'), wcoulmax
-  WRITE(stdout, '(5x, "nwgreen:", i5)'), nwgreen
-  WRITE(stdout, '(5x, "nwcoul:", i5)'), nwcoul
+  WRITE(stdout, '(/5x, "wcoulmax:", 1f10.4, " eV")') wcoulmax
+  WRITE(stdout, '(5x, "nwgreen:", i5)') nwgreen
+  WRITE(stdout, '(5x, "nwcoul:", i5)') nwcoul
   WRITE(stdout,'(//5x, "Dynamic Screening Model:")')
   IF(godbyneeds) then
       WRITE(stdout, '(/6x, "Godby Needs Plasmon-Pole")')
@@ -143,10 +143,10 @@ SUBROUTINE freqbins()
   DO i = 1, nfs
        WRITE(stdout,'(8x, i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
   ENDDO
-  WRITE(stdout, '(/5x, "Broadening: ", 1f10.4)'), eta
+  WRITE(stdout, '(/5x, "Broadening: ", 1f10.4)') eta
 
   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-  WRITE(stdout, '(/5x, "Spherical Cutoff: ", 1f10.4)'), rcut
+  WRITE(stdout, '(/5x, "Spherical Cutoff: ", 1f10.4)') rcut
 
   WRITE(stdout, '(/7x, "K-points: ", i4)') num_k_pts
   DO i = 1, num_k_pts

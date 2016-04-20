@@ -102,6 +102,6 @@ DO ig = 2, gcutcorr
       ig_unique(ngmunique) = ig
    ENDIF
 ENDDO
-write(6,'(/5x, "Number of symmops in Small G_q: ", i4)'), nsymq
-write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)'), gcutcorr, ngmunique
+write(6,'(/5x, "Number of symmops in Small G_q: ", i4)') nsymq
+write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)') gcutcorr, ngmunique
 END SUBROUTINE stern_symm

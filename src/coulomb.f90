@@ -91,7 +91,7 @@ else
 !we use the frequency variable for multishift as the nspin_mag var.
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
-  WRITE(stdout, '(4x,4x,"nspinmag", i4)'), nspin_mag
+  WRITE(stdout, '(4x,4x,"nspinmag", i4)') nspin_mag
   ALLOCATE (drhoscfs(dffts%nnr, nspin_mag, 1))    
 endif
 
