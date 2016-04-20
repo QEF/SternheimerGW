@@ -27,10 +27,10 @@ USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps4, pi, eps8
 
 IMPLICIT NONE
 
+integer  :: p, N, i 
 complex(DP) :: z(N), u(N)
 complex(DP) :: a(N)
 real(DP) :: ar, ai
-integer  :: p, N, i 
 
 !Instead of a higher order pad\'e approximant to the self energy we just calculate two 
 !frequency points one at w = 0 and one at w = i\Omega_{p}. and fit it to the plasmon pole

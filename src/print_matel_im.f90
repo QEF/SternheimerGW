@@ -30,6 +30,7 @@ subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma
 
 implicit none
 
+INTEGER                   ::   nwsigma
 REAL(DP)                  ::   wsigma(nwsigma) 
 INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
 REAL(DP)                  ::   w_ryd(nwsigma)
@@ -48,7 +49,6 @@ COMPLEX(DP)               ::   czero, temp
 
 INTEGER                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
 LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
-INTEGER                   ::   nwsigma
 
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)

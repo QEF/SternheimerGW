@@ -32,6 +32,7 @@ use wvfct,                only : nbnd, npw, npwx, igk, g2kin, et
 
 implicit none
 
+integer                   ::   nwsigma
 complex(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
 complex(DP)               ::   czero, temp
@@ -46,7 +47,6 @@ real(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a
                                et_qp_tr, z_tr, z(nbnd_sig)
 integer                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
 integer                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
-integer                   ::   nwsigma
 logical                   ::   do_band, do_iq, setup_pw, exst, single_line
 
      one   = 1.0d0 

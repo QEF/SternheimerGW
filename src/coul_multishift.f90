@@ -30,6 +30,7 @@ SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, f
 
 IMPLICIT NONE
 !coefficient of quadratic form
+  INTEGER :: ndmx ! input: the maximum dimension of the vectors
   INTEGER :: nfreq, iw, iwp
   complex(DP)   :: alpha(nbnd), beta(nbnd)
   complex(kind=DP), allocatable :: u_sig (:,:,:), u_sig_old(:,:,:), r(:,:)
@@ -48,8 +49,7 @@ IMPLICIT NONE
   complex(DP), PARAMETER      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
   complex(DP), external       :: zdotc
   complex(DP)                 :: freq(nfreq)
-  integer :: ndmx, & ! input: the maximum dimension of the vectors
-             ndim, & ! input: the actual dimension of the vectors
+  integer :: ndim, & ! input: the actual dimension of the vectors
              ngvecs,&
              iter,&
              nrec,&

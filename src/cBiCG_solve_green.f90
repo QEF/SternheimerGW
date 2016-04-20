@@ -41,6 +41,14 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 
   implicit none
 !first I/O variables
+  integer   :: ndmx,  & ! input: the maximum dimension of the vectors
+               ndim,  & ! input: the actual dimension of the vectors
+               kter,  & ! output: counter on iterations
+               nbnd,  & ! input: the number of bands
+               npol,  & ! input: number of components of the wavefunctions
+               ik,    & ! input: the k point
+               niters,& ! number of iterations for this BiCG min
+               nrec     ! for composite rec numbers
 !Frommer paper defines beta as \frac{\rho_{k}}{\rho_{k-1}}
   complex(DP), allocatable :: g (:,:), t (:,:), h (:,:), hold (:,:)
   !  the gradient of psi
@@ -67,14 +75,6 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 
   integer :: iter, ibnd, lbnd
   integer , allocatable :: conv (:)
-  integer   :: ndmx,  & ! input: the maximum dimension of the vectors
-               ndim,  & ! input: the actual dimension of the vectors
-               kter,  & ! output: counter on iterations
-               nbnd,  & ! input: the number of bands
-               npol,  & ! input: number of components of the wavefunctions
-               ik,    & ! input: the k point
-               niters,& ! number of iterations for this BiCG min
-               nrec     ! for composite rec numbers
 
   logical  :: tprec
   logical   :: conv_root ! output: if true the root is converged

@@ -29,6 +29,7 @@ SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
 
 IMPLICIT NONE
 !coefficient of quadratic form
+  INTEGER :: ndmx ! input: the maximum dimension of the vectors
   INTEGER :: nfreq, iw, iwp
   COMPLEX(DP)   :: alpha, beta
 !complex(kind=DP), allocatable, INTENT(OUT) :: x_sig (:,:)
@@ -44,8 +45,7 @@ REAL(DP) :: anorm(nwgreen)
   COMPLEX(DP)                 :: alphabeta(2)
   COMPLEX(DP), PARAMETER      :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
   complex(DP), external       :: zdotc
-  integer ::   ndmx, & ! input: the maximum dimension of the vectors
-               ndim, & ! input: the actual dimension of the vectors
+  integer ::   ndim, & ! input: the actual dimension of the vectors
                ngvecs,&
                niters,&
                iter,&

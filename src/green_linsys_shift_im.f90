@@ -64,6 +64,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 
  !should be freq blocks...
  !complex(DP) :: gr_A_shift(npwx, nwgreen)
+  integer :: nwgreen
   complex(DP), allocatable :: gr_A_shift(:,:)
   complex(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
   complex(DP) :: gr(npwx, 1), ci, cw 
@@ -78,7 +79,6 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   real(DP) :: ehomo, elumo, mu
   real(DP) :: gam(3)
   real(DP), intent(in) :: xk1(3)
-  integer :: nwgreen
   integer :: iw, igp, iw0
   integer :: iq, ik0
   integer :: rec0, n1, gveccount

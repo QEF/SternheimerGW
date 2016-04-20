@@ -31,6 +31,8 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
 
   implicit none
 
+  integer  :: nfreq, iw, iwp
+  integer  :: ndmx ! input: the maximum dimension of the vectors
 !coefficient of quadratic form
   complex(dp)   :: alpha, beta
   complex(kind=dp), allocatable :: u_sig (:,:), r(:), u_sig_old(:,:)!, r_sig(:,:)
@@ -47,9 +49,7 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
   real(dp) :: mu
   real(dp) :: anorm(nwgreen)
 
-  integer  :: nfreq, iw, iwp
-  integer  :: ndmx, & ! input: the maximum dimension of the vectors
-              ndim, & ! input: the actual dimension of the vectors
+  integer  :: ndim, & ! input: the actual dimension of the vectors
               ngvecs,&
               niters,&
               iter,&

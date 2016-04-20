@@ -40,6 +40,7 @@ IMPLICIT NONE
 !
 ! first I/O variables
 !
+  integer :: nfreq, iw, iwp
   integer ::   ndmx,  & ! input: the maximum dimension of the vectors
                ndim,  & ! input: the actual dimension of the vectors
                kter,  & ! output: counter on iterations
@@ -75,7 +76,6 @@ IMPLICIT NONE
   real(DP), allocatable     :: rho (:), a(:), c(:)
   real(DP)                  :: kter_eff
   integer                   :: iter, ibnd, lbnd, ngvecs
-  integer                   :: nfreq, iw, iwp
   integer , allocatable     :: conv (:)
   integer                   :: niters(nbnd)
   integer                   :: ios, itol

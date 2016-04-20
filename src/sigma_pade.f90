@@ -35,6 +35,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
                                    do_diag_g, do_diag_w, trunc_2d, nbnd_occ, double_grid
   implicit none
 
+  integer                  :: nwsigwin
   complex (dp)             :: sigma_band_c(nbnd_sig, nbnd_sig, nwsigma)
   complex (dp)             :: sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin)
   complex(dp), allocatable :: z(:), u(:), a(:)
@@ -43,7 +44,6 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   real(dp)                 :: ehomo, elumo, mu
   integer                  :: ig, igp, nw, iw, ibnd, jbnd, ios, &
                               ipol, ik0, ir,irp, counter
-  integer                  :: nwsigwin
 
 !nwsigma is the number of points we have calculated sigma at.
 !nwsigwin is the number of points in the sigma window we want
