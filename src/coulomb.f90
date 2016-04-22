@@ -35,7 +35,7 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   USE io_global,  ONLY : stdout, ionode
   USE uspp,       ONLY : okvan
   USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
-                         solve_direct, do_epsil, do_q0_only
+                         solve_direct, do_epsil, do_q0_only, tinvert
   USE partial,    ONLY : done_irr, comp_irr
   USE uspp_param, ONLY : nhm
   USE eqv_gw,     ONLY : drhoscfs, dvbare
@@ -105,7 +105,8 @@ DO ig = igstart, igstop
 !     if (do_q0_only.and.ig.gt.1) CYCLE
       qg2 = (g(1,ig_unique(ig))+xq(1))**2+(g(2,ig_unique(ig))+xq(2))**2+(g(3,ig_unique(ig))+xq(3))**2
       IF(solve_direct) THEN
-        !if(qg2.lt.eps8) CYCLE 
+         ! q + G = 0 is treated differently
+         IF(tinvert .AND. qg2 < eps8) CYCLE 
          drhoscfs = dcmplx(0.0d0, 0.0d0)
          dvbare(:)     = dcmplx(0.0d0, 0.0d0)
          dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
