@@ -80,8 +80,8 @@ IMPLICIT NONE
            call run_nscf(do_band, do_matel, iq)
            call initialize_gw()
            call coulomb_q0G0(iq, eps_m)
-           write(stdout,'(5x, "epsM(0) = ", f12.7)'), eps_m(1)
-           write(stdout,'(5x, "epsM(iwp) = ", f12.7)'), eps_m(2)
+           write(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
+           write(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
            call clean_pw_gw(iq, .FALSE.)
         endif
         call mp_barrier(inter_image_comm)
