@@ -92,7 +92,7 @@ else
 !we use the frequency variable for multishift as the nspin_mag var.
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
-  WRITE(stdout, '(4x,4x,"nspinmag", i4)'), nspin_mag
+  WRITE(stdout, '(4x,4x,"nspinmag", i4)') nspin_mag
   ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, 1))    
 endif
 irr=1
@@ -118,7 +118,7 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        CALL fwfft('Smooth', dvbare, dffts)
        DO iw = 1, nfs
           CALL fwfft('Dense', drhoscfs(:,iw,1), dffts)
-          WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)'),drhoscfs(nls(1),iw,1) &
+          WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') drhoscfs(nls(1),iw,1) &
 &                                                           + dvbare(nls(1))
           eps_m(iw) = drhoscfs(nls(1),iw,1) + 1.0d0
        ENDDO
@@ -134,7 +134,7 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
           CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)
        ENDDO
        IF(ionode) THEN
-         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)'), drhoscfs(nls(1), 1, 1) + dvbare(nls(1))
+         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)') drhoscfs(nls(1), 1, 1) + dvbare(nls(1))
        ENDIF
      !(eps_{M}^{-1} - 1)
        eps_m(iw) = drhoscfs(nls(1),1,1)
