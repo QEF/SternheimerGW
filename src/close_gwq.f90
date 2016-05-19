@@ -37,7 +37,7 @@ SUBROUTINE close_gwq( flag )
   USE uspp,          ONLY : okvan
   USE units_gw,      ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iuebar, iudrho, &
                             iudvscf
-  USE output,        ONLY : fildrho, fildvscf
+  USE output_mod,    ONLY : fildrho, fildvscf
   USE control_gw,    ONLY : do_coulomb
   !
   IMPLICIT NONE

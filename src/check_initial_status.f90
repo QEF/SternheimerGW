@@ -42,7 +42,7 @@ SUBROUTINE check_initial_status(auxdyn)
   USE scf,             ONLY : rho
   USE disp,            ONLY : nqs, x_q, nq1, nq2, nq3
   USE qpoint,          ONLY : xq
-  USE output,          ONLY : fildyn
+  USE output_mod,      ONLY : fildyn
   USE control_gw,      ONLY : ldisp, recover, done_bands,  &
                               start_q, last_q, current_iq, tmp_dir_gw, lgamma, &
                               ext_recover, ext_restart

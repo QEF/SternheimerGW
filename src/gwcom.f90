@@ -126,6 +126,7 @@ MODULE control_gw
   USE kinds, ONLY :  DP
   USE parameters, ONLY: npk
   USE control_lr
+  USE gw_type_mod, ONLY : output_type, name_length
   !
   ! ... the variables controlling the GW run
   !
@@ -216,6 +217,8 @@ MODULE control_gw
              just_corr,&
              double_grid
 
+   TYPE(output_type) output
+
 END MODULE control_gw
 !
 !
@@ -286,7 +289,7 @@ MODULE units_gw
 END MODULE units_gw
 !
 !
-MODULE output
+MODULE output_mod
   !
   ! ... the name of the files
   !
@@ -297,7 +300,7 @@ MODULE output
   ! output file for deltavscf
   ! output file for deltarho
   !
-END MODULE output
+END MODULE output_mod
 !
 !
 MODULE disp
@@ -398,7 +401,7 @@ MODULE gwcom
   USE control_gw
   USE freq_gw
   USE units_gw
-  USE output
+  USE output_mod
   USE gamma_gamma
   USE disp 
 END MODULE gwcom

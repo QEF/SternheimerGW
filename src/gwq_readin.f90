@@ -61,11 +61,11 @@ SUBROUTINE gwq_readin()
                             trunc_2d, do_epsil, do_serial, &
                             do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                             high_io, freq_gl, prec_direct, prec_shift, just_corr,&
-                            double_grid
+                            double_grid, name_length, output
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
-  USE output,        ONLY : fildyn, fildvscf, fildrho
+  USE output_mod,    ONLY : fildyn, fildvscf, fildrho
   USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
                             xk_kpoints, kpoints, num_k_pts, & 
                             w_of_q_start, w_of_k_start, w_of_k_stop
@@ -112,6 +112,19 @@ SUBROUTINE gwq_readin()
   LOGICAL :: exst, parallelfs
   REAL(DP)           :: ar, ai
   !
+  ! output configuration
+  CHARACTER(LEN=name_length) file_dft
+  CHARACTER(LEN=name_length) file_gw
+  CHARACTER(LEN=name_length) file_vxc
+  CHARACTER(LEN=name_length) file_exchange
+  CHARACTER(LEN=name_length) file_renorm
+  CHARACTER(LEN=name_length) file_re_corr
+  CHARACTER(LEN=name_length) file_re_corr_iw
+  CHARACTER(LEN=name_length) file_im_corr
+  CHARACTER(LEN=name_length) file_im_corr_iw
+  CHARACTER(LEN=name_length) file_spec
+  CHARACTER(LEN=name_length) file_spec_iw
+
   NAMELIST / INPUTGW / tr2_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
                        nrapp, max_seconds, reduce_io, &
@@ -128,6 +141,9 @@ SUBROUTINE gwq_readin()
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws
+  NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
+                       file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
+                       file_spec, file_spec_iw
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -285,6 +301,34 @@ SUBROUTINE gwq_readin()
   just_corr = .FALSE.
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
 
+  ! set defaults for output
+  file_dft        = ''
+  file_gw         = ''
+  file_vxc        = ''
+  file_exchange   = ''
+  file_renorm     = ''
+  file_re_corr    = ''
+  file_re_corr_iw = ''
+  file_im_corr    = ''
+  file_im_corr_iw = ''
+  file_spec       = ''
+  file_spec_iw    = ''
+
+  ! read the output from file
+  IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
+  
+  ! copy read data to output type
+  output%file_dft        = file_dft 
+  output%file_gw         = file_gw
+  output%file_vxc        = file_vxc
+  output%file_exchange   = file_exchange
+  output%file_renorm     = file_renorm
+  output%file_re_corr    = file_re_corr
+  output%file_re_corr_iw = file_re_corr_iw
+  output%file_im_corr    = file_im_corr
+  output%file_im_corr_iw = file_im_corr_iw
+  output%file_spec       = file_spec
+  output%file_spec_iw    = file_spec_iw
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.

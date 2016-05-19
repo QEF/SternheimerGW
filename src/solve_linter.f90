@@ -69,7 +69,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE nlcc_gw,              ONLY : nlcc_any
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
-  USE output,               ONLY : fildrho, fildvscf
+  USE output_mod,           ONLY : fildrho, fildvscf
   USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE lr_symm_base,         ONLY : minus_q, irgq, nsymq, rtau 

@@ -88,7 +88,7 @@
                             epsil, lgamma, recover, where_rec, alpha_pv, &
                             nbnd_occ, flmixdpot, reduce_io, rec_code_read, &
                             done_epsil, zeu, done_zeu, current_iq, just_corr
-  USE output,        ONLY : fildrho
+  USE output_mod,    ONLY : fildrho
   USE lr_symm_base,  ONLY : gi, gimq, irgq, minus_q, nsymq, rtau
   USE efield_mod,    ONLY : epsilon, zstareu
   USE qpoint,        ONLY : xq

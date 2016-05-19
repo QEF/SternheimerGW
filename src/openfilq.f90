@@ -38,7 +38,7 @@ SUBROUTINE openfilq()
   USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw, lgamma, do_coulomb
   USE save_gw,        ONLY : tmp_dir_save
   USE qpoint,         ONLY : nksq
-  USE output,         ONLY : fildyn, fildvscf
+  USE output_mod,     ONLY : fildyn, fildvscf
   USE wvfct,          ONLY : nbnd, npwx
   USE fft_base,       ONLY : dfftp, dffts
   USE lsda_mod,         ONLY : nspin

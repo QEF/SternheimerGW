@@ -44,18 +44,18 @@ subroutine bcast_gw_input ( )
                           do_imag, do_pade_coul, newgrid, high_io, freq_gl,&
                           prec_direct, tmp_dir_coul, prec_shift, just_corr,&
                           double_grid
-  USE disp,     ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
-                       w_of_k_start, w_of_k_stop
-  USE partial,  ONLY : nat_todo, nrapp
-  USE freq_gw,  ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul,&
-                       wsig_wind_min, wsig_wind_max, deltaws
-  USE output,   ONLY : fildvscf, fildyn, fildrho
-  use io_files, ONLY : tmp_dir, prefix
+  USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
+                          w_of_k_start, w_of_k_stop
+  USE partial,     ONLY : nat_todo, nrapp
+  USE freq_gw,     ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul,&
+                          wsig_wind_min, wsig_wind_max, deltaws
+  USE output_mod,  ONLY : fildvscf, fildyn, fildrho
+  use io_files,    ONLY : tmp_dir, prefix
   USE control_flags,    ONLY: iverbosity, modenum
   USE input_parameters, ONLY: max_seconds
   USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
   USE ions_base,        ONLY : amass
-  USE run_info, ONLY : title
+  USE run_info,         ONLY : title
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv,&
                             exch_conv
   USE gwsymm,        ONLY : use_symm
