@@ -48,12 +48,18 @@ MODULE pp_output_mod
   CHARACTER(*), PARAMETER :: tag_num_kpoint = 'NUM_KPOINT'
   !> tag used for every individual k-point
   CHARACTER(*), PARAMETER :: tag_kpoint = 'KPOINT'
-  !> tag used for the number of bands
-  CHARACTER(*), PARAMETER :: tag_num_band = 'NUM_BAND'
+  !> tag used for the k-point vector
+  CHARACTER(*), PARAMETER :: tag_kpoint_vector = 'VECTOR'
   !> tag used for the number of frequencies
   CHARACTER(*), PARAMETER :: tag_num_freq = 'NUM_FREQ'
   !> tag used for every individual frequency
   CHARACTER(*), PARAMETER :: tag_freq = 'FREQUENCY'
+  !> tag used for the value of the frequency
+  CHARACTER(*), PARAMETER :: tag_freq_value = 'VALUE'
+  !> tag used for the number of bands
+  CHARACTER(*), PARAMETER :: tag_num_band = 'NUM_BAND'
+  !> tag used for the band data
+  CHARACTER(*), PARAMETER :: tag_band = 'BAND'
 
   PRIVATE pp_output_1d, pp_output_2d
 
@@ -85,16 +91,14 @@ CONTAINS
     CALL pp_output_open(nks, nbnd, output%pp_renorm)
 
     ! bands * frequencies on real frequency axis
-    dim_re = nbnd * nw_re
-    CALL pp_output_open(nks, dim_re, output%pp_re_corr)
-    CALL pp_output_open(nks, dim_re, output%pp_im_corr)
-    CALL pp_output_open(nks, dim_re, output%pp_spec)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, output%pp_re_corr)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, output%pp_im_corr)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, output%pp_spec)
 
     ! bands * frequencies on imaginary axis
-    dim_im = nbnd * nw_im
-    CALL pp_output_open(nks, dim_im, output%pp_re_corr_iw)
-    CALL pp_output_open(nks, dim_im, output%pp_im_corr_iw)
-    CALL pp_output_open(nks, dim_im, output%pp_spec_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, output%pp_re_corr_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, output%pp_im_corr_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, output%pp_spec_iw)
 
   END SUBROUTINE pp_output_open_all
 
@@ -237,7 +241,8 @@ CONTAINS
     !
     ! sanity test of the input
     !
-    CALL errore(__FILE__, 'data array size inconsistent', output%num_band - SIZE(data))
+    CALL errore(__FILE__, 'data array size inconsistent (band)', output%num_band - SIZE(data))
+    CALL errore(__FILE__, 'data array size inconsistent (freq)', output%num_freq - 1)
     INQUIRE(UNIT = output%iunit, OPENED = opnd)
     IF (.NOT.opnd) CALL errore(__FILE__, output%filename//' not opened', 1)
 
@@ -254,12 +259,13 @@ CONTAINS
   !> specialization of the interface for 2d data
   SUBROUTINE pp_output_2d(output, kpt, data)
 
+    USE iotk_module, ONLY: iotk_write_begin, iotk_write_end, iotk_write_dat
+
     TYPE(pp_output_type), INTENT(IN) :: output
     REAL(dp), INTENT(IN) :: kpt(3)
     REAL(dp), INTENT(IN) :: data(:,:)
 
-    INTEGER ii
-    LOGICAL opnd
+    INTEGER ifreq
 
     ! don't do anything if file is not required
     IF (.NOT.output%to_file) RETURN
@@ -267,22 +273,21 @@ CONTAINS
     !
     ! sanity test of the input
     !
-    CALL errore(__FILE__, 'data array size inconsistent', output%num_band - SIZE(data))
-    INQUIRE(UNIT = output%iunit, OPENED = opnd)
-    IF (.NOT.opnd) CALL errore(__FILE__, output%filename//' not opened', 1)
+    CALL errore(__FILE__, 'data array size inconsistent (band)', output%num_band - SIZE(data,2))
+    CALL errore(__FILE__, 'data array size inconsistent (freq)', output%num_freq - SIZE(data,1))
 
     !
     ! write the data to the file
     !
-    WRITE(output%iunit, '(5x,3f10.6)') kpt
-    DO ii = 1, SIZE(data,1)
-      WRITE(output%iunit, '(10f15.8)') data(ii,:)
-      ! add an empty line if data would fill line completely
-      WRITE(output%iunit,*)
-    END DO ! ii
-
-    ! add an empty line at the end of one data set
-    WRITE(output%iunit,*)
+    CALL iotk_write_begin(output%iunit, tag_kpoint)
+    CALL iotk_write_dat(output%iunit, tag_kpoint_vector, kpt)
+    DO ifreq = 1, SIZE(data,1)
+      CALL iotk_write_begin(output%iunit, tag_freq)
+!      CALL iotk_write_dat(output%iunit, tag_freq_value, 0)
+      CALL iotk_write_dat(output%iunit, tag_band, data(ifreq, :))
+      CALL iotk_write_end(output%iunit, tag_freq)
+    END DO ! ifreq
+    CALL iotk_write_end(output%iunit, tag_kpoint)
 
   END SUBROUTINE pp_output_2d
 
