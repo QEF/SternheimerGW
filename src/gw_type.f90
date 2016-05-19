@@ -35,6 +35,7 @@ MODULE gw_type_mod
   !!
   !! \param filename   name of the file to which the data is written
   !! \param to_file    flag indicating if data is print to file    
+  !! \param xml_format flag indicating if the file is written in XML format
   !! \param iunit      unit access to file
   !! \param num_kpoint number of k-points
   !! \param num_band   number of bands
@@ -44,6 +45,7 @@ MODULE gw_type_mod
   TYPE pp_output_type
     CHARACTER(LEN=name_length) filename
     LOGICAL to_file
+    LOGICAL xml_format
     INTEGER iunit
     INTEGER num_kpoint
     INTEGER num_band

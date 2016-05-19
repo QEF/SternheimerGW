@@ -52,6 +52,8 @@ MODULE pp_output_mod
   CHARACTER(*), PARAMETER :: tag_num_band = 'NUM_BAND'
   !> tag used for the number of frequencies
   CHARACTER(*), PARAMETER :: tag_num_freq = 'NUM_FREQ'
+  !> tag used for every individual frequency
+  CHARACTER(*), PARAMETER :: tag_freq = 'FREQUENCY'
 
   PRIVATE pp_output_1d, pp_output_2d
 
@@ -130,6 +132,7 @@ CONTAINS
     output%num_band = nbnd
     output%num_freq = 1
     output%num_kpoint = nks
+    output%xml_format = .FALSE.
 
     ! open the file
     output%iunit = find_free_unit()
@@ -172,6 +175,7 @@ CONTAINS
     output%num_band = nbnd
     output%num_freq = nfreq
     output%num_kpoint = nks
+    output%xml_format = .FALSE.
 
     ! open the file
     CALL iotk_free_unit(output%iunit)
@@ -184,6 +188,39 @@ CONTAINS
     CALL iotk_write_dat(output%iunit, tag_num_freq, nfreq)
 
   END SUBROUTINE pp_output_open_xml
+
+  !> Close a file associated to a particular output type
+  !!
+  !! Depending on the format of the file either the xml or the
+  !! regular file closing routine are used.
+  !!
+  !! \param output file (as pp_output_type) which is closed
+  !!
+  SUBROUTINE pp_output_close(output)
+
+    USE iotk_module, ONLY: iotk_write_end, iotk_close_write
+
+    TYPE(pp_output_type), INTENT(IN) :: output
+
+    LOGICAL opnd
+
+    ! don't do anything if file is not open
+    IF (.NOT.output%to_file) RETURN
+
+    ! close the file (XML version)
+    IF (output%xml_format) THEN
+      CALL iotk_write_end(output%iunit, tag_head)
+      CALL iotk_close_write(output%iunit)
+
+    ! close the file (regular version)
+    ELSE
+      INQUIRE(UNIT = output%iunit, OPENED = opnd)
+      IF (.NOT.opnd) CALL errore(__FILE__, output%filename//' not opened', 1)
+      CLOSE(output%iunit)
+
+    END IF
+
+  END SUBROUTINE pp_output_close
 
   !> specialization of the interface for 1d data
   SUBROUTINE pp_output_1d(output, kpt, data)
