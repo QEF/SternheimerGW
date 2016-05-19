@@ -260,7 +260,7 @@ logical                   ::   do_band, do_iq, setup_pw, exst, single_line
   !
   ! print file according to user requirement
   !
-  IF (output%pp_dft%to_file)      CALL pp_output(output%pp_dft,      xk(:,ikq), et)
+  IF (output%pp_dft%to_file)      CALL pp_output(output%pp_dft,      xk(:,ikq), et(:,ikq))
   IF (output%pp_gw%to_file)       CALL pp_output(output%pp_gw,       xk(:,ikq), et_qp)
   IF (output%pp_vxc%to_file)      CALL pp_output(output%pp_vxc,      xk(:,ikq), vxc_diag)
   IF (output%pp_exchange%to_file) CALL pp_output(output%pp_exchange, xk(:,ikq), sigma_ex_diag)
