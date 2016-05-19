@@ -38,6 +38,7 @@ MODULE gw_type_mod
   !! \param iunit      unit access to file
   !! \param num_kpoint number of k-points
   !! \param num_band   number of bands
+  !! \param num_freq   number of frequency points (if any)
   !! \see pp_output_mod
   !!
   TYPE pp_output_type
@@ -46,6 +47,7 @@ MODULE gw_type_mod
     INTEGER iunit
     INTEGER num_kpoint
     INTEGER num_band
+    INTEGER num_freq
   END TYPE pp_output_type
 
   !> Type defining the output format.

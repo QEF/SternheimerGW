@@ -42,6 +42,17 @@ MODULE pp_output_mod
     MODULE PROCEDURE pp_output_1d, pp_output_2d
   END INTERFACE pp_output
 
+  !> tag used for the header of an xml file
+  CHARACTER(*), PARAMETER :: tag_head = 'SGW_OUTPUT'
+  !> tag used for the number of k-point
+  CHARACTER(*), PARAMETER :: tag_num_kpoint = 'NUM_KPOINT'
+  !> tag used for every individual k-point
+  CHARACTER(*), PARAMETER :: tag_kpoint = 'KPOINT'
+  !> tag used for the number of bands
+  CHARACTER(*), PARAMETER :: tag_num_band = 'NUM_BAND'
+  !> tag used for the number of frequencies
+  CHARACTER(*), PARAMETER :: tag_num_freq = 'NUM_FREQ'
+
   PRIVATE pp_output_1d, pp_output_2d
 
 CONTAINS
@@ -117,6 +128,7 @@ CONTAINS
 
     ! set metadata
     output%num_band = nbnd
+    output%num_freq = 1
     output%num_kpoint = nks
 
     ! open the file
@@ -127,6 +139,51 @@ CONTAINS
     WRITE(output%iunit, NML=plot)
 
   END SUBROUTINE pp_output_open
+
+  !> Open a file to print the data in xml format.
+  !!
+  !! If the filename is not set, this routine will just clear the to_file
+  !! flag, so that later parts of the code can test whether data is meant
+  !! to be written. If the filename is present, the file is opened and the
+  !! unit is stored in the type. Then the header for the data is written
+  !! into the file.
+  !!
+  !! \param nks number of k-points the data will contain
+  !! \param nbnd number of bands the data will have
+  !! \param nfreq number of frequency points the data will have
+  !! \param output type that contains the filename on input and the unit
+  !! and some metadata after the return of the function
+  !!
+  SUBROUTINE pp_output_open_xml(nks, nbnd, nfreq, output)
+
+    USE iotk_module, ONLY: iotk_free_unit, iotk_open_write, &
+                           iotk_write_begin, iotk_write_dat
+
+    INTEGER, INTENT(IN) :: nks
+    INTEGER, INTENT(IN) :: nbnd
+    INTEGER, INTENT(IN) :: nfreq
+    TYPE(pp_output_type), INTENT(INOUT) :: output
+
+    ! if no filename is present, clear to_file flag and exit
+    output%to_file = (output%filename /= '')
+    IF (.NOT.output%to_file) RETURN
+
+    ! set metadata
+    output%num_band = nbnd
+    output%num_freq = nfreq
+    output%num_kpoint = nks
+
+    ! open the file
+    CALL iotk_free_unit(output%iunit)
+    CALL iotk_open_write(output%iunit, output%filename)
+
+    ! write header with metadata
+    CALL iotk_write_begin(output%iunit, tag_head)
+    CALL iotk_write_dat(output%iunit, tag_num_kpoint, nks)
+    CALL iotk_write_dat(output%iunit, tag_num_band, nbnd)
+    CALL iotk_write_dat(output%iunit, tag_num_freq, nfreq)
+
+  END SUBROUTINE pp_output_open_xml
 
   !> specialization of the interface for 1d data
   SUBROUTINE pp_output_1d(output, kpt, data)
