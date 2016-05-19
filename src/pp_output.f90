@@ -148,7 +148,7 @@ CONTAINS
     ! write the data to the file
     !
     WRITE(output%iunit, '(5x,3f10.6)') kpt
-    WRITE(output%iunit, '(10f10.5)') data
+    WRITE(output%iunit, '(10f15.8)') data
     ! add an empty line at the end of one data set
     WRITE(output%iunit,*)
 
@@ -176,7 +176,7 @@ CONTAINS
     !
     WRITE(output%iunit, '(5x,3f10.6)') kpt
     DO ii = 1, SIZE(data,1)
-      WRITE(output%iunit, '(10f10.5)') data(ii,:)
+      WRITE(output%iunit, '(10f15.8)') data(ii,:)
       ! add an empty line if data would fill line completely
       WRITE(output%iunit,*)
     END DO ! ii
