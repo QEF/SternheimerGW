@@ -100,6 +100,8 @@ CONTAINS
   !!
   SUBROUTINE pp_output_open(nks, nbnd, output)
 
+    USE io_files, ONLY : seqopn
+
     INTEGER, INTENT(IN) :: nks
     INTEGER, INTENT(IN) :: nbnd
     TYPE(pp_output_type), INTENT(INOUT) :: output

@@ -29,13 +29,15 @@ program gw
   USE check_stop,      ONLY : check_stop_init
   USE control_gw,      ONLY : do_sigma_exx, do_sigma_exxG, do_sigma_matel, do_coulomb,&
                               do_green, multishift, do_sigma_c, do_q0_only,&
-                              do_imag, lgamma
+                              do_imag, lgamma, output
+  USE freq_gw,          ONLY : nwsigma, nwsigwin
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,         ONLY : diropn
   USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,            ONLY : nbnd
   USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE input_parameters, ONLY : max_seconds, force_symmorphic
+  USE pp_output_mod,    ONLY : pp_output_open_all
 
   IMPLICIT NONE
 
@@ -83,7 +85,12 @@ program gw
              call sigma_exchg(ik)
          endif
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
-         if (do_sigma_matel) call sigma_matel(ik)
+         if (do_sigma_matel) then
+           if (ik == w_of_k_start) then         
+             call pp_output_open_all(num_k_pts, nbnd_sig, nwsigwin, nwsigma, output)
+           end if
+           call sigma_matel(ik)
+         end if
          call clean_pw_gw(ik, .TRUE.)
       enddo
   else
