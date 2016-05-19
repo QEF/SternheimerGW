@@ -113,6 +113,7 @@ SUBROUTINE gwq_readin()
   REAL(DP)           :: ar, ai
   !
   ! output configuration
+  CHARACTER(LEN=name_length) directory
   CHARACTER(LEN=name_length) file_dft
   CHARACTER(LEN=name_length) file_gw
   CHARACTER(LEN=name_length) file_vxc
@@ -143,7 +144,7 @@ SUBROUTINE gwq_readin()
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
-                       file_spec, file_spec_iw
+                       file_spec, file_spec_iw, directory
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -302,6 +303,7 @@ SUBROUTINE gwq_readin()
   IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
 
   ! set defaults for output
+  directory       = ''
   file_dft        = ''
   file_gw         = ''
   file_vxc        = ''
@@ -318,6 +320,7 @@ SUBROUTINE gwq_readin()
   IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
   
   ! copy read data to output type
+  output%directory              = directory
   output%pp_dft%filename        = file_dft 
   output%pp_gw%filename         = file_gw
   output%pp_vxc%filename        = file_vxc
@@ -478,6 +481,8 @@ SUBROUTINE gwq_readin()
   tmp_dir_save=tmp_dir
   tmp_dir_gw= TRIM (tmp_dir) //'_gw'//trim(int_to_char(my_image_id))//'/'
   tmp_dir_coul= TRIM (tmp_dir) //'_gw0'//'/'
+  ! set output directory if not defined
+  IF (output%directory == '') output%directory = tmp_dir_gw
 
   CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
   ext_restart=.FALSE.
