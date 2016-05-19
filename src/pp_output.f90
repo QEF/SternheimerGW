@@ -231,6 +231,7 @@ CONTAINS
     !
     CALL errore(__FILE__, 'data array size inconsistent (band)', output%num_band - SIZE(data))
     CALL errore(__FILE__, 'data array size inconsistent (freq)', output%num_freq - 1)
+    IF (output%xml_format) CALL errore(__FILE__, 'must not be called with xml file', 1)
     INQUIRE(UNIT = output%iunit, OPENED = opnd)
     IF (.NOT.opnd) CALL errore(__FILE__, output%filename//' not opened', 1)
 
@@ -277,6 +278,7 @@ CONTAINS
     CALL errore(__FILE__, 'data array size inconsistent (band)', output%num_band - SIZE(data,2))
     CALL errore(__FILE__, 'data array size inconsistent (freq)', output%num_freq - SIZE(data,1))
     CALL errore(__FILE__, 'frequency and data array inconsistent', SIZE(data,1) - SIZE(omega))
+    IF (.NOT.output%xml_format) CALL errore(__FILE__, 'must be called with xml file', 1)
 
     !
     ! write the data to the file
