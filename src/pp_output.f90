@@ -20,27 +20,13 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------
-!> Provides routines that generate output for QE's plotband program
+!> Provides routines that generate output for QE's plotband program or in xml format.
 MODULE pp_output_mod
 
   USE kinds,       ONLY : dp
   USE gw_type_mod, ONLY : pp_output_type, output_type
 
   IMPLICIT NONE
-
-  !> Print the an array for QE's plotband program
-  !!
-  !! The array has the shape (a1, ..., an), where a1 to an are
-  !! multiplied to form the nbnd flag for plotband. It is assumed that
-  !! this routine is called nks times, where nks is the number of k-points
-  !! specified when opening the file.
-  !!
-  !! \param output file (as pp_output_type) to which the data is printed
-  !! \param kpt vector containing the current k-point
-  !! \param data array containing the data
-  INTERFACE pp_output
-    MODULE PROCEDURE pp_output_1d, pp_output_2d
-  END INTERFACE pp_output
 
   !> tag used for the number of k-point
   CHARACTER(*), PARAMETER :: tag_num_kpoint = 'NUM_KPOINT'
@@ -58,8 +44,6 @@ MODULE pp_output_mod
   CHARACTER(*), PARAMETER :: tag_num_band = 'NUM_BAND'
   !> tag used for the band data
   CHARACTER(*), PARAMETER :: tag_band = 'BAND'
-
-  PRIVATE pp_output_1d, pp_output_2d
 
 CONTAINS
 
@@ -222,8 +206,16 @@ CONTAINS
 
   END SUBROUTINE pp_output_close
 
-  !> specialization of the interface for 1d data
-  SUBROUTINE pp_output_1d(output, kpt, data)
+  !> Print an 1D array for QE's plotband program
+  !!
+  !! The array has the dimension of the number of bands. It is assumed that
+  !! this routine is called nks times, where nks is the number of k-points
+  !! specified when opening the file.
+  !!
+  !! \param output file (as pp_output_type) to which the data is printed
+  !! \param kpt vector containing the current k-point
+  !! \param data array containing the data
+  SUBROUTINE pp_output(output, kpt, data)
 
     TYPE(pp_output_type), INTENT(IN) :: output
     REAL(dp), INTENT(IN) :: kpt(3)
@@ -250,15 +242,28 @@ CONTAINS
     ! add an empty line at the end of one data set
     WRITE(output%iunit,*)
 
-  END SUBROUTINE pp_output_1d
+  END SUBROUTINE pp_output
 
-  !> specialization of the interface for 2d data
-  SUBROUTINE pp_output_2d(output, kpt, data)
+  !> Print a 2D array in xml format
+  !!
+  !! The array has the shape (nfreq, nbnd), where nfreq and nbnd are the
+  !! number of frequencies and bands, respectively. It is assumed that
+  !! this routine is called nks times, where nks is the number of k-points
+  !! specified when opening the file.
+  !!
+  !! \param output file (as pp_output_type) to which the data is printed
+  !! \param ikq index of the k-point
+  !! \param kpt vector containing the current k-point
+  !! \param omega frequency values
+  !! \param data array containing the data
+  SUBROUTINE pp_output_xml(output, ikq, kpt, omega, data)
 
-    USE iotk_module, ONLY: iotk_write_begin, iotk_write_end, iotk_write_dat
+    USE iotk_module, ONLY: iotk_index, iotk_write_begin, iotk_write_end, iotk_write_dat
 
     TYPE(pp_output_type), INTENT(IN) :: output
+    INTEGER,  INTENT(IN) :: ikq
     REAL(dp), INTENT(IN) :: kpt(3)
+    REAL(dp), INTENT(IN) :: omega(:)
     REAL(dp), INTENT(IN) :: data(:,:)
 
     INTEGER ifreq
@@ -271,20 +276,21 @@ CONTAINS
     !
     CALL errore(__FILE__, 'data array size inconsistent (band)', output%num_band - SIZE(data,2))
     CALL errore(__FILE__, 'data array size inconsistent (freq)', output%num_freq - SIZE(data,1))
+    CALL errore(__FILE__, 'frequency and data array inconsistent', SIZE(data,1) - SIZE(omega))
 
     !
     ! write the data to the file
     !
-    CALL iotk_write_begin(output%iunit, tag_kpoint)
+    CALL iotk_write_begin(output%iunit, tag_kpoint//TRIM(iotk_index(ikq)))
     CALL iotk_write_dat(output%iunit, tag_kpoint_vector, kpt)
     DO ifreq = 1, SIZE(data,1)
-      CALL iotk_write_begin(output%iunit, tag_freq)
-!      CALL iotk_write_dat(output%iunit, tag_freq_value, 0)
+      CALL iotk_write_begin(output%iunit, tag_freq//TRIM(iotk_index(ifreq)))
+      CALL iotk_write_dat(output%iunit, tag_freq_value, omega(ifreq))
       CALL iotk_write_dat(output%iunit, tag_band, data(ifreq, :))
-      CALL iotk_write_end(output%iunit, tag_freq)
+      CALL iotk_write_end(output%iunit, tag_freq//TRIM(iotk_index(ifreq)))
     END DO ! ifreq
-    CALL iotk_write_end(output%iunit, tag_kpoint)
+    CALL iotk_write_end(output%iunit, tag_kpoint//TRIM(iotk_index(ikq)))
 
-  END SUBROUTINE pp_output_2d
+  END SUBROUTINE pp_output_xml
 
 END MODULE pp_output_mod

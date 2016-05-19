@@ -30,7 +30,7 @@ use constants,            only : e2, fpi, RYTOEV, tpi, pi
 use io_global,            only : stdout, ionode_id, ionode
 use wvfct,                only : nbnd, npw, npwx, igk, g2kin, et
 use gwcom,                only : output
-use pp_output_mod,        only : pp_output
+use pp_output_mod,        only : pp_output, pp_output_xml
 
 implicit none
 
@@ -265,9 +265,9 @@ logical                   ::   do_band, do_iq, setup_pw, exst, single_line
   CALL pp_output(output%pp_vxc,      xk(:,ikq), vxc_diag * RYTOEV)
   CALL pp_output(output%pp_exchange, xk(:,ikq), sigma_ex_diag * RYTOEV)
   CALL pp_output(output%pp_renorm,   xk(:,ikq), z)
-  CALL pp_output(output%pp_re_corr,  xk(:,ikq), resig_diag * RYTOEV)
-  CALL pp_output(output%pp_im_corr,  xk(:,ikq), imsig_diag * RYTOEV)
-  CALL pp_output(output%pp_spec,     xk(:,ikq), a_diag / RYTOEV)
+  CALL pp_output_xml(output%pp_re_corr, ikq, xk(:,ikq), wsigma, resig_diag * RYTOEV)
+  CALL pp_output_xml(output%pp_im_corr, ikq, xk(:,ikq), wsigma, imsig_diag * RYTOEV)
+  CALL pp_output_xml(output%pp_spec,    ikq, xk(:,ikq), wsigma, a_diag / RYTOEV)
 
   9000 format(21x, 8(1x,f7.2))
   9005 format(8(1x,f14.7))
