@@ -60,6 +60,7 @@ CONTAINS
   SUBROUTINE pp_output_open_all(nks, nbnd, nw_re, nw_im, output)
 
     USE gw_type_mod, ONLY : name_length, output_type
+    USE wrappers,    ONLY : f_mkdir_safe
 
     INTEGER, INTENT(IN) :: nks
     INTEGER, INTENT(IN) :: nbnd
@@ -67,9 +68,13 @@ CONTAINS
     INTEGER, INTENT(IN) :: nw_im
     TYPE(output_type), INTENT(INOUT) :: output
 
-    INTEGER dim_re, dim_im
+    INTEGER dim_re, dim_im, ierr
 
     CHARACTER(LEN=name_length) prefix
+
+    ! create directory (if it doesn't exist)
+    ierr = f_mkdir_safe(output%directory)
+    IF (ierr > 0) CALL errore(__FILE__, "error when opening/creating directory for output", ierr)
 
     ! bands for band structures
     CALL pp_output_open(nks, nbnd, output%directory, output%pp_dft)
@@ -133,7 +138,7 @@ CONTAINS
 
     ! open the file
     output%iunit = find_free_unit()
-    CALL seqopn(output%iunit, output%filename, "FORMATTED", exst, directory)
+    CALL seqopn(output%iunit, output%filename, "FORMATTED", exst, TRIM(directory)//"/")
 
     ! write namelist to file
     WRITE(output%iunit, NML=plot)
