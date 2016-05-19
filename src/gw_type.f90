@@ -60,6 +60,7 @@ MODULE gw_type_mod
   !! file. Filenames not set will lead to the corresponding output not being
   !! written to file.
   !!
+  !! \param directory      directory in which output is written
   !! \param pp_dft         output of DFT Kohn-Sham eigenvalues
   !! \param pp_gw          output of GW quasi-particle eigenvalues
   !! \param pp_vxc         output of expectation values of V\f$_\text{xc}\f$
@@ -73,6 +74,7 @@ MODULE gw_type_mod
   !! \param pp_spec_iw     output of spectral function on imaginary frequency axis
   !!
   TYPE output_type
+    CHARACTER(LEN=name_length) directory
     TYPE(pp_output_type) pp_dft
     TYPE(pp_output_type) pp_gw
     TYPE(pp_output_type) pp_vxc

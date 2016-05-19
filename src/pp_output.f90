@@ -44,6 +44,8 @@ MODULE pp_output_mod
   CHARACTER(*), PARAMETER :: tag_num_band = 'NUM_BAND'
   !> tag used for the band data
   CHARACTER(*), PARAMETER :: tag_band = 'BAND'
+  !> xml suffix
+  CHARACTER(*), PARAMETER :: xml = '.xml'
 
 CONTAINS
 
@@ -66,21 +68,21 @@ CONTAINS
     INTEGER dim_re, dim_im
 
     ! bands for band structures
-    CALL pp_output_open(nks, nbnd, output%pp_dft)
-    CALL pp_output_open(nks, nbnd, output%pp_gw)
-    CALL pp_output_open(nks, nbnd, output%pp_vxc)
-    CALL pp_output_open(nks, nbnd, output%pp_exchange)
-    CALL pp_output_open(nks, nbnd, output%pp_renorm)
+    CALL pp_output_open(nks, nbnd, output%directory, output%pp_dft)
+    CALL pp_output_open(nks, nbnd, output%directory, output%pp_gw)
+    CALL pp_output_open(nks, nbnd, output%directory, output%pp_vxc)
+    CALL pp_output_open(nks, nbnd, output%directory, output%pp_exchange)
+    CALL pp_output_open(nks, nbnd, output%directory, output%pp_renorm)
 
     ! bands * frequencies on real frequency axis
-    CALL pp_output_open_xml(nks, nbnd, nw_re, output%pp_re_corr)
-    CALL pp_output_open_xml(nks, nbnd, nw_re, output%pp_im_corr)
-    CALL pp_output_open_xml(nks, nbnd, nw_re, output%pp_spec)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, output%directory, output%pp_re_corr)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, output%directory, output%pp_im_corr)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, output%directory, output%pp_spec)
 
     ! bands * frequencies on imaginary axis
-    CALL pp_output_open_xml(nks, nbnd, nw_im, output%pp_re_corr_iw)
-    CALL pp_output_open_xml(nks, nbnd, nw_im, output%pp_im_corr_iw)
-    CALL pp_output_open_xml(nks, nbnd, nw_im, output%pp_spec_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, output%directory, output%pp_re_corr_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, output%directory, output%pp_im_corr_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, output%directory, output%pp_spec_iw)
 
   END SUBROUTINE pp_output_open_all
 
@@ -94,15 +96,17 @@ CONTAINS
   !!
   !! \param nks number of k-points the data will contain
   !! \param nbnd number of bands the data will have
+  !! \param directory directory in which files are created
   !! \param output type that contains the filename on input and the unit
   !! and some metadata after the return of the function
   !!
-  SUBROUTINE pp_output_open(nks, nbnd, output)
+  SUBROUTINE pp_output_open(nks, nbnd, directory, output)
 
     USE io_files, ONLY : seqopn
 
     INTEGER, INTENT(IN) :: nks
     INTEGER, INTENT(IN) :: nbnd
+    CHARACTER(*), INTENT(IN) :: directory
     TYPE(pp_output_type), INTENT(INOUT) :: output
 
     INTEGER, EXTERNAL :: find_free_unit
@@ -122,7 +126,7 @@ CONTAINS
 
     ! open the file
     output%iunit = find_free_unit()
-    CALL seqopn(output%iunit, output%filename, "FORMATTED", exst)
+    CALL seqopn(output%iunit, output%filename, "FORMATTED", exst, directory)
 
     ! write namelist to file
     WRITE(output%iunit, NML=plot)
@@ -140,10 +144,11 @@ CONTAINS
   !! \param nks number of k-points the data will contain
   !! \param nbnd number of bands the data will have
   !! \param nfreq number of frequency points the data will have
+  !! \param directory directory in which files are created
   !! \param output type that contains the filename on input and the unit
   !! and some metadata after the return of the function
   !!
-  SUBROUTINE pp_output_open_xml(nks, nbnd, nfreq, output)
+  SUBROUTINE pp_output_open_xml(nks, nbnd, nfreq, directory, output)
 
     USE iotk_module, ONLY: iotk_free_unit, iotk_open_write, &
                            iotk_write_begin, iotk_write_dat
@@ -151,6 +156,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: nks
     INTEGER, INTENT(IN) :: nbnd
     INTEGER, INTENT(IN) :: nfreq
+    CHARACTER(*), INTENT(IN) :: directory
     TYPE(pp_output_type), INTENT(INOUT) :: output
 
     ! if no filename is present, clear to_file flag and exit
@@ -161,11 +167,11 @@ CONTAINS
     output%num_band = nbnd
     output%num_freq = nfreq
     output%num_kpoint = nks
-    output%xml_format = .FALSE.
+    output%xml_format = .TRUE.
 
     ! open the file
     CALL iotk_free_unit(output%iunit)
-    CALL iotk_open_write(output%iunit, output%filename)
+    CALL iotk_open_write(output%iunit, TRIM(directory)//TRIM(output%filename)//xml)
 
     ! write header with metadata
     CALL iotk_write_dat(output%iunit, tag_num_kpoint, nks)
