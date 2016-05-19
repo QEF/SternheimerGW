@@ -42,8 +42,6 @@ MODULE pp_output_mod
     MODULE PROCEDURE pp_output_1d, pp_output_2d
   END INTERFACE pp_output
 
-  !> tag used for the header of an xml file
-  CHARACTER(*), PARAMETER :: tag_head = 'SGW_OUTPUT'
   !> tag used for the number of k-point
   CHARACTER(*), PARAMETER :: tag_num_kpoint = 'NUM_KPOINT'
   !> tag used for every individual k-point
@@ -186,7 +184,6 @@ CONTAINS
     CALL iotk_open_write(output%iunit, output%filename)
 
     ! write header with metadata
-    CALL iotk_write_begin(output%iunit, tag_head)
     CALL iotk_write_dat(output%iunit, tag_num_kpoint, nks)
     CALL iotk_write_dat(output%iunit, tag_num_band, nbnd)
     CALL iotk_write_dat(output%iunit, tag_num_freq, nfreq)
@@ -213,7 +210,6 @@ CONTAINS
 
     ! close the file (XML version)
     IF (output%xml_format) THEN
-      CALL iotk_write_end(output%iunit, tag_head)
       CALL iotk_close_write(output%iunit)
 
     ! close the file (regular version)
