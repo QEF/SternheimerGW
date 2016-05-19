@@ -80,6 +80,7 @@ print_matel_im.o\
 sigma_pade.o\
 print_clock_gw.o\
 pp_output.o\
+gw_type.o\
 close_gwq.o\
 stop_gw.o\
 fft6.o\
