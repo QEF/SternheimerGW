@@ -29,7 +29,7 @@ SUBROUTINE sigma_matel (ik0)
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecs,                ONLY : nls
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws
+  USE freq_gw,              ONLY : fpol, fiu, nfs, nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
   USE klist,                ONLY : xk, wk, nkstot, nks
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE gvecw,                ONLY : ecutwfc
@@ -80,7 +80,7 @@ IMPLICIT NONE
   integer, allocatable      ::   igkq_tmp(:) 
   integer                   ::   iq, ikq, ikq_head
   integer                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
-  integer                   ::   nwsigwin, ierr, ng
+  integer                   ::   ierr, ng
   integer     :: sigma_c_ngm, sigma_x_ngm
   integer     :: iunwfc1
   integer     :: kpoolid(nkstot), iqrec1(nkstot)
@@ -325,7 +325,6 @@ call mp_barrier(inter_pool_comm)
   if(meta_ionode) THEN
      if(do_imag) then 
 !We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-        nwsigwin  = 1 + ceiling((wsig_wind_max - wsig_wind_min)/deltaws)
         allocate (wsigwin(nwsigwin))
         do iw = 1, nwsigwin
             wsigwin(iw) = wsig_wind_min + (wsig_wind_max-wsig_wind_min)/float(nwsigwin-1)*float(iw-1)

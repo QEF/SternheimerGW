@@ -38,7 +38,8 @@ SUBROUTINE freqbins()
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
-                         wgreenmax, fiu, nfs, greenzero, w0pmw, wgtcoul
+                         wgreenmax, fiu, nfs, greenzero, w0pmw, wgtcoul, &
+                         wsig_wind_max, wsig_wind_min, deltaws, nwsigwin
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV, pi
@@ -124,6 +125,7 @@ SUBROUTINE freqbins()
       WRITE(stdout,'(8x, i4, 4x, 2f12.3)') i, wgtcoul(i), wcoul(i)
    ENDDO
   ENDIF
+  nwsigwin  = 1 + ceiling((wsig_wind_max - wsig_wind_min)/deltaws)
 ! Print out Frequencies on Imaginary Axis for reference.
   WRITE(stdout, '(//5x,"Frequency Grids (eV):")')
   WRITE(stdout, '(/5x, "wsigmamin, wsigmamax, deltaw")')
