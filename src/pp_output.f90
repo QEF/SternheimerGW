@@ -24,7 +24,7 @@
 MODULE pp_output_mod
 
   USE kinds,       ONLY : dp
-  USE gw_type_mod, ONLY : pp_output_type
+  USE gw_type_mod, ONLY : pp_output_type, output_type
 
   IMPLICIT NONE
 
@@ -45,6 +45,86 @@ MODULE pp_output_mod
   PRIVATE pp_output_1d, pp_output_2d
 
 CONTAINS
+
+  !> Open all files that are use for PP printing
+  !!
+  !! \param nks number of k-points the data will contain
+  !! \param nbnd number of bands for GW quasiparticle energies
+  !! \param nw_re number of frequency points on real axis
+  !! \param nw_im number of frequency point on imaginary axis
+  !! \param output type that contains all files for PP
+  !!
+  SUBROUTINE pp_output_open_all(nks, nbnd, nw_re, nw_im, output)
+
+    INTEGER, INTENT(IN) :: nks
+    INTEGER, INTENT(IN) :: nbnd
+    INTEGER, INTENT(IN) :: nw_re
+    INTEGER, INTENT(IN) :: nw_im
+    TYPE(output_type), INTENT(INOUT) :: output
+
+    INTEGER dim_re, dim_im
+
+    ! bands for band structures
+    CALL pp_output_open(nks, nbnd, output%pp_dft)
+    CALL pp_output_open(nks, nbnd, output%pp_gw)
+    CALL pp_output_open(nks, nbnd, output%pp_vxc)
+    CALL pp_output_open(nks, nbnd, output%pp_exchange)
+    CALL pp_output_open(nks, nbnd, output%pp_renorm)
+
+    ! bands * frequencies on real frequency axis
+    dim_re = nbnd * nw_re
+    CALL pp_output_open(nks, dim_re, output%pp_re_corr)
+    CALL pp_output_open(nks, dim_re, output%pp_im_corr)
+    CALL pp_output_open(nks, dim_re, output%pp_spec)
+
+    ! bands * frequencies on imaginary axis
+    dim_im = nbnd * nw_im
+    CALL pp_output_open(nks, dim_im, output%pp_re_corr_iw)
+    CALL pp_output_open(nks, dim_im, output%pp_im_corr_iw)
+    CALL pp_output_open(nks, dim_im, output%pp_spec_iw)
+
+  END SUBROUTINE pp_output_open_all
+
+  !> Open a file to print the data for QE's plotband program
+  !!
+  !! If the filename is not set, this routine will just clear the to_file
+  !! flag, so that later parts of the code can test whether data is meant
+  !! to be written. If the filename is present, the file is opened and the
+  !! unit is stored in the type. Then the header for the data is written
+  !! into the file.
+  !!
+  !! \param nks number of k-points the data will contain
+  !! \param nbnd number of bands the data will have
+  !! \param output type that contains the filename on input and the unit
+  !! and some metadata after the return of the function
+  !!
+  SUBROUTINE pp_output_open(nks, nbnd, output)
+
+    INTEGER, INTENT(IN) :: nks
+    INTEGER, INTENT(IN) :: nbnd
+    TYPE(pp_output_type), INTENT(INOUT) :: output
+
+    INTEGER, EXTERNAL :: find_free_unit
+    LOGICAL exst
+
+    NAMELIST /plot/ nks, nbnd
+
+    ! if no filename is present, clear to_file flag and exit
+    output%to_file = (output%filename /= '')
+    IF (.NOT.output%to_file) RETURN
+
+    ! set metadata
+    output%num_band = nbnd
+    output%num_kpoint = nks
+
+    ! open the file
+    output%iunit = find_free_unit()
+    CALL seqopn(output%iunit, output%filename, "FORMATTED", exst)
+
+    ! write namelist to file
+    WRITE(output%iunit, NML=plot)
+
+  END SUBROUTINE pp_output_open
 
   !> specialization of the interface for 1d data
   SUBROUTINE pp_output_1d(output, kpt, data)
