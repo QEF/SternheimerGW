@@ -175,8 +175,8 @@ CONTAINS
     ! write the data to the file
     !
     WRITE(output%iunit, '(5x,3f10.6)') kpt
-    DO ii = 1, SIZE(data,2)
-      WRITE(output%iunit, '(10f10.5)') data(:,ii)
+    DO ii = 1, SIZE(data,1)
+      WRITE(output%iunit, '(10f10.5)') data(ii,:)
       ! add an empty line if data would fill line completely
       WRITE(output%iunit,*)
     END DO ! ii
