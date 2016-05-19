@@ -260,10 +260,10 @@ logical                   ::   do_band, do_iq, setup_pw, exst, single_line
   !
   ! print file according to user requirement
   !
-  IF (output%pp_dft%to_file)      CALL pp_output(output%pp_dft,      xk(:,ikq), et(:,ikq))
-  IF (output%pp_gw%to_file)       CALL pp_output(output%pp_gw,       xk(:,ikq), et_qp)
-  IF (output%pp_vxc%to_file)      CALL pp_output(output%pp_vxc,      xk(:,ikq), vxc_diag)
-  IF (output%pp_exchange%to_file) CALL pp_output(output%pp_exchange, xk(:,ikq), sigma_ex_diag)
+  IF (output%pp_dft%to_file)      CALL pp_output(output%pp_dft,      xk(:,ikq), et(:,ikq) * RYTOEV)
+  IF (output%pp_gw%to_file)       CALL pp_output(output%pp_gw,       xk(:,ikq), et_qp * RYTOEV)
+  IF (output%pp_vxc%to_file)      CALL pp_output(output%pp_vxc,      xk(:,ikq), vxc_diag * RYTOEV)
+  IF (output%pp_exchange%to_file) CALL pp_output(output%pp_exchange, xk(:,ikq), sigma_ex_diag * RYTOEV)
   IF (output%pp_renorm%to_file)   CALL pp_output(output%pp_renorm,   xk(:,ikq), z)
   IF (output%pp_re_corr%to_file)  CALL pp_output(output%pp_re_corr,  xk(:,ikq), resig_diag * RYTOEV)
   IF (output%pp_im_corr%to_file)  CALL pp_output(output%pp_im_corr,  xk(:,ikq), imsig_diag * RYTOEV)
