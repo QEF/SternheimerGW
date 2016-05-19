@@ -24,9 +24,12 @@ subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma
 
   USE kinds,                ONLY : DP
   USE gwsigma,              ONLY : ngmsig, nbnd_sig
+  USE klist,                ONLY : xk
   USE io_global,            ONLY : stdout, ionode_id, ionode
   USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
+  USE gwcom,                ONLY : output
+  USE pp_output_mod,        ONLY : pp_output
 
 implicit none
 
@@ -177,7 +180,14 @@ LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
   enddo
   write(stdout,*)
 
-  9000 format(8(1x,f7.2))
+  !
+  ! print file according to user requirement
+  !
+  IF (output%pp_re_corr_iw%to_file) CALL pp_output(output%pp_re_corr_iw, xk(:,ikq), resig_diag * RYTOEV)
+  IF (output%pp_im_corr_iw%to_file) CALL pp_output(output%pp_im_corr_iw, xk(:,ikq), imsig_diag * RYTOEV)
+  IF (output%pp_spec_iw%to_file)    CALL pp_output(output%pp_spec_iw,    xk(:,ikq), a_diag / RYTOEV)
+
+  9000 format(21x, 8(1x,f7.2))
   9005 format(8(1x,f14.7))
 RETURN
 end subroutine print_matel_im
