@@ -178,7 +178,7 @@ CONTAINS
     DO ii = 1, SIZE(data,2)
       WRITE(output%iunit, '(10f10.5)') data(:,ii)
       ! add an empty line if data would fill line completely
-      IF (MOD(SIZE(data,1), 10) == 0) WRITE(output%iunit,*)
+      WRITE(output%iunit,*)
     END DO ! ii
 
     ! add an empty line at the end of one data set
