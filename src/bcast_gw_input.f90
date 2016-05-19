@@ -43,7 +43,7 @@ subroutine bcast_gw_input ( )
                           coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
                           do_imag, do_pade_coul, newgrid, high_io, freq_gl,&
                           prec_direct, tmp_dir_coul, prec_shift, just_corr,&
-                          double_grid
+                          double_grid, output
   USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
                           w_of_k_start, w_of_k_stop
   USE partial,     ONLY : nat_todo, nrapp
@@ -103,6 +103,17 @@ subroutine bcast_gw_input ( )
   call mp_bcast (tmp_dir, meta_ionode_id, world_comm )
   call mp_bcast (tmp_dir_coul, meta_ionode_id, world_comm )
   call mp_bcast (prefix, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_dft, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_gw, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_vxc, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_exchange, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_renorm, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_re_corr, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_re_corr_iw, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_im_corr, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_im_corr_iw, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_spec, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_spec_iw, meta_ionode_id, world_comm )
 
  !SGW cutoffs and control
   call mp_bcast (ecutsex, meta_ionode_id, world_comm)

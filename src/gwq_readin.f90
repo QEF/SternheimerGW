@@ -335,11 +335,25 @@ SUBROUTINE gwq_readin()
   if(corr_conv.eq.0) corr_conv = ecutsco
 !HL TEST PARA FINE
 30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
-   CALL errore( 'gwq_readin', 'reading inputgw namelist', ABS( ios ) )
+   CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
   IF (meta_ionode) tmp_dir = trimcheck (outdir)
 
   CALL bcast_gw_input ( ) 
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
+
+  ! check which files are printed
+  output%print_dft        = '' /= output%file_dft        
+  output%print_gw         = '' /= output%file_gw         
+  output%print_vxc        = '' /= output%file_vxc        
+  output%print_exchange   = '' /= output%file_exchange   
+  output%print_renorm     = '' /= output%file_renorm     
+  output%print_re_corr    = '' /= output%file_re_corr    
+  output%print_re_corr_iw = '' /= output%file_re_corr_iw 
+  output%print_im_corr    = '' /= output%file_im_corr    
+  output%print_im_corr_iw = '' /= output%file_im_corr_iw 
+  output%print_spec       = '' /= output%file_spec       
+  output%print_spec_iw    = '' /= output%file_spec_iw    
+
   !
   ! ... Check all namelist variables
   !

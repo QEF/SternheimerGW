@@ -11,6 +11,7 @@ IFLAGS=
 
 GWOBJS = \
 kind_gw.o\
+gw_type.o\
 gwcom.o\
 version.o\
 gw.o\
@@ -80,7 +81,6 @@ print_matel_im.o\
 sigma_pade.o\
 print_clock_gw.o\
 pp_output.o\
-gw_type.o\
 close_gwq.o\
 stop_gw.o\
 fft6.o\
