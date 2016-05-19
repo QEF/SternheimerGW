@@ -23,119 +23,85 @@
 !> Provides routines that generate output for QE's plotband program
 MODULE pp_output_mod
 
-  USE kinds, ONLY : dp
+  USE kinds,       ONLY : dp
+  USE gw_type_mod, ONLY : pp_output_type
 
   IMPLICIT NONE
 
   !> Print the an array for QE's plotband program
   !!
-  !! The array has the shape (a1, ..., an, b), where a1 to an are
-  !! multiplied to form the nbnd flag for plotband. b is the number
-  !! of k-points of the system.
-  !! \param filename file to which the data is printed
-  !! \param kpt array containing the k-points
+  !! The array has the shape (a1, ..., an), where a1 to an are
+  !! multiplied to form the nbnd flag for plotband. It is assumed that
+  !! this routine is called nks times, where nks is the number of k-points
+  !! specified when opening the file.
+  !!
+  !! \param output file (as pp_output_type) to which the data is printed
+  !! \param kpt vector containing the current k-point
   !! \param data array containing the data
   INTERFACE pp_output
-    MODULE PROCEDURE pp_output_2d, pp_output_3d
+    MODULE PROCEDURE pp_output_1d, pp_output_2d
   END INTERFACE pp_output
 
-  PRIVATE pp_output_2d, pp_output_3d
+  PRIVATE pp_output_1d, pp_output_2d
 
 CONTAINS
 
-  !> specialization of the interface for 2d data
-  SUBROUTINE pp_output_2d(filename, kpt, data)
+  !> specialization of the interface for 1d data
+  SUBROUTINE pp_output_1d(output, kpt, data)
 
-    CHARACTER(LEN=*), INTENT(IN) :: filename
-    REAL(dp),         INTENT(IN) :: kpt(:,:)
-    REAL(dp),         INTENT(IN) :: data(:,:)
+    TYPE(pp_output_type), INTENT(IN) :: output
+    REAL(dp), INTENT(IN) :: kpt(3)
+    REAL(dp), INTENT(IN) :: data(:)
 
-    INTEGER nks, nbnd, unit_plot
-    INTEGER ikpt
-    INTEGER, EXTERNAL :: find_free_unit
-
-    NAMELIST /plot/ nks, nbnd
+    LOGICAL opnd
 
     !
     ! sanity test of the input
     !
-    nks  = SIZE(kpt, 2)
-    nbnd = SIZE(data, 1)
-    CALL errore(__FILE__, 'k-point should have dimension of 3', SIZE(kpt, 1) - 3)
-    CALL errore(__FILE__, 'data array should have dimension of kpt', SIZE(data, 2) - nks)
+    CALL errore(__FILE__, 'data array size inconsistent', output%num_band - SIZE(data))
+    INQUIRE(UNIT = output%iunit, OPENED = opnd)
+    IF (.NOT.opnd) CALL errore(__FILE__, output%filename//' not opened', 1)
 
     !
     ! write the data to the file
     !
+    WRITE(output%iunit, '(5x,3f10.6)') kpt
+    WRITE(output%iunit, '(10f10.5)') data
+    ! add an empty line at the end of one data set
+    WRITE(output%iunit,*)
 
-    ! open the file
-    unit_plot = find_free_unit()
-    OPEN(FILE = filename, UNIT = unit_plot)
+  END SUBROUTINE pp_output_1d
 
-    ! write the header
-    WRITE(unit_plot, NML=plot)
+  !> specialization of the interface for 2d data
+  SUBROUTINE pp_output_2d(output, kpt, data)
 
-    ! write the data
-    DO ikpt = 1, nks
-      WRITE(unit_plot, '(5x,3f10.6)') kpt(:,ikpt)
-      WRITE(unit_plot, '(10f10.5)') data(:,ikpt)
-      ! add an empty line at the end of one data set
-      WRITE(unit_plot,*)
-    END DO
+    TYPE(pp_output_type), INTENT(IN) :: output
+    REAL(dp), INTENT(IN) :: kpt(3)
+    REAL(dp), INTENT(IN) :: data(:,:)
 
-    ! close the file
-    CLOSE(unit_plot)
+    INTEGER ii
+    LOGICAL opnd
+
+    !
+    ! sanity test of the input
+    !
+    CALL errore(__FILE__, 'data array size inconsistent', output%num_band - SIZE(data))
+    INQUIRE(UNIT = output%iunit, OPENED = opnd)
+    IF (.NOT.opnd) CALL errore(__FILE__, output%filename//' not opened', 1)
+
+    !
+    ! write the data to the file
+    !
+    WRITE(output%iunit, '(5x,3f10.6)') kpt
+    DO ii = 1, SIZE(data,2)
+      WRITE(output%iunit, '(10f10.5)') data(:,ii)
+      ! add an empty line if data would fill line completely
+      IF (MOD(SIZE(data,1), 10) == 0) WRITE(output%iunit,*)
+    END DO ! ii
+
+    ! add an empty line at the end of one data set
+    WRITE(output%iunit,*)
 
   END SUBROUTINE pp_output_2d
-
-  !> specialization of the interface for 3d data
-  SUBROUTINE pp_output_3d(filename, kpt, data)
-
-    CHARACTER(LEN=*), INTENT(IN) :: filename
-    REAL(dp),         INTENT(IN) :: kpt(:,:)
-    REAL(dp),         INTENT(IN) :: data(:,:,:)
-
-    INTEGER nks, nbnd, unit_plot
-    INTEGER ikpt, ii
-    INTEGER, EXTERNAL :: find_free_unit
-
-    NAMELIST /plot/ nks, nbnd
-
-    !
-    ! sanity test of the input
-    !
-    nks  = SIZE(kpt, 2)
-    nbnd = SIZE(data, 1) * SIZE(data, 2)
-    CALL errore(__FILE__, 'k-point should have dimension of 3', SIZE(kpt, 1) - 3)
-    CALL errore(__FILE__, 'data array should have dimension of kpt', SIZE(data, 3) - nks)
-
-    !
-    ! write the data to the file
-    !
-
-    ! open the file
-    unit_plot = find_free_unit()
-    OPEN(FILE = filename, UNIT = unit_plot)
-
-    ! write the header
-    WRITE(unit_plot, NML=plot)
-
-    ! write the data
-    DO ikpt = 1, nks
-      WRITE(unit_plot, '(5x,3f10.6)') kpt(:,ikpt)
-      DO ii = 1, SIZE(data,2)
-        WRITE(unit_plot, '(10f10.5)') data(:,ii,ikpt)
-        ! add an empty line if data set fills the line
-        ! so that different sets are more easily seperable
-        IF (MOD(SIZE(data,1), 10) == 0) WRITE(unit_plot,*)
-      END DO
-      ! add an empty line at the end of one data set
-      WRITE(unit_plot,*)
-    END DO
-
-    ! close the file
-    CLOSE(unit_plot)
-
-  END SUBROUTINE pp_output_3d
 
 END MODULE pp_output_mod
