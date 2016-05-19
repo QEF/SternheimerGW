@@ -24,7 +24,7 @@
 MODULE pp_output_mod
 
   USE kinds,       ONLY : dp
-  USE gw_type_mod, ONLY : pp_output_type, output_type
+  USE gw_type_mod, ONLY : pp_output_type
 
   IMPLICIT NONE
 
@@ -59,6 +59,8 @@ CONTAINS
   !!
   SUBROUTINE pp_output_open_all(nks, nbnd, nw_re, nw_im, output)
 
+    USE gw_type_mod, ONLY : name_length, output_type
+
     INTEGER, INTENT(IN) :: nks
     INTEGER, INTENT(IN) :: nbnd
     INTEGER, INTENT(IN) :: nw_re
@@ -67,6 +69,8 @@ CONTAINS
 
     INTEGER dim_re, dim_im
 
+    CHARACTER(LEN=name_length) prefix
+
     ! bands for band structures
     CALL pp_output_open(nks, nbnd, output%directory, output%pp_dft)
     CALL pp_output_open(nks, nbnd, output%directory, output%pp_gw)
@@ -74,15 +78,18 @@ CONTAINS
     CALL pp_output_open(nks, nbnd, output%directory, output%pp_exchange)
     CALL pp_output_open(nks, nbnd, output%directory, output%pp_renorm)
 
+    ! prefix contains directory and file prefix
+    prefix = TRIM(output%directory)//"/"//TRIM(output%prefix)//"."
+
     ! bands * frequencies on real frequency axis
-    CALL pp_output_open_xml(nks, nbnd, nw_re, output%directory, output%pp_re_corr)
-    CALL pp_output_open_xml(nks, nbnd, nw_re, output%directory, output%pp_im_corr)
-    CALL pp_output_open_xml(nks, nbnd, nw_re, output%directory, output%pp_spec)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, prefix, output%pp_re_corr)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, prefix, output%pp_im_corr)
+    CALL pp_output_open_xml(nks, nbnd, nw_re, prefix, output%pp_spec)
 
     ! bands * frequencies on imaginary axis
-    CALL pp_output_open_xml(nks, nbnd, nw_im, output%directory, output%pp_re_corr_iw)
-    CALL pp_output_open_xml(nks, nbnd, nw_im, output%directory, output%pp_im_corr_iw)
-    CALL pp_output_open_xml(nks, nbnd, nw_im, output%directory, output%pp_spec_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, prefix, output%pp_re_corr_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, prefix, output%pp_im_corr_iw)
+    CALL pp_output_open_xml(nks, nbnd, nw_im, prefix, output%pp_spec_iw)
 
   END SUBROUTINE pp_output_open_all
 
@@ -144,11 +151,11 @@ CONTAINS
   !! \param nks number of k-points the data will contain
   !! \param nbnd number of bands the data will have
   !! \param nfreq number of frequency points the data will have
-  !! \param directory directory in which files are created
+  !! \param prefix directory and/or prefix added to the front of all files
   !! \param output type that contains the filename on input and the unit
   !! and some metadata after the return of the function
   !!
-  SUBROUTINE pp_output_open_xml(nks, nbnd, nfreq, directory, output)
+  SUBROUTINE pp_output_open_xml(nks, nbnd, nfreq, prefix, output)
 
     USE iotk_module, ONLY: iotk_free_unit, iotk_open_write, &
                            iotk_write_begin, iotk_write_dat
@@ -156,7 +163,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: nks
     INTEGER, INTENT(IN) :: nbnd
     INTEGER, INTENT(IN) :: nfreq
-    CHARACTER(*), INTENT(IN) :: directory
+    CHARACTER(*), INTENT(IN) :: prefix
     TYPE(pp_output_type), INTENT(INOUT) :: output
 
     ! if no filename is present, clear to_file flag and exit
@@ -171,7 +178,7 @@ CONTAINS
 
     ! open the file
     CALL iotk_free_unit(output%iunit)
-    CALL iotk_open_write(output%iunit, TRIM(directory)//TRIM(output%filename)//xml)
+    CALL iotk_open_write(output%iunit, TRIM(prefix)//TRIM(output%filename)//xml)
 
     ! write header with metadata
     CALL iotk_write_dat(output%iunit, tag_num_kpoint, nks)

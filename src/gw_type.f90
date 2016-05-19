@@ -61,6 +61,7 @@ MODULE gw_type_mod
   !! written to file.
   !!
   !! \param directory      directory in which output is written
+  !! \param prefix         prefix added to all file names
   !! \param pp_dft         output of DFT Kohn-Sham eigenvalues
   !! \param pp_gw          output of GW quasi-particle eigenvalues
   !! \param pp_vxc         output of expectation values of V\f$_\text{xc}\f$
@@ -75,6 +76,7 @@ MODULE gw_type_mod
   !!
   TYPE output_type
     CHARACTER(LEN=name_length) directory
+    CHARACTER(LEN=name_length) prefix
     TYPE(pp_output_type) pp_dft
     TYPE(pp_output_type) pp_gw
     TYPE(pp_output_type) pp_vxc

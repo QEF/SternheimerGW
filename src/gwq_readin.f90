@@ -483,6 +483,7 @@ SUBROUTINE gwq_readin()
   tmp_dir_coul= TRIM (tmp_dir) //'_gw0'//'/'
   ! set output directory if not defined
   IF (output%directory == '') output%directory = tmp_dir_gw
+  output%prefix = prefix
 
   CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
   ext_restart=.FALSE.
