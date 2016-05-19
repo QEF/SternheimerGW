@@ -26,58 +26,60 @@ MODULE gw_type_mod
   !> maximal length of file name
   INTEGER, PARAMETER :: name_length = 256
 
+  !> Type that contains the information about a file linked for PP output
+  !!
+  !! This type facilitates the pp_output_mod module. The type stores the
+  !! filename of the file to open and once the file is opened the associated
+  !! unit. To check for consistency of the data the number of k-points and
+  !! the number of bands are stored, too.
+  !!
+  !! \param filename   name of the file to which the data is written
+  !! \param to_file    flag indicating if data is print to file    
+  !! \param iunit      unit access to file
+  !! \param num_kpoint number of k-points
+  !! \param num_band   number of bands
+  !! \see pp_output_mod
+  !!
+  TYPE pp_output_type
+    CHARACTER(LEN=name_length) filename
+    LOGICAL to_file
+    INTEGER iunit
+    INTEGER num_kpoint
+    INTEGER num_band
+  END TYPE pp_output_type
+
   !> Type defining the output format.
   !!
-  !! Defines the filename of different output that can be produced by
-  !! SGW. Filenames not set will lead to the corresponding output not being
+  !! Defines the filename of different output that can be produced by SGW.
+  !! All filenames used for PP are stored in a pp_output_type that contains
+  !! some additional metadata to check for consistency of the data written to
+  !! file. Filenames not set will lead to the corresponding output not being
   !! written to file.
   !!
-  !! \param file_dft         output of DFT Kohn-Sham eigenvalues
-  !! \param print_dft        if DFT Kohn-Sham eigenvalues are printed
-  !! \param file_gw          output of GW quasi-particle eigenvalues
-  !! \param print_gw         if GW quasi-particle eigenvalues are printed
-  !! \param file_vxc         output of expectation values of V\f$_\text{xc}\f$
-  !! \param print_vxc        if expectation values of V\f$_\text{xc}\f$ are printed
-  !! \param file_exchange    output of the exchange part of \f$\Sigma\f$
-  !! \param print_exchange   if exchange part of \f$\Sigma\f$ is printed
-  !! \param file_renorm      output the quasiparticle renormalization
-  !! \param print_renorm     if quasiparticle renormalization is printed
-  !! \param file_re_corr     output of real part of correlation on real frequency axis
-  !! \param print_re_corr    if real part of correlation on real frequency axis is printed
-  !! \param file_re_corr_iw  output of real part of correlation on imaginary frequency axis
-  !! \param print_re_corr_iw if real part of correlation on imaginary frequency axis is printed
-  !! \param file_im_corr     output of imaginary part of correlation on real frequency axis
-  !! \param print_im_corr    if imaginary part of correlation on real frequency axis is printed
-  !! \param file_im_corr_iw  output of imaginary part of correlation on imaginary frequency axis
-  !! \param print_im_corr_iw if imaginary part of correlation on imaginary frequency axis is printed
-  !! \param file_spec        output of spectral function on real frequency axis
-  !! \param print_spec       if spectral function on real frequency axis is printed
-  !! \param file_spec_iw     output of spectral function on imaginary frequency axis
-  !! \param print_spec_iw    if spectral function on imaginary frequency axis is printed
+  !! \param pp_dft         output of DFT Kohn-Sham eigenvalues
+  !! \param pp_gw          output of GW quasi-particle eigenvalues
+  !! \param pp_vxc         output of expectation values of V\f$_\text{xc}\f$
+  !! \param pp_exchange    output of the exchange part of \f$\Sigma\f$
+  !! \param pp_renorm      output the quasiparticle renormalization
+  !! \param pp_re_corr     output of real part of correlation on real frequency axis
+  !! \param pp_re_corr_iw  output of real part of correlation on imaginary frequency axis
+  !! \param pp_im_corr     output of imaginary part of correlation on real frequency axis
+  !! \param pp_im_corr_iw  output of imaginary part of correlation on imaginary frequency axis
+  !! \param pp_spec        output of spectral function on real frequency axis
+  !! \param pp_spec_iw     output of spectral function on imaginary frequency axis
   !!
   TYPE output_type
-    CHARACTER(LEN=name_length) file_dft
-    LOGICAL                    print_dft
-    CHARACTER(LEN=name_length) file_gw
-    LOGICAL                    print_gw
-    CHARACTER(LEN=name_length) file_vxc
-    LOGICAL                    print_vxc
-    CHARACTER(LEN=name_length) file_exchange
-    LOGICAL                    print_exchange
-    CHARACTER(LEN=name_length) file_renorm
-    LOGICAL                    print_renorm
-    CHARACTER(LEN=name_length) file_re_corr
-    LOGICAL                    print_re_corr
-    CHARACTER(LEN=name_length) file_re_corr_iw
-    LOGICAL                    print_re_corr_iw
-    CHARACTER(LEN=name_length) file_im_corr
-    LOGICAL                    print_im_corr
-    CHARACTER(LEN=name_length) file_im_corr_iw
-    LOGICAL                    print_im_corr_iw
-    CHARACTER(LEN=name_length) file_spec
-    LOGICAL                    print_spec
-    CHARACTER(LEN=name_length) file_spec_iw
-    LOGICAL                    print_spec_iw
+    TYPE(pp_output_type) pp_dft
+    TYPE(pp_output_type) pp_gw
+    TYPE(pp_output_type) pp_vxc
+    TYPE(pp_output_type) pp_exchange
+    TYPE(pp_output_type) pp_renorm
+    TYPE(pp_output_type) pp_re_corr
+    TYPE(pp_output_type) pp_re_corr_iw
+    TYPE(pp_output_type) pp_im_corr
+    TYPE(pp_output_type) pp_im_corr_iw
+    TYPE(pp_output_type) pp_spec
+    TYPE(pp_output_type) pp_spec_iw
   END TYPE output_type
 
 END MODULE gw_type_mod

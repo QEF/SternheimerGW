@@ -318,17 +318,17 @@ SUBROUTINE gwq_readin()
   IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
   
   ! copy read data to output type
-  output%file_dft        = file_dft 
-  output%file_gw         = file_gw
-  output%file_vxc        = file_vxc
-  output%file_exchange   = file_exchange
-  output%file_renorm     = file_renorm
-  output%file_re_corr    = file_re_corr
-  output%file_re_corr_iw = file_re_corr_iw
-  output%file_im_corr    = file_im_corr
-  output%file_im_corr_iw = file_im_corr_iw
-  output%file_spec       = file_spec
-  output%file_spec_iw    = file_spec_iw
+  output%pp_dft%filename        = file_dft 
+  output%pp_gw%filename         = file_gw
+  output%pp_vxc%filename        = file_vxc
+  output%pp_exchange%filename   = file_exchange
+  output%pp_renorm%filename     = file_renorm
+  output%pp_re_corr%filename    = file_re_corr
+  output%pp_re_corr_iw%filename = file_re_corr_iw
+  output%pp_im_corr%filename    = file_im_corr
+  output%pp_im_corr_iw%filename = file_im_corr_iw
+  output%pp_spec%filename       = file_spec
+  output%pp_spec_iw%filename    = file_spec_iw
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
@@ -340,19 +340,6 @@ SUBROUTINE gwq_readin()
 
   CALL bcast_gw_input ( ) 
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
-
-  ! check which files are printed
-  output%print_dft        = '' /= output%file_dft        
-  output%print_gw         = '' /= output%file_gw         
-  output%print_vxc        = '' /= output%file_vxc        
-  output%print_exchange   = '' /= output%file_exchange   
-  output%print_renorm     = '' /= output%file_renorm     
-  output%print_re_corr    = '' /= output%file_re_corr    
-  output%print_re_corr_iw = '' /= output%file_re_corr_iw 
-  output%print_im_corr    = '' /= output%file_im_corr    
-  output%print_im_corr_iw = '' /= output%file_im_corr_iw 
-  output%print_spec       = '' /= output%file_spec       
-  output%print_spec_iw    = '' /= output%file_spec_iw    
 
   !
   ! ... Check all namelist variables
