@@ -231,6 +231,9 @@ CONTAINS
 
     LOGICAL opnd
 
+    ! don't do anything if file is not required
+    IF (.NOT.output%to_file) RETURN
+
     !
     ! sanity test of the input
     !
@@ -257,6 +260,9 @@ CONTAINS
 
     INTEGER ii
     LOGICAL opnd
+
+    ! don't do anything if file is not required
+    IF (.NOT.output%to_file) RETURN
 
     !
     ! sanity test of the input

@@ -258,16 +258,16 @@ logical                   ::   do_band, do_iq, setup_pw, exst, single_line
   write(stdout,*)
 
   !
-  ! print file according to user requirement
+  ! print output files according to user requirement
   !
-  IF (output%pp_dft%to_file)      CALL pp_output(output%pp_dft,      xk(:,ikq), et(:,ikq) * RYTOEV)
-  IF (output%pp_gw%to_file)       CALL pp_output(output%pp_gw,       xk(:,ikq), et_qp * RYTOEV)
-  IF (output%pp_vxc%to_file)      CALL pp_output(output%pp_vxc,      xk(:,ikq), vxc_diag * RYTOEV)
-  IF (output%pp_exchange%to_file) CALL pp_output(output%pp_exchange, xk(:,ikq), sigma_ex_diag * RYTOEV)
-  IF (output%pp_renorm%to_file)   CALL pp_output(output%pp_renorm,   xk(:,ikq), z)
-  IF (output%pp_re_corr%to_file)  CALL pp_output(output%pp_re_corr,  xk(:,ikq), resig_diag * RYTOEV)
-  IF (output%pp_im_corr%to_file)  CALL pp_output(output%pp_im_corr,  xk(:,ikq), imsig_diag * RYTOEV)
-  IF (output%pp_spec%to_file)     CALL pp_output(output%pp_spec,     xk(:,ikq), a_diag / RYTOEV)
+  CALL pp_output(output%pp_dft,      xk(:,ikq), et(:,ikq) * RYTOEV)
+  CALL pp_output(output%pp_gw,       xk(:,ikq), et_qp * RYTOEV)
+  CALL pp_output(output%pp_vxc,      xk(:,ikq), vxc_diag * RYTOEV)
+  CALL pp_output(output%pp_exchange, xk(:,ikq), sigma_ex_diag * RYTOEV)
+  CALL pp_output(output%pp_renorm,   xk(:,ikq), z)
+  CALL pp_output(output%pp_re_corr,  xk(:,ikq), resig_diag * RYTOEV)
+  CALL pp_output(output%pp_im_corr,  xk(:,ikq), imsig_diag * RYTOEV)
+  CALL pp_output(output%pp_spec,     xk(:,ikq), a_diag / RYTOEV)
 
   9000 format(21x, 8(1x,f7.2))
   9005 format(8(1x,f14.7))
