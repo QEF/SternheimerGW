@@ -33,6 +33,7 @@ program gw
   USE freq_gw,          ONLY : nwsigma, nwsigwin
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,         ONLY : diropn
+  USE io_global,        ONLY : meta_ionode
   USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,            ONLY : nbnd
   USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop
@@ -86,7 +87,7 @@ program gw
          endif
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
          if (do_sigma_matel) then
-           if (ik == w_of_k_start) then         
+           if (meta_ionode .AND. ik == w_of_k_start) then         
              call pp_output_open_all(num_k_pts, nbnd_sig, nwsigwin, nwsigma, output)
            end if
            call sigma_matel(ik)

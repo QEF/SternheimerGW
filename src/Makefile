@@ -14,6 +14,7 @@ kind_gw.o\
 gw_type.o\
 gwcom.o\
 version.o\
+pp_output.o\
 gw.o\
 testnan.o\
 save_gw_input.o\
@@ -80,7 +81,6 @@ para_pool.o\
 print_matel_im.o\
 sigma_pade.o\
 print_clock_gw.o\
-pp_output.o\
 close_gwq.o\
 stop_gw.o\
 fft6.o\
