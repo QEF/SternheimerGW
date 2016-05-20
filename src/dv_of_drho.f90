@@ -46,9 +46,10 @@ subroutine dv_of_drho (mode, dvscf, flag)
   USE nlcc_gw,   ONLY : nlcc_any
   USE qpoint,    ONLY : xq
   USE gc_lr,     ONLY : grho, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s
-  USE control_gw, ONLY : lrpa, trunc_2d
+  USE control_gw, ONLY : lrpa
   USE control_flags, only : gamma_only
   USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3
+  USE truncation_module, ONLY : truncate, no_truncation
 
   implicit none
 
@@ -71,6 +72,8 @@ subroutine dv_of_drho (mode, dvscf, flag)
   real(DP) :: zcut, spal
   ! the modulus of (q+G)^2
   ! the structure factor
+  real(DP) :: q_G(3)
+  ! the vector q + G
 
   complex(DP), allocatable :: dvaux (:,:), drhoc (:)
   !  the change of the core charge
@@ -132,11 +135,14 @@ subroutine dv_of_drho (mode, dvscf, flag)
     dvhart(:,:) = (0.d0,0.d0)
     do is = 1, nspin_lsda
       do ig = 1, ngm
-         qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
-         if (qg2 > 1.d-8) then
-            dvhart(nl(ig),is) = e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
-            dvhart(nlm(ig),is) = conjg(dvhart(nl(ig),is))
-         endif
+         q_G = (xq + g(:,ig)) * tpiba
+         dvhart(nl(ig),is) = truncate(no_truncation, q_G) * dvscf(nl(ig),1)
+         dvhart(nlm(ig),is) = conjg(dvhart(nl(ig),is))
+!qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
+!         if (qg2 > 1.d-8) then
+!            dvhart(nl(ig),is) = e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
+!            dvhart(nlm(ig),is) = conjg(dvhart(nl(ig),is))
+!         endif
       enddo
       !
       !  and transformed back to real space
@@ -150,40 +156,42 @@ subroutine dv_of_drho (mode, dvscf, flag)
   else
     do is = 1, nspin_lsda
        CALL fwfft ('Dense', dvaux (:, is), dfftp)
-       IF((.not.trunc_2d).or.(nq3.gt.1)) then
+!       IF((.not.trunc_2d).or.(nq3.gt.1)) then
          do ig = 1, ngm
-            qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
-            if (qg2 > 1.d-8) then
-                dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
-                                 e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
-            endif
+           q_G = (xq + g(:,ig)) * tpiba
+           dvaux(nl(ig),is) = dvaux(nl(ig),is) + truncate(no_truncation, q_G) * dvscf(nl(ig),1)
+!            qg2 = (g(1,ig)+xq(1))**2 + (g(2,ig)+xq(2))**2 + (g(3,ig)+xq(3))**2
+!            if (qg2 > 1.d-8) then
+!                dvaux(nl(ig),is) = dvaux(nl(ig),is) + &
+!                                 e2 * fpi * dvscf(nl(ig),1) / (tpiba2 * qg2)
+!            endif
          enddo
-       ELSE
-          zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
-          ! DO ig = 1, ngm
-          !      qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-          !   IF (qg2 > 1.d-8) then
-          !      qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-          !      qz   = sqrt((g(3,ig)+xq(3))**2)
-          !      spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-          !      dvaux(nl(ig), is) = dvaux(nl(ig), is) + dvscf(nl(ig), 1)*dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
-          !   ENDIF 
-          !ENDDO
-          DO ig = 1, ngm
-             qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-             qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-             qz   = sqrt((g(3,ig) + xq(3))**2)
-             IF(qxy.gt.eps8) then
-                spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-                dvaux(nl(ig),1) = dvaux(nl(ig),1) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
-             ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
-                spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-                dvaux(nl(ig),1) = dvaux(nl(ig),1) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
-             ELSE
-                dvaux(nl(ig),1) = 0.0d0
-             ENDIF
-          ENDDO
-       ENDIF
+!       ELSE
+!          zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat
+!          ! DO ig = 1, ngm
+!          !      qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+!          !   IF (qg2 > 1.d-8) then
+!          !      qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+!          !      qz   = sqrt((g(3,ig)+xq(3))**2)
+!          !      spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+!          !      dvaux(nl(ig), is) = dvaux(nl(ig), is) + dvscf(nl(ig), 1)*dcmplx(fpi*e2/(tpiba2*qg2)*spal, 0.0d0)
+!          !   ENDIF 
+!          !ENDDO
+!          DO ig = 1, ngm
+!             qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+!             qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+!             qz   = sqrt((g(3,ig) + xq(3))**2)
+!             IF(qxy.gt.eps8) then
+!                spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+!                dvaux(nl(ig),1) = dvaux(nl(ig),1) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+!             ELSE IF(qxy.lt.eps8.and.qz.gt.eps8) then
+!                spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
+!                dvaux(nl(ig),1) = dvaux(nl(ig),1) + dvscf(nl(ig),1)*dcmplx((e2*fpi/(tpiba2*qg2))*spal, 0.0d0)
+!             ELSE
+!                dvaux(nl(ig),1) = 0.0d0
+!             ENDIF
+!          ENDDO
+!       ENDIF
        CALL invfft ('Dense', dvaux (:, is), dfftp)
     enddo
     ! at the end the two contributes are added
