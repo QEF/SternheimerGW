@@ -56,8 +56,14 @@ CONTAINS
   !! \return Factor with which the quantity should be scaled.
   REAL(dp) FUNCTION truncate(method, kpt) RESULT (factor)
 
+    USE cell_base, ONLY: at, alat, omega
+    USE constants, ONLY: fpi
+    USE disp,      ONLY: nq1, nq2, nq3
+
     INTEGER,  INTENT(IN) :: method
     REAL(dp), INTENT(IN) :: kpt(3)
+
+    REAL(dp) length_cut
 
     SELECT CASE (method)
 
@@ -65,21 +71,95 @@ CONTAINS
       factor = 1.0
 
     CASE (SPHERICAL_TRUNCATION)
-      factor = truncate_spherical()
+
+      ! cutoff radius
+      length_cut = (3 * omega * nq1 * nq2 * nq3 / fpi)**(1.0 / 3.0)
+      factor = truncate_spherical(kpt, length_cut)
 
     CASE (FILM_TRUNCATION)
-      factor = truncate_film()
+
+      ! cutoff height
+      length_cut = 0.5 * SQRT(SUM(at(:,3)**2)) * alat * nq3
+      factor = truncate_film(kpt, length_cut)
 
     END SELECT ! method
 
   END FUNCTION truncate
 
   !> Implements the spherical truncation.
-  REAL(dp) FUNCTION truncate_spherical() RESULT (factor)
+  REAL(dp) FUNCTION truncate_spherical(kpt, rcut) RESULT (factor)
+
+    USE constants, ONLY: eps8, tpi, fpi, e2
+
+    REAL(dp), INTENT(IN) :: kpt(3)
+    REAL(dp), INTENT(IN) :: rcut
+
+    ! |k| and |k|^2
+    REAL(dp) length_k, length_k2
+
+    length_k2 = SUM(kpt**2)
+    length_k = SQRT(length_k2)
+
+    ! for large k vector
+    IF (length_k > eps8) THEN
+
+      ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 - cos(k r))
+      factor = fpi * e2 / length_k2 * (1 - COS(rcut * length_k))
+
+    ! limit of small values
+    ELSE
+
+      ! (1 - cos(k r)) ~ (k r)^2 / 2
+      ! with prefactor 4 pi e^2 / k^2, this yields 2 pi e^2 r^2
+      factor = tpi * e2 * rcut**2
+
+    END IF
+
   END FUNCTION truncate_spherical
 
   !> Implements the film truncation.
-  REAL(dp) FUNCTION truncate_film() RESULT (factor)
+  REAL(dp) FUNCTION truncate_film(kpt, zcut) RESULT (factor)
+
+    USE constants, ONLY: eps8, tpi, fpi, e2
+
+    REAL(dp), INTENT(IN) :: kpt(3)
+    REAL(dp), INTENT(IN) :: zcut
+
+    ! |k|^2
+    REAL(dp) length_k2
+
+    ! length of vector in z direction and in xy plane
+    REAL(dp) length_kz, length_kxy
+
+    ! product of kz and zcut
+    REAL(dp) arg
+
+    length_k2 = SUM(kpt**2)
+    length_kxy = SQRT(SUM(kpt(1:2)**2))
+    length_kz = kpt(3)
+    arg = length_kz * zcut
+
+    ! general case - large vector
+    IF (length_kxy > eps8) THEN
+
+      ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 + exp(-kxy z) * (kz / kxy sin(kz z) - cos(kz z))
+      factor = fpi * e2 / length_k2 * (1 + EXP(-length_kxy * zcut) * ((length_kz / length_kxy) * SIN(arg) - COS(arg)))
+
+    ! special case a) kxy small, kz large
+    ELSE IF (length_kz > eps8) THEN
+
+      ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 - kz z sin(kz z) - cos(kz z))
+      factor = fpi * e2 / length_k2 * (1 - arg * SIN(arg) - COS(arg))
+
+    ! special case b) kxy small, kz small
+    ELSE
+
+      ! 1 - kz z sin(kz z) - cos(kz z) ~ 1 - (kz z)^2 - 1 + (kz z)^2 / 2 = - (kz z)^2 / 2
+      ! with prefactor 4 pi e^2 / k^2, this yields -2 pi e^2 z^2
+      factor = -tpi * e2 * zcut**2
+
+    END IF
+
   END FUNCTION truncate_film
 
 END MODULE truncation_module
