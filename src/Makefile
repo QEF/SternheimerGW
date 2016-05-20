@@ -19,6 +19,7 @@ gw.o\
 testnan.o\
 save_gw_input.o\
 bcast_gw_input.o\
+truncation.o\
 gwq_readin.o\
 q_points.o\
 check_initial_status.o\
