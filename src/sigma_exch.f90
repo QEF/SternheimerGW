@@ -25,7 +25,7 @@ SUBROUTINE sigma_exch(ik0)
   USE kinds_gw,      ONLY : i8b
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,    ONLY : eta, nbnd_occ, trunc_2d, multishift, lgamma
+  USE control_gw,    ONLY : eta, nbnd_occ, truncation, multishift, lgamma
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, iunigk, wfc_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -47,6 +47,7 @@ SUBROUTINE sigma_exch(ik0)
   USE save_gw,       ONLY : tmp_dir_save
   USE mp_images,     ONLY : nimage, my_image_id, inter_image_comm
   USE mp_global,     ONLY : mp_global_end
+  USE truncation_module, ONLY : truncate
 IMPLICIT NONE
 ! ARRAYS to describe exchange operator.
 ! q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
@@ -60,7 +61,7 @@ IMPLICIT NONE
   COMPLEX(DP) :: czero, exch_element
   REAL(DP)    :: rcut, spal, zcut
   REAL(DP)    :: xq_coul(3)
-  REAL(DP)    :: xq(3)
+  REAL(DP)    :: xq(3), q_G(3)
   REAL(DP)    :: qg2, qg, qxy, qz
   REAL(DP)    :: xk1(3), aq(3)
   REAL(DP)    :: sxq(3,48), xqs(3,48)
@@ -162,43 +163,45 @@ IMPLICIT NONE
         allocate ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
         rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
         barcoul(:,:) = (0.0d0,0.0d0)
-        if(.not.trunc_2d) THEN
+!        if(.not.trunc_2d) THEN
            do ig = 1, sigma_x_st%ngmt
            !do ig = 1, gexcut
-              qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-                      + (g(3,ig)  + xq(3))**2.d0)
-              qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-                 + ((g(3,ig)) + xq(3))**2.d0
-              limit = (qg.lt.eps8)
-              if(.not.limit) then
-                 spal = 1.0d0 - cos (rcut * tpiba * qg)
-                 barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
-              else
-                !barcoul(gmapsym(ig, invs(isymop)), gmapsym(ig, invs(isymop))) = (fpi*e2*(rcut**2))/2
-                barcoul(ig, ig) = (fpi*e2*(rcut**2))/2
-              endif
+             q_G = (xq + g(:,ig)) * tpiba
+             barcoul(ig, ig) = truncate(truncation, q_G)
+!              qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
+!                      + (g(3,ig)  + xq(3))**2.d0)
+!              qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
+!                 + ((g(3,ig)) + xq(3))**2.d0
+!              limit = (qg.lt.eps8)
+!              if(.not.limit) then
+!                 spal = 1.0d0 - cos (rcut * tpiba * qg)
+!                 barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
+!              else
+!                !barcoul(gmapsym(ig, invs(isymop)), gmapsym(ig, invs(isymop))) = (fpi*e2*(rcut**2))/2
+!                barcoul(ig, ig) = (fpi*e2*(rcut**2))/2
+!              endif
            enddo
-        else
-            zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
-            rcut = -2*pi*zcut**2
-            do ig = 1, sigma_x_st%ngmt
-               qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-               qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-               qz   = sqrt((g(3,ig) + xq(3))**2)
-               spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-             if(qxy.gt.eps8) then
-               spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-               barcoul(ig,ig) = &
-&              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-        else if(qxy.lt.eps8.and.qz.gt.eps8) then
-               spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-               barcoul(ig,ig) = &
-&              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-        else  
-               barcoul(ig,ig) = dcmplx(rcut, 0.0d0)
-        endif
-       enddo
-     endif
+!        else
+!            zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
+!            rcut = -2*pi*zcut**2
+!            do ig = 1, sigma_x_st%ngmt
+!               qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+!               qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+!               qz   = sqrt((g(3,ig) + xq(3))**2)
+!               spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+!             if(qxy.gt.eps8) then
+!               spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
+!               barcoul(ig,ig) = &
+!&              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+!        else if(qxy.lt.eps8.and.qz.gt.eps8) then
+!               spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
+!               barcoul(ig,ig) = &
+!&              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+!        else  
+!               barcoul(ig,ig) = dcmplx(rcut, 0.0d0)
+!        endif
+!       enddo
+!     endif
      allocate (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
      barcoulr(:,:) = (0.0d0, 0.0d0)
      call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)

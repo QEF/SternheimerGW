@@ -24,7 +24,7 @@ subroutine sigma_exchG(ik0)
   USE kinds,            ONLY : DP
   USE constants,        ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,             ONLY : nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,       ONLY : eta, nbnd_occ, trunc_2d, multishift, lgamma
+  USE control_gw,       ONLY : eta, nbnd_occ, truncation, multishift, lgamma
   USE klist,            ONLY : wk, xk, nkstot, nks
   USE io_files,         ONLY : prefix, iunigk, wfc_dir
   USE wvfct,            ONLY : nbnd, npw, npwx, igk, g2kin, et
@@ -49,6 +49,7 @@ subroutine sigma_exchG(ik0)
   USE fft_interfaces,   ONLY : invfft, fwfft
   USE fft_base,         ONLY: dffts
   USE gvecs,            ONLY : nls
+  USE truncation_module, ONLY : truncate
 IMPLICIT NONE
 !ARRAYS to describe exchange operator.
   complex(DP), allocatable :: eigv(:,:)
@@ -67,7 +68,7 @@ IMPLICIT NONE
   real(DP)   :: xq_coul(3)
   real(DP)   :: xq_old(3)
   real(DP)   :: sigma_ex_diag(nbnd_sig)
-  real(DP)   :: xk1(3), aq(3)
+  real(DP)   :: xk1(3), aq(3), q_G(3)
   real(DP)   :: fac
   real(DP), parameter :: eps=1.e-5_dp
   integer    :: ikmq, ik0, ik, igkdim, nsymq
@@ -192,37 +193,39 @@ IMPLICIT NONE
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
         barcoul(:) = dcmplx(0.0d0,0.0d0)
-        if(.not.trunc_2d) THEN
+!        if(.not.trunc_2d) THEN
            do ig = 1, npwx
-              qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-                      + (g(3,ig)  + xq(3))**2.d0)
-              qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-                 + ((g(3,ig)) + xq(3))**2.d0
-              limit = (qg.lt.eps8)
-              if(.not.limit) then
-                 spal = 1.0d0 - cos (rcut * tpiba * qg)
-                 barcoul (ig) = &
-&                e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
-              else
-                 barcoul(ig) = (fpi*e2*(rcut**2))/2
-              endif
+             q_G = (xq + g(:,ig)) * tpiba
+             barcoul(ig) = truncate(truncation, q_G)
+!              qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
+!                      + (g(3,ig)  + xq(3))**2.d0)
+!              qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
+!                 + ((g(3,ig)) + xq(3))**2.d0
+!              limit = (qg.lt.eps8)
+!              if(.not.limit) then
+!                 spal = 1.0d0 - cos (rcut * tpiba * qg)
+!                 barcoul (ig) = &
+!&                e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
+!              else
+!                 barcoul(ig) = (fpi*e2*(rcut**2))/2
+!              endif
+!           enddo
+!        else
+!           zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
+!           rcut = -2*pi*zcut**2
+!           do ig = 1, npwx
+!              qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
+!              qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
+!              qz   = sqrt((g(3,ig) + xq(3))**2)
+!              spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
+!              if(qg2.gt.eps8) then
+!                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*(cos(tpiba*qz*zcut))
+!                 barcoul(ig) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
+!              else  
+!                 barcoul(ig) = dcmplx(rcut, 0.0d0)
+!              endif
            enddo
-        else
-           zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
-           rcut = -2*pi*zcut**2
-           do ig = 1, npwx
-              qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-              qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-              qz   = sqrt((g(3,ig) + xq(3))**2)
-              spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-              if(qg2.gt.eps8) then
-                 spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*(cos(tpiba*qz*zcut))
-                 barcoul(ig) = dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-              else  
-                 barcoul(ig) = dcmplx(rcut, 0.0d0)
-              endif
-           enddo
-        endif
+!        endif
         do vbnd = 1, nbnd_occ(ik1)
            psi (:) = (0.d0, 0.d0)
            do ig = 1, npw 
