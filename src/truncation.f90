@@ -15,6 +15,8 @@ MODULE truncation_module
   !> film geometry truncation (expects film in x-y plane)
   INTEGER, PARAMETER :: FILM_TRUNCATION = 2
 
+  PRIVATE truncate_spherical, truncate_film
+ 
 CONTAINS
 
   !> Evaluate how the quantity associated with a reciprocal vector is truncated.
@@ -22,6 +24,9 @@ CONTAINS
   !! Calculate a factor to scale a quantity defined in reciprocal space. There are
   !! different methods implemented to truncate the quantity, which are selected by
   !! the first parameter.
+  !!
+  !! \par[No truncation]
+  !! The quantity remains unchanged, i.e., the function returns the value 1.
   !!
   !! \par[Spherical truncation]
   !!
@@ -35,6 +40,27 @@ CONTAINS
     INTEGER,  INTENT(IN) :: method
     REAL(dp), INTENT(IN) :: kpt(3)
 
+    SELECT CASE (method)
+
+    CASE (NO_TRUNCATION)
+      factor = 1.0
+
+    CASE (SPHERICAL_TRUNCATION)
+      factor = truncate_spherical()
+
+    CASE (FILM_TRUNCATION)
+      factor = truncate_film()
+
+    END SELECT ! method
+
   END FUNCTION truncate
+
+  !> Implements the spherical truncation.
+  REAL(dp) FUNCTION truncate_spherical() RESULT (factor)
+  END FUNCTION truncate_spherical
+
+  !> Implements the film truncation.
+  REAL(dp) FUNCTION truncate_film() RESULT (factor)
+  END FUNCTION truncate_film
 
 END MODULE truncation_module
