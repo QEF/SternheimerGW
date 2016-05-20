@@ -157,6 +157,8 @@ MODULE control_gw
   INTEGER :: rec_code, &   ! code for recover
              rec_code_read=-1000 ! code for recover. Not changed during the run
 
+  INTEGER :: truncation ! method used to truncate in reciprocal space
+
   INTEGER :: maxter_coul, maxter_green, w_green_start
 
   LOGICAL :: lgamma_gamma,&! if .TRUE. this is a q=0 computation with k=0 only 

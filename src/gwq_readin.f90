@@ -61,7 +61,8 @@ SUBROUTINE gwq_readin()
                             trunc_2d, do_epsil, do_serial, &
                             do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                             high_io, freq_gl, prec_direct, prec_shift, just_corr,&
-                            double_grid, name_length, output
+                            double_grid, name_length, output, &
+                            method_truncation => truncation
   USE save_gw,       ONLY : tmp_dir_save
   USE qpoint,        ONLY : nksq, xq
   USE partial,       ONLY : atomo, list, nat_todo, nrapp
@@ -86,6 +87,7 @@ SUBROUTINE gwq_readin()
                             greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
+  USE truncation_module
   !
   !
   IMPLICIT NONE
@@ -126,6 +128,9 @@ SUBROUTINE gwq_readin()
   CHARACTER(LEN=name_length) file_spec
   CHARACTER(LEN=name_length) file_spec_iw
 
+  ! truncation method
+  CHARACTER(LEN=trunc_length) :: truncation
+
   NAMELIST / INPUTGW / tr2_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
                        nrapp, max_seconds, reduce_io, &
@@ -141,7 +146,7 @@ SUBROUTINE gwq_readin()
                        greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_serial, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
-                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws
+                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
                        file_spec, file_spec_iw, directory
@@ -300,7 +305,28 @@ SUBROUTINE gwq_readin()
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
-  IF (meta_ionode) READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
+
+  ! use the default truncation scheme
+  truncation = 'on'
+
+  IF (meta_ionode) THEN
+    READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
+
+    ! interpret the truncation scheme
+    SELECT CASE (truncation)
+    CASE (NO_TRUNCATION_1, NO_TRUNCATION_2, NO_TRUNCATION_3, NO_TRUNCATION_4, NO_TRUNCATION_5)
+      method_truncation = NO_TRUNCATION
+
+    CASE (SPHERICAL_TRUNCATION_1, SPHERICAL_TRUNCATION_2, SPHERICAL_TRUNCATION_3, &
+          SPHERICAL_TRUNCATION_4, SPHERICAL_TRUNCATION_5)
+      method_truncation = SPHERICAL_TRUNCATION
+
+    CASE (FILM_TRUNCATION_1, FILM_TRUNCATION_2, FILM_TRUNCATION_3, FILM_TRUNCATION_4)
+      method_truncation = FILM_TRUNCATION
+
+    END SELECT ! truncation
+
+  END IF ! meta_ionode
 
   ! set defaults for output
   directory       = ''

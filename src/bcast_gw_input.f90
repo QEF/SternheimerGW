@@ -43,7 +43,7 @@ subroutine bcast_gw_input ( )
                           coul_multishift, trunc_2d, do_epsil, do_serial, do_diag_g, do_diag_w,&
                           do_imag, do_pade_coul, newgrid, high_io, freq_gl,&
                           prec_direct, tmp_dir_coul, prec_shift, just_corr,&
-                          double_grid, output
+                          double_grid, output, truncation
   USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
                           w_of_k_start, w_of_k_stop
   USE partial,     ONLY : nat_todo, nrapp
@@ -151,6 +151,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (do_imag, meta_ionode_id, world_comm)
   call mp_bcast (do_pade_coul, meta_ionode_id, world_comm)
   call mp_bcast (double_grid, meta_ionode_id, world_comm)
+  call mp_bcast (truncation, meta_ionode_id, world_comm)
 
 !Frequency grid
   call mp_bcast (wsigmamin, meta_ionode_id, world_comm)
