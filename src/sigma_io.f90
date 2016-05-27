@@ -189,7 +189,30 @@ CONTAINS
   !! \param[out] sigma_x Exchange part of Sigma.
   !! \param[out] sigma_c Correlation part of Sigma (frequency dependent).
   !!
-  SUBROUTINE sigma_io_read
+  SUBROUTINE sigma_io_read(iunit, ikpt, sigma_x, sigma_c)
+
+    USE iotk_module, ONLY: iotk_index, iotk_namlenx, &
+                           iotk_scan_begin, iotk_scan_end, iotk_scan_dat
+
+    INTEGER,     INTENT(IN)  :: iunit
+    INTEGER,     INTENT(IN)  :: ikpt
+    COMPLEX(dp), INTENT(OUT) :: sigma_x(:,:)
+    COMPLEX(dp), INTENT(OUT) :: sigma_c(:,:,:)
+
+    CHARACTER(LEN=iotk_namlenx) tag_sigma_loc
+
+    tag_sigma_loc = tag_sigma // iotk_index(iunit)
+
+    CALL iotk_scan_begin(iunit, tag_sigma_loc)
+
+    ! write the exchange part
+    CALL iotk_scan_dat(iunit, tag_exchange, sigma_x)
+
+    ! write the correlation part
+    CALL iotk_scan_dat(iunit, tag_correlation, sigma_c)
+
+    CALL iotk_scan_end(iunit, tag_sigma_loc)
+
   END SUBROUTINE sigma_io_read
 
 END MODULE sigma_io_module
