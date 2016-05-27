@@ -132,7 +132,7 @@ IMPLICIT NONE
     DO ig = 1, npwq
       vpsi(ig) = psic(nls(igk(ig)))
     END DO
-
+ 
     ! multiply with left wave function 
     DO ibnd = 1, nbnd_sig
       vxc(ibnd,jbnd) = ZdoTC (npwq, evc (1, ibnd), 1, vpsi, 1)

@@ -86,6 +86,7 @@ sigma_exch.o\
 sigma_exchG.o\
 sigma_expect.o\
 sigma_grids.o\
+sigma_io.o\
 sigma_matel.o\
 sigma_pade.o\
 solve_direct.o\
