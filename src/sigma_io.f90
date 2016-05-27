@@ -215,4 +215,28 @@ CONTAINS
 
   END SUBROUTINE sigma_io_read
 
+  !> Close a file opened for writing.
+  !! \param[in] iunit Unit of the file to close.
+  SUBROUTINE sigma_io_close_write(iunit)
+
+    USE iotk_module, ONLY: iotk_close_write
+
+    INTEGER, INTENT(IN) :: iunit
+
+    CALL iotk_close_write(iunit)
+
+  END SUBROUTINE sigma_io_close_write
+
+  !> Close a file opened for reading.
+  !! \param[in] iunit Unit of the file to close.
+  SUBROUTINE sigma_io_close_read(iunit)
+
+    USE iotk_module, ONLY: iotk_close_read
+
+    INTEGER, INTENT(IN) :: iunit
+
+    CALL iotk_close_read(iunit)
+
+  END SUBROUTINE sigma_io_close_read
+
 END MODULE sigma_io_module
