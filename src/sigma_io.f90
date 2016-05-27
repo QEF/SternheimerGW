@@ -31,11 +31,23 @@ MODULE sigma_io_module
 
   IMPLICIT NONE
 
-  !> xml tag for the sigma matrix
-  CHARACTER(*), PARAMETER :: tag_sigma = "SIGMA"
+  !> xml tag used as root tag
+  CHARACTER(*), PARAMETER :: tag_root = "SELF_ENERGY"
+
+  !> xml tag for the number of k-points
+  CHARACTER(*), PARAMETER :: tag_num_kpoint = "NUM_KPOINT"
+
+  !> xml tag for the number of G-vectors for exchange part of Sigma
+  CHARACTER(*), PARAMETER :: tag_num_exchange = "NUM_EXCHANGE"
+
+  !> xml tag for the number of G-vectors for correlation part of Sigma
+  CHARACTER(*), PARAMETER :: tag_num_correlation = "NUM_CORRELATION"
 
   !> xml tag for the k-point
-  CHARACTER(*), PARAMETER :: tag_kpt = "KPOINT"
+  CHARACTER(*), PARAMETER :: tag_kpoint = "KPOINT"
+
+  !> xml tag for the sigma matrix
+  CHARACTER(*), PARAMETER :: tag_sigma = "SIGMA"
 
   !> xml tag for the exchange part
   CHARACTER(*), PARAMETER :: tag_exchange = "EXCHANGE"
@@ -44,6 +56,48 @@ MODULE sigma_io_module
   CHARACTER(*), PARAMETER :: tag_correlation = "CORRELATION"
 
 CONTAINS
+
+  !> Open Sigma file to write.
+  !!
+  !! Open Sigma and write metadata about it to the header.
+  !!
+  !! \param[in] filename Name of the file in which the data is written.
+  !! \param[in] kpt List of k-points for which Sigma is generated
+  !! \param[in] ngm_x Number of G vectors for exchange.
+  !! \param[in] ngm_c Number of G vectors for correlation.
+  !! \param[out] iunit Unit to access the file.
+  SUBROUTINE sigma_io_open(filename, kpt, ngm_x, ngm_c, iunit)
+
+    USE iotk_module, ONLY: iotk_free_unit, iotk_open_write, &
+                           iotk_write_dat
+
+    CHARACTER(*), INTENT(IN)  :: filename
+    REAL(dp),     INTENT(IN)  :: kpt(:,:)
+    INTEGER,      INTENT(IN)  :: ngm_x, ngm_c
+    INTEGER,      INTENT(OUT) :: iunit
+
+    ! find a free unit
+    CALL iotk_free_unit(iunit)
+
+    ! open the file
+    CALL iotk_open_write(iunit, filename, binary=.TRUE., root=tag_root)
+
+    !
+    ! write the meta data
+    !
+    ! number of G-vectors in Sigma_x
+    CALL iotk_write_dat(iunit, tag_num_exchange, ngm_x)
+
+    ! number of G-vectors in Sigma_c
+    CALL iotk_write_dat(iunit, tag_num_correlation, ngm_c)
+
+    ! number of k-points
+    CALL iotk_write_dat(iunit, tag_num_kpoint, SIZE(kpt, 2))
+
+    ! write k-points
+    CALL iotk_write_dat(iunit, tag_kpoint, kpt)
+
+  END SUBROUTINE sigma_io_open
 
   !> Write Sigma to disk.
   !!
