@@ -34,9 +34,6 @@ MODULE sigma_io_module
   !> xml tag used as root tag
   CHARACTER(*), PARAMETER :: tag_root = "SELF_ENERGY"
 
-  !> xml tag for the number of k-points
-  CHARACTER(*), PARAMETER :: tag_num_kpoint = "NUM_KPOINT"
-
   !> xml tag for the number of G-vectors for exchange part of Sigma
   CHARACTER(*), PARAMETER :: tag_num_exchange = "NUM_EXCHANGE"
 
@@ -66,7 +63,7 @@ CONTAINS
   !! \param[in] ngm_x Number of G vectors for exchange.
   !! \param[in] ngm_c Number of G vectors for correlation.
   !! \param[out] iunit Unit to access the file.
-  SUBROUTINE sigma_io_open(filename, kpt, ngm_x, ngm_c, iunit)
+  SUBROUTINE sigma_io_open_write(filename, kpt, ngm_x, ngm_c, iunit)
 
     USE iotk_module, ONLY: iotk_free_unit, iotk_open_write, &
                            iotk_write_dat
@@ -91,13 +88,49 @@ CONTAINS
     ! number of G-vectors in Sigma_c
     CALL iotk_write_dat(iunit, tag_num_correlation, ngm_c)
 
-    ! number of k-points
-    CALL iotk_write_dat(iunit, tag_num_kpoint, SIZE(kpt, 2))
+    ! write k-points
+    CALL iotk_write_dat(iunit, tag_kpoint, kpt)
+
+  END SUBROUTINE sigma_io_open_write
+
+  !> Open Sigma file to read.
+  !!
+  !! Open Sigma and read metadata about it from the header.
+  !!
+  !! \param[in] filename Name of the file from which the data is read.
+  !! \param[out] kpt List of k-points for which Sigma is generated.
+  !! \param[out] ngm_x Number of G vectors for exchange.
+  !! \param[out] ngm_c Number of G vectors for correlation.
+  !! \param[out] iunit Unit to access the file.
+  SUBROUTINE sigma_io_open_read(filename, kpt, ngm_x, ngm_c, iunit)
+
+    USE iotk_module, ONLY: iotk_free_unit, iotk_open_read, &
+                           iotk_scan_dat
+
+    CHARACTER(*), INTENT(IN)  :: filename
+    REAL(dp),     INTENT(OUT) :: kpt(:,:)
+    INTEGER,      INTENT(OUT) :: ngm_x, ngm_c
+    INTEGER,      INTENT(OUT) :: iunit
+
+    ! find a free unit
+    CALL iotk_free_unit(iunit)
+
+    ! open the file
+    CALL iotk_open_read(iunit, filename, binary=.TRUE.)
+
+    !
+    ! read the meta data
+    !
+    ! number of G-vectors in Sigma_x
+    CALL iotk_scan_dat(iunit, tag_num_exchange, ngm_x)
+
+    ! number of G-vectors in Sigma_c
+    CALL iotk_scan_dat(iunit, tag_num_correlation, ngm_c)
 
     ! write k-points
     CALL iotk_write_dat(iunit, tag_kpoint, kpt)
 
-  END SUBROUTINE sigma_io_open
+  END SUBROUTINE sigma_io_open_read
 
   !> Write Sigma to disk.
   !!
