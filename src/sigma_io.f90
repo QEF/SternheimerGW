@@ -40,6 +40,9 @@ MODULE sigma_io_module
   !> xml tag for the number of G-vectors for correlation part of Sigma
   CHARACTER(*), PARAMETER :: tag_num_correlation = "NUM_CORRELATION"
 
+  !> xml tag for the number of frequencies
+  CHARACTER(*), PARAMETER :: tag_frequency = "NUM_FREQUENCY"
+
   !> xml tag for the k-point
   CHARACTER(*), PARAMETER :: tag_kpoint = "KPOINT"
 
@@ -59,11 +62,12 @@ CONTAINS
   !! Open Sigma and write metadata about it to the header.
   !!
   !! \param[in] filename Name of the file in which the data is written.
-  !! \param[in] kpt List of k-points for which Sigma is generated
+  !! \param[in] kpt List of k-points for which Sigma is generated.
   !! \param[in] ngm_x Number of G vectors for exchange.
   !! \param[in] ngm_c Number of G vectors for correlation.
+  !! \param[in] num_freq Number of frequency points.
   !! \param[out] iunit Unit to access the file.
-  SUBROUTINE sigma_io_open_write(filename, kpt, ngm_x, ngm_c, iunit)
+  SUBROUTINE sigma_io_open_write(filename, kpt, ngm_x, ngm_c, num_freq, iunit)
 
     USE iotk_module, ONLY: iotk_free_unit, iotk_open_write, &
                            iotk_write_dat
@@ -71,6 +75,7 @@ CONTAINS
     CHARACTER(*), INTENT(IN)  :: filename
     REAL(dp),     INTENT(IN)  :: kpt(:,:)
     INTEGER,      INTENT(IN)  :: ngm_x, ngm_c
+    INTEGER,      INTENT(IN)  :: num_freq
     INTEGER,      INTENT(OUT) :: iunit
 
     ! find a free unit
@@ -88,6 +93,9 @@ CONTAINS
     ! number of G-vectors in Sigma_c
     CALL iotk_write_dat(iunit, tag_num_correlation, ngm_c)
 
+    ! number of frequency points
+    CALL iotk_write_dat(iunit, tag_frequency, num_freq)
+
     ! write k-points
     CALL iotk_write_dat(iunit, tag_kpoint, kpt)
 
@@ -101,8 +109,9 @@ CONTAINS
   !! \param[out] kpt List of k-points for which Sigma is generated.
   !! \param[out] ngm_x Number of G vectors for exchange.
   !! \param[out] ngm_c Number of G vectors for correlation.
+  !! \param[out] num_freq Number of frequency points.
   !! \param[out] iunit Unit to access the file.
-  SUBROUTINE sigma_io_open_read(filename, kpt, ngm_x, ngm_c, iunit)
+  SUBROUTINE sigma_io_open_read(filename, kpt, ngm_x, ngm_c, num_freq, iunit)
 
     USE iotk_module, ONLY: iotk_free_unit, iotk_open_read, &
                            iotk_scan_dat
@@ -110,6 +119,7 @@ CONTAINS
     CHARACTER(*), INTENT(IN)  :: filename
     REAL(dp),     INTENT(OUT) :: kpt(:,:)
     INTEGER,      INTENT(OUT) :: ngm_x, ngm_c
+    INTEGER,      INTENT(OUT) :: num_freq
     INTEGER,      INTENT(OUT) :: iunit
 
     ! find a free unit
@@ -127,8 +137,11 @@ CONTAINS
     ! number of G-vectors in Sigma_c
     CALL iotk_scan_dat(iunit, tag_num_correlation, ngm_c)
 
+    ! number of frequency points
+    CALL iotk_scan_dat(iunit, tag_frequency, num_freq)
+
     ! write k-points
-    CALL iotk_write_dat(iunit, tag_kpoint, kpt)
+    CALL iotk_scan_dat(iunit, tag_kpoint, kpt)
 
   END SUBROUTINE sigma_io_open_read
 
@@ -168,6 +181,14 @@ CONTAINS
   END SUBROUTINE sigma_io_write
 
   !> Read Sigma from disk
+  !!
+  !! Read the self-energy for exchange and correlation separately.
+  !!
+  !! \param[in] iunit Unit to which the Sigma is written, must be opened with iotk_module.
+  !! \param[in] ikpt Index of the k-point.
+  !! \param[out] sigma_x Exchange part of Sigma.
+  !! \param[out] sigma_c Correlation part of Sigma (frequency dependent).
+  !!
   SUBROUTINE sigma_io_read
   END SUBROUTINE sigma_io_read
 
