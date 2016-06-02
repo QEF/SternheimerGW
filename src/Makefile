@@ -95,6 +95,7 @@ star_q.o\
 stern_symm.o\
 stop_gw.o\
 testnan.o\
+timing.o\
 truncate_2d.o\
 truncation.o\
 unfold_w.o\
