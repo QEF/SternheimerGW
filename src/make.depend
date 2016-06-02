@@ -301,11 +301,11 @@ gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
 gw.o : ../../PW/src/pwcom.o
-gw.o : sigma_io.o
 gw.o : gwcom.o
 gw.o : pp_output.o
 gw.o : sigma_grid.o
 gw.o : sigma_io.o
+gw.o : timing.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
 gwcom.o : ../../Modules/fft_custom.o
@@ -431,7 +431,6 @@ openfilq.o : save_gw_input.o
 opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : ../../PW/src/pwcom.o
-opengwfil.o : sigma_io.o
 opengwfil.o : gwcom.o
 opengwfil.o : sigma_io.o
 pade.o : ../../Modules/kind.o
@@ -724,7 +723,9 @@ stern_symm.o : gwcom.o
 stop_gw.o : ../../Modules/environment.o
 stop_gw.o : ../../Modules/kind.o
 stop_gw.o : ../../Modules/mp_global.o
+stop_gw.o : timing.o
 testnan.o : ../../Modules/kind.o
+timing.o : ../../Modules/io_global.o
 truncate_2d.o : ../../LR_Modules/lrcom.o
 truncate_2d.o : ../../Modules/cell_base.o
 truncate_2d.o : ../../Modules/constants.o

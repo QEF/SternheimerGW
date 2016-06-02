@@ -24,23 +24,24 @@ program gw
 !-----------------------------------------------------------------------
 !... This is the main driver of the Sternheimer-GW code.
 !-----------------------------------------------------------------------
-  USE mp_global,       ONLY : mp_startup
-  USE environment,     ONLY : environment_start
-  USE check_stop,      ONLY : check_stop_init
-  USE control_gw,      ONLY : do_sigma_exx, do_sigma_exxG, do_sigma_matel, do_coulomb,&
-                              do_green, multishift, do_sigma_c, do_q0_only,&
-                              do_imag, lgamma, output
-  USE freq_gw,          ONLY : nwsigma, nwsigwin
-  USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, nbnd_sig
-  USE io_files,         ONLY : diropn
-  USE io_global,        ONLY : meta_ionode
+  USE check_stop,        ONLY : check_stop_init
+  USE control_gw,        ONLY : do_sigma_exx, do_sigma_exxG, do_sigma_matel, do_coulomb,&
+                                do_green, multishift, do_sigma_c, do_q0_only,&
+                                do_imag, lgamma, output
+  USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
+  USE environment,       ONLY : environment_start
+  USE freq_gw,           ONLY : nwsigma, nwsigwin
+  USE gwsigma,           ONLY : sigma_x_st, sigma_c_st, nbnd_sig
+  USE io_files,          ONLY : diropn
+  USE io_global,         ONLY : meta_ionode
+  USE mp_global,         ONLY : mp_startup
+  USE pp_output_mod,     ONLY : pp_output_open_all
+  USE input_parameters,  ONLY : max_seconds, force_symmorphic
   USE sigma_grid_module, ONLY: sigma_grid
-  USE sigma_io_module,  ONLY : sigma_io_close_write
-  USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-  USE wvfct,            ONLY : nbnd
-  USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop
-  USE input_parameters, ONLY : max_seconds, force_symmorphic
-  USE pp_output_mod,    ONLY : pp_output_open_all
+  USE sigma_io_module,   ONLY : sigma_io_close_write
+  USE timing_module,     ONLY : time_setup
+  USE units_gw,          ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
+  USE wvfct,             ONLY : nbnd
 
   IMPLICIT NONE
 
@@ -53,8 +54,10 @@ program gw
 ! Initialize MPI, clocks, print initial messages
   call mp_startup ( start_images=.true. )
   call environment_start ( code )
+  call start_clock(time_setup)
   call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
+  
   call gwq_readin()
   call check_stop_init()
   call check_initial_status(auxdyn)
@@ -63,6 +66,7 @@ program gw
   call freqbins()
   call sigma_grid()
   call opengwfil()
+  call stop_clock(time_setup)
 ! Calculation W
   if(do_coulomb) call do_stern()
   ik = 1

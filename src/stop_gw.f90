@@ -27,17 +27,19 @@ SUBROUTINE stop_gw( flag )
   !
   ! ... Synchronize processes before stopping.
   !
-  USE kinds, ONLY : DP
-  USE mp_global, ONLY : mp_global_end
+  USE environment,   ONLY : environment_end
+  USE kinds,         ONLY : DP
+  USE mp_global,     ONLY : mp_global_end
+  USE timing_module, ONLY : timing_print_clock
 ! Need to check what is closed in destroy_status_run:
 ! USE save_gw,         ONLY : clean_input_variables
-  USE environment,     ONLY : environment_end
   !
   IMPLICIT NONE
   !
   LOGICAL :: flag
   !
   !
+  CALL timing_print_clock() 
   CALL print_clock_gw()
   !
   !

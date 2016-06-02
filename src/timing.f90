@@ -53,4 +53,24 @@ MODULE timing_module
   !> label for the clock measuring the evaluation of the matrix elements
   CHARACTER(*), PARAMETER :: time_matel = 'mat_el'
 
+CONTAINS
+
+  !> Print the measure timing of the SGW run in a nice format.
+  !!
+  !!
+  SUBROUTINE timing_print_clock()
+
+    USE io_global, ONLY: stdout
+
+    ! empty line to separate it from the rest of the output
+    WRITE(stdout, *)
+
+    ! info line
+    WRITE(stdout, *) 'Timing of the code:'
+
+    ! print the time needed for the setup
+    CALL print_clock(time_setup)
+
+  END SUBROUTINE timing_print_clock
+
 END MODULE timing_module
