@@ -21,22 +21,23 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE do_stern()
-  USE io_global,  ONLY : stdout, ionode_id, meta_ionode
-  USE kinds,      ONLY : DP
-  USE disp,       ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start, x_q
-  USE gwsigma,    ONLY : sigma_c_st, gcutcorr
-  USE gwsymm,     ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
-  USE control_gw, ONLY : done_bands, reduce_io, recover, tmp_dir_gw,&
-                          ext_restart, bands_computed, bands_computed, nbnd_occ, &
-                          do_q0_only, solve_direct, tinvert, lrpa, do_epsil
-  USE freq_gw,    ONLY : nfs
-  USE units_gw,   ONLY : lrcoul, iuncoul
-  USE klist,      ONLY : lgauss
-  USE mp_global,  ONLY : inter_image_comm, intra_image_comm, &
-                         my_image_id, nimage, root_image
-  USE mp,         ONLY : mp_sum, mp_barrier
-  USE mp_world,   ONLY : mpime
+  USE control_gw,       ONLY : done_bands, reduce_io, recover, tmp_dir_gw,&
+                               ext_restart, bands_computed, bands_computed, nbnd_occ, &
+                               do_q0_only, solve_direct, tinvert, lrpa, do_epsil
+  USE disp,             ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start, x_q
+  USE freq_gw,          ONLY : nfs
+  USE gwsigma,          ONLY : sigma_c_st, gcutcorr
+  USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
+  USE io_global,        ONLY : stdout, ionode_id, meta_ionode
+  USE kinds,            ONLY : DP
+  USE klist,            ONLY : lgauss
+  USE mp,               ONLY : mp_sum, mp_barrier
+  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
+                               my_image_id, nimage, root_image
+  USE mp_world,         ONLY : mpime
   USE noncollin_module, ONLY : noncolin, nspin_mag
+  USE timing_module,    ONLY : time_coulomb
+  USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
 
@@ -44,6 +45,8 @@ IMPLICIT NONE
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
   LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel, lgamma
   COMPLEX(DP), ALLOCATABLE :: eps_m(:)
+
+  CALL start_clock(time_coulomb)
 
   allocate ( scrcoul_g( gcutcorr, gcutcorr, nfs, nspin_mag))
   allocate ( ig_unique( gcutcorr) )
@@ -132,4 +135,7 @@ IMPLICIT NONE
    deallocate( ig_unique )
    deallocate( sym_ig )
    deallocate( sym_friend )
+
+   CALL stop_clock(time_coulomb)
+
 end SUBROUTINE do_stern

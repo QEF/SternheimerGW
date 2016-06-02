@@ -27,38 +27,36 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 ! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
 ! The dielectric matrix is given by:
 ! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
-  USE kinds,      ONLY : DP
-  USE ions_base,  ONLY : nat
-  USE constants,  ONLY : e2, fpi, RYTOEV, pi, eps8
-  USE cell_base,  ONLY : alat, tpiba2, omega
-  USE lsda_mod,   ONLY : nspin
-  USE io_global,  ONLY : stdout, ionode
-  USE uspp,       ONLY : okvan
-  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
-                         solve_direct, do_epsil, do_q0_only, tinvert
-  USE partial,    ONLY : done_irr, comp_irr
-  USE uspp_param, ONLY : nhm
-  USE eqv_gw,     ONLY : drhoscfs, dvbare
-  USE paw_variables,    ONLY : okpaw
+  USE cell_base,        ONLY : alat, tpiba2, omega
+  USE constants,        ONLY : e2, fpi, RYTOEV, pi, eps8
+  USE control_gw,       ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
+                               solve_direct, do_epsil, do_q0_only, tinvert
+  USE disp,             ONLY : nqs, nq1, nq2, nq3
+  USE eqv_gw,           ONLY : drhoscfs, dvbare
+  USE fft_base,         ONLY : dfftp, dffts
+  USE fft_interfaces,   ONLY : invfft, fwfft
+  USE freq_gw,          ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
+  USE gvecs,            ONLY : nls
+  USE gvect,            ONLY : ngm, g, nl
+  USE gwsigma,          ONLY : sigma_c_st, gcutcorr
+  USE gwsymm,           ONLY : ig_unique, ngmunique
+  USE io_global,        ONLY : stdout, ionode
+  USE ions_base,        ONLY : nat
+  USE lsda_mod,         ONLY : nspin
+  USE mp,               ONLY : mp_sum, mp_barrier
+  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
+                               my_image_id, nimage, root_image
+  USE mp_pools,         ONLY : me_pool, root_pool, inter_pool_comm
+  USE mp_world,         ONLY : mpime
   USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE gwsigma,     ONLY : sigma_c_st, gcutcorr
-  USE qpoint,      ONLY : xq
-  USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
-  USE units_gw,    ONLY : iuncoul, lrcoul
-  USE disp,        ONLY : nqs, nq1, nq2, nq3
- !Symmetry Stuff
-  USE gwsymm,          ONLY : ig_unique, ngmunique
- !FFTS 
-  USE gvect,           ONLY : ngm, g, nl
-  USE gvecs,           ONLY : nls
-  USE fft_base,        ONLY : dfftp, dffts
-  USE fft_interfaces,  ONLY : invfft, fwfft
-  USE klist,           ONLY : lgauss
-  USE mp_world,        ONLY : mpime
-  USE mp_pools,        ONLY : me_pool, root_pool, inter_pool_comm
-  USE mp,                   ONLY : mp_sum, mp_barrier
-  USE mp_global,  ONLY : inter_image_comm, intra_image_comm, &
-                         my_image_id, nimage, root_image
+  USE kinds,            ONLY : DP
+  USE klist,            ONLY : lgauss
+  USE partial,          ONLY : done_irr, comp_irr
+  USE paw_variables,    ONLY : okpaw
+  USE qpoint,           ONLY : xq
+  USE units_gw,         ONLY : iuncoul, lrcoul
+  USE uspp,             ONLY : okvan
+  USE uspp_param,       ONLY : nhm
 
   IMPLICIT NONE
 
@@ -81,7 +79,6 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
   REAL(DP) :: qg, rcut, spal
 ! used to test the recover file
   EXTERNAL get_clock
-  CALL start_clock ('coulomb')
 
 if(solve_direct) then
   ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
@@ -159,6 +156,5 @@ ENDDO
 545 CONTINUE
 tcpu = get_clock ('GW')
 DEALLOCATE (drhoscfs)
-CALL stop_clock ('coulomb')
 RETURN
 END SUBROUTINE coulomb

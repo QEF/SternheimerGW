@@ -68,8 +68,15 @@ CONTAINS
     ! info line
     WRITE(stdout, *) 'Timing of the code:'
 
+    !
+    ! Overview over the different parts
+    !
+
     ! print the time needed for the setup
     CALL print_clock(time_setup)
+
+    ! print the time needed to calculate W
+    CALL print_clock(time_coulomb)
 
   END SUBROUTINE timing_print_clock
 
