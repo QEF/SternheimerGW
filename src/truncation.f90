@@ -87,7 +87,7 @@ CONTAINS
   !!
   !! \par Film truncation
   !! We truncate at a certain height Z, which eliminates the divergence in reciprocal
-  !! space. For details refer to Rozzi et al., Phys. Rev. B 73, 205119 (2006). To
+  !! space. For details refer to Ismail-Beigi, Phys. Rev. B 73, 233103 (2006). To
   !! activate this truncation scheme, set truncation to 'film', '2d', 'film truncation',
   !! or '2d truncation' in the input file.
   !!
@@ -203,38 +203,29 @@ CONTAINS
     REAL(dp), INTENT(IN) :: kpt(3)
     REAL(dp), INTENT(IN) :: zcut
 
-    ! |k|^2
-    REAL(dp) length_k2
+    ! |k| and |k|^2
+    REAL(dp) length_k, length_k2
 
     ! length of vector in z direction and in xy plane
     REAL(dp) length_kz, length_kxy
 
-    ! product of kz and zcut
-    REAL(dp) arg
-
     length_k2 = SUM(kpt**2)
+    length_k = SQRT(length_k2)
     length_kxy = SQRT(SUM(kpt(1:2)**2))
     length_kz = kpt(3)
-    arg = length_kz * zcut
 
     ! general case - large vector
-    IF (length_kxy > eps8) THEN
+    IF (length_k > eps8) THEN
 
-      ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 + exp(-kxy z) * (kz / kxy sin(kz z) - cos(kz z))
-      factor = fpi * e2 / length_k2 * (1 + EXP(-length_kxy * zcut) * ((length_kz / length_kxy) * SIN(arg) - COS(arg)))
+      ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 - exp(-kxy z) * cos(kz z))
+      factor = fpi * e2 / length_k2 * (1 - EXP(-length_kxy * zcut) * COS(length_kz * zcut))
 
-    ! special case a) kxy small, kz large
-    ELSE IF (length_kz > eps8) THEN
-
-      ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 - kz z sin(kz z) - cos(kz z))
-      factor = fpi * e2 / length_k2 * (1 - arg * SIN(arg) - COS(arg))
-
-    ! special case b) kxy small, kz small
+    ! special case - small vector
     ELSE
 
-      ! 1 - kz z sin(kz z) - cos(kz z) ~ 1 - (kz z)^2 - 1 + (kz z)^2 / 2 = - (kz z)^2 / 2
-      ! with prefactor 4 pi e^2 / k^2, this yields -2 pi e^2 z^2
-      factor = -tpi * e2 * zcut**2
+      ! 1 - cos(kz z) ~ 1 - (kz z)^2 / 2 = (kz z)^2 / 2
+      ! with prefactor 4 pi e^2 / k^2, this yields 2 pi e^2 z^2
+      factor = tpi * e2 * zcut**2
 
     END IF
 
