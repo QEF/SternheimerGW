@@ -106,6 +106,7 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
     if(qg2.lt.0.0001.AND.lgauss) then 
        write(6,'("Not calculating static electric field applied to metal, cycling coulomb")')
        WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
+       DEALLOCATE(drhoscfs)
        RETURN
     endif
     IF(solve_direct) THEN
