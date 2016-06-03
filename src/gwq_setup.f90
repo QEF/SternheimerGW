@@ -160,117 +160,23 @@
   !
   ! 3) Computes the derivative of the xc potential
   !
-  dmuxc(:,:,:) = 0.d0
-  if (lsda) then
-     do ir = 1, dfftp%nnr
-        rhoup = rho%of_r (ir, 1) + 0.5d0 * rho_core (ir)
-        rhodw = rho%of_r (ir, 2) + 0.5d0 * rho_core (ir)
-        call dmxc_spin (rhoup, rhodw, dmuxc(ir,1,1), dmuxc(ir,2,1), &
-                                      dmuxc(ir,1,2), dmuxc(ir,2,2) )
-     enddo
-  else
-     IF (noncolin.and.domag) THEN
-        do ir = 1, dfftp%nnr
-           rhotot = rho%of_r (ir, 1) + rho_core (ir)
-           call dmxc_nc (rhotot, rho%of_r(ir,2), rho%of_r(ir,3), rho%of_r(ir,4), auxdmuxc)
-           DO is=1,nspin_mag
-              DO js=1,nspin_mag
-                 dmuxc(ir,is,js)=auxdmuxc(is,js)
-              END DO
-           END DO
-        enddo
-     ELSE
-        do ir = 1, dfftp%nnr
-           rhotot = rho%of_r (ir, 1) + rho_core (ir)
-           IF(.not.just_corr) THEN
-             if (rhotot.gt.1.d-30) dmuxc (ir, 1, 1) = dmxc (rhotot)
-             if (rhotot.lt. - 1.d-30) dmuxc (ir, 1, 1) = - dmxc ( - rhotot)
-           ELSE
-           !Only correlation energy is included in the RPA + Vxc.
-             if (rhotot.gt.1.d-30) dmuxc (ir, 1, 1) = dmxc_corr      (rhotot)
-             if (rhotot.lt. - 1.d-30) dmuxc (ir, 1, 1) = - dmxc_corr (- rhotot)
-           ENDIF
-        enddo
-     END IF
-  endif
-
+  call setup_dmuxc()
+  !
+  ! Setup all gradient correction stuff
+  !
+  call setup_dgc()
+  !
   ! 4) Computes the inverse of each matrix of the crystal symmetry group
-  !HL-
-   call inverse_s ( )
+  !
+  call inverse_s()
+  !
   ! 5) Computes the number of occupied bands for each k point
-  if (lgauss) then
-     !
-     ! discard conduction bands such that w0gauss(x,n) < small
-     !
-     ! hint:
-     !   small = 1.0333492677046d-2  ! corresponds to 2 gaussian sigma
-     !   small = 6.9626525973374d-5  ! corresponds to 3 gaussian sigma
-     !   small = 6.3491173359333d-8  ! corresponds to 4 gaussian sigma
-     !
-     small = 6.9626525973374d-5
-     !
-     ! - appropriate limit for gaussian broadening (used for all ngauss)
-     !
-     xmax = sqrt ( - log (sqrt (pi) * small) )
-     !
-     ! - appropriate limit for Fermi-Dirac
-     !
-     if (ngauss.eq. - 99) then
-        fac = 1.d0 / sqrt (small)
-        xmax = 2.d0 * log (0.5d0 * (fac + sqrt (fac * fac - 4.d0) ) )
-     endif
-     target = ef + xmax * degauss
-     do ik = 1, nks
-        do ibnd = 1, nbnd
-           if (et (ibnd, ik) .lt.target) nbnd_occ (ik) = ibnd
-        enddo
-        if (nbnd_occ (ik) .eq. nbnd) WRITE( stdout, '(5x,/,&
-             &"Possibly too few bands at point ", i4,3f10.5)') &
-             ik,  (xk (ipol, ik) , ipol = 1, 3)
-     enddo
-  else if (ltetra) then
-     call errore('gwq_setup','phonon + tetrahedra not implemented', 1)
-  else
-     if (lsda) call infomsg('gwq_setup','occupation numbers probably wrong')
-     if (noncolin) then
-        nbnd_occ = nint (nelec) 
-     else
-        do ik = 1, nks
-           nbnd_occ (ik) = nint (nelec) / degspin
-        enddo
-     endif
-  endif
+  !
+  call setup_nbnd_occ()
   !
   ! 6) Computes alpha_pv
   !
-  emin = et (1, 1)
-  do ik = 1, nks
-     do ibnd = 1, nbnd
-        emin = min (emin, et (ibnd, ik) )
-     enddo
-  enddo
-#ifdef __PARA
-  ! find the minimum across pools
-  call mp_min( emin, inter_pool_comm )
-#endif
-  if (lgauss) then
-     emax = target
-     alpha_pv = emax - emin
-  else
-     emax = et (1, 1)
-     do ik = 1, nks
-        do ibnd = 1, nbnd_occ(ik)
-           emax = max (emax, et (ibnd, ik) )
-        enddo
-     enddo
-#ifdef __PARA
-     ! find the maximum across pools
-     call mp_max( emax, inter_pool_comm )
-#endif
-     alpha_pv = 2.d0 * (emax - emin)
-  endif
-  ! avoid zero value for alpha_pv
-  alpha_pv = max (alpha_pv, 1.0d-2)
+  call setup_alpha_pv()
   !
   ! 7) set all the variables needed to use the pattern representation
   !

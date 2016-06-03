@@ -39,7 +39,7 @@ subroutine deallocate_gwq
                                     dpsim, dpsip, dvbare
   USE nlcc_gw,               ONLY : drc
   USE units_gw,              ONLY : this_dvkb3_is_on_file, this_pcxpsi_is_on_file
-  USE control_gw,            ONLY : lgamma
+  USE control_gw,            ONLY : lgamma, nbnd_occ
   USE lrus,                  ONLY : becp1
 
   IMPLICIT NONE
@@ -80,6 +80,7 @@ subroutine deallocate_gwq
   end if
   call deallocate_bec_type ( becp )
 
+  if(allocated(nbnd_occ)) deallocate(nbnd_occ)
 
   return
 end subroutine deallocate_gwq
