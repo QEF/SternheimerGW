@@ -20,45 +20,47 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
-  USE kinds,                ONLY : DP
-  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
-  USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix
-  USE check_stop,           ONLY : check_stop_now
-  USE wavefunctions_module, ONLY : evc
-  USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
+SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
+
   USE cell_base,            ONLY : tpiba2
-  USE ener,                 ONLY : ef
-  USE klist,                ONLY : xk, wk, nkstot
-  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
-  USE gvecw,                ONLY : ecutwfc
-  USE uspp,                 ONLY : okvan, vkb
-  USE uspp_param,           ONLY : upf, nhm, nh
-  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE check_stop,           ONLY : check_stop_now
+  USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, current_iq, ext_recover, &
                                    eta, tr2_green, maxter_green, prec_shift,&
                                    multishift, high_io
-  USE nlcc_gw,              ONLY : nlcc_any
-  USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
-  USE eqv_gw,               ONLY : evq, eprectot
-  USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs, x_q
+  USE ener,                 ONLY : ef
+  USE eqv_gw,               ONLY : evq, eprectot
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, w0pmw
-  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec, gcutcorr
   USE gvect,                ONLY : g, ngm
+  USE gvecw,                ONLY : ecutwfc
+  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec, gcutcorr
+  USE io_files,             ONLY : prefix
+  USE io_global,            ONLY : stdout, ionode
+  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : xk, wk, nkstot
   USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
-  USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
-                                   me_image, nproc_image, inter_image_comm
+  USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
   USE mp_global,            ONLY : nproc_pool_file, &
                                    nproc_bgrp_file, nproc_image_file
-  USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
-  USE mp_world,             ONLY : nproc, mpime
   USE mp_pools,             ONLY : inter_pool_comm
+  USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
+                                   me_image, nproc_image, inter_image_comm
+  USE mp_world,             ONLY : nproc, mpime
+  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
+  USE nlcc_gw,              ONLY : nlcc_any
+  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
+  USE timing_module,        ONLY : time_green
+  USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
+  USE uspp,                 ONLY : okvan, vkb
+  USE uspp_param,           ONLY : upf, nhm, nh
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
 
   IMPLICIT NONE 
 
@@ -110,6 +112,8 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   logical :: conv_root
   external   cg_psi, ch_psi_all_green
 
+  call start_clock(time_green)
+
   ALLOCATE  (h_diag (npwx, 1))
   ALLOCATE  (etc(nbnd_occ(1), nkstot))
   if(multishift) ALLOCATE(gr_A_shift(npwx, nwgreen))
@@ -119,7 +123,6 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   do iw =1, nwgreen
      w_ryd(iw) = w0pmw(1,iw)/RYTOEV
   enddo
-  call start_clock('greenlinsys')
   where_rec='no_recover'
 ! hl arb k.
   call gk_sort_safe(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
@@ -237,6 +240,7 @@ if(allocated(niters))     deallocate(niters)
 if(allocated(h_diag))     deallocate(h_diag)
 if(allocated(etc))        deallocate(etc)
 if(allocated(gr_A_shift)) deallocate(gr_A_shift)
-call stop_clock('greenlinsys')
-return
+
+  call stop_clock(time_green)
+
 end subroutine green_linsys_shift_im

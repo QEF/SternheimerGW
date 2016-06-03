@@ -66,7 +66,7 @@ CONTAINS
     WRITE(stdout, *)
 
     ! info line
-    WRITE(stdout, *) 'Timing of the code:'
+    WRITE(stdout,'(a)') 'Timing of the code:'
 
     !
     ! Overview over the different parts
@@ -77,6 +77,9 @@ CONTAINS
 
     ! print the time needed to calculate W
     CALL print_clock(time_coulomb)
+
+    ! print the time needed to calculate G
+    CALL print_clock(time_green)
 
   END SUBROUTINE timing_print_clock
 

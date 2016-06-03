@@ -151,6 +151,7 @@ do_stern.o : ../../Modules/mp_world.o
 do_stern.o : ../../Modules/noncol.o
 do_stern.o : ../../PW/src/pwcom.o
 do_stern.o : gwcom.o
+do_stern.o : timing.o
 dv_of_drho.o : ../../FFTXlib/fft_interfaces.o
 dv_of_drho.o : ../../LR_Modules/lrcom.o
 dv_of_drho.o : ../../Modules/cell_base.o
@@ -265,6 +266,7 @@ green_linsys_shift_im.o : ../../Modules/uspp.o
 green_linsys_shift_im.o : ../../Modules/wavefunctions.o
 green_linsys_shift_im.o : ../../PW/src/pwcom.o
 green_linsys_shift_im.o : gwcom.o
+green_linsys_shift_im.o : timing.o
 green_linsys_shift_re.o : ../../LR_Modules/lrcom.o
 green_linsys_shift_re.o : ../../Modules/cell_base.o
 green_linsys_shift_re.o : ../../Modules/check_stop.o
@@ -287,6 +289,7 @@ green_linsys_shift_re.o : ../../Modules/wavefunctions.o
 green_linsys_shift_re.o : ../../PW/src/buffers.o
 green_linsys_shift_re.o : ../../PW/src/pwcom.o
 green_linsys_shift_re.o : gwcom.o
+green_linsys_shift_re.o : timing.o
 green_multishift.o : ../../Modules/constants.o
 green_multishift.o : ../../Modules/kind.o
 green_multishift.o : gwcom.o

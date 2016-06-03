@@ -21,46 +21,50 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE green_linsys_shift_re (green, mu, iq)
-  USE kinds,                ONLY : DP
-  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
-  USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix
-  USE check_stop,           ONLY : check_stop_now
-  USE wavefunctions_module, ONLY : evc
-  USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
+
+  USE buffers,              ONLY : save_buffer, get_buffer
   USE cell_base,            ONLY : tpiba2
-  USE ener,                 ONLY : ef
-  USE klist,                ONLY : xk, wk, nkstot
-  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
-  USE gvecw,                ONLY : ecutwfc
-  USE uspp,                 ONLY : okvan, vkb
-  USE uspp_param,           ONLY : upf, nhm, nh
-  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE check_stop,           ONLY : check_stop_now
+  USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, current_iq, ext_recover, &
                                    eta, tr2_green, maxter_green, prec_shift
-  USE nlcc_gw,              ONLY : nlcc_any
-  USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
-  USE eqv_gw,               ONLY : evq, eprectot
-  USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE disp,                 ONLY : nqs, x_q
+  USE ener,                 ONLY : ef
+  USE eqv_gw,               ONLY : evq, eprectot
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, &
                                    w0pmw, nwgreen, nwcoul, wcoul
-  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
   USE gvect,                ONLY : g, ngm
+  USE gvecw,                ONLY : ecutwfc
+  USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
+  USE io_files,             ONLY : prefix
+  USE io_global,            ONLY : stdout, ionode
+  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : xk, wk, nkstot
+  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
-  USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
-                                   me_image, nproc_image, inter_image_comm
+  USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
   USE mp_global,            ONLY : nproc_pool_file, &
                                    nproc_bgrp_file, nproc_image_file
-  USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
-  USE mp_world,             ONLY : nproc, mpime
+  USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
+                                   me_image, nproc_image, inter_image_comm
   USE mp_pools,             ONLY : inter_pool_comm
-  USE buffers,       ONLY : save_buffer, get_buffer
+  USE mp_world,             ONLY : nproc, mpime
+  USE nlcc_gw,              ONLY : nlcc_any
+  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
+  USE timing_module,        ONLY : time_green
+  USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
+  USE uspp,                 ONLY : okvan, vkb
+  USE uspp_param,           ONLY : upf, nhm, nh
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
+
   IMPLICIT NONE 
+
   !should be freq blocks...
   COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
@@ -110,6 +114,8 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
    LOGICAL :: conv_root
    EXTERNAL cg_psi, ch_psi_all_green
 
+   CALL start_clock(time_green)
+
    allocate  (h_diag (npwx, 1))
    allocate  (etc(nbnd_occ(1), nkstot))
    ci = (0.0d0, 1.0d0)
@@ -117,7 +123,6 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
    do iw =1, nwgreen
       w_ryd(iw) = w0pmw(1,iw)/RYTOEV
    enddo
-   CALL start_clock('greenlinsys')
    where_rec='no_recover'
    ikq = iq
    IF (nksq.gt.1) then
@@ -199,6 +204,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
 if(allocated(niters)) DEALLOCATE(niters)
 if(allocated(h_diag)) DEALLOCATE(h_diag)
 if(allocated(etc))    DEALLOCATE(etc)
-CALL stop_clock('greenlinsys')
-RETURN
+
+  CALL stop_clock(time_green)
+
 END SUBROUTINE green_linsys_shift_re

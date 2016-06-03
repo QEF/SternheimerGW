@@ -76,10 +76,12 @@ program gw
 ! Calculation of CORRELATION energy \Sigma^{c}_{k}=\sum_{q}G_{k-q}{W_{q}-v_{q}}:
   if (do_imag) then
       do ik = w_of_k_start, w_of_k_stop
+         call start_clock(time_setup)
          call run_nscf(do_band, do_matel, ik)
          call initialize_gw()
          if (do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
          if (do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
+         call stop_clock(time_setup)
          if (do_sigma_c) call sigma_c_im(ik)
          if (do_sigma_c.and.multishift) then
             close(unit = iunresid, status = 'DELETE')
@@ -102,10 +104,12 @@ program gw
       enddo
   else
       do ik = w_of_k_start, w_of_k_stop
+         call start_clock(time_setup)
          call run_nscf(do_band, do_matel, ik)
          call initialize_gw()
          if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
          if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
+         call stop_clock(time_setup)
          if(do_sigma_c) call sigma_c_re(ik)
          if (do_sigma_c.and.multishift) then
             close(unit = iunresid, status = 'DELETE')
