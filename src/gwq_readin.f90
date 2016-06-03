@@ -70,7 +70,7 @@ SUBROUTINE gwq_readin()
   USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
                             xk_kpoints, kpoints, num_k_pts, & 
                             w_of_q_start, w_of_k_start, w_of_k_stop
-  USE io_files,         ONLY : outdir, tmp_dir, prefix
+  USE io_files,         ONLY : tmp_dir, prefix
   USE noncollin_module, ONLY : i_cons, noncolin
   USE ldaU,             ONLY : lda_plus_u
   USE control_flags, ONLY : iverbosity, modenum
@@ -103,6 +103,7 @@ SUBROUTINE gwq_readin()
   REAL(DP) :: amass_input(nsx)
   ! save masses read from input here
   !
+  CHARACTER(LEN=256)         :: outdir
   CHARACTER(LEN=80)          :: card
   CHARACTER(LEN=1), EXTERNAL :: capital
   CHARACTER(LEN=6) :: int_to_char
