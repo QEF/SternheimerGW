@@ -238,9 +238,9 @@ PROGRAM mustar
   if (ios /= 0) call errore ('diropn', 'error opening '//trim(tempfile), iuncoul)
 ! ENDIF
 
- WRITE(stdout, '(\5x, "nk1 nk2 nk3", 3i4)'), nk1, nk2, nk3
- WRITE(stdout, '(\5x, "Fermi Vector", f12.7)'), kf
- WRITE(stdout, '(\5x, "Thomas-Fermi Vector", f12.7)'), qtf
+ WRITE(stdout, '( 5x, "nk1 nk2 nk3", 3i4)'), nk1, nk2, nk3
+ WRITE(stdout, '( 5x, "Fermi Vector", f12.7)'), kf
+ WRITE(stdout, '( 5x, "Thomas-Fermi Vector", f12.7)'), qtf
 !Calculate Coulomb matrix elements stored in struct vcnknpkp
   CALL start_clock( 'calculation' )
   IF(do_coulmat) THEN

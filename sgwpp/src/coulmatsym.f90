@@ -14,7 +14,8 @@ SUBROUTINE coulmatsym()
                                    nk1, nk2, nk3, k1, k2, k3
   USE klist,                ONLY : nks, nkstot, ngauss, degauss, xk, wk, nelec
   USE wavefunctions_module, ONLY : evc 
-  USE wvfct,                ONLY : nbnd, et, npw, igk, npwx, g2kin, ecutwfc
+  USE wvfct,                ONLY : nbnd, et, npw, igk, npwx, g2kin
+  USE gvecw,                ONLY : ecutwfc
   USE lsda_mod,             ONLY : nspin
   USE ktetra,               ONLY : ntetra, tetra, ltetra
   USE fft_base,             ONLY : dfftp, dffts
@@ -272,12 +273,13 @@ IMPLICIT NONE
    write(stdout,*) omega
    write(stdout,*) nsym
 
-   write(stdout, '(5X, "nbndmin ", i4, " nbndmax",i4)'), nbndmin, nbndmax
-   write(stdout, '(5X, "Ef eV", f12.7, " bandwidth eV", f12.7)'), ef*rytoev, bandwidth*rytoev
-   write(stdout, '(5X, "N(0) states per atom per spin per eV ", f12.7)'),  N0/rytoev
-   write(stdout, '(5X, "debye temp Ry:", f12.7, " eV ", f12.7, " Kelvin ", f12.7)'), debye_e, debye_e*RYTOEV, (debye_e*RYTOEV*eV_to_kelvin)
-   write(stdout, '(5X, "\mu", f12.7)'), mu
-   write(stdout, '(5X, "\mu^{*} ", f12.7)'), mu/(1+mu*log((ef)/debye_e))
+   write(stdout, '(5X, "nbndmin ", i4, " nbndmax",i4)') nbndmin, nbndmax
+   write(stdout, '(5X, "Ef eV", f12.7, " bandwidth eV", f12.7)') ef*rytoev, bandwidth*rytoev
+   write(stdout, '(5X, "N(0) states per atom per spin per eV ", f12.7)')  N0/rytoev
+   write(stdout, '(5X, "debye temp Ry:", f12.7, " eV ", f12.7, " Kelvin ", f12.7)') &
+        debye_e, debye_e*RYTOEV, (debye_e*RYTOEV*eV_to_kelvin)
+   write(stdout, '(5X, "\mu", f12.7)') mu
+   write(stdout, '(5X, "\mu^{*} ", f12.7)') mu/(1+mu*log((ef)/debye_e))
    write(stdout, '(5X, "\mu^{*}", f12.7)' ) mu/(1+mu*log((bandwidth)/debye_e))
 
    write(stdout, * ) 

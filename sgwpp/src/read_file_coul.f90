@@ -92,7 +92,8 @@ SUBROUTINE read_xml_file_coul()
   USE force_mod,            ONLY : force
   USE klist,                ONLY : nkstot, nks, xk, wk
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE wvfct,                ONLY : nbnd, nbndx, et, wg, ecutwfc
+  USE wvfct,                ONLY : nbnd, nbndx, et, wg
+  USE gvecw,                ONLY : ecutwfc
   USE symm_base,            ONLY : irt, d1, d2, d3, checkallsym
   USE ktetra,               ONLY : tetra, ntetra 
   USE extfield,             ONLY : forcefield, tefield
@@ -323,7 +324,7 @@ SUBROUTINE read_xml_file_coul()
       USE constants, ONLY : pi
       USE cell_base, ONLY : alat, tpiba, tpiba2
       USE gvect,     ONLY : ecutrho, gcutm
-      USE wvfct,     ONLY : ecutwfc
+      USE gvecw,     ONLY : ecutwfc
       USE gvecs,     ONLY : gcutms, dual, doublegrid
       !
       !

@@ -27,7 +27,7 @@ MODULE pw_restart_coul
                           qexml_write_bz,qexml_write_para, qexml_write_bands_info, &
                           qexml_write_bands_pw, qexml_wfc_filename, &
                           default_fmt_version => qexml_default_version, &
-                          qexml_save_history, qexml_kpoint_dirname, &
+                          qexml_kpoint_dirname, &
                           qexml_read_header, qexml_read_cell, qexml_read_moving_cell, &
                           qexml_read_planewaves, qexml_read_ions, qexml_read_spin, &
                           qexml_read_magnetization, qexml_read_xc, qexml_read_occ, qexml_read_bz, &
@@ -288,7 +288,8 @@ MODULE pw_restart_coul
       USE noncollin_module, ONLY : noncolin
       USE ktetra,           ONLY : ntetra
       USE klist,            ONLY : nkstot, nelec
-      USE wvfct,            ONLY : nbnd, npwx, ecutwfc
+      USE wvfct,            ONLY : nbnd, npwx
+      USE gvecw,            ONLY : ecutwfc
       USE control_flags,    ONLY : gamma_only
       USE mp_pools,         ONLY : kunit
       USE mp_global,        ONLY : nproc_file, nproc_pool_file, &
@@ -722,7 +723,8 @@ MODULE pw_restart_coul
       USE gvecs,           ONLY : ngms_g, dual
       USE fft_base,        ONLY : dfftp
       USE fft_base,        ONLY : dffts
-      USE wvfct,           ONLY : npwx, g2kin, ecutwfc
+      USE wvfct,           ONLY : npwx, g2kin
+      USE gvecw,           ONLY : ecutwfc
       USE control_flags,   ONLY : gamma_only
       !
       IMPLICIT NONE
@@ -900,6 +902,7 @@ MODULE pw_restart_coul
                             Hubbard_l, Hubbard_U, Hubbard_J, Hubbard_alpha, &
                             Hubbard_J0, Hubbard_beta, U_projection
       USE kernel_table, ONLY : vdw_table_name
+      USE acfdt_ener,   ONLY : acfdt_in_pw
       USE control_flags,ONLY : llondon, lxdm, ts_vdw
       USE london_module,ONLY : scal6, lon_rcut
       USE tsvdw_module, ONLY : vdw_isolated
@@ -923,7 +926,7 @@ MODULE pw_restart_coul
          CALL qexml_read_xc( dft_name, lda_plus_u, lda_plus_u_kind, U_projection,&
                              Hubbard_lmax, Hubbard_l, nsp_, Hubbard_U, Hubbard_J, &
                              Hubbard_J0, Hubbard_alpha, Hubbard_beta, &
-                             inlc, vdw_table_name, llondon, scal6, &
+                             inlc, vdw_table_name,  acfdt_in_pw, llondon, scal6,&
                              lon_rcut, lxdm, ts_vdw, vdw_isolated, ierr )
          !
       END IF
@@ -1267,7 +1270,8 @@ MODULE pw_restart_coul
       USE cell_base,            ONLY : tpiba2
       USE lsda_mod,             ONLY : nspin, isk
       USE klist,                ONLY : nkstot, wk, nks, xk, ngk
-      USE wvfct,                ONLY : npw, npwx, g2kin, et, wg, nbnd, ecutwfc
+      USE wvfct,                ONLY : npw, npwx, g2kin, et, wg, nbnd
+      USE gvecw,                ONLY : ecutwfc
       USE wavefunctions_module, ONLY : evc
       USE io_files,             ONLY : nwordwfc, iunwfc
       USE buffers,              ONLY : save_buffer

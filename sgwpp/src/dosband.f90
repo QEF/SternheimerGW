@@ -1,6 +1,7 @@
 SUBROUTINE dosband()
   USE klist,                ONLY : nks, nkstot, ngauss, degauss, xk, wk, nelec
-  USE wvfct,                ONLY : nbnd, et, npw, igk, npwx,  g2kin, ecutwfc
+  USE wvfct,                ONLY : nbnd, et, npw, igk, npwx,  g2kin
+  USE gvecw,                ONLY : ecutwfc
   USE kinds,                ONLY : DP
   USE cell_base,            ONLY : tpiba2, omega, at, alat, bg
   USE ener,                 ONLY : ef

@@ -1,9 +1,15 @@
 # Makefile for postprocessing (PP)
-include ../../../make.sys
+
+ESPRESSO=../../..
+SGW=../..
+include $(ESPRESSO)/make.sys
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)../../../iotk/src $(MOD_FLAG)../../../Modules \
-          $(MOD_FLAG)../../../PW/src $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \
+          $(MOD_FLAG)$(ESPRESSO)/LAXlib  $(MOD_FLAG)$(ESPRESSO)/FFTXlib \
+          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
+          $(MOD_FLAG).
+
 IFLAGS=
 
 SGWPPOBJS = \
@@ -23,12 +29,15 @@ plotmuk.o\
 dosg.o\
 stop_pp.o
 
-PWOBJS = ../../../PW/src/libpw.a
-QEOBJS = ../../../Modules/libqemod.a
 
-MODULES = $(PWOBJS) $(QEOBJS)
+LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
+PWOBJS = $(ESPRESSO)/PW/src/libpw.a
+QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a \
+         $(ESPRESSO)/LAXlib/libqela.a
 
-LIBOBJS = ../../../flib/ptools.a ../../../flib/flib.a ../../../clib/clib.a ../../../iotk/src/libiotk.a ../../src/libgw.a
+MODULES = $(PWOBJS) $(QEMODS) $(LRMODS)
+
+LIBOBJS = $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a $(SGW)/src/libgw.a
 
 all: coulmat.x
 
@@ -38,7 +47,7 @@ libsgwppa.a : $(SGWPPOBJS)
 
 coulmat.x : mustar.o libsgwppa.a $(MODULES) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o coulmat.x mustar.o libsgwppa.a $(MODULES) $(LIBOBJS) $(LIBS)
-	- ( cd ../bin ; ln -fs ../src/coulmat.x . )
+	- ( ln -fs $$(pwd)/coulmat.x $(SGW)/bin/coulmat.x )
 
 clean :
 	- /bin/rm -f *.x *.o *~ *.d *.mod *.i *.L libsgwppa.a
