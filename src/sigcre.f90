@@ -20,44 +20,46 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> G TIMES W PRODUCT
+!! On the real frequency axis the Green's function
+!! Requires access to the occupied staets \psi_{n\k}(\r)
+!! Therefore we use the same tricks as for sigma_exch.f90
 SUBROUTINE sigma_c_re(ik0) 
-!G TIMES W PRODUCT
-!On the real frequency axis the Green's function
-!Requires access to the occupied staets \psi_{n\k}(\r)
-!Therefore we use the same tricks as for sigma_exch.f90
-  USE kinds,         ONLY : DP
-  USE kinds_gw,      ONLY : i8b
-  USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
-  USE io_files,      ONLY : prefix, tmp_dir
-  USE lsda_mod,      ONLY : nspin
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul, output
-  USE klist,         ONLY : wk, xk, nkstot, nks
-  USE wvfct,         ONLY : nbnd, npw, npwx, g2kin
-  USE eqv,           ONLY : evq
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
-                            nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
-                            wgreen, wsigma, wsigmamin, wsigmamax, &
-                            deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
-                            w0pmw, wgtcoul
-  USE units_gw,      ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
-  USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE gvect,         ONLY : g, ngm, nl
-  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at,bg
-  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE lr_symm_base,  ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
-  USE wavefunctions_module, ONLY : evc
-  USE control_flags,        ONLY : noinv
-  USE gwsigma,       ONLY : sigma_c_st
-  USE mp_global,     ONLY : mp_global_end
-  USE mp_world,      ONLY : nproc, mpime
-  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
-                            me_image, nproc_image, inter_image_comm
-  USE mp,            ONLY : mp_sum, mp_barrier, mp_bcast
-  USE mp_pools,      ONLY : inter_pool_comm
-  USE output_mod,    ONLY : filcoul
+
+  USE cell_base,       ONLY : tpiba2, tpiba, omega, alat, at,bg
+  USE constants,       ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE control_flags,   ONLY : noinv
+  USE control_gw,      ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
+                              trunc_2d, tmp_dir_coul, output
+  USE disp,            ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
+  USE eqv,             ONLY : evq
+  USE freq_gw,         ONLY : fpol, fiu, nfs, nfsmax, &
+                              nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
+                              wgreen, wsigma, wsigmamin, wsigmamax, &
+                              deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
+                              w0pmw, wgtcoul
+  USE gvect,           ONLY : g, ngm, nl
+  USE gwsigma,         ONLY : sigma_c_st
+  USE io_files,        ONLY : prefix, tmp_dir
+  USE io_global,       ONLY : stdout, ionode_id, ionode, meta_ionode
+  USE kinds,           ONLY : DP
+  USE kinds_gw,        ONLY : i8b
+  USE klist,           ONLY : wk, xk, nkstot, nks
+  USE lr_symm_base,    ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  USE lsda_mod,        ONLY : nspin
+  USE mp,              ONLY : mp_sum, mp_barrier, mp_bcast
+  USE mp_global,       ONLY : mp_global_end
+  USE mp_images,       ONLY : nimage, my_image_id, intra_image_comm,   &
+                              me_image, nproc_image, inter_image_comm
+  USE mp_pools,        ONLY : inter_pool_comm
+  USE mp_world,        ONLY : nproc, mpime
+  USE output_mod,      ONLY : filcoul
+  USE qpoint,          ONLY : xq, npwq, nksq, ikks, ikqs
   USE sigma_io_module, ONLY : sigma_io_write_c
+  USE symm_base,       ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  USE timing_module,   ONLY : time_sigma_c
+  USE units_gw,        ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
+  USE wvfct,           ONLY : nbnd, npw, npwx, g2kin
 
   IMPLICIT NONE
 
@@ -135,6 +137,9 @@ SUBROUTINE sigma_c_re(ik0)
   INTEGER :: ikstar, ik1
 
 #define DIRECT_IO_FACTOR 8 
+
+   CALL start_clock(time_sigma_c)
+
 ! iG(W-v)
    ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
    ALLOCATE ( scrcoul_g_R     (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
@@ -160,7 +165,6 @@ SUBROUTINE sigma_c_re(ik0)
    ci = (0.0d0, 1.d0)
    czero = (0.0d0, 0.0d0)
    sigma(:,:,:) = (0.0d0, 0.0d0)
-   CALL start_clock('sigmac')
    CALL gmap_sym(nrot, s, ftau, gmapsym, eigv, invs)
    IF(allocated(sigma)) THEN
      WRITE(6,'(4x,"Sigma allocated")')
@@ -238,8 +242,13 @@ DO iq = 1, nqs
   !read wave.
      if(.not.k_cycle(isymop)) CYCLE 
      iqrec = iqrec_k (isymop) 
-     if(iqrec_old.ne.iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
-     if(iqrec_old.ne.iqrec) CALL green_linsys_shift_re(greenf_g(1,1,1), mu, iqrec)
+
+     ! Green's function
+     CALL stop_clock(time_sigma_c)
+     IF (iqrec_old /= iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
+     IF (iqrec_old /= iqrec) CALL green_linsys_shift_re(greenf_g(1,1,1), mu, iqrec)
+     CALL stop_clock(time_sigma_c)
+
      iqrec_old = iqrec
      isym   = isym_k(isymop)
      nig0   = nig0_k(isymop)
@@ -323,10 +332,11 @@ DEALLOCATE ( z,a,u )
     CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
     CALL sigma_io_write_c(output%unit_sigma, ik0, sigma_g)
     WRITE(6,'(4x,"Sigma Written to File")')
-    CALL stop_clock('sigmac')
     DEALLOCATE ( sigma_g  )
   ENDIF !ionode
   CALL mp_barrier(inter_image_comm)
   DEALLOCATE ( sigma  )
-RETURN
+
+  CALL stop_clock(time_sigma_c)
+
 END SUBROUTINE sigma_c_re

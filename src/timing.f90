@@ -81,6 +81,9 @@ CONTAINS
     ! print the time needed to calculate G
     CALL print_clock(time_green)
 
+    ! print the time needed to calculate Sigma_c
+    CALL print_clock(time_sigma_c)
+
   END SUBROUTINE timing_print_clock
 
 END MODULE timing_module

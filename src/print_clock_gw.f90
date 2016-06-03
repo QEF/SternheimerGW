@@ -48,7 +48,7 @@ subroutine print_clock_gw
   WRITE( stdout,  * ) ' G, W and sigma: '
   call print_clock ('coulomb')
   call print_clock ('green')
-  call print_clock ('sigmac')
+  call print_clock ('sigma_c')
   call print_clock ('sigma_exch')
   WRITE( stdout, * )
   WRITE( stdout, * )

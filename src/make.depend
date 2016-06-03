@@ -548,12 +548,12 @@ sigcim.o : ../../Modules/mp_images.o
 sigcim.o : ../../Modules/mp_pools.o
 sigcim.o : ../../Modules/mp_world.o
 sigcim.o : ../../Modules/recvec.o
-sigcim.o : ../../Modules/wavefunctions.o
 sigcim.o : ../../PW/src/pwcom.o
 sigcim.o : ../../PW/src/symm_base.o
 sigcim.o : gwcom.o
 sigcim.o : kind_gw.o
 sigcim.o : sigma_io.o
+sigcim.o : timing.o
 sigcre.o : ../../LR_Modules/lrcom.o
 sigcre.o : ../../Modules/cell_base.o
 sigcre.o : ../../Modules/constants.o
@@ -567,12 +567,12 @@ sigcre.o : ../../Modules/mp_images.o
 sigcre.o : ../../Modules/mp_pools.o
 sigcre.o : ../../Modules/mp_world.o
 sigcre.o : ../../Modules/recvec.o
-sigcre.o : ../../Modules/wavefunctions.o
 sigcre.o : ../../PW/src/pwcom.o
 sigcre.o : ../../PW/src/symm_base.o
 sigcre.o : gwcom.o
 sigcre.o : kind_gw.o
 sigcre.o : sigma_io.o
+sigcre.o : timing.o
 sigma_exch.o : ../../LR_Modules/lrcom.o
 sigma_exch.o : ../../Modules/cell_base.o
 sigma_exch.o : ../../Modules/constants.o
