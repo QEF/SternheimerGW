@@ -20,37 +20,41 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine sigma_exchG(ik0)
-  USE kinds,            ONLY : DP
-  USE constants,        ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE disp,             ONLY : nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,       ONLY : eta, nbnd_occ, truncation, multishift, lgamma
-  USE klist,            ONLY : wk, xk, nkstot, nks
-  USE io_files,         ONLY : prefix, wfc_dir
-  USE wvfct,            ONLY : nbnd, npw, npwx, g2kin
-  USE gvecw,            ONLY : ecutwfc
+SUBROUTINE sigma_exchG(ik0)
+
+  USE buffers,              ONLY : save_buffer, get_buffer
+  USE cell_base,            ONLY : omega, tpiba2, at, bg, tpiba, alat
+  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE control_gw,           ONLY : eta, nbnd_occ, truncation, multishift, lgamma
+  USE disp,                 ONLY : nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
+  USE eqv,                  ONLY : evq
+  USE fft_base,             ONLY : dffts
+  USE fft_interfaces,       ONLY : invfft, fwfft
+  USE gvecs,                ONLY : nls
+  USE gvect,                ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
+  USE gvecw,                ONLY : ecutwfc
+  USE gwsigma,              ONLY : sigma_x_st, nbnd_sig, sigma_band_exg
+  USE io_files,             ONLY : prefix, wfc_dir
+  USE io_global,            ONLY : stdout, ionode_id, ionode, meta_ionode
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : wk, xk, nkstot, nks
+  USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
+  USE mp_images,            ONLY : nimage, my_image_id, inter_image_comm
+  USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
+  USE mp_world,             ONLY : nproc, mpime
+  USE noncollin_module,     ONLY : npol, nspin_mag
+  USE qpoint,               ONLY : xq, npwq, igkq, nksq
+  USE save_gw,              ONLY : tmp_dir_save
+  USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot,&
+                                   copy_sym, inverse_s, s_axis_to_cart
+  USE timing_module,        ONLY : time_sigma_x
+  USE truncation_module,    ONLY : truncate
+  USE units_gw,             ONLY : iunsex, lrsex, lrwfc, iuwfc
   USE wavefunctions_module, ONLY : evc
-  USE symm_base,        ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot,&
-                               copy_sym, inverse_s, s_axis_to_cart
-  USE cell_base,        ONLY : omega, tpiba2, at, bg, tpiba, alat
-  USE eqv,              ONLY : evq
-  USE units_gw,         ONLY : iunsex, lrsex, lrwfc, iuwfc
-  USE qpoint,           ONLY : xq, npwq, igkq, nksq
-  USE gwsigma,          ONLY : sigma_x_st, nbnd_sig, sigma_band_exg
-  USE buffers,          ONLY : save_buffer, get_buffer
-  USE io_global,        ONLY : stdout, ionode_id, ionode, meta_ionode
-  USE gvect,            ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
-  USE mp,               ONLY : mp_sum, mp_barrier, mp_bcast
-  USE noncollin_module, ONLY : npol, nspin_mag
-  USE mp_pools,         ONLY : inter_pool_comm, npool, kunit, my_pool_id
-  USE mp_world,         ONLY : nproc, mpime
-  USE save_gw,          ONLY : tmp_dir_save
-  USE mp_images,        ONLY : nimage, my_image_id, inter_image_comm
-  USE fft_interfaces,   ONLY : invfft, fwfft
-  USE fft_base,         ONLY: dffts
-  USE gvecs,            ONLY : nls
-  USE truncation_module, ONLY : truncate
-IMPLICIT NONE
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
+
+  IMPLICIT NONE
+
 !ARRAYS to describe exchange operator.
   complex(DP), allocatable :: eigv(:,:)
   complex(DP), allocatable :: barcoul(:)
@@ -93,7 +97,7 @@ IMPLICIT NONE
   integer  :: imq, isq(48), nqstar, nqs
   integer  :: nsq(48), i, nsymrot
 
-  call start_clock('sigma_exch')
+  CALL start_clock(time_sigma_x)
 
   allocate ( gmapsym  (ngm, nrot)       )
   allocate ( eigv     (ngm, nrot)       )
@@ -271,7 +275,8 @@ IMPLICIT NONE
  deallocate ( dpsic    )
  deallocate ( barcoul  )
 
- call stop_clock('sigma_exch')
+ CALL stop_clock(time_sigma_x)
+
  9000 format(8(1x,f7.2))
  9005 format(8(1x,f14.7))
 end subroutine sigma_exchG

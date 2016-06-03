@@ -21,35 +21,39 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE sigma_exch(ik0)
-  USE kinds,         ONLY : DP
-  USE kinds_gw,      ONLY : i8b
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,    ONLY : eta, nbnd_occ, truncation, multishift, lgamma, output
-  USE klist,         ONLY : wk, xk, nkstot, nks
-  USE io_files,      ONLY : prefix, wfc_dir
-  USE wvfct,         ONLY : nbnd, npw, npwx, g2kin
-  USE gvecw,         ONLY : ecutwfc
+
+  USE buffers,              ONLY : save_buffer, get_buffer
+  USE cell_base,            ONLY : omega, tpiba2, at, bg, tpiba, alat
+  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE control_gw,           ONLY : eta, nbnd_occ, truncation, multishift, lgamma, output
+  USE disp,                 ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
+  USE eqv,                  ONLY : evq
+  USE gvect,                ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
+  USE gvecw,                ONLY : ecutwfc
+  USE gwsigma,              ONLY : sigma_x_st, nbnd_sig, gexcut
+  USE io_files,             ONLY : prefix, wfc_dir
+  USE io_global,            ONLY : stdout, ionode_id, ionode, meta_ionode
+  USE kinds,                ONLY : DP
+  USE kinds_gw,             ONLY : i8b
+  USE klist,                ONLY : wk, xk, nkstot, nks
+  USE mp,                   ONLY : mp_sum, mp_barrier
+  USE mp_global,            ONLY : mp_global_end
+  USE mp_images,            ONLY : nimage, my_image_id, inter_image_comm
+  USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
+  USE mp_world,             ONLY : nproc, mpime
+  USE noncollin_module,     ONLY : npol, nspin_mag
+  USE qpoint,               ONLY : npwq, igkq, nksq
+  USE save_gw,              ONLY : tmp_dir_save
   USE sigma_io_module,      ONLY : sigma_io_write_x
+  USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  USE timing_module,        ONLY : time_sigma_x
+  USE truncation_module,    ONLY : truncate
+  USE units_gw,             ONLY : lrsex, lrwfc, iuwfc, iunsex
   USE wavefunctions_module, ONLY : evc
-  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
-  USE eqv,           ONLY : evq
-  USE units_gw,      ONLY : iunsex, lrsex, lrwfc, iuwfc
-  USE qpoint,        ONLY : npwq, igkq, nksq
-  USE gwsigma,       ONLY : sigma_x_st, nbnd_sig, gexcut
-  USE buffers,       ONLY : save_buffer, get_buffer
-  USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
-  USE gvect,         ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
-  USE mp,            ONLY : mp_sum, mp_barrier
-  USE noncollin_module, ONLY : npol, nspin_mag
-  USE mp_pools,      ONLY : inter_pool_comm, npool, kunit, my_pool_id
-  USE mp_world,      ONLY : nproc, mpime
-  USE save_gw,       ONLY : tmp_dir_save
-  USE mp_images,     ONLY : nimage, my_image_id, inter_image_comm
-  USE mp_global,     ONLY : mp_global_end
-  USE truncation_module, ONLY : truncate
-IMPLICIT NONE
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
+
+  IMPLICIT NONE
+
 ! ARRAYS to describe exchange operator.
 ! q-vector of coulomb potential xq_coul := k_{0} - xk(ik)
   COMPLEX(DP) :: sigma_band_ex(nbnd_sig, nbnd_sig)
@@ -92,7 +96,8 @@ IMPLICIT NONE
 #define DIRECT_IO_FACTOR 8
 ! Self-Energy grid:
 ! iGv
-  call start_clock('sigma_exch')
+  CALL start_clock(time_sigma_x)
+
   allocate ( sigma_ex    (sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr) )
   allocate ( gmapsym  (ngm, nrot)   )
   allocate ( eigv     (ngm, nrot)   )
@@ -228,5 +233,7 @@ IMPLICIT NONE
   deallocate (sigma_ex)
   call mp_barrier(inter_pool_comm)!I think I need these after writes!
   call mp_barrier(inter_image_comm)!I think I need these after writes!
-  call stop_clock('sigma_exch')
+
+  CALL stop_clock(time_sigma_x)
+
 end subroutine sigma_exch

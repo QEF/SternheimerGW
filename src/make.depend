@@ -595,6 +595,7 @@ sigma_exch.o : gwcom.o
 sigma_exch.o : kind_gw.o
 sigma_exch.o : save_gw_input.o
 sigma_exch.o : sigma_io.o
+sigma_exch.o : timing.o
 sigma_exch.o : truncation.o
 sigma_exchG.o : ../../FFTXlib/fft_interfaces.o
 sigma_exchG.o : ../../LR_Modules/lrcom.o
@@ -617,6 +618,7 @@ sigma_exchG.o : ../../PW/src/pwcom.o
 sigma_exchG.o : ../../PW/src/symm_base.o
 sigma_exchG.o : gwcom.o
 sigma_exchG.o : save_gw_input.o
+sigma_exchG.o : timing.o
 sigma_exchG.o : truncation.o
 sigma_expect.o : ../../Modules/kind.o
 sigma_expect.o : reorder.o

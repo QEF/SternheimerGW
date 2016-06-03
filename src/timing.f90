@@ -84,6 +84,9 @@ CONTAINS
     ! print the time needed to calculate Sigma_c
     CALL print_clock(time_sigma_c)
 
+    ! print the time needed to calculate Sigma_x
+    CALL print_clock(time_sigma_x)
+
   END SUBROUTINE timing_print_clock
 
 END MODULE timing_module

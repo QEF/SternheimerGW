@@ -49,7 +49,7 @@ subroutine print_clock_gw
   call print_clock ('coulomb')
   call print_clock ('green')
   call print_clock ('sigma_c')
-  call print_clock ('sigma_exch')
+  call print_clock ('sigma_x')
   WRITE( stdout, * )
   WRITE( stdout, * )
   call print_clock ('gwqscf')
