@@ -266,9 +266,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
            call start_clock ('vpsifft')
            do ibnd = 1, nbnd_occ (ikk)
-              call cft_wave (evc (1, ibnd), aux1, +1)
+              call cft_wave (ik, evc (1, ibnd), aux1, +1)
               call apply_dpot(dffts%nnr, aux1, dvscfins(1,1), current_spin)
-              call cft_wave (dvpsi (1, ibnd), aux1, -1)
+              call cft_wave (ik, dvpsi (1, ibnd), aux1, -1)
            enddo
            call stop_clock ('vpsifft')
            !  In the case of US pseudopotentials there is an additional
