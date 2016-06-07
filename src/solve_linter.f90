@@ -43,47 +43,48 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !------------------------------------------------------------------------------
 
 
-  USE kinds,                ONLY : DP
-  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
-  USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix
-  USE check_stop,           ONLY : check_stop_now
-  USE wavefunctions_module, ONLY : evc
-  USE constants,            ONLY : degspin
+  USE buffers,              ONLY : save_buffer, get_buffer
   USE cell_base,            ONLY : tpiba2
-  USE ener,                 ONLY : ef
-  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot, igk_k, ngk
-  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE spin_orb,             ONLY : domag
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin,  et
-  USE scf,                  ONLY : rho
-  USE uspp,                 ONLY : okvan, vkb
-  USE uspp_param,           ONLY : upf, nhm, nh
-  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
-  USE paw_variables,        ONLY : okpaw
+  USE check_stop,           ONLY : check_stop_now
+  USE constants,            ONLY : degspin, eps8
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    alpha_pv, lgamma, lgamma_gamma, convt, &
                                    nbnd_occ, alpha_mix, ldisp, rec_code_read, &
                                    where_rec, flmixdpot, current_iq, &
                                    ext_recover, eta, high_io, maxter_coul
+  USE ener,                 ONLY : ef
+  USE eqv,                  ONLY : dvpsi, dpsi, evq
+  USE fft_base,             ONLY : dfftp, dffts
+  USE fft_interfaces,       ONLY : invfft, fwfft
+  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
+  USE gvecs,                ONLY : nls, doublegrid
+  USE gvect,                ONLY : ngm, g, nl
+  USE io_files,             ONLY : prefix
+  USE io_global,            ONLY : stdout, ionode
+  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot, ngk, igk_k
+  USE lr_symm_base,         ONLY : minus_q, irgq, nsymq, rtau 
+  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
+  USE mp,                   ONLY : mp_sum, mp_barrier
+  USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups, me_bgrp
+  USE mp_images,            ONLY : intra_image_comm
+  USE mp_pools,             ONLY : inter_pool_comm
+  USE mp_world,             ONLY : mpime
   USE nlcc_gw,              ONLY : nlcc_any
+  USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE output_mod,           ONLY : fildrho, fildvscf
+  USE paw_variables,        ONLY : okpaw
+  USE qpoint,               ONLY : xq, npwq, nksq, ikks, ikqs, igkq
+  USE scf,                  ONLY : rho
+  USE spin_orb,             ONLY : domag
+  USE timing_module,        ONLY : time_solver
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
-  USE output_mod,           ONLY : fildrho, fildvscf
-  USE eqv,                  ONLY : dvpsi, dpsi, evq
-  USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
-  USE lr_symm_base,         ONLY : minus_q, irgq, nsymq, rtau 
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
-  USE mp,                   ONLY : mp_sum, mp_barrier
-  USE buffers,              ONLY : save_buffer, get_buffer
-  USE mp_pools,             ONLY : inter_pool_comm
-  USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups, me_bgrp
-  USE mp_world,             ONLY : mpime
-  USE mp_images, ONLY : intra_image_comm
-  USE gvect,           ONLY : ngm, g, nl
-  USE gvecs,           ONLY : nls, doublegrid
-  USE fft_base,        ONLY : dfftp, dffts
-  USE fft_interfaces,  ONLY : invfft, fwfft
+  USE uspp,                 ONLY : okvan, vkb
+  USE uspp_param,           ONLY : upf, nhm, nh
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, current_k, et
 
   implicit none
 
@@ -153,6 +154,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              lmetq0,     & ! true if xq=(0,0,0) in a metal
              cgsolver          
 
+  CALL start_clock (time_solver)
+
   allocate (dpsi(npwx*npol, nbnd))
  
   IF (rec_code_read > 20 ) RETURN
@@ -165,8 +168,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ipert  = 1
   lter   = 0
   lmres  = 1
-
-  call start_clock ('solve_linter')
 
   allocate (dvscfout ( dfftp%nnr , nspin_mag))    
   allocate (drhoscfh ( dfftp%nnr , nspin_mag))    
@@ -459,7 +460,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   if (doublegrid) deallocate (dvscfins)
   deallocate (dvscfin)
   deallocate (dpsi)
-  call stop_clock ('solve_linter')
+
+  CALL stop_clock (time_solver)
+
 END SUBROUTINE solve_linter
 
 SUBROUTINE check_all_convt(convt)
@@ -487,6 +490,5 @@ SUBROUTINE check_all_convt(convt)
   ENDIF
   !
   DEALLOCATE(convt_check)
-  RETURN
   !
 END SUBROUTINE

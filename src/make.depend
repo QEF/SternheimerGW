@@ -692,6 +692,7 @@ solve_direct.o : ../../PW/src/buffers.o
 solve_direct.o : ../../PW/src/pwcom.o
 solve_direct.o : ../../PW/src/scf_mod.o
 solve_direct.o : gwcom.o
+solve_direct.o : timing.o
 solve_linter.o : ../../FFTXlib/fft_interfaces.o
 solve_linter.o : ../../LR_Modules/lrcom.o
 solve_linter.o : ../../Modules/cell_base.o
@@ -716,6 +717,7 @@ solve_linter.o : ../../PW/src/buffers.o
 solve_linter.o : ../../PW/src/pwcom.o
 solve_linter.o : ../../PW/src/scf_mod.o
 solve_linter.o : gwcom.o
+solve_linter.o : timing.o
 star_q.o : ../../Modules/io_global.o
 star_q.o : ../../Modules/kind.o
 stern_symm.o : ../../LR_Modules/lrcom.o

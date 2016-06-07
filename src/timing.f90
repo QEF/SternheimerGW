@@ -53,6 +53,12 @@ MODULE timing_module
   !> label for the clock measuring the evaluation of the matrix elements
   CHARACTER(*), PARAMETER :: time_matel = 'mat_el'
 
+  !
+  ! split screened Coulomb into parts
+  !
+  !> label for the clock measuring the linear solver
+  CHARACTER(*), PARAMETER :: time_solver = 'linear_solver'
+
 CONTAINS
 
   !> Print the measure timing of the SGW run in a nice format.
@@ -86,6 +92,18 @@ CONTAINS
 
     ! print the time needed to calculate Sigma_x
     CALL print_clock(time_sigma_x)
+
+    ! empty line to separate it from the rest of the output
+    WRITE(stdout, *)
+
+    !
+    ! Detailed part of screened Coulomb interaction
+    !
+    ! info line
+    WRITE(stdout,'(a)') 'Needed for screened Coulomb interaction'
+
+    ! print the time needed for the linear solver
+    CALL print_clock(time_solver)
 
   END SUBROUTINE timing_print_clock
 

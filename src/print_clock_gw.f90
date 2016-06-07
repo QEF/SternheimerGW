@@ -53,7 +53,7 @@ subroutine print_clock_gw
   WRITE( stdout, * )
   WRITE( stdout, * )
   call print_clock ('gwqscf')
-  call print_clock ('solve_linter')
+  call print_clock ('linear_solver')
   WRITE( stdout, * )
   call print_clock ('dvqpsi_us')
   call print_clock ('ortho')
