@@ -24,12 +24,14 @@ cBiCG_solve.o : ../../Modules/kind.o
 cBiCG_solve.o : ../../Modules/mp.o
 cBiCG_solve.o : ../../Modules/mp_global.o
 cBiCG_solve.o : ../../Modules/mp_world.o
+cBiCG_solve.o : timing.o
 cBiCG_solve_coul.o : ../../Modules/kind.o
 cBiCG_solve_coul.o : gwcom.o
 cBiCG_solve_green.o : ../../Modules/kind.o
 cBiCG_solve_green.o : ../../Modules/mp.o
 cBiCG_solve_green.o : ../../Modules/mp_global.o
 cBiCG_solve_green.o : gwcom.o
+cBiCG_solve_green.o : timing.o
 ch_psi_all.o : ../../LR_Modules/lrcom.o
 ch_psi_all.o : ../../Modules/becmod.o
 ch_psi_all.o : ../../Modules/kind.o
@@ -79,6 +81,7 @@ construct_w.o : ../../Modules/kind.o
 construct_w.o : ../../Modules/mp_global.o
 construct_w.o : ../../Modules/recvec.o
 construct_w.o : gwcom.o
+construct_w.o : timing.o
 coul_multi.o : ../../Modules/kind.o
 coul_multi.o : gwcom.o
 coul_multishift.o : ../../Modules/constants.o
@@ -293,10 +296,12 @@ green_linsys_shift_re.o : timing.o
 green_multishift.o : ../../Modules/constants.o
 green_multishift.o : ../../Modules/kind.o
 green_multishift.o : gwcom.o
+green_multishift.o : timing.o
 green_multishift_im.o : ../../Modules/constants.o
 green_multishift_im.o : ../../Modules/kind.o
 green_multishift_im.o : ../../PW/src/pwcom.o
 green_multishift_im.o : gwcom.o
+green_multishift_im.o : timing.o
 gw.o : ../../Modules/check_stop.o
 gw.o : ../../Modules/environment.o
 gw.o : ../../Modules/input_parameters.o
@@ -671,6 +676,7 @@ sigprod.o : ../../Modules/mp_world.o
 sigprod.o : ../../Modules/recvec.o
 sigprod.o : ../../PW/src/symm_base.o
 sigprod.o : gwcom.o
+sigprod.o : timing.o
 solve_direct.o : ../../FFTXlib/fft_interfaces.o
 solve_direct.o : ../../LR_Modules/lrcom.o
 solve_direct.o : ../../Modules/cell_base.o

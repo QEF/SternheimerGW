@@ -20,15 +20,17 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine sigprod(isymop, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
-  use kinds,          only : DP
-  use cell_base,      only : tpiba2, tpiba, omega, alat, at
-  use gwsigma,        only : sigma_c_st, gcutcorr
-  use fft_interfaces, only : invfft, fwfft
-  use fft_custom,     only : fft_cus, set_custom_grid, ggent, gvec_init
-  use gvect,          only : nl, ngm, g, nlm, gstart, gl, igtongl
-  use symm_base,      only : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  use mp_world,       only : nproc, mpime
+SUBROUTINE sigprod(isymop, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
+
+  USE cell_base,      ONLY : tpiba2, tpiba, omega, alat, at
+  USE fft_interfaces, ONLY : invfft, fwfft
+  USE fft_custom,     ONLY : fft_cus, set_custom_grid, ggent, gvec_init
+  USE gwsigma,        ONLY : sigma_c_st, gcutcorr
+  USE gvect,          ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
+  USE mp_world,       ONLY : nproc, mpime
+  USE kinds,          ONLY : DP
+  USE symm_base,      ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  USE timing_module,  ONLY : time_GW_product
 
   implicit none
 
@@ -46,6 +48,8 @@ subroutine sigprod(isymop, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
   integer                  :: ig, igp, ir
   integer                  :: ig1, ig1p, igw
   real(DP), parameter      :: eps=1.0d-5
+
+  CALL start_clock(time_GW_product)
 
 ! G_{1}
   do igp = 1, gcutcorr
@@ -83,4 +87,7 @@ subroutine sigprod(isymop, dz, scrcoul_g, greenf_g, sigma_g, gmapsym)
      sigma_r(1:gcutcorr, igp) = conjg(aux(sigma_c_st%nlt(1:gcutcorr)))
   enddo
   sigma_g(1:gcutcorr,1:gcutcorr) = sigma_g(1:gcutcorr,1:gcutcorr) + sigma_r(1:gcutcorr,1:gcutcorr)
+
+  CALL stop_clock(time_GW_product)
+
 end subroutine sigprod

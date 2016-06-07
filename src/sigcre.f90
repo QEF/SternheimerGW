@@ -57,7 +57,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE qpoint,          ONLY : xq, npwq, nksq, ikks, ikqs
   USE sigma_io_module, ONLY : sigma_io_write_c
   USE symm_base,       ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE timing_module,   ONLY : time_sigma_c
+  USE timing_module,   ONLY : time_sigma_c, time_GW_product
   USE units_gw,        ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE wvfct,           ONLY : nbnd, npw, npwx, g2kin
 
@@ -273,6 +273,8 @@ DO iq = 1, nqs
                cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
            ENDIF
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
+
+           CALL start_clock(time_GW_product)
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
@@ -283,7 +285,11 @@ DO iq = 1, nqs
              CALL fft6_g(greenf_g(1,1,iw+nwcoul), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
              sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
            endif
+           CALL stop_clock(time_GW_product)
+
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (-w_rydsig(iw0)-w_ryd(iw)))
+
+           CALL start_clock(time_GW_product)
            scrcoul = czero
            CALL fft6_c(scrcoul_pade_g(1,1), scrcoul(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isymop, +1)
            greenfr(:,:) = czero
@@ -294,6 +300,8 @@ DO iq = 1, nqs
              CALL fft6_g(greenf_g(1,1,iw), greenfr(1,1), sigma_c_st, gmapsym(1,1), eigv(1,1), isym, nig0, +1)
              sigma (:,:,iw0) = sigma (:,:,iw0) + (1.0d0/dble(nsym))*cprefac*conjg(greenfr(:,:))*scrcoul(:,:)
            endif
+           CALL stop_clock(time_GW_product)
+
         ENDDO !on frequency convolution over w'
      ENDDO !on iw0  
   ENDIF

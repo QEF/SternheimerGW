@@ -80,6 +80,9 @@ MODULE timing_module
   !> label for the clock measuring the time to construct W in real frequency
   CHARACTER(*), PARAMETER :: time_construct_w = 'construct_w'
 
+  !> label for the clock measuring the time to multiply G and W
+  CHARACTER(*), PARAMETER :: time_GW_product = 'Sigma = G*W'
+
 CONTAINS
 
   !> Print the measure timing of the SGW run in a nice format.
@@ -155,6 +158,9 @@ CONTAINS
 
     ! print the time needed to construct W on real frequency mesh
     CALL print_clock(time_construct_w)
+
+    ! print the time necessary to convolute G and W
+    CALL print_clock(time_GW_product)
 
   END SUBROUTINE timing_print_clock
 
