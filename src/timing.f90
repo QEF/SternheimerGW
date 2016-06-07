@@ -56,6 +56,10 @@ MODULE timing_module
   !
   ! split screened Coulomb into parts
   !
+
+  !> label for the clock measuring the nscf calculation (W part)
+  CHARACTER(*), PARAMETER :: time_coul_nscf = 'coul_nscf'
+
   !> label for the clock measuring the linear solver
   CHARACTER(*), PARAMETER :: time_solver = 'linear_solver'
 
@@ -101,6 +105,9 @@ CONTAINS
     !
     ! info line
     WRITE(stdout,'(a)') 'Needed for screened Coulomb interaction'
+
+    ! print the time needed for the nscf calculations
+    CALL print_clock(time_coul_nscf)
 
     ! print the time needed for the linear solver
     CALL print_clock(time_solver)

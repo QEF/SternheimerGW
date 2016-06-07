@@ -36,7 +36,7 @@ SUBROUTINE do_stern()
                                my_image_id, nimage, root_image
   USE mp_world,         ONLY : mpime
   USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE timing_module,    ONLY : time_coulomb
+  USE timing_module,    ONLY : time_coulomb, time_coul_nscf
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
@@ -80,7 +80,12 @@ IMPLICIT NONE
         eps_m(:) = dcmplx(0.0d0,0.0d0)
         if(my_image_id.eq.0) THEN
            call prepare_q0(do_band, do_iq, setup_pw, iq)
-           call run_nscf(do_band, do_matel, iq)
+
+           ! nscf calculation to obtain the wave functions
+           CALL start_clock(time_coul_nscf)
+           CALL run_nscf(do_band, do_matel, iq)
+           CALL stop_clock(time_coul_nscf)
+
            call initialize_gw()
            call coulomb_q0G0(iq, eps_m)
            scrcoul_g(1,1,:,1) = eps_m
@@ -91,7 +96,12 @@ IMPLICIT NONE
         call mp_barrier(inter_image_comm)
     endif
     call prepare_q(do_band, do_iq, setup_pw, iq)
-    call run_nscf(do_band, do_matel, iq)
+ 
+    ! nscf calculation to obtain the wave functions
+    CALL start_clock(time_coul_nscf)
+    CALL run_nscf(do_band, do_matel, iq)
+    CALL stop_clock(time_coul_nscf)
+
     call initialize_gw()
     if(use_symm) THEN
       write(stdout,'("")')
