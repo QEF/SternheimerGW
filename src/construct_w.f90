@@ -21,18 +21,20 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
-  use kinds,         only : DP
-  use constants,     only : e2, fpi, RYTOEV, tpi, eps8, pi
-  use control_gw,    only : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
-  use freq_gw,       only : fpol, fiu, nfs, nfsmax, &
+
+  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
+  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
+  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
+  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax
-  use gwsigma,       only : sigma_c_st, gcutcorr
-  use gvect,         only : g, ngm, nl
-  use disp,          only : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  use cell_base,     only : tpiba2, tpiba, omega, alat, at
-  use mp_global,     only : mp_global_end
+  USE gvect,         ONLY : g, ngm, nl
+  USE gwsigma,       ONLY : sigma_c_st, gcutcorr
+  USE kinds,         ONLY : DP
+  USE mp_global,     ONLY : mp_global_end
+  USE timing_module, ONLY : time_construct_w
 
   implicit none
 
@@ -51,6 +53,8 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
   logical             :: pade_catch
   logical             :: found_q
   logical             :: limq, inv_q, found, trev
+
+  CALL start_clock(time_construct_w)
 
    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
@@ -93,4 +97,7 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
            endif
         enddo
    endif
+
+   CALL stop_clock(time_construct_w)
+
 end SUBROUTINE construct_w

@@ -73,6 +73,13 @@ MODULE timing_module
   !> label for the clock measuring the time for the multishift solver (G part)
   CHARACTER(*), PARAMETER :: time_green_multishift = 'green_multi'
 
+  !
+  ! split Sigma_c into parts
+  !
+
+  !> label for the clock measuring the time to construct W in real frequency
+  CHARACTER(*), PARAMETER :: time_construct_w = 'construct_w'
+
 CONTAINS
 
   !> Print the measure timing of the SGW run in a nice format.
@@ -136,6 +143,18 @@ CONTAINS
 
     ! print the time needed for the multishift solver
     CALL print_clock(time_green_multishift)
+
+    !
+    ! Detailed part of correlation part of Sigma
+    !
+    ! empty line to separate it from the rest of the output
+    WRITE(stdout, *)
+
+    ! info line
+    WRITE(stdout,'(a)') "Needed for correlation part of Sigma"
+
+    ! print the time needed to construct W on real frequency mesh
+    CALL print_clock(time_construct_w)
 
   END SUBROUTINE timing_print_clock
 
