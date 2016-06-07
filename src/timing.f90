@@ -70,6 +70,9 @@ MODULE timing_module
   !> label for the clock measuring the linear solver (G part)
   CHARACTER(*), PARAMETER :: time_green_solver = 'green_solver'
 
+  !> label for the clock measuring the time for the multishift solver (G part)
+  CHARACTER(*), PARAMETER :: time_green_multishift = 'green_multi'
+
 CONTAINS
 
   !> Print the measure timing of the SGW run in a nice format.
@@ -130,6 +133,9 @@ CONTAINS
 
     ! print the time needed for the linear solver
     CALL print_clock(time_green_solver)
+
+    ! print the time needed for the multishift solver
+    CALL print_clock(time_green_multishift)
 
   END SUBROUTINE timing_print_clock
 

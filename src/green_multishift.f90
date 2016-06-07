@@ -21,11 +21,13 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
-   USE kinds,       ONLY : DP
-   USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-   USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
-   USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
-   USE control_gw,  ONLY : eta, tr2_green
+
+   USE constants,     ONLY : degspin, pi, tpi, RYTOEV, eps8
+   USE control_gw,    ONLY : eta, tr2_green
+   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
+   USE kinds,         ONLY : DP
+   USE timing_module, ONLY : time_green_multishift
+   USE units_gw,      ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
 
 IMPLICIT NONE
 !coefficient of quadratic form
@@ -51,6 +53,9 @@ REAL(DP) :: anorm(nwgreen)
                iter,&
                nrec 
   integer :: ios
+
+  CALL start_clock(time_green_multishift)
+
 !ALLOCATE(x_sig(ndmx,nfreq), r(ndmx))
   ALLOCATE(r(ndmx))
   ALLOCATE(u_sig(ndmx,nfreq), u_sig_old(ndmx,nfreq), r_sig(ndmx,nfreq))
@@ -124,4 +129,7 @@ REAL(DP) :: anorm(nwgreen)
   DEALLOCATE(u_sig)
   DEALLOCATE(u_sig_old) 
   DEALLOCATE(r_sig)
+
+  CALL stop_clock(time_green_multishift)
+
 END SUBROUTINE

@@ -21,13 +21,15 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_sig)
-  USE kinds,       ONLY : dp
-  USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-  USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
-  USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
-  USE control_gw,  ONLY : eta, tr2_green
-  USE ener,        ONLY : ef
-  USE gwsigma,     ONLY : sigma_x_st, sigma_c_st
+
+  USE constants,     ONLY : degspin, pi, tpi, RYTOEV, eps8
+  USE control_gw,    ONLY : eta, tr2_green
+  USE ener,          ONLY : ef
+  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
+  USE gwsigma,       ONLY : sigma_x_st, sigma_c_st
+  USE kinds,         ONLY : dp
+  USE timing_module, ONLY : time_green_multishift
+  USE units_gw,      ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
 
   implicit none
 
@@ -55,6 +57,8 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
               iter,&
               nrec 
   integer  :: ios
+
+  CALL start_clock(time_green_multishift)
 
   allocate (r(ndim))
   allocate (u_sig(ndim,nfreq), u_sig_old(ndim,nfreq)) !, r_sig(ndim,nfreq))
@@ -125,4 +129,7 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
   deallocate(u_sig)
   deallocate(u_sig_old) 
   !deallocate(r_sig)
+
+  CALL stop_clock(time_green_multishift)
+
 END SUBROUTINE green_multishift_im
