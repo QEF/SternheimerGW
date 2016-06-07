@@ -53,7 +53,7 @@ subroutine print_clock_gw
   WRITE( stdout, * )
   WRITE( stdout, * )
   call print_clock ('gwqscf')
-  call print_clock ('linear_solver')
+  call print_clock ('coul_solver')
   WRITE( stdout, * )
   call print_clock ('dvqpsi_us')
   call print_clock ('ortho')
@@ -70,8 +70,7 @@ subroutine print_clock_gw
 #endif
   WRITE( stdout, * )
   WRITE( stdout, * )
-  call print_clock ('cgsolve')
-  call print_clock ('cbcgsolve')
+  call print_clock ('green_solver')
   WRITE( stdout, * )
   call print_clock ('ch_psi')
   call print_clock ('first')

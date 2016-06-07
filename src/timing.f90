@@ -60,8 +60,15 @@ MODULE timing_module
   !> label for the clock measuring the nscf calculation (W part)
   CHARACTER(*), PARAMETER :: time_coul_nscf = 'coul_nscf'
 
-  !> label for the clock measuring the linear solver
-  CHARACTER(*), PARAMETER :: time_solver = 'linear_solver'
+  !> label for the clock measuring the linear solver (W part)
+  CHARACTER(*), PARAMETER :: time_coul_solver = 'coul_solver'
+
+  !
+  ! split Green's function into part
+  !
+
+  !> label for the clock measuring the linear solver (G part)
+  CHARACTER(*), PARAMETER :: time_green_solver = 'green_solver'
 
 CONTAINS
 
@@ -97,12 +104,12 @@ CONTAINS
     ! print the time needed to calculate Sigma_x
     CALL print_clock(time_sigma_x)
 
-    ! empty line to separate it from the rest of the output
-    WRITE(stdout, *)
-
     !
     ! Detailed part of screened Coulomb interaction
     !
+    ! empty line to separate it from the rest of the output
+    WRITE(stdout, *)
+
     ! info line
     WRITE(stdout,'(a)') 'Needed for screened Coulomb interaction'
 
@@ -110,7 +117,19 @@ CONTAINS
     CALL print_clock(time_coul_nscf)
 
     ! print the time needed for the linear solver
-    CALL print_clock(time_solver)
+    CALL print_clock(time_coul_solver)
+
+    !
+    ! Detailed part of Green's function
+    !
+    ! empty line to separate it from the rest of the output
+    WRITE(stdout, *)
+
+    ! info line
+    WRITE(stdout,'(a)') "Needed for Green's function"
+
+    ! print the time needed for the linear solver
+    CALL print_clock(time_green_solver)
 
   END SUBROUTINE timing_print_clock
 

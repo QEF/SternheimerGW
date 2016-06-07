@@ -78,7 +78,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE qpoint,               ONLY : xq, npwq, nksq, ikks, ikqs, igkq
   USE scf,                  ONLY : rho
   USE spin_orb,             ONLY : domag
-  USE timing_module,        ONLY : time_solver
+  USE timing_module,        ONLY : time_coul_solver
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
   USE uspp,                 ONLY : okvan, vkb
@@ -154,7 +154,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              lmetq0,     & ! true if xq=(0,0,0) in a metal
              cgsolver          
 
-  CALL start_clock (time_solver)
+  CALL start_clock (time_coul_solver)
 
   allocate (dpsi(npwx*npol, nbnd))
  
@@ -461,7 +461,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   deallocate (dvscfin)
   deallocate (dpsi)
 
-  CALL stop_clock (time_solver)
+  CALL stop_clock (time_coul_solver)
 
 END SUBROUTINE solve_linter
 

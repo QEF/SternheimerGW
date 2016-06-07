@@ -32,12 +32,13 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 !
-  USE kinds,       ONLY : DP
-  USE mp_global,   ONLY : intra_pool_comm
-  USE mp,          ONLY : mp_sum
-  USE control_gw,  ONLY : maxter_green
-  USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-  USE gwsigma,     ONLY : sigma_x_st, sigma_c_st
+  USE control_gw,    ONLY : maxter_green
+  USE gwsigma,       ONLY : sigma_x_st, sigma_c_st
+  USE kinds,         ONLY : DP
+  USE mp,            ONLY : mp_sum
+  USE mp_global,     ONLY : intra_pool_comm
+  USE timing_module, ONLY : time_green_solver
+  USE units_gw,      ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
 
   implicit none
 !first I/O variables
@@ -82,7 +83,8 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   external h_psi       ! input: the routine computing h_psi
   external cg_psi      ! input: the routine computing cg_psi
   
-  call start_clock ('cgsolve')
+  CALL start_clock (time_green_solver)
+
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
              hold(ndmx*npol ,nbnd) )
   allocate ( gt(ndmx*npol,nbnd), tt(ndmx*npol,nbnd), ht(ndmx*npol,nbnd), &
@@ -201,7 +203,8 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   deallocate (g, t, h, hold)
   deallocate (gt, tt, ht, htold)
   deallocate (gtp, gp)
-  call stop_clock ('cgsolve')
-  return
+
+  CALL stop_clock (time_green_solver)
+
 END SUBROUTINE cbcg_solve_green
  

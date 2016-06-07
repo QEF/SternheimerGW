@@ -33,11 +33,12 @@ SUBROUTINE cbcg_solve(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 
-USE kinds,       ONLY : DP
-USE mp,          ONLY : mp_sum
-USE io_global,   ONLY : stdout, ionode
-USE mp_global,   ONLY : intra_pool_comm
-USE mp_world,    ONLY : mpime
+USE io_global,     ONLY : stdout, ionode
+USE kinds,         ONLY : DP
+USE mp,            ONLY : mp_sum
+USE mp_global,     ONLY : intra_pool_comm
+USE mp_world,      ONLY : mpime
+USE timing_module, ONLY : time_green_solver
 
 implicit none
 
@@ -107,6 +108,9 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
   real(DP) :: kter_eff
   ! account the number of iterations with b
   ! coefficient of quadratic form
+
+  CALL start_clock (time_green_solver)
+
   allocate ( g(ndmx*npol,nbnd), t(ndmx*npol,nbnd), h(ndmx*npol,nbnd), &
              hold(ndmx*npol ,nbnd) )
   allocate ( gt(ndmx*npol,nbnd), tt(ndmx*npol,nbnd), ht(ndmx*npol,nbnd), &
@@ -136,7 +140,6 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
   gtp(:,:) = (0.d0, 0.0d0)
   anorm = 0.0
 
-  call start_clock ('cbcgsolve')
 
   do iter = 1, maxter
     ! kter = kter + 1
@@ -266,7 +269,8 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
   deallocate (g, t, h, hold)
   deallocate (gt, tt, ht, htold)
   deallocate (gtp, gp)
-  call stop_clock ('cbcgsolve')
-  return
+
+  CALL stop_clock (time_green_solver)
+
 END SUBROUTINE cbcg_solve
  

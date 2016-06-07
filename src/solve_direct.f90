@@ -75,7 +75,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE scf,                  ONLY : rho
   USE spin_orb,             ONLY : domag
-  USE timing_module,        ONLY : time_solver
+  USE timing_module,        ONLY : time_coul_solver
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
   USE uspp,                 ONLY : okvan, vkb
@@ -159,7 +159,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   complex(DP)               :: dpsi(npwx,nbnd,nfs)
   complex(DP)               :: dpsipm(npwx, nbnd, 2*nfs-1)
 
-  CALL start_clock (time_solver)
+  CALL start_clock (time_coul_solver)
 
   if (rec_code_read > 20 ) RETURN
   irr    = 1
@@ -346,6 +346,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   deallocate (dvscfout)
   deallocate (dbecsum)
 
-  CALL stop_clock (time_solver)
+  CALL stop_clock (time_coul_solver)
 
 END SUBROUTINE solve_lindir
