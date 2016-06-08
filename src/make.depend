@@ -661,6 +661,7 @@ sigma_matel.o : ../../PW/src/scf_mod.o
 sigma_matel.o : gwcom.o
 sigma_matel.o : kind_gw.o
 sigma_matel.o : sigma_expect.o
+sigma_matel.o : timing.o
 sigma_pade.o : ../../Modules/constants.o
 sigma_pade.o : ../../Modules/gvecw.o
 sigma_pade.o : ../../Modules/io_files.o

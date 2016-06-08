@@ -21,36 +21,38 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE sigma_matel (ik0)
-  USE io_global,            ONLY : stdout, meta_ionode
-  USE io_files,             ONLY : diropn 
+
   USE buffers,              ONLY : get_buffer, close_buffer
-  USE kinds,                ONLY : DP
-  USE kinds_gw,             ONLY : i8b
-  USE gvect,                ONLY : ngm, g, gl, igtongl
-  USE gvecs,                ONLY : nls
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE freq_gw,              ONLY : nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
-  USE klist,                ONLY : xk
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
-  USE gvecw,                ONLY : ecutwfc
-  USE qpoint,               ONLY : npwq
-  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
-  USE control_gw,           ONLY : lgamma, do_imag, do_sigma_exxG
-  USE wavefunctions_module, ONLY : evc
-  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
-                                   sigma_band_exg, gcutcorr
-  USE disp,                 ONLY : xk_kpoints
-  USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
-  USE cell_base,            ONLY : tpiba2
   USE buiol,                ONLY : buiol_check_unit
+  USE cell_base,            ONLY : tpiba2
+  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
+  USE control_gw,           ONLY : lgamma, do_imag, do_sigma_exxG, output
+  USE disp,                 ONLY : xk_kpoints
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE mp_world,             ONLY : mpime
-  USE mp_images,            ONLY : my_image_id
+  USE freq_gw,              ONLY : nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
+  USE gvecs,                ONLY : nls
+  USE gvect,                ONLY : ngm, g, gl, igtongl
+  USE gvecw,                ONLY : ecutwfc
+  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
+                                   sigma_band_exg, gcutcorr
+  USE io_files,             ONLY : diropn 
+  USE io_global,            ONLY : stdout, meta_ionode
+  USE kinds,                ONLY : DP
+  USE kinds_gw,             ONLY : i8b
+  USE klist,                ONLY : xk
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
-  USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
+  USE mp_images,            ONLY : my_image_id
+  USE mp_world,             ONLY : mpime
   USE output_mod,           ONLY : filsigx, filsigc
+  USE qpoint,               ONLY : npwq
+  USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
+  USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
+  USE timing_module,        ONLY : time_matel
+  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
 
 IMPLICIT NONE
 
@@ -65,6 +67,8 @@ IMPLICIT NONE
   INTEGER                   :: ng
   INTEGER                   :: sigma_c_ngm, sigma_x_ngm
   LOGICAL                   :: exst, opnd
+
+  CALL start_clock(time_matel)
 
   IF ( .NOT. meta_ionode ) RETURN
 
@@ -234,5 +238,7 @@ IMPLICIT NONE
     CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
   END IF
   IF (allocated(sigma_band_exg)) DEALLOCATE(sigma_band_exg)
+
+  CALL stop_clock(time_matel)
 
 END SUBROUTINE sigma_matel

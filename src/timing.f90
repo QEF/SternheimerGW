@@ -51,7 +51,7 @@ MODULE timing_module
   CHARACTER(*), PARAMETER :: time_sigma_x = 'sigma_x'
 
   !> label for the clock measuring the evaluation of the matrix elements
-  CHARACTER(*), PARAMETER :: time_matel = 'mat_el'
+  CHARACTER(*), PARAMETER :: time_matel = 'sigma_matel'
 
   !
   ! split screened Coulomb into parts
@@ -102,6 +102,7 @@ CONTAINS
   !! -calculation of G
   !! -convolution of G and W
   !! -exchange
+  !! -matrix elements of Sigma
   !! then resolve these parts into the important contributions.
   !!
   SUBROUTINE timing_print_clock()
@@ -132,6 +133,9 @@ CONTAINS
 
     ! print the time needed to calculate Sigma_x
     CALL print_clock(time_sigma_x)
+
+    ! print the time needed to evaluate the matrix elements
+    CALL print_clock(time_matel)
 
     !
     ! Detailed part of screened Coulomb interaction
