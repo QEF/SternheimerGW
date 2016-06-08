@@ -301,6 +301,7 @@ gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
 gw.o : ../../PW/src/pwcom.o
+gw.o : sigma_io.o
 gw.o : gwcom.o
 gw.o : pp_output.o
 gw.o : sigma_grid.o
@@ -430,6 +431,7 @@ openfilq.o : save_gw_input.o
 opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : ../../PW/src/pwcom.o
+opengwfil.o : sigma_io.o
 opengwfil.o : gwcom.o
 opengwfil.o : sigma_io.o
 pade.o : ../../Modules/kind.o
