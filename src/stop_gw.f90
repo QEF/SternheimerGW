@@ -40,7 +40,6 @@ SUBROUTINE stop_gw( flag )
   !
   !
   CALL timing_print_clock() 
-  CALL print_clock_gw()
   !
   !
   CALL environment_end('SGW')

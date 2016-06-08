@@ -468,9 +468,6 @@ prepare_q0.o : ../../Modules/control_flags.o
 prepare_q0.o : ../../Modules/io_global.o
 prepare_q0.o : ../../PW/src/pwcom.o
 prepare_q0.o : gwcom.o
-print_clock_gw.o : ../../Modules/io_global.o
-print_clock_gw.o : ../../Modules/uspp.o
-print_clock_gw.o : gwcom.o
 print_matel.o : ../../Modules/cell_base.o
 print_matel.o : ../../Modules/constants.o
 print_matel.o : ../../Modules/io_global.o
