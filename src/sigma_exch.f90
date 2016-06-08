@@ -25,11 +25,12 @@ SUBROUTINE sigma_exch(ik0)
   USE kinds_gw,      ONLY : i8b
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
-  USE control_gw,    ONLY : eta, nbnd_occ, truncation, multishift, lgamma
+  USE control_gw,    ONLY : eta, nbnd_occ, truncation, multishift, lgamma, output
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE io_files,      ONLY : prefix, wfc_dir
   USE wvfct,         ONLY : nbnd, npw, npwx, g2kin
   USE gvecw,         ONLY : ecutwfc
+  USE sigma_io_module,      ONLY : sigma_io_write_x
   USE wavefunctions_module, ONLY : evc
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
@@ -221,6 +222,7 @@ IMPLICIT NONE
   if (meta_ionode) THEN
       call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
       call davcio(sigma_g_ex, lrsex, iunsex, ik0,  1)
+    CALL sigma_io_write_x(output%unit_sigma, ik0, sigma_g_ex)
   endif
   deallocate(sigma_g_ex)
   deallocate (sigma_ex)

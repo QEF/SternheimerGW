@@ -30,7 +30,7 @@ subroutine sigma_c_im(ik0)
   use constants,     only : e2, fpi, RYTOEV, tpi, eps8, pi
   use disp,          only : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   use control_gw,    only : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
-                            trunc_2d, tmp_dir_coul, high_io
+                            trunc_2d, tmp_dir_coul, high_io, output
   use klist,         only : wk, xk, nkstot, nks, lgauss
   use wvfct,         only : nbnd, npw, npwx, g2kin
   use eqv,           only : evq
@@ -57,6 +57,7 @@ subroutine sigma_c_im(ik0)
   use mp,            only : mp_sum, mp_barrier, mp_bcast
   use mp_pools,      only : inter_pool_comm
   use output_mod,    only : filcoul
+  USE sigma_io_module, ONLY : sigma_io_write_c
 
   implicit none
 
@@ -273,6 +274,7 @@ subroutine sigma_c_im(ik0)
 !Now write Sigma in G space to file. 
   if (meta_ionode) THEN
       call davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
+    CALL sigma_io_write_c(output%unit_sigma, ik0, sigma_g)
       write(6,'(4x,"Sigma Written to File")')
       call stop_clock('sigmac')
   endif !ionode

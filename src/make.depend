@@ -545,6 +545,7 @@ sigcim.o : ../../Modules/mp_world.o
 sigcim.o : ../../Modules/recvec.o
 sigcim.o : ../../Modules/wavefunctions.o
 sigcim.o : ../../PW/src/pwcom.o
+sigcim.o : ../../PW/src/sigma_io.o
 sigcim.o : ../../PW/src/symm_base.o
 sigcim.o : gwcom.o
 sigcim.o : kind_gw.o
@@ -563,6 +564,7 @@ sigcre.o : ../../Modules/mp_world.o
 sigcre.o : ../../Modules/recvec.o
 sigcre.o : ../../Modules/wavefunctions.o
 sigcre.o : ../../PW/src/pwcom.o
+sigcre.o : ../../PW/src/sigma_io.o
 sigcre.o : ../../PW/src/symm_base.o
 sigcre.o : gwcom.o
 sigcre.o : kind_gw.o
@@ -583,6 +585,7 @@ sigma_exch.o : ../../Modules/recvec.o
 sigma_exch.o : ../../Modules/wavefunctions.o
 sigma_exch.o : ../../PW/src/buffers.o
 sigma_exch.o : ../../PW/src/pwcom.o
+sigma_exch.o : ../../PW/src/sigma_io.o
 sigma_exch.o : ../../PW/src/symm_base.o
 sigma_exch.o : gwcom.o
 sigma_exch.o : kind_gw.o

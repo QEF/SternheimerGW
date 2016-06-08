@@ -32,7 +32,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul
+  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul, output
   USE klist,         ONLY : wk, xk, nkstot, nks
   USE wvfct,         ONLY : nbnd, npw, npwx, g2kin
   USE eqv,           ONLY : evq
@@ -57,6 +57,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE mp,            ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_pools,      ONLY : inter_pool_comm
   USE output_mod,    ONLY : filcoul
+  USE sigma_io_module, ONLY : sigma_io_write_c
 
   IMPLICIT NONE
 
@@ -320,6 +321,7 @@ DEALLOCATE ( z,a,u )
     ENDDO
 !Now write Sigma in G space to file. 
     CALL davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
+    CALL sigma_io_write_c(output%unit_sigma, ik0, sigma_g)
     WRITE(6,'(4x,"Sigma Written to File")')
     CALL stop_clock('sigmac')
     DEALLOCATE ( sigma_g  )
