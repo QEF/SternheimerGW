@@ -57,7 +57,8 @@ SUBROUTINE sigma_c_re(ik0)
   USE qpoint,          ONLY : xq, npwq, nksq, ikks, ikqs
   USE sigma_io_module, ONLY : sigma_io_write_c
   USE symm_base,       ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE timing_module,   ONLY : time_sigma_c, time_GW_product
+  USE timing_module,   ONLY : time_sigma_c, time_GW_product, time_sigma_setup, &
+                              time_sigma_comm, time_sigma_io
   USE units_gw,        ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
   USE wvfct,           ONLY : nbnd, npw, npwx, g2kin
 
@@ -139,6 +140,7 @@ SUBROUTINE sigma_c_re(ik0)
 #define DIRECT_IO_FACTOR 8 
 
    CALL start_clock(time_sigma_c)
+   CALL start_clock(time_sigma_setup)
 
 ! iG(W-v)
    ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
@@ -200,6 +202,8 @@ SUBROUTINE sigma_c_re(ik0)
   call mp_barrier(inter_pool_comm)
   WRITE(6,'("mu", f12.7)') mu*RYTOEV
   WRITE(1000+mpime,'("mu", f12.7)') mu*RYTOEV
+
+  CALL stop_clock(time_sigma_setup)
 
 DO iq = 1, nqs
    iqcoul = 1
@@ -315,12 +319,17 @@ DEALLOCATE ( scrcoul_pade_g   )
 DEALLOCATE ( scrcoul_g, scrcoul_g_R )
 DEALLOCATE ( z,a,u )
 
+  CALL start_clock(time_sigma_comm)
+
 #ifdef __PARA
   CALL mp_barrier(inter_pool_comm)
   CALL mp_sum(sigma, inter_pool_comm)
   CALL mp_barrier(inter_image_comm)
   CALL mp_sum(sigma, inter_image_comm)
 #endif __PARA
+
+  CALL stop_clock(time_sigma_comm)
+  CALL start_clock(time_sigma_io)
 
   IF (meta_ionode) THEN
     ALLOCATE ( sigma_g (sigma_c_st%ngmt, sigma_c_st%ngmt, nwsigma))
@@ -345,6 +354,7 @@ DEALLOCATE ( z,a,u )
   CALL mp_barrier(inter_image_comm)
   DEALLOCATE ( sigma  )
 
+  CALL stop_clock(time_sigma_io)
   CALL stop_clock(time_sigma_c)
 
 END SUBROUTINE sigma_c_re

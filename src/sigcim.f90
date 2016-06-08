@@ -57,7 +57,8 @@ SUBROUTINE sigma_c_im(ik0)
   USE symm_base,       ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot, invsym
   USE units_gw,        ONLY : iuncoul, iungreen, iunsigma, lrsigma,&
                               lrcoul, lrgrn, iuwfc, lrwfc
-  USE timing_module,   ONLY : time_sigma_c
+  USE timing_module,   ONLY : time_sigma_c, time_sigma_setup, time_sigma_io, &
+                              time_sigma_comm
   USE wvfct,           ONLY : nbnd, npw, npwx, g2kin
 
   IMPLICIT NONE
@@ -134,6 +135,7 @@ SUBROUTINE sigma_c_im(ik0)
 #define DIRECT_IO_FACTOR 8 
 
    CALL start_clock(time_sigma_c)
+   CALL start_clock(time_sigma_setup)
 
 ! iG(W-v)
    allocate ( scrcoul_g       (gcutcorr, gcutcorr, nfs)     )
@@ -210,6 +212,9 @@ SUBROUTINE sigma_c_im(ik0)
   call mp_barrier(inter_pool_comm)
   nsymm1 = 1.0d0/dble(nsym)
   call para_pool(nqs,iqstart,iqstop)
+
+  CALL stop_clock(time_sigma_setup)
+
   do iq = iqstart, iqstop
      trev = .false.
      xq(:) = x_q(:,iq)
@@ -273,12 +278,19 @@ SUBROUTINE sigma_c_im(ik0)
   deallocate ( scrcoul_pade_g )
   deallocate ( scrcoul_g      )
   deallocate ( z, a, u        )
+
+  CALL start_clock(time_sigma_comm)
+
 #ifdef __PARA
   call mp_barrier(inter_pool_comm)
   call mp_sum(sigma_g, inter_pool_comm)
   call mp_barrier(inter_image_comm)
   call mp_sum(sigma_g, inter_image_comm)
 #endif __PARA
+
+  CALL stop_clock(time_sigma_comm)
+  CALL start_clock(time_sigma_io)
+
 !Now write Sigma in G space to file. 
   if (meta_ionode) THEN
       call davcio (sigma_g, lrsigma, iunsigma, ik0, 1)
@@ -288,6 +300,7 @@ SUBROUTINE sigma_c_im(ik0)
   deallocate ( sigma_g  )
   call mp_barrier(inter_image_comm)
 
+  CALL stop_clock(time_sigma_io)
   CALL stop_clock(time_sigma_c)
 
 end subroutine sigma_c_im

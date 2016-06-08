@@ -77,16 +77,32 @@ MODULE timing_module
   ! split Sigma_c into parts
   !
 
+  !> label for the clock measuring the time to setup quantities for Sigma
+  CHARACTER(*), PARAMETER :: time_sigma_setup = 'setup_sigma'
+
   !> label for the clock measuring the time to construct W in real frequency
   CHARACTER(*), PARAMETER :: time_construct_w = 'construct_w'
 
   !> label for the clock measuring the time to multiply G and W
   CHARACTER(*), PARAMETER :: time_GW_product = 'Sigma = G*W'
 
+  !> label for the clock measuring the communication time
+  CHARACTER(*), PARAMETER :: time_sigma_comm = 'Sigma communication'
+
+  !> label for the clock measuring the time to store Sigma to disk
+  CHARACTER(*), PARAMETER :: time_sigma_io = 'Sigma IO'
+
 CONTAINS
 
-  !> Print the measure timing of the SGW run in a nice format.
+  !> Print the measured timing of the SGW run in a nice format.
   !!
+  !! First print a summary of the main parts
+  !! -setup
+  !! -calculation of W
+  !! -calculation of G
+  !! -convolution of G and W
+  !! -exchange
+  !! then resolve these parts into the important contributions.
   !!
   SUBROUTINE timing_print_clock()
 
@@ -156,11 +172,20 @@ CONTAINS
     ! info line
     WRITE(stdout,'(a)') "Needed for correlation part of Sigma"
 
+    ! print the time needed to setup things for Sigma
+    CALL print_clock(time_sigma_setup)
+
     ! print the time needed to construct W on real frequency mesh
     CALL print_clock(time_construct_w)
 
     ! print the time necessary to convolute G and W
     CALL print_clock(time_GW_product)
+
+    ! print the time needed to communicate Sigma across the processes
+    CALL print_clock(time_sigma_comm)
+
+    ! print the time needed to write Sigma to disk
+    CALL print_clock(time_sigma_io)
 
   END SUBROUTINE timing_print_clock
 
