@@ -301,6 +301,7 @@ gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
 gw.o : ../../PW/src/pwcom.o
+gw.o : sigma_io.o
 gw.o : gwcom.o
 gw.o : pp_output.o
 gwcom.o : ../../LR_Modules/lrcom.o
@@ -427,6 +428,7 @@ openfilq.o : save_gw_input.o
 opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : ../../PW/src/pwcom.o
+opengwfil.o : sigma_io.o
 opengwfil.o : gwcom.o
 pade.o : ../../Modules/kind.o
 pade_eps.o : ../../LR_Modules/lrcom.o
@@ -625,6 +627,7 @@ sigma_grids.o : ../../Modules/recvec.o
 sigma_grids.o : ../../PW/src/pwcom.o
 sigma_grids.o : gwcom.o
 sigma_io.o : ../../Modules/kind.o
+sigma_io.o : ../../iotk/src/iotk_module.o
 sigma_matel.o : ../../FFTXlib/fft_interfaces.o
 sigma_matel.o : ../../LR_Modules/lrcom.o
 sigma_matel.o : ../../Modules/cell_base.o

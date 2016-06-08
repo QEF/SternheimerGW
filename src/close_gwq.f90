@@ -29,15 +29,16 @@ SUBROUTINE close_gwq( flag )
   ! ... Called at the end of the run with flag=.TRUE. (removes 'recover')
   ! ... or during execution with flag=.FALSE. (does not remove 'recover')
   !
-  USE control_flags, ONLY : twfcollect
-  USE paw_variables, ONLY : okpaw
-  USE io_global,     ONLY : ionode, stdout
-  USE buffers,       ONLY : close_buffer
-  USE uspp,          ONLY : okvan
-  USE units_gw,      ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iuebar, iudrho, &
-                            iudvscf
-  USE output_mod,    ONLY : fildrho, fildvscf
-  USE control_gw,    ONLY : do_coulomb
+  USE buffers,         ONLY : close_buffer
+  USE control_flags,   ONLY : twfcollect
+  USE control_gw,      ONLY : do_coulomb
+  USE io_global,       ONLY : ionode, stdout
+  USE output_mod,      ONLY : fildrho, fildvscf
+  USE paw_variables,   ONLY : okpaw
+  USE units_gw,        ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iuebar, iudrho, &
+                              iudvscf
+  USE uspp,            ONLY : okvan
+
   !
   IMPLICIT NONE
   !

@@ -21,48 +21,61 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE opengwfil()
+
+  USE control_gw,      ONLY : multishift, do_sigma_exxG, output
+  USE disp,            ONLY : xk_kpoints, num_k_pts
+  USE freq_gw,         ONLY : nfs, nwsigma
+  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, gcutcorr
+  USE io_files,        ONLY : tmp_dir, diropn, seqopn
+  USE io_global,       ONLY : meta_ionode
+  USE output_mod,      ONLY : filcoul, filsigx, filsigc
+  USE sigma_io_module, ONLY : sigma_io_open_write
   USE units_gw,        ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, &
                               lrsigma, lrsex, iunsex, iunresid, lrresid, & 
                               iunalphabeta, lralphabeta, iunsigext, lrsigext
-  USE io_files,        ONLY : tmp_dir, diropn, seqopn
-  USE freq_gw,         ONLY : nfs, nwsigma
-  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, gcutcorr
-  USE control_gw,      ONLY : multishift, do_sigma_exxG
   USE wvfct,           ONLY : nbnd,npwx
-  USE io_global,       ONLY : meta_ionode
-  USE output_mod,      ONLY : filcoul, filsigx, filsigc
 
 IMPLICIT  NONE
   LOGICAL :: exst
+  INTEGER, EXTERNAL :: find_free_unit
 
-    iuncoul = 28
-   !lrcoul = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt * nfs
-    lrcoul = 2 * gcutcorr * gcutcorr * nfs
-    if(meta_ionode) CALL diropn (iuncoul, filcoul, lrcoul, exst)
-    iungreen = 31
-    !lrgrn  = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt
-    lrgrn  = 2 * gcutcorr * gcutcorr
-!    CALL diropn (iungreen, 'green', lrgrn, exst)
-!\Sigma^{c}(\G,\G';\omega)
-    iunsigma = 32
-    !lrsigma = 2 * sigma_c_st%ngmt * sigma_c_st%ngmt * nwsigma
-    lrsigma = 2 * gcutcorr * gcutcorr*nwsigma
-    if(meta_ionode) CALL diropn(iunsigma, filsigc, lrsigma, exst)
-!\Sigma^{x}(\G,\G';\omega)
-    if(.not. do_sigma_exxG) then
-       iunsex = 33
-       lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
-       if(meta_ionode) CALL diropn(iunsex, filsigx, lrsex, exst)
-    endif
-    if(multishift) then
-       iunresid = 34
-!!!!!This only needs to be the same as ngmsco!!!
-!      lrresid  = 2*npwx
-! Factor of 2 for complex and second factor so we don't
-! throw away g sphere
-       !lrresid  = 2*2*sigma_c_st%ngmt
-       lrresid  = 2*2*gcutcorr
-       iunalphabeta = 35
-       lralphabeta  = 4
-    endif
+  ! open file for coulomb 
+  iuncoul = 28
+  lrcoul = 2 * gcutcorr * gcutcorr * nfs
+  IF (meta_ionode) THEN 
+    CALL diropn (iuncoul, filcoul, lrcoul, exst)
+  END IF
+
+  ! file for \Sigma^{c}(\G,\G';\omega)
+  lrsigma = 2 * gcutcorr * gcutcorr*nwsigma
+  IF (meta_ionode) THEN
+    iunsigma = find_free_unit()
+    CALL diropn(iunsigma, filsigc, lrsigma, exst)
+  END IF
+
+  ! file for \Sigma^{x}(\G,\G';\omega)
+  IF (.NOT.do_sigma_exxG) THEN
+     lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
+     IF (meta_ionode) THEN
+       iunsex = find_free_unit()
+       CALL diropn(iunsex, filsigx, lrsex, exst)
+     END IF
+  END IF
+
+  ! file for output of sigma
+  IF (meta_ionode) THEN
+    CALL sigma_io_open_write(output%file_sigma, xk_kpoints(:,:num_k_pts), &
+                     sigma_x_st%ngmt, gcutcorr, nwsigma, output%unit_sigma)
+  END IF
+
+  IF (multishift) THEN
+    ! This only needs to be the same as ngmsco
+    ! Factor of 2 for complex and second factor so we don't
+    ! throw away g sphere
+    iunresid = 34
+    lrresid  = 2*2*gcutcorr
+    iunalphabeta = 35
+    lralphabeta  = 4
+  END IF
+
 END SUBROUTINE opengwfil

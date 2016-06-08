@@ -34,6 +34,7 @@ program gw
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,         ONLY : diropn
   USE io_global,        ONLY : meta_ionode
+  USE sigma_io_module,  ONLY : sigma_io_close_write
   USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,            ONLY : nbnd
   USE disp,             ONLY : num_k_pts, w_of_k_start, w_of_k_stop
@@ -116,5 +117,6 @@ program gw
   endif
   127 continue
   call close_gwq(.TRUE.)
+  IF (meta_ionode) CALL sigma_io_close_write(output%unit_sigma)
   call stop_gw( .TRUE. )
 end program gw
