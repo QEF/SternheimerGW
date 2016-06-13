@@ -1,22 +1,26 @@
-#!/bin/sh
+#!/bin/bash
 
-# check if svn info available (do not write anything)
-svn info 2> /dev/null > /dev/null
+# check if inside git repository
+has_git=$(git rev-parse --is-inside-work-tree 2> /dev/null)
 
-if [ $? = 0 ] ; then 
-# svn info available: get svn revision
-   svn_rev=$(svnversion -n)
+# if we are in repository
+if [[ "$has_git" == "true" ]]
+then
+  label=$(git describe --tags)
+
+# if we are not in repository, but an old version file exist
+elif test -f version.f90
+then
+  label=$(awk -F\' '/git_describe/{ print $2 }' version.f90)
+
+# not in a repository and no old version file
 else
-# try git svn
-   svn_rev=$(git log 2> /dev/null | grep git-svn-id | awk -F"[@ ]*" '{ print $4; exit }')
-   if [ -z "$svn_rev" ] ; then
-# no svn info available: revert to no info
-     svn_rev=unknown
-   fi
+  label="unknown"
+
 fi
 
-# write svn into file version_tmp.f90
-cat version.f90.in | sed 's/unknown/'$svn_rev'/' > version.f90.tmp
+# write label into file version.f90.tmp
+cat version.f90.in | sed 's/unknown/'$label'/' > version.f90.tmp
 
 # check if a previous version.f90 file exists
 if test -f version.f90 ; then
@@ -36,4 +40,5 @@ else
    mv version.f90.tmp version.f90
 
 fi
+
 

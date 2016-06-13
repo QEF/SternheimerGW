@@ -20,15 +20,40 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-!
+!> This module keeps track of the SGW version number.
+!!
+!! We use semantic versioning as much as is reasonably possible for a code
+!! relying on the occationally rapid changes in the Quantum Espresso package.
+!! A detailed description can be found here http://semver.org/ .
+!! We do not use the patch sublevel of the version number. These commits
+!! are identified by the git hash tag.
+!!
+!! Here is an outline of the general principles:
+!! - Whenever there is an incompatible change to the API, update the major
+!!   version number. In practice this means that if you make significant
+!!   changes to the interface of a subroutine or the input file.
+!!   Significant are all those changes that would break an old file unless
+!!   it is modified to the new behavior.
+!! - Whenever a new feature is introduced and whenever QE is updated, update
+!!   the minor revision number. Usually the QE releases will be so frequent
+!!   that you can release new features with the next QE release.
+!! 
+!! Use tags to identify releases and add the compatible QE release. Example:
+!! If version 1.15 of SGW is released with QE version 6.2 use the tag
+!! v1.15_QE_v6.2. Do only use this form of the tag if the version corresponds
+!! excactly to the unmodified version of QE; otherwise use simply the
+!! v1.15 tag.
+!!
+!! For versions between commits the git-describe functionality is used to
+!! determine the version number.
 !----------------------------------------------------------------------------
 MODULE sgw_version
   !
   IMPLICIT NONE
   !
-  SAVE
-  !
-  CHARACTER (LEN=6)  ::  sgw_version_number = '0.577'
-  CHARACTER (LEN=12) :: sgw_svn_revision = 'unknown'
+  !> Version number set by hand.
+  CHARACTER(*), PARAMETER :: sgw_version_number = '0.5'
+  !> Version number extracted from git describe.
+  CHARACTER(*), PARAMETER :: sgw_git_describe = 'unknown'
   !
 END MODULE sgw_version

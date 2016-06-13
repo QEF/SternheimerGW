@@ -110,7 +110,7 @@ TLDEPS= bindir mods libs pw-lib lr-lib
 all : version libgw.a gw.x
 
 version : 
-	sh update_version
+	bash update_version
 
 version.f90 : version
 
