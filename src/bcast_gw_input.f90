@@ -118,6 +118,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (output%pp_im_corr_iw%filename, meta_ionode_id, world_comm )
   call mp_bcast (output%pp_spec%filename, meta_ionode_id, world_comm )
   call mp_bcast (output%pp_spec_iw%filename, meta_ionode_id, world_comm )
+  call mp_bcast (output%file_sigma, meta_ionode_id, world_comm )
 
  !SGW cutoffs and control
   call mp_bcast (ecutsex, meta_ionode_id, world_comm)

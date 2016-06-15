@@ -73,6 +73,8 @@ MODULE gw_type_mod
   !! \param pp_im_corr_iw  output of imaginary part of correlation on imaginary frequency axis
   !! \param pp_spec        output of spectral function on real frequency axis
   !! \param pp_spec_iw     output of spectral function on imaginary frequency axis
+  !! \param unit_sigma     unit under which file_sigma is opened
+  !! \param file_sigma     filename in which Sigma_x and Sigma_c are written
   !!
   TYPE output_type
     CHARACTER(LEN=name_length) directory
@@ -88,6 +90,11 @@ MODULE gw_type_mod
     TYPE(pp_output_type) pp_im_corr_iw
     TYPE(pp_output_type) pp_spec
     TYPE(pp_output_type) pp_spec_iw
+
+    ! file for exchange and correlation part of sigma
+    INTEGER unit_sigma
+    CHARACTER(LEN=name_length) file_sigma
+
   END TYPE output_type
 
 END MODULE gw_type_mod

@@ -128,6 +128,7 @@ SUBROUTINE gwq_readin()
   CHARACTER(LEN=name_length) file_im_corr_iw
   CHARACTER(LEN=name_length) file_spec
   CHARACTER(LEN=name_length) file_spec_iw
+  CHARACTER(LEN=name_length) file_sigma
 
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
@@ -151,7 +152,7 @@ SUBROUTINE gwq_readin()
                        filsigx, filsigc, filcoul
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
-                       file_spec, file_spec_iw, directory
+                       file_spec, file_spec_iw, directory, file_sigma
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -348,6 +349,7 @@ SUBROUTINE gwq_readin()
   file_im_corr_iw = ''
   file_spec       = ''
   file_spec_iw    = ''
+  file_sigma      = 'Sigma'
 
   ! read the output from file
   IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
@@ -365,6 +367,7 @@ SUBROUTINE gwq_readin()
   output%pp_im_corr_iw%filename = file_im_corr_iw
   output%pp_spec%filename       = file_spec
   output%pp_spec_iw%filename    = file_spec_iw
+  output%file_sigma             = file_sigma
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
