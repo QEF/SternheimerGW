@@ -349,7 +349,7 @@ SUBROUTINE gwq_readin()
   file_im_corr_iw = ''
   file_spec       = ''
   file_spec_iw    = ''
-  file_sigma      = 'Sigma'
+  file_sigma      = 'sigma.xml'
 
   ! read the output from file
   IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
@@ -520,6 +520,9 @@ SUBROUTINE gwq_readin()
   ! set output directory if not defined
   IF (output%directory == '') output%directory = tmp_dir_gw
   output%prefix = prefix
+
+  ! augment sigma file with output directory
+  output%file_sigma = TRIM(output%directory) // output%file_sigma
 
   CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
   ext_restart=.FALSE.
