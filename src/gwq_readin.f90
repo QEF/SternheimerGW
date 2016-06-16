@@ -88,6 +88,7 @@ SUBROUTINE gwq_readin()
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
   USE truncation_module
+  USE wrappers,      ONLY : f_mkdir_safe
   !
   !
   IMPLICIT NONE
@@ -520,6 +521,10 @@ SUBROUTINE gwq_readin()
   ! set output directory if not defined
   IF (output%directory == '') output%directory = tmp_dir_gw
   output%prefix = prefix
+
+  ! create directory (if it doesn't exist)
+  ierr = f_mkdir_safe(output%directory)
+  IF (ierr > 0) CALL errore(__FILE__, "error when opening/creating directory for output", ierr)
 
   ! augment sigma file with output directory
   output%file_sigma = TRIM(output%directory) // output%file_sigma

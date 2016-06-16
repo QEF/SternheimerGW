@@ -301,9 +301,9 @@ gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
 gw.o : ../../PW/src/pwcom.o
-gw.o : sigma_io.o
 gw.o : gwcom.o
 gw.o : pp_output.o
+gw.o : sigma_io.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
 gwcom.o : ../../Modules/fft_custom.o
@@ -349,6 +349,7 @@ gwq_readin.o : ../../Modules/parameters.o
 gwq_readin.o : ../../Modules/paw_variables.o
 gwq_readin.o : ../../Modules/run_info.o
 gwq_readin.o : ../../Modules/uspp.o
+gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/ldaU.o
 gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
@@ -428,8 +429,8 @@ openfilq.o : save_gw_input.o
 opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : ../../PW/src/pwcom.o
-opengwfil.o : sigma_io.o
 opengwfil.o : gwcom.o
+opengwfil.o : sigma_io.o
 pade.o : ../../Modules/kind.o
 pade_eps.o : ../../LR_Modules/lrcom.o
 pade_eps.o : ../../Modules/constants.o
@@ -445,7 +446,6 @@ para_pool.o : ../../Modules/mp_pools.o
 para_pool.o : ../../Modules/mp_world.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
-pp_output.o : ../../Modules/wrappers.o
 pp_output.o : ../../iotk/src/iotk_module.o
 pp_output.o : gw_type.o
 prepare_q.o : ../../LR_Modules/lrcom.o
@@ -545,10 +545,10 @@ sigcim.o : ../../Modules/mp_world.o
 sigcim.o : ../../Modules/recvec.o
 sigcim.o : ../../Modules/wavefunctions.o
 sigcim.o : ../../PW/src/pwcom.o
-sigcim.o : ../../PW/src/sigma_io.o
 sigcim.o : ../../PW/src/symm_base.o
 sigcim.o : gwcom.o
 sigcim.o : kind_gw.o
+sigcim.o : sigma_io.o
 sigcre.o : ../../LR_Modules/lrcom.o
 sigcre.o : ../../Modules/cell_base.o
 sigcre.o : ../../Modules/constants.o
@@ -564,10 +564,10 @@ sigcre.o : ../../Modules/mp_world.o
 sigcre.o : ../../Modules/recvec.o
 sigcre.o : ../../Modules/wavefunctions.o
 sigcre.o : ../../PW/src/pwcom.o
-sigcre.o : ../../PW/src/sigma_io.o
 sigcre.o : ../../PW/src/symm_base.o
 sigcre.o : gwcom.o
 sigcre.o : kind_gw.o
+sigcre.o : sigma_io.o
 sigma_exch.o : ../../LR_Modules/lrcom.o
 sigma_exch.o : ../../Modules/cell_base.o
 sigma_exch.o : ../../Modules/constants.o
@@ -585,11 +585,11 @@ sigma_exch.o : ../../Modules/recvec.o
 sigma_exch.o : ../../Modules/wavefunctions.o
 sigma_exch.o : ../../PW/src/buffers.o
 sigma_exch.o : ../../PW/src/pwcom.o
-sigma_exch.o : ../../PW/src/sigma_io.o
 sigma_exch.o : ../../PW/src/symm_base.o
 sigma_exch.o : gwcom.o
 sigma_exch.o : kind_gw.o
 sigma_exch.o : save_gw_input.o
+sigma_exch.o : sigma_io.o
 sigma_exch.o : truncation.o
 sigma_exchG.o : ../../FFTXlib/fft_interfaces.o
 sigma_exchG.o : ../../LR_Modules/lrcom.o
