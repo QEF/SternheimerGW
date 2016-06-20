@@ -10,17 +10,18 @@ Getting Started
 ======
 
 Checkout the latest version of espresso-5.x.x/
-  svn checkout http://qeforge.qe-forge.org/svn/q-e/trunk/espresso ./espresso-5.1/
+  svn checkout http://qeforge.qe-forge.org/svn/q-e/trunk/espresso ./espresso-5.*/
   username: anonymous
   password: 
 
 Make all:
-  cd ./espresso-5.x.x/
-  ./config
+  cd ./espresso-5.*/
+  ./configure
   make pw
 
 Checkout the latest version of SGW:
   svn co https://rothery3.materials.ox.ac.uk/svn/sgw/branches/sgw-5.0/ ./SGW
   cd ./SGW/src
+  ./update_version
   make
 

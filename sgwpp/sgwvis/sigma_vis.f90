@@ -1,22 +1,22 @@
 PROGRAM diel_vis
-  USE environment,ONLY : environment_start
-  USE io_global,  ONLY : stdout, ionode, ionode_id
-  USE mp_global,  ONLY : nproc_pool
-  USE mp,         ONLY : mp_bcast
-  USE parameters, ONLY : ntypx
-  USE constants,  ONLY :  pi, fpi, tpi
-  USE cell_base
-  USE ions_base,         ONLY : nat, ityp, atm, ntyp => nsp, tau, zv
-  USE lsda_mod,          ONLY: nspin
   USE gvect
   USE gsmooth
-  USE wavefunctions_module,  ONLY: psic
-  USE io_files, ONLY: nd_nmbr, prefix, tmp_dir, nwordwfc, iunwfc, find_free_unit, outdir
-  USE fft_base,              ONLY : grid_scatter
-  USE printout_base,         ONLY : title
-  USE control_flags,         ONLY : gamma_only
-  USE scf,                   ONLY : rho, vltot, v
-  USE klist,                 ONLY : nks, xk, wk
+  USE environment, ONLY : environment_start
+  USE io_global,   ONLY : stdout, ionode, ionode_id
+  USE mp_global,   ONLY : nproc_pool
+  USE mp,          ONLY : mp_bcast
+  USE parameters,  ONLY : ntypx
+  USE constants,   ONLY :  pi, fpi, tpi
+  USE cell_base
+  USE ions_base,   ONLY : nat, ityp, atm, ntyp => nsp, tau, zv
+  USE lsda_mod,    ONLY : nspin
+  USE wavefunctions_module, ONLY: psic
+  USE io_files,             ONLY: nd_nmbr, prefix, tmp_dir, nwordwfc, iunwfc, find_free_unit, outdir
+  USE fft_base,             ONLY : grid_scatter
+  USE printout_base,        ONLY : title
+  USE control_flags,        ONLY : gamma_only
+  USE scf,                  ONLY : rho, vltot, v
+  USE klist,                ONLY : nks, xk, wk
   USE wvfct,                ONLY : et, nbnd, npwx, npw, igk, g2kin
   USE wavefunctions_module, ONLY : evc
 

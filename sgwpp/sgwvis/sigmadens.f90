@@ -9,7 +9,7 @@
 !-----------------------------------------------------------------------
 SUBROUTINE sigmadens (filplot,plot_num)
   !-----------------------------------------------------------------------
-  !      Writes the charge density (or potential, or polarisation)
+  !      Writes the screened Coulomb interaction or Self-Energy Operator
   !      into a file format suitable for plotting
   !-----------------------------------------------------------------------
   !
@@ -108,7 +108,7 @@ SUBROUTINE sigmadens (filplot,plot_num)
   real(DP)      :: aq(3)
   character(len=256) :: tempfile, filename
 !  USE disp,  ONLY : nq1, nq2, nq3, x_q, nqs, wq
-  real(DP)      :: xq(3,64), wq(9)
+  real(DP)      :: xq(3,64), wq(64)
 
 #define DIRECT_IO_FACTOR 8 
 
@@ -419,21 +419,21 @@ SUBROUTINE sigmadens (filplot,plot_num)
 
         CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
 
-!Si Correlation grid (should be set on input
-        ngmpol   = 2451
-        nwsigma  = 2
-        iunsigma = 32
+!RGO Correlation grid (should be set on input
+!        ngmpol   = 2451
+!        nwsigma  = 2
+!        iunsigma = 32
 !Si exchange grid (should be set on input)
 !        ngmpol   = 283
 !        nwsigma  = 1
 !        iunsigma = 32
-!        ngmpol   = 59
-!        nwsigma  = 7
-!        iunsigma = 32
+        ngmpol   = 59
+        nwsigma  = 7
+        iunsigma = 32
 !        CALL q_points()
 
      call kpoint_grid(nsym, time_reversal, .false., s, t_rev,& 
-                      bg, 9, 0,0,0, 3,3,1, nqs, xq, wq )
+                      bg, 64, 0,0,0, 4,4,4, nqs, xq, wq )
 
       xq(:,1) = 0.0d0
 
@@ -442,12 +442,13 @@ SUBROUTINE sigmadens (filplot,plot_num)
       end do
 
 
-        allocate (sigmar(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
+        !allocate (sigmar(dfftp%nr1x*dfftp%nr2x*dfftp%nr3x))
+
         allocate (sigma_g(ngmpol, ngmpol, nwsigma))
 
 !FOR INPUT FILE
-        !filename = trim(prefix)//"."//"sigma1"
-        filename = trim(prefix)//"."//"coul1"
+        filename = trim(prefix)//"."//"sigma1"
+        !filename = trim(prefix)//"."//"coul1"
         !filename = trim(prefix)//"."//"sigma_ex1"
 
         tempfile = trim(tmp_dir) //"_gw0/"// trim(filename)
@@ -456,18 +457,6 @@ SUBROUTINE sigmadens (filplot,plot_num)
         open ( iunsigma, file = trim(adjustl(tempfile)), iostat = ios, form ='unformatted', & 
         status = 'unknown', access = 'direct', recl = unf_recl)
         write(stdout, '("iostat ", i4)'), ios
-        !call diropn(iuncoul, 'sigma1', lrcoul, exst)
-
-!        open ( iunsigma, file = "./tmp/gw0/si.sigma_ex1", iostat = ios, form ='unformatted', & 
-!        status = 'unknown', access = 'direct', recl = unf_recl)
-
-       ! filename = trim(prefix)//"."//"coul1"
-       ! tempfile = trim(tmp_dir_coul) // trim(filename)
-       ! unf_recl = DIRECT_IO_FACTOR * int(lrcoul, kind=kind(unf_recl))
-       ! open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
-       ! form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
-       ! time for a slow FFT!
-       ! choose point ir.
        !!! x0 and e1 are in alat units !!!
         allocate (rhog   ( ngm ))
         allocate (sigmag ( ngm ))
@@ -475,9 +464,15 @@ SUBROUTINE sigmadens (filplot,plot_num)
         rhog   = dcmplx(0.0d0, 0.0d0)
         sigmar = dcmplx(0.0d0, 0.0d0)
 
-        nx = dfftp%nr1x
-        ny = dfftp%nr2x
-        nz = dfftp%nr3x
+!        nx = dfftp%nr1x
+!        ny = dfftp%nr2x
+!        nz = dfftp%nr3x
+
+        nx = 4*dfftp%nr1x
+        ny = 4*dfftp%nr2x
+        nz = 4*dfftp%nr3x
+
+        allocate (sigmar(nx*ny*nz))
 
         write(stdout, '(/5x, "ngmpol ", i4, " nwsigma", i4 )') ngmpol, nwsigma
         write(stdout, '(/5x, "nsym ", i4, " nks", i4, "omega, " f12.4 )')   nsym,   nks , omega
@@ -502,6 +497,9 @@ SUBROUTINE sigmadens (filplot,plot_num)
               CALL rotate(xq(1,iq), aq, s, nsym, isym)
               do ig = 1, ngmpol
                  eigx0 = exp((0.d0, -1.d0)*2.d0*pi*(&
+                              !x0(1)*4.0*(g(1,gmapsym(ig, isym)) + aq(1)) + &
+                              !x0(2)*4.0*(g(2,gmapsym(ig,isym))  + aq(2)) + &
+                              !x0(3)*4.0*(g(3,gmapsym(ig,isym))  + aq(3))))
                               x0(1)*(g(1,gmapsym(ig, isym)) + aq(1)) + &
                               x0(2)*(g(2,gmapsym(ig,isym))  + aq(2)) + &
                               x0(3)*(g(3,gmapsym(ig,isym))  + aq(3))))
@@ -516,8 +514,10 @@ SUBROUTINE sigmadens (filplot,plot_num)
         sigmar = (1.0/float(nsym))*sigmar
         CALL xsf_struct (alat, at, nat, tau, atm, ityp, ounit)
         CALL xsf_fast_datagrid_3d &
-             (sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x,&
-              dfftp%nr2x, dfftp%nr3x, at, alat, ounit)
+             (sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, nx,&
+              ny, nz, at, alat, ounit)
+             !(sigmar, dfftp%nr1, dfftp%nr2, dfftp%nr3, dfftp%nr1x,&
+             ! dfftp%nr2x, dfftp%nr3x, at, alat, ounit)
      ENDif
   !
   write(stdout, '(5x,"Plot Type: ",a,"   Output format: ",a)') &
@@ -577,9 +577,13 @@ SUBROUTINE plot_3d_sig (alat, at, nat, tau, atm, ityp, ngm, g, rhog, &
   allocate (eigy(  ny))
   allocate (eigz(  nz))
 
-  deltax = m1 / nx
-  deltay = m2 / ny
-  deltaz = m3 / nz
+!  deltax = m1 / nx
+!  deltay = m2 / ny
+!  deltaz = m3 / nz
+
+  deltax = 4.0*m1 / nx
+  deltay = 4.0*m2 / ny
+  deltaz = 4.0*m3 / nz
 
  !HL want to accumulate sum
  !carica = 0.d0
