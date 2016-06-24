@@ -35,8 +35,9 @@
 !!   Significant are all those changes that would break an old file unless
 !!   it is modified to the new behavior.
 !! - Whenever a new feature is introduced and whenever QE is updated, update
-!!   the minor revision number. Usually the QE releases will be so frequent
-!!   that you can release new features with the next QE release.
+!!   the minor revision number. Every time you do a minor release update the 
+!!   compatible_QE_revision field to the correct revision, so that one knows
+!!   with which revision of QE the code should compile.
 !! 
 !! Use tags to identify releases and add the compatible QE release. Example:
 !! If version 1.15 of SGW is released with QE version 6.2 use the tag
@@ -52,8 +53,10 @@ MODULE sgw_version
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: sgw_version_number = '0.5'
+  CHARACTER(*), PARAMETER :: sgw_version_number = '0.6'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: sgw_git_describe = 'unknown'
+  !> Revision number of compatible QE version
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev12534'
   !
 END MODULE sgw_version
