@@ -41,7 +41,7 @@ SUBROUTINE sigma_matel (ik0)
                                    sigma_band_exg, gcutcorr
   USE disp,                 ONLY : xk_kpoints, x_q, nqs
   USE noncollin_module,     ONLY : nspin_mag
-  USE eqv,                  ONLY : dmuxc, eprec
+  USE eqv,                  ONLY : dmuxc
   USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
   USE cell_base,            ONLY : omega, tpiba2, at, bg, alat
   USE buiol,                ONLY : buiol_check_unit

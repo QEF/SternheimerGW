@@ -70,7 +70,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
   USE output_mod,           ONLY : fildrho, fildvscf
-  USE eqv,                  ONLY : dvpsi, dpsi, evq, eprec
+  USE eqv,                  ONLY : dvpsi, dpsi, evq
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE lr_symm_base,         ONLY : minus_q, irgq, nsymq, rtau 
   USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
@@ -246,17 +246,11 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                           (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
-        h_diag = 0.d0
-        do ibnd = 1, nbnd_occ (ikk)
-           do ig = 1, npwq
-              h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
-           enddo
-           IF (noncolin) THEN
-              do ig = 1, npwq
-                 h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
-              enddo
-           END IF
-        enddo
+        !
+        ! compute preconditioning matrix h_diag used by cgsolve_all
+        !
+        CALL h_prec (ik, evq, h_diag)
+        !
 !HL indices freezing perturbations.
         nrec = ik
 !and now adds the contribution of the self consistent term

@@ -44,7 +44,7 @@ subroutine allocate_gwq
   USE ions_base,      ONLY : nat, ntyp => nsp
   USE lrus,          ONLY : becp1
   USE qpoint,        ONLY : nksq, eigqts, igkq
-  USE eqv_gw,        ONLY : dpsi, evq, vlocq, dmuxc, dvpsi, eprec, &
+  USE eqv_gw,        ONLY : dpsi, evq, vlocq, dmuxc, dvpsi, &
                             dvbare, dpsim, dpsip, eprectot
   USE units_gw,      ONLY : this_pcxpsi_is_on_file, this_dvkb3_is_on_file
   USE control_gw,    ONLY : lgamma  
@@ -72,7 +72,6 @@ subroutine allocate_gwq
 
   allocate (dvpsi ( npwx*npol , nbnd))    
   allocate (vlocq ( ngm , ntyp))    
-  allocate (eprec ( nbnd, nksq) )
   allocate (eprectot ( nbnd, nkstot) )
   allocate (eigqts ( nat))
   allocate (dmuxc (dfftp%nnr , nspin_mag , nspin_mag))    

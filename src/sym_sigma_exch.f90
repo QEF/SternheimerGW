@@ -32,7 +32,7 @@ SUBROUTINE sym_sigma_exch(ik0)
   USE wavefunctions_module, ONLY : evc
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE cell_base,     ONLY : omega, tpiba2, at, bg, tpiba, alat
-  USE eqv,           ONLY : evq, eprec
+  USE eqv,           ONLY : evq
   USE units_gw,      ONLY : iunsex, lrsex, lrwfc, iuwfc
   USE qpoint,        ONLY : xq, npwq, igkq, nksq
   USE gwsigma,       ONLY : sigma_x_st, nbnd_sig

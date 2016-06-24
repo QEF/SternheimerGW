@@ -51,7 +51,7 @@ SUBROUTINE gwq_init()
   USE noncollin_module,     ONLY : noncolin, npol
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf
-  USE eqv_gw,               ONLY : vlocq, evq, eprec, eprectot
+  USE eqv_gw,               ONLY : vlocq, evq, eprectot
   USE nlcc_gw,              ONLY : nlcc_any
   USE control_gw,           ONLY : nbnd_occ, lgamma
   USE units_gw,             ONLY : lrwfc, iuwfc
@@ -170,13 +170,11 @@ SUBROUTINE gwq_init()
      END IF
      !
      DO ibnd= 1, nbnd_occ(ikk)
-        eprec (ibnd,ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
         eprectot (ibnd, nbase+ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
      END DO
      !
   END DO
   !
-  CALL mp_sum (eprec, intra_bgrp_comm)
   CALL mp_sum   ( eprectot, inter_pool_comm )
   !
   DEALLOCATE( aux1 )

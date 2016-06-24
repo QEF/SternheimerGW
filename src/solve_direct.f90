@@ -69,7 +69,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
   USE output_mod,           ONLY : fildrho, fildvscf
-  USE eqv,                  ONLY : dvpsi, evq, eprec
+  USE eqv,                  ONLY : dvpsi, evq
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE lr_symm_base,         ONLY : minus_q, irgq, nsymq, rtau 
   USE freq_gw,         ONLY : fpol, fiu, nfs, nfsmax
@@ -219,25 +219,18 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
                           (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
                           (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
         enddo
-    h_diag = 0.d0
-    if(prec_direct) THEN
-        do ibnd = 1, nbnd_occ (ikk)
-           do ig = 1, npwq
-              h_diag(ig,ibnd)= 1.d0/max(1.0d0, g2kin(ig)/eprec(ibnd,ik))
-           enddo
-           if (noncolin) THEN
-              do ig = 1, npwq
-                 h_diag(ig+npwx,ibnd)=1.d0/max(1.0d0,g2kin(ig)/eprec(ibnd,ik))
-              enddo
-           END if
-        enddo
-    else
-        do ibnd = 1, nbnd_occ (ikk)
-           do ig = 1, npwq
-                 h_diag(ig,ibnd) =  1.0d0
-           enddo
-        enddo
-    endif
+        !
+        ! compute preconditioning matrix h_diag used by cgsolve_all
+        !
+        IF (prec_direct) THEN
+          CALL h_prec (ik, evq, h_diag)
+        ELSE
+          h_diag = 0.d0
+          DO ibnd = 1, nbnd_occ(ikk)
+            h_diag(:npwq,ibnd) = 1.0
+          END DO
+        END IF
+        !
         mode = 1
         nrec = ik
         call dvqpsi_us (dvbarein, ik, .false.)

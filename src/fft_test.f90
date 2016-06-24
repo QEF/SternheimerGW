@@ -25,7 +25,7 @@ SUBROUTINE fft_test(ik0)
   USE kinds,         ONLY : DP
   USE gwsigma,       ONLY : ngmsco, sigma, sigma_g, nrsco, nlsco, fft6_g2r, ecutsco, ngmsig
   USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin, et
-  USE eqv,           ONLY : evq, eprec
+  USE eqv,           ONLY : evq
   USE gvect,         ONLY : g, ngm, ecutwfc, nl
   USE cell_base,     ONLY : tpiba2, tpiba
   USE qpoint,        ONLY : xq, npwq, igkq, nksq, ikks, ikqs

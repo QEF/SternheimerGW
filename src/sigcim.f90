@@ -33,7 +33,7 @@ subroutine sigma_c_im(ik0)
                             trunc_2d, tmp_dir_coul, high_io
   use klist,         only : wk, xk, nkstot, nks, lgauss
   use wvfct,         only : nbnd, npw, npwx, igk, g2kin, et
-  use eqv,           only : evq, eprec
+  use eqv,           only : evq
   use freq_gw,       only : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &

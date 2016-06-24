@@ -33,7 +33,7 @@ subroutine sigma_exchG(ik0)
   USE symm_base,        ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot,&
                                copy_sym, inverse_s, s_axis_to_cart
   USE cell_base,        ONLY : omega, tpiba2, at, bg, tpiba, alat
-  USE eqv,              ONLY : evq, eprec
+  USE eqv,              ONLY : evq
   USE units_gw,         ONLY : iunsex, lrsex, lrwfc, iuwfc
   USE qpoint,           ONLY : xq, npwq, igkq, nksq
   USE gwsigma,          ONLY : sigma_x_st, nbnd_sig, sigma_band_exg
