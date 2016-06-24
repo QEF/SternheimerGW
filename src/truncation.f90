@@ -198,7 +198,7 @@ CONTAINS
   !! \see truncate
   REAL(dp) FUNCTION truncate_film(kpt, zcut) RESULT (factor)
 
-    USE constants, ONLY: eps8, tpi, fpi, e2
+    USE constants, ONLY: eps6, tpi, fpi, e2
 
     REAL(dp), INTENT(IN) :: kpt(3)
     REAL(dp), INTENT(IN) :: zcut
@@ -215,7 +215,7 @@ CONTAINS
     length_kz = kpt(3)
 
     ! general case - large vector
-    IF (length_k > eps8) THEN
+    IF (length_k > eps6) THEN
 
       ! Coulomb potential 4 pi e^2 / k^2 is scaled by (1 - exp(-kxy z) * cos(kz z))
       factor = fpi * e2 / length_k2 * (1 - EXP(-length_kxy * zcut) * COS(length_kz * zcut))
