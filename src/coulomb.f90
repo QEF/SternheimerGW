@@ -96,7 +96,7 @@ else
 endif
 
 irr=1
-scrcoul(:,:,:,:) = (0.d0, 0.0d0)
+!scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
 !WRITE(1000+mpime, '(2i4)') igstart, igstop
@@ -128,6 +128,7 @@ DO ig = igstart, igstop
             enddo
          enddo !iw
       ELSE
+        IF (qg2 < eps8) CYCLE
         if(qg2.lt.0.001.AND.lgauss) then 
           write(stdout,'("Not calculating static electric field applied to metal, cycling coulomb")')
           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')

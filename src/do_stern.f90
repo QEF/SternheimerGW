@@ -69,25 +69,24 @@ IMPLICIT NONE
   do iq = iq1, iq2
 !Perform head of dielectric matrix calculation.
      call start_clock ('epsilq')
+    do_matel = .FALSE.
+    scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
      lgamma = ALL(x_q(:,iq) == 0)
      if (lgamma) THEN
         allocate(eps_m(nfs))
         eps_m(:) = dcmplx(0.0d0,0.0d0)
         if(my_image_id.eq.0) THEN
-           scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
            call prepare_q0(do_band, do_iq, setup_pw, iq)
-           do_matel = .FALSE.
            call run_nscf(do_band, do_matel, iq)
            call initialize_gw()
            call coulomb_q0G0(iq, eps_m)
+           scrcoul_g(1,1,:,1) = eps_m
            write(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
            write(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
            call clean_pw_gw(iq, .FALSE.)
         endif
         call mp_barrier(inter_image_comm)
     endif
-    do_matel = .FALSE.
-    scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
     call prepare_q(do_band, do_iq, setup_pw, iq)
     call run_nscf(do_band, do_matel, iq)
     call initialize_gw()

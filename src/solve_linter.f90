@@ -453,7 +453,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
 155 iter0=0
 
-   WRITE( stdout, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
+   WRITE( stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1, &
         & "secs av.it.:",f5.1)') iter, tcpu, averlt
 !   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
 !          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
