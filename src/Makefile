@@ -1,7 +1,7 @@
 # Makefile for GW. 
 
 ESPRESSO=../..
-include $(ESPRESSO)/make.sys
+include $(ESPRESSO)/make.inc
 
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_FLAG)$(ESPRESSO)/LAXlib \
