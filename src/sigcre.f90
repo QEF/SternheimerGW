@@ -26,41 +26,42 @@
 !! Therefore we use the same tricks as for sigma_exch.f90
 SUBROUTINE sigma_c_re(ik0) 
 
-  USE cell_base,       ONLY : tpiba2, tpiba, omega, alat, at,bg
-  USE constants,       ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE control_flags,   ONLY : noinv
-  USE control_gw,      ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
-                              trunc_2d, tmp_dir_coul, output
-  USE disp,            ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE eqv,             ONLY : evq
-  USE freq_gw,         ONLY : fpol, fiu, nfs, nfsmax, &
-                              nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
-                              wgreen, wsigma, wsigmamin, wsigmamax, &
-                              deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
-                              w0pmw, wgtcoul
-  USE gvect,           ONLY : g, ngm, nl
-  USE gwsigma,         ONLY : sigma_c_st
-  USE io_files,        ONLY : prefix, tmp_dir
-  USE io_global,       ONLY : stdout, ionode_id, ionode, meta_ionode
-  USE kinds,           ONLY : DP
-  USE kinds_gw,        ONLY : i8b
-  USE klist,           ONLY : wk, xk, nkstot, nks
-  USE lr_symm_base,    ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
-  USE lsda_mod,        ONLY : nspin
-  USE mp,              ONLY : mp_sum, mp_barrier, mp_bcast
-  USE mp_global,       ONLY : mp_global_end
-  USE mp_images,       ONLY : nimage, my_image_id, intra_image_comm,   &
-                              me_image, nproc_image, inter_image_comm
-  USE mp_pools,        ONLY : inter_pool_comm
-  USE mp_world,        ONLY : nproc, mpime
-  USE output_mod,      ONLY : filcoul
-  USE qpoint,          ONLY : xq, npwq, nksq, ikks, ikqs
-  USE sigma_io_module, ONLY : sigma_io_write_c
-  USE symm_base,       ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE timing_module,   ONLY : time_sigma_c, time_GW_product, time_sigma_setup, &
-                              time_sigma_comm, time_sigma_io
-  USE units_gw,        ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
-  USE wvfct,           ONLY : nbnd, npw, npwx, g2kin
+  USE cell_base,         ONLY : tpiba2, tpiba, omega, alat, at,bg
+  USE constants,         ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
+  USE control_flags,     ONLY : noinv
+  USE control_gw,        ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
+                                trunc_2d, tmp_dir_coul, output
+  USE disp,              ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
+  USE eqv,               ONLY : evq
+  USE expand_igk_module, ONLY : expand_igk
+  USE freq_gw,           ONLY : fpol, fiu, nfs, nfsmax, &
+                                nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
+                                wgreen, wsigma, wsigmamin, wsigmamax, &
+                                deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
+                                w0pmw, wgtcoul
+  USE gvect,             ONLY : g, ngm, nl
+  USE gwsigma,           ONLY : sigma_c_st
+  USE io_files,          ONLY : prefix, tmp_dir
+  USE io_global,         ONLY : stdout, ionode_id, ionode, meta_ionode
+  USE kinds,             ONLY : DP
+  USE kinds_gw,          ONLY : i8b
+  USE klist,             ONLY : wk, xk, nkstot, nks
+  USE lr_symm_base,      ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+  USE lsda_mod,          ONLY : nspin
+  USE mp,                ONLY : mp_sum, mp_barrier, mp_bcast
+  USE mp_global,         ONLY : mp_global_end
+  USE mp_images,         ONLY : nimage, my_image_id, intra_image_comm,   &
+                                me_image, nproc_image, inter_image_comm
+  USE mp_pools,          ONLY : inter_pool_comm
+  USE mp_world,          ONLY : nproc, mpime
+  USE output_mod,        ONLY : filcoul
+  USE qpoint,            ONLY : xq, npwq, nksq, ikks, ikqs
+  USE sigma_io_module,   ONLY : sigma_io_write_c
+  USE symm_base,         ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
+  USE timing_module,     ONLY : time_sigma_c, time_GW_product, time_sigma_setup, &
+                                time_sigma_comm, time_sigma_io
+  USE units_gw,          ONLY : iuncoul, iungreen, iunsigma, lrsigma, lrcoul, lrgrn, iuwfc, lrwfc
+  USE wvfct,             ONLY : nbnd, npw, npwx, g2kin
 
   IMPLICIT NONE
 
@@ -141,6 +142,8 @@ SUBROUTINE sigma_c_re(ik0)
 
    CALL start_clock(time_sigma_c)
    CALL start_clock(time_sigma_setup)
+
+   CALL expand_igk
 
 ! iG(W-v)
    ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )

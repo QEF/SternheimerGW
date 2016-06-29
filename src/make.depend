@@ -30,7 +30,6 @@ cBiCG_solve_coul.o : gwcom.o
 cBiCG_solve_green.o : ../../Modules/kind.o
 cBiCG_solve_green.o : ../../Modules/mp.o
 cBiCG_solve_green.o : ../../Modules/mp_global.o
-cBiCG_solve_green.o : ../../PW/src/pwcom.o
 cBiCG_solve_green.o : gwcom.o
 cBiCG_solve_green.o : timing.o
 ch_psi_all.o : ../../LR_Modules/lrcom.o
@@ -83,7 +82,6 @@ construct_w.o : ../../Modules/mp_global.o
 construct_w.o : ../../Modules/recvec.o
 construct_w.o : gwcom.o
 construct_w.o : timing.o
-coul_multi.o : ../../LR_Modules/lrcom.o
 coul_multi.o : ../../Modules/kind.o
 coul_multi.o : gwcom.o
 coul_multishift.o : ../../Modules/constants.o
@@ -464,7 +462,6 @@ para_img.o : ../../Modules/mp_world.o
 para_pool.o : ../../Modules/io_global.o
 para_pool.o : ../../Modules/mp_pools.o
 para_pool.o : ../../Modules/mp_world.o
-petsc_solver.o : ../../Modules/kind.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o
@@ -563,6 +560,7 @@ sigcim.o : ../../Modules/mp_world.o
 sigcim.o : ../../Modules/recvec.o
 sigcim.o : ../../PW/src/pwcom.o
 sigcim.o : ../../PW/src/symm_base.o
+sigcim.o : expand_igk.o
 sigcim.o : gwcom.o
 sigcim.o : kind_gw.o
 sigcim.o : sigma_io.o
@@ -582,6 +580,7 @@ sigcre.o : ../../Modules/mp_world.o
 sigcre.o : ../../Modules/recvec.o
 sigcre.o : ../../PW/src/pwcom.o
 sigcre.o : ../../PW/src/symm_base.o
+sigcre.o : expand_igk.o
 sigcre.o : gwcom.o
 sigcre.o : kind_gw.o
 sigcre.o : sigma_io.o
