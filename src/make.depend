@@ -190,6 +190,7 @@ environment_sgw.o : ../../Modules/mp_images.o
 environment_sgw.o : ../../Modules/mp_pools.o
 environment_sgw.o : ../../Modules/mp_world.o
 environment_sgw.o : ../../Modules/version.o
+expand_igk.o : ../../PW/src/pwcom.o
 fft6.o : ../../FFTXlib/fft_interfaces.o
 fft6.o : ../../Modules/cell_base.o
 fft6.o : ../../Modules/fft_base.o
@@ -463,6 +464,7 @@ para_img.o : ../../Modules/mp_world.o
 para_pool.o : ../../Modules/io_global.o
 para_pool.o : ../../Modules/mp_pools.o
 para_pool.o : ../../Modules/mp_world.o
+petsc_solver.o : ../../Modules/kind.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o
