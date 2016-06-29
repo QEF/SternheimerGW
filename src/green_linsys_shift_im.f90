@@ -42,7 +42,8 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE io_global,            ONLY : stdout, ionode
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE kinds,                ONLY : DP
-  USE klist,                ONLY : xk, wk, nkstot
+  USE klist,                ONLY : xk, wk, nkstot, igk_k, nks, ngk
+  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
   USE mp_global,            ONLY : nproc_pool_file, &
@@ -51,7 +52,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE mp_images,            ONLY : nimage, my_image_id, intra_image_comm,   &
                                    me_image, nproc_image, inter_image_comm
   USE mp_world,             ONLY : nproc, mpime
-  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE nlcc_gw,              ONLY : nlcc_any
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
@@ -60,7 +60,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf, nhm, nh
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, current_k
 
   IMPLICIT NONE 
 
@@ -68,7 +68,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
  !complex(DP) :: gr_A_shift(npwx, nwgreen)
   integer :: nwgreen
   complex(DP), allocatable :: gr_A_shift(:,:)
-  complex(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
+  complex(DP) :: gr_A(npwx, 1), rhs(npwx, 1)
   complex(DP) :: gr(npwx, 1), ci, cw 
   complex(DP) :: green(gcutcorr, gcutcorr, nwgreen)
   complex(DP), allocatable :: etc(:,:)
@@ -129,6 +129,12 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
                 npw, igk, g2kin)
   igkq => igk
   npwq = npw
+
+  ! store the extra elements in the expanded arrays
+  igk_k(:, nks + 1) = igkq
+  ngk(nks + 1)      = npw
+  xk(:, nks + 1)    = xk1
+
 ! Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 ! igkq_tmp is gamma centered index up to ngmsco,
 ! igkq_ig  is the linear index for looping up to npwq.

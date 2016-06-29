@@ -43,7 +43,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   USE io_global,            ONLY : stdout, ionode
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE kinds,                ONLY : DP
-  USE klist,                ONLY : xk, wk, nkstot
+  USE klist,                ONLY : xk, wk, nkstot, nks, igk_k, ngk
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE mp,                   ONLY : mp_sum, mp_barrier, mp_bcast
   USE mp_bands,             ONLY : nproc_bgrp, ntask_groups
@@ -125,11 +125,17 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
    enddo
    where_rec='no_recover'
    ikq = iq
-   IF (nksq.gt.1) then
-       CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ),&
-                     npw, igk, g2kin )
-   ENDIF
+
+   CALL gk_sort_safe(xk(:,ikq), ngm, g, (ecutwfc / tpiba2 ), &
+                npw, igk, g2kin)
+   igkq = igk
    npwq = npw
+
+   ! store the extra elements in the expanded arrays
+   igk_k(:, nks + 1) = igkq
+   ngk(nks + 1)      = npw
+   xk(:, nks + 1)    = xk(:,ikq)
+
     counter = 0
     igkq_tmp(:) = 0
     igkq_ig(:)  = 0 
