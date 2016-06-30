@@ -2,7 +2,7 @@
 
 ESPRESSO=../../..
 SGW=../..
-include $(ESPRESSO)/make.sys
+include $(ESPRESSO)/make.inc
 
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules \

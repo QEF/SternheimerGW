@@ -2,21 +2,10 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
   USE kinds,         ONLY : DP
   USE cell_base,     ONLY : at, bg
   USE klist,         ONLY : nks, nkstot, ngauss, degauss, xk, wk
- !  7) computes the variables needed to pass to the pattern representation
- !     tmq    the matrix of the symmetry which sends q -> -q + G
- !     gi     the G associated to each symmetry operation
- !     gimq   the G of the q -> -q+G symmetry
- !     irgq   the small group indices
- !     nsymq  the order of the small group of q
- !     irotmq the index of the q->-q+G symmetry
- !     nirr   the number of irreducible representation
- !     npert  the dimension of each irreducible representation
- !     nmodes the number of modes
- !     minus_q true if there is a symmetry sending q -> -q+G
   USE symm_base,     ONLY : t_rev, irt, ftau, nrot, nsym, &
                             time_reversal, sname, d1, d2, d3, &
                             copy_sym, s_axis_to_cart
-  USE gvect,          ONLY : g
+  USE gvect,         ONLY : g
 
   IMPLICIT NONE
 
@@ -50,12 +39,19 @@ SUBROUTINE find_qg_ibz(xq_ibk, s, iq, isym, nig0, found_q, inv_q)
 !no pooling!
       x_q_loc(:) = xk(:,iq)
       CALL cryst_to_cart(1, x_q_loc(:), at, -1)
-    !!DO ig = 1 , 27 WORKS FOR CUBIC CRYSTAL
-      DO ig = 1 , 125 !CAC6 IS very freaky c.f. FG's cuprates stuff
+      DO ig = 1 , 27 !WORKS FOR CUBIC CRYSTAL
+    !!DO ig = 1 , 125 !requires higher G cutoff c.f. cuprates stuff
           g_loc = g(:,ig)
           call cryst_to_cart(1, g_loc, at, -1)
         DO isym = 1, nsym
            ism1 = invs(isym)
+         !  xq_ibk_locr(1) = s (1, 1, isym) * xq_ibk_loc(1)  + s (1, 2, isym) * xq_ibk_loc(2) + s (1, 3, isym) * xq_ibk_loc(3)
+         !  xq_ibk_locr(2) = s (2, 1, isym) * xq_ibk_loc(1)  + s (2, 2, isym) * xq_ibk_loc(2) + s (2, 3, isym) * xq_ibk_loc(3)
+         !  xq_ibk_locr(3) = s (3, 1, isym) * xq_ibk_loc(1)  + s (3, 2, isym) * xq_ibk_loc(2) + s (3, 3, isym) * xq_ibk_loc(3)
+         !  found_q  = (abs(x_q_loc(1) - xq_ibk_locr(1) + g_loc(1)).le.eps).and. &
+         !             (abs(x_q_loc(2) - xq_ibk_locr(2) + g_loc(2)).le.eps).and. & 
+         !             (abs(x_q_loc(3) - xq_ibk_locr(3) + g_loc(3)).le.eps) 
+!BELOW IS THE MODIFIED SYM ROUTINE as it is in SGW
            xq_ibk_locr(1) = s (1, 1, isym) * (xq_ibk_loc(1) + g_loc(1)) &
                           + s (1, 2, isym) * (xq_ibk_loc(2) + g_loc(2)) &
                           + s (1, 3, isym) * (xq_ibk_loc(3) + g_loc(3))

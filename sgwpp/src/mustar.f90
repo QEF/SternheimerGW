@@ -29,7 +29,7 @@ PROGRAM mustar
   USE mp_world,    ONLY : world_comm
   USE iotk_module
   USE xml_io_base
-  USE io_files,    ONLY : tmp_dir, prefix, outdir, diropn
+  USE io_files,    ONLY : tmp_dir, prefix, diropn
   USE constants,   ONLY : RYTOEV, eps8
   USE ener,        ONLY : ef
   USE klist,       ONLY : lgauss
@@ -49,14 +49,27 @@ PROGRAM mustar
                                my_image_id, nimage, root_image
   IMPLICIT NONE
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
+  
+
   !
   ! input variables
   !
-  INTEGER                 :: nw,nshell,ibndmin,ibndmax
-  INTEGER                 :: nk1tmp, nk2tmp, nk3tmp
-  REAL(DP)                :: intersmear,intrasmear,wmax,wmin,shift,eta, qmod_par
-  CHARACTER(10)           :: calculation,smeartype
-  LOGICAL                 :: metalcalc, exst
+  logical                  :: metalcalc, exst
+
+  integer                :: nw,nshell,ibndmin,ibndmax
+  integer                 :: nk1tmp, nk2tmp, nk3tmp
+  integer   :: ios
+  integer   :: recl
+  integer*8 :: unf_recl
+  real(DP)                 :: intersmear,intrasmear,wmax,wmin,shift,eta, qmod_par
+  character(len=256)      :: tempfile, filename, outdir
+  character(10)           :: calculation,smeartype
+
+  complex(DP), allocatable :: vcnknpkp(:,:,:,:)
+
+
+
+
   !
   NAMELIST / inputpp / prefix, outdir, calculation, nk1, nk2, nk3, qtf, do_coulmat, &
                        do_fsavg, nbndmin, kf, degaussfs, ngcoul, do_lind, debye_e,  &
@@ -65,13 +78,6 @@ PROGRAM mustar
   !
   ! local variables
   !
-  INTEGER :: ios
-
-  COMPLEX(DP), ALLOCATABLE :: vcnknpkp(:,:,:,:)
-  character(len=256) :: tempfile, filename
-  INTEGER :: recl
-  integer*8 :: unf_recl
-  
 
 !---------------------------------------------
 ! program body
@@ -90,7 +96,7 @@ PROGRAM mustar
   calculation  = 'coulmat'
   prefix       = 'pwscf'
   shift        = 0.0d0
-  outdir       = './'
+  outdir       = './tmp'
   intersmear   = 0.136
   wmin         = 0.0d0
   wmax         = 30.0d0
