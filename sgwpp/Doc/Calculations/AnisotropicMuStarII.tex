@@ -1,0 +1,237 @@
+\documentclass{article}
+
+\def\w{\omega}
+\def\wp{\omega^\prime}
+\def\wc{{\omega_{\rm C}}}
+\def\ket{\rangle}
+\def\bra{\langle}
+\def\H{\hat{H}}
+\def\P{\hat{P}_{\rm occ}}
+\def\E{\varepsilon}
+\def\vp{{v^\prime}}
+\def\q{{\bf q}}
+\def\s{\sigma}
+\def\k{{\bf k}}
+\def\qp{{\bf q^\prime}}
+\def\G{{\bf G}}
+\def\Gp{{\bf G^\prime}}
+\def\rt{\tilde{r}}
+\def\pt{\tilde{p}}
+\def\rb{{\bf r}}
+\def\rp{{\bf r^\prime}}
+\def\rpp{{\bf r^{\prime\prime}}}
+\def\rppp{{\bf r^{\prime\prime\prime}}}
+\def\mo{$\overline{1}$}
+\def\mt{$\overline{2}$}
+\def\S{\mathcal{S}}
+\def\Gs{\mathcal{G}}
+\def\v{\mathbf{v}}
+\def\symm{\left\{\mathcal{S}|\mathbf{v}\right\}}
+
+\begin{document}
+\section{Expressions}
+This is just a brief note summarizing what I have
+calculated so far for $\mu$ and $\mu^{*}$.
+We denote a symmetry operation of the Crystal as::
+%
+\begin{equation}
+  \label{eq:symmoperation}
+  \symm\rb = \S\rb + \v.
+\end{equation}
+
+We write the matrix elements with the screened Coulomb interaction as:
+%
+\begin{eqnarray}
+\label{eq:coulmat}
+W_{n\k n'\k'} = \int \psi^{*}_{n'\k'}(\rb)\psi_{n\k}(\rb)W(\rb,\rp) \nonumber\\
+\times\psi^{*}_{n'-\k'}(\rp)\psi_{n-\k}(\rp) \rm{d}\rb \rm{d}\rp.
+\end{eqnarray}
+
+
+The isotropic Coulomb pseudopotential $\mu$ is given:
+%
+\begin{eqnarray}
+\label{eq:musymm}
+\mu =\frac{1}{N(0)}\frac{1}{\Omega}\sum_{\q\in{\rm IBZ}}\sum_{S}
+\frac{{\rm w}_{\q}}{N_{\rm group}}\sum_{\k\in {\rm IBZ}}\nonumber{\rm w}_{\k}\sum_{n n' \G \G'}\\ 
+f^{*}_{n\k n'\k'}(\G)\frac{4\pi e^{2}}{|\q+\G|^{2}}
+\epsilon_{\G\G'}^{-1}(\q)f_{n\k n'\k'}(\G')
+\end{eqnarray}
+%
+
+In Eq.~\ref{eq:musymm}, $\Omega$ is the volume of the crystal unit cell, 
+$\rm{w}_{\k}$ $\rm{w}_{\q}$, are the weights (per spin) of the $\q$ and $\k$ 
+points in the Irreducible Brillouin Zone (IBZ). In addition $\k'=\k-\S^{-1}\q$.
+We have defined $f_{n'\k',n\k}$ as:
+%
+\begin{equation}
+f_{n'\k',n\k}(\G) = \int e^{-i\G\cdot\rb} \psi_{n'\k'}(\rb)\psi_{n\k}(\rb) \rm{d}\rb
+\end{equation}
+
+%To calculate the anisotropic tensor I have simply dropped the sum over $n$ and $n'$
+%and accumulated Eq.~\ref{eq:musymm} in a matrix $\mu_{n n'}$:
+%
+%\begin{eqnarray}
+%\label{eq:munnp}
+%\mu_{n n'} = \frac{1}{N(0)}\frac{1}{\Omega}\sum_{\q\in{\rm IBZ}}\sum_{S}
+%\frac{{\rm w}_{\q}}{N_{\rm group}}\sum_{\k\in {\rm IBZ}}\nonumber{\rm w}_{\k}\sum_{\G \G'}\\ 
+%f^{*}_{n\k n'\k'}(\G)\frac{4\pi e^{2}}{|\q+\G|^{2}}
+%\epsilon_{\G\G'}^{-1}(\q)f_{n\k n'\k'}(\G')
+%\end{eqnarray}
+
+\section{Pb}
+In Table~\ref{tab:pb} I calculated the isotropic
+Coulomb pseudopotential parameters using the Lindhard
+and the full LDA dielectric function calculated using
+the Sternheimer equation. It appears the local field
+effects are more significant in Pb enhancing the screening 
+by around $10\%$. For Pb the $N(0)$ I have calculated is
+$0.242$ states per eV per atom per spin.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c c c}
+             & $\mu$  & $E_{F}$  & $\omega_{c}$  & $\mu^{*}$ \\
+\hline
+Lindhard     & 0.239  & 11.74    & 0.035         & 0.100 \\
+LDA          & 0.191  & 11.74    & 0.035         & 0.091 \\ 
+\end{tabular}
+\caption{Coulomb pseudopotential for Pb calculated using
+the Lindhard dielectric function and the LDA screening.\label{tab:pb}}
+\end{center}
+\end{table}
+
+%In addition I have calculated the anisotropic $\mu_{nn'}$ matrix
+%in Table~\ref{tab:pbaniso}. It appears there are three bands
+%participating in the Coulomb pseudopotential around the Fermi
+%energy.
+%
+%\begin{table}
+%\begin{center}
+%\begin{tabular}{c c c}
+%Band 2     & Band 3    & Band 4    \\
+%0.0207440  & 0.0331581 & 0.0024041 \\
+%0.0297328  & 0.0949253 & 0.0061428 \\
+%0.0022238  & 0.0060766 & 0.0005877 \\
+%\end{tabular}
+%\caption{Anisotropic parameters for Pb. \label{tab:pbaniso}}
+%\end{center}
+%\end{table}
+%
+
+\section{MgB$_{2}$}
+For MgB$_{2}$ I have prepared Table \ref{tab:mgb2} for a range of different
+isotropic $\mu^{*}$, electronic energy scales, and
+vibrational energy scales. In each case I've calculated $\mu^*$ using
+the LDA electronic bandwidth, the ideal electron gas, and the
+lowest plasmon frequency of MgB$_2$ and for a range of vibrational
+cutoffs $\omega_{c}$. For MgB$_2$ the N(0) I have calculated is
+$0.35$ states per eV per spin.
+
+I think the plasmon energy is the most appropriate
+choice for the electronic energy scale in this system
+and might be interesting to discuss in the context of the 
+Eliashberg equations and the superconducting temperature.
+%
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c c c}
+\hline
+\hline
+             & $\mu$  & $E_{F}$  & $\omega_{c}$  & $\mu^{*}$ \\
+LDA          & 0.224  & 12.43    & 0.5    & 0.130 \\ 
+Electron Gas & 0.224  & 9.76     & 0.5    & 0.134 \\
+Plasmon      & 0.224  & 2.50     & 0.5    & 0.165 \\
+\hline
+LDA          & 0.224  & 12.43    & 0.35   & 0.124 \\
+Electron Gas & 0.224  & 9.76     & 0.35   & 0.128 \\
+Plasmon      & 0.224  & 2.50     & 0.35   & 0.156 \\
+\hline
+LDA          & 0.224  & 12.43    & 0.086  & 0.106 \\
+Electron Gas & 0.224  & 9.76     & 0.086  & 0.109 \\ 
+Plasmon      & 0.224  & 2.50     & 0.086  & 0.128 \\
+\end{tabular}
+\caption{$\mu^{*}$ calculated using different electronic and vibrational
+energy scales. \label{tab:mgb2}}
+\end{center}
+\end{table}
+
+In Table~\ref{tab:mgb2aniso} I give the anisotropic parameters for $\mu$. For
+MgB$_{2}$ there are 8 electrons in the unit cell. Bands 1 and 2
+are completely filled and Bands 3, 4, and 5 are only partially
+filled and contribute to the Fermi surface. 
+
+By placing a restriction on the integration in $\k$ space we are
+able to separate $\mu$ into the contributions from $\pi$ and $\sigma$
+bands. 
+
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c}
+$\sigma$  & 0.0719  & 0.02593   \\
+$\pi$     & 0.0239  & 0.09823   \\
+\end{tabular}
+\caption{Anisotropic $\mu$ for MgB$_2$ without the band dependent density of states. \label{tab:mgb2aniso}}
+\end{center}
+\end{table}
+
+%
+If we follow the convention of Moon et. al. they define
+the anisotropic $\mu$:
+%
+\begin{equation}
+\mu_{nn'} = \frac{1}{N(0)}\sum_{\k\k'}\frac{\delta(\epsilon_{n\k}-\epsilon_{F})}{N_{n}} W_{n\k n'\k'}
+\delta(\epsilon_{n'\k'}-\epsilon_{F})
+\end{equation}
+%
+where $N_{n}$ is the density of states at the fermi level for band $n$.
+Including a band density of states $N_{\sigma} = 2.01$, and $N_{\pi}=2.75$ 
+states/Ry per atom per spin we find Table \ref{tab:bdos}:
+%
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c}
+$\sigma$  & 0.036  & 0.014 \\
+$\pi$     & 0.009  & 0.038 \\
+\end{tabular}
+\caption{Anisotropic $\mu$ for MgB$_2$ including $N_{n}$, the band dependent density of states
+. \label{tab:bdos}}
+\end{center}
+\end{table}
+%
+
+Comparing the ratios in Table~\ref{tab:bdos} we find 
+$\mu_{\sigma\sigma}/N_{\sigma}:\mu_{\pi}/N_{\pi}$ is $1.28:1.00$ suggesting weaker
+dielectric screening for the $\sigma$ orbitals. This can be directly compared
+with the ratio Moon et. al. find $1.31:1.00$. We can also compare
+$\mu_{\sigma\sigma}:\mu_{\pi\pi}:\mu_{\sigma\pi}:\mu_{\pi\sigma}$,
+$0.036:0.038:0.014:0.009$ Reducing this to common fractions
+we find $4.0:4.22:1.56:1$. This too can be directly compared with
+Moon et. al. relative numers of $3.54:3.69:1.38:1.00$. So clearly the present calculations
+suggest a slightly higher level of anisotropy then previously found but 
+of similar relative magnitudes.
+
+I am also still not sure what the preferred procedure is for renormalizing
+the anisotropic $\mu$ parameter. Tomorrow I will look at the Mazin
+paper where they given an expression for the anisotropic $\mu^{*}$.
+
+\section{Renormalized $\mu^{*}$}
+Mazin gives the extension to a multiband case:%
+%
+\begin{equation}
+\mu^{*}_{ij} = \mu_{ij} - \sum_{n}\mu_{in} \ln(W_{n}/\omega_{c})\mu^{*}_{nj}
+\end{equation}
+%
+\section{Conclusion}
+%
+Those are the results for Mg$B_{2}$ and Pb which I have acquired so far.
+Hopefully $CaC_{6}$ will be completed soon as well. Numerically I am happy
+with the level of convergence in each case. I think the small discrepancy
+with the previous MgB$_{2}$ calculations might be related to convergence with
+the sum over states. My thinking is the sum over
+states might understimate $\epsilon$ and result in a corresponding underestimate of the
+screening. This is consistent with the fact that using the Lindhard dielectric
+function I calculate the Classical result for $\mu^{*}$, Al and Pb of 0.100. When using the
+full dielectric matrix I get slightly smaller values for Al $0.096$ and Pb $0.091$. 
+
+\end{document}
