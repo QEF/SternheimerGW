@@ -1,0 +1,72 @@
+\documentclass{article}
+
+\def\w{\omega}
+\def\wp{\omega^\prime}
+\def\wc{{\omega_{\rm C}}}
+\def\ket{\rangle}
+\def\bra{\langle}
+\def\H{\hat{H}}
+\def\P{\hat{P}_{\rm occ}}
+\def\E{\varepsilon}
+\def\vp{{v^\prime}}
+\def\q{{\bf q}}
+\def\s{\sigma}
+\def\k{{\bf k}}
+\def\qp{{\bf q^\prime}}
+\def\G{{\bf G}}
+\def\Gp{{\bf G^\prime}}
+\def\rt{\tilde{r}}
+\def\pt{\tilde{p}}
+\def\rb{{\bf r}}
+\def\rp{{\bf r^\prime}}
+\def\rpp{{\bf r^{\prime\prime}}}
+\def\rppp{{\bf r^{\prime\prime\prime}}}
+\def\mo{$\overline{1}$}
+\def\mt{$\overline{2}$}
+\def\S{\mathcal{S}}
+\def\Gs{\mathcal{G}}
+\def\v{\mathbf{v}}
+\def\symm{\left\{\mathcal{S}|\mathbf{v}\right\}}
+
+
+\begin{document}
+\section{Theory}
+  For MgB$_{2}$ we have calculated the isoptropic and anisotropic Coulomb interaction using RPA screening
+and RPA+Vxc.
+
+
+In the isotropic case I have used the standard definitions:
+%
+\begin{equation}
+\mu = N(0)\bra\bra W_{n\k,n'\k'} \ket\ket_{\rm FS}
+\end{equation}
+%
+\begin{equation}
+\mu = N(0) \frac{\sum_{n\k}\sum_{n'\k'}W_{n\k,n'\k'}\delta(\epsilon_{n\k}) \delta(\epsilon_{n'\k'})}{\sum_{n\k}\sum_{n'\k'}\delta(\epsilon_{n\k})\delta(\epsilon_{n'\k'})}
+\end{equation}
+%
+For the Anisotropic tensors \emph{I am still performing the average over the whole Fermi Surface} but with a truncation in $\k$-space for the delta functions I am using 
+Mazin's definition:
+%
+\begin{equation}
+\mu_{ij} = <<W_{n\k,n'\k'}>>_{ij} N_{j}
+\end{equation}
+
+
+\begin{equation}
+\mu_{mm'} = N(0) \frac{\sum_{n\k}\sum_{n'\k'}W_{n\k,n'\k'}\delta(\epsilon_{m}) \delta(\epsilon_{m'})}{\sum_{n\k}\sum_{n'\k'}\delta(\epsilon_{n\k})\delta(\epsilon_{n'\k'})}
+\end{equation}
+
+\section{Results}
+\begin{table}
+\begin{center}
+\begin{tabular}{l c c}
+$\sigma$  & 0.0719  & 0.02593   \\
+$\pi$     & 0.0239  & 0.09823   \\
+\end{tabular}
+\caption{Anisotropic $\mu$ for MgB$_2$ using RPA. \label{tab:mgb2aniso}}
+\end{center}
+\end{table}
+
+
+\end{document}
