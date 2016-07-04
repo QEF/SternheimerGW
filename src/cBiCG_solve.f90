@@ -254,6 +254,10 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
      enddo
   enddo
 
+  ! abort if solver doesn't converge
+  CALL errore(__FILE__, "Coulomb solver did not converge within given number&
+                       & of iterations", maxter)
+
 100 continue
   kter = kter_eff
   deallocate (rho)

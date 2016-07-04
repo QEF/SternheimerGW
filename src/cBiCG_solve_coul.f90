@@ -249,6 +249,10 @@ IMPLICIT NONE
      enddo!do ibnd
   enddo!iter
 
+  ! abort if solver doesn't converge
+  CALL errore(__FILE__, "Coulomb solver did not converge within given number&
+                       & of iterations", maxter_coul)
+
 100 continue
   kter   =  kter_eff
   deallocate (rho)

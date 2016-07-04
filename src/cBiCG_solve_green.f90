@@ -187,6 +187,11 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
         endif
      enddo!do ibnd
   enddo!iter
+
+  ! abort if solver doesn't converge
+  CALL errore(__FILE__, "Green solver did not converge within given number&
+                       & of iterations", maxter_green)
+
 100 continue
   niters =  iter
   kter   =  kter_eff

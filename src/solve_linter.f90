@@ -445,6 +445,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   enddo !loop on kter (iterations)
 
+  ! abort if solver doesn't converge
+  CALL errore(__FILE__, "Iterative solver did not converge within given number&
+                       & of iterations", niter_gw)
+
 155 iter0=0
 
    WRITE( stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1, &
