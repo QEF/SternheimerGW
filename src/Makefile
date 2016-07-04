@@ -12,6 +12,7 @@ IFLAGS=
 GWOBJS = \
 allocate_gwq.o\
 bcast_gw_input.o\
+bicgstab.o\
 check_initial_status.o\
 cBiCG_solve.o\
 cBiCG_solve_coul.o\
