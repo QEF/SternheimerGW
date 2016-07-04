@@ -102,7 +102,7 @@ IMPLICIT NONE
 
   one   = 1.0d0 
   czero = (0.0d0, 0.0d0)
-  w_ryd = wsigma/RYTOEV
+  w_ryd = wsigma(:nwsigma)/RYTOEV
   nbnd = nbnd_sig 
   zero(:) = 0.d0
   lgamma=.true.
