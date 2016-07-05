@@ -70,6 +70,15 @@ MODULE bicgstab_module
     !> \f$\omega\f$ of Fromme's algorithm
     COMPLEX(dp) omega
   
+    !> \f$\gamma\f$ of Fromme's algorithm
+    COMPLEX(dp), ALLOCATABLE :: gamma(:)
+
+    !> \f$\gamma'\f$ of Fromme's algorithm
+    COMPLEX(dp), ALLOCATABLE :: gamma_p(:)
+
+    !> \f$\gamma''\f$ of Fromme's algorithm
+    COMPLEX(dp), ALLOCATABLE :: gamma_pp(:)
+
   END TYPE seed_system_type
 
   !> Variables and arrays used for the shifted system.
@@ -104,6 +113,15 @@ MODULE bicgstab_module
 
     !> \f$\mu_{ij}\f$ of Fromme's algorithm
     COMPLEX(dp), ALLOCATABLE :: mu(:)
+
+    !> \f$\gamma\f$ of Fromme's algorithm
+    COMPLEX(dp), ALLOCATABLE :: gamma(:)
+
+    !> \f$\gamma'\f$ of Fromme's algorithm
+    COMPLEX(dp), ALLOCATABLE :: gamma_p(:)
+
+    !> \f$\gamma''\f$ of Fromme's algorithm
+    COMPLEX(dp), ALLOCATABLE :: gamma_pp(:)
 
   END TYPE shift_system_type
 
@@ -176,6 +194,7 @@ CONTAINS
       !
       ! perform MR part (Algorithm 4)
       !
+      CALL mr_part(lmax, seed_system, shift_system)
 
     END DO ! iter
 
@@ -215,6 +234,9 @@ CONTAINS
     ALLOCATE(seed_system%xx(vec_size))
     ALLOCATE(seed_system%rr(vec_size, 0:lmax))
     ALLOCATE(seed_system%tilde_r0(vec_size))
+    ALLOCATE(seed_system%gamma(lmax))
+    ALLOCATE(seed_system%gamma_p(lmax))
+    ALLOCATE(seed_system%gamma_pp(lmax))
 
     ! initialize arrays
     ! initialize only u0, because the other ones will be set in the algorithm 
@@ -245,6 +267,9 @@ CONTAINS
     DEALLOCATE(seed_system%xx)
     DEALLOCATE(seed_system%rr) 
     DEALLOCATE(seed_system%tilde_r0) 
+    DEALLOCATE(seed_system%gamma)
+    DEALLOCATE(seed_system%gamma_p)
+    DEALLOCATE(seed_system%gamma_pp)
 
   END SUBROUTINE destroy_seed
 
@@ -320,6 +345,9 @@ CONTAINS
       ! allocate arrays of given size
       ALLOCATE(shift_system(ishift)%uu(vec_size, 0:lmax))
       ALLOCATE(shift_system(ishift)%xx(vec_size))
+      ALLOCATE(shift_system(ishift)%gamma(lmax))
+      ALLOCATE(shift_system(ishift)%gamma_p(lmax))
+      ALLOCATE(shift_system(ishift)%gamma_pp(lmax))
 
       ! allocate array for mu
       ALLOCATE(shift_system(ishift)%mu(mu_size))
@@ -383,6 +411,9 @@ CONTAINS
       DEALLOCATE(shift_system(ishift)%uu)
       DEALLOCATE(shift_system(ishift)%xx)
       DEALLOCATE(shift_system(ishift)%mu)
+      DEALLOCATE(shift_system(ishift)%gamma)
+      DEALLOCATE(shift_system(ishift)%gamma_p)
+      DEALLOCATE(shift_system(ishift)%gamma_pp)
 
     END DO ! ishift
 
@@ -442,7 +473,7 @@ CONTAINS
     !> complex 1
     COMPLEX(dp), PARAMETER :: one = CMPLX(1, 0)
 
-    ! BLAS routines
+    ! BLAS dot product routine
     COMPLEX(dp), EXTERNAL :: ZDOTC
 
     ! determine vector size
@@ -570,5 +601,232 @@ CONTAINS
     END DO ! j
 
   END SUBROUTINE bicg_part
+
+  !> The MR part of the BiCGstab algorithm.
+  !!
+  !! This subroutine implements the *Algorithm 4* of Fromme's paper.
+  !!
+  SUBROUTINE mr_part(lmax, seed_system, shift_system)
+
+    !> Dimensionality of the GMRES algorithm.
+    INTEGER, INTENT(IN) :: lmax
+
+    !> Contains the current best guess for the solution of the linear
+    !! system and the corresponding residual in the seed system. Updated
+    !! to the next best guess at the end of the routine.
+    TYPE(seed_system_type),  INTENT(INOUT) :: seed_system
+
+    !> Contains the current best guess for the solution of the linear
+    !! system and the corresponding residual in the shifted system. Updated
+    !! to the next best guess at the end of the routine.
+    TYPE(shift_system_type), INTENT(INOUT), TARGET :: shift_system(:)
+
+    !> pointer to the currently active shifted system
+    TYPE(shift_system_type), POINTER :: active
+
+    !> Size of the vectors to initialize.
+    INTEGER vec_size
+
+    !> Number of shifted systems
+    INTEGER num_shift
+
+    !> Counter for the shifted systems
+    INTEGER ishift
+
+    !> counter for previous iterations
+    INTEGER ii
+
+    !> counter for GMRES iteration
+    INTEGER jj
+
+    !> helper to access the right element
+    INTEGER offset, ij
+
+    !> Temporary storage for prefactors
+    COMPLEX(dp) factor
+
+    !> The variable \f$\xi\f$ of Fromme's algorithm.
+    COMPLEX(dp) xi
+
+    !> The variable \f$\psi\f$ of Fromme's algorithm.
+    COMPLEX(dp) psi
+
+    !> The vector \f$\nu\f$ of Fromme's algorithm.
+    COMPLEX(dp), ALLOCATABLE :: nu(:)
+
+    !> The array \f$\tau\f$ of Fromme's algorithm.
+    COMPLEX(dp), ALLOCATABLE :: tau(:)
+
+    ! BLAS dot product routine
+    COMPLEX(dp), EXTERNAL :: ZDOTC
+
+    ! allocate vectors of appropriate size
+    ALLOCATE(nu(lmax))
+    ALLOCATE(tau((lmax + 1) * (lmax + 2) / 2))
+
+    ! determine vector size
+    vec_size = SIZE(seed_system%tilde_r0)
+
+    ! determine number of shifted systems
+    num_shift = SIZE(shift_system)
+
+    !
+    ! Fromme's algorithm 4
+    ! Note: the L?? refers to the line numbers given in Fromme's paper
+    !       we abbreviate the superscript sigma with ^
+    !
+    ! modified Gram-Schmidt orthogonalization
+    !
+    ! L1: loop over GMRES iterations
+    DO jj = 1, lmax
+      !
+      offset = jj * (jj + 1) / 2 + 1
+      !
+      ! L2: loop over previous iterations
+      DO ii = 1, jj - 1
+        !
+        ij = offset + ii
+        !
+        ! L3: tau_ij = (r_j, r_i) / nu_i
+        tau(ij) = ZDOTC(vec_size, seed_system%rr(:,jj), 1, seed_system%rr(:,ii), 1) / nu(ii)
+        !     r_j = r_j - tau_ij r_i
+        CALL ZAXPY(vec_size, -tau(ij), seed_system%rr(:,ii), 1, seed_system%rr(:,jj), 1)
+        !
+      END DO ! i
+      !
+      ! L5: nu_j = (r_j, r_j)
+      nu(jj) = ZDOTC(vec_size, seed_system%rr(:,jj), 1, seed_system%rr(:,jj), 1)
+      !     gamma_j' = (r_0, r_j) / nu(j)
+      seed_system%gamma_p(jj) = ZDOTC(vec_size, seed_system%rr(:,0), 1, seed_system%rr(:,jj), 1) / nu(jj)
+      !
+    END DO ! j
+    !
+    ! L7: gamma_l = gamma_l'
+    seed_system%gamma(lmax) = seed_system%gamma_p(lmax)
+    !     omega = gamma_l
+    seed_system%omega = seed_system%gamma(lmax)
+    !
+    ! L8: sum over tau gamma
+    DO jj = lmax - 1, 1, -1
+      !
+      ! L9: gamma_j = gamma_j' - sum_{i = j + 1}^l tau_ji gamma_i
+      seed_system%gamma(jj) = seed_system%gamma_p(jj)
+      DO ii = jj + 1, lmax
+        ij = ii * (ii + 1) / 2 + jj + 1
+        seed_system%gamma(jj) = seed_system%gamma(jj) - tau(ij) * seed_system%gamma(ii)
+      END DO ! i
+      !
+    END DO ! j
+    !
+    ! L11: sum over tau gamma
+    DO jj = 1, lmax - 1
+      !
+      ! L12: gamma_j" = gamma_j+1 + sum_{i = j + 1}^{l-1} tau_ji gamma_i
+      seed_system%gamma_pp(jj) = seed_system%gamma(jj + 1)
+      DO ii = jj + 1, lmax - 1
+        ij = ii * (ii + 1) / 2 + jj + 1
+        seed_system%gamma_pp(jj) = seed_system%gamma_pp(jj) + tau(ij) * seed_system%gamma(ii)
+      END DO ! i
+    END DO ! j
+    !
+    ! update step
+    ! L14: x = x + gamma_1 r_0
+    CALL ZAXPY(vec_size, seed_system%gamma(1), seed_system%rr(:,0), 1, seed_system%xx, 1)
+    !      u_0 = u_0 - gamma_l u_l
+    CALL ZAXPY(vec_size, -seed_system%gamma(lmax), seed_system%uu(:,lmax), 1, seed_system%uu(:,0), 1)
+    !
+    ! L15: loop over GMRES iterations
+    DO jj = 1, lmax - 1
+      !
+      ! L16: u_0 = u_0 - gamma_j u_j
+      CALL ZAXPY(vec_size, -seed_system%gamma(jj), seed_system%uu(:,jj), 1, seed_system%uu(:,0), 1)
+      !
+      ! L17: x = x + gamma_j" r_j
+      CALL ZAXPY(vec_size, seed_system%gamma_pp(jj), seed_system%rr(:,jj), 1, seed_system%xx, 1)
+      !
+    END DO ! j
+    !
+    ! shifted systems
+    !
+    DO ishift = 1, num_shift
+      !
+      active => shift_system(ishift)
+      !
+      ! L20: call Horner's scheme to obtain psi^ and gamma_j^
+      CALL horner_scheme
+      !
+      ! L21: xi = theta^ phi^
+      xi = active%theta * active%phi
+      !      theta^ = theta^ phi^
+      active%theta = active%theta * active%phi
+      !
+      ! L22: loop over GMRES iterations
+      DO jj = 1, lmax
+        !
+        ! L23: gamma_j'^ = sum_{i = j}^l mu_{j - 1, i - 1} gamma_i^
+        active%gamma_p(jj) = 0
+        DO ii = jj, lmax
+          ij = (ii - 1) * ii / 2 + jj
+          active%gamma_p(jj) = active%gamma(jj) + active%mu(ij) * active%gamma(ii)
+        END DO ! i
+        !
+      END DO ! j
+      !
+      ! L25: loop over GMRES iterations
+      DO jj = 1, lmax - 1
+        !
+        ! L26: gamma_j"^ = gamma_j'^ + sum_{i = j + 1}^{l - 1} tau_ji gamma_i+1'^
+        active%gamma_pp(jj) = active%gamma_p(jj)
+        DO ii = jj + 1, lmax - 1
+          ij = ii * (ii + 1) / 2 + jj + 1
+          active%gamma_pp(jj) = active%gamma_pp(jj) + tau(ij) * active%gamma_p(ii + 1)
+        END DO ! i
+        !
+      END DO ! j
+      !
+      ! note: the residuum update is done later, outside of the loop
+      ! L28: x^ = x^ + gamma_1'^ / xi r_0
+      factor = active%gamma_p(1) / xi
+      CALL ZAXPY(vec_size, factor, seed_system%rr(:,0), 1, active%xx, 1)
+      !      u0^ = u0^ - gamma_l u_l
+      CALL ZAXPY(vec_size, -seed_system%gamma(lmax), seed_system%uu(:,lmax), 1, &
+                 active%uu(:,0), 1)
+      !
+      ! L29: loop over GMRES iterations
+      DO jj = 1, lmax - 1
+        !
+        ! L30: u_0^ = u_0^ - gamma_j u_j^
+        CALL ZAXPY(vec_size, -seed_system%gamma(jj), seed_system%uu(:,jj), 1, &
+                   active%uu(:,0), 1)
+        !
+        ! L31: x^ = x^ + (gamma_j"^ / xi) r_j
+        factor = active%gamma_pp(jj) / xi
+        CALL ZAXPY(vec_size, factor, seed_system%rr(:,jj), 1, active%xx, 1)
+        !
+      END DO ! j
+      !
+      ! L34: u_0^ = u_0^ / psi
+      factor = 1 / psi
+      CALL ZSCAL(vec_size, factor, active%uu(:,0), 1)
+      !
+    END DO ! ishift
+    !
+    ! now do the delayed residuum update
+    ! note that the effect of L28 is to shift the upper boundary of the loop
+    !
+    ! L29: loop over GMRES iterations
+    DO jj = 1, lmax
+      !
+      ! L32: r_0 = r_0 - gamma_j' r_j
+      CALL ZAXPY(vec_size, -seed_system%gamma_p(jj), seed_system%rr(:,jj), 1, &
+                 seed_system%rr(:,0), 1)
+      !
+    END DO ! j
+
+    ! free memory
+    DEALLOCATE(tau)
+    DEALLOCATE(nu)
+
+  END SUBROUTINE mr_part
 
 END MODULE bicgstab_module
