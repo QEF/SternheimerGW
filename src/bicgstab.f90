@@ -52,14 +52,20 @@ MODULE bicgstab_module
     !> \f$\tilde r_0\f$ of Fromme's algorithm.
     COMPLEX(dp), ALLOCATABLE :: tilde_r0(:)
 
+    !> rho contains dot product of residuals
+    COMPLEX(dp) rho
+
     !> \f$\rho_{\text{old}}\f$ of Fromme's algorithm
     COMPLEX(dp) rho_old
+
+    !> \f$\alpha\f$ of Fromme's algorithm
+    COMPLEX(dp) alpha
 
     !> \f$\alpha_{\text{old}}\f$ of Fromme's algorithm
     COMPLEX(dp) alpha_old
 
-    !> \f$\alpha\f$ of Fromme's algorithm
-    COMPLEX(dp) alpha
+    !> beta determines step size
+    COMPLEX(dp) beta
 
     !> \f$\omega\f$ of Fromme's algorithm
     COMPLEX(dp) omega
@@ -75,14 +81,26 @@ MODULE bicgstab_module
     !> approximate solution to the linear system
     COMPLEX(dp), ALLOCATABLE :: xx(:)
 
+    !> the shift of this system
+    COMPLEX(dp) sigma
+
     !> \f$\phi_{\text{old}}^\sigma\f$ of Fromme's algorithm
     COMPLEX(dp) phi_old
 
     !> \f$\phi^\sigma\f$ of Fromme's algorithm
     COMPLEX(dp) phi
 
+    !> \f$\phi_{\text{new}}^\sigma\f$ of Fromme's algorithm
+    COMPLEX(dp) phi_new
+
     !> \f$\vartheta^\sigma\f$ of Fromme's algorithm
     COMPLEX(dp) theta
+
+    !> \f$\alpha^\sigma\f$ of Fromme's algorithm
+    COMPLEX(dp) alpha
+
+    !> \f$\beta^\sigma\f$ of Fromme's algorithm
+    COMPLEX(dp) beta
 
     !> \f$\mu_{ij}\f$ of Fromme's algorithm
     COMPLEX(dp), ALLOCATABLE :: mu(:)
@@ -95,10 +113,21 @@ CONTAINS
   !!
   !! This subroutine implements the *Algorithm 2* of Fromme's paper.
   !!
-  SUBROUTINE bicgstab(lmax, bb, sigma)
+  SUBROUTINE bicgstab(lmax, AA, bb, sigma)
 
     !> Dimensionality of the GMRES algorithm.
     INTEGER,     INTENT(IN) :: lmax
+
+    !> Function pointer that applies the linear operator to a vector.
+    INTERFACE
+      SUBROUTINE AA(xx, Ax)
+        USE kinds, ONLY: dp
+        !> The input vector.
+        COMPLEX(dp), INTENT(IN)  :: xx(:)
+        !> The operator applied to the vector.
+        COMPLEX(dp), INTENT(OUT) :: Ax(:)
+      END SUBROUTINE AA
+    END INTERFACE
 
     !> Right hand side of the linear equation.
     COMPLEX(dp), INTENT(IN) :: bb(:)
@@ -142,7 +171,7 @@ CONTAINS
       !
       ! perform BiCG part (Algorithm 3)
       !
-      CALL bicg_part(lmax, seed_system, shift_system)
+      CALL bicg_part(lmax, AA, seed_system, shift_system)
 
       !
       ! perform MR part (Algorithm 4)
@@ -296,6 +325,7 @@ CONTAINS
       shift_system(ishift)%xx = 0
 
       ! initialize the variables
+      shift_system(ishift)%sigma   = sigma(ishift)
       shift_system(ishift)%phi_old = 1.0
       shift_system(ishift)%phi     = 1.0
       shift_system(ishift)%theta   = 1.0
@@ -357,10 +387,21 @@ CONTAINS
   !!
   !! This subroutine implements the *Algorithm 3* of Fromme's paper.
   !!
-  SUBROUTINE bicg_part(lmax, seed_system, shift_system)
+  SUBROUTINE bicg_part(lmax, AA, seed_system, shift_system)
 
     !> Dimensionality of the GMRES algorithm.
     INTEGER, INTENT(IN) :: lmax
+
+    !> Function pointer that applies the linear operator to a vector.
+    INTERFACE
+      SUBROUTINE AA(xx, Ax)
+        USE kinds, ONLY: dp
+        !> The input vector.
+        COMPLEX(dp), INTENT(IN)  :: xx(:)
+        !> The operator applied to the vector.
+        COMPLEX(dp), INTENT(OUT) :: Ax(:)
+      END SUBROUTINE AA
+    END INTERFACE
 
     !> Contains the current best guess for the solution of the linear
     !! system and the corresponding residual in the seed system. Updated
@@ -370,7 +411,189 @@ CONTAINS
     !> Contains the current best guess for the solution of the linear
     !! system and the corresponding residual in the shifted system. Updated
     !! to the next best guess at the end of the routine.
-    TYPE(shift_system_type), INTENT(INOUT) :: shift_system(:)
+    TYPE(shift_system_type), INTENT(INOUT), TARGET :: shift_system(:)
+
+    !> pointer to the currently active shifted system
+    TYPE(shift_system_type), POINTER :: active
+
+    !> residuals of the seed system
+    COMPLEX(dp), ALLOCATABLE :: rr(:,:)
+
+    !> search direction of all systems
+    !! index 0: seed; index 1-n: shifted
+    COMPLEX(dp), ALLOCATABLE, TARGET :: uu_all(:,:,:)
+
+    !> search direction of current system
+    COMPLEX(dp), POINTER :: uu(:,:)
+
+    !> Size of the vectors to initialize.
+    INTEGER vec_size
+
+    !> Number of shifted systems
+    INTEGER num_shift
+
+    !> Counter for the shifted systems
+    INTEGER ishift
+
+    !> counter for previous iterations
+    INTEGER ii
+
+    !> counter for GMRES iteration
+    INTEGER jj
+
+    !> helper variable to store factor
+    COMPLEX(dp) factor
+
+    !> complex 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1, 0)
+
+    ! BLAS routines
+    COMPLEX(dp), EXTERNAL :: ZDOTC
+
+    ! determine vector size
+    vec_size = SIZE(seed_system%r0)
+
+    ! determine number of shifted systems
+    num_shift = SIZE(shift_system)
+
+    ! allocate necessary arrays
+    ALLOCATE(uu_all(vec_size, 0:lmax, 0:num_shift))
+    ALLOCATE(rr(vec_size, 0:lmax))
+
+    ! copy input to array
+    uu_all(:, 0, 0) = seed_system%u0
+    rr(:, 0) = seed_system%r0
+    DO ishift = 1, ishift
+      active => shift_system(ishift)
+      uu_all(:, 1, ishift) = active%u0
+    END DO ! ishift
+
+    !
+    ! Fromme's algorithm 3
+    ! Note: the L?? refers to the line numbers given in Fromme's paper
+    !       we abbreviate the superscript sigma with ^
+    !
+    ! L3: rho_old = - omega * rho_old
+    seed_system%rho_old = - seed_system%omega * seed_system%rho_old
+    !
+    ! L4: loop over GMRES iterations
+    DO jj = 0, lmax - 1
+      !
+      ! seed system
+      !
+      uu => uu_all(:,:,0)
+      !
+      ! L6: rho = (r_j, ~r_0),
+      seed_system%rho = ZDOTC(vec_size, rr(:,jj), 1, seed_system%tilde_r0, 1)
+      !     beta = alpha * rho / rho_old,
+      seed_system%beta = seed_system%alpha * seed_system%rho / seed_system%rho_old
+      !     rho_old = rho
+      seed_system%rho_old = seed_system%rho
+      !
+      ! L7: loop over previous steps
+      DO ii = 0, jj
+        !
+        ! L8: u_i = r_i - beta u_i
+        CALL ZSCAL(vec_size, -seed_system%beta, uu(:,ii), 1)
+        CALL ZAXPY(vec_size, one, rr(:,ii), 1, uu(:,ii), 1)
+        !
+      END DO ! i
+      !
+      ! L10: u_j+1 = A u_j
+      CALL AA(uu(:,jj), uu(:, jj + 1))
+      !
+      ! L11: alpha = rho / (u_j+1, ~r_0)
+      seed_system%alpha = seed_system%rho &
+                        / ZDOTC(vec_size, uu(:, jj + 1), 1, seed_system%tilde_r0, 1)
+      !
+      ! shifted system
+      !
+      ! loop over all shifted systems
+      DO ishift = 1, num_shift
+        !
+        active => shift_system(ishift)
+        uu => uu_all(:,:,ishift)
+        !
+        ! L13: phi_new^ = (1 + alpha sigma) phi^ + alpha beta / alpha_old (phi_old^ - phi^)
+        active%phi_new = (one + seed_system%alpha * active%sigma) * active%phi &
+                       + seed_system%alpha * seed_system%beta / seed_system%alpha_old &
+                       * (active%phi_old - active%phi)
+        !      beta^ = (phi_old^ / phi^)**2 beta
+        active%beta = (active%phi_old / active%phi)**2 * seed_system%beta
+        !      alpha^ = (phi_old^ / phi^) alpha
+        active%alpha = (active%phi_old / active%phi) * seed_system%alpha
+        !
+        ! evaluate 1 / (theta^ phi^) used in L15 and L17
+        factor = 1.0 / (active%theta * active%phi)
+        !
+        ! L14: loop over previous steps
+        DO ii = 0, jj
+          !
+          ! L15: u_i^ = r_i / (theta^ phi^) - beta^ u_i^
+          CALL ZSCAL(vec_size, -active%beta, uu(:,ii), 1)
+          CALL ZAXPY(vec_size, factor, rr(:,ii), 1, uu(:,ii), 1)
+          !
+        END DO ! i
+        !
+        ! L17: x^ = x^ + alpha^ u0^
+        CALL ZAXPY(vec_size, active%alpha, uu(:,0), 1, active%xx, 1)
+        !
+        ! note - we shifted update of alpha after the loop to allow
+        !        for systems with multiple shifts
+        ! L18: phi_old^ = phi^
+        active%phi_old = active%phi
+        !      phi^ = phi_new^
+        active%phi = active%phi_new
+        !
+        ! note: we can use factor here, because phi_old = phi in L18
+        ! L19: u_j+1^ = r_j / (theta^ phi_old^)
+        CALL ZCOPY(vec_size, rr(:,jj), 1, uu(:, jj + 1), 1)
+        CALL ZSCAL(vec_size, factor, uu(:, jj + 1), 1)
+        !
+      END DO ! ishift
+      !
+      ! back to seed system
+      uu => uu_all(:,:,0)
+      !
+      ! this update must be done here instead of with the rest of
+      ! line 18, because it acts on the seed_system and would affect
+      ! the other shifted systems otherwise
+      ! L18: alpha_old = alpha
+      seed_system%alpha_old = seed_system%alpha
+      !
+      ! L21: loop over previous iterations
+      DO ii = 0, jj
+        !
+        ! L22: r_i = r_i - alpha u_i+1
+        CALL ZAXPY(vec_size, -seed_system%alpha, uu(:, ii + 1), 1, rr(:,ii), 1)
+        !
+      END DO ! i
+      !
+      ! L24: r_j+1 = A r_j
+      CALL AA(rr(:,jj), rr(:, jj + 1))
+      !
+      ! L25: x = x + alpha u0
+      CALL ZAXPY(vec_size, seed_system%alpha, uu(:,0), 1, seed_system%xx, 1)
+      !
+      ! now update shifted systems again
+      DO ishift = 1, num_shift
+        !
+        active => shift_system(ishift)
+        uu => uu_all(:,:,ishift)
+        !
+        ! L26: u_j+1^ = (u_j+1^ - r_j / (theta^ phi^)) / alpha^ - sigma u_j^
+        factor = -1.0 / (active%theta * active%phi)
+        CALL ZAXPY(vec_size, factor, rr(:,jj), 1, uu(:, jj + 1), 1)
+        CALL ZSCAL(vec_size, 1.0 / active%alpha, uu(:, jj + 1), 1)
+        CALL ZAXPY(vec_size, -active%sigma, uu(:,jj), 1, uu(:, jj + 1), 1)
+        !
+      END DO ! ishift
+      !
+    END DO ! j
+
+    ! free memory
+    DEALLOCATE(uu)
+    DEALLOCATE(rr)
 
   END SUBROUTINE bicg_part
 
