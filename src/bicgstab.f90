@@ -41,13 +41,13 @@ MODULE bicgstab_module
   TYPE seed_system_type
 
     !> search direction
-    COMPLEX(dp), ALLOCATABLE :: u0(:)
+    COMPLEX(dp), ALLOCATABLE :: uu(:,:)
 
     !> approximate solution to the linear system
     COMPLEX(dp), ALLOCATABLE :: xx(:)
 
     !> residual vector
-    COMPLEX(dp), ALLOCATABLE :: r0(:)
+    COMPLEX(dp), ALLOCATABLE :: rr(:,:)
 
     !> \f$\tilde r_0\f$ of Fromme's algorithm.
     COMPLEX(dp), ALLOCATABLE :: tilde_r0(:)
@@ -76,7 +76,7 @@ MODULE bicgstab_module
   TYPE shift_system_type
 
     !> search direction
-    COMPLEX(dp), ALLOCATABLE :: u0(:)
+    COMPLEX(dp), ALLOCATABLE :: uu(:,:)
 
     !> approximate solution to the linear system
     COMPLEX(dp), ALLOCATABLE :: xx(:)
@@ -158,7 +158,7 @@ CONTAINS
     !
     ! initialization seed system
     !
-    CALL init_seed(bb, seed_system)
+    CALL init_seed(lmax, bb, seed_system)
 
     !
     ! initialization shifted systems
@@ -193,7 +193,10 @@ CONTAINS
   END SUBROUTINE bicgstab
 
   !> Initialize the seed system.
-  SUBROUTINE init_seed(bb, seed_system)
+  SUBROUTINE init_seed(lmax, bb, seed_system)
+
+    !> Dimensionality of the GMRES algorithm.
+    INTEGER,     INTENT(IN) :: lmax
 
     !> Initial residual (right hand side of equation).
     COMPLEX(dp), INTENT(IN) :: bb(:)
@@ -208,17 +211,19 @@ CONTAINS
     vec_size = SIZE(bb)
 
     ! allocate arrays of given size
-    ALLOCATE(seed_system%u0(vec_size))
+    ALLOCATE(seed_system%uu(vec_size, 0:lmax))
     ALLOCATE(seed_system%xx(vec_size))
-    ALLOCATE(seed_system%r0(vec_size))
+    ALLOCATE(seed_system%rr(vec_size, 0:lmax))
     ALLOCATE(seed_system%tilde_r0(vec_size))
 
     ! initialize arrays
-    seed_system%u0 = 0
+    ! initialize only u0, because the other ones will be set in the algorithm 
+    seed_system%uu(:,0) = 0
     seed_system%xx = 0
 
     ! initial residual is r0 = (b - A x) = b, because initial x = 0
-    seed_system%r0 = bb
+    ! initialize only r0, because the other ones will be set in the algorithm 
+    seed_system%rr(:,0) = bb
     seed_system%tilde_r0 = bb
 
     ! init the variables
@@ -236,9 +241,9 @@ CONTAINS
     TYPE(seed_system_type), INTENT(INOUT) :: seed_system
 
     ! deallocate the arrays
-    DEALLOCATE(seed_system%u0)
+    DEALLOCATE(seed_system%uu)
     DEALLOCATE(seed_system%xx)
-    DEALLOCATE(seed_system%r0) 
+    DEALLOCATE(seed_system%rr) 
     DEALLOCATE(seed_system%tilde_r0) 
 
   END SUBROUTINE destroy_seed
@@ -314,14 +319,15 @@ CONTAINS
     DO ishift = 1, SIZE(sigma)
 
       ! allocate arrays of given size
-      ALLOCATE(shift_system(ishift)%u0(vec_size))
+      ALLOCATE(shift_system(ishift)%uu(vec_size, 0:lmax))
       ALLOCATE(shift_system(ishift)%xx(vec_size))
 
       ! allocate array for mu
       ALLOCATE(shift_system(ishift)%mu(mu_size))
 
       ! initialize arrays to 0
-      shift_system(ishift)%u0 = 0
+      ! initialize only u0, because the other ones will be set in the algorithm 
+      shift_system(ishift)%uu(:,0) = 0
       shift_system(ishift)%xx = 0
 
       ! initialize the variables
@@ -375,7 +381,7 @@ CONTAINS
     DO ishift = 1, SIZE(shift_system)
 
       ! deallocate arrays
-      DEALLOCATE(shift_system(ishift)%u0)
+      DEALLOCATE(shift_system(ishift)%uu)
       DEALLOCATE(shift_system(ishift)%xx)
       DEALLOCATE(shift_system(ishift)%mu)
 
@@ -416,16 +422,6 @@ CONTAINS
     !> pointer to the currently active shifted system
     TYPE(shift_system_type), POINTER :: active
 
-    !> residuals of the seed system
-    COMPLEX(dp), ALLOCATABLE :: rr(:,:)
-
-    !> search direction of all systems
-    !! index 0: seed; index 1-n: shifted
-    COMPLEX(dp), ALLOCATABLE, TARGET :: uu_all(:,:,:)
-
-    !> search direction of current system
-    COMPLEX(dp), POINTER :: uu(:,:)
-
     !> Size of the vectors to initialize.
     INTEGER vec_size
 
@@ -451,22 +447,10 @@ CONTAINS
     COMPLEX(dp), EXTERNAL :: ZDOTC
 
     ! determine vector size
-    vec_size = SIZE(seed_system%r0)
+    vec_size = SIZE(seed_system%tilde_r0)
 
     ! determine number of shifted systems
     num_shift = SIZE(shift_system)
-
-    ! allocate necessary arrays
-    ALLOCATE(uu_all(vec_size, 0:lmax, 0:num_shift))
-    ALLOCATE(rr(vec_size, 0:lmax))
-
-    ! copy input to array
-    uu_all(:, 0, 0) = seed_system%u0
-    rr(:, 0) = seed_system%r0
-    DO ishift = 1, ishift
-      active => shift_system(ishift)
-      uu_all(:, 1, ishift) = active%u0
-    END DO ! ishift
 
     !
     ! Fromme's algorithm 3
@@ -481,10 +465,8 @@ CONTAINS
       !
       ! seed system
       !
-      uu => uu_all(:,:,0)
-      !
       ! L6: rho = (r_j, ~r_0),
-      seed_system%rho = ZDOTC(vec_size, rr(:,jj), 1, seed_system%tilde_r0, 1)
+      seed_system%rho = ZDOTC(vec_size, seed_system%rr(:,jj), 1, seed_system%tilde_r0, 1)
       !     beta = alpha * rho / rho_old,
       seed_system%beta = seed_system%alpha * seed_system%rho / seed_system%rho_old
       !     rho_old = rho
@@ -494,17 +476,18 @@ CONTAINS
       DO ii = 0, jj
         !
         ! L8: u_i = r_i - beta u_i
-        CALL ZSCAL(vec_size, -seed_system%beta, uu(:,ii), 1)
-        CALL ZAXPY(vec_size, one, rr(:,ii), 1, uu(:,ii), 1)
+        CALL ZSCAL(vec_size, -seed_system%beta, seed_system%uu(:,ii), 1)
+        CALL ZAXPY(vec_size, one, seed_system%rr(:,ii), 1, seed_system%uu(:,ii), 1)
         !
       END DO ! i
       !
       ! L10: u_j+1 = A u_j
-      CALL AA(uu(:,jj), uu(:, jj + 1))
+      CALL AA(seed_system%uu(:,jj), seed_system%uu(:, jj + 1))
       !
       ! L11: alpha = rho / (u_j+1, ~r_0)
       seed_system%alpha = seed_system%rho &
-                        / ZDOTC(vec_size, uu(:, jj + 1), 1, seed_system%tilde_r0, 1)
+                        / ZDOTC(vec_size, seed_system%uu(:, jj + 1), 1, &
+                                seed_system%tilde_r0, 1)
       !
       ! shifted system
       !
@@ -512,7 +495,6 @@ CONTAINS
       DO ishift = 1, num_shift
         !
         active => shift_system(ishift)
-        uu => uu_all(:,:,ishift)
         !
         ! L13: phi_new^ = (1 + alpha sigma) phi^ + alpha beta / alpha_old (phi_old^ - phi^)
         active%phi_new = (one + seed_system%alpha * active%sigma) * active%phi &
@@ -530,13 +512,13 @@ CONTAINS
         DO ii = 0, jj
           !
           ! L15: u_i^ = r_i / (theta^ phi^) - beta^ u_i^
-          CALL ZSCAL(vec_size, -active%beta, uu(:,ii), 1)
-          CALL ZAXPY(vec_size, factor, rr(:,ii), 1, uu(:,ii), 1)
+          CALL ZSCAL(vec_size, -active%beta, active%uu(:,ii), 1)
+          CALL ZAXPY(vec_size, factor, seed_system%rr(:,ii), 1, active%uu(:,ii), 1)
           !
         END DO ! i
         !
         ! L17: x^ = x^ + alpha^ u0^
-        CALL ZAXPY(vec_size, active%alpha, uu(:,0), 1, active%xx, 1)
+        CALL ZAXPY(vec_size, active%alpha, active%uu(:,0), 1, active%xx, 1)
         !
         ! note - we shifted update of alpha after the loop to allow
         !        for systems with multiple shifts
@@ -547,13 +529,10 @@ CONTAINS
         !
         ! note: we can use factor here, because phi_old = phi in L18
         ! L19: u_j+1^ = r_j / (theta^ phi_old^)
-        CALL ZCOPY(vec_size, rr(:,jj), 1, uu(:, jj + 1), 1)
-        CALL ZSCAL(vec_size, factor, uu(:, jj + 1), 1)
+        CALL ZCOPY(vec_size, seed_system%rr(:,jj), 1, active%uu(:, jj + 1), 1)
+        CALL ZSCAL(vec_size, factor, active%uu(:, jj + 1), 1)
         !
       END DO ! ishift
-      !
-      ! back to seed system
-      uu => uu_all(:,:,0)
       !
       ! this update must be done here instead of with the rest of
       ! line 18, because it acts on the seed_system and would affect
@@ -565,35 +544,31 @@ CONTAINS
       DO ii = 0, jj
         !
         ! L22: r_i = r_i - alpha u_i+1
-        CALL ZAXPY(vec_size, -seed_system%alpha, uu(:, ii + 1), 1, rr(:,ii), 1)
+        CALL ZAXPY(vec_size, -seed_system%alpha, seed_system%uu(:, ii + 1), 1, &
+                   seed_system%rr(:,ii), 1)
         !
       END DO ! i
       !
       ! L24: r_j+1 = A r_j
-      CALL AA(rr(:,jj), rr(:, jj + 1))
+      CALL AA(seed_system%rr(:,jj), seed_system%rr(:, jj + 1))
       !
       ! L25: x = x + alpha u0
-      CALL ZAXPY(vec_size, seed_system%alpha, uu(:,0), 1, seed_system%xx, 1)
+      CALL ZAXPY(vec_size, seed_system%alpha, seed_system%uu(:,0), 1, seed_system%xx, 1)
       !
       ! now update shifted systems again
       DO ishift = 1, num_shift
         !
         active => shift_system(ishift)
-        uu => uu_all(:,:,ishift)
         !
         ! L26: u_j+1^ = (u_j+1^ - r_j / (theta^ phi^)) / alpha^ - sigma u_j^
         factor = -1.0 / (active%theta * active%phi)
-        CALL ZAXPY(vec_size, factor, rr(:,jj), 1, uu(:, jj + 1), 1)
-        CALL ZSCAL(vec_size, 1.0 / active%alpha, uu(:, jj + 1), 1)
-        CALL ZAXPY(vec_size, -active%sigma, uu(:,jj), 1, uu(:, jj + 1), 1)
+        CALL ZAXPY(vec_size, factor, seed_system%rr(:,jj), 1, active%uu(:, jj + 1), 1)
+        CALL ZSCAL(vec_size, 1.0 / active%alpha, active%uu(:, jj + 1), 1)
+        CALL ZAXPY(vec_size, -active%sigma, active%uu(:,jj), 1, active%uu(:, jj + 1), 1)
         !
       END DO ! ishift
       !
     END DO ! j
-
-    ! free memory
-    DEALLOCATE(uu)
-    DEALLOCATE(rr)
 
   END SUBROUTINE bicg_part
 
