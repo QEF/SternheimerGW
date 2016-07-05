@@ -41,13 +41,16 @@ MODULE bicgstab_module
   TYPE seed_system_type
 
     !> search direction
-    COMPLEX(dp), ALLOCATABLE :: uu(:)
+    COMPLEX(dp), ALLOCATABLE :: u0(:)
 
     !> approximate solution to the linear system
     COMPLEX(dp), ALLOCATABLE :: xx(:)
 
     !> residual vector
-    COMPLEX(dp), ALLOCATABLE :: rr(:)
+    COMPLEX(dp), ALLOCATABLE :: r0(:)
+
+    !> \f$\tilde r_0\f$ of Fromme's algorithm.
+    COMPLEX(dp), ALLOCATABLE :: tilde_r0(:)
 
     !> \f$\rho_{\text{old}}\f$ of Fromme's algorithm
     COMPLEX(dp) rho_old
@@ -67,7 +70,7 @@ MODULE bicgstab_module
   TYPE shift_system_type
 
     !> search direction
-    COMPLEX(dp), ALLOCATABLE :: uu(:)
+    COMPLEX(dp), ALLOCATABLE :: u0(:)
 
     !> approximate solution to the linear system
     COMPLEX(dp), ALLOCATABLE :: xx(:)
@@ -176,16 +179,18 @@ CONTAINS
     vec_size = SIZE(bb)
 
     ! allocate arrays of given size
-    ALLOCATE(seed_system%uu(vec_size))
+    ALLOCATE(seed_system%u0(vec_size))
     ALLOCATE(seed_system%xx(vec_size))
-    ALLOCATE(seed_system%rr(vec_size))
+    ALLOCATE(seed_system%r0(vec_size))
+    ALLOCATE(seed_system%tilde_r0(vec_size))
 
     ! initialize arrays
-    seed_system%uu = 0
+    seed_system%u0 = 0
     seed_system%xx = 0
 
-    ! initial residual is r = (b - A x) = b, because initial x = 0
-    seed_system%rr = bb
+    ! initial residual is r0 = (b - A x) = b, because initial x = 0
+    seed_system%r0 = bb
+    seed_system%tilde_r0 = bb
 
     ! init the variables
     seed_system%rho_old   = 1.0
@@ -202,9 +207,10 @@ CONTAINS
     TYPE(seed_system_type), INTENT(INOUT) :: seed_system
 
     ! deallocate the arrays
-    DEALLOCATE(seed_system%uu)
+    DEALLOCATE(seed_system%u0)
     DEALLOCATE(seed_system%xx)
-    DEALLOCATE(seed_system%rr) 
+    DEALLOCATE(seed_system%r0) 
+    DEALLOCATE(seed_system%tilde_r0) 
 
   END SUBROUTINE destroy_seed
 
@@ -279,14 +285,14 @@ CONTAINS
     DO ishift = 1, SIZE(sigma)
 
       ! allocate arrays of given size
-      ALLOCATE(shift_system(ishift)%uu(vec_size))
+      ALLOCATE(shift_system(ishift)%u0(vec_size))
       ALLOCATE(shift_system(ishift)%xx(vec_size))
 
       ! allocate array for mu
       ALLOCATE(shift_system(ishift)%mu(mu_size))
 
       ! initialize arrays to 0
-      shift_system(ishift)%uu = 0
+      shift_system(ishift)%u0 = 0
       shift_system(ishift)%xx = 0
 
       ! initialize the variables
@@ -339,7 +345,7 @@ CONTAINS
     DO ishift = 1, SIZE(shift_system)
 
       ! deallocate arrays
-      DEALLOCATE(shift_system(ishift)%uu)
+      DEALLOCATE(shift_system(ishift)%u0)
       DEALLOCATE(shift_system(ishift)%xx)
       DEALLOCATE(shift_system(ishift)%mu)
 
