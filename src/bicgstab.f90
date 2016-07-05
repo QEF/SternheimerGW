@@ -269,7 +269,7 @@ CONTAINS
     !> dimension of the array mu
     INTEGER mu_size
 
-    !> binomials \f$\begin{pmatrix}j - 1\\ i - 1\end{pmatrix}\f$
+    !> binomials \f$\begin{pmatrix}j \\ i\end{pmatrix}\f$
     REAL(dp),    ALLOCATABLE :: binomial(:)
 
     !> array to store \f$\sigma^n\f$ for \f$n = 0, \ldots, l_{\text{max}}\f$
@@ -285,30 +285,29 @@ CONTAINS
     ALLOCATE(binomial(mu_size))
     ALLOCATE(sigma_pow(0:lmax - 1))
 
-    !                     / j - 1 \        (j - 1)!
-    ! evaluate binomials (         ) = -----------------
-    !                     \ i - 1 /    (i - 1)! (j - i)!
-    ! note: shift by one compared to Fromme, because Fortran starts indices at 1
-    DO jj = 1, lmax
+    !                     / j \        j!
+    ! evaluate binomials (     ) = -----------
+    !                     \ i /    i! (j - i)!
+    DO jj = 0, lmax - 1
 
       ! the ij index starts at this value
-      offset = jj * (jj - 1) / 2
+      offset = jj * (jj + 1) / 2 + 1
 
-      DO ii = 1, jj
+      DO ii = 0, jj
 
         ! evaluate index in array
         ij = offset + ii
 
-        ! trivial case i = 1: binomial = 1
-        IF (ii == 1) THEN
+        ! trivial case i = 0: binomial = 1
+        IF (ii == 0) THEN
           binomial(ij) = 1
 
         ! in general, the following is valid
-        !  / j - 1 \     / j - 1 \  j - i + 1
-        ! (         ) = (         ) ---------
-        !  \ i - 1 /     \ i - 2 /    i - 1
+        !  / j \     /   j   \  j - i + 1
+        ! (     ) = (         ) ---------
+        !  \ i /     \ i - 1 /      i
         ELSE
-          binomial(ij) = binomial(ij - 1) * (jj - ii + 1) / (ii - 1)
+          binomial(ij) = (binomial(ij - 1) * (jj - ii + 1)) / ii
 
         END IF
 
@@ -343,19 +342,19 @@ CONTAINS
       END DO ! i
 
       ! construct mu_ij
-      DO jj = 1, lmax
+      DO jj = 0, lmax - 1
 
         ! the ij index starts at this value
-        offset = jj * (jj - 1) / 2
+        offset = jj * (jj + 1) / 2 + 1
 
-        DO ii = 1, jj
+        DO ii = 0, jj
 
           ! evaluate index in array
           ij = offset + ii
 
-          !          /j - 1\       j - i
-          ! mu_ij = (       ) sigma
-          !          \i - 1/
+          !          / j \       j - i
+          ! mu_ij = (     ) sigma
+          !          \ i /
           shift_system(ishift)%mu(ij) = binomial(ij) * sigma_pow(jj - ii)
 
         END DO ! i
