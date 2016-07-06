@@ -753,7 +753,7 @@ CONTAINS
       active => shift_system(ishift)
       !
       ! L20: call Horner's scheme to obtain psi^ and gamma_j^
-      CALL horner_scheme
+      CALL horner_scheme(seed_system%gamma, active%sigma, active%gamma, psi)
       !
       ! L21: xi = theta^ phi^
       xi = active%theta * active%phi
@@ -828,5 +828,73 @@ CONTAINS
     DEALLOCATE(nu)
 
   END SUBROUTINE mr_part
+
+  !> The Horner's scheme part of the BiCGstab algorithm.
+  !!
+  !! This subroutine implements the *Algorithm 5* of Fromme's paper.
+  !!
+  !! Computes \f$\gamma^\sigma_j$ and $\psi^\sigma$ for the shifted
+  !! system from the values in the seed system and the shift 
+  !! \f$\sigma\f$.
+  !!
+  SUBROUTINE horner_scheme(seed_gamma, sigma, shift_gamma, psi)
+
+    !> The \f$gamma\f$ values in the seed system.
+    COMPLEX(dp), INTENT(IN)  :: seed_gamma(:)
+
+    !> The shift relative to the seed system.
+    COMPLEX(dp), INTENT(IN)  :: sigma
+
+    !> The \f$\gamma^\sigma\f$ values in the shifted system.
+    COMPLEX(dp), INTENT(OUT) :: shift_gamma(:)
+
+    !> The \f$\psi^\sigma\f$ value for the shifted system.
+    COMPLEX(dp), INTENT(OUT) :: psi
+
+    !> dimension of the gamma arrays
+    INTEGER lmax
+
+    !> loop variables
+    INTEGER ii, jj
+
+    !> determine size of the array
+    lmax = SIZE(seed_gamma)
+
+    !
+    ! Fromme's algorithm 5
+    ! Note: we abbreviate the superscript sigma with ^
+    !
+    ! gamma_l^ = -gamma_l
+    shift_gamma(lmax) = -seed_gamma(lmax)
+    !
+    ! loop over GMRES iterations
+    DO jj = lmax - 1, 1, -1
+      !
+      ! gamma_j^ = -sigma gamma_j+1^ - gamma_j
+      shift_gamma(jj) = -sigma * shift_gamma(jj + 1) - seed_gamma(jj)
+      !
+    END DO ! j
+    !
+    ! psi^ = -sigma gamma_1^ + 1
+    psi = -sigma * shift_gamma(1) + 1
+    !
+    DO ii = 1, lmax - 1
+      DO jj = lmax - 1, ii, -1
+        !
+        ! gamma_j^ = -sigma gamma_j+1^ + gamma_j^
+        shift_gamma(jj) = -sigma * shift_gamma(jj + 1) + shift_gamma(jj)
+        !
+      END DO ! j
+    END DO ! i
+    !
+    ! loop over GMRES iterations
+    DO jj = 1, lmax
+      !
+      ! gamma_j^ = -gamma_j^ / psi^
+      shift_gamma(jj) = -shift_gamma(jj) / psi
+      !
+    END DO ! j
+
+  END SUBROUTINE horner_scheme
 
 END MODULE bicgstab_module
