@@ -474,7 +474,7 @@ CONTAINS
     COMPLEX(dp), PARAMETER :: one = CMPLX(1, 0)
 
     ! BLAS dot product routine
-    COMPLEX(dp), EXTERNAL :: ZDOTC
+    COMPLEX(dp), EXTERNAL :: ZDOTU
 
     ! determine vector size
     vec_size = SIZE(seed_system%tilde_r0)
@@ -496,7 +496,7 @@ CONTAINS
       ! seed system
       !
       ! L6: rho = (r_j, ~r_0),
-      seed_system%rho = ZDOTC(vec_size, seed_system%rr(:,jj), 1, seed_system%tilde_r0, 1)
+      seed_system%rho = ZDOTU(vec_size, seed_system%rr(:,jj), 1, seed_system%tilde_r0, 1)
       !     beta = alpha * rho / rho_old,
       seed_system%beta = seed_system%alpha * seed_system%rho / seed_system%rho_old
       !     rho_old = rho
@@ -516,7 +516,7 @@ CONTAINS
       !
       ! L11: alpha = rho / (u_j+1, ~r_0)
       seed_system%alpha = seed_system%rho &
-                        / ZDOTC(vec_size, seed_system%uu(:, jj + 1), 1, &
+                        / ZDOTU(vec_size, seed_system%uu(:, jj + 1), 1, &
                                 seed_system%tilde_r0, 1)
       !
       ! shifted system
@@ -658,7 +658,7 @@ CONTAINS
     COMPLEX(dp), ALLOCATABLE :: tau(:)
 
     ! BLAS dot product routine
-    COMPLEX(dp), EXTERNAL :: ZDOTC
+    COMPLEX(dp), EXTERNAL :: ZDOTU
 
     ! allocate vectors of appropriate size
     ALLOCATE(nu(lmax))
@@ -688,16 +688,16 @@ CONTAINS
         ij = offset + ii
         !
         ! L3: tau_ij = (r_j, r_i) / nu_i
-        tau(ij) = ZDOTC(vec_size, seed_system%rr(:,jj), 1, seed_system%rr(:,ii), 1) / nu(ii)
+        tau(ij) = ZDOTU(vec_size, seed_system%rr(:,jj), 1, seed_system%rr(:,ii), 1) / nu(ii)
         !     r_j = r_j - tau_ij r_i
         CALL ZAXPY(vec_size, -tau(ij), seed_system%rr(:,ii), 1, seed_system%rr(:,jj), 1)
         !
       END DO ! i
       !
       ! L5: nu_j = (r_j, r_j)
-      nu(jj) = ZDOTC(vec_size, seed_system%rr(:,jj), 1, seed_system%rr(:,jj), 1)
+      nu(jj) = ZDOTU(vec_size, seed_system%rr(:,jj), 1, seed_system%rr(:,jj), 1)
       !     gamma_j' = (r_0, r_j) / nu(j)
-      seed_system%gamma_p(jj) = ZDOTC(vec_size, seed_system%rr(:,0), 1, seed_system%rr(:,jj), 1) / nu(jj)
+      seed_system%gamma_p(jj) = ZDOTU(vec_size, seed_system%rr(:,0), 1, seed_system%rr(:,jj), 1) / nu(jj)
       !
     END DO ! j
     !
