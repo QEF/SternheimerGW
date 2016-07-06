@@ -532,8 +532,8 @@ CONTAINS
                        * (active%phi_old - active%phi)
         !      beta^ = (phi_old^ / phi^)**2 beta
         active%beta = (active%phi_old / active%phi)**2 * seed_system%beta
-        !      alpha^ = (phi_old^ / phi^) alpha
-        active%alpha = (active%phi_old / active%phi) * seed_system%alpha
+        !      alpha^ = (phi^ / phi_new^) alpha
+        active%alpha = (active%phi / active%phi_new) * seed_system%alpha
         !
         ! evaluate 1 / (theta^ phi^) used in L15 and L17
         factor = 1.0 / (active%theta * active%phi)
@@ -721,11 +721,11 @@ CONTAINS
     ! L11: sum over tau gamma
     DO jj = 1, lmax - 1
       !
-      ! L12: gamma_j" = gamma_j+1 + sum_{i = j + 1}^{l-1} tau_ji gamma_i
+      ! L12: gamma_j" = gamma_j+1 + sum_{i = j + 1}^{l-1} tau_ji gamma_i+1
       seed_system%gamma_pp(jj) = seed_system%gamma(jj + 1)
       DO ii = jj + 1, lmax - 1
         ij = ii * (ii + 1) / 2 + jj + 1
-        seed_system%gamma_pp(jj) = seed_system%gamma_pp(jj) + tau(ij) * seed_system%gamma(ii)
+        seed_system%gamma_pp(jj) = seed_system%gamma_pp(jj) + tau(ij) * seed_system%gamma(ii + 1)
       END DO ! i
     END DO ! j
     !
@@ -757,8 +757,8 @@ CONTAINS
       !
       ! L21: xi = theta^ phi^
       xi = active%theta * active%phi
-      !      theta^ = theta^ phi^
-      active%theta = active%theta * active%phi
+      !      theta^ = theta^ psi
+      active%theta = active%theta * psi 
       !
       ! L22: loop over GMRES iterations
       DO jj = 1, lmax
@@ -767,7 +767,7 @@ CONTAINS
         active%gamma_p(jj) = 0
         DO ii = jj, lmax
           ij = (ii - 1) * ii / 2 + jj
-          active%gamma_p(jj) = active%gamma(jj) + active%mu(ij) * active%gamma(ii)
+          active%gamma_p(jj) = active%gamma_p(jj) + active%mu(ij) * active%gamma(ii)
         END DO ! i
         !
       END DO ! j
@@ -775,8 +775,8 @@ CONTAINS
       ! L25: loop over GMRES iterations
       DO jj = 1, lmax - 1
         !
-        ! L26: gamma_j"^ = gamma_j'^ + sum_{i = j + 1}^{l - 1} tau_ji gamma_i+1'^
-        active%gamma_pp(jj) = active%gamma_p(jj)
+        ! L26: gamma_j"^ = gamma_j+1'^ + sum_{i = j + 1}^{l - 1} tau_ji gamma_i+1'^
+        active%gamma_pp(jj) = active%gamma_p(jj + 1)
         DO ii = jj + 1, lmax - 1
           ij = ii * (ii + 1) / 2 + jj + 1
           active%gamma_pp(jj) = active%gamma_pp(jj) + tau(ij) * active%gamma_p(ii + 1)
@@ -796,7 +796,7 @@ CONTAINS
       DO jj = 1, lmax - 1
         !
         ! L30: u_0^ = u_0^ - gamma_j u_j^
-        CALL ZAXPY(vec_size, -seed_system%gamma(jj), seed_system%uu(:,jj), 1, &
+        CALL ZAXPY(vec_size, -seed_system%gamma(jj), active%uu(:,jj), 1, &
                    active%uu(:,0), 1)
         !
         ! L31: x^ = x^ + (gamma_j"^ / xi) r_j
