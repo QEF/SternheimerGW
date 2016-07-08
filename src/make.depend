@@ -607,6 +607,7 @@ sigma_exchG.o : ../../PW/src/symm_base.o
 sigma_exchG.o : gwcom.o
 sigma_exchG.o : save_gw_input.o
 sigma_exchG.o : truncation.o
+sigma_expect.o : ../../Modules/kind.o
 sigma_grids.o : ../../FFTXlib/fft_types.o
 sigma_grids.o : ../../FFTXlib/stick_set.o
 sigma_grids.o : ../../Modules/cell_base.o
