@@ -83,8 +83,10 @@ construct_w.o : ../../Modules/mp_global.o
 construct_w.o : ../../Modules/recvec.o
 construct_w.o : gwcom.o
 construct_w.o : timing.o
+coul_multi.o : ../../LR_Modules/lrcom.o
 coul_multi.o : ../../Modules/kind.o
 coul_multi.o : gwcom.o
+coul_multi.o : linear_op.o
 coul_multishift.o : ../../Modules/constants.o
 coul_multishift.o : ../../Modules/kind.o
 coul_multishift.o : ../../PW/src/pwcom.o

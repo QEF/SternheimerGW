@@ -31,10 +31,12 @@ SUBROUTINE coul_multi(h_psi, cg_psi, e, d0psi, x_sig, h_diag, w_ryd, nfreq, &
 !
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
-USE kinds,       ONLY : DP
-USE control_gw,  ONLY : maxter_coul
-USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-USE freq_gw,     ONLY : nfs
+USE control_gw,       ONLY : maxter_coul, alpha_pv
+USE freq_gw,          ONLY : nfs
+USE kinds,            ONLY : DP
+USE linear_op_module, ONLY : linear_op
+USE qpoint,           ONLY : ikqs
+USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
 
 IMPLICIT NONE
 !
@@ -136,7 +138,6 @@ IMPLICIT NONE
      if (iter .eq. 1) then
 ! r = b - A* x
 ! rt = conjg (r) 
-        !call h_psi (ndim, dpsi, g, e, cwpsi, ik, nbnd)
         do ibnd = 1, nbnd
 ! initial residual should be r = b
 ! call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
@@ -210,8 +211,8 @@ IMPLICIT NONE
         endif
      enddo
 !****************** THIS IS THE MOST EXPENSIVE PART ****************** !
-     call h_psi (ndim, hold,   t, eu(1), cwpsi, ik, lbnd)
-     call h_psi (ndim, htold, tt, eu(1), conjg(cwpsi), ik, lbnd)
+    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + cwpsi, alpha_pv, hold(:,1:lbnd), t(:,1:lbnd))
+    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + conjg(cwpsi), alpha_pv, htold(:,1:lbnd), tt(:,1:lbnd))
 
     lbnd=0
     do ibnd = 1, nbnd
