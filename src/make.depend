@@ -31,6 +31,7 @@ cBiCG_solve_green.o : ../../Modules/kind.o
 cBiCG_solve_green.o : ../../Modules/mp.o
 cBiCG_solve_green.o : ../../Modules/mp_global.o
 cBiCG_solve_green.o : gwcom.o
+cBiCG_solve_green.o : linear_op.o
 cBiCG_solve_green.o : timing.o
 ch_psi_all.o : ../../LR_Modules/lrcom.o
 ch_psi_all.o : ../../Modules/becmod.o

@@ -32,13 +32,16 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 !
-  USE control_gw,    ONLY : maxter_green
-  USE gwsigma,       ONLY : sigma_x_st, sigma_c_st
-  USE kinds,         ONLY : DP
-  USE mp,            ONLY : mp_sum
-  USE mp_global,     ONLY : intra_pool_comm
-  USE timing_module, ONLY : time_green_solver
-  USE units_gw,      ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
+  USE control_gw,       ONLY : maxter_green
+  USE gwsigma,          ONLY : sigma_x_st, sigma_c_st
+  USE kinds,            ONLY : DP
+  USE klist,            ONLY : nks
+  USE linear_op_module, ONLY : linear_op
+  USE mp,               ONLY : mp_sum
+  USE mp_global,        ONLY : intra_pool_comm
+  USE timing_module,    ONLY : time_green_solver
+  USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
+
 
   implicit none
 !first I/O variables
@@ -80,6 +83,9 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   logical  :: tprec
   logical   :: conv_root ! output: if true the root is converged
 
+  !> no projectors for the Green's function
+  real(dp), parameter :: alpha_pv = 0
+
   external h_psi       ! input: the routine computing h_psi
   external cg_psi      ! input: the routine computing cg_psi
   
@@ -112,7 +118,7 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      if (iter .eq. 1) then
 !r = b - A* x
 !rt = conjg (r) 
-        call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
+        call linear_op(nks + 1, ndim, e + cw, alpha_pv, dpsi, g)
         do ibnd = 1, nbnd
 !initial residual should be r = b
 !          call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
@@ -147,8 +153,8 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      enddo
      if (conv_root) goto 100
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-     call h_psi (ndim, h, t, e(1), cw, ik, nbnd)
-     call h_psi (ndim, ht, tt, e(1), conjg(cw), ik, nbnd)
+     call linear_op(nks + 1, ndim, e + cw, alpha_pv, h, t)
+     call linear_op(nks + 1, ndim, e + conjg(cw), alpha_pv, ht, tt)
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
