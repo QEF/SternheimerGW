@@ -57,6 +57,7 @@ incdrhoscf_w.o\
 initialize_gw.o\
 invert_epsilon.o\
 kind_gw.o\
+linear_op.o\
 mix_pot.o\
 mix_pot_c.o\
 mod_diel.o\

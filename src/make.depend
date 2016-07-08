@@ -30,6 +30,7 @@ cBiCG_solve_coul.o : gwcom.o
 cBiCG_solve_green.o : ../../Modules/kind.o
 cBiCG_solve_green.o : ../../Modules/mp.o
 cBiCG_solve_green.o : ../../Modules/mp_global.o
+cBiCG_solve_green.o : ../../PW/src/pwcom.o
 cBiCG_solve_green.o : gwcom.o
 cBiCG_solve_green.o : timing.o
 ch_psi_all.o : ../../LR_Modules/lrcom.o
@@ -82,6 +83,7 @@ construct_w.o : ../../Modules/mp_global.o
 construct_w.o : ../../Modules/recvec.o
 construct_w.o : gwcom.o
 construct_w.o : timing.o
+coul_multi.o : ../../LR_Modules/lrcom.o
 coul_multi.o : ../../Modules/kind.o
 coul_multi.o : gwcom.o
 coul_multishift.o : ../../Modules/constants.o
@@ -411,6 +413,13 @@ initialize_gw.o : ../../PW/src/pwcom.o
 initialize_gw.o : gwcom.o
 invert_epsilon.o : ../../Modules/kind.o
 invert_epsilon.o : gwcom.o
+linear_op.o : ../../LR_Modules/lrcom.o
+linear_op.o : ../../Modules/becmod.o
+linear_op.o : ../../Modules/kind.o
+linear_op.o : ../../Modules/noncol.o
+linear_op.o : ../../Modules/uspp.o
+linear_op.o : ../../PW/src/pwcom.o
+linear_op.o : gwcom.o
 mix_pot.o : ../../Modules/io_files.o
 mix_pot.o : ../../Modules/kind.o
 mix_pot.o : ../../Modules/mp.o
