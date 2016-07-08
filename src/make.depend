@@ -19,11 +19,14 @@ bcast_gw_input.o : ../../Modules/mp.o
 bcast_gw_input.o : ../../Modules/mp_world.o
 bcast_gw_input.o : ../../Modules/run_info.o
 bcast_gw_input.o : gwcom.o
+cBiCG_solve.o : ../../LR_Modules/lrcom.o
 cBiCG_solve.o : ../../Modules/io_global.o
 cBiCG_solve.o : ../../Modules/kind.o
 cBiCG_solve.o : ../../Modules/mp.o
 cBiCG_solve.o : ../../Modules/mp_global.o
 cBiCG_solve.o : ../../Modules/mp_world.o
+cBiCG_solve.o : gwcom.o
+cBiCG_solve.o : linear_op.o
 cBiCG_solve.o : timing.o
 cBiCG_solve_coul.o : ../../Modules/kind.o
 cBiCG_solve_coul.o : gwcom.o

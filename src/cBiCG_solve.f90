@@ -33,12 +33,15 @@ SUBROUTINE cbcg_solve(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
 !   where h is a complex hermitian matrix, e, w, and eta are
 !   real scalar, x and b are complex vectors
 
-USE io_global,     ONLY : stdout, ionode
-USE kinds,         ONLY : DP
-USE mp,            ONLY : mp_sum
-USE mp_global,     ONLY : intra_pool_comm
-USE mp_world,      ONLY : mpime
-USE timing_module, ONLY : time_green_solver
+USE control_gw,       ONLY : alpha_pv
+USE io_global,        ONLY : stdout, ionode
+USE kinds,            ONLY : DP
+USE linear_op_module, ONLY : linear_op
+USE mp,               ONLY : mp_sum
+USE mp_global,        ONLY : intra_pool_comm
+USE mp_world,         ONLY : mpime
+USE qpoint,           ONLY : ikqs
+USE timing_module,    ONLY : time_green_solver
 
 implicit none
 
@@ -149,7 +152,7 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
     ! rt   = conjg ( r )
      if (iter .eq. 1) then
         !rt = conjg (r) 
-        call h_psi (ndim, dpsi, g, e, cw, ik, nbnd)
+        CALL linear_op(ikqs(ik), ndim, e + cw, alpha_pv, dpsi, g)
         do ibnd = 1, nbnd
         !r = A*x -b:
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
@@ -203,8 +206,8 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
         endif
     enddo
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-    call h_psi (ndim, hold, t, eu(1), cw, ik, lbnd)
-    call h_psi (ndim, htold, tt, eu(1), dconjg(cw), ik, lbnd)
+    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + cw, alpha_pv, hold(:,1:lbnd), t(:,1:lbnd))
+    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + conjg(cw), alpha_pv, htold(:,1:lbnd), tt(:,1:lbnd))
 
     lbnd=0
     do ibnd = 1, nbnd
