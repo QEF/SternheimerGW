@@ -92,6 +92,12 @@ MODULE timing_module
   !> label for the clock measuring the time to store Sigma to disk
   CHARACTER(*), PARAMETER :: time_sigma_io = 'Sigma IO'
 
+  !
+  ! general routines
+  !
+  !> label for the total time spent to evaluate the linear operator
+  CHARACTER(*), PARAMETER :: time_linear_op = 'linear operator'
+
 CONTAINS
 
   !> Print the measured timing of the SGW run in a nice format.
@@ -190,6 +196,18 @@ CONTAINS
 
     ! print the time needed to write Sigma to disk
     CALL print_clock(time_sigma_io)
+
+    !
+    ! Some general routines
+    !
+    ! empty line to separate it from the rest of the output
+    WRITE(stdout, *)
+
+    ! info line
+    WRITE(stdout,'(a)') "Timing for some important routines"
+
+    ! print the time spent to evaluate the linear operator
+    CALL print_clock(time_linear_op)
 
   END SUBROUTINE timing_print_clock
 

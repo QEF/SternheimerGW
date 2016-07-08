@@ -48,6 +48,7 @@ SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
   USE control_gw,       ONLY: nbnd_occ
   USE kinds,            ONLY: dp
   USE noncollin_module, ONLY: noncolin, npol
+  USE timing_module,    ONLY: time_linear_op
   USE wvfct,            ONLY: npwx, nbnd, current_k_ => current_k
 
   IMPLICIT NONE
@@ -85,7 +86,7 @@ SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
   !> complex constants
   COMPLEX(dp), PARAMETER :: one = 1
 
-  CALL start_clock('linear_op')
+  CALL start_clock(time_linear_op)
 
   ! determine some helper variables
   vec_size = npwx * npol
@@ -137,7 +138,7 @@ SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
 
   DEALLOCATE(spsi)
 
-  CALL stop_clock ('linear_op')
+  CALL stop_clock (time_linear_op)
 
 END SUBROUTINE linear_op
 

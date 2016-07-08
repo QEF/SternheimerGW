@@ -425,6 +425,7 @@ linear_op.o : ../../Modules/noncol.o
 linear_op.o : ../../Modules/uspp.o
 linear_op.o : ../../PW/src/pwcom.o
 linear_op.o : gwcom.o
+linear_op.o : timing.o
 mix_pot.o : ../../Modules/io_files.o
 mix_pot.o : ../../Modules/kind.o
 mix_pot.o : ../../Modules/mp.o
