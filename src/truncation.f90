@@ -35,33 +35,27 @@ MODULE truncation_module
 
   !> no truncation - use bare Coulomb potential
   INTEGER, PARAMETER :: NO_TRUNCATION = 0
-  !> \cond
   CHARACTER(LEN=trunc_length), PARAMETER :: NO_TRUNCATION_1 = 'none'
   CHARACTER(LEN=trunc_length), PARAMETER :: NO_TRUNCATION_2 = 'off'
   CHARACTER(LEN=trunc_length), PARAMETER :: NO_TRUNCATION_3 = 'false'
   CHARACTER(LEN=trunc_length), PARAMETER :: NO_TRUNCATION_4 = 'no'
   CHARACTER(LEN=trunc_length), PARAMETER :: NO_TRUNCATION_5 = 'no truncation'
-  !> \endcond
 
   !> spherical truncation - truncate potential at certain distance
   INTEGER, PARAMETER :: SPHERICAL_TRUNCATION = 1
-  !> \cond
   CHARACTER(LEN=trunc_length), PARAMETER :: SPHERICAL_TRUNCATION_1 = 'on'
   CHARACTER(LEN=trunc_length), PARAMETER :: SPHERICAL_TRUNCATION_2 = 'true'
   CHARACTER(LEN=trunc_length), PARAMETER :: SPHERICAL_TRUNCATION_3 = 'yes'
   CHARACTER(LEN=trunc_length), PARAMETER :: SPHERICAL_TRUNCATION_4 = 'spherical'
   CHARACTER(LEN=trunc_length), PARAMETER :: SPHERICAL_TRUNCATION_5 = 'spherical truncation'
-  !> \endcond
 
   !> film geometry truncation (expects film in x-y plane) -
   !! truncate potential at certain height
   INTEGER, PARAMETER :: FILM_TRUNCATION = 2
-  !> \cond
   CHARACTER(LEN=trunc_length), PARAMETER :: FILM_TRUNCATION_1 = 'film'
   CHARACTER(LEN=trunc_length), PARAMETER :: FILM_TRUNCATION_2 = 'film truncation'
   CHARACTER(LEN=trunc_length), PARAMETER :: FILM_TRUNCATION_3 = '2d'
   CHARACTER(LEN=trunc_length), PARAMETER :: FILM_TRUNCATION_4 = '2d truncation'
-  !> \endcond
 
   PRIVATE truncate_bare, truncate_spherical, truncate_film
  
@@ -73,37 +67,39 @@ CONTAINS
   !! different methods implemented to truncate the quantity, which are selected by
   !! the first parameter.
   !!
-  !! \par No truncation 
+  !! <h4> No truncation </h4>
   !! The bare Coulomb potential is used and only the divergent terms are removed.
   !! To activate this truncation scheme, set truncation to 'none', 'off', 'false',
   !! 'no', or 'no truncation' in the input file.
   !!
-  !! \par Spherical truncation
+  !! <h4> Spherical truncation </h4>
   !! We truncate in real space at a certain radius R. In reciprocal space this leads
   !! to the prefactor \f$[1 - \cos(k R)]\f$. This prefactor expands to \f$(k R)^2 / 2\f$
   !! for small k cancelling the divergence of the Coulomb potential there. To activate
   !! this truncation scheme, set truncation to 'on', 'true', 'yes', 'spherical', or
   !! 'spherical truncation' in the input file.
   !!
-  !! \par Film truncation
+  !! <h4> Film truncation </h4>
   !! We truncate at a certain height Z, which eliminates the divergence in reciprocal
   !! space. For details refer to Ismail-Beigi, Phys. Rev. B 73, 233103 (2006). To
   !! activate this truncation scheme, set truncation to 'film', '2d', 'film truncation',
   !! or '2d truncation' in the input file.
   !!
-  !! \param[in] method Truncation method used; must be one of the integer constants
-  !!            defined in this module. 
-  !! \param[in] kpt Reciprocal lattice vector for which the quantity is truncated.
-  !! \return Coulomb potential in reciprocal space scaled according to the specified
-  !!         truncation scheme.
-  REAL(dp) FUNCTION truncate(method, kpt) RESULT (factor)
+  FUNCTION truncate(method, kpt) RESULT (factor)
 
     USE cell_base, ONLY: at, alat, omega
     USE constants, ONLY: fpi
     USE disp,      ONLY: nq1, nq2, nq3
 
+    !> Truncation method used; must be one of the integer constants
+    !! defined in this module.
     INTEGER,  INTENT(IN) :: method
+    !> Reciprocal lattice vector for which the quantity is truncated.
     REAL(dp), INTENT(IN) :: kpt(3)
+
+    !> Coulomb potential in reciprocal space scaled according to the specified
+    !! truncation scheme.
+    REAL(dp) factor
 
     REAL(dp) length_cut
 
