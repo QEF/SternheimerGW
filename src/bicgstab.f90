@@ -134,7 +134,7 @@ CONTAINS
   !!
   !! This subroutine implements the *Algorithm 2* of Fromme's paper.
   !!
-  SUBROUTINE bicgstab(lmax, threshold, AA, bb, sigma)
+  SUBROUTINE bicgstab(lmax, threshold, AA, bb, sigma, xx)
 
     !> Dimensionality of the GMRES algorithm.
     INTEGER,     INTENT(IN) :: lmax
@@ -153,17 +153,23 @@ CONTAINS
     END INTERFACE
 
     !> Right hand side of the linear equation.
-    COMPLEX(dp), INTENT(IN) :: bb(:)
+    COMPLEX(dp), INTENT(IN)  :: bb(:)
 
     !> Shift \f$\sigma\f$ in the linear operator. The first element of the array
     !! will be used as seed system. The other ones as shifted systems.
-    COMPLEX(dp), INTENT(IN) :: sigma(:)
+    COMPLEX(dp), INTENT(IN)  :: sigma(:)
 
     !> Stop when convergence threshold is reached.
-    REAL(dp),    INTENT(IN) :: threshold
+    REAL(dp),    INTENT(IN)  :: threshold
+
+    !> On output: the solution of the linear system
+    COMPLEX(dp), INTENT(OUT) :: xx(:,:)
 
     !> Size of the right-hand vector.
     INTEGER vec_size
+
+    !> loop over shifted systems
+    INTEGER ishift
 
     !> Counter for number of iterations.
     INTEGER iter
@@ -181,6 +187,14 @@ CONTAINS
 
     ! determine dimension of vector
     vec_size = SIZE(bb)
+
+    !
+    ! sanity check of the input
+    !
+    IF (SIZE(xx, 1) /= vec_size) &
+      CALL errore(__FILE__, "right-hand side and solution must have same size", 1)
+    IF (SIZE(xx, 2) /= SIZE(sigma)) &
+      CALL errore(__FILE__, "we need one solution vector per shift for the result", 1)
 
     !
     ! initialization seed system
@@ -217,6 +231,14 @@ CONTAINS
       CALL errore(__FILE__, "BiCGstab algorithm did not converge in given&
                            & number of iterations", max_iter)
     END IF
+
+    !
+    ! copy the result to the output array
+    !
+    CALL ZCOPY(vec_size, seed_system%xx, 1, xx(:,1), 1)
+    DO ishift = 2, SIZE(sigma)
+      CALL ZCOPY(vec_size, shift_system(ishift - 1)%xx, 1, xx(:,ishift), 1)
+    END DO ! ishift
 
     !
     ! destroy the allocated array in the types
