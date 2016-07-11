@@ -1,6 +1,15 @@
 Release notes
 =============
 
+Version 0.7
+-----------
+
+Added new routine to reorder arrays according to an igk array.
+Added automatic documentation options (Doxygen/Ford).
+Added some checks if the solver converged.
+Cleanup some unused files and variables within files.
+
+
 Version 0.6
 -----------
 
