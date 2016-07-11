@@ -52,6 +52,9 @@ MODULE bicgstab_module
     !> \f$\tilde r_0\f$ of Fromme's algorithm.
     COMPLEX(dp), ALLOCATABLE :: tilde_r0(:)
 
+    !> the shift of this system
+    COMPLEX(dp) sigma
+
     !> rho contains dot product of residuals
     COMPLEX(dp) rho
 
@@ -138,8 +141,10 @@ CONTAINS
 
     !> Function pointer that applies the linear operator to a vector.
     INTERFACE
-      SUBROUTINE AA(xx, Ax)
+      SUBROUTINE AA(sigma, xx, Ax)
         USE kinds, ONLY: dp
+        !> The shift of this system.
+        COMPLEX(dp), INTENT(IN)  :: sigma
         !> The input vector.
         COMPLEX(dp), INTENT(IN)  :: xx(:)
         !> The operator applied to the vector.
@@ -150,7 +155,8 @@ CONTAINS
     !> Right hand side of the linear equation.
     COMPLEX(dp), INTENT(IN) :: bb(:)
 
-    !> Shifts \f$\sigma\f$ relative to the seed system.
+    !> Shift \f$\sigma\f$ in the linear operator. The first element of the array
+    !! will be used as seed system. The other ones as shifted systems.
     COMPLEX(dp), INTENT(IN) :: sigma(:)
 
     !> Stop when convergence threshold is reached.
@@ -171,7 +177,7 @@ CONTAINS
 
     !> Contains the current best guess for the solution of the linear
     !! system and the corresponding residual in the shifted system.
-    TYPE(shift_system_type) shift_system(SIZE(sigma))
+    TYPE(shift_system_type) shift_system(SIZE(sigma) - 1)
 
     ! determine dimension of vector
     vec_size = SIZE(bb)
@@ -179,7 +185,7 @@ CONTAINS
     !
     ! initialization seed system
     !
-    CALL init_seed(lmax, bb, seed_system)
+    CALL init_seed(lmax, bb, sigma(1), seed_system)
 
     !
     ! initialization shifted systems
@@ -255,13 +261,16 @@ CONTAINS
   END FUNCTION converged
 
   !> Initialize the seed system.
-  SUBROUTINE init_seed(lmax, bb, seed_system)
+  SUBROUTINE init_seed(lmax, bb, sigma, seed_system)
 
     !> Dimensionality of the GMRES algorithm.
     INTEGER,     INTENT(IN) :: lmax
 
     !> Initial residual (right hand side of equation).
     COMPLEX(dp), INTENT(IN) :: bb(:)
+
+    !> The shift of the system that we will use as the seed system.
+    COMPLEX(dp), INTENT(IN) :: sigma
 
     !> On output contains the initialized seed system.
     TYPE(seed_system_type), INTENT(OUT) :: seed_system
@@ -292,6 +301,7 @@ CONTAINS
     seed_system%tilde_r0 = bb
 
     ! init the variables
+    seed_system%sigma     = sigma
     seed_system%rho_old   = 1.0
     seed_system%alpha_old = 1.0
     seed_system%alpha     = 0.0
@@ -329,7 +339,7 @@ CONTAINS
     COMPLEX(dp), INTENT(IN) :: sigma(:)
 
     !> On output contains the initialized shifted systems.
-    TYPE(shift_system_type), INTENT(OUT) :: shift_system(SIZE(sigma))
+    TYPE(shift_system_type), INTENT(OUT) :: shift_system(SIZE(sigma) - 1)
 
     !> counter over shifted systems
     INTEGER ishift
@@ -383,7 +393,7 @@ CONTAINS
     END DO ! j
 
     ! loop over all shifted systems
-    DO ishift = 1, SIZE(sigma)
+    DO ishift = 1, SIZE(sigma) - 1
 
       ! allocate arrays of given size
       ALLOCATE(shift_system(ishift)%uu(vec_size, 0:lmax))
@@ -401,15 +411,16 @@ CONTAINS
       shift_system(ishift)%xx = 0
 
       ! initialize the variables
-      shift_system(ishift)%sigma   = sigma(ishift)
       shift_system(ishift)%phi_old = 1.0
       shift_system(ishift)%phi     = 1.0
       shift_system(ishift)%theta   = 1.0
+      ! subtract the shift of the initial system
+      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
 
       ! construct sigma_pow array
       sigma_pow(0) = 1.0
       DO ii = 1, lmax - 1
-        sigma_pow(ii) = sigma(ishift) * sigma_pow(ii - 1)
+        sigma_pow(ii) = shift_system(ishift)%sigma * sigma_pow(ii - 1)
       END DO ! i
 
       ! construct mu_ij
@@ -473,8 +484,10 @@ CONTAINS
 
     !> Function pointer that applies the linear operator to a vector.
     INTERFACE
-      SUBROUTINE AA(xx, Ax)
+      SUBROUTINE AA(sigma, xx, Ax)
         USE kinds, ONLY: dp
+        !> The shift of this system.
+        COMPLEX(dp), INTENT(IN)  :: sigma
         !> The input vector.
         COMPLEX(dp), INTENT(IN)  :: xx(:)
         !> The operator applied to the vector.
@@ -555,7 +568,7 @@ CONTAINS
       END DO ! i
       !
       ! L10: u_j+1 = A u_j
-      CALL AA(seed_system%uu(:,jj), seed_system%uu(:, jj + 1))
+      CALL AA(seed_system%sigma, seed_system%uu(:,jj), seed_system%uu(:, jj + 1))
       !
       ! L11: alpha = rho / (u_j+1, ~r_0)
       seed_system%alpha = seed_system%rho &
@@ -623,7 +636,7 @@ CONTAINS
       END DO ! i
       !
       ! L24: r_j+1 = A r_j
-      CALL AA(seed_system%rr(:,jj), seed_system%rr(:, jj + 1))
+      CALL AA(seed_system%sigma, seed_system%rr(:,jj), seed_system%rr(:, jj + 1))
       !
       ! L25: x = x + alpha u0
       CALL ZAXPY(vec_size, seed_system%alpha, seed_system%uu(:,0), 1, seed_system%xx, 1)
