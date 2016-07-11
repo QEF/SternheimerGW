@@ -131,7 +131,7 @@ CONTAINS
   !!
   !! This subroutine implements the *Algorithm 2* of Fromme's paper.
   !!
-  SUBROUTINE bicgstab(lmax, AA, bb, sigma)
+  SUBROUTINE bicgstab(lmax, threshold, AA, bb, sigma)
 
     !> Dimensionality of the GMRES algorithm.
     INTEGER,     INTENT(IN) :: lmax
@@ -152,6 +152,9 @@ CONTAINS
 
     !> Shifts \f$\sigma\f$ relative to the seed system.
     COMPLEX(dp), INTENT(IN) :: sigma(:)
+
+    !> Stop when convergence threshold is reached.
+    REAL(dp),    INTENT(IN) :: threshold
 
     !> Size of the right-hand vector.
     INTEGER vec_size
@@ -191,10 +194,16 @@ CONTAINS
       !
       CALL bicg_part(lmax, AA, seed_system, shift_system)
 
+      ! stop loop if result is converged
+      IF (converged(threshold, seed_system%rr(:,0))) EXIT
+
       !
       ! perform MR part (Algorithm 4)
       !
       CALL mr_part(lmax, seed_system, shift_system)
+
+      ! stop loop if result is converged
+      IF (converged(threshold, seed_system%rr(:,0))) EXIT
 
     END DO ! iter
 
@@ -210,6 +219,40 @@ CONTAINS
     CALL destroy_shift(shift_system)
 
   END SUBROUTINE bicgstab
+
+  !> Check if the residual is below the given threshold.
+  FUNCTION converged(threshold, residual)
+
+    !> If the norm of the residual drops below this threshold, the system is
+    !! considered as converged.
+    REAL(dp),    INTENT(IN) :: threshold
+
+    !> The residual in the seed system of the multishift problem.
+    COMPLEX(dp), INTENT(IN) :: residual(:)
+
+    !> returns true, if the norm of the residual is smaller than the threshold
+    LOGICAL converged
+
+    !> size of the vector
+    INTEGER vec_size
+
+    !> norm of the residual
+    REAL(dp) norm_residual
+
+    !> BLAS function to evaluate the euclidian norm
+    REAL(dp), EXTERNAL :: DNRM2
+
+    ! determine vector size
+    ! note: factor 2 because we want to evaluate the norm of a complex vector
+    vec_size = 2 * SIZE(residual)
+
+    ! check residual of seed system
+    norm_residual = DNRM2(vec_size, residual, 1)
+
+    ! if the norm is smaller than the threshold the system is converged
+    converged = (norm_residual < threshold)
+
+  END FUNCTION converged
 
   !> Initialize the seed system.
   SUBROUTINE init_seed(lmax, bb, seed_system)
