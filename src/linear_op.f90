@@ -38,7 +38,7 @@ CONTAINS
 !!
 !! We evaluate the following equation
 !! \f{equation}{
-!!   A_n \psi_n = (H - \omega_n S + \alpha_{\text{pv}} P_{\text{v}}) \psi_n
+!!   A_n \psi_n = (H + \omega_n S + \alpha_{\text{pv}} P_{\text{v}}) \psi_n
 !! \f}
 !! Here H is the Hamiltonian, S is the overlap matrix, \f$P_{\text{v}}\f$ is the
 !! projector onto the valence bands.
@@ -68,7 +68,7 @@ SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
   !> The vector \f$\psi\f$ to which the shifted Hamiltonian is applied.
   COMPLEX(dp), INTENT(IN)  :: psi(:,:)
 
-  !> On output, the vector \f$(H - \omega S + \alpha_{\text{pv}} P_{\text{v}}) \psi\f$
+  !> On output, the vector \f$(H + \omega S + \alpha_{\text{pv}} P_{\text{v}}) \psi\f$
   COMPLEX(dp), INTENT(OUT) :: A_psi(:,:)
 
   !> total vector size (npwx * npol).
@@ -116,12 +116,12 @@ SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
   CALL s_psi (npwx, num_g, num_band, psi, spsi)
 
   !
-  ! we compute (H - omega S) psi
+  ! we compute (H + omega S) psi
   !
   DO iband = 1, num_band
-    CALL ZAXPY(num_g, -omega(iband), spsi(1, iband), 1, A_psi(1, iband), 1)
+    CALL ZAXPY(num_g, omega(iband), spsi(1, iband), 1, A_psi(1, iband), 1)
     IF (noncolin) &
-      CALL ZAXPY(num_g, -omega(iband), spsi(npwx + 1, iband), 1, A_psi(npwx + 1, iband), 1)
+      CALL ZAXPY(num_g, omega(iband), spsi(npwx + 1, iband), 1, A_psi(npwx + 1, iband), 1)
   END DO ! iband
 
   !

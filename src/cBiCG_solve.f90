@@ -89,6 +89,9 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
 
   COMPLEX(DP)  :: cw
 
+  !> The sum of frequency and eigenvalue.
+  COMPLEX(dp) :: omega(nbnd)
+
   INTEGER :: maxter
 
 !HL need to introduce gt tt ht htold for BICON
@@ -152,7 +155,8 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
     ! rt   = conjg ( r )
      if (iter .eq. 1) then
         !rt = conjg (r) 
-        CALL linear_op(ikqs(ik), ndim, e + cw, alpha_pv, dpsi, g)
+        omega = e + cw
+        CALL linear_op(ikqs(ik), ndim, -omega, alpha_pv, dpsi, g)
         do ibnd = 1, nbnd
         !r = A*x -b:
            call zaxpy (ndim, (-1.d0,0.d0), d0psi(1,ibnd), 1, g(1,ibnd), 1)
@@ -206,8 +210,10 @@ integer ::   ndmx, & ! input: the maximum dimension of the vectors
         endif
     enddo
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + cw, alpha_pv, hold(:,1:lbnd), t(:,1:lbnd))
-    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + conjg(cw), alpha_pv, htold(:,1:lbnd), tt(:,1:lbnd))
+    omega(:lbnd) = eu(:lbnd) + cw
+    CALL linear_op(ikqs(ik), ndim, -omega(:lbnd), alpha_pv, hold(:,1:lbnd), t(:,1:lbnd))
+    omega(:lbnd) = eu(:lbnd) + conjg(cw)
+    CALL linear_op(ikqs(ik), ndim, -omega(:lbnd), alpha_pv, htold(:,1:lbnd), tt(:,1:lbnd))
 
     lbnd=0
     do ibnd = 1, nbnd

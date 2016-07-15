@@ -69,6 +69,7 @@ IMPLICIT NONE
   complex(DP), parameter    :: cone = (1.0d0,0.0d0), czero=(0.0d0, 0.0d0)
   complex(DP), external     :: zdotc
   complex(DP)               :: freq(nfreq)
+  complex(DP)               :: omega(nbnd)
 
   real(DP)                  :: anorm,   &               ! output: the norm of the error in the solution
                                ethr,    &               ! input: the required precision
@@ -211,8 +212,10 @@ IMPLICIT NONE
         endif
      enddo
 !****************** THIS IS THE MOST EXPENSIVE PART ****************** !
-    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + cwpsi, alpha_pv, hold(:,1:lbnd), t(:,1:lbnd))
-    CALL linear_op(ikqs(ik), ndim, eu(1:lbnd) + conjg(cwpsi), alpha_pv, htold(:,1:lbnd), tt(:,1:lbnd))
+    omega(:lbnd) = eu(:lbnd) + cwpsi
+    CALL linear_op(ikqs(ik), ndim, -omega(:lbnd), alpha_pv, hold(:,1:lbnd), t(:,1:lbnd))
+    omega(:lbnd) = eu(:lbnd) + conjg(cwpsi)
+    CALL linear_op(ikqs(ik), ndim, -omega(:lbnd), alpha_pv, htold(:,1:lbnd), tt(:,1:lbnd))
 
     lbnd=0
     do ibnd = 1, nbnd

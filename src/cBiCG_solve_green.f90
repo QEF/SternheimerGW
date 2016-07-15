@@ -61,6 +61,7 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   !  the conjugate gradient
   !  work space
   complex(DP)  :: cw
+  complex(DP) :: omega(nbnd)
   complex(DP) :: alphabeta(2), beta_old
   complex(DP) :: alpha1, beta1
   complex(DP) :: dpsi  (ndmx*npol, nbnd), & ! output: the solution of the linear syst
@@ -117,8 +118,9 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
   do iter = 1, maxter_green
      if (iter .eq. 1) then
 !r = b - A* x
-!rt = conjg (r) 
-        call linear_op(nks + 1, ndim, e + cw, alpha_pv, dpsi, g)
+!rt = conjg (r)
+        omega = e + cw
+        call linear_op(nks + 1, ndim, -omega, alpha_pv, dpsi, g)
         do ibnd = 1, nbnd
 !initial residual should be r = b
 !          call davcio (d0psi(:,1), lrresid, iunresid, iter, +1)
@@ -153,8 +155,10 @@ SUBROUTINE cbcg_solve_green(h_psi, cg_psi, e, d0psi, dpsi, h_diag, &
      enddo
      if (conv_root) goto 100
 !****************** THIS IS THE MOST EXPENSIVE PART**********************!
-     call linear_op(nks + 1, ndim, e + cw, alpha_pv, h, t)
-     call linear_op(nks + 1, ndim, e + conjg(cw), alpha_pv, ht, tt)
+     omega = e + cw
+     call linear_op(nks + 1, ndim, -omega, alpha_pv, h, t)
+     omega = e + conjg(cw)
+     call linear_op(nks + 1, ndim, -omega, alpha_pv, ht, tt)
      lbnd=0
      do ibnd = 1, nbnd
         if (conv (ibnd) .eq.0) then
