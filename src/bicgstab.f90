@@ -23,7 +23,7 @@
 !> Shifted BiCGStab(l) solver for linear equation \f$(A + \sigma I) x = b\f$.
 !!
 !! Implements the shifted BiCGStab(l) algorithm according to the paper of
-!! Fromme, Computing **70**, 87 (2003). The general idea is that the matrix
+!! Frommer, Computing **70**, 87 (2003). The general idea is that the matrix
 !! \f$A\f$ and \f$A + \sigma I\f$ span the same Krylov subspace. Hence, we can
 !! solve the linear equation of all linear problems at the cost of a single one.
 !!
@@ -49,7 +49,7 @@ MODULE bicgstab_module
     !> residual vector
     COMPLEX(dp), ALLOCATABLE :: rr(:,:)
 
-    !> \f$\tilde r_0\f$ of Fromme's algorithm.
+    !> \f$\tilde r_0\f$ of Frommer's algorithm.
     COMPLEX(dp), ALLOCATABLE :: tilde_r0(:)
 
     !> the shift of this system
@@ -58,28 +58,28 @@ MODULE bicgstab_module
     !> rho contains dot product of residuals
     COMPLEX(dp) rho
 
-    !> \f$\rho_{\text{old}}\f$ of Fromme's algorithm
+    !> \f$\rho_{\text{old}}\f$ of Frommer's algorithm
     COMPLEX(dp) rho_old
 
-    !> \f$\alpha\f$ of Fromme's algorithm
+    !> \f$\alpha\f$ of Frommer's algorithm
     COMPLEX(dp) alpha
 
-    !> \f$\alpha_{\text{old}}\f$ of Fromme's algorithm
+    !> \f$\alpha_{\text{old}}\f$ of Frommer's algorithm
     COMPLEX(dp) alpha_old
 
     !> beta determines step size
     COMPLEX(dp) beta
 
-    !> \f$\omega\f$ of Fromme's algorithm
+    !> \f$\omega\f$ of Frommer's algorithm
     COMPLEX(dp) omega
   
-    !> \f$\gamma\f$ of Fromme's algorithm
+    !> \f$\gamma\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: gamma(:)
 
-    !> \f$\gamma'\f$ of Fromme's algorithm
+    !> \f$\gamma'\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: gamma_p(:)
 
-    !> \f$\gamma''\f$ of Fromme's algorithm
+    !> \f$\gamma''\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: gamma_pp(:)
 
   END TYPE seed_system_type
@@ -96,34 +96,34 @@ MODULE bicgstab_module
     !> the shift of this system
     COMPLEX(dp) sigma
 
-    !> \f$\phi_{\text{old}}^\sigma\f$ of Fromme's algorithm
+    !> \f$\phi_{\text{old}}^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) phi_old
 
-    !> \f$\phi^\sigma\f$ of Fromme's algorithm
+    !> \f$\phi^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) phi
 
-    !> \f$\phi_{\text{new}}^\sigma\f$ of Fromme's algorithm
+    !> \f$\phi_{\text{new}}^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) phi_new
 
-    !> \f$\vartheta^\sigma\f$ of Fromme's algorithm
+    !> \f$\vartheta^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) theta
 
-    !> \f$\alpha^\sigma\f$ of Fromme's algorithm
+    !> \f$\alpha^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) alpha
 
-    !> \f$\beta^\sigma\f$ of Fromme's algorithm
+    !> \f$\beta^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) beta
 
-    !> \f$\mu_{ij}\f$ of Fromme's algorithm
+    !> \f$\mu_{ij}\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: mu(:)
 
-    !> \f$\gamma\f$ of Fromme's algorithm
+    !> \f$\gamma\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: gamma(:)
 
-    !> \f$\gamma'\f$ of Fromme's algorithm
+    !> \f$\gamma'\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: gamma_p(:)
 
-    !> \f$\gamma''\f$ of Fromme's algorithm
+    !> \f$\gamma''\f$ of Frommer's algorithm
     COMPLEX(dp), ALLOCATABLE :: gamma_pp(:)
 
   END TYPE shift_system_type
@@ -132,7 +132,7 @@ CONTAINS
 
   !> Main driver routine of the algorithm.
   !!
-  !! This subroutine implements the *Algorithm 2* of Fromme's paper.
+  !! This subroutine implements the *Algorithm 2* of Frommer's paper.
   !!
   SUBROUTINE bicgstab(lmax, threshold, AA, bb, sigma, xx)
 
@@ -437,7 +437,8 @@ CONTAINS
       shift_system(ishift)%phi     = 1.0
       shift_system(ishift)%theta   = 1.0
       ! subtract the shift of the initial system
-      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
+!      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
+      shift_system(ishift)%sigma   = sigma(1) - sigma(ishift + 1)
 
       ! construct sigma_pow array
       sigma_pow(0) = 1.0
@@ -497,7 +498,7 @@ CONTAINS
 
   !> The BiCG part of the BiCGstab algorithm.
   !!
-  !! This subroutine implements the *Algorithm 3* of Fromme's paper.
+  !! This subroutine implements the *Algorithm 3* of Frommer's paper.
   !!
   SUBROUTINE bicg_part(lmax, AA, seed_system, shift_system)
 
@@ -561,8 +562,8 @@ CONTAINS
     num_shift = SIZE(shift_system)
 
     !
-    ! Fromme's algorithm 3
-    ! Note: the L?? refers to the line numbers given in Fromme's paper
+    ! Frommer's algorithm 3
+    ! Note: the L?? refers to the line numbers given in Frommer's paper
     !       we abbreviate the superscript sigma with ^
     !
     ! L3: rho_old = - omega * rho_old
@@ -682,7 +683,7 @@ CONTAINS
 
   !> The MR part of the BiCGstab algorithm.
   !!
-  !! This subroutine implements the *Algorithm 4* of Fromme's paper.
+  !! This subroutine implements the *Algorithm 4* of Frommer's paper.
   !!
   SUBROUTINE mr_part(lmax, seed_system, shift_system)
 
@@ -723,16 +724,16 @@ CONTAINS
     !> Temporary storage for prefactors
     COMPLEX(dp) factor
 
-    !> The variable \f$\xi\f$ of Fromme's algorithm.
+    !> The variable \f$\xi\f$ of Frommer's algorithm.
     COMPLEX(dp) xi
 
-    !> The variable \f$\psi\f$ of Fromme's algorithm.
+    !> The variable \f$\psi\f$ of Frommer's algorithm.
     COMPLEX(dp) psi
 
-    !> The vector \f$\nu\f$ of Fromme's algorithm.
+    !> The vector \f$\nu\f$ of Frommer's algorithm.
     COMPLEX(dp), ALLOCATABLE :: nu(:)
 
-    !> The array \f$\tau\f$ of Fromme's algorithm.
+    !> The array \f$\tau\f$ of Frommer's algorithm.
     COMPLEX(dp), ALLOCATABLE :: tau(:)
 
     ! BLAS dot product routine
@@ -749,8 +750,8 @@ CONTAINS
     num_shift = SIZE(shift_system)
 
     !
-    ! Fromme's algorithm 4
-    ! Note: the L?? refers to the line numbers given in Fromme's paper
+    ! Frommer's algorithm 4
+    ! Note: the L?? refers to the line numbers given in Frommer's paper
     !       we abbreviate the superscript sigma with ^
     !
     ! modified Gram-Schmidt orthogonalization
@@ -866,8 +867,10 @@ CONTAINS
       ! L28: x^ = x^ + gamma_1'^ / xi r_0
       factor = active%gamma_p(1) / xi
       CALL ZAXPY(vec_size, factor, seed_system%rr(:,0), 1, active%xx, 1)
-      !      u0^ = u0^ - gamma_l u_l
-      CALL ZAXPY(vec_size, -seed_system%gamma(lmax), seed_system%uu(:,lmax), 1, &
+      !      u_0^ = u_0^ - gamma_l u_l^
+      ! note: the latter equation is incorrect in Frommer's paper
+      !       where u_l instead of u_l^ is used
+      CALL ZAXPY(vec_size, -seed_system%gamma(lmax), active%uu(:,lmax), 1, &
                  active%uu(:,0), 1)
       !
       ! L29: loop over GMRES iterations
@@ -909,7 +912,7 @@ CONTAINS
 
   !> The Horner's scheme part of the BiCGstab algorithm.
   !!
-  !! This subroutine implements the *Algorithm 5* of Fromme's paper.
+  !! This subroutine implements the *Algorithm 5* of Frommer's paper.
   !!
   !! Computes \f$\gamma^\sigma_j$ and $\psi^\sigma$ for the shifted
   !! system from the values in the seed system and the shift 
@@ -939,7 +942,7 @@ CONTAINS
     lmax = SIZE(seed_gamma)
 
     !
-    ! Fromme's algorithm 5
+    ! Frommer's algorithm 5
     ! Note: we abbreviate the superscript sigma with ^
     !
     ! gamma_l^ = -gamma_l
