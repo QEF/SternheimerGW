@@ -251,6 +251,8 @@ godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
 godby_needs.o : ../../Modules/mp_world.o
 green.o : ../../Modules/kind.o
+green.o : ../../PW/src/pwcom.o
+green.o : linear_op.o
 green.o : timing.o
 green_linsys_shift_im.o : ../../LR_Modules/lrcom.o
 green_linsys_shift_im.o : ../../Modules/cell_base.o
