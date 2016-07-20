@@ -45,6 +45,7 @@ gauleg_grid.o\
 gk_sort_safe.o\
 gmap_sym.o\
 godby_needs.o\
+green.o\
 green_linsys_shift_im.o\
 green_linsys_shift_re.o\
 green_multishift.o\
