@@ -25,10 +25,86 @@ MODULE green_module
 
   IMPLICIT NONE
 
-  PUBLIC green_function
+  PUBLIC green_function, green_prepare
   PRIVATE
 
 CONTAINS
+
+  !> Prepare the QE global modules, so that the Green's function can be evaluated.
+  !!
+  !! Because QE stores some information in global modules, we need to initialize
+  !! those quantities appropriatly so that the function calls work as intented.
+  !!
+  SUBROUTINE green_prepare(kpt, gcutcorr, igk_corr)
+
+    USE cell_base,         ONLY: tpiba2
+    USE expand_igk_module, ONLY: expand_igk
+    USE gvect,             ONLY: g, ngm
+    USE gvecw,             ONLY: ecutwfc
+    USE kinds,             ONLY: dp
+    USE klist,             ONLY: igk_k, ngk, xk, nks
+    USE uspp,              ONLY: vkb
+    USE wvfct,             ONLY: npw, igk, g2kin
+
+    !> The k-point at which the Green's function is evaluated.
+    REAL(dp), INTENT(IN) :: kpt(3)
+
+    !> The G-vector cutoff for the correlation.
+    INTEGER,  INTENT(IN) :: gcutcorr
+
+    !> The map from G-vectors at current k to global array.
+    INTEGER,  INTENT(OUT), ALLOCATABLE :: igk_corr(:)
+
+    !> number of G-vectors for correlation
+    INTEGER num_g
+
+    !> loop variable for G-vectors
+    INTEGER ig
+
+    !> current active index of output igk array
+    INTEGER indx
+
+    ! evaluate the igk-map of the current k-point
+    CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), npw, igk, g2kin)
+
+    ! rescale to lattice units
+    g2kin = g2kin * tpiba2
+
+    ! store the igk of the k-point in an extra element
+    CALL expand_igk()
+    igk_k(:, nks + 1) = igk
+    ngk(nks + 1) = npw
+    xk(:, nks + 1) = kpt
+
+    !
+    ! create the output igk array
+    !
+    ! count the number of G vectors used for correlation
+    num_g = COUNT((igk > 0) .AND. (igk <= gcutcorr))
+
+    ! allocate the array
+    ALLOCATE(igk_corr(num_g))
+
+    ! loop over all G and find matching elements
+    indx = 0
+    DO ig = 1, npw
+
+      ! igk within bounds
+      IF (igk(ig) > 0 .AND. igk(ig) <= gcutcorr) THEN
+        indx = indx + 1
+        igk_corr(indx) = igk(ig)
+        IF (indx == num_g) EXIT
+      END IF ! matching igk
+
+    END DO ! ig
+
+    !
+    ! call necessary global initialize routines
+    !
+    ! initialize PP projectors
+    CALL init_us_2(npw, igk, kpt, vkb)
+
+  END SUBROUTINE green_prepare
 
   !> Evaluate the Green's function of the system.
   !!

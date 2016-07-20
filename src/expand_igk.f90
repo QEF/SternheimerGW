@@ -42,6 +42,9 @@ CONTAINS
     !> temporary array storing the old ngk
     INTEGER, ALLOCATABLE :: ngk_tmp(:)
 
+    ! trivial case - already appropriate size
+    IF (SIZE(igk_k, 2) > nks) RETURN
+
     ! copy old igk and ngk to temporary array
     ALLOCATE(igk_k_tmp(npwx, nks))
     ALLOCATE(ngk_tmp(nks))
@@ -51,8 +54,8 @@ CONTAINS
     ! reallocate igk_k and ngk increasing the size by one
     DEALLOCATE(igk_k)
     DEALLOCATE(ngk)
-    ALLOCATE(igk_k(npwx, nks+1))
-    ALLOCATE(ngk(nks+1))
+    ALLOCATE(igk_k(npwx, nks + 1))
+    ALLOCATE(ngk(nks + 1))
 
     ! copy the temporary array in the new igk_k and ngk
     igk_k(:,:nks) = igk_k_tmp
