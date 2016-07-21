@@ -35,7 +35,7 @@ CONTAINS
   !! Because QE stores some information in global modules, we need to initialize
   !! those quantities appropriatly so that the function calls work as intented.
   !!
-  SUBROUTINE green_prepare(kpt, gcutcorr, igk_corr)
+  SUBROUTINE green_prepare(kpt, gcutcorr, map)
 
     USE cell_base,         ONLY: tpiba2
     USE expand_igk_module, ONLY: expand_igk
@@ -43,6 +43,7 @@ CONTAINS
     USE gvecw,             ONLY: ecutwfc
     USE kinds,             ONLY: dp
     USE klist,             ONLY: igk_k, ngk, xk, nks
+    USE reorder_mod,       ONLY: create_map
     USE uspp,              ONLY: vkb
     USE wvfct,             ONLY: npw, igk, g2kin
 
@@ -53,7 +54,7 @@ CONTAINS
     INTEGER,  INTENT(IN) :: gcutcorr
 
     !> The map from G-vectors at current k to global array.
-    INTEGER,  INTENT(OUT), ALLOCATABLE :: igk_corr(:)
+    INTEGER,  INTENT(OUT), ALLOCATABLE :: map(:)
 
     !> number of G-vectors for correlation
     INTEGER num_g
@@ -63,6 +64,9 @@ CONTAINS
 
     !> current active index of output igk array
     INTEGER indx
+
+    !> temporary copy of the map array
+    INTEGER, ALLOCATABLE :: map_(:)
 
     ! evaluate the igk-map of the current k-point
     CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), npw, igk, g2kin)
@@ -77,26 +81,21 @@ CONTAINS
     xk(:, nks + 1) = kpt
 
     !
-    ! create the output igk array
+    ! create the output map array
     !
     ! count the number of G vectors used for correlation
     num_g = COUNT((igk > 0) .AND. (igk <= gcutcorr))
 
     ! allocate the array
-    ALLOCATE(igk_corr(num_g))
+    ALLOCATE(map(num_g))
+    ALLOCATE(map_(SIZE(igk)))
 
-    ! loop over all G and find matching elements
-    indx = 0
-    DO ig = 1, npw
+    ! create the map and copy to result array
+    map_ = create_map(igk, gcutcorr)
+    map = map_(:gcutcorr)
 
-      ! igk within bounds
-      IF (igk(ig) > 0 .AND. igk(ig) <= gcutcorr) THEN
-        indx = indx + 1
-        igk_corr(indx) = igk(ig)
-        IF (indx == num_g) EXIT
-      END IF ! matching igk
-
-    END DO ! ig
+    ! free memory
+    DEALLOCATE(map_)
 
     !
     ! call necessary global initialize routines
@@ -116,7 +115,7 @@ CONTAINS
   !! where \f$H_k\f$ is the Hamiltonian at a certain k-point, \f$\omega\f$ is
   !! the frequency, and \f$\delta_{G,G'}\f$ is the Kronecker delta.
   !!
-  SUBROUTINE green_function(comm, multishift, lmax, threshold, igk, num_g, omega, green)
+  SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green)
 
     USE bicgstab_module, ONLY: bicgstab
     USE kinds,           ONLY: dp
@@ -136,9 +135,10 @@ CONTAINS
     !> Threshold for the convergence of the linear system.
     REAL(dp),    INTENT(IN)  :: threshold
 
-    !> The list from global G vector order to current k-point.
+    !> The reverse list from global G vector order to current k-point.
+    !! Generate this by a call to create_map in reorder.
     !! @note this should be reduced to the correlation cutoff
-    INTEGER,     INTENT(IN)  :: igk(:)
+    INTEGER,     INTENT(IN)  :: map(:)
 
     !> The number of G-vectors at the k-point.
     INTEGER,     INTENT(IN)  ::  num_g
@@ -193,8 +193,8 @@ CONTAINS
       CALL errore(__FILE__, "Green's function should be num_g_c x num_g_c x num_freq", 1)
     IF (SIZE(green, 3) /= num_freq) &
       CALL errore(__FILE__, "Green's function and omega are inconsistent", 1)
-    IF (SIZE(igk) /= num_g_corr) &
-      CALL errore(__FILE__, "mismatch in size of igk and Green's function", 1)
+    IF (SIZE(map) /= num_g_corr) &
+      CALL errore(__FILE__, "mismatch in size of map and Green's function", 1)
 
     ! allocate array for the right hand side
     ALLOCATE(bb(num_g), STAT = ierr)
@@ -220,7 +220,7 @@ CONTAINS
 
       ! set right-hand side
       bb = zero
-      bb(ig) = -one
+      bb(map(ig)) = -one
 
       ! if multishift is set, we solve all frequencies at once
       IF (multishift) THEN
@@ -229,7 +229,7 @@ CONTAINS
         CALL bicgstab(lmax, threshold, green_operator, bb, omega, green_part)
 
         ! copy from temporary array to result
-        green(igk, igk(ig), :) = green_part(:num_g_corr, :)
+        green(:, ig, :) = green_part(map, :)
 
       ! without multishift, we solve every frequency separately
       ELSE
@@ -240,7 +240,7 @@ CONTAINS
           CALL bicgstab(lmax, threshold, green_operator, bb, omega(ifreq:ifreq), green_part)
 
           ! copy from temporary array to result
-          green(igk, igk(ig), ifreq) = green_part(:num_g_corr, 1)
+          green(:, ig, ifreq) = green_part(map, 1)
 
         END DO ! ifreq
 
