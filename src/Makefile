@@ -65,8 +65,7 @@ mod_diel.o\
 openfilq.o\
 opengwfil.o\
 pade.o\
-para_img.o\
-para_pool.o\
+parallel.o\
 pp_output.o\
 prepare_q.o\
 prepare_q0.o\

@@ -54,6 +54,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE mp_world,             ONLY : nproc, mpime
   USE nlcc_gw,              ONLY : nlcc_any
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
+  USE parallel_module,      ONLY : parallel_task 
   USE qpoint,               ONLY : xq, npwq, igkq, nksq, ikks, ikqs
   USE timing_module,        ONLY : time_green
   USE units_gw,             ONLY : iuwfc, lrwfc, iuwfcna, iungreen, lrgrn
@@ -85,6 +86,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   integer :: iq, ik0
   integer :: rec0, n1, gveccount
   integer, allocatable      :: niters(:)
+  integer, allocatable :: num_task(:)
   integer :: kter,       & ! counter on iterations
              iter0,      & ! starting iteration
              ipert,      & ! counter on perturbations
@@ -182,7 +184,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 !On first frequency block we do the seed system with BiCG:
     gveccount = 1
     if(multishift) gr_A_shift = (0.0d0, 0.d0)
-    call para_img(counter, igstart, igstop)
+    call parallel_task(inter_image_comm, counter, igstart, igstop, num_task)
 !allocate list to keep track of the number of residuals for each G-vector:
     ngvecs = igstop-igstart + 1
     if(.not.allocated(niters)) ALLOCATE(niters(ngvecs))

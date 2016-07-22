@@ -55,6 +55,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE mp_pools,          ONLY : inter_pool_comm
   USE mp_world,          ONLY : nproc, mpime
   USE output_mod,        ONLY : filcoul
+  USE parallel_module,   ONLY : parallel_task
   USE qpoint,            ONLY : xq, npwq, nksq, ikks, ikqs
   USE sigma_io_module,   ONLY : sigma_io_write_c
   USE symm_base,         ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
@@ -138,6 +139,8 @@ SUBROUTINE sigma_c_re(ik0)
   logical :: found_k
   INTEGER :: ikstar, ik1
 
+  INTEGER, ALLOCATABLE :: num_task(:)
+
 #define DIRECT_IO_FACTOR 8 
 
    CALL start_clock(time_sigma_c)
@@ -192,7 +195,8 @@ SUBROUTINE sigma_c_re(ik0)
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 #endif
-  CALL para_img(nwsigma, iw0start, iw0stop)
+  CALL parallel_task(inter_image_comm, nwsigma, iw0start, iw0stop, num_task)
+  DEALLOCATE(num_task)
   WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
   WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !ONLY PROCESSORS WITH K points to process: 

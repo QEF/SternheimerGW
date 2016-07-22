@@ -1,0 +1,183 @@
+! test if distribution of task across process grid works
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_parallel_task(this)
+
+  USE parallel_module, ONLY: parallel_task
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! 32 tasks should be split evenly on 2 and 4, but not on three processes
+  INTEGER, PARAMETER :: num_task_1 = 32
+
+  ! 47 tasks should always have a remainder unless we use only 1 process
+  INTEGER, PARAMETER :: num_task_2 = 47
+
+  ! test if the code works when the number of tasks is smaller than number of processes
+  INTEGER, PARAMETER :: num_task_3 = 2
+
+  ! the MPI communicator, its size, and the rank of this process
+  INTEGER comm, size, rank
+
+  ! result of the tests
+  INTEGER first_task, last_task
+  INTEGER, ALLOCATABLE :: num_task(:)
+
+  comm = this%getMpiCommunicator()
+  size = this%getNumProcesses()
+  rank = this%getProcessRank()
+
+  !
+  ! first test - split num_task_1 tasks over processes
+  !
+  CALL parallel_task(comm, num_task_1, first_task, last_task, num_task)
+  SELECT CASE (size)
+  CASE (1)
+    @assertEqual([32], num_task)
+    @assertEqual(1, first_task)
+    @assertEqual(32, last_task)
+  CASE (2)
+    @assertEqual([16, 16], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(16, last_task)
+    CASE (1)
+      @assertEqual(17, first_task)
+      @assertEqual(32, last_task)
+    END SELECT ! rank
+  CASE (3)
+    @assertEqual([10, 11, 11], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(10, last_task)
+    CASE (1)
+      @assertEqual(11, first_task)
+      @assertEqual(21, last_task)
+    CASE (2)
+      @assertEqual(22, first_task)
+      @assertEqual(32, last_task)
+    END SELECT ! rank
+  CASE (4)
+    @assertEqual([8, 8, 8, 8], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(8, last_task)
+    CASE (1)
+      @assertEqual(9, first_task)
+      @assertEqual(16, last_task)
+    CASE (2)
+      @assertEqual(17, first_task)
+      @assertEqual(24, last_task)
+    CASE (3)
+      @assertEqual(25, first_task)
+      @assertEqual(32, last_task)
+    END SELECT ! rank
+  END SELECT ! size
+
+  !
+  ! second test - split num_task_2 tasks over processes
+  !
+  CALL parallel_task(comm, num_task_2, first_task, last_task, num_task)
+  SELECT CASE (size)
+  CASE (1)
+    @assertEqual([47], num_task)
+    @assertEqual(1, first_task)
+    @assertEqual(47, last_task)
+  CASE (2)
+    @assertEqual([23, 24], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(23, last_task)
+    CASE (1)
+      @assertEqual(24, first_task)
+      @assertEqual(47, last_task)
+    END SELECT ! rank
+  CASE (3)
+    @assertEqual([15, 16, 16], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(15, last_task)
+    CASE (1)
+      @assertEqual(16, first_task)
+      @assertEqual(31, last_task)
+    CASE (2)
+      @assertEqual(32, first_task)
+      @assertEqual(47, last_task)
+    END SELECT ! rank
+  CASE (4)
+    @assertEqual([11, 12, 12, 12], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(11, last_task)
+    CASE (1)
+      @assertEqual(12, first_task)
+      @assertEqual(23, last_task)
+    CASE (2)
+      @assertEqual(24, first_task)
+      @assertEqual(35, last_task)
+    CASE (3)
+      @assertEqual(36, first_task)
+      @assertEqual(47, last_task)
+    END SELECT ! rank
+  END SELECT ! size
+
+  !
+  ! third test - split num_task_3 tasks over processes
+  !
+  CALL parallel_task(comm, num_task_3, first_task, last_task, num_task)
+  SELECT CASE (size)
+  CASE (1)
+    @assertEqual([2], num_task)
+    @assertEqual(1, first_task)
+    @assertEqual(2, last_task)
+  CASE (2)
+    @assertEqual([1, 1], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(1, last_task)
+    CASE (1)
+      @assertEqual(2, first_task)
+      @assertEqual(2, last_task)
+    END SELECT ! rank
+  CASE (3)
+    @assertEqual([0, 1, 1], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(0, last_task)
+    CASE (1)
+      @assertEqual(1, first_task)
+      @assertEqual(1, last_task)
+    CASE (2)
+      @assertEqual(2, first_task)
+      @assertEqual(2, last_task)
+    END SELECT ! rank
+  CASE (4)
+    @assertEqual([0, 0, 1, 1], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(0, last_task)
+    CASE (1)
+      @assertEqual(1, first_task)
+      @assertEqual(0, last_task)
+    CASE (2)
+      @assertEqual(1, first_task)
+      @assertEqual(1, last_task)
+    CASE (3)
+      @assertEqual(2, first_task)
+      @assertEqual(2, last_task)
+    END SELECT ! rank
+  END SELECT ! size
+
+END SUBROUTINE test_parallel_task

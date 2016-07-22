@@ -52,6 +52,7 @@ SUBROUTINE sigma_c_im(ik0)
                                 me_image, nproc_image, inter_image_comm
   USE mp_pools,          ONLY : inter_pool_comm
   USE mp_world,          ONLY : nproc, mpime
+  USE parallel_module,   ONLY : parallel_task
   USE output_mod,        ONLY : filcoul
   USE qpoint,            ONLY : xq, npwq, nksq, ikks, ikqs
   USE sigma_io_module,   ONLY : sigma_io_write_c
@@ -133,6 +134,8 @@ SUBROUTINE sigma_c_im(ik0)
   integer  :: imq, isq(48), nqstar
   integer  :: nsq(48), i, nsymrot, iq1
 
+  integer, allocatable :: num_task(:)
+
 #define DIRECT_IO_FACTOR 8 
 
    CALL start_clock(time_sigma_c)
@@ -201,7 +204,8 @@ SUBROUTINE sigma_c_im(ik0)
    open(iuncoul, file = trim(adjustl(tempfile)), iostat = ios, &
    form = 'unformatted', status = 'OLD', access = 'direct', recl = unf_recl)
 #endif
-  call para_img(nwsigma, iw0start, iw0stop)
+  call parallel_task(inter_image_comm, nwsigma, iw0start, iw0stop, num_task)
+  DEALLOCATE(num_task)
   write(stdout, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
   write(stdout,'("Starting Frequency Integration")')
   call get_homo_lumo (ehomo, elumo)
@@ -214,7 +218,8 @@ SUBROUTINE sigma_c_im(ik0)
   call mp_bcast(mu, ionode_id ,inter_pool_comm)
   call mp_barrier(inter_pool_comm)
   nsymm1 = 1.0d0/dble(nsym)
-  call para_pool(nqs,iqstart,iqstop)
+  call parallel_task(inter_pool_comm, nqs, iqstart, iqstop, num_task)
+  DEALLOCATE(num_task)
 
   CALL stop_clock(time_sigma_setup)
 

@@ -36,11 +36,13 @@ SUBROUTINE do_stern()
                                my_image_id, nimage, root_image
   USE mp_world,         ONLY : mpime
   USE noncollin_module, ONLY : noncolin, nspin_mag
+  USE parallel_module,  ONLY : parallel_task
   USE timing_module,    ONLY : time_coulomb, time_coul_nscf
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
 
+  INTEGER, ALLOCATABLE :: num_task(:)
   INTEGER :: iq, ik, ig, igstart, igstop, ios, iq1, iq2
   COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
   LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel, lgamma
@@ -115,7 +117,8 @@ IMPLICIT NONE
       enddo
     endif
        if(nimage.gt.1) then
-          call para_img(ngmunique, igstart, igstop)
+          call parallel_task(inter_image_comm, ngmunique, igstart, igstop, num_task)
+          DEALLOCATE (num_task)
        else
           igstart = 1
           igstop = ngmunique
