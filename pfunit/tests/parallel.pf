@@ -197,6 +197,9 @@ SUBROUTINE test_mp_allgatherv(this)
   ! split work across this number of processes
   INTEGER, PARAMETER :: num_task_total = 13
 
+  ! dimension of first array index
+  INTEGER, PARAMETER :: dim_one = 3
+
   ! first and last task done on this process
   INTEGER first_task, last_task
 
@@ -206,14 +209,17 @@ SUBROUTINE test_mp_allgatherv(this)
   ! loop over the tasks
   INTEGER itask
 
+  ! loop over first dimension
+  INTEGER ii
+
   ! the MPI communicator
   INTEGER comm
 
-  ! real array that is communicated
-  REAL(dp), ALLOCATABLE :: array_rv(:)
+  ! real arrays that are communicated
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:)
 
-  ! complex array that is communicated
-  COMPLEX(dp), ALLOCATABLE :: array_cv(:)
+  ! complex array that are communicated
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:)
 
   comm = this%getMpiCommunicator()
 
@@ -252,5 +258,46 @@ SUBROUTINE test_mp_allgatherv(this)
     @assertEqual(-itask, IMAG(array_cv(itask)), eps14)
   END DO ! itask
   DEALLOCATE(array_cv)
+
+  ! fill real matrix
+  ALLOCATE(array_rm(dim_one, num_task_total))
+  array_rm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_rm(ii, itask) = REAL(100 * ii + itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_rm)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO ii = 1, dim_one
+      @assertEqual(100 * ii + itask, array_rm(ii, itask), eps14)
+    END DO ! ii
+  END DO ! itask
+  DEALLOCATE(array_rm)
+
+  ! fill complex matrix
+  ALLOCATE(array_cm(dim_one, num_task_total))
+  array_cm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_cm(ii, itask) = CMPLX(100 * ii + itask, 100 * ii - itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_cm)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO ii = 1, dim_one
+      @assertEqual(100 * ii + itask, REAL(array_cm(ii, itask)), eps14)
+      @assertEqual(100 * ii - itask, IMAG(array_cm(ii, itask)), eps14)
+    END DO ! ii
+  END DO ! itask
+  DEALLOCATE(array_cm)
 
 END SUBROUTINE test_mp_allgatherv
