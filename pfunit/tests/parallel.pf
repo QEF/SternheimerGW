@@ -200,6 +200,9 @@ SUBROUTINE test_mp_allgatherv(this)
   ! dimension of first array index
   INTEGER, PARAMETER :: dim_one = 3
 
+  ! dimension of second array index
+  INTEGER, PARAMETER :: dim_two = 2
+
   ! first and last task done on this process
   INTEGER first_task, last_task
 
@@ -209,17 +212,17 @@ SUBROUTINE test_mp_allgatherv(this)
   ! loop over the tasks
   INTEGER itask
 
-  ! loop over first dimension
-  INTEGER ii
+  ! loop over dimensions
+  INTEGER ii, jj
 
   ! the MPI communicator
   INTEGER comm
 
   ! real arrays that are communicated
-  REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:)
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:), array_rt(:,:,:)
 
   ! complex array that are communicated
-  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:)
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:), array_ct(:,:,:)
 
   comm = this%getMpiCommunicator()
 
@@ -299,5 +302,54 @@ SUBROUTINE test_mp_allgatherv(this)
     END DO ! ii
   END DO ! itask
   DEALLOCATE(array_cm)
+
+  ! fill real 3d matrix
+  ALLOCATE(array_rt(dim_one, dim_two, num_task_total))
+  array_rt = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_rt(ii, jj, itask) = REAL(10000 * jj + 100 * ii + itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_rt)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual(10000 * jj + 100 * ii + itask, array_rt(ii, jj, itask), eps14)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+  DEALLOCATE(array_rt)
+
+  ! fill complex 3d matrix
+  ALLOCATE(array_ct(dim_one, dim_two, num_task_total))
+  array_ct = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_ct(ii, jj, itask) = CMPLX(10000 * jj + 100 * ii + itask, -10000 * jj + 100 * ii - itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_ct)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual( 10000 * jj + 100 * ii + itask, REAL(array_ct(ii, jj, itask)), eps14)
+        @assertEqual(-10000 * jj + 100 * ii - itask, IMAG(array_ct(ii, jj, itask)), eps14)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+  DEALLOCATE(array_ct)
 
 END SUBROUTINE test_mp_allgatherv
