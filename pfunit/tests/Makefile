@@ -3,6 +3,11 @@ ifneq ($(BASEMK_INCLUDED),YES)
 include $(PFUNIT)/include/base.mk
 endif
 
+ESPRESSO=../../..
+MOD_FLAG=-I
+MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_FLAG)$(ESPRESSO)/LAXlib \
+          $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG) $(ESPRESSO)/LR_Modules
+
 SRCS = $(wildcard *.pf)
 OBJS = $(SRCS:.pf=$(OBJ_EXT))
 
@@ -20,7 +25,7 @@ endif
 	$(PFUNIT)/bin/pFUnitParser.py $<  $@
 
 %$(OBJ_EXT): %.F90
-	$(MPIF90) -c $(FFLAGS) $<
+	$(MPIF90) -c $(FFLAGS) $(MODFLAGS) $<
 
 clean: local-E1-clean
 

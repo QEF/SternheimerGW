@@ -181,3 +181,76 @@ SUBROUTINE test_parallel_task(this)
   END SELECT ! size
 
 END SUBROUTINE test_parallel_task
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_mp_allgatherv(this)
+
+  USE constants,       ONLY: eps14
+  USE kinds,           ONLY: dp
+  USE parallel_module, ONLY: parallel_task, mp_allgatherv
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! split work across this number of processes
+  INTEGER, PARAMETER :: num_task_total = 13
+
+  ! first and last task done on this process
+  INTEGER first_task, last_task
+
+  ! number of tasks done on the individual processes
+  INTEGER, ALLOCATABLE :: num_task(:)
+
+  ! loop over the tasks
+  INTEGER itask
+
+  ! the MPI communicator
+  INTEGER comm
+
+  ! real array that is communicated
+  REAL(dp), ALLOCATABLE :: array_rv(:)
+
+  ! complex array that is communicated
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:)
+
+  comm = this%getMpiCommunicator()
+
+  ! distribute the tasks
+  CALL parallel_task(comm, num_task_total, first_task, last_task, num_task)
+
+  ! fill real vector
+  ALLOCATE(array_rv(num_task_total))
+  array_rv = 0.0_dp
+  DO itask = first_task, last_task
+    array_rv(itask) = REAL(itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_rv)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    @assertEqual(itask, array_rv(itask), eps14)
+  END DO ! itask
+  DEALLOCATE(array_rv)
+
+  ! fill complex vector
+  ALLOCATE(array_cv(num_task_total))
+  array_cv = 0.0_dp
+  DO itask = first_task, last_task
+    array_cv(itask) = CMPLX(itask, -itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_cv)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    @assertEqual( itask, REAL(array_cv(itask)), eps14)
+    @assertEqual(-itask, IMAG(array_cv(itask)), eps14)
+  END DO ! itask
+  DEALLOCATE(array_cv)
+
+END SUBROUTINE test_mp_allgatherv
