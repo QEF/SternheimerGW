@@ -353,3 +353,106 @@ SUBROUTINE test_mp_allgatherv(this)
   DEALLOCATE(array_ct)
 
 END SUBROUTINE test_mp_allgatherv
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_mp_gatherv(this)
+
+  USE constants,       ONLY: eps14
+  USE kinds,           ONLY: dp
+  USE parallel_module, ONLY: parallel_task, mp_gatherv
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! split work across this number of processes
+  INTEGER, PARAMETER :: num_task_total = 17
+
+  ! dimension of first array index
+  INTEGER, PARAMETER :: dim_one = 2
+
+  ! dimension of second array index
+  INTEGER, PARAMETER :: dim_two = 3
+
+  ! collect everything on first process
+  INTEGER, PARAMETER :: root = 0
+
+  ! first and last task done on this process
+  INTEGER first_task, last_task
+
+  ! number of tasks done on the individual processes
+  INTEGER, ALLOCATABLE :: num_task(:)
+
+  ! loop over the tasks
+  INTEGER itask
+
+  ! loop over dimensions
+  INTEGER ii, jj
+
+  ! the rank of this process
+  INTEGER rank
+
+  ! the MPI communicator
+  INTEGER comm
+
+  ! this process is root
+  LOGICAL is_root
+
+  ! real arrays that are communicated
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rv_root(:)
+
+  ! complex arrays that are communicated
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cv_root(:)
+
+  rank = this%getProcessRank()
+  comm = this%getMpiCommunicator()
+  is_root = rank == root
+
+  ! distribute the tasks
+  CALL parallel_task(comm, num_task_total, first_task, last_task, num_task)
+
+  ! fill real vector
+  ALLOCATE(array_rv(num_task(rank + 1)))
+  array_rv = 0.0_dp
+  DO itask = first_task, last_task
+    array_rv(itask - first_task + 1) = REAL(itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_rv, array_rv_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      @assertEqual(itask, array_rv_root(itask), eps14)
+    END DO ! itask
+    DEALLOCATE(array_rv_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_rv_root))
+  END IF
+  DEALLOCATE(array_rv)
+
+  ! fill complex vector
+  ALLOCATE(array_cv(num_task(rank + 1)))
+  array_cv = 0.0_dp
+  DO itask = first_task, last_task
+    array_cv(itask - first_task + 1) = CMPLX(itask, -itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_cv, array_cv_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      @assertEqual( itask, REAL(array_cv_root(itask)), eps14)
+      @assertEqual(-itask, IMAG(array_cv_root(itask)), eps14)
+    END DO ! itask
+    DEALLOCATE(array_cv_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_cv_root))
+  END IF
+  DEALLOCATE(array_cv)
+
+END SUBROUTINE test_mp_gatherv
