@@ -401,9 +401,11 @@ SUBROUTINE test_mp_gatherv(this)
 
   ! real arrays that are communicated
   REAL(dp), ALLOCATABLE :: array_rv(:), array_rv_root(:)
+  REAL(dp), ALLOCATABLE :: array_rm(:,:), array_rm_root(:,:)
 
   ! complex arrays that are communicated
   COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cv_root(:)
+  COMPLEX(dp), ALLOCATABLE :: array_cm(:,:), array_cm_root(:,:)
 
   rank = this%getProcessRank()
   comm = this%getMpiCommunicator()
@@ -454,5 +456,56 @@ SUBROUTINE test_mp_gatherv(this)
     @assertFalse(ALLOCATED(array_cv_root))
   END IF
   DEALLOCATE(array_cv)
+
+  ! fill real array
+  ALLOCATE(array_rm(dim_one, num_task(rank + 1)))
+  array_rm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_rm(ii, itask - first_task + 1) = REAL(100 * ii + itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_rm, array_rm_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO ii = 1, dim_one
+        @assertEqual(100 * ii + itask, array_rm_root(ii, itask), eps14)
+      END DO ! ii
+    END DO ! itask
+    DEALLOCATE(array_rm_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_rm_root))
+  END IF
+  DEALLOCATE(array_rm)
+
+  ! fill complex vector
+  ALLOCATE(array_cm(dim_one, num_task(rank + 1)))
+  array_cm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_cm(ii, itask - first_task + 1) = CMPLX(100 * ii + itask, 100 * ii - itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_cm, array_cm_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO ii = 1, dim_one
+        @assertEqual(100 * ii + itask, REAL(array_cm_root(ii, itask)), eps14)
+        @assertEqual(100 * ii - itask, IMAG(array_cm_root(ii, itask)), eps14)
+      END DO ! ii
+    END DO ! itask
+    DEALLOCATE(array_cm_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_cm_root))
+  END IF
+  DEALLOCATE(array_cm)
 
 END SUBROUTINE test_mp_gatherv
