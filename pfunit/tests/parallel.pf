@@ -402,10 +402,12 @@ SUBROUTINE test_mp_gatherv(this)
   ! real arrays that are communicated
   REAL(dp), ALLOCATABLE :: array_rv(:), array_rv_root(:)
   REAL(dp), ALLOCATABLE :: array_rm(:,:), array_rm_root(:,:)
+  REAL(dp), ALLOCATABLE :: array_rt(:,:,:), array_rt_root(:,:,:)
 
   ! complex arrays that are communicated
   COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cv_root(:)
   COMPLEX(dp), ALLOCATABLE :: array_cm(:,:), array_cm_root(:,:)
+  COMPLEX(dp), ALLOCATABLE :: array_ct(:,:,:), array_ct_root(:,:,:)
 
   rank = this%getProcessRank()
   comm = this%getMpiCommunicator()
@@ -507,5 +509,65 @@ SUBROUTINE test_mp_gatherv(this)
     @assertFalse(ALLOCATED(array_cm_root))
   END IF
   DEALLOCATE(array_cm)
+
+  ! fill real array
+  ALLOCATE(array_rt(dim_one, dim_two, num_task(rank + 1)))
+  array_rt = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_rt(ii, jj, itask - first_task + 1) = REAL(10000 * jj + 100 * ii + itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_rt, array_rt_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual(10000 * jj + 100 * ii + itask, array_rt_root(ii, jj, itask), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! itask
+    DEALLOCATE(array_rt_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_rt_root))
+  END IF
+  DEALLOCATE(array_rt)
+
+  ! fill complex array
+  ALLOCATE(array_ct(dim_one, dim_two, num_task(rank + 1)))
+  array_ct = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_ct(ii, jj, itask - first_task + 1) = &
+          CMPLX(10000 * jj + 100 * ii + itask, -10000 * jj + 100 * ii - itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_ct, array_ct_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual( 10000 * jj + 100 * ii + itask, REAL(array_ct_root(ii, jj, itask)), eps14)
+          @assertEqual(-10000 * jj + 100 * ii - itask, IMAG(array_ct_root(ii, jj, itask)), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! itask
+    DEALLOCATE(array_ct_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_ct_root))
+  END IF
+  DEALLOCATE(array_ct)
 
 END SUBROUTINE test_mp_gatherv
