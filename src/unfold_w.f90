@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE unfold_w(scrcoul_g_in, iq)
+SUBROUTINE unfold_w(iq, scrcoul_in, scrcoul_out)
 USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsymm,        ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
@@ -38,12 +38,20 @@ USE cell_base,        ONLY : at, bg
 
 IMPLICIT NONE
 
-COMPLEX(DP)  :: scrcoul_g_in(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs, nspin_mag)
-COMPLEX(DP)  :: scrcoul_g_tmp(sigma_c_st%ngmt, nfs)
+!> the index of the active q point
+INTEGER,     INTENT(IN)  :: iq
+
+!> the screened coulomb interaction only symmetrized elements
+COMPLEX(DP), INTENT(IN)  :: scrcoul_in(sigma_c_st%ngmt, nfs, ngmunique)
+
+!> the screened coulomb interaction all elements
+COMPLEX(DP), INTENT(OUT) :: scrcoul_out(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
+
+COMPLEX(DP)  :: scrcoul_tmp(sigma_c_st%ngmt, nfs)
 COMPLEX(DP)  :: phase
 INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
-INTEGER      :: isym, iwim, iq, iw
-INTEGER      :: done, ngmdone, isp
+INTEGER      :: isym, iwim, iw
+INTEGER      :: done, ngmdone
 INTEGER      :: ngmdonelist(sigma_c_st%ngmt)
 INTEGER      :: gmapsym(ngm,48)
 COMPLEX(DP)  :: eigv(ngm,48)
@@ -75,10 +83,19 @@ LOGICAL      :: sym(48), minus_q, invsymq
   CALL s_axis_to_cart () 
   gmapsym(:,:) = 0
   CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
-!Cases where no unfolding needs to be done:
-  if(.not.use_symm)GOTO 126
-  if(nsymq.eq.1)GOTO 126
-!end Cases
+!
+! reorder the input to the output array
+!
+  FORALL (ig = 1:ngmunique, igp = 1:sigma_c_st%ngmt, iwim=1:nfs)
+    scrcoul_out(ig_unique(ig), igp, iwim) = scrcoul_in(igp, iwim, ig)
+  END FORALL
+! trivial case
+! no unfolding needs to be done
+  IF (.NOT.use_symm .OR. nsymq == 1) THEN
+    RETURN
+  END IF ! no unfolding
+!end trivial case
+!
 !stack ngmdone list with vectors that aren't unique:
   xq_loc = xq
   CALL cryst_to_cart(1, xq_loc(:), at, -1)
@@ -99,8 +116,8 @@ IF(modielec) then
          ENDDO
          DO iwim = 1, nfs
             DO isym = 1, nsymq
-               scrcoul_g_in(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim,1) = &
-                 scrcoul_g_in(ig_unique(ig), ig_unique(ig), iwim, 1)
+               scrcoul_out(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim) = &
+                 scrcoul_out(ig_unique(ig), ig_unique(ig), iwim)
             ENDDO
          ENDDO
       ENDDO
@@ -115,11 +132,10 @@ ELSE
 !still need to unfold this vector so we append it to the done list:
         ngmdone = ngmdone + 1
         ngmdonelist(ngmdone) = ig
-        DO isp = 1, nspin_mag
 !and unfold it with the correct correspondence ig has sym_friend(ig) where R^{-1} ig = ig_unique:
         DO iwim = 1, nfs
             DO igp = 1, sigma_c_st%ngmt
-               scrcoul_g_tmp(igp,iwim) = scrcoul_g_in(sym_friend(ig), igp, iwim, isp)
+               scrcoul_tmp(igp, iwim) = scrcoul_out(sym_friend(ig), igp, iwim)
             ENDDO
         ENDDO
 !the relationship R between ig and sym_friend(ig) is given by sym_ig.
@@ -129,13 +145,11 @@ ELSE
 !the \tau_{r} part which applies to the original G, G' rotation on R
 !e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))
                 phase = eigv(sym_friend(ig), sym_ig(ig))*conjg(eigv(igp, sym_ig(ig)))
-                scrcoul_g_in(ig, gmapsym(igp, invs(sym_ig(ig))), iwim, isp) = scrcoul_g_tmp(igp, iwim)*phase
+                scrcoul_out(ig, gmapsym(igp, invs(sym_ig(ig))), iwim) = scrcoul_tmp(igp, iwim)*phase
              ENDDO
          ENDDO
-        ENDDO
 128 CONTINUE
     ENDDO
 ENDIF
 
-126 CONTINUE
 END SUBROUTINE unfold_w

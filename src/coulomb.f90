@@ -20,13 +20,14 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE coulomb(iq, igstart, igstop, scrcoul) 
+!> This subroutine is the main driver of the COULOMB self consistent cycle
+!! which calculates the dielectric matrix by generating the density response
+!! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
+!! The dielectric matrix is given by:
+!! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
 !-----------------------------------------------------------------------
-! This subroutine is the main driver of the COULOMB self consistent cycle
-! which calculates the dielectric matrix by generating the density response
-! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
-! The dielectric matrix is given by:
-! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
+SUBROUTINE coulomb(iq, igstart, num_task, scrcoul) 
+!-----------------------------------------------------------------------
   USE cell_base,        ONLY : alat, tpiba2, omega
   USE constants,        ONLY : e2, fpi, RYTOEV, pi, eps8
   USE control_gw,       ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
@@ -60,37 +61,50 @@ SUBROUTINE coulomb(iq, igstart, igstop, scrcoul)
 
   IMPLICIT NONE
 
+  !> index of the active q-point
+  INTEGER, INTENT(IN) :: iq
+
+  !> first index of the G vector evaluated on this process
+  INTEGER, INTENT(IN) :: igstart
+
+  !> number of G vector evaluated by this process
+  INTEGER, INTENT(IN) :: num_task
+
+  !> the screened coulomb interaction
+  COMPLEX(dp), INTENT(OUT) :: scrcoul(gcutcorr, nfs, num_task)
+
+  !> actual index inside the array
+  INTEGER :: indx
+
   REAL(DP) :: tcpu, get_clock
 ! timing variables
   REAL(DP) :: qg2, qg2coul
   INTEGER :: ig, igp, iw, npe, irr, icounter
-  INTEGER :: igstart, igstop, igpert, isp
+  INTEGER :: igpert, isp
   COMPLEX(DP), allocatable :: drhoaux (:,:) 
   COMPLEX(DP) :: padapp, w
 !HL temp variable for scrcoul to write to file.  
   COMPLEX(DP) :: cw
   INTEGER :: unf_recl, recl, ios
-  INTEGER :: iq, screening 
+  INTEGER :: screening 
   LOGICAL :: exst
-!again should decide if this should be allocated globally. 
-  COMPLEX(DP) :: scrcoul(gcutcorr, gcutcorr, nfs, 1)
 !modeps and spencer-alavi vars
   REAL(DP) :: wwp, eps0, q0, wwq, fac
   REAL(DP) :: qg, rcut, spal
 ! used to test the recover file
   EXTERNAL get_clock
 
-if(solve_direct) then
-  ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
-else
-!for self-consistent solution we only consider one
-!frequency at a time. To save memory and time and lines of codes etc.
-!we use the frequency variable for multishift as the nspin_mag var.
-!to extend this to magnetic with multishift we need to add another
-!dimension to drhoscfrs
-  WRITE(stdout, '(4x,4x,"nspinmag", i4)') nspin_mag
-  ALLOCATE (drhoscfs(dffts%nnr, nspin_mag, 1))    
-endif
+  ! for self-consistent solution we only consider one
+  ! frequency at a time. To save memory and time and lines of codes etc.
+  ! we use the frequency variable for multishift as the nspin_mag var.
+  ! to extend this to magnetic with multishift we need to add another
+  ! dimension to drhoscfrs
+  IF(solve_direct) then
+    ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
+  ELSE
+    ALLOCATE (drhoscfs(dffts%nnr, 1, 1))
+  END IF
+  IF (nspin_mag /= 1) CALL errore(__FILE__, "not implemented for magnetic system", nspin_mag)
 
 irr=1
 !scrcoul(:,:,:,:) = (0.d0, 0.0d0)
@@ -98,7 +112,8 @@ irr=1
 !g is sorted in magnitude order.
 !WRITE(1000+mpime, '(2i4)') igstart, igstop
 !WRITE(1000+mpime, *) ig_unique(:)
-DO ig = igstart, igstop
+DO indx = 1, num_task
+  ig = igstart + indx - 1
 !     if (do_q0_only.and.ig.gt.1) CYCLE
       qg2 = (g(1,ig_unique(ig))+xq(1))**2+(g(2,ig_unique(ig))+xq(2))**2+(g(3,ig_unique(ig))+xq(3))**2
       IF(solve_direct) THEN
@@ -117,10 +132,10 @@ DO ig = igstart, igstop
             do igp = 1, gcutcorr
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw, 1)
+                  scrcoul(igp, iw, indx) = drhoscfs(nls(igp), iw, 1)
                else
 !diagonal elements eps(\G,\G') = \delta(G,G') - drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw, 1) + dvbare(nls(ig_unique(ig)))
+                  scrcoul(igp, iw, indx) = drhoscfs(nls(igp), iw, 1) + dvbare(nls(ig_unique(ig)))
                endif
             enddo
          enddo !iw
@@ -138,16 +153,12 @@ DO ig = igstart, igstop
            CALL invfft('Smooth', dvbare, dffts)
            CALL solve_linter (dvbare, iw, drhoscfs(:,:,1))
            CALL fwfft('Smooth', dvbare, dffts)
-           DO isp =1 , nspin_mag
-              CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)
-           ENDDO
+           CALL fwfft('Dense', drhoscfs(:,1,1), dffts)
            IF(ionode) THEN
              WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)') &
-               drhoscfs(nls(ig_unique(ig)), 1, 1) + dvbare(nls(ig_unique(ig)))
-             DO isp = 1, nspin_mag
-               DO igp = 1, gcutcorr
-                  scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp, 1)
-               ENDDO
+             drhoscfs(nls(ig_unique(ig)), 1, 1) + dvbare(nls(ig_unique(ig)))
+             DO igp = 1, gcutcorr
+                scrcoul(igp, iw, indx) = drhoscfs(nl(igp), 1, 1)
              ENDDO
            ENDIF
         ENDDO

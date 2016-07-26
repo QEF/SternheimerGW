@@ -156,9 +156,8 @@ dgradcorr.o : ../../PW/src/pwcom.o
 do_stern.o : ../../Modules/io_global.o
 do_stern.o : ../../Modules/kind.o
 do_stern.o : ../../Modules/mp.o
-do_stern.o : ../../Modules/mp_global.o
+do_stern.o : ../../Modules/mp_images.o
 do_stern.o : ../../Modules/mp_world.o
-do_stern.o : ../../Modules/noncol.o
 do_stern.o : ../../PW/src/pwcom.o
 do_stern.o : gwcom.o
 do_stern.o : parallel.o
@@ -466,7 +465,10 @@ pade_eps.o : ../../Modules/io_global.o
 pade_eps.o : ../../Modules/kind.o
 pade_eps.o : ../../Modules/recvec.o
 pade_eps.o : gwcom.o
+parallel.o : ../../Modules/kind.o
+parallel.o : ../../Modules/mp.o
 parallel.o : ../../Modules/mp_global.o
+parallel.o : ../../Modules/parallel_include.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o

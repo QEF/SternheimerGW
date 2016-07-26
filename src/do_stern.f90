@@ -20,135 +20,199 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> Solve the Sternheimer equation to obtain the screened Coulomb interaction.
+!!
+!! This routine is the driver routine for the solvers. Depending on the choice
+!! in the input file either a direct or an iterative solver is used.
 SUBROUTINE do_stern()
-  USE control_gw,       ONLY : done_bands, reduce_io, recover, tmp_dir_gw,&
-                               ext_restart, bands_computed, bands_computed, nbnd_occ, &
-                               do_q0_only, solve_direct, tinvert, lrpa, do_epsil
-  USE disp,             ONLY : nqs, num_k_pts, xk_kpoints, w_of_q_start, x_q
+
+  USE control_gw,       ONLY : do_q0_only, solve_direct, tinvert, do_epsil
+  USE disp,             ONLY : nqs, num_k_pts, w_of_q_start, x_q
   USE freq_gw,          ONLY : nfs
-  USE gwsigma,          ONLY : sigma_c_st, gcutcorr
+  USE gwsigma,          ONLY : gcutcorr
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
-  USE io_global,        ONLY : stdout, ionode_id, meta_ionode
+  USE io_global,        ONLY : stdout
   USE kinds,            ONLY : DP
   USE klist,            ONLY : lgauss
   USE mp,               ONLY : mp_sum, mp_barrier
-  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
-                               my_image_id, nimage, root_image
+  USE mp_images,        ONLY : inter_image_comm, my_image_id
   USE mp_world,         ONLY : mpime
-  USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE parallel_module,  ONLY : parallel_task
+  USE parallel_module,  ONLY : parallel_task, mp_gatherv
   USE timing_module,    ONLY : time_coulomb, time_coul_nscf
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
 
+  !> the number of tasks done on any process
   INTEGER, ALLOCATABLE :: num_task(:)
-  INTEGER :: iq, ik, ig, igstart, igstop, ios, iq1, iq2
-  COMPLEX(DP), ALLOCATABLE :: scrcoul_g(:,:,:,:)
-  LOGICAL :: do_band, do_iq, setup_pw, exst, do_matel, lgamma
-  COMPLEX(DP), ALLOCATABLE :: eps_m(:)
+
+  !> the number of tasks done on this process
+  INTEGER :: num_task_loc
+
+  !> the part of the screened Coulomb interaction calculated on this process
+  COMPLEX(dp), ALLOCATABLE :: scrcoul_loc(:,:,:)
+
+  !> the screened Coulomb interaction gathered on the root process
+  COMPLEX(dp), ALLOCATABLE :: scrcoul_root(:,:,:)
+
+  !> the unfolded Coulomb interaction
+  COMPLEX(dp), ALLOCATABLE :: scrcoul_g(:,:,:)
+
+  !> the dielectric constant at the q + G = 0 point
+  COMPLEX(dp), ALLOCATABLE :: eps_m(:)
+
+  !> loop variables
+  INTEGER :: iq, ig, igstart, igstop, ios, iq1, iq2
+  LOGICAL :: do_band, do_iq, setup_pw, do_matel
+
+  !> we need a special treatment for the case q + G = 0
+  !! this flag indicates whether we are at this point
+  LOGICAL :: lgamma
+
+  !> is this process the root of the image
+  LOGICAL :: is_root
+
+  !> id of the image on which we collect the data
+  INTEGER,     PARAMETER :: root_id = 0
+
+  !> constant to initialize arrays to zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0, 0.0, KIND=dp)
 
   CALL start_clock(time_coulomb)
 
-  allocate ( scrcoul_g( gcutcorr, gcutcorr, nfs, nspin_mag))
-  allocate ( ig_unique( gcutcorr) )
-  allocate ( sym_ig(gcutcorr))
-  allocate ( sym_friend(gcutcorr))
+  ! some tasks are only done by the root process
+  is_root = my_image_id == root_id
 
-  do_iq=.TRUE.
+  IF (is_root) ALLOCATE(scrcoul_g(gcutcorr, gcutcorr, nfs))
+
+  ! allocate arrays for symmetry routine
+  ALLOCATE(ig_unique(gcutcorr))
+  ALLOCATE(sym_ig(gcutcorr))
+  ALLOCATE(sym_friend(gcutcorr))
+
+  do_iq    = .TRUE.
   setup_pw = .TRUE.
   do_band  = .TRUE.
   do_matel = .TRUE.
 
-  if(lgauss) write(stdout, '(//5x,"SYSTEM IS METALLIC")')
-  if(.not.do_epsil) then
-      iq1 = w_of_q_start
-      iq2 = nqs
-  else
-  ! In case we want to trace a line through the brillouin zone
-  ! or get the screening for a particular grid q points (i.e. coulomb matel).
-      iq1 = w_of_q_start
-      iq2 = num_k_pts
-  endif
+  IF(lgauss) WRITE(stdout, '(//5x,"SYSTEM IS METALLIC")')
+  IF(.NOT.do_epsil) THEN
+    iq1 = w_of_q_start
+    iq2 = nqs
+  ELSE
+    ! In case we want to trace a line through the brillouin zone
+    ! or get the screening for a particular grid q points (i.e. coulomb matel).
+    iq1 = w_of_q_start
+    iq2 = num_k_pts
+  ENDIF
     
-  do iq = iq1, iq2
-!Perform head of dielectric matrix calculation.
-     call start_clock ('epsilq')
+  DO iq = iq1, iq2
+    ! Perform head of dielectric matrix calculation.
+    CALL start_clock ('epsilq')
     do_matel = .FALSE.
-    scrcoul_g(:,:,:,:) = (0.0d0, 0.0d0)
-     lgamma = ALL(x_q(:,iq) == 0)
-     if (lgamma) THEN
-        allocate(eps_m(nfs))
-        eps_m(:) = dcmplx(0.0d0,0.0d0)
-        if(my_image_id.eq.0) THEN
-           call prepare_q0(do_band, do_iq, setup_pw, iq)
 
-           ! nscf calculation to obtain the wave functions
-           CALL start_clock(time_coul_nscf)
-           CALL run_nscf(do_band, do_matel, iq)
-           CALL stop_clock(time_coul_nscf)
+    ! we must evaluate the q + G = 0 case differently, because we need to
+    ! shift the vector by a small delta q so that the solver has a
+    ! nonvanishing solution
+    ! the gamma point is evaluated at the root process
+    lgamma = ALL(x_q(:,iq) == 0)
+    IF (lgamma .AND. is_root) THEN
 
-           call initialize_gw()
-           call coulomb_q0G0(iq, eps_m)
-           scrcoul_g(1,1,:,1) = eps_m
-           write(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
-           write(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
-           call clean_pw_gw(iq, .FALSE.)
-        endif
-        call mp_barrier(inter_image_comm)
-    endif
-    call prepare_q(do_band, do_iq, setup_pw, iq)
+      ! create and initialize array for dielectric constant at q + G = 0
+      ALLOCATE(eps_m(nfs))
+      eps_m = zero
+
+      CALL prepare_q0(do_band, do_iq, setup_pw, iq)
+
+      ! nscf calculation to obtain the wave functions
+      CALL start_clock(time_coul_nscf)
+      CALL run_nscf(do_band, do_matel, iq)
+      CALL stop_clock(time_coul_nscf)
+
+      CALL initialize_gw()
+      CALL coulomb_q0G0(iq, eps_m)
+      scrcoul_g(1,1,:) = eps_m
+      WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
+      WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
+      CALL clean_pw_gw(iq, .FALSE.)
+
+    END IF ! gamma & root
+
+    !
+    ! now the general case for any q + G /= 0
+    !
+    CALL prepare_q(do_band, do_iq, setup_pw, iq)
  
     ! nscf calculation to obtain the wave functions
     CALL start_clock(time_coul_nscf)
     CALL run_nscf(do_band, do_matel, iq)
     CALL stop_clock(time_coul_nscf)
 
-    call initialize_gw()
-    if(use_symm) THEN
-      write(stdout,'("")')
-      write(stdout,'(5x, "SYMMETRIZING COULOMB Perturbations")')
-      write(stdout,'("")')
-      call stern_symm()
-    else
-      ngmunique = gcutcorr
-      do ig = 1, gcutcorr
-         ig_unique(ig) = ig
-      enddo
-    endif
-       if(nimage.gt.1) then
-          call parallel_task(inter_image_comm, ngmunique, igstart, igstop, num_task)
-          DEALLOCATE (num_task)
-       else
-          igstart = 1
-          igstop = ngmunique
-       endif
-       write(stdout, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)')iq, igstart, igstop
-       call coulomb(iq, igstart, igstop, scrcoul_g)
-       if(nimage.gt.1) THEN
-          call mp_sum(scrcoul_g, inter_image_comm)
-       endif
-!Only the meta_image should write to file
-       if (meta_ionode) THEN
-         call unfold_w(scrcoul_g,iq)
-         if(solve_direct.and.tinvert) write(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
-         if(solve_direct.and.tinvert) call invert_epsilon(scrcoul_g, lgamma, eps_m)
-         call davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
-       endif
-       if(allocated(eps_m)) deallocate(eps_m)
-       call mp_barrier(inter_image_comm)
-       call clean_pw_gw(iq, .FALSE.)
-       if(do_q0_only) GOTO 126
-       call print_clock ('epsilq')
-       call stop_clock ('epsilq')
-  enddo
-126 continue 
-   write(stdout, '("Finished Calculating Screened Coulomb")')
-   deallocate( scrcoul_g )
-   deallocate( ig_unique )
-   deallocate( sym_ig )
-   deallocate( sym_friend )
+    CALL initialize_gw()
 
-   CALL stop_clock(time_coulomb)
+    ! symmetrize the G vectors -> only unique ones are calculated
+    IF (use_symm) THEN
+      WRITE(stdout,'("")')
+      WRITE(stdout,'(5x, "SYMMETRIZING COULOMB Perturbations")')
+      WRITE(stdout,'("")')
+      CALL stern_symm()
+    ELSE
+      ngmunique = gcutcorr
+      DO ig = 1, gcutcorr
+         ig_unique(ig) = ig
+      END DO
+    END IF ! use_symm
+
+    ! distribute the number of tasks over processes
+    CALL parallel_task(inter_image_comm, ngmunique, igstart, igstop, num_task)
+    WRITE(stdout, '(5x, "iq ",i4, " igstart ", i4, " igstop ", i4)') iq, igstart, igstop
+
+    ! note: my_image_id + 1 to convert from C to Fortran notation
+    num_task_loc = num_task(my_image_id + 1)
+
+    ! allocate array for distributed part of Coulomb on all processes
+    ALLOCATE(scrcoul_loc(gcutcorr, nfs, num_task_loc))
+
+    ! evaluate screened Coulomb interaction and collect on root
+    CALL coulomb(iq, igstart, num_task_loc, scrcoul_loc)
+    CALL mp_gatherv(inter_image_comm, root_id, num_task, scrcoul_loc, scrcoul_root)
+
+    ! Only the root of the image should write to file
+    IF (is_root) THEN
+
+      ! unfold W from reduced array to full array
+      ! also reorder the indices
+      CALL unfold_w(iq, scrcoul_root, scrcoul_g)
+
+      ! for the direct solver W = eps^-1
+      IF (solve_direct .AND. tinvert) THEN
+        WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
+        CALL invert_epsilon(scrcoul_g, lgamma, eps_m)
+      END IF
+
+      ! write to file
+      CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+    END IF ! root
+
+    DEALLOCATE(scrcoul_loc)
+    IF (is_root) DEALLOCATE(scrcoul_root)
+    IF (ALLOCATED(num_task)) DEALLOCATE(num_task)
+    IF (ALLOCATED(eps_m))    DEALLOCATE(eps_m)
+
+    CALL mp_barrier(inter_image_comm)
+    CALL clean_pw_gw(iq, .FALSE.)
+    IF(do_q0_only) EXIT
+    CALL print_clock ('epsilq')
+    CALL stop_clock ('epsilq')
+
+  END DO ! iq
+
+  WRITE(stdout, '("Finished Calculating Screened Coulomb")')
+  IF (ALLOCATED(scrcoul_g)) DEALLOCATE(scrcoul_g)
+  DEALLOCATE(ig_unique)
+  DEALLOCATE(sym_ig)
+  DEALLOCATE(sym_friend)
+
+  CALL stop_clock(time_coulomb)
 
 end SUBROUTINE do_stern
