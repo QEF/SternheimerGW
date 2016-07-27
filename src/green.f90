@@ -119,8 +119,7 @@ CONTAINS
 
     USE bicgstab_module, ONLY: bicgstab
     USE kinds,           ONLY: dp
-    USE mp,              ONLY: mp_sum
-    USE parallel_module, ONLY: parallel_task
+    USE parallel_module, ONLY: parallel_task, mp_allgatherv
     USE timing_module,   ONLY: time_green
 
     !> Parallelize the calculation over this communicator
@@ -157,6 +156,9 @@ CONTAINS
 
     !> Helper array storing the result of the linear equation
     COMPLEX(dp), ALLOCATABLE :: green_part(:,:)
+
+    !> Green's function that is gathered across the processes
+    COMPLEX(dp), ALLOCATABLE :: green_comm(:,:,:)
 
     !> The number of frequencies.
     INTEGER num_freq
@@ -213,7 +215,10 @@ CONTAINS
 
     ! parallelize over communicator
     CALL parallel_task(comm, num_g_corr, ig_start, ig_stop, num_task)
-    DEALLOCATE(num_task)
+
+    ! allocate array to gather Green's function
+    ALLOCATE(green_comm(num_g_corr, num_freq, num_g_corr), STAT = ierr)
+    CALL errore(__FILE__, "could not allocate green_comm", ierr)
 
     ! loop over all G-vectors
     DO ig = ig_start, ig_stop
@@ -228,8 +233,8 @@ CONTAINS
         ! solve the linear system
         CALL bicgstab(lmax, threshold, green_operator, bb, omega, green_part)
 
-        ! copy from temporary array to result
-        green(:, ig, :) = green_part(map, :)
+        ! copy from temporary array to communicated array
+        green_comm(:, :, ig) = green_part(map, :)
 
       ! without multishift, we solve every frequency separately
       ELSE
@@ -239,8 +244,8 @@ CONTAINS
           ! solve the linear system
           CALL bicgstab(lmax, threshold, green_operator, bb, omega(ifreq:ifreq), green_part)
 
-          ! copy from temporary array to result
-          green(:, ig, ifreq) = green_part(map, 1)
+          ! copy from temporary array to communicated array
+          green_comm(:, ifreq, ig) = green_part(map, 1)
 
         END DO ! ifreq
 
@@ -252,8 +257,16 @@ CONTAINS
     DEALLOCATE(bb)
     DEALLOCATE(green_part)
 
-    ! ccollect on single process
-    CALL mp_sum(green, comm)
+    ! gather the result from all processes
+    CALL mp_allgatherv(comm, num_task, green_comm)
+
+    ! reorder into result array
+    DO ig = 1, num_g_corr
+      green(ig, :, :) = green_comm(:, :, ig)
+    END DO ! ig
+
+    DEALLOCATE(num_task)
+    DEALLOCATE(green_comm)
 
     CALL stop_clock(time_green)
 
