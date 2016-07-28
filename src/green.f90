@@ -25,7 +25,7 @@ MODULE green_module
 
   IMPLICIT NONE
 
-  PUBLIC green_function, green_prepare
+  PUBLIC green_function, green_prepare, green_nonanalytic
   PRIVATE
 
 CONTAINS
@@ -271,6 +271,128 @@ CONTAINS
     CALL stop_clock(time_green)
 
   END SUBROUTINE green_function
+
+  !> Add the nonanalytic part of the Green's function.
+  !!
+  !! For real space frequency integration, we split a nonanalytic part of the
+  !! Green's function so that the resulting analytic part has no poles above
+  !! the real axis. The nonanalytic part is given as
+  !! \f{equation}{
+  !!   G_{\text{N}}(G, G', \omega) = 2 \pi i \sum_{\text{v}}
+  !!   \delta(\omega - \epsilon_{\text v}) u_{\text{v}}^\ast(G) u_{\text{v}}(G')
+  !! \f}
+  !! where the \f$u_{\text v}(G)\f$ are the eigenvectors. Note that the sum
+  !! runs over the occupied states only.
+  !! We approximate the \f$\delta\f$ function by a Cauchy-Lorentz distribution
+  !! \f{equation}{
+  !!   \delta(\omega) \approx \frac{\eta}{\pi(\omega^2 + \eta^2)}
+  !! \f}
+  SUBROUTINE green_nonanalytic(map, freq, eval, evec, green)
+
+    USE constants,     ONLY: pi, tpi
+    USE kinds,         ONLY: dp
+    USE timing_module, ONLY: time_green
+
+    !> The reverse list from global G vector order to current k-point.
+    !! Generate this by a call to create_map in reorder.
+    !! @note this should be reduced to the correlation cutoff
+    INTEGER,     INTENT(IN)    :: map(:)
+
+    !> The frequency points for which the Green's function is evaluated.
+    !! @note This is a complex \f$\omega + i \eta\f$
+    COMPLEX(dp), INTENT(IN)    :: freq(:)
+
+    !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
+    COMPLEX(dp), INTENT(IN)    :: eval(:)
+
+    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
+    COMPLEX(dp), INTENT(IN)    :: evec(:,:)
+
+    !> The Green's function - note that the nonanalytic part is added to
+    !! whatever is already found in the array.
+    COMPLEX(dp), INTENT(INOUT) :: green(:,:,:)
+
+    !> the number of valence bands
+    INTEGER num_band
+
+    !> the number of G vectors at the k-point
+    INTEGER num_g
+
+    !> the number of G vectors used for the correlation
+    INTEGER num_g_corr
+
+    !> the number of frequency points
+    INTEGER num_freq
+
+    !> loop variable for summation over valence bands
+    INTEGER iband
+
+    !> loop variable for frequencies
+    INTEGER ifreq
+
+    !> loop variable for G and G'
+    INTEGER ig, igp
+
+    !> the value of \f$\omega - \epsilon_{\text{v}} + \imag \eta\f$
+    COMPLEX(dp) freq_eps
+
+    !> the value of the Lorentzian distribution
+    REAL(dp) lorentzian
+
+    !> 2 pi i
+    COMPLEX(dp), PARAMETER :: c2PiI = CMPLX(tpi, 1.0, KIND=dp)
+
+    CALL start_clock(time_green)
+
+    ! initialize helper variables
+    num_band = SIZE(eval)
+    num_freq = SIZE(freq)
+    num_g    = SIZE(evec, 1)
+    num_g_corr = SIZE(map)
+
+    ! sanity check of the input
+    IF (SIZE(evec, 2) /= num_band) &
+      CALL errore(__FILE__, "size of eigenvalue and eigenvector inconsistent", 1)
+    IF (num_g < num_g_corr) &
+      CALL errore(__FILE__, "cannot use more G's for correlation that available", 1)
+    IF (SIZE(green, 1) /= num_g_corr) &
+      CALL errore(__FILE__, "1st dimension of Green's function incorrect", 1)
+    IF (SIZE(green, 2) /= num_g_corr) &
+      CALL errore(__FILE__, "2nd dimension of Green's function incorrect", 1)
+    IF (SIZE(green, 3) /= num_freq) &
+      CALL errore(__FILE__, "3rd dimension of Green's function should be number of frequencies", 1)
+
+    ! loop over frequencies
+    DO ifreq = 1, num_freq
+
+      ! loop over bands
+      DO iband = 1, num_band
+
+        ! determine omega - epsilon + imag eta
+        freq_eps = freq(ifreq) - eval(iband)
+
+        ! determine the value of the Lorentzian
+        lorentzian = IMAG(freq(ifreq)) / (pi * ABS(freq_eps)**2)
+
+        ! loop over G and G'
+        DO igp = 1, num_g_corr
+          DO ig = 1, num_g_corr
+
+            ! add nonanalytic part to Green's function
+            ! 2 pi i u*(G) u(G') delta 
+            green(ig, igp, ifreq) = green(ig, igp, ifreq) + &
+              c2PiI * CONJG(evec(map(ig), iband)) * evec(map(igp), iband) * lorentzian
+
+          END DO ! ig
+        END DO ! igp
+
+      END DO ! iband
+
+    END DO ! ifreq
+
+    CALL stop_clock(time_green)
+
+  END SUBROUTINE green_nonanalytic
 
   !> Wrapper for the linear operator call.
   !!
