@@ -22,88 +22,77 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> Driver routine for the solution of the linear system.
+!!
+!! It defines the change of the wavefunction due to a perturbing potential
+!! parameterized in r and iw, i.e. \f$v_{r, iw} (r')\f$
+!! Currently symmetrized in terms of mode etc. Might need to strip this out
+!! and check PW for how it stores/symmetrizes charge densities.
+!!
+!! This routine performs the following tasks
+!! 1. computes the bare potential term Delta V | psi > 
+!! 2. adds to it the screening term Delta V_{SCF} | psi >
+!! 3. applies P_c^+ (orthogonalization to valence states)
+!! 4. calls c_bi_cgsolve_all to solve the linear system
+!! 5. computes Delta rho, Delta V_{SCF}.
+!----------------------------------------------------------------------------
 SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !-----------------------------------------------------------------------------
-  !  HL
-  !  Driver routine for the solution of the linear system which
-  !  defines the change of the wavefunction due to a perturbing potential
-  !  parameterized in r and iw. i.e. v_{r, iw} (r')
-  !  It performs the following tasks:
-  !   a) computes the bare potential term Delta V | psi > 
-  !   b) adds to it the screening term Delta V_{SCF} | psi >
-  !   c) applies P_c^+ (orthogonalization to valence states)
-  !   d) calls c_bi_cgsolve_all to solve the linear system
-  !   e) computes Delta rho, Delta V_{SCF}.
-  !   Currently symmetrized in terms of mode etc. Might need to strip this out
-  !   and check PW for how it stores/symmetrizes charge densities.
-!----------------------------------------------------------------------------
-! grep @10TION for all the instances where I've turned off the regular
-! PH parallelism which always assumes we have split k-points across processors.
-! Each processor has a full slice of k-points. 
-!------------------------------------------------------------------------------
-
 
   USE buffers,              ONLY : save_buffer, get_buffer
   USE cell_base,            ONLY : tpiba2
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : degspin, eps8
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
-                                   alpha_pv, lgamma, lgamma_gamma, convt, &
-                                   nbnd_occ, alpha_mix, ldisp, rec_code_read, &
-                                   where_rec, flmixdpot, current_iq, &
-                                   ext_recover, eta, high_io, maxter_coul
-  USE ener,                 ONLY : ef
+                                   lgamma, convt, nbnd_occ, alpha_mix, &
+                                   rec_code_read, where_rec, flmixdpot, &
+                                   high_io, maxter_coul
   USE eqv,                  ONLY : dvpsi, dpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : invfft, fwfft
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax
-  USE gvecs,                ONLY : nls, doublegrid
-  USE gvect,                ONLY : ngm, g, nl
-  USE io_files,             ONLY : prefix
-  USE io_global,            ONLY : stdout, ionode
-  USE ions_base,            ONLY : nat, ntyp => nsp, ityp
+  USE freq_gw,              ONLY : fiu, nfsmax
+  USE gvecs,                ONLY : doublegrid
+  USE gvect,                ONLY : g, nl
+  USE io_global,            ONLY : stdout
+  USE ions_base,            ONLY : nat
   USE kinds,                ONLY : DP
-  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot, ngk, igk_k
-  USE lr_symm_base,         ONLY : minus_q, irgq, nsymq, rtau 
+  USE klist,                ONLY : xk, wk, nkstot, ngk, igk_k
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE mp,                   ONLY : mp_sum, mp_barrier
-  USE mp_bands,             ONLY : intra_bgrp_comm, ntask_groups, me_bgrp
-  USE mp_images,            ONLY : intra_image_comm
   USE mp_pools,             ONLY : inter_pool_comm
   USE mp_world,             ONLY : mpime
-  USE nlcc_gw,              ONLY : nlcc_any
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
-  USE output_mod,           ONLY : fildrho, fildvscf
-  USE paw_variables,        ONLY : okpaw
-  USE qpoint,               ONLY : xq, npwq, nksq, ikks, ikqs, igkq
-  USE scf,                  ONLY : rho
-  USE spin_orb,             ONLY : domag
+  USE qpoint,               ONLY : npwq, igkq, nksq, ikks, ikqs
   USE timing_module,        ONLY : time_coul_solver
-  USE units_gw,             ONLY : iudrho, lrdrho, iudwf, lrdwf, iubar, lrbar, &
-                                   iuwfc, lrwfc, iunrec, iudvscf, iudwfm, iudwfp 
-  USE uspp,                 ONLY : okvan, vkb
-  USE uspp_param,           ONLY : upf, nhm, nh
+  USE units_gw,             ONLY : lrdwf, iubar, lrbar, &
+                                   iuwfc, lrwfc, iudwfm, iudwfp 
+  USE uspp,                 ONLY : vkb
+  USE uspp_param,           ONLY : nhm
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, current_k, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
 
-  implicit none
+  IMPLICIT NONE
 
-  complex(DP) :: drhoscf (dfftp%nnr, nspin_mag)
-  ! output: the change of the scf charge
-  complex(DP) :: dvbarein (dffts%nnr)
+  !> the initial perturbuing potential
+  COMPLEX(dp), INTENT(IN)  :: dvbarein (dffts%nnr)
+
+  !> the index of the frequency
+  INTEGER,     INTENT(IN)  :: iw
+
+  !> the change of the scf charge
+  COMPLEX(dp), INTENT(OUT) :: drhoscf(dfftp%nnr, nspin_mag)
+
   complex(DP), allocatable, target :: dvscfin(:,:)
   ! change of the scf potential 
   complex(DP), pointer :: dvscfins (:,:)
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
   complex(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
-  complex(DP), allocatable :: ldos (:,:), ldoss (:,:), mixin(:), mixout(:), &
-                              dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
+  complex(DP), allocatable :: dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
   complex(kind=DP) :: ZDOTC
   ! Misc variables for metals
-  ! dos_ef: density of states at Ef
   real(DP), external :: w0gauss, wgauss
   real(DP) , allocatable :: h_diag (:,:)
   real(DP) :: thresh, anorm, averlt, dr2
@@ -111,14 +100,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! anorm : the norm of the error
   ! averlt: average number of iterations
   ! dr2   : self-consistency error
-  real(DP) :: dos_ef, weight, aux_avg (2)
+  real(DP) :: weight, aux_avg (2)
   !HL dbecsum (:,:,:,:), dbecsum_nc(:,:,:,:,:), aux1 (:,:)
   ! Misc work space
   ! ldos : local density of states af Ef
   ! ldoss: as above, without augmentation charges
   ! dbecsum: the derivative of becsum
-  ! becsum1 PAW array.
-  real(DP), allocatable :: becsum1(:,:,:)
   real(DP) :: tcpu, get_clock ! timing variables
   real(DP) :: meandvb
 
@@ -133,26 +120,23 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              ik, ikk,    & ! counter on k points
              ikq,        & ! counter on k+q points
              ig,         & ! counter on G vectors
-             ndim,       & ! integer actual row dimension of dpsi
              is,         & ! counter on spin polarizations
-             nt,         & ! counter on types
-             na,         & ! counter on atoms
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
-             mode,       & ! mode index
-             igpert,     & ! bare perturbation g vector.
              lmres         ! number of gmres iterations to include when using bicgstabl.
-  integer :: iw, ir 
   integer :: irr, imode0, npe
 
   external ch_psi_all, cg_psi, h_psi_all, ch_psi_all_nopv
   real(kind=DP)    :: DZNRM2
   external ZDOTC, DZNRM2
 
-  logical :: conv_root,  & ! true if linear system is converged
-             exst,       & ! used to open the recover file
-             lmetq0,     & ! true if xq=(0,0,0) in a metal
-             cgsolver          
+  logical :: conv_root    ! true if linear system is converged
+
+  ! complex value of 0
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  ! complex value of 0.5
+  COMPLEX(dp), PARAMETER :: half = CMPLX(0.5_dp, 0.0_dp, KIND = dp)
 
   CALL start_clock (time_coul_solver)
 
@@ -195,14 +179,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! niter_gw := maximum number of iterations
   
   do kter = 1, niter_gw
-     iter = kter + iter0
-     ltaver = 0
+     iter       = kter + iter0
+     ltaver     = 0
      lintercall = 0
-     drhoscf(:,:)   = (0.d0, 0.d0)
-     drhoscfh(:,:)  = (0.d0, 0.d0)
-     dbecsum(:,:,:) = (0.d0, 0.d0)
+     drhoscf    = zero
+     drhoscfh   = zero
+     dbecsum    = zero
 
-     IF (noncolin) dbecsum_nc = (0.d0, 0.d0)
+     IF (noncolin) dbecsum_nc = zero 
 !start kpoints loop
      do ik = 1, nksq
 ! lgamma is a q=0 computation
@@ -319,10 +303,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                    npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, &
                   -cw, maxter_coul, .true.)
 
-              dpsi(:,:) = dcmplx(0.0d0, 0.0d0)
+              dpsi(:,:) = zero
               do ibnd =1 , nbnd_occ(ikk)
-                 call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsim(1,ibnd), 1, dpsi(1,ibnd), 1)
-                 call ZAXPY (npwx*npol, dcmplx(0.5d0,0.0), dpsip(1,ibnd), 1, dpsi(1,ibnd), 1)
+                 call ZAXPY (npwx*npol, half, dpsim(1,ibnd), 1, dpsi(1,ibnd), 1)
+                 call ZAXPY (npwx*npol, half, dpsip(1,ibnd), 1, dpsi(1,ibnd), 1)
               enddo
         endif
 
@@ -377,7 +361,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !    call addusddens (drhoscfh, dbecsum, 0)
      call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
 
-     meandvb = sqrt ((sum(dreal(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
+     meandvb = sqrt ((sum(real(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
      if (meandvb.lt.1.d-10) then 
          CALL fwfft ('Dense', dvscfout(:,1), dfftp)
          dvscfout ( nl(1), current_spin ) = (0.d0, 0.0d0)
@@ -423,7 +407,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 #endif
      tcpu = get_clock ('SGW')
      dr2 = dr2 
-     FLUSH( stdout )
+     FLUSH(stdout)
      rec_code=10
 
 !     WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
@@ -434,9 +418,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   enddo !loop on kter (iterations)
 
-  ! abort if solver doesn't converge
-  CALL errore(__FILE__, "Iterative solver did not converge within given number&
-                       & of iterations", niter_gw)
+!  ! abort if solver doesn't converge
+!  CALL errore(__FILE__, "Iterative solver did not converge within given number&
+!                       & of iterations", niter_gw)
 
 155 iter0=0
 
