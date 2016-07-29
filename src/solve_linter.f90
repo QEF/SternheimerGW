@@ -40,7 +40,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !-----------------------------------------------------------------------------
 
   USE buffers,              ONLY : save_buffer, get_buffer
-  USE cell_base,            ONLY : tpiba2
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : degspin, eps8
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
@@ -52,7 +51,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE freq_gw,              ONLY : fiu, nfsmax
   USE gvecs,                ONLY : doublegrid
-  USE gvect,                ONLY : g, nl
+  USE gvect,                ONLY : nl
   USE io_global,            ONLY : stdout
   USE ions_base,            ONLY : nat
   USE kinds,                ONLY : DP
@@ -62,14 +61,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE mp_pools,             ONLY : inter_pool_comm
   USE mp_world,             ONLY : mpime
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
-  USE qpoint,               ONLY : npwq, igkq, nksq, ikks, ikqs
+  USE qpoint,               ONLY : npwq, nksq, igkq, ikks, ikqs
   USE timing_module,        ONLY : time_coul_solver
   USE units_gw,             ONLY : lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iudwfm, iudwfp 
   USE uspp,                 ONLY : vkb
   USE uspp_param,           ONLY : nhm
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, et
 
   IMPLICIT NONE
 
@@ -119,10 +118,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              lintercall, & ! average number of calls to cgsolve_all
              ik, ikk,    & ! counter on k points
              ikq,        & ! counter on k+q points
-             ig,         & ! counter on G vectors
              is,         & ! counter on spin polarizations
              nrec, nrec1,& ! the record number for dvpsi and dpsi
-             ios,        & ! integer variable for I/O control
              lmres         ! number of gmres iterations to include when using bicgstabl.
   integer :: irr, imode0, npe
 
@@ -140,7 +137,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   CALL start_clock (time_coul_solver)
 
-  allocate (dpsi(npwx*npol, nbnd))
+  ALLOCATE (dpsi(npwx*npol, nbnd))
  
   IF (rec_code_read > 20 ) RETURN
 
@@ -153,77 +150,73 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   lter   = 0
   lmres  = 1
 
-  allocate (dvscfout ( dfftp%nnr , nspin_mag))    
-  allocate (drhoscfh ( dfftp%nnr , nspin_mag))    
-  allocate (etc(nbnd, nkstot))
-  allocate (dbecsum ( (nhm * (nhm + 1))/2 , nat, nspin_mag))
+  ALLOCATE(dvscfout(dfftp%nnr, nspin_mag))  
+  ALLOCATE(drhoscfh( dfftp%nnr, nspin_mag))
+  ALLOCATE(etc(nbnd, nkstot))
+  ALLOCATE(dbecsum((nhm * (nhm + 1)) / 2, nat, nspin_mag))
 
-  allocate (dvscfin  ( dfftp%nnr , nspin_mag))    
-  if (doublegrid) then
-     allocate (dvscfins ( dffts%nnr , nspin_mag))    
-  else
-     dvscfins => dvscfin
-  endif
+  ALLOCATE(dvscfin(dfftp%nnr, nspin_mag))    
+  IF (doublegrid) THEN
+    ALLOCATE(dvscfins(dffts%nnr, nspin_mag))    
+  ELSE
+    dvscfins => dvscfin
+  ENDIF
 
 !Complex eigenvalues
-  IF (noncolin) allocate (dbecsum_nc (nhm, nhm, nat, nspin))
-  allocate (aux1 ( dffts%nnr, npol))    
-  allocate (h_diag ( npwx*npol, nbnd))    
-  IF (.not.ASSOCIATED(igkq)) ALLOCATE(igkq(npwx))
+  IF (noncolin) ALLOCATE (dbecsum_nc(nhm, nhm, nat, nspin))
+  ALLOCATE(aux1(dffts%nnr, npol))
+  ALLOCATE(h_diag(npwx*npol, nbnd))
 
-  iter0 = 0
-  convt =.FALSE.
-  where_rec='no_recover'
+  iter0 =  0
+  convt = .FALSE.
+  where_rec = 'no_recover'
 
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
   
-  do kter = 1, niter_gw
-     iter       = kter + iter0
-     ltaver     = 0
-     lintercall = 0
-     drhoscf    = zero
-     drhoscfh   = zero
-     dbecsum    = zero
-
-     IF (noncolin) dbecsum_nc = zero 
-!start kpoints loop
-     do ik = 1, nksq
-! lgamma is a q=0 computation
-        if (lgamma)  npwq = npw
-! k and k+q mesh defined in initialize_gw:
-!       ikks(ik) = 2 * ik - 1
-!       ikqs(ik) = 2 * ik
-        ikk = ikks(ik)
-        ikq = ikqs(ik)
-        npw = ngk(ikk)
-        npwq= ngk(ikq)
-        igkq= igk_k(:,ikq)
-
-        if (lsda) current_spin = isk (ikk)
-       !Calculates beta functions (Kleinman-Bylander projectors), with
-       !structure factor, for all atoms, in reciprocal space
-       !HL the beta functions (vkb) are being generated properly.  
-        call init_us_2 (npwq, igk_k(1,ikq), xk (1, ikq), vkb)
-
-       !Reads unperturbed wavefuctions psi(k) and psi(k+q)
-
-        if (nksq.gt.1) then
-           if (lgamma) then
-              call get_buffer (evc, lrwfc, iuwfc, ikk)
-           else
-              call get_buffer (evc, lrwfc, iuwfc, ikk)
-              call get_buffer (evq, lrwfc, iuwfc, ikq)
-           endif
-        endif
-
-!IS TPA preconditioner better?
-        CALL g2_kin(ikq)
-        !
-        ! compute preconditioning matrix h_diag used by cgsolve_all
-        !
-        CALL h_prec (ik, evq, h_diag)
-        !
+  DO kter = 1, niter_gw
+    !
+    iter       = kter + iter0
+    ltaver     = 0
+    lintercall = 0
+    drhoscf    = zero
+    drhoscfh   = zero
+    dbecsum    = zero
+    IF (noncolin) dbecsum_nc = zero 
+    !
+    DO ik = 1, nksq
+      !
+      ikk  = ikks(ik)
+      ikq  = ikqs(ik)
+      npw  = ngk(ikk)
+      npwq = ngk(ikq)
+      ! this is necessary for now until all instances of igkq
+      ! are replaced with the appropriate igk_k
+      igkq = igk_k(:,ikq)
+      !
+      IF (lsda) current_spin = isk(ikk)
+      !
+      ! read unperturbed wavefunctions psi(k) and psi(k+q)
+      !
+      IF (nksq > 1) THEN
+        IF (lgamma) THEN
+          CALL get_buffer(evc, lrwfc, iuwfc, ikk)
+        ELSE
+          CALL get_buffer(evc, lrwfc, iuwfc, ikk)
+          CALL get_buffer(evq, lrwfc, iuwfc, ikq)
+        END IF
+      END IF
+      !
+      ! compute beta functions and kinetic energy for k-point ikq
+      ! needed by h_psi, called by ch_psi_all, called by cgsolve_all
+      !
+      CALL init_us_2(npwq, igk_k(1, ikq), xk(1, ikq), vkb)
+      CALL g2_kin(ikq)
+      !
+      ! compute preconditioning matrix h_diag used by cgsolve_all
+      !
+      CALL h_prec(ik, evq, h_diag)
+      !
 !HL indices freezing perturbations.
         nrec = ik
 !and now adds the contribution of the self consistent term
@@ -418,9 +411,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   enddo !loop on kter (iterations)
 
-!  ! abort if solver doesn't converge
-!  CALL errore(__FILE__, "Iterative solver did not converge within given number&
-!                       & of iterations", niter_gw)
+  ! abort if solver doesn't converge
+  CALL errore(__FILE__, "Iterative solver did not converge within given number&
+                       & of iterations", niter_gw)
 
 155 iter0=0
 
