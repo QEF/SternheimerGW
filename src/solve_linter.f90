@@ -41,11 +41,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
-  USE constants,            ONLY : degspin, eps8
+  USE constants,            ONLY : degspin
   USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
                                    lgamma, convt, nbnd_occ, alpha_mix, &
                                    rec_code_read, where_rec, flmixdpot, &
                                    high_io, maxter_coul
+  USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, dpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : invfft, fwfft
@@ -59,13 +60,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE mp,                   ONLY : mp_sum, mp_barrier
   USE mp_pools,             ONLY : inter_pool_comm
-  USE mp_world,             ONLY : mpime
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
   USE qpoint,               ONLY : npwq, nksq, igkq, ikks, ikqs
   USE timing_module,        ONLY : time_coul_solver
   USE units_gw,             ONLY : lrdwf, iubar, lrbar, &
                                    iuwfc, lrwfc, iudwfm, iudwfp 
-  USE uspp,                 ONLY : vkb
+  USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : nhm
   USE wavefunctions_module, ONLY : evc
   USE wvfct,                ONLY : nbnd, npw, npwx, et
@@ -79,13 +79,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   INTEGER,     INTENT(IN)  :: iw
 
   !> the change of the scf charge
-  COMPLEX(dp), INTENT(OUT) :: drhoscf(dfftp%nnr, nspin_mag)
+  COMPLEX(dp), INTENT(OUT) :: drhoscf(dfftp%nnr, nspin_mag, 1)
 
   complex(DP), allocatable, target :: dvscfin(:,:,:)
   ! change of the scf potential 
   complex(DP), pointer :: dvscfins (:,:,:)
   ! change of the scf potential (smooth part only)
-  complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
+  complex(DP), allocatable :: drhoscfh(:,:,:), dvscfout(:,:,:)
   complex(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
   complex(DP), allocatable :: dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
   complex(DP) :: cw
@@ -119,7 +119,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              ik, ikk,    & ! counter on k points
              ikq,        & ! counter on k+q points
              is,         & ! counter on spin polarizations
-             nrec, nrec1,& ! the record number for dvpsi and dpsi
+             nrec,       & ! the record number for dvpsi and dpsi
              lmres         ! number of gmres iterations to include when using bicgstabl.
   integer :: irr, imode0, npe
 
@@ -144,6 +144,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   !> complex value of 0.5
   COMPLEX(dp), PARAMETER :: half = CMPLX(0.5_dp, 0.0_dp, KIND = dp)
 
+  !> 10^-10
+  REAL(dp),    PARAMETER :: eps10 = 1e-10_dp
+
   CALL start_clock (time_coul_solver)
 
   ! note: for now we just evaluate a single frequency at a time
@@ -162,8 +165,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   lter   = 0
   lmres  = 1
 
-  ALLOCATE(dvscfout(dfftp%nnr, nspin_mag))  
-  ALLOCATE(drhoscfh( dfftp%nnr, nspin_mag))
+  ALLOCATE(dvscfout(dfftp%nnr, nspin_mag, num_freq))
+  ALLOCATE(drhoscfh(dfftp%nnr, nspin_mag, num_freq))
   ALLOCATE(etc(nbnd, nkstot))
   ALLOCATE(dbecsum((nhm * (nhm + 1)) / 2, nat, nspin_mag))
 
@@ -298,13 +301,13 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         !
       ELSE ! general case iter > 1
         !
-        ! After the first iteration dvbare_q*psi_kpoint is read from file
-        !
-        nrec = ik
-        CALL get_buffer(dvpsi, lrbar, iubar, nrec)
-        !
         ! frequencies are the equivalent of perturbations in PHonon
         DO ifreq = 1, num_freq
+          !
+          ! After the first iteration dvbare_q*psi_kpoint is read from file
+          !
+          nrec = ik
+          CALL get_buffer(dvpsi, lrbar, iubar, nrec)
           !
           ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
           ! dvscf_q from previous iteration (mix_potential)
@@ -384,114 +387,147 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         END DO ! ifreq
 
       END IF ! first_iteration
+      !
+      ltaver = ltaver + lter
+      lintercall = lintercall + 1
+      !
+      IF (.NOT.conv_root) WRITE(stdout, '(5x,"kpoint ",i4,"  ibnd ",i4, &
+                  &             " solve_linter: root not converged ", e10.3 , "iter ", i4)') &
+                  &             ik, nbnd_occ(ikk), anorm, iter
+      !
+      nrec = ik
+      !
+      ! writes delta_psi+- on iunit iudwf, k=kpoint
+      !
+      IF (high_io) THEN
+        IF (iw > 1) CALL save_buffer(dpsim, lrdwf, iudwfm, ik)
+        CALL save_buffer(dpsip, lrdwf, iudwfp, ik)
+      END IF ! high_io
+      !
+      ! calculates dvscf, sum over k => dvscf_q_ipert
+      !
+      weight = wk (ikk)
+      ! TODO change to account for ifreq
+      IF (noncolin) THEN
+        call incdrhoscf_nc(drhoscf(1, 1, 1), weight, ik, &
+                           dbecsum_nc(1, 1, 1, 1), dpsi)
+      ELSE
+        call incdrhoscf(drhoscf(1, current_spin, 1), weight, ik, &
+                        dbecsum(1, 1, current_spin), dpsi(1,1))
+      ENDIF
 
-        ltaver = ltaver + lter
-        lintercall = lintercall + 1
+    END DO ! on k-points
+    !
+    IF (doublegrid) THEN
+      DO ifreq = 1, num_freq
+        DO is = 1, nspin_mag
+          CALL cinterpolate(drhoscfh(1, is, ifreq), drhoscf(1, is, ifreq), 1)
+        END DO ! is
+      END DO ! ifreq
+    ELSE
+      CALL ZCOPY(num_freq * nspin_mag * dfftp%nnr, drhoscf, 1, drhoscfh, 1)
+    ENDIF
+    !
+    ! In the noncolinear, spin-orbit case rotate dbecsum
+    !
+    IF (noncolin .AND. okvan) CALL set_dbecsum_nc(dbecsum_nc, dbecsum, npe)
+    !
+    ! Now we compute for all perturbations the total charge and potential
+    !
+!    CALL addusddens(drhoscfh, dbecsum, imode0, npe, 0)
+    !
+    ! Reduce the delta rho across pools
+    !
+    CALL mp_sum(drhoscf, inter_pool_comm)
+    CALL mp_sum(drhoscfh, inter_pool_comm)
+    !
+    ! After the loop over the perturbations we have the linear change
+    ! in the charge density for each mode of this representation.
+    ! Here we symmetrize them ...
+    ! TODO check if/how symmetrization can be used
+    !
+    ! ... save them on disk and
+    ! compute the corresponding change in scf potential
+    !
+    ! average value of dV_bare
+    meandvb = SQRT(SUM(ABS(dvbarein)**2)) / REAL(dffts%nnr, KIND = dp)
+    !
+    DO ifreq = 1, num_freq
+      !
+      CALL ZCOPY(dfftp%nnr * nspin_mag, drhoscfh(1, 1, ifreq), 1, dvscfout(1, 1, ifreq), 1)
+      !
+      ! here we enforce zero average variation of the charge density
+      ! if the bare perturbation does not have a constant term
+      ! (otherwise the numerical error, coupled with a small denominator
+      ! in the Coulomb term, gives rise to a spurious dvscf response)
+      ! One wing of the dielectric matrix is particularly badly behaved
+      !
+      IF (meandvb < eps10) THEN 
+        DO is = 1, nspin_mag
+          CALL fwfft('Dense', dvscfout(:, is, ifreq), dfftp)
+          dvscfout(nl(1), current_spin, ifreq) = zero
+          CALL invfft('Dense', dvscfout(:, is, ifreq), dfftp)
+        END DO ! is
+      END IF
+      !
+      ! TODO write to file for restarting
+      !
+      !
+      ! Compute the response HXC potential
+      !
+      CALL dv_of_drho (dvscfout(1, 1, ifreq), .FALSE.)
+      !
+      ! And we mix with the old potential
+      !
+      ! TODO replace this with ifreq
+      !      probably need to mix all freq at once?
+      IF (iw == 1) THEN
+        !
+        ! Density reponse in real space should be real at zero freq no matter what!
+        ! just using standard broyden for the zero freq. case.
+        !
+        CALL mix_potential(2 * dfftp%nnr * nspin_mag, dvscfout(1, 1, ifreq), &
+                           dvscfin(1, 1, ifreq), alpha_mix(kter), dr2, tr2_gw, &
+                           iter, nmix_gw, flmixdpot, convt)
+        !
+      ELSE
+        !
+        ! use a mixing scheme working on complex
+        !
+        CALL mix_potential_c(dfftp%nnr * nspin_mag, dvscfout(1, 1, ifreq), &
+                             dvscfin(1, 1, ifreq), alpha_mix(kter), dr2, tr2_gw, &
+                             iter, nmix_gw, convt)
+        !
+      END IF ! frequency = Fermi energy
+      !
+    END DO ! ifreq
+    !
+    ! check that convergence hase been reached on ALL processors in this image
+    CALL check_all_convt(convt)
+    !
+    IF (doublegrid) THEN
+      DO is = 1, nspin_mag
+        CALL cinterpolate(dvscfin(1,is,1), dvscfins(1,is,1), -1)
+      END DO
+    END IF
+    !
+    aux_avg(1) = REAL(ltaver, KIND = dp)
+    aux_avg(2) = REAL(lintercall, KIND = dp)
+    CALL mp_sum(aux_avg, inter_pool_comm)
+    averlt = aux_avg(1) / aux_avg(2)
 
-!        WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
-!          &               " solve_linter:  ", e10.3 , "iter ", i4)')  &
-!          &                 ik , nbnd_occ(ikk), anorm, iter
-
-        IF (.NOT.conv_root) WRITE(1000+mpime, '(5x,"kpoint ",i4,"  ibnd ",i4, &
-                  &              " solve_linter: root not converged ", e10.3 , "iter ", i4)')  &
-                  &                ik , nbnd_occ(ikk), anorm, iter
-
-           nrec1 =  ik
-         !calculates dvscf, sum over k => dvscf_q_ipert
-         !incdrhoscf:  This routine computes the change of the charge density due to the
-         !HL low/io
-          if(high_io) then
-             if(iw.gt.1) call save_buffer (dpsim, lrdwf, iudwfm, ik)
-             call save_buffer (dpsip, lrdwf, iudwfp, ik)
-          endif
-         ! perturbation. It is called at the end of the computation of the
-         ! change of the wavefunction for a given k point.
-           weight = wk (ikk)
-
-         IF (noncolin) THEN
-           call incdrhoscf_w (drhoscf(1, 1) , weight, ik, &
-                              dbecsum(1,1,current_spin), dpsi)
-         ELSE
-           call incdrhoscf_w (drhoscf(1, 1) , weight, ik, &
-                              dbecsum(1,1,current_spin), dpsi(1,1))
-         ENDIF
-
-     enddo !on k-points
-
-     call mp_sum ( drhoscf, inter_pool_comm )
-
-     if (doublegrid) then
-         do is = 1, nspin_mag
-            call cinterpolate (drhoscfh(1,1), drhoscf(1,1), 1)
-         enddo
-     else
-            call zcopy (nspin_mag*dfftp%nnr, drhoscf(1,1), 1, drhoscfh(1,1), 1)
-     endif
-!
-! In the noncolinear, spin-orbit case rotate dbecsum
-! IF (noncolin.and.okvan) CALL set_dbecsum_nc(dbecsum_nc, dbecsum, npe)
-! Now we compute for all perturbations the total charge and potential
-!
-! HL NEED FOR ULTRASOFT:
-!    call addusddens (drhoscfh, dbecsum, 0)
-     call zcopy (dfftp%nnr*nspin_mag, drhoscfh(1,1), 1, dvscfout(1,1),1)
-
-     meandvb = sqrt ((sum(real(dvbarein)))**2.d0 + (sum(aimag(dvbarein)))**2.d0 )/float(dffts%nnr)
-     if (meandvb.lt.1.d-10) then 
-         CALL fwfft ('Dense', dvscfout(:,1), dfftp)
-         dvscfout ( nl(1), current_spin ) = (0.d0, 0.0d0)
-         CALL invfft ('Dense', dvscfout(:,1), dfftp)
-     endif
-!
-! IF (okpaw) call mp_sum ( dbecsum, inter_pool_comm )
-! for q->0 the Fermi level can shift.
-! IF (lmetq0) call ef_shift(drhoscfh,ldos,ldoss, dos_ef, irr,npe,.false.)
-     call dv_of_drho (1, dvscfout(1,1), .true.)
-!    nmix_gw = 4
-     if (iw.eq.1) then
-!Density reponse in real space should be real at zero freq no matter what!
-!just using standard broyden for the zero freq. case.
-        call mix_potential(2*dfftp%nnr*nspin_mag, dvscfout, dvscfin, alpha_mix(kter), &
-                           dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
-     else
-    !Is the hermitian mixing scheme still okay?
-        call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin, alpha_mix(kter),& 
-                           dr2, tr2_gw, iter, nmix_gw, convt)
-                             
-     endif
-  !HL need this if we aren't dealing with electric fields:
-  !lmetq0 = lgauss.and.lgamma
-  !if (lmetq0) then
-  !      allocate ( ldos ( dfftp%nnr  , nspin_mag) )
-  !      allocate ( ldoss( dffts%nnr , nspin_mag) )
-  !      call localdos ( ldos , ldoss , dos_ef )
-  !endif
-     if (doublegrid) then
-           do is = 1, nspin_mag
-              call cinterpolate (dvscfin(1,is,1), dvscfins(1,is,1), -1)
-           enddo
-     endif
-
-#ifdef __PARA
-     aux_avg (1) = DBLE (ltaver)
-     aux_avg (2) = DBLE (lintercall)
-     call mp_sum ( aux_avg, inter_pool_comm )
-     averlt = aux_avg (1) / aux_avg (2)
-#else
-     averlt = DBLE (ltaver) / lintercall
-#endif
-     tcpu = get_clock ('SGW')
-     dr2 = dr2 
-     FLUSH(stdout)
-     rec_code=10
+    tcpu = get_clock ('SGW')
+    dr2 = dr2 
+    FLUSH(stdout)
+    rec_code=10
 
 !     WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !           "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 !     WRITE(1000+mpime, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
 !           &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
-     if (convt) goto 155
+     IF (convt) GOTO 155
 
-  enddo !loop on kter (iterations)
+   END DO !loop on kter (iterations)
 
   ! abort if solver doesn't converge
   CALL errore(__FILE__, "Iterative solver did not converge within given number&
@@ -506,21 +542,21 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
-  drhoscf(:,:) = dvscfin(:,:,1)
+  drhoscf = dvscfin
   
  !call mp_barrier(intra_image_comm)
  
-  deallocate (h_diag)
-  deallocate (aux1)
-  deallocate (dbecsum)
-  IF (noncolin) deallocate (dbecsum_nc)
-  deallocate (dvscfout)
-  deallocate (drhoscfh)
-  if (doublegrid) deallocate (dvscfins)
-  deallocate (dvscfin)
-  deallocate (dpsi)
+  DEALLOCATE(h_diag)
+  DEALLOCATE(aux1)
+  DEALLOCATE(dbecsum)
+  DEALLOCATE(dvscfout)
+  DEALLOCATE(drhoscfh)
+  DEALLOCATE(dvscfin)
+  DEALLOCATE(dpsi)
+  IF (doublegrid) DEALLOCATE(dvscfins)
+  IF (noncolin) DEALLOCATE(dbecsum_nc)
 
-  CALL stop_clock (time_coul_solver)
+  CALL stop_clock(time_coul_solver)
 
 END SUBROUTINE solve_linter
 
