@@ -81,9 +81,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   !> the change of the scf charge
   COMPLEX(dp), INTENT(OUT) :: drhoscf(dfftp%nnr, nspin_mag)
 
-  complex(DP), allocatable, target :: dvscfin(:,:)
+  complex(DP), allocatable, target :: dvscfin(:,:,:)
   ! change of the scf potential 
-  complex(DP), pointer :: dvscfins (:,:)
+  complex(DP), pointer :: dvscfins (:,:,:)
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable :: drhoscfh (:,:), dvscfout (:,:)
   complex(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
@@ -129,13 +129,25 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   logical :: conv_root    ! true if linear system is converged
 
-  ! complex value of 0
+  !> special treatment is possible for the first iteration
+  LOGICAL first_iteration
+
+  !> the number of frequencies
+  INTEGER num_freq
+
+  !> loop variable for frequencies
+  INTEGER ifreq
+
+  !> complex value of 0
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
 
-  ! complex value of 0.5
+  !> complex value of 0.5
   COMPLEX(dp), PARAMETER :: half = CMPLX(0.5_dp, 0.0_dp, KIND = dp)
 
   CALL start_clock (time_coul_solver)
+
+  ! note: for now we just evaluate a single frequency at a time
+  num_freq = 1
 
   ALLOCATE (dpsi(npwx*npol, nbnd))
  
@@ -155,9 +167,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ALLOCATE(etc(nbnd, nkstot))
   ALLOCATE(dbecsum((nhm * (nhm + 1)) / 2, nat, nspin_mag))
 
-  ALLOCATE(dvscfin(dfftp%nnr, nspin_mag))    
+  ALLOCATE(dvscfin(dfftp%nnr, nspin_mag, num_freq))
   IF (doublegrid) THEN
-    ALLOCATE(dvscfins(dffts%nnr, nspin_mag))    
+    ALLOCATE(dvscfins(dffts%nnr, nspin_mag, num_freq))
   ELSE
     dvscfins => dvscfin
   ENDIF
@@ -175,6 +187,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 ! niter_gw := maximum number of iterations
   
   DO kter = 1, niter_gw
+    !
+    first_iteration = (kter == 1)
     !
     iter       = kter + iter0
     ltaver     = 0
@@ -217,91 +231,159 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       !
       CALL h_prec(ik, evq, h_diag)
       !
-!HL indices freezing perturbations.
+      ! in the first iteration we initialize the linear system
+      ! and may use the multishift solver
+      IF (first_iteration) THEN
+        !
+        !  At the first iteration dvbare_q*psi_kpoint is calculated
+        !  and written to file
+        !
         nrec = ik
-!and now adds the contribution of the self consistent term
-        if (where_rec =='solve_lint'.or.iter>1) then
-          ! After the first iteration dvbare_q*psi_kpoint is read from file
-           call get_buffer (dvpsi, lrbar, iubar, nrec)
-
-           call start_clock ('vpsifft')
-           do ibnd = 1, nbnd_occ (ikk)
-              call cft_wave (ik, evc (1, ibnd), aux1, +1)
-              call apply_dpot(dffts%nnr, aux1, dvscfins(1,1), current_spin)
-              call cft_wave (ik, dvpsi (1, ibnd), aux1, -1)
-           enddo
-           call stop_clock ('vpsifft')
-           !  In the case of US pseudopotentials there is an additional
-           !  selfconsist term which comes from the dependence of D on
-           !  V_{eff} on the bare change of the potential
-           !
-           !Need to check this for ultrasoft              
-           !HL THIS TERM PROBABLY NEEDS TO BE INCLUDED.
-           !KC: This term needs to be included for USPP.
-           !KC: add the augmentation charge term for dvscf
-         !!  call adddvscf (1, ik)
-        else
-            call dvqpsi_us (dvbarein, ik, .false.)
-         ! USPP
-         ! add the augmentation charge term for dvext and dbext
-         ! call adddvscf (1, ik)
-           call save_buffer (dvpsi, lrbar, iubar, nrec)
-        endif
+        CALL dvqpsi_us(dvbarein, ik, .FALSE.)
+        CALL save_buffer(dvpsi, lrbar, iubar, nrec)
+        !
         ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
         ! Apply -P_c^+.
         !-P_c^ = - (1-P_v^):
-        CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi, npwq, .false.)
-        
-        if(where_rec=='solve_lint'.or.iter > 1) then
-           if(high_io) then
-              call get_buffer( dpsip, lrdwf, iudwfp, ik)
-              if(iw.gt.1) call get_buffer( dpsim, lrdwf, iudwfm, ik)
-           else
-              dpsim(:,:)     = (0.d0, 0.d0) 
-              dpsip(:,:)     = (0.d0, 0.d0) 
-           endif
-           thresh = min (1.d-1 * sqrt (dr2), 1.d-2)
-        else
-         !
-         ! At the first iteration dpsi and dvscfin are set to zero
-         !
-          dpsi(:,:)      = (0.d0, 0.d0) 
-          dpsim(:,:)     = (0.d0, 0.d0) 
-          dpsip(:,:)     = (0.d0, 0.d0) 
-          dvscfin(:, :)  = (0.d0, 0.d0)
-          dvscfout(:, :) = (0.d0, 0.d0)
-          thresh         =  1.0d-2
-        endif
-
+        CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi, npwq, .FALSE.)
+        !
+        ! At the first iteration initialize arrays to zero
+        !
+        dpsi     = zero
+        dpsim    = zero
+        dpsip    = zero
+        dvscfin  = zero
+        dvscfout = zero
+        !
+        ! starting threshold for iterative solution of the linear system
+        !
+        thresh = 1.0d-2
+        !
+        ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
+        ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
+        ! TODO replace with multishift solver
+        !
         conv_root = .true.
-        etc(:,:)  = CMPLX( et(:,:), 0.0d0 , kind=DP)
-        cw        = fiu(iw) 
+        etc = CMPLX(et, 0.0_dp, kind = dp)
+        cw  = fiu(iw) 
+        !
+        IF (iw == 1) THEN
+          !
+          ! for the Fermi energy, we may use the CG solver
+          !
+          CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),  &
+               npol)
+          CALL ZCOPY(npwx * npol * nbnd_occ(ikk), dpsip, 1, dpsi, 1)
+          !
+        ELSE 
+          !
+          ! for all other frequencies we use the BiCG solver
+          !
+          conv_root = .TRUE.
+          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
+               npol, +cw, maxter_coul, .TRUE.)
+          !
+          conv_root = .TRUE.
+          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
+               npol, -cw, maxter_coul, .TRUE.)
+          !
+          dpsi = zero
+          CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsim, 1, dpsi, 1)
+          CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsip, 1, dpsi, 1)
+          !
+        END IF ! frequency = Fermi energy?
+        !
+      ELSE ! general case iter > 1
+        !
+        ! After the first iteration dvbare_q*psi_kpoint is read from file
+        !
+        nrec = ik
+        CALL get_buffer(dvpsi, lrbar, iubar, nrec)
+        !
+        ! frequencies are the equivalent of perturbations in PHonon
+        DO ifreq = 1, num_freq
+          !
+          ! calculates dvscf_q*psi_k in G_space, for all bands, k=kpoint
+          ! dvscf_q from previous iteration (mix_potential)
+          !
+          DO ibnd = 1, nbnd_occ (ikk)
+            CALL cft_wave(ik, evc (1, ibnd), aux1, +1)
+            CALL apply_dpot(dffts%nnr, aux1, dvscfins(1, 1, ifreq), current_spin)
+            CALL cft_wave(ik, dvpsi (1, ibnd), aux1, -1)
+          ENDDO
+          !
+          !  In the case of US pseudopotentials there is an additional
+          !  selfconsist term which comes from the dependence of D on
+          !  V_{eff} on the bare change of the potential
+          !
+          CALL adddvscf(ifreq, ik)
+          !
+          ! Orthogonalize dvpsi to valence states: ps = <evq|dvpsi>
+          ! Apply -P_c^+.
+          !-P_c^ = - (1-P_v^):
+          CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi, npwq, .FALSE.)
+          !
+          ! starting value for delta_psi is read from iudwf
+          !
+          IF (high_io) THEN
+            CALL get_buffer(dpsip, lrdwf, iudwfp, ik)
+            ! TODO replace iw with ifreq
+            IF (iw > 1) CALL get_buffer(dpsim, lrdwf, iudwfm, ik)
+          !
+          ! restart from default
+          !
+          ELSE
+            dpsim = zero
+            dpsip = zero 
+          ENDIF
+          !
+          ! threshold for iterative solution of the linear system
+          !
+          thresh = MIN(1.d-1 * SQRT(dr2), 1.d-2)
+          !
+          ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
+          ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
+          !
+          conv_root = .true.
+          etc = CMPLX(et, 0.0_dp, kind = dp)
+          ! TODO update to ifreq
+          cw  = fiu(iw) 
+          !
+          IF (iw == 1) THEN
+            !
+            ! for the Fermi energy, we may use the CG solver
+            !
+            CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+                 npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),  &
+                 npol)
+            CALL ZCOPY(npwx * npol * nbnd_occ(ikk), dpsip, 1, dpsi, 1)
+            !
+          ELSE 
+            !
+            ! for all other frequencies we use the BiCG solver
+            !
+            conv_root = .TRUE.
+            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+                 npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
+                 npol, +cw, maxter_coul, .TRUE.)
+            !
+            conv_root = .TRUE.
+            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+                 npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
+                 npol, -cw, maxter_coul, .TRUE.)
+            !
+            dpsi = zero
+            CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsim, 1, dpsi, 1)
+            CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsip, 1, dpsi, 1)
+            !
+          END IF ! frequency = Fermi energy?
 
-        if (iw.eq.1) then
-               call cgsolve_all (h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
-                      npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), &
-                      npol)
-               do ibnd = 1, nbnd_occ(ikk)
-                  call ZCOPY (npwx*npol, dpsip (1, ibnd), 1, dpsi(1, ibnd), 1)
-               enddo
-        else 
+        END DO ! ifreq
 
-              conv_root = .true.
-              call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
-                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
-                   npol, cw, maxter_coul, .true.)
-
-              conv_root = .true.
-              call cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag,     &
-                   npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk), npol, &
-                  -cw, maxter_coul, .true.)
-
-              dpsi(:,:) = zero
-              do ibnd =1 , nbnd_occ(ikk)
-                 call ZAXPY (npwx*npol, half, dpsim(1,ibnd), 1, dpsi(1,ibnd), 1)
-                 call ZAXPY (npwx*npol, half, dpsip(1,ibnd), 1, dpsi(1,ibnd), 1)
-              enddo
-        endif
+      END IF ! first_iteration
 
         ltaver = ltaver + lter
         lintercall = lintercall + 1
@@ -373,7 +455,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                            dr2, tr2_gw, iter, nmix_gw, flmixdpot, convt)
      else
     !Is the hermitian mixing scheme still okay?
-        call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin(1,1), alpha_mix(kter),& 
+        call mix_potential_c(dfftp%nnr*nspin_mag, dvscfout(1,1), dvscfin, alpha_mix(kter),& 
                            dr2, tr2_gw, iter, nmix_gw, convt)
                              
      endif
@@ -386,7 +468,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   !endif
      if (doublegrid) then
            do is = 1, nspin_mag
-              call cinterpolate (dvscfin(1,is), dvscfins(1,is), -1)
+              call cinterpolate (dvscfin(1,is,1), dvscfins(1,is,1), -1)
            enddo
      endif
 
@@ -424,7 +506,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
 !        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
 
-  drhoscf(:,:) = dvscfin(:,:)
+  drhoscf(:,:) = dvscfin(:,:,1)
   
  !call mp_barrier(intra_image_comm)
  
