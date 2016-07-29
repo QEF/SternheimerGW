@@ -55,6 +55,7 @@ SUBROUTINE coulomb(iq, igstart, num_task, scrcoul)
   USE partial,          ONLY : done_irr, comp_irr
   USE paw_variables,    ONLY : okpaw
   USE qpoint,           ONLY : xq
+  USE solve_module,     ONLY : solve_linter
   USE units_gw,         ONLY : iuncoul, lrcoul
   USE uspp,             ONLY : okvan
   USE uspp_param,       ONLY : nhm

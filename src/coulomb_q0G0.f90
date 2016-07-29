@@ -45,18 +45,19 @@ SUBROUTINE coulomb_q0G0(iq, eps_m)
   USE klist,            ONLY : lgauss
   USE kinds,            ONLY : DP
   USE lsda_mod,         ONLY : nspin
+  USE mp,               ONLY : mp_sum, mp_barrier
+  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
+                               my_image_id, nimage, root_image
+  USE mp_pools,         ONLY : me_pool, root_pool, inter_pool_comm
+  USE mp_world,         ONLY : mpime
   USE noncollin_module, ONLY : noncolin, nspin_mag
   USE partial,          ONLY : done_irr, comp_irr
   USE paw_variables,    ONLY : okpaw
   USE qpoint,           ONLY : xq
+  USE solve_module,     ONLY : solve_linter
   USE units_gw,         ONLY : iuncoul, lrcoul
   USE uspp,             ONLY : okvan
   USE uspp_param,       ONLY : nhm
-  USE mp_world,         ONLY : mpime
-  USE mp_pools,         ONLY : me_pool, root_pool, inter_pool_comm
-  USE mp,               ONLY : mp_sum, mp_barrier
-  USE mp_global,        ONLY : inter_image_comm, intra_image_comm, &
-                               my_image_id, nimage, root_image
 
   IMPLICIT NONE
 

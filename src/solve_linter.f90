@@ -22,6 +22,19 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> This module contains the iterative and the direct solver to determine the
+!! screened Coulomb interaction.
+!!
+!! The purpose is to contain the common parts of the solvers in a single routine to
+!! avoid code duplication as much as possible. This module is developed starting
+!! from solve_linter of the PHonon package.
+!------------------------------------------------------------------------------
+MODULE solve_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
 !> Driver routine for the solution of the linear system.
 !!
 !! It defines the change of the wavefunction due to a perturbing potential
@@ -587,3 +600,5 @@ SUBROUTINE check_all_convt(convt)
   DEALLOCATE(convt_check)
   !
 END SUBROUTINE
+
+END MODULE solve_module
