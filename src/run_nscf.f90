@@ -36,7 +36,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   USE lsda_mod,        ONLY : nspin
   USE input_parameters,ONLY : pseudo_dir, force_symmorphic
   USE control_flags,   ONLY : restart
-  USE fft_base,        ONLY : dffts
+  USE fft_base,        ONLY : dtgs
   USE qpoint,          ONLY : xq
   USE check_stop,      ONLY : check_stop_now
   USE control_gw,      ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
@@ -111,7 +111,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !  they are not used, apart in particular points, where they are
   !  activated.
   !
-  IF (ntask_groups > 1) dffts%have_task_groups=.FALSE.
+  IF (ntask_groups > 1) dtgs%have_task_groups=.FALSE.
   !
   CALL stop_clock( 'PWSCF' )
   !

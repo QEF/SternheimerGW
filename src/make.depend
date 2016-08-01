@@ -608,6 +608,7 @@ sigma_exchG.o : gwcom.o
 sigma_exchG.o : save_gw_input.o
 sigma_exchG.o : truncation.o
 sigma_expect.o : ../../Modules/kind.o
+sigma_expect.o : reorder.o
 sigma_grids.o : ../../FFTXlib/fft_types.o
 sigma_grids.o : ../../FFTXlib/stick_set.o
 sigma_grids.o : ../../Modules/cell_base.o
@@ -635,9 +636,7 @@ sigma_matel.o : ../../Modules/io_global.o
 sigma_matel.o : ../../Modules/kind.o
 sigma_matel.o : ../../Modules/mp.o
 sigma_matel.o : ../../Modules/mp_images.o
-sigma_matel.o : ../../Modules/mp_pools.o
 sigma_matel.o : ../../Modules/mp_world.o
-sigma_matel.o : ../../Modules/noncol.o
 sigma_matel.o : ../../Modules/recvec.o
 sigma_matel.o : ../../Modules/wavefunctions.o
 sigma_matel.o : ../../PW/src/buffers.o
@@ -645,7 +644,7 @@ sigma_matel.o : ../../PW/src/pwcom.o
 sigma_matel.o : ../../PW/src/scf_mod.o
 sigma_matel.o : gwcom.o
 sigma_matel.o : kind_gw.o
-sigma_matel.o : save_gw_input.o
+sigma_matel.o : sigma_expect.o
 sigma_pade.o : ../../Modules/constants.o
 sigma_pade.o : ../../Modules/gvecw.o
 sigma_pade.o : ../../Modules/io_files.o

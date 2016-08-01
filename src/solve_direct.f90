@@ -82,9 +82,6 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
   USE mp_world,        ONLY : mpime
   USE mp_pools,             ONLY : inter_pool_comm
   USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
-#ifdef __NAG
-  USE f90_unix_io,     ONLY : flush
-#endif
 
   implicit none
   !
@@ -338,7 +335,7 @@ SUBROUTINE solve_lindir(dvbarein, drhoscf)
     enddo
     averlt = DBLE (ltaver) / lintercall
     tcpu = get_clock ('GW')
-    CALL FLUSH( stdout )
+    FLUSH( stdout )
     rec_code=10
   enddo !loop on kter (iterations)
 !   after this point drhoscf is dv_hartree(RPA)

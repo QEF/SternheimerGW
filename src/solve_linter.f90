@@ -84,9 +84,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE gvecs,           ONLY : nls, doublegrid
   USE fft_base,        ONLY : dfftp, dffts
   USE fft_interfaces,  ONLY : invfft, fwfft
-#ifdef __NAG
-  USE f90_unix_io,     ONLY : flush
-#endif
 
   implicit none
 
@@ -434,7 +431,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 #endif
      tcpu = get_clock ('SGW')
      dr2 = dr2 
-     CALL FLUSH( stdout )
+     FLUSH( stdout )
      rec_code=10
 
 !     WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
