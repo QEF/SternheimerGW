@@ -60,7 +60,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
                                    rec_code_read, where_rec, flmixdpot, &
                                    high_io, maxter_coul
   USE dv_of_drho_lr,        ONLY : dv_of_drho
-  USE eqv,                  ONLY : dvpsi, dpsi, evq
+  USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE freq_gw,              ONLY : fiu, nfsmax
@@ -99,7 +99,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   complex(DP), pointer :: dvscfins (:,:,:)
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable :: drhoscfh(:,:,:), dvscfout(:,:,:)
-  complex(DP) :: dpsip(npwx*npol, nbnd), dpsim(npwx*npol, nbnd)
   complex(DP), allocatable :: dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
   complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
@@ -132,8 +131,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
              ik, ikk,    & ! counter on k points
              ikq,        & ! counter on k+q points
              is,         & ! counter on spin polarizations
-             nrec,       & ! the record number for dvpsi and dpsi
-             lmres         ! number of gmres iterations to include when using bicgstabl.
+             nrec          ! the record number for dvpsi and dpsi
   integer :: irr, imode0, npe
 
   external ch_psi_all, cg_psi, h_psi_all, ch_psi_all_nopv
@@ -151,6 +149,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   !> loop variable for frequencies
   INTEGER ifreq
 
+  !> Change of the potential for e +- w
+  !! first dimension  - number of G vector
+  !! second dimension - number of bands
+  !! third dimension  - number of frequencies 
+  COMPLEX(dp), ALLOCATABLE :: dpsi(:,:,:)
+
   !> complex value of 0
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
 
@@ -165,7 +169,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! note: for now we just evaluate a single frequency at a time
   num_freq = 1
 
-  ALLOCATE (dpsi(npwx*npol, nbnd))
+  ! if the index of the last dimension is positive or negative, we evaluate
+  ! (H + w S + alpha P) and (H - w S + alpha P), respectively
+  ALLOCATE(dpsi(npwx * npol, nbnd, 2 * num_freq))
  
   IF (rec_code_read > 20 ) RETURN
 
@@ -176,7 +182,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   irr    = 1
   ipert  = 1
   lter   = 0
-  lmres  = 1
 
   ALLOCATE(dvscfout(dfftp%nnr, nspin_mag, num_freq))
   ALLOCATE(drhoscfh(dfftp%nnr, nspin_mag, num_freq))
@@ -266,8 +271,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         ! At the first iteration initialize arrays to zero
         !
         dpsi     = zero
-        dpsim    = zero
-        dpsip    = zero
         dvscfin  = zero
         dvscfout = zero
         !
@@ -287,28 +290,26 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           !
           ! for the Fermi energy, we may use the CG solver
           !
-          CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+          CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(1,1,1), h_diag, & 
                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),  &
                npol)
-          CALL ZCOPY(npwx * npol * nbnd_occ(ikk), dpsip, 1, dpsi, 1)
           !
         ELSE 
           !
           ! for all other frequencies we use the BiCG solver
           !
           conv_root = .TRUE.
-          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,1), h_diag, &
                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
                npol, +cw, maxter_coul, .TRUE.)
           !
           conv_root = .TRUE.
-          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,2), h_diag, &
                npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
                npol, -cw, maxter_coul, .TRUE.)
           !
-          dpsi = zero
-          CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsim, 1, dpsi, 1)
-          CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsip, 1, dpsi, 1)
+          CALL ZSCAL(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,1), 1)
+          CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,2), 1, dpsi(1,1,1), 1)
           !
         END IF ! frequency = Fermi energy?
         !
@@ -345,15 +346,14 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           ! starting value for delta_psi is read from iudwf
           !
           IF (high_io) THEN
-            CALL get_buffer(dpsip, lrdwf, iudwfp, ik)
+            CALL get_buffer(dpsi(1,1,1), lrdwf, iudwfp, ik)
             ! TODO replace iw with ifreq
-            IF (iw > 1) CALL get_buffer(dpsim, lrdwf, iudwfm, ik)
+            IF (iw > 1) CALL get_buffer(dpsi(1,1,2), lrdwf, iudwfm, ik)
           !
           ! restart from default
           !
           ELSE
-            dpsim = zero
-            dpsip = zero 
+            dpsi = zero
           ENDIF
           !
           ! threshold for iterative solution of the linear system
@@ -372,28 +372,26 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
             !
             ! for the Fermi energy, we may use the CG solver
             !
-            CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsip, h_diag, & 
+            CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(1,1,1), h_diag, & 
                  npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),  &
                  npol)
-            CALL ZCOPY(npwx * npol * nbnd_occ(ikk), dpsip, 1, dpsi, 1)
             !
           ELSE 
             !
             ! for all other frequencies we use the BiCG solver
             !
             conv_root = .TRUE.
-            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsip, h_diag, &
+            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,1), h_diag, &
                  npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
                  npol, +cw, maxter_coul, .TRUE.)
             !
             conv_root = .TRUE.
-            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsim, h_diag, &
+            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,2), h_diag, &
                  npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
                  npol, -cw, maxter_coul, .TRUE.)
             !
-            dpsi = zero
-            CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsim, 1, dpsi, 1)
-            CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsip, 1, dpsi, 1)
+            CALL ZSCAL(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,1), 1)
+            CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,2), 1, dpsi(1,1,1), 1)
             !
           END IF ! frequency = Fermi energy?
 
@@ -413,8 +411,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       ! writes delta_psi+- on iunit iudwf, k=kpoint
       !
       IF (high_io) THEN
-        IF (iw > 1) CALL save_buffer(dpsim, lrdwf, iudwfm, ik)
-        CALL save_buffer(dpsip, lrdwf, iudwfp, ik)
+        IF (iw > 1) CALL save_buffer(dpsi(1,1,2), lrdwf, iudwfm, ik)
+        CALL save_buffer(dpsi(1,1,1), lrdwf, iudwfp, ik)
       END IF ! high_io
       !
       ! calculates dvscf, sum over k => dvscf_q_ipert
@@ -423,10 +421,10 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       ! TODO change to account for ifreq
       IF (noncolin) THEN
         call incdrhoscf_nc(drhoscf(1, 1, 1), weight, ik, &
-                           dbecsum_nc(1, 1, 1, 1), dpsi)
+                           dbecsum_nc(1, 1, 1, 1), dpsi(1, 1, 1))
       ELSE
         call incdrhoscf(drhoscf(1, current_spin, 1), weight, ik, &
-                        dbecsum(1, 1, current_spin), dpsi(1,1))
+                        dbecsum(1, 1, current_spin), dpsi(1, 1, 1))
       ENDIF
 
     END DO ! on k-points
@@ -542,9 +540,9 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
    END DO !loop on kter (iterations)
 
-  ! abort if solver doesn't converge
-  CALL errore(__FILE__, "Iterative solver did not converge within given number&
-                       & of iterations", niter_gw)
+!  ! abort if solver doesn't converge
+!  CALL errore(__FILE__, "Iterative solver did not converge within given number&
+!                       & of iterations", niter_gw)
 
 155 iter0=0
 
