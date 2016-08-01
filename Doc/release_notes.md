@@ -1,6 +1,16 @@
 Release notes
 =============
 
+Version 0.8
+-----------
+
+Create a new module to evaluate the expectation value of Sigma.
+The idea is to collect parts that are similar for Sigma_x and Sigma_c into
+a single file, to avoid the duplication of code.
+It also makes it easier to evaluate the expectation value in other parts of
+the code should it be necessary.
+
+
 Version 0.7
 -----------
 
