@@ -109,7 +109,7 @@ SUBROUTINE coulomb(iq, igstart, num_task, scrcoul)
   IF(solve_direct) then
     ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
   ELSE
-    ALLOCATE (drhoscfs(dffts%nnr, 1, 1))
+    ALLOCATE (drhoscfs(dffts%nnr, 1, nfs))
   END IF
   IF (nspin_mag /= 1) CALL errore(__FILE__, "not implemented for magnetic system", nspin_mag)
 
@@ -153,23 +153,23 @@ DO indx = 1, num_task
           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
           CYCLE
         endif
+        drhoscfs = zero
+        dvbare   = zero
+        dvbare(nls(ig_unique(ig))) = one
+        CALL invfft('Smooth', dvbare, dffts)
+        CALL solve_linter(dvbare, fiu(:nfs), drhoscfs)
+        CALL fwfft('Smooth', dvbare, dffts)
         DO iw = 1, nfs
-           drhoscfs = zero
-           dvbare   = zero
-           dvbare(nls(ig_unique(ig))) = one
-           CALL invfft('Smooth', dvbare, dffts)
-           CALL solve_linter (dvbare, fiu(iw:iw), drhoscfs(:,:,1))
-           CALL fwfft('Smooth', dvbare, dffts)
-           CALL fwfft('Dense', drhoscfs(:,1,1), dffts)
+           CALL fwfft('Dense', drhoscfs(:,1,iw), dffts)
            IF(ionode) THEN
              WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)') &
-             drhoscfs(nls(ig_unique(ig)), 1, 1) + dvbare(nls(ig_unique(ig)))
+               drhoscfs(nls(ig_unique(ig)), 1, iw) + dvbare(nls(ig_unique(ig)))
              DO igp = 1, gcutcorr
-                scrcoul(igp, iw, indx) = drhoscfs(nl(igp), 1, 1)
-             ENDDO
-           ENDIF
-        ENDDO
-      ENDIF !solve_direct/solve_linter
+               scrcoul(igp, iw, indx) = drhoscfs(nl(igp), 1, iw)
+             END DO ! igp
+           END IF
+        END DO ! iw
+      END IF !solve_direct/solve_linter
 ENDDO 
 545 CONTINUE
 tcpu = get_clock ('GW')

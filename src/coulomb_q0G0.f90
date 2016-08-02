@@ -97,7 +97,8 @@ else
 !to extend this to magnetic with multishift we need to add another
 !dimension to drhoscfrs
   WRITE(stdout, '(4x,4x,"nspinmag", i4)') nspin_mag
-  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, 1))    
+  IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
+  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, nfs))
 endif
 irr=1
 scrcoul(:,:,:,:) = (0.d0, 0.0d0)
@@ -127,23 +128,23 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
           eps_m(iw) = drhoscfs(nls(1),iw,1) + 1.0d0
        ENDDO
     ELSE
-     DO iw = 1, nfs
        drhoscfs = zero
        dvbare   = zero
        dvbare(nls(1)) = one
        CALL invfft('Smooth', dvbare, dffts)
-       CALL solve_linter (dvbare, fiu(iw:iw), drhoscfs)
+       CALL solve_linter(dvbare, fiu(:nfs), drhoscfs)
        CALL fwfft('Smooth', dvbare, dffts)
-       DO isp =1 , nspin_mag
-          CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)
-       ENDDO
-       IF(ionode) THEN
-         WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)') drhoscfs(nls(1), 1, 1) + dvbare(nls(1))
-       ENDIF
-     !(eps_{M}^{-1} - 1)
-       eps_m(iw) = drhoscfs(nls(1),1,1)
-     ENDDO
-    ENDIF
+       DO iw = 1, nfs
+         DO isp = 1, nspin_mag
+           CALL fwfft('Dense', drhoscfs(:, isp, iw), dffts)
+         END DO ! isp
+         IF(ionode) THEN
+           WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f16.9)') drhoscfs(nls(1), 1, iw) + dvbare(nls(1))
+         END IF
+         !(eps_{M}^{-1} - 1)
+         eps_m(iw) = drhoscfs(nls(1), 1, iw)
+       END DO ! iw
+    END IF
 545 CONTINUE
 tcpu = get_clock ('GW')
 DEALLOCATE (drhoscfs)
