@@ -737,7 +737,9 @@ solve_linter.o : ../../Modules/uspp.o
 solve_linter.o : ../../Modules/wavefunctions.o
 solve_linter.o : ../../PW/src/buffers.o
 solve_linter.o : ../../PW/src/pwcom.o
+solve_linter.o : bicgstab.o
 solve_linter.o : gwcom.o
+solve_linter.o : linear_op.o
 solve_linter.o : timing.o
 star_q.o : ../../Modules/io_global.o
 star_q.o : ../../Modules/kind.o

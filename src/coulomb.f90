@@ -77,6 +77,12 @@ SUBROUTINE coulomb(iq, igstart, num_task, scrcoul)
   !> actual index inside the array
   INTEGER :: indx
 
+  !> complex constant of zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  !> complex constant of one
+  COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND = dp)
+
   REAL(DP) :: tcpu, get_clock
 ! timing variables
   REAL(DP) :: qg2, qg2coul
@@ -120,9 +126,9 @@ DO indx = 1, num_task
       IF(solve_direct) THEN
          ! q + G = 0 is treated differently
          IF(tinvert .AND. qg2 < eps8) CYCLE 
-         drhoscfs = dcmplx(0.0d0, 0.0d0)
-         dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-         dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
+         drhoscfs = zero 
+         dvbare   = zero 
+         dvbare(nls(ig_unique(ig))) = one
          CALL invfft('Smooth', dvbare, dffts)
          CALL solve_lindir (dvbare, drhoscfs(:,:,1))
          CALL fwfft('Smooth', dvbare, dffts)
@@ -148,11 +154,11 @@ DO indx = 1, num_task
           CYCLE
         endif
         DO iw = 1, nfs
-           drhoscfs = dcmplx(0.0d0, 0.0d0)
-           dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-           dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
+           drhoscfs = zero
+           dvbare   = zero
+           dvbare(nls(ig_unique(ig))) = one
            CALL invfft('Smooth', dvbare, dffts)
-           CALL solve_linter (dvbare, iw, drhoscfs(:,:,1))
+           CALL solve_linter (dvbare, fiu(iw:iw), drhoscfs(:,:,1))
            CALL fwfft('Smooth', dvbare, dffts)
            CALL fwfft('Dense', drhoscfs(:,1,1), dffts)
            IF(ionode) THEN

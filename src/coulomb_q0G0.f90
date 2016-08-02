@@ -61,6 +61,12 @@ SUBROUTINE coulomb_q0G0(iq, eps_m)
 
   IMPLICIT NONE
 
+  !> complex constant of zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  !> complex constant of one
+  COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND = dp)
+
   REAL(DP) :: tcpu, get_clock
 ! timing variables
   REAL(DP) :: qg2, qg2coul
@@ -108,9 +114,9 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        RETURN
     endif
     IF(solve_direct) THEN
-       drhoscfs      = dcmplx(0.0d0, 0.0d0)
-       dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-       dvbare (nls(1)) = dcmplx(1.d0, 0.d0)
+       drhoscfs = zero
+       dvbare   = zero
+       dvbare(nls(1)) = one
        CALL invfft('Smooth', dvbare, dffts)
        CALL solve_lindir (dvbare, drhoscfs)
        CALL fwfft('Smooth', dvbare, dffts)
@@ -122,11 +128,11 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        ENDDO
     ELSE
      DO iw = 1, nfs
-       drhoscfs      = dcmplx(0.0d0, 0.0d0)
-       dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-       dvbare (nls(1)) = dcmplx(1.d0, 0.d0)
+       drhoscfs = zero
+       dvbare   = zero
+       dvbare(nls(1)) = one
        CALL invfft('Smooth', dvbare, dffts)
-       CALL solve_linter (dvbare, iw, drhoscfs)
+       CALL solve_linter (dvbare, fiu(iw:iw), drhoscfs)
        CALL fwfft('Smooth', dvbare, dffts)
        DO isp =1 , nspin_mag
           CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)

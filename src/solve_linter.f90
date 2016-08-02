@@ -49,21 +49,21 @@ CONTAINS
 !! 4. calls c_bi_cgsolve_all to solve the linear system
 !! 5. computes Delta rho, Delta V_{SCF}.
 !----------------------------------------------------------------------------
-SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
+SUBROUTINE solve_linter(dvbarein, freq, drhoscf)
 !-----------------------------------------------------------------------------
 
+  USE bicgstab_module,      ONLY : bicgstab
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : degspin
-  USE control_gw,           ONLY : rec_code, niter_gw, nmix_gw, tr2_gw, &
+  USE control_gw,           ONLY : niter_gw, nmix_gw, tr2_gw, &
                                    lgamma, convt, nbnd_occ, alpha_mix, &
-                                   rec_code_read, where_rec, flmixdpot, &
-                                   high_io, maxter_coul
+                                   flmixdpot
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : invfft, fwfft
-  USE freq_gw,              ONLY : fiu, nfsmax
+  USE freq_gw,              ONLY : nfsmax
   USE gvecs,                ONLY : doublegrid
   USE gvect,                ONLY : nl
   USE io_global,            ONLY : stdout
@@ -76,20 +76,20 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
   USE qpoint,               ONLY : npwq, nksq, igkq, ikks, ikqs
   USE timing_module,        ONLY : time_coul_solver
-  USE units_gw,             ONLY : lrdwf, iubar, lrbar, &
-                                   iuwfc, lrwfc, iudwfm, iudwfp 
+  USE units_gw,             ONLY : iubar, lrbar, &
+                                   iuwfc, lrwfc, iudwfp 
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : nhm
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npw, npwx, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k
 
   IMPLICIT NONE
 
   !> the initial perturbuing potential
   COMPLEX(dp), INTENT(IN)  :: dvbarein (dffts%nnr)
 
-  !> the index of the frequency
-  INTEGER,     INTENT(IN)  :: iw
+  !> the frequencies for which the screened Coulomb is evaluated
+  COMPLEX(dp), INTENT(IN)  :: freq(:)
 
   !> the change of the scf charge
   COMPLEX(dp), INTENT(OUT) :: drhoscf(dfftp%nnr, nspin_mag, 1)
@@ -100,18 +100,15 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   ! change of the scf potential (smooth part only)
   complex(DP), allocatable :: drhoscfh(:,:,:), dvscfout(:,:,:)
   complex(DP), allocatable :: dbecsum (:,:,:), dbecsum_nc(:,:,:,:), aux1 (:,:)
-  complex(DP) :: cw
   complex(DP), allocatable :: etc(:,:)
   complex(kind=DP) :: ZDOTC
   ! Misc variables for metals
   real(DP), external :: w0gauss, wgauss
   real(DP) , allocatable :: h_diag (:,:)
-  real(DP) :: thresh, anorm, averlt, dr2
+  real(DP) :: thresh, dr2
   ! thresh: convergence threshold
-  ! anorm : the norm of the error
-  ! averlt: average number of iterations
   ! dr2   : self-consistency error
-  real(DP) :: weight, aux_avg (2)
+  real(DP) :: weight
   !HL dbecsum (:,:,:,:), dbecsum_nc(:,:,:,:,:), aux1 (:,:)
   ! Misc work space
   ! ldos : local density of states af Ef
@@ -138,8 +135,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   real(kind=DP)    :: DZNRM2
   external ZDOTC, DZNRM2
 
-  logical :: conv_root    ! true if linear system is converged
-
   !> special treatment is possible for the first iteration
   LOGICAL first_iteration
 
@@ -148,6 +143,22 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   !> loop variable for frequencies
   INTEGER ifreq
+
+  !! is the first frequency equal to 0
+  LOGICAL zero_freq
+
+  !> a copy of the input frequencies with negative values added
+  !! this makes the call of the multishift solver easier
+  COMPLEX(dp), ALLOCATABLE :: omega(:)
+
+  !> size of this array
+  INTEGER num_omega
+
+  !> index in the array omega
+  INTEGER iomega
+
+  !> helper variable - length of array in BLAS routines
+  INTEGER vec_size
 
   !> Change of the potential for e +- w
   !! first dimension  - number of G vector
@@ -166,15 +177,33 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   CALL start_clock (time_coul_solver)
 
-  ! note: for now we just evaluate a single frequency at a time
-  num_freq = 1
+  ! determine number of frequencies
+  ! note: currently on num_freq = 1 is implemented
+  num_freq = SIZE(freq)
+  IF (num_freq /= 1) CALL errore(__FILE__, "only num_freq = 1 implemented", num_freq)
+  zero_freq = freq(1) == zero
+
+  ! if the first frequency is 0, we don't need to add the negative value
+  IF (zero_freq) THEN
+    num_omega = 2 * num_freq - 1
+  ELSE
+    num_omega = 2 * num_freq
+  END IF ! zero_freq
+
+  ! create copy of the frequency array alternating adding negative
+  ! values to the back
+  ALLOCATE(omega(num_omega))
+  omega(:num_freq) = freq
+  IF (zero_freq) THEN
+    omega(num_freq + 1:) = -freq(2:)
+  ELSE
+    omega(num_freq + 1:) = -freq
+  END IF
 
   ! if the index of the last dimension is positive or negative, we evaluate
   ! (H + w S + alpha P) and (H - w S + alpha P), respectively
-  ALLOCATE(dpsi(npwx * npol, nbnd, 2 * num_freq))
+  ALLOCATE(dpsi(npwx * npol, nbnd, num_omega))
  
-  IF (rec_code_read > 20 ) RETURN
-
 !HL- Allocate arrays for dV_scf (need to alter these from (dfftp%nnr, nspin_mag, npe) 
 !to just (dfftp%nnr, nspin_mag).
   npe    = 1
@@ -202,7 +231,6 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 
   iter0 =  0
   convt = .FALSE.
-  where_rec = 'no_recover'
 
 ! The outside loop is over the iterations.
 ! niter_gw := maximum number of iterations
@@ -229,6 +257,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       ! are replaced with the appropriate igk_k
       igkq = igk_k(:,ikq)
       !
+      current_k = ikq
       IF (lsda) current_spin = isk(ikk)
       !
       ! read unperturbed wavefunctions psi(k) and psi(k+q)
@@ -280,38 +309,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         !
         ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
         ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
-        ! TODO replace with multishift solver
         !
-        conv_root = .true.
-        etc = CMPLX(et, 0.0_dp, kind = dp)
-        cw  = fiu(iw) 
+        ! use the BiCGstab solver
         !
-        IF (iw == 1) THEN
-          !
-          ! for the Fermi energy, we may use the CG solver
-          !
-          CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(1,1,1), h_diag, & 
-               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),  &
-               npol)
-          !
-        ELSE 
-          !
-          ! for all other frequencies we use the BiCG solver
-          !
-          conv_root = .TRUE.
-          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,1), h_diag, &
-               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
-               npol, +cw, maxter_coul, .TRUE.)
-          !
-          conv_root = .TRUE.
-          CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,2), h_diag, &
-               npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
-               npol, -cw, maxter_coul, .TRUE.)
-          !
-          CALL ZSCAL(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,1), 1)
-          CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,2), 1, dpsi(1,1,1), 1)
-          !
-        END IF ! frequency = Fermi energy?
+        DO ibnd = 1, nbnd_occ(ik)
+          CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), et(ibnd, ikk) + omega, dpsi(:npwq, ibnd, :))
+        END DO ! ibnd
         !
       ELSE ! general case iter > 1
         !
@@ -344,17 +347,12 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           CALL orthogonalize(dvpsi, evq, ikk, ikq, dpsi, npwq, .FALSE.)
           !
           ! starting value for delta_psi is read from iudwf
-          !
-          IF (high_io) THEN
-            CALL get_buffer(dpsi(1,1,1), lrdwf, iudwfp, ik)
-            ! TODO replace iw with ifreq
-            IF (iw > 1) CALL get_buffer(dpsi(1,1,2), lrdwf, iudwfm, ik)
+          ! TODO: restarting is deactivated because bicgstab doesn't take
+          !       a starting value in the current form
           !
           ! restart from default
           !
-          ELSE
-            dpsi = zero
-          ENDIF
+          dpsi = zero
           !
           ! threshold for iterative solution of the linear system
           !
@@ -363,57 +361,62 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
           ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
           ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
           !
-          conv_root = .true.
-          etc = CMPLX(et, 0.0_dp, kind = dp)
-          ! TODO update to ifreq
-          cw  = fiu(iw) 
+          ! determine index of -omega
+          IF (zero_freq) THEN
+            iomega = ifreq + num_freq - 1
+          ELSE
+            iomega = ifreq + num_freq
+          END IF
           !
-          IF (iw == 1) THEN
+          ! use the BiCGstab solver
+          !
+          DO ibnd = 1, nbnd_occ(ik)
             !
-            ! for the Fermi energy, we may use the CG solver
+            ! solve +omega
+            CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), &
+                          et(ibnd, ikk) + omega(ifreq:ifreq),              &
+                          dpsi(:npwq, ibnd, ifreq:ifreq))
             !
-            CALL cgsolve_all(h_psi_all, cg_psi, et(1,ikk), dvpsi, dpsi(1,1,1), h_diag, & 
-                 npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),  &
-                 npol)
+            ! solve -omega
+            IF (.NOT.zero_freq .OR. ifreq > 1) THEN
+              CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), &
+                            et(ibnd, ikk) + omega(iomega:iomega),            &
+                            dpsi(:npwq, ibnd, iomega:iomega))
+            END IF
             !
-          ELSE 
-            !
-            ! for all other frequencies we use the BiCG solver
-            !
-            conv_root = .TRUE.
-            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,1), h_diag, &
-                 npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
-                 npol, +cw, maxter_coul, .TRUE.)
-            !
-            conv_root = .TRUE.
-            CALL cbcg_solve(ch_psi_all, cg_psi, etc(1,ikk), dvpsi, dpsi(1,1,2), h_diag, &
-                 npwx, npwq, thresh, ik, lter, conv_root, anorm, nbnd_occ(ikk),   &
-                 npol, -cw, maxter_coul, .TRUE.)
-            !
-            CALL ZSCAL(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,1), 1)
-            CALL ZAXPY(npwx * npol * nbnd_occ(ikk), half, dpsi(:,:,2), 1, dpsi(1,1,1), 1)
-            !
-          END IF ! frequency = Fermi energy?
-
+          END DO ! ibnd
+          !
         END DO ! ifreq
-
+        !
       END IF ! first_iteration
+      !
+      ! average between dpsi+ and dpsi-
+      !
+      IF (zero_freq) THEN
+        !
+        ! if the first frequency is 0, we only average +omega and -omega for all other frequencies
+        !
+        vec_size = npwx * npol * nbnd_occ(ikk) * (num_freq - 1)
+        CALL ZSCAL(vec_size, half, dpsi(:,:,2), 1)
+        CALL ZAXPY(vec_size, half, dpsi(:,:,num_freq + 1), 1, dpsi(:,:,2), 1)
+        !
+      ELSE ! not zero_freq
+        !
+        ! if the first frequency is not 0, we average +omega and -omega for all frequecies
+        !
+        vec_size = npwx * npol * nbnd_occ(ikk) * num_freq
+        CALL ZSCAL(vec_size, half, dpsi(:,:,1), 1)
+        CALL ZAXPY(vec_size, half, dpsi(:,:,num_freq + 1), 1, dpsi(:,:,1), 1)
+        !
+      END IF ! zero_freq
       !
       ltaver = ltaver + lter
       lintercall = lintercall + 1
       !
-      IF (.NOT.conv_root) WRITE(stdout, '(5x,"kpoint ",i4,"  ibnd ",i4, &
-                  &             " solve_linter: root not converged ", e10.3 , "iter ", i4)') &
-                  &             ik, nbnd_occ(ikk), anorm, iter
-      !
       nrec = ik
       !
       ! writes delta_psi+- on iunit iudwf, k=kpoint
-      !
-      IF (high_io) THEN
-        IF (iw > 1) CALL save_buffer(dpsi(1,1,2), lrdwf, iudwfm, ik)
-        CALL save_buffer(dpsi(1,1,1), lrdwf, iudwfp, ik)
-      END IF ! high_io
+      ! TODO: currently deactivated because solver doesn't take previous input
       !
       ! calculates dvscf, sum over k => dvscf_q_ipert
       !
@@ -492,7 +495,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       !
       ! TODO replace this with ifreq
       !      probably need to mix all freq at once?
-      IF (iw == 1) THEN
+      IF (zero_freq) THEN
         !
         ! Density reponse in real space should be real at zero freq no matter what!
         ! just using standard broyden for the zero freq. case.
@@ -522,41 +525,21 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
       END DO
     END IF
     !
-    aux_avg(1) = REAL(ltaver, KIND = dp)
-    aux_avg(2) = REAL(lintercall, KIND = dp)
-    CALL mp_sum(aux_avg, inter_pool_comm)
-    averlt = aux_avg(1) / aux_avg(2)
+    IF (convt) EXIT
+    !
+  END DO ! loop on kter (iterations)
 
-    tcpu = get_clock ('SGW')
-    dr2 = dr2 
-    FLUSH(stdout)
-    rec_code=10
+  ! abort if solver doesn't converge
+  IF (kter > niter_gw) THEN
+    CALL errore(__FILE__, "Iterative solver did not converge within given number&
+                         & of iterations", niter_gw)
+  END IF
 
-!     WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!           "secs   av.it.: ",f5.1)') iter, tcpu, averlt
-!     WRITE(1000+mpime, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
-!           &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
-     IF (convt) GOTO 155
-
-   END DO !loop on kter (iterations)
-
-!  ! abort if solver doesn't converge
-!  CALL errore(__FILE__, "Iterative solver did not converge within given number&
-!                       & of iterations", niter_gw)
-
-155 iter0=0
-
-   WRITE( stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1, &
-        & "secs av.it.:",f5.1)') iter, tcpu, averlt
-!   WRITE( stdout, '(5x," thresh=",es10.3, " alpha_mix = ",f6.3, &
-!          &      " |ddv_scf|^2 = ",es10.3 )') thresh, alpha_mix (kter) , dr2
-!   WRITE(1000+mpime, '(/,5x," iter # ",i3," total cpu time :",f8.1, &
-!        "secs   av.it.: ",f5.1)') iter, tcpu, averlt
+  tcpu = get_clock ('SGW')
+  WRITE(stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1)') iter, tcpu
 
   drhoscf = dvscfin
   
- !call mp_barrier(intra_image_comm)
- 
   DEALLOCATE(h_diag)
   DEALLOCATE(aux1)
   DEALLOCATE(dbecsum)
@@ -598,5 +581,70 @@ SUBROUTINE check_all_convt(convt)
   DEALLOCATE(convt_check)
   !
 END SUBROUTINE
+
+!! Wrapper for the linear operator call.
+!!
+!! Sets the necessary additional variables.
+SUBROUTINE coulomb_operator(omega, psi, A_psi)
+
+  USE control_gw,       ONLY: alpha_pv
+  USE kinds,            ONLY: dp
+  USE linear_op_module, ONLY: linear_op
+  USE wvfct,            ONLY: npwx, current_k
+
+  !> The initial shift.
+  COMPLEX(dp), INTENT(IN)  :: omega
+
+  !> The input vector.
+  COMPLEX(dp), INTENT(IN)  :: psi(:)
+
+  !> The operator applied to the vector.
+  COMPLEX(dp), INTENT(OUT) :: A_psi(:)
+
+  !> Local copy of omega, because linear_op require arrays.
+  COMPLEX(dp) omega_(1)
+
+  !> Local copies of psi and A_psi because linear_op requires arrays.
+  COMPLEX(dp), ALLOCATABLE :: psi_(:,:), A_psi_(:,:)
+
+  !> real value of zero
+  REAL(dp), PARAMETER :: zero = 0.0_dp
+
+  !> Error code.
+  INTEGER ierr
+
+  !> number of G vectors
+  INTEGER num_g
+
+  ! determine number of G vectors
+  num_g = SIZE(psi)
+
+  !> allocate temporary array
+  ALLOCATE(psi_(npwx, 1), A_psi_(npwx, 1), STAT = ierr)
+  CALL errore(__FILE__, "could not allocate temporary arrays psi_ and A_psi_", ierr)
+
+  !
+  ! initialize helper
+  !
+
+  ! negative omega so that (H - omega) psi is calculated
+  omega_ = -omega
+
+  ! zero the elements outside of the definition
+  psi_(:num_g, 1) = psi
+  psi_(num_g + 1:, 1) = zero
+
+  !
+  ! apply the linear operator (H - omega + alpha Pv) psi
+  !
+  CALL linear_op(current_k, num_g, omega_, alpha_pv, psi_, A_psi_)
+
+  ! extract result
+  A_psi = A_psi_(:num_g,1)
+
+  ! free memory
+  DEALLOCATE(psi_, A_psi_)
+
+END SUBROUTINE coulomb_operator
 
 END MODULE solve_module
