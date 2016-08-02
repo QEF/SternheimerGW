@@ -31,7 +31,7 @@ SUBROUTINE coulomb(iq, igstart, num_task, scrcoul)
   USE cell_base,        ONLY : alat, tpiba2, omega
   USE constants,        ONLY : e2, fpi, RYTOEV, pi, eps8
   USE control_gw,       ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
-                               solve_direct, do_epsil, do_q0_only, tinvert
+                               solve_direct, do_epsil, do_q0_only, tinvert, niter_gw
   USE disp,             ONLY : nqs, nq1, nq2, nq3
   USE eqv_gw,           ONLY : drhoscfs, dvbare
   USE fft_base,         ONLY : dfftp, dffts
@@ -157,7 +157,7 @@ DO indx = 1, num_task
         dvbare   = zero
         dvbare(nls(ig_unique(ig))) = one
         CALL invfft('Smooth', dvbare, dffts)
-        CALL solve_linter(dvbare, fiu(:nfs), drhoscfs)
+        CALL solve_linter(niter_gw, dvbare, fiu(:nfs), drhoscfs)
         CALL fwfft('Smooth', dvbare, dffts)
         DO iw = 1, nfs
            CALL fwfft('Dense', drhoscfs(:,1,iw), dffts)

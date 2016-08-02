@@ -42,6 +42,9 @@ CONTAINS
 !! Currently symmetrized in terms of mode etc. Might need to strip this out
 !! and check PW for how it stores/symmetrizes charge densities.
 !!
+!! If the number of iterations is set to 1, the direct solver is used, otherwise
+!! we use the iterative method.
+!!
 !! This routine performs the following tasks
 !! 1. computes the bare potential term Delta V | psi > 
 !! 2. adds to it the screening term Delta V_{SCF} | psi >
@@ -49,14 +52,14 @@ CONTAINS
 !! 4. calls c_bi_cgsolve_all to solve the linear system
 !! 5. computes Delta rho, Delta V_{SCF}.
 !----------------------------------------------------------------------------
-SUBROUTINE solve_linter(dvbarein, freq, drhoscf)
+SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
 !-----------------------------------------------------------------------------
 
   USE bicgstab_module,      ONLY : bicgstab
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : degspin
-  USE control_gw,           ONLY : niter_gw, nmix_gw, tr2_gw, &
+  USE control_gw,           ONLY : nmix_gw, tr2_gw, &
                                    lgamma, convt, nbnd_occ, alpha_mix
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
@@ -82,6 +85,9 @@ SUBROUTINE solve_linter(dvbarein, freq, drhoscf)
   USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k
 
   IMPLICIT NONE
+
+  !> number of iterations - use 1 to choose the direct solver
+  INTEGER,     INTENT(IN)  :: num_iter
 
   !> the initial perturbuing potential
   COMPLEX(dp), INTENT(IN)  :: dvbarein(:)
@@ -251,9 +257,9 @@ SUBROUTINE solve_linter(dvbarein, freq, drhoscf)
   convt = .FALSE.
 
 ! The outside loop is over the iterations.
-! niter_gw := maximum number of iterations
+! num_iter := maximum number of iterations
   
-  DO iter = 1, niter_gw
+  DO iter = 1, num_iter
     !
     first_iteration = (iter == 1)
     !
@@ -527,9 +533,9 @@ SUBROUTINE solve_linter(dvbarein, freq, drhoscf)
   END DO ! loop on iter (iterations)
 
   ! abort if solver doesn't converge
-  IF (iter > niter_gw) THEN
+  IF (iter > num_iter) THEN
     CALL errore(__FILE__, "Iterative solver did not converge within given number&
-                         & of iterations", niter_gw)
+                         & of iterations", num_iter)
   END IF
 
   tcpu = get_clock ('SGW')
