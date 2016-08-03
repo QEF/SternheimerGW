@@ -86,7 +86,7 @@ SUBROUTINE coulomb(iq, igstart, num_task, scrcoul)
   REAL(DP) :: tcpu, get_clock
 ! timing variables
   REAL(DP) :: qg2, qg2coul
-  INTEGER :: ig, igp, iw, npe, irr, icounter
+  INTEGER :: ig, igp, iw, npe, icounter
   INTEGER :: igpert, isp
   COMPLEX(DP), allocatable :: drhoaux (:,:) 
   COMPLEX(DP) :: padapp, w
@@ -101,20 +101,11 @@ SUBROUTINE coulomb(iq, igstart, num_task, scrcoul)
 ! used to test the recover file
   EXTERNAL get_clock
 
-  ! for self-consistent solution we only consider one
-  ! frequency at a time. To save memory and time and lines of codes etc.
-  ! we use the frequency variable for multishift as the nspin_mag var.
-  ! to extend this to magnetic with multishift we need to add another
-  ! dimension to drhoscfrs
-  IF(solve_direct) then
-    ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
-  ELSE
-    ALLOCATE (drhoscfs(dffts%nnr, 1, nfs))
-  END IF
-  IF (nspin_mag /= 1) CALL errore(__FILE__, "not implemented for magnetic system", nspin_mag)
+  ! we use the frequency as equivalent of the perturbation in phonon
+  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, nfs))
+  IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
+  scrcoul = (0.d0, 0.0d0)
 
-irr=1
-!scrcoul(:,:,:,:) = (0.d0, 0.0d0)
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
 !WRITE(1000+mpime, '(2i4)') igstart, igstop
@@ -130,19 +121,19 @@ DO indx = 1, num_task
          dvbare   = zero 
          dvbare(nls(ig_unique(ig))) = one
          CALL invfft('Smooth', dvbare, dffts)
-         CALL solve_lindir (dvbare, drhoscfs(:,:,1))
+         CALL solve_linter(1, dvbare, fiu(:nfs), drhoscfs)
          CALL fwfft('Smooth', dvbare, dffts)
          do iw = 1, nfs
-            CALL fwfft ('Dense', drhoscfs(:,iw,1), dffts)
+            CALL fwfft ('Dense', drhoscfs(:,1,iw), dffts)
             WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') &
-              drhoscfs(nls(ig_unique(ig)),iw,1)+dvbare(nls(ig_unique(ig)))
+              drhoscfs(nls(ig_unique(ig)),1,iw)+dvbare(nls(ig_unique(ig)))
             do igp = 1, gcutcorr
                if(igp.ne.ig_unique(ig)) then
 !diagonal elements drho(G,G').
-                  scrcoul(igp, iw, indx) = drhoscfs(nls(igp), iw, 1)
+                  scrcoul(igp, iw, indx) = drhoscfs(nls(igp), 1, iw)
                else
 !diagonal elements eps(\G,\G') = \delta(G,G') - drho(G,G').
-                  scrcoul(igp, iw, indx) = drhoscfs(nls(igp), iw, 1) + dvbare(nls(ig_unique(ig)))
+                  scrcoul(igp, iw, indx) = drhoscfs(nls(igp), 1, iw) + dvbare(nls(ig_unique(ig)))
                endif
             enddo
          enddo !iw

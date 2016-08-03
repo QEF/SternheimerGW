@@ -70,7 +70,7 @@ SUBROUTINE coulomb_q0G0(iq, eps_m)
   REAL(DP) :: tcpu, get_clock
 ! timing variables
   REAL(DP) :: qg2, qg2coul
-  INTEGER :: ig, igp, iw, npe, irr, icounter
+  INTEGER :: ig, igp, iw, npe, icounter
   INTEGER :: igstart, igstop, igpert, isp
   COMPLEX(DP), allocatable :: drhoaux (:,:) 
   COMPLEX(DP) :: padapp, w
@@ -88,20 +88,11 @@ SUBROUTINE coulomb_q0G0(iq, eps_m)
 ! used to test the recover file
   EXTERNAL get_clock
 
-if(solve_direct) then
-  ALLOCATE (drhoscfs(dfftp%nnr, nfs, 1))    
-else
-!for self-consistent solution we only consider one
-!frequency at a time. To save memory and time and lines of codes etc.
-!we use the frequency variable for multishift as the nspin_mag var.
-!to extend this to magnetic with multishift we need to add another
-!dimension to drhoscfrs
-  WRITE(stdout, '(4x,4x,"nspinmag", i4)') nspin_mag
-  IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
+  ! we use the frequency as equivalent of the perturbation in phonon
   ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, nfs))
-endif
-irr=1
-scrcoul(:,:,:,:) = (0.d0, 0.0d0)
+  IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
+  scrcoul(:,:,:,:) = (0.d0, 0.0d0)
+
 !LOOP OVER ig, unique g vectors only. 
 !g is sorted in magnitude order.
 !WRITE(1000+mpime, '(2i4)') igstart, igstop
@@ -119,13 +110,13 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        dvbare   = zero
        dvbare(nls(1)) = one
        CALL invfft('Smooth', dvbare, dffts)
-       CALL solve_lindir (dvbare, drhoscfs)
+       CALL solve_linter(1, dvbare, fiu(:nfs), drhoscfs)
        CALL fwfft('Smooth', dvbare, dffts)
        DO iw = 1, nfs
-          CALL fwfft('Dense', drhoscfs(:,iw,1), dffts)
-          WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') drhoscfs(nls(1),iw,1) &
+          CALL fwfft('Dense', drhoscfs(:,1,iw), dffts)
+          WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') drhoscfs(nls(1),1,iw) &
 &                                                           + dvbare(nls(1))
-          eps_m(iw) = drhoscfs(nls(1),iw,1) + 1.0d0
+          eps_m(iw) = drhoscfs(nls(1),1,iw) + 1.0d0
        ENDDO
     ELSE
        drhoscfs = zero

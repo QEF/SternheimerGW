@@ -143,6 +143,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   !> special treatment is possible for the first iteration
   LOGICAL first_iteration
 
+  !> special treatment of the direct solver
+  LOGICAL direct_solver
+
   !> the number of frequencies
   INTEGER num_freq
 
@@ -208,6 +211,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   ! determine number of frequencies
   num_freq = SIZE(freq)
   zero_freq = freq(1) == zero
+
+  ! use the direct solver
+  direct_solver = num_iter == 1
 
   !
   ! sanity test of input
@@ -327,7 +333,20 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
         !
         ! starting threshold for iterative solution of the linear system
         !
-        thresh = 1.0d-2
+        IF (direct_solver) THEN
+          !
+          ! for the direct solver, we start with the actual threshold
+          !
+          thresh = tr2_gw
+          !
+        ELSE
+          !
+          ! for the iterative solver, we can start with a moderate
+          ! threshold, because it will be iteratively refined
+          !
+          thresh = 1.0d-2
+          !
+        END IF ! direct_solver
         !
         ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
         ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
@@ -511,6 +530,10 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
       !
     END DO ! ifreq
     !
+    ! for the direct solver we are done here
+    !
+    IF (direct_solver) EXIT
+    !
     ! And we mix with the old potential
     !
     CALL mix_potential_c(SIZE(dvscfout), dvscfout, dvscfin,       &
@@ -538,10 +561,27 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
                          & of iterations", num_iter)
   END IF
 
-  tcpu = get_clock ('SGW')
-  WRITE(stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1)') iter, tcpu
-
-  drhoscf = dvscfin
+  !
+  ! store the result in the output array
+  !
+  IF (direct_solver) THEN
+    !
+    ! for the direct solver the dielectric constant is given by 1 - delta V
+    !
+    drhoscf = -dvscfout
+    !
+  ELSE ! not direct_solver
+    !
+    ! print number of iterations needed for convergence
+    !
+    tcpu = get_clock ('SGW')
+    WRITE(stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1)') iter, tcpu
+    !
+    ! for the iterative solver the screened Coulomb interaction is delta V
+    !
+    drhoscf = dvscfin
+    !
+  END IF ! direct_solver
   
   DEALLOCATE(aux)
   DEALLOCATE(dbecsum)
