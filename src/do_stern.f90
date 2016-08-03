@@ -174,7 +174,7 @@ IMPLICIT NONE
     ALLOCATE(scrcoul_loc(gcutcorr, nfs, num_task_loc))
 
     ! evaluate screened Coulomb interaction and collect on root
-    CALL coulomb(iq, igstart, num_task_loc, scrcoul_loc)
+    CALL coulomb(igstart, num_task_loc, scrcoul_loc)
     CALL mp_gatherv(inter_image_comm, root_id, num_task, scrcoul_loc, scrcoul_root)
 
     ! Only the root of the image should write to file
