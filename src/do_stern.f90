@@ -130,7 +130,7 @@ IMPLICIT NONE
       CALL stop_clock(time_coul_nscf)
 
       CALL initialize_gw()
-      CALL coulomb_q0G0(iq, eps_m)
+      CALL coulomb_q0G0(eps_m)
       scrcoul_g(1,1,:) = eps_m
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
