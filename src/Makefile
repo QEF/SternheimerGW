@@ -86,6 +86,7 @@ sgw_opening.o\
 sigcim.o\
 sigcre.o\
 sigprod.o\
+sigma.o\
 sigma_exch.o\
 sigma_exchG.o\
 sigma_expect.o\
