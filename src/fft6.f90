@@ -25,14 +25,121 @@
 !! This module allows to do a Fourier transform of quantities that have to
 !! spacial coordinates into reciprocal space and the reverse
 !! \f{equation}{
-!!   f(r, r') \longrightarrow_{\text{fwfft6}}  f(G, G')
-!!            \longrightarrow_{\text{invfft6}} f(r, r')~.
+!!   f(r, r') \underset{\text{fwfft6}}{\longrightarrow} f(G, G')
+!!            \underset{\text{invfft6}}{\longrightarrow} f(r, r')~.
 !! \f}
 MODULE fft6_module
 
   IMPLICIT NONE
 
 CONTAINS
+
+  !> Transform an input array \f$f(r, r')\f$ from real to reciprocal space
+  !! \f$f(G, G')\f$.
+  !!
+  !! This is done in the following steps:
+  SUBROUTINE fwfft6(grid_type, f, dfft, map, omega)
+
+    USE kinds,          ONLY: dp
+    USE fft_interfaces, ONLY: fwfft
+    USE fft_types,      ONLY: fft_type_descriptor
+
+    !> grid type used for the Fourier transform, this is passed to fwfft
+    !! check the definition of fwfft for a list of options
+    CHARACTER(*), INTENT(IN)    :: grid_type
+
+    !> *on input*  the array in real space \f$f(r, r')\f$ <br>
+    !! *on output* the array in reciprocal space \f$f(G, G')\f$
+    COMPLEX(dp),  INTENT(INOUT) :: f(:,:)
+
+    !> FFT descriptor - this defines the way the Fourier transform is
+    !! executed, must be consistent with grid_type
+    !! @note the code does not check explicitly if dfft and grid_type are compatible
+    TYPE(fft_type_descriptor), INTENT(IN) :: dfft
+
+    !> Because usually a sphere of G-vectors is used, not all points on the FFT
+    !! grid are set. This map points from index of the G-points inside the
+    !! sphere onto their index in the full G-mesh.
+    INTEGER,      INTENT(IN)    :: map(:)
+
+    !> volume of the unit cell
+    REAL(dp),     INTENT(IN)    :: omega
+
+    !> number of points in reciprocal space
+    INTEGER num_g
+
+    !> counter on reciprocal space points
+    INTEGER ig
+
+    !> number of points in real space
+    INTEGER num_r
+
+    !> counter on real space points
+    INTEGER ir
+
+    !> check for error in allocation
+    INTEGER ierr
+
+    !> work array for the second index (which is not contigous in memory
+    COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    ! initialize helper variables
+    num_g = SIZE(map)
+    num_r = dfft%nnr
+
+    !
+    ! sanity test of the input
+    !
+    ! reduced mesh must be within full mesh
+    IF (ANY(map > num_r)) &
+      CALL errore(__FILE__, "some G vector are outside the mesh of the Fourier transform", 1)
+    !
+    ! check that f has size compatible with dfft
+    IF (SIZE(f, 1) /= num_r) &
+      CALL errore(__FILE__, "size of array not compatible with Fourier transform", 1)
+    IF (SIZE(f, 2) /= num_r) &
+      CALL errore(__FILE__, "f must be a square matrix", 1)
+
+    ! create work array
+    ALLOCATE(work(num_r), STAT = ierr)
+    IF (ierr /= 0) &
+      CALL errore(__FILE__, "error allocating the work array", ierr)
+
+    ! loop over second index
+    DO ir = 1, num_r
+      !!
+      !! 1. we store the conjugate of a row in the work array \f$w(r) = f^\ast(r, r')\f$
+      !!
+      work = CONJG(f(:, ir))
+      !!
+      !! 2. we transform the work array \f$w(r) \rightarrow w(G)\f$
+      !!
+      CALL fwfft(grid_type, work, dfft)
+      !!
+      !! 3. we extract the G vectors inside of the sphere \f$f(G, r') = w^\ast(G)\f$
+      !!
+      f(:num_g, ir) = CONJG(work(map))
+      !!
+    END DO ! ir
+
+    ! loop over first index (now in reciprocal space)
+    DO ig = 1, num_g
+      !!
+      !! 4. we store a column in the work array \f$w(r') = f(G, r')\f$
+      !!
+      work = f(ig, :)
+      !!
+      !! 5. we tranform the work array \f$w(r') \rightarrow w(G')\f$
+      !!
+      CALL fwfft(grid_type, work, dfft)
+      !!
+      !! 6. extract the G vectors within the sphere \f$f(G, G') = w(G')\f$
+      !!
+      f(ig, :num_g) = work(map) * omega
+      !!
+    END DO ! ig
+
+  END SUBROUTINE fwfft6
 
 subroutine fft6(f_g, f_r, fc, conv)
   USE kinds,          ONLY : DP

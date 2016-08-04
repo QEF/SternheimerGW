@@ -182,6 +182,7 @@ environment_sgw.o : ../../Modules/mp_world.o
 environment_sgw.o : ../../Modules/version.o
 expand_igk.o : ../../PW/src/pwcom.o
 fft6.o : ../../FFTXlib/fft_interfaces.o
+fft6.o : ../../FFTXlib/fft_types.o
 fft6.o : ../../Modules/cell_base.o
 fft6.o : ../../Modules/fft_base.o
 fft6.o : ../../Modules/fft_custom.o

@@ -28,7 +28,7 @@ SUBROUTINE sigma_exch(ik0)
   USE control_gw,           ONLY : eta, nbnd_occ, truncation, multishift, lgamma, output
   USE disp,                 ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE eqv,                  ONLY : evq
-  USE fft6_module,          ONLY : fft6
+  USE fft6_module,          ONLY : fft6, fwfft6
   USE gvect,                ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
   USE gwsigma,              ONLY : sigma_x_st, nbnd_sig, gexcut
@@ -222,18 +222,30 @@ SUBROUTINE sigma_exch(ik0)
   call mp_barrier(inter_pool_comm)!I think I need these after writes!
   call mp_sum (sigma_ex, inter_pool_comm)  
   call mp_sum (kcounter, inter_pool_comm)  
-!  write(1000+mpime,*)"kcounter: ", kcounter
-  allocate ( sigma_g_ex  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
-  sigma_g_ex(:,:) = (0.0d0,0.0d0)
-  if (meta_ionode) THEN
-      call fft6(sigma_g_ex, sigma_ex, sigma_x_st, -1)
-      call davcio(sigma_g_ex, lrsex, iunsex, ik0,  1)
+
+  !
+  ! evaluate Fourier transform and write to file
+  !
+  IF (meta_ionode) THEN
+    !
+    ! Fourier transform Sigma_x(r, r') -> Sigma_x(G, G')
+    !
+    CALL fwfft6('Custom', sigma_ex, sigma_x_st%dfftt, sigma_x_st%nlt, omega)
+    !
+    ! create copy of the array to write to file
+    ALLOCATE(sigma_g_ex(sigma_x_st%ngmt, sigma_x_st%ngmt))
+    sigma_g_ex = sigma_ex(:sigma_x_st%ngmt, :sigma_x_st%ngmt)
+    !
+    ! write unformatted
+    CALL davcio(sigma_g_ex, lrsex, iunsex, ik0,  1)
+    ! write formatted
     CALL sigma_io_write_x(output%unit_sigma, ik0, sigma_g_ex)
-  endif
-  deallocate(sigma_g_ex)
-  deallocate (sigma_ex)
-  call mp_barrier(inter_pool_comm)!I think I need these after writes!
-  call mp_barrier(inter_image_comm)!I think I need these after writes!
+    !
+    DEALLOCATE(sigma_g_ex)
+    !
+  END IF ! meta_ionode
+
+  DEALLOCATE(sigma_ex)
 
   CALL stop_clock(time_sigma_x)
 
