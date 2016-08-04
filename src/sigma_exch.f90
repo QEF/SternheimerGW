@@ -28,6 +28,7 @@ SUBROUTINE sigma_exch(ik0)
   USE control_gw,           ONLY : eta, nbnd_occ, truncation, multishift, lgamma, output
   USE disp,                 ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE eqv,                  ONLY : evq
+  USE fft6_module,          ONLY : fft6
   USE gvect,                ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
   USE gwsigma,              ONLY : sigma_x_st, nbnd_sig, gexcut

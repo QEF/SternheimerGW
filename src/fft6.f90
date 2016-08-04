@@ -20,6 +20,20 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> Provide routines for 6 dimensional FFT.
+!!
+!! This module allows to do a Fourier transform of quantities that have to
+!! spacial coordinates into reciprocal space and the reverse
+!! \f{equation}{
+!!   f(r, r') \longrightarrow_{\text{fwfft6}}  f(G, G')
+!!            \longrightarrow_{\text{invfft6}} f(r, r')~.
+!! \f}
+MODULE fft6_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
 subroutine fft6(f_g, f_r, fc, conv)
   USE kinds,          ONLY : DP
   USE cell_base,      ONLY : tpiba2, tpiba, omega, alat, at
@@ -85,3 +99,5 @@ else
     call errore (' FFT routines',' Wrong switch',1)
 end if
 end subroutine fft6
+
+END MODULE fft6_module

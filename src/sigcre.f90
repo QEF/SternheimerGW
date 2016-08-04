@@ -34,6 +34,7 @@ SUBROUTINE sigma_c_re(ik0, freq)
   USE disp,              ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE eqv,               ONLY : evq
   USE expand_igk_module, ONLY : expand_igk
+  USE fft6_module,       ONLY : fft6
   USE freq_gw,           ONLY : fiu, nfs, nwcoul, nwsigma, wsigmamin, wsigmamax, &
                                 wcoulmax
   USE freqbins_module,   ONLY : freqbins_type

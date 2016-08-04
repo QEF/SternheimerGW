@@ -351,6 +351,7 @@ gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/ldaU.o
 gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
+gwq_readin.o : freqbins.o
 gwq_readin.o : gwcom.o
 gwq_readin.o : save_gw_input.o
 gwq_readin.o : truncation.o
@@ -569,6 +570,7 @@ sigcre.o : ../../Modules/recvec.o
 sigcre.o : ../../PW/src/pwcom.o
 sigcre.o : ../../PW/src/symm_base.o
 sigcre.o : expand_igk.o
+sigcre.o : fft6.o
 sigcre.o : freqbins.o
 sigcre.o : gwcom.o
 sigcre.o : kind_gw.o
@@ -593,6 +595,7 @@ sigma_exch.o : ../../Modules/wavefunctions.o
 sigma_exch.o : ../../PW/src/buffers.o
 sigma_exch.o : ../../PW/src/pwcom.o
 sigma_exch.o : ../../PW/src/symm_base.o
+sigma_exch.o : fft6.o
 sigma_exch.o : gwcom.o
 sigma_exch.o : kind_gw.o
 sigma_exch.o : save_gw_input.o
