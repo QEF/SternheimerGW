@@ -28,7 +28,7 @@ SUBROUTINE sigma_exch(ik0)
   USE control_gw,           ONLY : eta, nbnd_occ, truncation, multishift, lgamma, output
   USE disp,                 ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE eqv,                  ONLY : evq
-  USE fft6_module,          ONLY : fft6, fwfft6
+  USE fft6_module,          ONLY : fwfft6, invfft6
   USE gvect,                ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
   USE gwsigma,              ONLY : sigma_x_st, nbnd_sig, gexcut
@@ -60,7 +60,7 @@ SUBROUTINE sigma_exch(ik0)
   COMPLEX(DP) :: sigma_band_ex(nbnd_sig, nbnd_sig)
   COMPLEX(DP), ALLOCATABLE :: sigma_ex(:,:)
   COMPLEX(DP), ALLOCATABLE :: greenf_na(:,:), greenf_nar(:,:)
-  COMPLEX(DP), ALLOCATABLE :: barcoul(:,:), barcoulr(:,:)
+  COMPLEX(DP), ALLOCATABLE :: barcoul(:,:)
   COMPLEX(DP), ALLOCATABLE :: sigma_g_ex(:,:)
   COMPLEX(DP), ALLOCATABLE ::  eigv(:,:)
   COMPLEX(DP) :: ZdoTC
@@ -84,7 +84,7 @@ SUBROUTINE sigma_exch(ik0)
   INTEGER    :: kpoolid(nkstot), iqrec1(nkstot)
   INTEGER    :: nbase, nksloc, rest, mypoolid
   INTEGER    :: ikmq, ik0, ik
-  INTEGER    :: ig, igp, ir, irp, kcounter
+  INTEGER    :: ig, igp, ir, irp
   INTEGER    :: iq, ipol, ibnd, jbnd, counter, ios
   LOGICAL    :: limit
   LOGICAL    :: found_k
@@ -114,7 +114,7 @@ SUBROUTINE sigma_exch(ik0)
   write(6,'(4x,"Occupied bands at k: ",i3)') nbnd_occ(ik0)
   write(6,*)"   lgamma, gexcut ", lgamma, gexcut
   write(6,'(4x,"nksq,nks,nkstot,kunit ",4i4)') nksq, nks,nkstot, kunit
-  kcounter = 0
+  
   czero = (0.0d0, 0.0d0)
   sigma_ex(:,:) = (0.0d0, 0.0d0)
 !New pool parallel approach, we cycle if the kpoint isn't on the present
@@ -167,61 +167,38 @@ SUBROUTINE sigma_exch(ik0)
         greenf_nar(:,:) = czero
         call fft6_g(greenf_na(1,1), greenf_nar(1,1), sigma_x_st, gmapsym, eigv(1,1), isymop, 1, 1)
         deallocate(greenf_na)
-        allocate ( barcoul  (sigma_x_st%ngmt, sigma_x_st%ngmt) )
-        rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-        barcoul(:,:) = (0.0d0,0.0d0)
-!        if(.not.trunc_2d) THEN
-           do ig = 1, sigma_x_st%ngmt
-           !do ig = 1, gexcut
-             q_G = (xq + g(:,ig)) * tpiba
-             barcoul(ig, ig) = truncate(truncation, q_G)
-!              qg = sqrt((g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-!                      + (g(3,ig)  + xq(3))**2.d0)
-!              qg2 = (g(1,ig)  + xq(1))**2.d0  + (g(2,ig) + xq(2))**2.d0  &
-!                 + ((g(3,ig)) + xq(3))**2.d0
-!              limit = (qg.lt.eps8)
-!              if(.not.limit) then
-!                 spal = 1.0d0 - cos (rcut * tpiba * qg)
-!                 barcoul (ig, ig) = e2 * fpi / (tpiba2*qg2) * dcmplx(spal, 0.0d0)
-!              else
-!                !barcoul(gmapsym(ig, invs(isymop)), gmapsym(ig, invs(isymop))) = (fpi*e2*(rcut**2))/2
-!                barcoul(ig, ig) = (fpi*e2*(rcut**2))/2
-!              endif
-           enddo
-!        else
-!            zcut = 0.50d0*sqrt(at(1,3)**2 + at(2,3)**2 + at(3,3)**2)*alat*nq3
-!            rcut = -2*pi*zcut**2
-!            do ig = 1, sigma_x_st%ngmt
-!               qg2 = (g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2 + (g(3,ig)+xq(3))**2
-!               qxy  = sqrt((g(1,ig) + xq(1))**2 + (g(2,ig) + xq(2))**2)
-!               qz   = sqrt((g(3,ig) + xq(3))**2)
-!               spal = 1.0d0 - EXP(-tpiba*qxy*zcut)*cos(tpiba*qz*zcut)
-!             if(qxy.gt.eps8) then
-!               spal = 1.0d0 + EXP(-tpiba*qxy*zcut)*((qz/qxy)*sin(tpiba*qz*zcut) - cos(tpiba*qz*zcut))
-!               barcoul(ig,ig) = &
-!&              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-!        else if(qxy.lt.eps8.and.qz.gt.eps8) then
-!               spal = 1.0d0 - cos(tpiba*qz*zcut) - tpiba*qz*zcut*sin(tpiba*qz*zcut)
-!               barcoul(ig,ig) = &
-!&              dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-!        else  
-!               barcoul(ig,ig) = dcmplx(rcut, 0.0d0)
-!        endif
-!       enddo
-!     endif
-     allocate (barcoulr    (sigma_x_st%dfftt%nnr,  sigma_x_st%dfftt%nnr))
-     barcoulr(:,:) = (0.0d0, 0.0d0)
-     call fft6(barcoul(1,1), barcoulr(1,1), sigma_x_st, 1)
-     deallocate(barcoul)
-     sigma_ex = sigma_ex + 0.5*wk(ik1)*(1.0d0/dble(nsym))*&
-&               (0.0d0,1.0d0)/tpi*greenf_nar*barcoulr
-     deallocate(barcoulr)
-     deallocate(greenf_nar)
-   enddo!isym
-  enddo!iq
-  call mp_barrier(inter_pool_comm)!I think I need these after writes!
+
+        !
+        ! evaluate the bare Coulomb interaction in a truncated geometry
+        !
+        ALLOCATE(barcoul(sigma_x_st%dfftt%nnr, sigma_x_st%dfftt%nnr))
+        barcoul = czero
+        !
+        DO ig = 1, sigma_x_st%ngmt
+          !
+          q_G = (xq + g(:,ig)) * tpiba
+          barcoul(ig, ig) = truncate(truncation, q_G)
+          !
+        END DO ! ig
+
+        !
+        ! now Fourier transform to real space
+        !
+        CALL invfft6('Custom', barcoul, sigma_x_st%dfftt, sigma_x_st%nlt, omega)
+
+        !
+        ! Sigma = G V
+        !
+        sigma_ex = sigma_ex + 0.5 * wk(ik1) * (1.0d0 / REAL(nsym, KIND = dp)) * &
+&                  CMPLX(0.0d0, 1.0d0, KIND = dp) / tpi * greenf_nar * barcoul
+
+        DEALLOCATE(barcoul)
+        DEALLOCATE(greenf_nar)
+
+     END DO ! isym
+  END DO ! iq
+
   call mp_sum (sigma_ex, inter_pool_comm)  
-  call mp_sum (kcounter, inter_pool_comm)  
 
   !
   ! evaluate Fourier transform and write to file
