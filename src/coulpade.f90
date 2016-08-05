@@ -24,7 +24,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, truncation
-  USE freq_gw,       ONLY : fiu, nfs, nfsmax, &
+  USE freq_gw,       ONLY : fiu, nfs, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax

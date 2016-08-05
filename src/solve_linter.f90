@@ -65,7 +65,6 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : invfft, fwfft
-  USE freq_gw,              ONLY : nfsmax
   USE gvecs,                ONLY : doublegrid
   USE gvect,                ONLY : nl
   USE io_global,            ONLY : stdout

@@ -83,7 +83,7 @@ SUBROUTINE gwq_readin()
   USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
-  USE freq_gw,       ONLY : fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
+  USE freq_gw,       ONLY : fiu, nfs, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
                             greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
@@ -437,8 +437,8 @@ SUBROUTINE gwq_readin()
   if(.not.do_imag) freq_gl=.false.
   CALL mp_bcast(freq_gl,meta_ionode_id, world_comm)
 
-  if (nfs > nfsmax) call errore('gwq_readin','Too many frequencies',1) 
-  if (nfs < 1) call errore('gwq_readin','Too few frequencies',1) 
+  if (nfs < 1) call errore('gwq_readin','Too few frequencies',1)
+  ALLOCATE(fiu(nfs))
 
   IF (meta_ionode) THEN
      IF ( TRIM(card) == 'FREQUENCIES' .OR. &

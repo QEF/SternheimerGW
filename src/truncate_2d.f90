@@ -29,7 +29,7 @@ subroutine truncate_2D(scrcoul, xqloc, opt)
   USE qpoint,        ONLY : npwq, igkq, nksq, ikks, ikqs
   USE gwsigma,       ONLY : sigma_c_st
   USE fft_base,      ONLY : dfftp
-  USE freq_gw,       ONLY : fiu, nfs, nfsmax
+  USE freq_gw,       ONLY : fiu, nfs
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE noncollin_module, ONLY : nspin_lsda, nspin_mag, nspin_gga
   USE control_gw,  ONLY : multishift

@@ -32,7 +32,7 @@ SUBROUTINE sigma_c_im(ik0)
   USE ener,              ONLY : ef
   USE eqv,               ONLY : evq
   USE expand_igk_module, ONLY : expand_igk
-  USE freq_gw,           ONLY : fiu, nfs, nfsmax, &
+  USE freq_gw,           ONLY : fiu, nfs, &
                                 nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                                 wgreen, wsigma, wsigmamin, wsigmamax, &
                                 deltaw, wcoulmax, ind_w0mw, ind_w0pw, &

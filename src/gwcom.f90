@@ -229,10 +229,8 @@ MODULE freq_gw
   !
   SAVE
   ! ... the variables for computing frequency dependent dielectric constant
-  INTEGER, PARAMETER :: nfsmax=350  ! # of maximum frequencies
   INTEGER :: nfs                   ! # of frequencies
-  !REAL (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
-  COMPLEX (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
+  COMPLEX(KIND = dp), ALLOCATABLE :: fiu(:)    ! values  of frequency
   !variables for convolution
   INTEGER :: nwcoul, nwgreen, nwalloc, nwsigma, nwsigwin
 

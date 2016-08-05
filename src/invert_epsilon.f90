@@ -23,7 +23,7 @@
 SUBROUTINE invert_epsilon(scrcoul_g_in, lgamma, eps_m)
 USE kinds,         ONLY : DP
 USE gwsigma,       ONLY : sigma_c_st, gcutcorr
-USE freq_gw,       ONLY : fiu, nfs, nfsmax, nwcoul, wcoul
+USE freq_gw,       ONLY : fiu, nfs, nwcoul, wcoul
 USE control_gw,    ONLY : solve_direct
 
 IMPLICIT NONE    
