@@ -243,7 +243,6 @@ MODULE freq_gw
   REAL(DP) :: wsig_wind_max, wsig_wind_min, deltaws
   REAL(DP), ALLOCATABLE :: wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
   REAL,    ALLOCATABLE :: w0pmw (:,:)
-  REAL(DP) :: plasmon
   REAL(DP) :: greenzero
 
 END MODULE freq_gw
