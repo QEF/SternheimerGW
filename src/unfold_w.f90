@@ -25,7 +25,7 @@ USE kinds,         ONLY : DP
 USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
 USE gwsymm,        ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
 USE gvect,         ONLY : g, ngm, nl
-USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
+USE freq_gw,       ONLY : fiu, nfs, nfsmax, nwcoul, wcoul
 USE control_gw,    ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont
 USE qpoint,        ONLY : xq
 USE cell_base,     ONLY : at

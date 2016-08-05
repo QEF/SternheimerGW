@@ -40,7 +40,7 @@ subroutine allocate_gwq
   USE uspp,           ONLY : okvan, nkb
   USE paw_variables,  ONLY : okpaw
   USE uspp_param,     ONLY : nhm
-  USE freq_gw,        ONLY : fpol, fiu, nfs, nfsmax
+  USE freq_gw,        ONLY : fiu, nfs, nfsmax
   USE ions_base,      ONLY : nat, ntyp => nsp
   USE lrus,          ONLY : becp1
   USE qpoint,        ONLY : nksq, eigqts, igkq

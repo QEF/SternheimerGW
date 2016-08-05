@@ -25,6 +25,13 @@ MODULE freqbins_module
 
   IMPLICIT NONE
 
+  !> Contains the information about the frequencies used for the convolution of
+  !! G and W to obtain the self-energy \f$\Sigma\f$.
+  TYPE freqbins_type
+
+    !> 
+  END TYPE freqbins_type
+
 CONTAINS
 
   !> Generate frequency bins

@@ -24,7 +24,7 @@ SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
 
    USE constants,     ONLY : degspin, pi, tpi, RYTOEV, eps8
    USE control_gw,    ONLY : eta, tr2_green
-   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, nwgreen, wgreen
+   USE freq_gw,       ONLY : fiu, nfs, nfsmax, nwgreen, wgreen
    USE kinds,         ONLY : DP
    USE timing_module, ONLY : time_green_multishift
    USE units_gw,      ONLY : iunresid, lrresid, iunalphabeta, lralphabeta

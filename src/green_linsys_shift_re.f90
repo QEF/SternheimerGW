@@ -34,7 +34,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   USE disp,                 ONLY : nqs, x_q
   USE ener,                 ONLY : ef
   USE eqv_gw,               ONLY : evq, eprectot
-  USE freq_gw,              ONLY : fpol, fiu, nfs, nfsmax, wgreen, deltaw, &
+  USE freq_gw,              ONLY : fiu, nfs, nfsmax, wgreen, deltaw, &
                                    w0pmw, nwgreen, nwcoul, wcoul
   USE gvect,                ONLY : g, ngm
   USE gvecw,                ONLY : ecutwfc

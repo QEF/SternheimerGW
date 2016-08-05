@@ -47,7 +47,7 @@ subroutine bcast_gw_input ( )
   USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
                           w_of_k_start, w_of_k_stop
   USE partial,     ONLY : nat_todo, nrapp
-  USE freq_gw,     ONLY : fpol, wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul,&
+  USE freq_gw,     ONLY : wsigmamin, wsigmamax, wcoulmax, deltaw, plasmon, greenzero, nwcoul,&
                           wsig_wind_min, wsig_wind_max, deltaws
   USE output_mod,  ONLY : fildvscf, fildyn, fildrho, filsigx, filsigc, filcoul
   use io_files,    ONLY : tmp_dir, prefix
@@ -63,7 +63,6 @@ subroutine bcast_gw_input ( )
   implicit none
   call mp_bcast (trans, meta_ionode_id, world_comm )
   call mp_bcast (reduce_io, meta_ionode_id, world_comm )
-  call mp_bcast (fpol, meta_ionode_id, world_comm )
   call mp_bcast (ldisp, meta_ionode_id, world_comm )
   call mp_bcast (recover, meta_ionode_id, world_comm )
   call mp_bcast (lrpa, meta_ionode_id, world_comm )

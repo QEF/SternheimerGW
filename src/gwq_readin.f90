@@ -83,7 +83,7 @@ SUBROUTINE gwq_readin()
   USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
+  USE freq_gw,       ONLY : fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
                             greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
@@ -139,7 +139,7 @@ SUBROUTINE gwq_readin()
                        nrapp, max_seconds, reduce_io, &
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
-                       recover, fpol, lrpa, lnoloc, start_irr, last_irr, &
+                       recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
@@ -222,7 +222,6 @@ SUBROUTINE gwq_readin()
   iverbosity   = 0
   lnoloc       = .FALSE.
   epsil        = .FALSE.
-  fpol         = .FALSE.
   max_seconds  =  1.E+7_DP
   reduce_io    = .FALSE.
   prec_direct  = .FALSE.
@@ -420,49 +419,43 @@ SUBROUTINE gwq_readin()
 ! HL here we can just use this to readin the list of frequencies that we want to calculate
 ! Stored in array  fiu(:), of size nfs.
 ! reads the frequencies ( just if fpol = .true. )
-  IF ( fpol ) THEN
-     nfs=0
-     IF (meta_ionode) THEN
-        READ (5, *, iostat = ios) card
-        IF ( TRIM(card)=='FREQUENCIES'.OR. &
-             TRIM(card)=='frequencies'.OR. &
-             TRIM(card)=='Frequencies') THEN
-           READ (5, *, iostat = ios) nfs
-        ENDIF
+  nfs=0
+  IF (meta_ionode) THEN
+     READ (5, *, iostat = ios) card
+     IF ( TRIM(card)=='FREQUENCIES'.OR. &
+          TRIM(card)=='frequencies'.OR. &
+          TRIM(card)=='Frequencies') THEN
+        READ (5, *, iostat = ios) nfs
      ENDIF
+  ENDIF
 
-     CALL mp_bcast(ios, meta_ionode_id, world_comm )
-     CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
-     CALL mp_bcast(nfs, meta_ionode_id, world_comm )
+  CALL mp_bcast(ios, meta_ionode_id, world_comm )
+  CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
+  CALL mp_bcast(nfs, meta_ionode_id, world_comm )
 
 !No adaptive grid for real freq calc (YET)
-     if(.not.do_imag) freq_gl=.false.
-     CALL mp_bcast(freq_gl,meta_ionode_id, world_comm)
+  if(.not.do_imag) freq_gl=.false.
+  CALL mp_bcast(freq_gl,meta_ionode_id, world_comm)
 
-     if (nfs > nfsmax) call errore('gwq_readin','Too many frequencies',1) 
-     if (nfs < 1) call errore('gwq_readin','Too few frequencies',1) 
+  if (nfs > nfsmax) call errore('gwq_readin','Too many frequencies',1) 
+  if (nfs < 1) call errore('gwq_readin','Too few frequencies',1) 
 
-     IF (meta_ionode) THEN
-        IF ( TRIM(card) == 'FREQUENCIES' .OR. &
-             TRIM(card) == 'frequencies' .OR. &
-             TRIM(card) == 'Frequencies' ) THEN
-           DO i = 1, nfs
-              !HL Need to convert frequencies from electron volts into Rydbergs
-              READ (5, *, iostat = ios) ar, ai 
-              fiu(i) = dcmplx(ar, ai) / dcmplx(RYTOEV,0.0d0)
-           END DO
-        END IF
+  IF (meta_ionode) THEN
+     IF ( TRIM(card) == 'FREQUENCIES' .OR. &
+          TRIM(card) == 'frequencies' .OR. &
+          TRIM(card) == 'Frequencies' ) THEN
+        DO i = 1, nfs
+           !HL Need to convert frequencies from electron volts into Rydbergs
+           READ (5, *, iostat = ios) ar, ai 
+           fiu(i) = dcmplx(ar, ai) / dcmplx(RYTOEV,0.0d0)
+        END DO
      END IF
-
-     CALL mp_bcast(ios, meta_ionode_id, world_comm)
-     CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
-     CALL mp_bcast(fiu, meta_ionode_id, world_comm )
-  ELSE
-      nfs=0
-     !fiu=0.0_DP
-      fiu=DCMPLX(0.0d0, 0.d0)
-      CALL mp_bcast(fiu, meta_ionode_id, world_comm )
   END IF
+
+  CALL mp_bcast(ios, meta_ionode_id, world_comm)
+  CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
+  CALL mp_bcast(fiu, meta_ionode_id, world_comm )
+
  IF (kpoints) then
      num_k_pts = 0
      IF (meta_ionode) THEN

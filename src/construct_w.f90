@@ -26,7 +26,7 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
+  USE freq_gw,       ONLY : fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax

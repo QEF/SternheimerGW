@@ -24,7 +24,7 @@ SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, f
    USE kinds,       ONLY : DP
    USE wvfct,       ONLY : nbnd
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-   USE freq_gw,     ONLY : fpol, fiu, nwgreen, wgreen
+   USE freq_gw,     ONLY : fiu, nwgreen, wgreen
    USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
    USE control_gw,  ONLY : eta, tr2_green,  maxter_coul
 
