@@ -20,20 +20,38 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE freqbins()
-  !
-  ! generate frequency bins
-  ! ----------------------------------------------------------------
-  ! Here I assume Sigma is needed for w0 between wsigmamin and wsigmamax
-  ! The convolution requires W for positive frequencies w up to wcoulmax
-  ! (even function - cf Shishkin and Kress) and the GF spanning w0+-w.
-  ! Therefore the freq. range of GF is
-  ! from (wsigmamin-wcoulmax) to (wsigmamax+wcoulmax)
-  ! the freq. dependence of the GF is inexpensive, so we use the same spacing
-  ! NB: I assume wcoulmax>0, wsigmamin=<0, wsigmamax>0 and zero of energy at the Fermi level
-  ! TODO HL: should set two frequency windows one fine grid for the range around the fermi level
-  ! say  ef +/- 60 eV  down to the lowest pseudo state included! and a second 
-  ! course window for everything outside this range. 
+!> Contains routine and type to define frequencies
+MODULE freqbins_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+  !> Generate frequency bins
+  !!
+  !! We assume that the self-energy \f$Sigma\f$ is needed for frequencies
+  !! \f$\omega^\Sigma_\text{min} \le \omega^\Sigma \le \omega^\Sigma_\text{max}\f$.
+  !! The convolution requires W for positive frequencies[1] \f$0 \le
+  !! \omega^\text{coul} \le \omega^\text{coul}_\text{max}\f$. The Green's function is
+  !! needed for
+  !! \f{equation}{
+  !!   \omega^\Sigma_\text{min} - \omega^\text{coul}_\text{max} \le
+  !!   \omega^\text{green} \le \omega^\Sigma_\text{max} - \omega^\text{coul}_\text{max}~.
+  !! \f}
+  !! Because of the multishift algorithm, the frequency dependence of the
+  !! Green's function is inexpensive, so we use the same spacing.
+  !!
+  !! @note We require \f$\omega^\text{coul}_\text{max} > 0 \f$, 
+  !! \f$\omega^\Sigma_\text{min} \le 0\f$, and \f$\omega^\Sigma_\text{max} > 0\f$.
+  !! The zero of energy is set to the Fermi level.
+  !!
+  !! [1] <a href="http://link.aps.org/doi/10.1103/PhysRevB.74.035101">
+  !!     Shishkin, Kresse, Phys. Rev. B, **74**, 035101 (2006)
+  !!     </a>
+  ! TODO should set two frequency windows one fine grid for the range around the fermi level
+  !      say  ef +/- 60 eV  down to the lowest pseudo state included! and a second 
+  !      course window for everything outside this range.
+  SUBROUTINE freqbins()
  
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
@@ -156,3 +174,5 @@ SUBROUTINE freqbins()
   ENDDO
 
 END SUBROUTINE freqbins
+
+END MODULE freqbins_module

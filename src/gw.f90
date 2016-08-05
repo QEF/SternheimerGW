@@ -31,13 +31,14 @@ program gw
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
   USE freq_gw,           ONLY : nwsigma, nwsigwin
+  USE freqbins_module,   ONLY : freqbins
   USE gwsigma,           ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,          ONLY : diropn
   USE io_global,         ONLY : meta_ionode
   USE mp_global,         ONLY : mp_startup
   USE pp_output_mod,     ONLY : pp_output_open_all
   USE input_parameters,  ONLY : max_seconds, force_symmorphic
-  USE sigma_grid_module, ONLY: sigma_grid
+  USE sigma_grid_module, ONLY : sigma_grid
   USE sigma_io_module,   ONLY : sigma_io_close_write
   USE timing_module,     ONLY : time_setup
   USE units_gw,          ONLY : iunresid, lrresid, iunalphabeta, lralphabeta

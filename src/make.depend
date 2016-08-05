@@ -303,6 +303,7 @@ gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
 gw.o : ../../PW/src/pwcom.o
+gw.o : freqbins.o
 gw.o : gwcom.o
 gw.o : pp_output.o
 gw.o : sigma_grid.o
