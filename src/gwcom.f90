@@ -242,7 +242,6 @@ MODULE freq_gw
   !Grid for the analytic continuation
   REAL(DP) :: wsig_wind_max, wsig_wind_min, deltaws
   REAL(DP), ALLOCATABLE :: wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
-  INTEGER, ALLOCATABLE :: ind_w0mw (:,:), ind_w0pw (:,:)
   REAL,    ALLOCATABLE :: w0pmw (:,:)
   REAL(DP) :: plasmon
   REAL(DP) :: greenzero

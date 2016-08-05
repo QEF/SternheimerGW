@@ -62,7 +62,7 @@ CONTAINS
  
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwsigma, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
-                         deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
+                         deltaw, wcoulmax, &
                          fiu, nfs, greenzero, w0pmw, wgtcoul, &
                          wsig_wind_max, wsig_wind_min, deltaws, nwsigwin
   USE io_global,  ONLY :  stdout, ionode, ionode_id
