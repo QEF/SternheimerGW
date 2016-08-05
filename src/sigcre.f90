@@ -35,7 +35,7 @@ SUBROUTINE sigma_c_re(ik0)
   USE eqv,               ONLY : evq
   USE expand_igk_module, ONLY : expand_igk
   USE freq_gw,           ONLY : fiu, nfs, &
-                                nwcoul, nwgreen, nwsigma, wtmp, wcoul, &
+                                nwcoul, nwgreen, nwsigma, wcoul, &
                                 wgreen, wsigma, wsigmamin, wsigmamax, &
                                 deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
                                 w0pmw, wgtcoul

@@ -60,7 +60,7 @@ CONTAINS
   !      course window for everything outside this range.
   SUBROUTINE freqbins()
  
-  USE freq_gw,    ONLY : nwcoul, nwgreen, nwsigma, wtmp, wcoul,& 
+  USE freq_gw,    ONLY : nwcoul, nwgreen, nwsigma, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
                          fiu, nfs, greenzero, w0pmw, wgtcoul, &
@@ -85,6 +85,7 @@ CONTAINS
   LOGICAL  :: foundp, foundm
 
   REAL(dp) :: wgreenmin, wgreenmax
+  REAL(dp), ALLOCATABLE :: wtmp(:)
 
   zero = 0.0d0
   IF(.not.freq_gl) THEN
