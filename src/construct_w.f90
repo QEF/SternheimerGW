@@ -27,7 +27,7 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE freq_gw,       ONLY : fiu, nfs, &
-                            nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
+                            nwcoul, nwgreen, nwsigma, wtmp, wcoul, &
                             wgreen, wsigma, wsigmamin, wsigmamax, &
                             deltaw, wcoulmax
   USE gvect,         ONLY : g, ngm, nl

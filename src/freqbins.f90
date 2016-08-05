@@ -60,7 +60,7 @@ CONTAINS
   !      course window for everything outside this range.
   SUBROUTINE freqbins()
  
-  USE freq_gw,    ONLY : nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul,& 
+  USE freq_gw,    ONLY : nwcoul, nwgreen, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
                          deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
                          wgreenmax, fiu, nfs, greenzero, w0pmw, wgtcoul, &
@@ -80,6 +80,7 @@ CONTAINS
   REAL(DP)  :: x1, x2       !ranges
   REAL(DP), ALLOCATABLE  :: x(:), w(:)   !abcissa and weights
   INTEGER  :: n            !number of points
+  INTEGER  :: nwalloc
   INTEGER  :: iw, iw0, iwp, iw0mw, iw0pw, i
   LOGICAL  :: foundp, foundm
 

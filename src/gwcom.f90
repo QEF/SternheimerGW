@@ -232,7 +232,7 @@ MODULE freq_gw
   INTEGER :: nfs                   ! # of frequencies
   COMPLEX(KIND = dp), ALLOCATABLE :: fiu(:)    ! values  of frequency
   !variables for convolution
-  INTEGER :: nwcoul, nwgreen, nwalloc, nwsigma, nwsigwin
+  INTEGER :: nwcoul, nwgreen, nwsigma, nwsigwin
 
   !The wsigmamin, wsigmamax, etc is currently being set in freqbins. 
   !I will change this so that it becomes a user defined option in the punchcard
