@@ -62,8 +62,8 @@ CONTAINS
  
   USE freq_gw,    ONLY : nwcoul, nwgreen, nwsigma, wtmp, wcoul,& 
                          wgreen, wsigma, wsigmamin, wsigmamax,&
-                         deltaw, wcoulmax, ind_w0mw, ind_w0pw, wgreenmin,&
-                         wgreenmax, fiu, nfs, greenzero, w0pmw, wgtcoul, &
+                         deltaw, wcoulmax, ind_w0mw, ind_w0pw, &
+                         fiu, nfs, greenzero, w0pmw, wgtcoul, &
                          wsig_wind_max, wsig_wind_min, deltaws, nwsigwin
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
@@ -83,6 +83,8 @@ CONTAINS
   INTEGER  :: nwalloc
   INTEGER  :: iw, iw0, iwp, iw0mw, iw0pw, i
   LOGICAL  :: foundp, foundm
+
+  REAL(dp) :: wgreenmin, wgreenmax
 
   zero = 0.0d0
   IF(.not.freq_gl) THEN

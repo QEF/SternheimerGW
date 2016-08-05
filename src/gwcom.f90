@@ -238,7 +238,7 @@ MODULE freq_gw
   !I will change this so that it becomes a user defined option in the punchcard
   !with default values eventually. 
 
-  REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax 
+  REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax
   !Grid for the analytic continuation
   REAL(DP) :: wsig_wind_max, wsig_wind_min, deltaws
   REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
