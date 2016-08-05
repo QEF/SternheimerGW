@@ -619,6 +619,10 @@ sigcre.o : kind_gw.o
 sigcre.o : parallel.o
 sigcre.o : sigma_io.o
 sigcre.o : timing.o
+sigma.o : ../../Modules/fft_custom.o
+sigma.o : ../../Modules/kind.o
+sigma.o : fft6.o
+sigma.o : timing.o
 sigma_exch.o : ../../LR_Modules/lrcom.o
 sigma_exch.o : ../../Modules/cell_base.o
 sigma_exch.o : ../../Modules/constants.o

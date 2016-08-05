@@ -109,4 +109,87 @@ CONTAINS
   SUBROUTINE sigma_imag
   END SUBROUTINE sigma_imag
 
+  !> Evaluate the product \f$\Sigma = \alpha G W\f$.
+  !!
+  !! The product is evaluated in real space. Because the Green's function can
+  !! be used for several W values, we expect that the Green's function is
+  !! already transformed to real space by the calling routine.
+  SUBROUTINE sigma_prod(omega, fft_cust, alpha, green, array)
+
+    USE fft_custom,     ONLY: fft_cus
+    USE fft6_module,    ONLY: invfft6, fwfft6
+    USE kinds,          ONLY: dp
+    USE timing_module,  ONLY: time_GW_product
+
+    !> volume of the unit cell
+    REAL(dp),      INTENT(IN)    :: omega
+
+    !> type that defines the custom Fourier transform for Sigma
+    TYPE(fft_cus), INTENT(IN)    :: fft_cust
+
+    !> The prefactor with which the self-energy is multiplied
+    COMPLEX(dp),   INTENT(IN)    :: alpha
+
+    !> the Green's function in real space \f$G(r, r')\f$
+    COMPLEX(dp),   INTENT(IN)    :: green(:,:)
+
+    !> *on input* the screened Coulomb interaction with both indices in reciprocal space <br>
+    !! *on output* the self-energy with both indices in reciprocal space
+    COMPLEX(dp),   INTENT(INOUT) :: array(:,:)
+
+    !> the number of points in real space
+    INTEGER num_r
+
+    !> the number of G vectors defining the reciprocal space
+    INTEGER num_g
+
+    !> counter on G vectors
+    INTEGER ig
+
+    CALL start_clock(time_GW_product)
+
+    ! determine the helper variables
+    num_r = fft_cust%dfftt%nnr
+    num_g = fft_cust%ngmt
+
+    !
+    ! sanity check of the input
+    !
+    IF (SIZE(green, 1) /= num_r) &
+      CALL errore(__FILE__, "size of G inconsistent with FFT definition", 1)
+    IF (SIZE(green, 2) /= num_r) &
+      CALL errore(__FILE__, "Green's function not a square matrix", 1)
+    IF (SIZE(array, 1) /= num_r) &
+      CALL errore(__FILE__, "size of array inconsistent with FFT definition", 1)
+    IF (SIZE(array, 2) /= num_r) &
+      CALL errore(__FILE__, "array is not a square matrix", 1)
+
+    !!
+    !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
+    !!
+    ! array contains W(r, r')
+    CALL invfft6('Custom', array, fft_cust%dfftt, fft_cust%nlt, omega)
+
+    !!
+    !! 2. We evaluate the product in real space 
+    !!    \f$\Sigma(r, r') / \alpha = G(r, r') W(r, r') \f$
+    !!
+    ! array contains Sigma(r, r') / alpha
+    array = green * array
+
+    !!
+    !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
+    !!
+    !. array contains Sigma(G, G') / alpha
+    CALL fwfft6('Custom', array, fft_cust%dfftt, fft_cust%nlt, omega)
+
+    !! 4. We multiply with the prefactor \f$\alpha\f$.
+    DO ig = 1, num_g
+      array(:num_g, ig) = alpha * array(:num_g, ig)
+    END DO ! ig
+
+    CALL stop_clock(time_GW_product)
+
+  END SUBROUTINE sigma_prod
+
 END MODULE sigma_module
