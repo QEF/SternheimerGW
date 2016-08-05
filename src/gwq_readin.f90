@@ -84,7 +84,7 @@ SUBROUTINE gwq_readin()
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
   USE freq_gw,       ONLY : fiu, nfs, wsigmamin, wsigmamax, deltaw, wcoulmax, &
-                            greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
+                            nwcoul, wsig_wind_min, wsig_wind_max, deltaws
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
   USE truncation_module
@@ -146,7 +146,7 @@ SUBROUTINE gwq_readin()
                        wsigmamax, deltaw, wcoulmax,&
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, do_sigma_extra,&
-                       greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
+                       solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation, &
@@ -266,7 +266,6 @@ SUBROUTINE gwq_readin()
   high_io    = .TRUE.
   freq_gl    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
-  greenzero    = 0.0d0 
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
   ecutsco      = 5.0
