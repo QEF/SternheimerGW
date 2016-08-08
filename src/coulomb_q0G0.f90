@@ -116,7 +116,6 @@ scrcoul(:,:,:,:) = (0.d0, 0.0d0)
        CALL invfft('Smooth', dvbare, dffts)
        CALL solve_lindir (dvbare, drhoscfs)
        CALL fwfft('Smooth', dvbare, dffts)
-       CALL fwfft('Smooth', dvbare, dffts)
        DO iw = 1, nfs
           CALL fwfft('Dense', drhoscfs(:,iw,1), dffts)
           WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') drhoscfs(nls(1),iw,1) &
