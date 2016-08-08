@@ -28,13 +28,13 @@ SUBROUTINE sigma_c_re(ik0)
   USE kinds,         ONLY : DP
   USE kinds_gw,      ONLY : i8b
   USE io_global,     ONLY : stdout, ionode_id, ionode, meta_ionode
-  USE io_files,      ONLY : iunigk, prefix, tmp_dir
+  USE io_files,      ONLY : prefix, tmp_dir
   USE lsda_mod,      ONLY : nspin
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, cohsex, modielec, trunc_2d, tmp_dir_coul
   USE klist,         ONLY : wk, xk, nkstot, nks
-  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin
+  USE wvfct,         ONLY : nbnd, npw, npwx, g2kin
   USE eqv,           ONLY : evq
   USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
@@ -186,7 +186,6 @@ SUBROUTINE sigma_c_re(ik0)
   WRITE(6, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
   WRITE(1000+mpime, '(5x, "nwsigma ",i4, " iw0start ", i4, " iw0stop ", i4)') nwsigma, iw0start, iw0stop
 !ONLY PROCESSORS WITH K points to process: 
-  IF (nksq.gt.1) rewind (unit = iunigk)
   WRITE(6,'(4x,"Starting Frequency Integration")')
 !kpoints split between pools
   CALL get_homo_lumo (ehomo, elumo)

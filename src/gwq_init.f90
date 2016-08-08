@@ -37,15 +37,14 @@ SUBROUTINE gwq_init()
   USE becmod,               ONLY : calbec
   USE constants,            ONLY : eps8, tpi
   USE gvect,                ONLY : g, ngm
-  USE klist,                ONLY : xk, nkstot
+  USE klist,                ONLY : xk, nkstot, ngk
   USE lsda_mod,             ONLY : lsda, current_spin, isk
   USE buffers,              ONLY : get_buffer
   USE io_global,            ONLY : stdout, meta_ionode_id
-  USE io_files,             ONLY : iunigk
   USE atom,                 ONLY : msh, rgrid
   USE vlocal,               ONLY : strf
   USE spin_orb,             ONLY : lspinorb
-  USE wvfct,                ONLY : igk, g2kin, npwx, npw, nbnd
+  USE wvfct,                ONLY : g2kin, npwx, npw, nbnd
   USE gvecw,                ONLY : ecutwfc
   USE wavefunctions_module, ONLY : evc
   USE noncollin_module,     ONLY : noncolin, npol
@@ -55,7 +54,7 @@ SUBROUTINE gwq_init()
   USE nlcc_gw,              ONLY : nlcc_any
   USE control_gw,           ONLY : nbnd_occ, lgamma
   USE units_gw,             ONLY : lrwfc, iuwfc
-  USE qpoint,               ONLY : xq, igkq, npwq, nksq, eigqts, ikks, ikqs
+  USE qpoint,               ONLY : xq, npwq, nksq, eigqts, ikks, ikqs
   USE mp_bands,            ONLY : intra_bgrp_comm
   USE mp,                  ONLY : mp_sum
   USE mp_pools,            ONLY : inter_pool_comm, my_pool_id, npool, kunit
@@ -105,30 +104,17 @@ SUBROUTINE gwq_init()
   IF ( ( my_pool_id + 1 ) > rest ) nbase = nbase + rest * kunit
 
   eprectot(:,:) = 0.0d0
-  IF ( nksq > 1 ) REWIND( iunigk )
   DO ik = 1, nksq
      ikk  = ikks(ik)
      ikq  = ikqs(ik)
+     npw  = ngk(ikk)
+     npwq = ngk(ikq)
      !
      IF ( lsda ) current_spin = isk( ikk )
      !
-     ! ... g2kin is used here as work space
-     CALL gk_sort( xk(1,ikk), ngm, g, ( ecutwfc / tpiba2 ), npw, igk, g2kin )
-     !
      ! ... if there is only one k-point evc, evq, npw, igk stay in memory
      !
-     IF ( nksq > 1 ) WRITE( iunigk ) npw, igk
-     !
-     IF ( lgamma ) THEN
-     !
-        npwq = npw
-     !
-     ELSE   
-     !
-        CALL gk_sort( xk(1,ikq), ngm, g, ( ecutwfc / tpiba2 ), &
-                      npwq, igkq, g2kin )
-     !
-        IF ( nksq > 1 ) WRITE( iunigk ) npwq, igkq
+     IF ( .NOT. lgamma ) THEN
      !
         IF ( ABS( xq(1) - ( xk(1,ikq) - xk(1,ikk) ) ) > eps8 .OR. &
              ABS( xq(2) - ( xk(2,ikq) - xk(2,ikk) ) ) > eps8 .OR. &
@@ -151,11 +137,8 @@ SUBROUTINE gwq_init()
      ! diagonal elements of the unperturbed Hamiltonian,
      ! needed for preconditioning
      !
-     do ig = 1, npwq
-        g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
-                       (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
-                       (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
-     enddo
+     CALL g2_kin(ikq)
+     !
      aux1 = (0.d0,0.d0)
      DO ig = 1, npwq
         aux1 (ig,1:nbnd_occ(ikk)) = g2kin (ig) * evq (ig, 1:nbnd_occ(ikk))

@@ -23,12 +23,12 @@
 subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   use kinds,                only : dp
   use io_global,            only : stdout, ionode_id, ionode
-  use io_files,             only : prefix, iunigk
+  use io_files,             only : prefix
   use constants,            only : e2, fpi, RYTOEV, tpi, pi
   use gwsigma,              only : ngmsig, nbnd_sig
   use ener,                 only : ef
   use freq_gw,              only : fpol, fiu, nfs, nwsigma, wsigma
-  use wvfct,                only : nbnd, npw, npwx, igk, g2kin
+  use wvfct,                only : nbnd, npw, npwx, g2kin
   use gvecw,                only : ecutwfc
   use klist,                only : lgauss
   use control_gw,           only : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &

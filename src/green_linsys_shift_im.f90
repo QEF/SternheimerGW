@@ -24,7 +24,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix, iunigk
+  USE io_files,             ONLY : prefix
   USE check_stop,           ONLY : check_stop_now
   USE wavefunctions_module, ONLY : evc
   USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
@@ -32,7 +32,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE ener,                 ONLY : ef
   USE klist,                ONLY : xk, wk, nkstot
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
   USE gvecw,                ONLY : ecutwfc
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf, nhm, nh
@@ -101,6 +101,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
+  integer, target  :: igk(npwx)
   integer  :: igkq_ig(npwx) 
   integer  :: igkq_tmp(npwx) 
   integer  :: counter
@@ -123,7 +124,7 @@ subroutine green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
 ! hl arb k.
   call gk_sort_safe(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
                 npw, igk, g2kin)
-  igkq = igk
+  igkq => igk
   npwq = npw
 ! Need a loop to find all plane waves below ecutsco when igkq takes us outside of this sphere.
 ! igkq_tmp is gamma centered index up to ngmsco,

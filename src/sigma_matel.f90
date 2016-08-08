@@ -31,7 +31,7 @@ SUBROUTINE sigma_matel (ik0)
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
   USE freq_gw,              ONLY : nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
   USE klist,                ONLY : xk
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
   USE gvecw,                ONLY : ecutwfc
   USE qpoint,               ONLY : npwq
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
@@ -60,7 +60,7 @@ IMPLICIT NONE
                                sigma_band_x(nbnd_sig, nbnd_sig, 1), vxc(nbnd_sig,nbnd_sig)
   REAL(DP), ALLOCATABLE     :: wsigwin(:)
   REAL(DP)                  :: vtxc, etxc
-  INTEGER                   :: ikq
+  INTEGER                   :: igk(npwx), ikq
   INTEGER                   :: ig, iw, ibnd, jbnd, ipol, ik0, ir
   INTEGER                   :: ng
   INTEGER                   :: sigma_c_ngm, sigma_x_ngm

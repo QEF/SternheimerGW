@@ -28,7 +28,7 @@ use gwsigma,              only : ngmsig, nbnd_sig
 use klist,                only : xk, wk, nkstot, nks
 use constants,            only : e2, fpi, RYTOEV, tpi, pi
 use io_global,            only : stdout, ionode_id, ionode
-use wvfct,                only : nbnd, npw, npwx, igk, g2kin, et
+use wvfct,                only : nbnd, npw, npwx, g2kin, et
 use gwcom,                only : output
 use pp_output_mod,        only : pp_output, pp_output_xml
 

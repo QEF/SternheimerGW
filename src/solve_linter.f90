@@ -46,16 +46,16 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix, iunigk
+  USE io_files,             ONLY : prefix
   USE check_stop,           ONLY : check_stop_now
   USE wavefunctions_module, ONLY : evc
   USE constants,            ONLY : degspin
   USE cell_base,            ONLY : tpiba2
   USE ener,                 ONLY : ef
-  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot
+  USE klist,                ONLY : lgauss, degauss, ngauss, xk, wk, nkstot, igk_k, ngk
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
   USE spin_orb,             ONLY : domag
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk,g2kin,  et
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin,  et
   USE scf,                  ONLY : rho
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf, nhm, nh
@@ -184,6 +184,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
   IF (noncolin) allocate (dbecsum_nc (nhm, nhm, nat, nspin))
   allocate (aux1 ( dffts%nnr, npol))    
   allocate (h_diag ( npwx*npol, nbnd))    
+  IF (.not.ASSOCIATED(igkq)) ALLOCATE(igkq(npwx))
 
   iter0 = 0
   convt =.FALSE.
@@ -201,13 +202,8 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
      dbecsum(:,:,:) = (0.d0, 0.d0)
 
      IF (noncolin) dbecsum_nc = (0.d0, 0.d0)
-     if (nksq.gt.1) rewind (unit = iunigk)
 !start kpoints loop
      do ik = 1, nksq
-        if (nksq.gt.1) then
-           read (iunigk, err = 100, iostat = ios) npw, igk
-100        call errore ('solve_linter', 'reading igk', abs (ios) )
-        endif
 ! lgamma is a q=0 computation
         if (lgamma)  npwq = npw
 ! k and k+q mesh defined in initialize_gw:
@@ -215,16 +211,15 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
 !       ikqs(ik) = 2 * ik
         ikk = ikks(ik)
         ikq = ikqs(ik)
+        npw = ngk(ikk)
+        npwq= ngk(ikq)
+        igkq= igk_k(:,ikq)
 
         if (lsda) current_spin = isk (ikk)
-        if (.not.lgamma.and.nksq.gt.1) then
-           read (iunigk, err = 200, iostat = ios) npwq, igkq
-200        call errore ('solve_linter', 'reading igkq', abs (ios) )
-        endif
        !Calculates beta functions (Kleinman-Bylander projectors), with
        !structure factor, for all atoms, in reciprocal space
        !HL the beta functions (vkb) are being generated properly.  
-        call init_us_2 (npwq, igkq, xk (1, ikq), vkb)
+        call init_us_2 (npwq, igk_k(1,ikq), xk (1, ikq), vkb)
 
        !Reads unperturbed wavefuctions psi(k) and psi(k+q)
 
@@ -238,11 +233,7 @@ SUBROUTINE solve_linter(dvbarein, iw, drhoscf)
         endif
 
 !IS TPA preconditioner better?
-        do ig = 1, npwq
-           g2kin (ig) = ( (xk (1,ikq) + g (1, igkq(ig)) ) **2 + &
-                          (xk (2,ikq) + g (2, igkq(ig)) ) **2 + &
-                          (xk (3,ikq) + g (3, igkq(ig)) ) **2 ) * tpiba2
-        enddo
+        CALL g2_kin(ikq)
         !
         ! compute preconditioning matrix h_diag used by cgsolve_all
         !

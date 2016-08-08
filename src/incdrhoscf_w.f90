@@ -33,10 +33,11 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
   USE kinds, only : DP
   USE cell_base, ONLY : omega
   USE ions_base, ONLY : nat
-  USE wvfct,     ONLY : npw, igk, npwx, nbnd
+  USE wvfct,     ONLY : npwx, nbnd
   USE uspp_param,ONLY: nhm
   USE wavefunctions_module,  ONLY: evc
-  USE qpoint,    ONLY : npwq, igkq, ikks
+  USE klist,     ONLY : ngk, igk_k
+  USE qpoint,    ONLY : ikks, ikqs
   USE control_gw, ONLY : nbnd_occ
   !USE gsmooth,   ONLY : dffts%nnr, nls, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s
   USE gvecs,     ONLY : nls
@@ -66,7 +67,8 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
   ! the wavefunctions in real space
   ! the change of wavefunctions in real space
 
-  integer :: ibnd, ikk, ir, ig
+  integer :: npw, npwq
+  integer :: ibnd, ikk, ikq, ir, ig
   ! counters
 
   call start_clock ('incdrhoscf')
@@ -77,6 +79,9 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
  !wgt = weight / omega
 
   ikk = ikks(ik)
+  ikq = ikqs(ik)
+  npw = ngk(ikk)
+  npwq= ngk(ikq)
   !
   ! dpsi contains the perturbed wavefunctions of this k point
   ! evc  contains the unperturbed wavefunctions of this k point
@@ -84,14 +89,14 @@ subroutine incdrhoscf_w (drhoscf, weight, ik, dbecsum, dpsi)
   do ibnd = 1, nbnd_occ (ikk)
      psi (:) = (0.d0, 0.d0)
      do ig = 1, npw
-        psi (nls (igk (ig) ) ) = evc (ig, ibnd)
+        psi (nls (igk_k (ig, ikk) ) ) = evc (ig, ibnd)
      enddo
 
      CALL invfft('Wave', psi, dffts)
 
      dpsic(:) = (0.d0, 0.d0)
      do ig = 1, npwq
-        dpsic (nls (igkq (ig) ) ) = dpsi (ig, ibnd)
+        dpsic (nls (igk_k (ig, ikq) ) ) = dpsi (ig, ibnd)
      enddo
 
      CALL invfft('Wave', dpsic, dffts)  

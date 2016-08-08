@@ -24,7 +24,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   USE kinds,                ONLY : DP
   USE ions_base,            ONLY : nat, ntyp => nsp, ityp
   USE io_global,            ONLY : stdout, ionode
-  USE io_files,             ONLY : prefix, iunigk
+  USE io_files,             ONLY : prefix
   USE check_stop,           ONLY : check_stop_now
   USE wavefunctions_module, ONLY : evc
   USE constants,            ONLY : degspin, pi, tpi, RYTOEV, eps8
@@ -32,7 +32,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   USE ener,                 ONLY : ef
   USE klist,                ONLY : xk, wk, nkstot
   USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
   USE gvecw,                ONLY : ecutwfc
   USE uspp,                 ONLY : okvan, vkb
   USE uspp_param,           ONLY : upf, nhm, nh
@@ -98,6 +98,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
              nrec, nrec1,& ! the record number for dvpsi and dpsi
              ios,        & ! integer variable for I/O control
              mode          ! mode index
+   INTEGER     :: igk(npwx)
    INTEGER     :: igkq_ig(npwx) 
    INTEGER     :: igkq_tmp(npwx) 
    INTEGER     :: counter

@@ -25,14 +25,14 @@ subroutine sigma_c_im(ik0)
   use kinds,         only : DP
   use kinds_gw,      only : i8b
   use io_global,     only : stdout, ionode_id, ionode, meta_ionode
-  use io_files,      only : iunigk, prefix, tmp_dir
+  use io_files,      only : prefix, tmp_dir
   use lsda_mod,      only : nspin
   use constants,     only : e2, fpi, RYTOEV, tpi, eps8, pi
   use disp,          only : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   use control_gw,    only : lgamma, eta, godbyneeds, padecont, cohsex, modielec, &
                             trunc_2d, tmp_dir_coul, high_io
   use klist,         only : wk, xk, nkstot, nks, lgauss
-  use wvfct,         only : nbnd, npw, npwx, igk, g2kin
+  use wvfct,         only : nbnd, npw, npwx, g2kin
   use eqv,           only : evq
   use freq_gw,       only : fpol, fiu, nfs, nfsmax, &
                             nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &

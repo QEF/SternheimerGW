@@ -26,8 +26,8 @@ subroutine sigma_exchG(ik0)
   USE disp,             ONLY : nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE control_gw,       ONLY : eta, nbnd_occ, truncation, multishift, lgamma
   USE klist,            ONLY : wk, xk, nkstot, nks
-  USE io_files,         ONLY : prefix, iunigk, wfc_dir
-  USE wvfct,            ONLY : nbnd, npw, npwx, igk, g2kin
+  USE io_files,         ONLY : prefix, wfc_dir
+  USE wvfct,            ONLY : nbnd, npw, npwx, g2kin
   USE gvecw,            ONLY : ecutwfc
   USE wavefunctions_module, ONLY : evc
   USE symm_base,        ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot,&
@@ -76,7 +76,7 @@ IMPLICIT NONE
   integer    :: iq, ipol, ibnd, jbnd, vbnd
   integer    :: rec0, ios
   integer    :: iman, nman, ndeg(nbnd_sig), ideg, ikq
-  integer    :: igkp(npwx) 
+  integer    :: igk(npwx), igkp(npwx) 
   integer    :: igk_ig(npwx) 
   integer    :: igk_tmp(npwx) 
   integer    :: igkq_ig(npwx) 

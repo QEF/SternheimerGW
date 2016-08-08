@@ -27,8 +27,8 @@ SUBROUTINE sigma_exch(ik0)
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints, num_k_pts
   USE control_gw,    ONLY : eta, nbnd_occ, truncation, multishift, lgamma
   USE klist,         ONLY : wk, xk, nkstot, nks
-  USE io_files,      ONLY : prefix, iunigk, wfc_dir
-  USE wvfct,         ONLY : nbnd, npw, npwx, igk, g2kin
+  USE io_files,      ONLY : prefix, wfc_dir
+  USE wvfct,         ONLY : nbnd, npw, npwx, g2kin
   USE gvecw,         ONLY : ecutwfc
   USE wavefunctions_module, ONLY : evc
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
@@ -67,7 +67,7 @@ IMPLICIT NONE
   REAL(DP)    :: sxq(3,48), xqs(3,48)
   REAL(DP), PARAMETER :: eps=1.e-5_dp
   INTEGER, ALLOCATABLE     :: gmapsym(:,:)
-  INTEGER    :: igkq_ig(npwx), igkq_tmp(npwx) 
+  INTEGER    :: igk(npwx), igkq_ig(npwx), igkq_tmp(npwx) 
   INTEGER    :: ikq
   INTEGER    :: iq1,ik1,iqstart,iqstop
   INTEGER    :: iqrec, nig0, isym

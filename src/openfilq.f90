@@ -43,7 +43,7 @@ SUBROUTINE openfilq()
   USE fft_base,       ONLY : dfftp, dffts
   USE lsda_mod,         ONLY : nspin
   USE uspp,             ONLY : nkb, okvan
-  USE io_files,         ONLY : prefix, iunigk
+  USE io_files,         ONLY : prefix
   USE noncollin_module, ONLY : npol, nspin_mag
   USE control_flags,    ONLY : twfcollect, io_level
   USE mp_global,        ONLY : me_pool
@@ -122,11 +122,6 @@ SUBROUTINE openfilq()
   !
   iudrho = 23
   lrdrho = 2 * dfftp%nr1x * dfftp%nr2x * dfftp%nr3x * nspin_mag
-  !   Here the sequential files
-  !   The igk at a given k (and k+q if q!=0)
-  !
-  IF (nksq > 1) CALL seqopn (iunigk, 'igk', 'unformatted', exst)
-
 !HL write files for \Delta\psi^{\pm}
   RETURN
 END SUBROUTINE openfilq

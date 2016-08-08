@@ -35,16 +35,17 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
   USE lsda_mod,  ONLY : lsda, isk
   USE noncollin_module, ONLY : npol
   use uspp_param,ONLY : upf
-  USE wvfct,     ONLY : nbnd, npw, npwx, igk
+  USE wvfct,     ONLY : nbnd, npw, npwx
   USE wavefunctions_module,  ONLY: evc
   USE nlcc_gw,    ONLY : nlcc_any, drc
   USE eqv,        ONLY : dvpsi, dmuxc, vlocq
-  USE qpoint,     ONLY : npwq, igkq, xq, eigqts, ikks
+  USE qpoint,     ONLY : npwq, igkq, xq, eigqts, ikks, ikqs
 
   USE gvect,      ONLY : ngm, g, nl
   USE gvecs,      ONLY : nls, doublegrid
   USE fft_base,   ONLY : dfftp, dffts
   USE fft_interfaces, ONLY : invfft, fwfft
+  USE klist,      ONLY : igk_k
 
   implicit none
   !
@@ -56,7 +57,7 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
   !
   !   And the local variables
   !
-  integer :: na, mu, ikk, ig, nt, ibnd, ir, is, ip
+  integer :: na, mu, ikk, ikq, ig, nt, ibnd, ir, is, ip
   ! counter on atoms
   ! counter on modes
   ! the point k
@@ -92,6 +93,7 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
   !    real space
   !
   ikk = ikks(ik)
+  ikq = ikqs(ik)
   dvpsi(:,:) = (0.d0, 0.d0)
   aux1(:) = (0.d0, 0.d0)
 
@@ -105,11 +107,11 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
         aux2(:) = (0.d0, 0.d0)
         if (ip==1) then
            do ig = 1, npw
-              aux2 (nls (igk (ig) ) ) = evc (ig, ibnd)
+              aux2(nls(igk_k(ig, ikk))) = evc(ig, ibnd)
            enddo
         else
            do ig = 1, npw
-              aux2 (nls (igk (ig) ) ) = evc (ig+npwx, ibnd)
+              aux2(nls(igk_k(ig, ikk))) = evc(ig + npwx, ibnd)
            enddo
         end if
         !
@@ -125,11 +127,11 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
 
         if (ip==1) then
            do ig = 1, npwq
-              dvpsi (ig, ibnd) = aux2 (nls (igkq (ig) ) )
+              dvpsi(ig, ibnd) = aux2(nls(igk_k(ig, ikq)))
            enddo
         else
            do ig = 1, npwq
-              dvpsi (ig+npwx, ibnd) = aux2 (nls (igkq (ig) ) )
+              dvpsi(ig+npwx, ibnd) = aux2(nls(igk_k(ig, ikq)))
            enddo
         end if
      enddo

@@ -30,7 +30,7 @@ subroutine allocate_gwq
   !
   USE kinds,    ONLY : DP
   USE klist,    ONLY : nks, nkstot
-  USE wvfct,    ONLY : nbnd, igk, npwx
+  USE wvfct,    ONLY : nbnd, npwx
   USE gvect,    ONLY : ngm
   USE lsda_mod, ONLY : nspin
   USE noncollin_module,      ONLY : noncolin, npol, nspin_mag
@@ -57,15 +57,14 @@ subroutine allocate_gwq
   !
   !   FOR LGAMMA
   if (lgamma) then
-     !
-     !  q=0  : evq and igkq are pointers to evc and igk
-     !
-     evq  => evc
-     igkq => igk
+    !
+    ! q=0  : evq is a pointer to evc
+    !
+    evq  => evc
   else
- !
- !q!=0 : evq, igkq are allocated and calculated at point k+q
- !
+    !
+    ! q!=0 : evq is and calculated at point k+q
+    !
     allocate (evq ( npwx*npol , nbnd))    
     allocate (igkq ( npwx))    
   endif

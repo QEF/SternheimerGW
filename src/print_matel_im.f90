@@ -26,7 +26,7 @@ subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma
   USE gwsigma,              ONLY : ngmsig, nbnd_sig
   USE klist,                ONLY : xk
   USE io_global,            ONLY : stdout, ionode_id, ionode
-  USE wvfct,                ONLY : nbnd, npw, npwx, igk, g2kin, et
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
   USE gwcom,                ONLY : output
   USE pp_output_mod,        ONLY : pp_output, pp_output_xml
