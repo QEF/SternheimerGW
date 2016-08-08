@@ -216,9 +216,6 @@ find_xk_uniq.o : ../../Modules/io_global.o
 find_xk_uniq.o : ../../Modules/kind.o
 find_xk_uniq.o : ../../PW/src/symm_base.o
 find_xk_uniq.o : gwcom.o
-freq_gl.o : ../../Modules/constants.o
-freq_gl.o : ../../Modules/kind.o
-freq_gl.o : gwcom.o
 freqbins.o : ../../Modules/cell_base.o
 freqbins.o : ../../Modules/constants.o
 freqbins.o : ../../Modules/io_global.o

@@ -41,7 +41,7 @@ subroutine bcast_gw_input ( )
                           do_q0_only, maxter_coul, maxter_green, godbyneeds, cohsex, padecont,&
                           multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                           coul_multishift, trunc_2d, do_epsil, do_diag_g, do_diag_w,&
-                          do_imag, do_pade_coul, newgrid, high_io, freq_gl,&
+                          do_imag, do_pade_coul, newgrid, high_io, &
                           prec_direct, tmp_dir_coul, prec_shift, just_corr,&
                           double_grid, output, truncation
   USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
@@ -170,7 +170,6 @@ subroutine bcast_gw_input ( )
   call mp_bcast (lrcoul,    meta_ionode_id, world_comm)
   call mp_bcast (lrgrn,    meta_ionode_id, world_comm)
   call mp_bcast (high_io,    meta_ionode_id, world_comm)
-  call mp_bcast (freq_gl,    meta_ionode_id, world_comm)
   call mp_bcast (prec_direct,    meta_ionode_id, world_comm)
   call mp_bcast (prec_shift,    meta_ionode_id, world_comm)
   call mp_bcast (nwcoul,    meta_ionode_id, world_comm)

@@ -214,7 +214,6 @@ MODULE control_gw
              newgrid = .FALSE.,&
              loqua   = .FALSE.,&
              high_io, &  
-             freq_gl, &
              just_corr,&
              double_grid
 

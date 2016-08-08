@@ -95,7 +95,7 @@ CONTAINS
   USE io_global,  ONLY :  stdout, ionode, ionode_id
   USE kinds,      ONLY : DP
   USE constants,  ONLY : RYTOEV, pi
-  USE control_gw, ONLY : eta, godbyneeds, padecont, freq_gl, do_imag
+  USE control_gw, ONLY : eta, godbyneeds, padecont, do_imag
   USE disp,       ONLY : num_k_pts, w_of_k_start, w_of_k_stop, xk_kpoints,& 
                          nq1, nq2, nq3
   USE cell_base,  ONLY : omega, tpiba2, at, bg, tpiba, alat
@@ -115,7 +115,7 @@ CONTAINS
   REAL(dp), ALLOCATABLE :: wtmp(:)
 
   zero = 0.0d0
-  IF(.not.freq_gl) THEN
+  IF (.NOT.do_imag) THEN
    !wgreenmin = wsigmamin-wcoulmax
    !wgreenmax = wsigmamax+wcoulmax
 !for change of variables in Green's function

@@ -60,7 +60,7 @@ SUBROUTINE gwq_readin()
                             solve_direct, w_green_start, tinvert, coul_multishift,&
                             trunc_2d, do_epsil, &
                             do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                            high_io, freq_gl, prec_direct, prec_shift, just_corr,&
+                            high_io, prec_direct, prec_shift, just_corr,&
                             double_grid, name_length, output, &
                             method_truncation => truncation
   USE save_gw,       ONLY : tmp_dir_save
@@ -148,7 +148,7 @@ SUBROUTINE gwq_readin()
                        padecont, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
+                       prec_direct, tmp_dir, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation, &
                        filsigx, filsigc, filcoul
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
@@ -264,7 +264,6 @@ SUBROUTINE gwq_readin()
   do_pade_coul    = .FALSE.
   double_grid     = .TRUE.
   high_io    = .TRUE.
-  freq_gl    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
@@ -430,10 +429,6 @@ SUBROUTINE gwq_readin()
   CALL mp_bcast(ios, meta_ionode_id, world_comm )
   CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
   CALL mp_bcast(nfs, meta_ionode_id, world_comm )
-
-!No adaptive grid for real freq calc (YET)
-  if(.not.do_imag) freq_gl=.false.
-  CALL mp_bcast(freq_gl,meta_ionode_id, world_comm)
 
   if (nfs < 1) call errore('gwq_readin','Too few frequencies',1)
   ALLOCATE(fiu(nfs))
