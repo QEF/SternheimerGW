@@ -23,13 +23,40 @@
 !> Contains routine and type to define frequencies
 MODULE freqbins_module
 
+  USE kinds, ONLY: dp
+
   IMPLICIT NONE
+
+  PRIVATE
+
+  PUBLIC freqbins_type, freqbins
 
   !> Contains the information about the frequencies used for the convolution of
   !! G and W to obtain the self-energy \f$\Sigma\f$.
   TYPE freqbins_type
 
-    !> 
+    !> The coarse frequency grid used to determine W.
+    COMPLEX(dp), ALLOCATABLE :: solver(:)
+
+    !> The dense frequency grid onto which W is analytically continued.
+    COMPLEX(dp), ALLOCATABLE :: coul(:)
+
+    !> The dense frequency grid used for the self-energy.
+    COMPLEX(dp), ALLOCATABLE :: sigma(:)
+
+    !> The weights for the frequency integration.
+    REAL(dp),    ALLOCATABLE :: weight(:)
+
+    !> The grid used for the output of the self-energy.
+    REAL(dp),    ALLOCATABLE :: window(:)
+
+  CONTAINS
+
+    PROCEDURE :: num_freq   => freqbins_num_freq
+    PROCEDURE :: num_coul   => freqbins_num_coul
+    PROCEDURE :: num_sigma  => freqbins_num_sigma
+    PROCEDURE :: num_window => freqbins_num_window
+
   END TYPE freqbins_type
 
 CONTAINS
@@ -185,5 +212,45 @@ CONTAINS
   ENDDO
 
 END SUBROUTINE freqbins
+
+  !> extract the number of frequencies in coarse mesh for W
+  INTEGER FUNCTION freqbins_num_freq(this) RESULT (num_freq)
+
+    !> The frequency type of which the number of frequencies are extracted
+    CLASS(freqbins_type), INTENT(IN) :: this
+
+    num_freq = SIZE(this%solver)
+
+  END FUNCTION freqbins_num_freq
+
+  !> extract the number of frequencies in the dense mesh of W
+  INTEGER FUNCTION freqbins_num_coul(this) RESULT (num_coul)
+
+    !> The frequency type of which the number of frequencies are extracted
+    CLASS(freqbins_type), INTENT(IN) :: this
+
+    num_coul = SIZE(this%coul)
+
+  END FUNCTION freqbins_num_coul
+
+  !> extract the number of frequencies in the dense mesh of Sigma
+  INTEGER FUNCTION freqbins_num_sigma(this) RESULT (num_sigma)
+
+    !> The frequency type of which the number of frequencies are extracted
+    CLASS(freqbins_type), INTENT(IN) :: this
+
+    num_sigma = SIZE(this%sigma)
+
+  END FUNCTION freqbins_num_sigma
+
+  !> extract the number of frequencies in the output window
+  INTEGER FUNCTION freqbins_num_window(this) RESULT (num_window)
+
+    !> The frequency type of which the number of frequencies are extracted
+    CLASS(freqbins_type), INTENT(IN) :: this
+
+    num_window = SIZE(this%window)
+
+  END FUNCTION freqbins_num_window
 
 END MODULE freqbins_module
