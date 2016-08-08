@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
+SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen, w_ryd)
 
   USE cell_base,            ONLY : tpiba2
   USE check_stop,           ONLY : check_stop_now
@@ -34,7 +34,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   USE disp,                 ONLY : nqs, x_q
   USE ener,                 ONLY : ef
   USE eqv_gw,               ONLY : evq, eprectot
-  USE freq_gw,              ONLY : fiu, nfs, wgreen, deltaw, w0pmw
   USE gvect,                ONLY : g, ngm
   USE gvecw,                ONLY : ecutwfc
   USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec, gcutcorr
@@ -122,9 +121,6 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
   ci = (0.0d0, 1.0d0)
 ! write(1000+mpime, *) mu
 ! Convert freq array generated in freqbins into rydbergs.
-  do iw =1, nwgreen
-     w_ryd(iw) = w0pmw(1,iw)/RYTOEV
-  enddo
   where_rec='no_recover'
 ! hl arb k.
   call gk_sort_safe(xk1(1), ngm, g, (ecutwfc / tpiba2 ), &
@@ -203,7 +199,7 @@ SUBROUTINE green_linsys_shift_im (green, xk1, iw0, mu, nwgreen)
              call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,1), rhs, gr_A, h_diag,   &
                                    npwx, npw, tr2_green, 1, lter, conv_root, anorm, 1, npol, &
                                    cw , niters(gveccount), .true.)
-             call green_multishift_im(npwx, 2*gcutcorr, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+             call green_multishift_im(npwx, 2*gcutcorr, nwgreen, niters(gveccount), 1, nwgreen, w_ryd(1), mu, gr_A_shift)
              if (niters(gveccount).ge.maxter_green) then
                    WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig
                    gr_A_shift(:,:) = dcmplx(0.0d0,0.0d0)

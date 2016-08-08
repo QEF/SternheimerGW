@@ -186,11 +186,11 @@ CONTAINS
   !! some information about the generated grids and estimates the necessary
   !! memory.
   !!
-  SUBROUTINE sigma_grid()
+  SUBROUTINE sigma_grid(freq)
     !
     USE cell_base,        ONLY : tpiba2
     USE control_flags,    ONLY : gamma_only
-    USE freq_gw,          ONLY : nfs, nwsigma, nwgreen
+    USE freqbins_module,  ONLY : freqbins_type
     USE gvecw,            ONLY : ecutwfc
     USE gwsigma,          ONLY : ecutsex, sigma_x_st, gexcut, &
                                  ecutsco, sigma_c_st, gcutcorr
@@ -200,7 +200,10 @@ CONTAINS
     USE mp_bands,         ONLY : comm => intra_bgrp_comm
     ! 
     IMPLICIT NONE
-    ! 
+    !
+    !> type that defines the frequencies used
+    TYPE(freqbins_type), INTENT(IN) :: freq
+    !
     !> number of bytes in a complex
     REAL(dp), PARAMETER :: complex_byte = 16.0_dp
     !> number of bytes in a mega byte
@@ -216,7 +219,18 @@ CONTAINS
     !> helper variables for the number of r in exchange and correlation grid
     REAL(dp) num_r_x, num_r_c
 
-    integer itest
+    !> number of frequencies used in the linear solver
+    INTEGER num_freq
+
+    !> number of frequencies used for the Green's function
+    INTEGER num_green
+
+    !> number of frequencies used for the self energy integration
+    INTEGER num_sigma
+
+    num_freq  = freq%num_freq()
+    num_green = 2 * freq%num_coul()
+    num_sigma = freq%num_sigma()
 
     !
     ! Generate the exchange grid
@@ -243,14 +257,14 @@ CONTAINS
     WRITE(stdout,*)
     WRITE(stdout,'(5x,a)') 'Memory Usage:'
     WRITE(stdout,*)
-    WRITE(stdout, myfmt) "G(G, G'; w):    ", num_g_c**2 * REAL(nwgreen, KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "G(r, r'; w):    ", num_r_c**2 * REAL(nwgreen, KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "W(G, G'; w):    ", num_g_c**2 * REAL(nfs,     KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "W(r, r'):       ", num_r_c**2                          * in_MB, 'MB'
-    WRITE(stdout, myfmt) "Sigma(G, G'; w):", num_g_c**2 * REAL(nwsigma, KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "Sigma(r, r'; w):", num_r_c**2 * REAL(nwsigma, KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "V(G, G'):       ", num_g_x**2                          * in_MB, 'MB'
-    WRITE(stdout, myfmt) "V(r, r'):       ", num_r_x**2                          * in_MB, 'MB'
+    WRITE(stdout, myfmt) "G(G, G'; w):    ", num_g_c**2 * REAL(num_green, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "G(r, r'; w):    ", num_r_c**2 * REAL(num_green, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "W(G, G'; w):    ", num_g_c**2 * REAL(num_freq,  KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "W(r, r'):       ", num_r_c**2                            * in_MB, 'MB'
+    WRITE(stdout, myfmt) "Sigma(G, G'; w):", num_g_c**2 * REAL(num_sigma, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "Sigma(r, r'; w):", num_r_c**2 * REAL(num_sigma, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "V(G, G'):       ", num_g_x**2                            * in_MB, 'MB'
+    WRITE(stdout, myfmt) "V(r, r'):       ", num_r_x**2                            * in_MB, 'MB'
     WRITE(stdout,*)
 
   END SUBROUTINE sigma_grid

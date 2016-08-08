@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma) 
+subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, w_ryd, nwsigma) 
 
   USE kinds,                ONLY : DP
   USE gwsigma,              ONLY : ngmsig, nbnd_sig
@@ -56,7 +56,7 @@ LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)
      nbnd  = nbnd_sig 
-     w_ryd(:) = wsigma(:)/RYTOEV
+     wsigma(:) = w_ryd(:) * RYTOEV
 
      do ibnd = 1, nbnd_sig
         do iw = 1, nwsigma

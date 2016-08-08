@@ -20,14 +20,14 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
+subroutine sigma_pade(sigma_band_c, sigma_band_con, w_ryd, w_ryd2, nwsigwin)
   use kinds,                only : dp
   use io_global,            only : stdout, ionode_id, ionode
   use io_files,             only : prefix
   use constants,            only : e2, fpi, RYTOEV, tpi, pi
   use gwsigma,              only : ngmsig, nbnd_sig
   use ener,                 only : ef
-  use freq_gw,              only : fiu, nfs, nwsigma, wsigma
+  use freq_gw,              only : fiu, nfs, nwsigma
   use wvfct,                only : nbnd, npw, npwx, g2kin
   use gvecw,                only : ecutwfc
   use klist,                only : lgauss
@@ -40,7 +40,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
   complex (dp)             :: sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin)
   complex(dp), allocatable :: z(:), u(:), a(:)
   complex(dp), allocatable :: z2(:), u2(:), a2(:)
-  real(dp)                 :: w_ryd(nwsigma), w_ryd2(nwsigwin), wsigwin(nwsigwin)
+  real(dp)                 :: w_ryd(nwsigma), w_ryd2(nwsigwin)
   real(dp)                 :: ehomo, elumo, mu
   integer                  :: ig, igp, nw, iw, ibnd, jbnd, ios, &
                               ipol, ik0, ir,irp, counter
@@ -60,8 +60,6 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, wsigwin, nwsigwin)
     endif
    !mu = ehomo
    !write(6, '(f14.7)'), mu 
-    w_ryd(:)  = wsigma(:)/RYTOEV
-    w_ryd2(:) = wsigwin(:)/RYTOEV
 if (double_grid) then
     do ibnd =1 , nbnd_sig
         do jbnd = 1, nbnd_sig

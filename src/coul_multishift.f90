@@ -24,7 +24,7 @@ SUBROUTINE coul_multishift(ndmx, ndim, nfreq, niters, x_sig, dpsic, alphabeta, f
    USE kinds,       ONLY : DP
    USE wvfct,       ONLY : nbnd
    USE units_gw,    ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-   USE freq_gw,     ONLY : fiu, nwgreen, wgreen
+   USE freq_gw,     ONLY : fiu
    USE constants,   ONLY : degspin, pi, tpi, RYTOEV, eps8
    USE control_gw,  ONLY : eta, tr2_green,  maxter_coul
 
@@ -39,8 +39,6 @@ IMPLICIT NONE
   complex(kind=DP) :: pi_coeff (nbnd, nfreq), pi_coeff_old (nbnd, nfreq), pi_coeff_new(nbnd, nfreq)
   complex(DP)      :: w_ryd(nfreq)
 !  real(DP)     :: h_diag(ndmx, nbnd)
-
-  real(DP) :: anorm(nwgreen)
 
 !variable for reading in the stored alpha beta coefficients.
   complex(DP)                 :: alphabeta(2, nbnd, maxter_coul+1)

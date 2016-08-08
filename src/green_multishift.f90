@@ -20,11 +20,11 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
+SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig, nwgreen, w_ryd)
 
    USE constants,     ONLY : degspin, pi, tpi, RYTOEV, eps8
    USE control_gw,    ONLY : eta, tr2_green
-   USE freq_gw,       ONLY : fiu, nfs, nwgreen, wgreen
+   USE freq_gw,       ONLY : fiu, nfs
    USE kinds,         ONLY : DP
    USE timing_module, ONLY : time_green_multishift
    USE units_gw,      ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
@@ -32,7 +32,7 @@ SUBROUTINE green_multishift(ndmx, ndim, nfreq, niters, ngvecs, x_sig)
 IMPLICIT NONE
 !coefficient of quadratic form
   INTEGER :: ndmx ! input: the maximum dimension of the vectors
-  INTEGER :: nfreq, iw, iwp
+  INTEGER :: nfreq, iw, iwp, nwgreen
   COMPLEX(DP)   :: alpha, beta
 !complex(kind=DP), allocatable, INTENT(OUT) :: x_sig (:,:)
   COMPLEX(DP), INTENT(OUT) :: x_sig (ndmx,nfreq)
@@ -59,7 +59,6 @@ REAL(DP) :: anorm(nwgreen)
 !ALLOCATE(x_sig(ndmx,nfreq), r(ndmx))
   ALLOCATE(r(ndmx))
   ALLOCATE(u_sig(ndmx,nfreq), u_sig_old(ndmx,nfreq), r_sig(ndmx,nfreq))
-  w_ryd(:) = wgreen(:)/RYTOEV
 !Green shifted system.
      u_sig(:,:) = czero
      x_sig(:,:) = czero

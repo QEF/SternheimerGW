@@ -20,12 +20,12 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_sig)
+SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, nwgreen, w_ryd, mu, x_sig)
 
   USE constants,     ONLY : degspin, pi, tpi, RYTOEV, eps8
   USE control_gw,    ONLY : eta, tr2_green
   USE ener,          ONLY : ef
-  USE freq_gw,       ONLY : fiu, nfs, nwgreen, wgreen
+  USE freq_gw,       ONLY : fiu, nfs
   USE gwsigma,       ONLY : sigma_x_st, sigma_c_st
   USE kinds,         ONLY : dp
   USE timing_module, ONLY : time_green_multishift
@@ -33,7 +33,7 @@ SUBROUTINE green_multishift_im(ndmx, ndim, nfreq, niters, ngvecs, w_ryd, mu, x_s
 
   implicit none
 
-  integer  :: nfreq, iw, iwp
+  integer  :: nfreq, iw, iwp, nwgreen
   integer  :: ndmx ! input: the maximum dimension of the vectors
 !coefficient of quadratic form
   complex(dp)   :: alpha, beta

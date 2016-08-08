@@ -231,17 +231,15 @@ MODULE freq_gw
   INTEGER :: nfs                   ! # of frequencies
   COMPLEX(KIND = dp), ALLOCATABLE :: fiu(:)    ! values  of frequency
   !variables for convolution
-  INTEGER :: nwcoul, nwgreen, nwsigma, nwsigwin
+  INTEGER :: nwcoul, nwsigma, nwsigwin
 
   !The wsigmamin, wsigmamax, etc is currently being set in freqbins. 
   !I will change this so that it becomes a user defined option in the punchcard
   !with default values eventually. 
 
-  REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax
+  REAL(DP) :: wsigmamin, wsigmamax, wcoulmax
   !Grid for the analytic continuation
-  REAL(DP) :: wsig_wind_max, wsig_wind_min, deltaws
-  REAL(DP), ALLOCATABLE :: wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
-  REAL,    ALLOCATABLE :: w0pmw (:,:)
+  REAL(DP) :: wsig_wind_max, wsig_wind_min
 
 END MODULE freq_gw
 !

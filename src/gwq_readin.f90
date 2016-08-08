@@ -83,8 +83,8 @@ SUBROUTINE gwq_readin()
   USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
   USE control_flags, ONLY : twfcollect
   USE paw_variables, ONLY : okpaw
-  USE freq_gw,       ONLY : fiu, nfs, wsigmamin, wsigmamax, deltaw, wcoulmax, &
-                            nwcoul, wsig_wind_min, wsig_wind_max, deltaws
+  USE freq_gw,       ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
+                            wsig_wind_min, wsig_wind_max, nwsigwin
   USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,        ONLY : use_symm
   USE truncation_module
@@ -143,13 +143,13 @@ SUBROUTINE gwq_readin()
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
-                       wsigmamax, deltaw, wcoulmax,&
+                       wsigmamax, wcoulmax, nwsigma,&
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        prec_direct, tmp_dir, prec_shift, just_corr,& 
-                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation, &
+                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
                        filsigx, filsigc, filcoul
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
@@ -269,10 +269,11 @@ SUBROUTINE gwq_readin()
 !W and G. G cannot exceed sigma.
   ecutsco      = 5.0
   ecutsex      = 5.0
-  corr_conv    = 0.0
   ecutprec     = 15.0
   nbnd_sig     = 8
   nwcoul       = 35
+  nwsigma      = 11
+  nwsigwin     = 801
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   godbyneeds   = .FALSE.
@@ -295,11 +296,9 @@ SUBROUTINE gwq_readin()
 !Frequency variables
   wsigmamin      = 0.0d0
   wsigmamax      = 20.0d0
-  deltaw         =  2.0d0 
   wcoulmax       = 80.0d0   
   wsig_wind_min   = -50.0
   wsig_wind_max   =  30.0
-  deltaws   =   0.1
 
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
@@ -330,6 +329,13 @@ SUBROUTINE gwq_readin()
       method_truncation = FILM_TRUNCATION
 
     END SELECT ! truncation
+
+    ! convert frequencies to Ry
+    wsigmamin = wsigmamin / RYTOEV
+    wsigmamax = wsigmamax / RYTOEV
+    wcoulmax  = wcoulmax  / RYTOEV
+    wsig_wind_max = wsig_wind_max / RYTOEV
+    wsig_wind_min = wsig_wind_min / RYTOEV
 
   END IF ! meta_ionode
 

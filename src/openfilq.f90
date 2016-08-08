@@ -34,7 +34,7 @@ SUBROUTINE openfilq()
                              lrwfc, lrdwf, lrbar, lrcom, lrdvkb3, lrcoul, &
                              lrdrhous, lrebar, lrdrho, iudwfm, iudwfp, iuncoul, lrgrn, iungreen
   USE io_files,       ONLY : tmp_dir, diropn, seqopn, wfc_dir
-  USE freq_gw,        ONLY : nfs, nwgreen
+  USE freq_gw,        ONLY : nfs
   USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw, lgamma, do_coulomb
   USE save_gw,        ONLY : tmp_dir_save
   USE qpoint,         ONLY : nksq

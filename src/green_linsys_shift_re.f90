@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE green_linsys_shift_re (green, mu, iq)
+SUBROUTINE green_linsys_shift_re (green, mu, iq, nwgreen, w_ryd)
 
   USE buffers,              ONLY : save_buffer, get_buffer
   USE cell_base,            ONLY : tpiba2
@@ -34,8 +34,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   USE disp,                 ONLY : nqs, x_q
   USE ener,                 ONLY : ef
   USE eqv_gw,               ONLY : evq, eprectot
-  USE freq_gw,              ONLY : fiu, nfs, wgreen, deltaw, &
-                                   w0pmw, nwgreen, nwcoul, wcoul
+  USE freq_gw,              ONLY : fiu, nfs
   USE gvect,                ONLY : g, ngm
   USE gvecw,                ONLY : ecutwfc
   USE gwsigma,              ONLY : sigma_c_st, ecutsco, ecutprec
@@ -80,7 +79,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
   REAL(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   REAL(DP) :: tr_cgsolve = 1.0d-4
   REAL(DP) :: ehomo, elumo, mu
-  INTEGER :: iw, igp, iw0
+  INTEGER :: iw, igp, iw0, nwgreen
   INTEGER :: iq, ik0
   INTEGER :: rec0, n1, gveccount
   INTEGER, ALLOCATABLE      :: niters(:)
@@ -120,9 +119,6 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
    allocate  (etc(nbnd_occ(1), nkstot))
    ci = (0.0d0, 1.0d0)
 !Convert freq array generated in freqbins into rydbergs.
-   do iw =1, nwgreen
-      w_ryd(iw) = w0pmw(1,iw)/RYTOEV
-   enddo
    where_rec='no_recover'
    ikq = iq
 
@@ -186,7 +182,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq)
           call cbcg_solve_green(ch_psi_all_green, cg_psi, etc(1,ikq), rhs, gr_A, h_diag,   &
                                 npwx, npwq, tr2_green, ikq, lter, conv_root, anorm, 1, npol, &
                                 cw , niters(gveccount), .true.)
-          call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, w_ryd(1), mu, gr_A_shift)
+          call green_multishift_im(npwx, npwq, nwgreen, niters(gveccount), 1, nwgreen, w_ryd(1), mu, gr_A_shift)
           if (ig.eq.igstop) write(1000+mpime,*) niters(gveccount)
           if (niters(gveccount).ge.maxter_green) then
                 WRITE(1000+mpime, '(5x,"Gvec: ", i4)') ig

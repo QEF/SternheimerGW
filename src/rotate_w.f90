@@ -24,10 +24,8 @@ SUBROUTINE rotate_w(scrcoul_g, scrcoul_g_R, gmapsym, eigv, isym, xq_ibk)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d
-  USE freq_gw,       ONLY : fiu, nfs, &
-                            nwcoul, nwgreen, nwsigma, wcoul, &
-                            wgreen, wsigma, wsigmamin, wsigmamax, &
-                            deltaw, wcoulmax
+  USE freq_gw,       ONLY : fiu, nfs, nwcoul, nwsigma, wsigmamin, wsigmamax, &
+                            wcoulmax
   USE gwsigma,       ONLY : sigma_c_st
   USE gvect,         ONLY : g, ngm, nl
   USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints

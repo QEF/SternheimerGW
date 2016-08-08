@@ -216,11 +216,7 @@ find_xk_uniq.o : ../../Modules/io_global.o
 find_xk_uniq.o : ../../Modules/kind.o
 find_xk_uniq.o : ../../PW/src/symm_base.o
 find_xk_uniq.o : gwcom.o
-freqbins.o : ../../Modules/cell_base.o
-freqbins.o : ../../Modules/constants.o
-freqbins.o : ../../Modules/io_global.o
 freqbins.o : ../../Modules/kind.o
-freqbins.o : gwcom.o
 gauleg_grid.o : ../../Modules/constants.o
 gauleg_grid.o : ../../Modules/kind.o
 gk_sort_safe.o : ../../Modules/kind.o
@@ -551,6 +547,7 @@ sigcim.o : ../../Modules/recvec.o
 sigcim.o : ../../PW/src/pwcom.o
 sigcim.o : ../../PW/src/symm_base.o
 sigcim.o : expand_igk.o
+sigcim.o : freqbins.o
 sigcim.o : gwcom.o
 sigcim.o : kind_gw.o
 sigcim.o : parallel.o
@@ -572,6 +569,7 @@ sigcre.o : ../../Modules/recvec.o
 sigcre.o : ../../PW/src/pwcom.o
 sigcre.o : ../../PW/src/symm_base.o
 sigcre.o : expand_igk.o
+sigcre.o : freqbins.o
 sigcre.o : gwcom.o
 sigcre.o : kind_gw.o
 sigcre.o : parallel.o
@@ -636,6 +634,7 @@ sigma_grid.o : ../../Modules/io_global.o
 sigma_grid.o : ../../Modules/kind.o
 sigma_grid.o : ../../Modules/mp_bands.o
 sigma_grid.o : ../../PW/src/pwcom.o
+sigma_grid.o : freqbins.o
 sigma_grid.o : gwcom.o
 sigma_io.o : ../../Modules/kind.o
 sigma_io.o : ../../iotk/src/iotk_module.o
@@ -657,6 +656,7 @@ sigma_matel.o : ../../Modules/wavefunctions.o
 sigma_matel.o : ../../PW/src/buffers.o
 sigma_matel.o : ../../PW/src/pwcom.o
 sigma_matel.o : ../../PW/src/scf_mod.o
+sigma_matel.o : freqbins.o
 sigma_matel.o : gwcom.o
 sigma_matel.o : kind_gw.o
 sigma_matel.o : sigma_expect.o

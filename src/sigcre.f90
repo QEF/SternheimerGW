@@ -24,7 +24,7 @@
 !! On the real frequency axis the Green's function
 !! Requires access to the occupied staets \psi_{n\k}(\r)
 !! Therefore we use the same tricks as for sigma_exch.f90
-SUBROUTINE sigma_c_re(ik0) 
+SUBROUTINE sigma_c_re(ik0, freq) 
 
   USE cell_base,         ONLY : tpiba2, tpiba, omega, alat, at,bg
   USE constants,         ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
@@ -34,11 +34,9 @@ SUBROUTINE sigma_c_re(ik0)
   USE disp,              ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
   USE eqv,               ONLY : evq
   USE expand_igk_module, ONLY : expand_igk
-  USE freq_gw,           ONLY : fiu, nfs, &
-                                nwcoul, nwgreen, nwsigma, wcoul, &
-                                wgreen, wsigma, wsigmamin, wsigmamax, &
-                                deltaw, wcoulmax, &
-                                w0pmw, wgtcoul
+  USE freq_gw,           ONLY : fiu, nfs, nwcoul, nwsigma, wsigmamin, wsigmamax, &
+                                wcoulmax
+  USE freqbins_module,   ONLY : freqbins_type
   USE gvect,             ONLY : g, ngm, nl
   USE gwsigma,           ONLY : sigma_c_st
   USE io_files,          ONLY : prefix, tmp_dir
@@ -65,6 +63,8 @@ SUBROUTINE sigma_c_re(ik0)
   USE wvfct,             ONLY : nbnd, npw, npwx, g2kin
 
   IMPLICIT NONE
+
+  TYPE(freqbins_type), INTENT(IN) :: freq
 
   COMPLEX(DP)         :: ci, czero
   COMPLEX(DP)         :: phase
@@ -147,12 +147,13 @@ SUBROUTINE sigma_c_re(ik0)
    CALL start_clock(time_sigma_setup)
 
    CALL expand_igk
+   CALL errore(__FILE__, "real frequency integration broken at the moment", 1)
 
 ! iG(W-v)
    ALLOCATE ( scrcoul_g       (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
    ALLOCATE ( scrcoul_g_R     (sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)    )
    ALLOCATE ( scrcoul_pade_g  (sigma_c_st%ngmt, sigma_c_st%ngmt)         )
-   ALLOCATE ( greenf_g        (sigma_c_st%ngmt, sigma_c_st%ngmt, nwgreen) )
+   ALLOCATE ( greenf_g        (sigma_c_st%ngmt, sigma_c_st%ngmt, 2*nwcoul) )
 !These go on the big grid...
    ALLOCATE ( scrcoul        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
    ALLOCATE ( greenfr        (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr))
@@ -162,8 +163,8 @@ SUBROUTINE sigma_c_re(ik0)
 !This is a memory hog...
    ALLOCATE (sigma  (sigma_c_st%dfftt%nnr, sigma_c_st%dfftt%nnr, nwsigma))
    ALLOCATE  (z(nfs), a(nfs), u(nfs))
-   w_ryd(:) = wcoul(:nwcoul)/RYTOEV
-   w_rydsig(:) = wsigma(:nwsigma)/RYTOEV
+   w_ryd(:)    = REAL(freq%coul)
+   w_rydsig(:) = REAL(freq%sigma)
    WRITE(6,"( )")
    WRITE(6,'(4x,"Direct product GW for k0(",i3," ) = (",3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
    WRITE(6,"( )")
@@ -217,7 +218,7 @@ DO iq = 1, nqs
    found_qc = .false.
    scrcoul_g(:,:,:)   = dcmplx(0.0d0, 0.0d0)
 
-   cprefac = (deltaw/RYTOEV)*wq(iq)*(0.0d0, 1.0d0)/tpi
+!   cprefac = (deltaw/RYTOEV)*wq(iq)*(0.0d0, 1.0d0)/tpi
 
    if(.not.modielec) CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, -1)
    CALL coulpade(scrcoul_g(1,1,1), xq(1))
@@ -257,7 +258,7 @@ DO iq = 1, nqs
      ! Green's function
      CALL stop_clock(time_sigma_c)
      IF (iqrec_old /= iqrec) WRITE(1000+mpime,'("RUNNING THROUGH GREENS FUNCTION")')
-     IF (iqrec_old /= iqrec) CALL green_linsys_shift_re(greenf_g(1,1,1), mu, iqrec)
+     IF (iqrec_old /= iqrec) CALL green_linsys_shift_re(greenf_g(1,1,1), mu, iqrec, 2*nwcoul, REAL(freq%green(czero)))
      CALL stop_clock(time_sigma_c)
 
      iqrec_old = iqrec
@@ -278,11 +279,11 @@ DO iq = 1, nqs
            ELSE
                 cprefac = cprefac * 2.d0/3.d0
            ENDIF
-           IF (iw.eq.1) THEN
-               cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-           ELSE IF (iw.eq.nwcoul) THEN
-               cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
-           ENDIF
+!           IF (iw.eq.1) THEN
+!               cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
+!           ELSE IF (iw.eq.nwcoul) THEN
+!               cprefac = (1.0d0/3.0d0)*(deltaw/RYTOEV) * wq(iq) * (0.0d0, 1.0d0)/ tpi
+!           ENDIF
            CALL construct_w(scrcoul_g(1,1,1), scrcoul_pade_g(1,1), (w_ryd(iw)-w_rydsig(iw0)))
 
            CALL start_clock(time_GW_product)

@@ -30,8 +30,9 @@ program gw
                                 do_imag, lgamma, output
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
-  USE freq_gw,           ONLY : nwsigma, nwsigwin
-  USE freqbins_module,   ONLY : freqbins
+  USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul,&
+                                wsig_wind_min, wsig_wind_max, nwsigwin
+  USE freqbins_module,   ONLY : freqbins, freqbins_type
   USE gwsigma,           ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,          ONLY : diropn
   USE io_global,         ONLY : meta_ionode
@@ -52,6 +53,9 @@ program gw
   character (LEN=256) :: auxdyn
   logical             :: do_band, exst, do_matel
 
+  !> stores the frequencies uses for the calculation
+  TYPE(freqbins_type) freq
+
 ! Initialize MPI, clocks, print initial messages
   call mp_startup ( start_images=.true. )
   call environment_start ( code )
@@ -64,8 +68,9 @@ program gw
   call check_initial_status(auxdyn)
 ! Initialize frequency grids, FFT grids for correlation
 ! and exchange operators, open relevant GW-files.
-  call freqbins()
-  call sigma_grid()
+  call freqbins(do_imag, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
+                wsig_wind_min, wsig_wind_max, nwsigwin, freq)
+  call sigma_grid(freq)
   call opengwfil()
   call stop_clock(time_setup)
 ! Calculation W
@@ -83,7 +88,7 @@ program gw
          if (do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
          if (do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
          call stop_clock(time_setup)
-         if (do_sigma_c) call sigma_c_im(ik)
+         if (do_sigma_c) call sigma_c_im(ik, freq)
          if (do_sigma_c.and.multishift) then
             close(unit = iunresid, status = 'DELETE')
             close(unit = iunalphabeta, status = 'DELETE')
@@ -99,7 +104,7 @@ program gw
            if (meta_ionode .AND. ik == w_of_k_start) then         
              call pp_output_open_all(num_k_pts, nbnd_sig, nwsigwin, nwsigma, output)
            end if
-           call sigma_matel(ik)
+           call sigma_matel(ik, freq)
          end if
          call clean_pw_gw(ik, .TRUE.)
       enddo
@@ -111,7 +116,7 @@ program gw
          if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
          if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
          call stop_clock(time_setup)
-         if(do_sigma_c) call sigma_c_re(ik)
+         if(do_sigma_c) call sigma_c_re(ik, freq)
          if (do_sigma_c.and.multishift) then
             close(unit = iunresid, status = 'DELETE')
             close(unit = iunalphabeta, status = 'DELETE')
@@ -121,7 +126,7 @@ program gw
          else if(do_sigma_exx .and. do_sigma_exxG) then
              call sigma_exchg(ik)
          endif
-         if (do_sigma_matel) call sigma_matel(ik)
+         if (do_sigma_matel) call sigma_matel(ik, freq)
          call clean_pw_gw(ik, .TRUE.)
       enddo
   endif

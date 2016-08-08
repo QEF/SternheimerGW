@@ -47,8 +47,8 @@ subroutine bcast_gw_input ( )
   USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
                           w_of_k_start, w_of_k_stop
   USE partial,     ONLY : nat_todo, nrapp
-  USE freq_gw,     ONLY : wsigmamin, wsigmamax, wcoulmax, deltaw, nwcoul,&
-                          wsig_wind_min, wsig_wind_max, deltaws
+  USE freq_gw,     ONLY : wsigmamin, wsigmamax, wcoulmax, nwcoul,&
+                          wsig_wind_min, wsig_wind_max, nwsigma, nwsigwin
   USE output_mod,  ONLY : fildvscf, fildyn, fildrho, filsigx, filsigc, filcoul
   use io_files,    ONLY : tmp_dir, prefix
   USE control_flags,    ONLY: iverbosity, modenum
@@ -158,21 +158,21 @@ subroutine bcast_gw_input ( )
   call mp_bcast (wsigmamax, meta_ionode_id, world_comm)
   call mp_bcast (wsig_wind_min, meta_ionode_id, world_comm)
   call mp_bcast (wsig_wind_max, meta_ionode_id, world_comm)
-  call mp_bcast (deltaws, meta_ionode_id, world_comm)
   call mp_bcast (wcoulmax,  meta_ionode_id, world_comm)
-  call mp_bcast (deltaw,    meta_ionode_id, world_comm)
   call mp_bcast (just_corr,    meta_ionode_id, world_comm)
 
 !units information
 !  call mp_bcast (iuncoul,    meta_ionode_id, world_comm)
 !  call mp_bcast (iungreen,    meta_ionode_id, world_comm)
 !  call mp_bcast (iunsigma,    meta_ionode_id, world_comm)
-  call mp_bcast (lrcoul,    meta_ionode_id, world_comm)
-  call mp_bcast (lrgrn,    meta_ionode_id, world_comm)
-  call mp_bcast (high_io,    meta_ionode_id, world_comm)
-  call mp_bcast (prec_direct,    meta_ionode_id, world_comm)
-  call mp_bcast (prec_shift,    meta_ionode_id, world_comm)
-  call mp_bcast (nwcoul,    meta_ionode_id, world_comm)
+  call mp_bcast (lrcoul, meta_ionode_id, world_comm)
+  call mp_bcast (lrgrn, meta_ionode_id, world_comm)
+  call mp_bcast (high_io, meta_ionode_id, world_comm)
+  call mp_bcast (prec_direct, meta_ionode_id, world_comm)
+  call mp_bcast (prec_shift, meta_ionode_id, world_comm)
+  call mp_bcast (nwcoul, meta_ionode_id, world_comm)
+  call mp_bcast (nwsigma, meta_ionode_id, world_comm)
+  call mp_bcast (nwsigwin, meta_ionode_id, world_comm)
 
   call mp_bcast (use_symm, meta_ionode_id, world_comm)
   call mp_bcast (w_of_q_start, meta_ionode_id, world_comm)

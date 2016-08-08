@@ -21,7 +21,7 @@
 !
 !------------------------------------------------------------------------------ 
 !> G TIMES W PRODUCT sigma_correlation_imaginary frequency.
-SUBROUTINE sigma_c_im(ik0) 
+SUBROUTINE sigma_c_im(ik0, freq)
 
   USE cell_base,         ONLY : tpiba2, tpiba, omega, alat, at,bg
   USE constants,         ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
@@ -32,11 +32,9 @@ SUBROUTINE sigma_c_im(ik0)
   USE ener,              ONLY : ef
   USE eqv,               ONLY : evq
   USE expand_igk_module, ONLY : expand_igk
-  USE freq_gw,           ONLY : fiu, nfs, &
-                                nwcoul, nwgreen, nwsigma, wcoul, &
-                                wgreen, wsigma, wsigmamin, wsigmamax, &
-                                deltaw, wcoulmax, &
-                                w0pmw, wgtcoul
+  USE freq_gw,           ONLY : fiu, nfs, nwcoul, nwsigma, wsigmamin, wsigmamax, &
+                                wcoulmax
+  USE freqbins_module,   ONLY : freqbins_type
   USE gvect,             ONLY : g, ngm, nl
   USE gwsigma,           ONLY : sigma_c_st, gcutcorr
   USE io_files,          ONLY : prefix, tmp_dir
@@ -64,6 +62,8 @@ SUBROUTINE sigma_c_im(ik0)
   USE wvfct,             ONLY : nbnd, npw, npwx, g2kin
 
   IMPLICIT NONE
+
+  TYPE(freqbins_type), INTENT(IN) :: freq
 
   complex(DP)         :: ci, czero
   complex(DP)         :: phase
@@ -157,9 +157,9 @@ SUBROUTINE sigma_c_im(ik0)
    allocate (z(nfs), a(nfs), u(nfs))
 
    nnr = sigma_c_st%dfftt%nnr
-   wgtcoulry(:) = wgtcoul(:)/RYTOEV
-   w_ryd(:)    = wcoul(:)/RYTOEV
-   w_rydsig(:) = wsigma(:)/RYTOEV
+   wgtcoulry(:) = freq%weight
+   w_ryd(:)     = AIMAG(freq%coul)
+   w_rydsig(:)  = AIMAG(freq%sigma)
 
    write(stdout,'(/4x,"Direct product GW for k0(",i3," ) = (", 3f12.7," )")') ik0, (xk_kpoints(ipol, ik0), ipol=1,3)
    write(stdout,'(4x, "nfs, ", i4, " nwsigma, ", i4)') nfs, nwsigma
@@ -263,7 +263,7 @@ SUBROUTINE sigma_c_im(ik0)
 
         ! green function
         CALL stop_clock(time_sigma_c)
-        CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul)
+        CALL green_linsys_shift_im(greenf_g(1,1,1), xk1(1), 1, mu, 2*nwcoul, AIMAG(freq%green(czero)))
         CALL start_clock(time_sigma_c)
 
         nig0    = 1

@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE sigma_matel (ik0)
+SUBROUTINE sigma_matel (ik0, freq)
 
   USE buffers,              ONLY : get_buffer, close_buffer
   USE buiol,                ONLY : buiol_check_unit
@@ -31,7 +31,8 @@ SUBROUTINE sigma_matel (ik0)
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE freq_gw,              ONLY : nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
+  USE freq_gw,              ONLY : nwsigma, nwsigwin
+  USE freqbins_module,      ONLY : freqbins_type
   USE gvecs,                ONLY : nls
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
@@ -56,11 +57,12 @@ SUBROUTINE sigma_matel (ik0)
 
 IMPLICIT NONE
 
+  TYPE(freqbins_type), INTENT(IN) :: freq
+
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP)               :: psic(dffts%nnr), vpsi(ngm)
   COMPLEX(DP)               :: ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_x(nbnd_sig, nbnd_sig, 1), vxc(nbnd_sig,nbnd_sig)
-  REAL(DP), ALLOCATABLE     :: wsigwin(:)
   REAL(DP)                  :: vtxc, etxc
   INTEGER                   :: igk(npwx), ikq
   INTEGER                   :: ig, iw, ibnd, jbnd, ipol, ik0, ir
@@ -221,21 +223,17 @@ IMPLICIT NONE
   ! 
   IF (do_imag) THEN
     ! We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-    ALLOCATE (wsigwin(nwsigwin))
-    DO iw = 1, nwsigwin
-        wsigwin(iw) = wsig_wind_min + (wsig_wind_max-wsig_wind_min)/float(nwsigwin-1)*float(iw-1)
-    END DO
     ALLOCATE (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
     ! print selfenergy on the imaginary axis.
-    CALL print_matel_im(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+    CALL print_matel_im(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), AIMAG(freq%sigma), nwsigma)
     ! do analytic continuation and print selfenergy on the real axis.
     sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
-    CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
+    CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), AIMAG(freq%sigma), freq%window, nwsigwin)
+    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), freq%window, nwsigwin)
    deallocate(sigma_band_con)
   ELSE
     ! print sigma on real axis
-    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), REAL(freq%sigma), nwsigma)
   END IF
   IF (allocated(sigma_band_exg)) DEALLOCATE(sigma_band_exg)
 
