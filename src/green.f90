@@ -140,7 +140,7 @@ CONTAINS
     INTEGER,     INTENT(IN)  :: map(:)
 
     !> The number of G-vectors at the k-point.
-    INTEGER,     INTENT(IN)  ::  num_g
+    INTEGER,     INTENT(IN)  :: num_g
 
     !> The list of frequencies for which the Green's function is evaluated.
     COMPLEX(dp), INTENT(IN)  :: omega(:)
@@ -170,7 +170,7 @@ CONTAINS
     INTEGER ig_start, ig_stop
 
     !> loop variable for G loop
-    INTEGER ig
+    INTEGER ig, igp
 
     !> loop over frequencies
     INTEGER ifreq
@@ -187,16 +187,16 @@ CONTAINS
     CALL start_clock(time_green)
 
     ! determine helper variables
-    num_g_corr = SIZE(green, 1)
+    num_g_corr = SIZE(map)
     num_freq = SIZE(omega)
 
     ! sanity test of the input
-    IF (SIZE(green, 2) /= num_g_corr) &
-      CALL errore(__FILE__, "Green's function should be num_g_c x num_g_c x num_freq", 1)
+    IF (SIZE(green, 1) < num_g_corr) &
+      CALL errore(__FILE__, "first dimension of Green's functions to small", 1)
+    IF (SIZE(green, 2) < num_g_corr) &
+      CALL errore(__FILE__, "second dimension of Green's function to small", 1)
     IF (SIZE(green, 3) /= num_freq) &
       CALL errore(__FILE__, "Green's function and omega are inconsistent", 1)
-    IF (SIZE(map) /= num_g_corr) &
-      CALL errore(__FILE__, "mismatch in size of map and Green's function", 1)
 
     ! allocate array for the right hand side
     ALLOCATE(bb(num_g), STAT = ierr)
@@ -262,7 +262,9 @@ CONTAINS
 
     ! reorder into result array
     DO ig = 1, num_g_corr
-      green(ig, :, :) = green_comm(:, :, ig)
+      DO igp = 1, num_g_corr
+        green(ig, igp, :) = green_comm(igp, :, ig)
+      END DO ! igp
     END DO ! ig
 
     DEALLOCATE(num_task)
@@ -355,10 +357,10 @@ CONTAINS
       CALL errore(__FILE__, "size of eigenvalue and eigenvector inconsistent", 1)
     IF (num_g < num_g_corr) &
       CALL errore(__FILE__, "cannot use more G's for correlation that available", 1)
-    IF (SIZE(green, 1) /= num_g_corr) &
-      CALL errore(__FILE__, "1st dimension of Green's function incorrect", 1)
-    IF (SIZE(green, 2) /= num_g_corr) &
-      CALL errore(__FILE__, "2nd dimension of Green's function incorrect", 1)
+    IF (SIZE(green, 1) < num_g_corr) &
+      CALL errore(__FILE__, "1st dimension of Green's function to small", 1)
+    IF (SIZE(green, 2) < num_g_corr) &
+      CALL errore(__FILE__, "2nd dimension of Green's function to small", 1)
     IF (SIZE(green, 3) /= num_freq) &
       CALL errore(__FILE__, "3rd dimension of Green's function should be number of frequencies", 1)
 
