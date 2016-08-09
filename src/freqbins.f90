@@ -35,6 +35,9 @@ MODULE freqbins_module
   !! G and W to obtain the self-energy \f$\Sigma\f$.
   TYPE freqbins_type
 
+    !> flag indicates whether we integrate on the real or imaginary axis
+    LOGICAL imag_sigma
+
     !> The coarse frequency grid used to determine W.
     COMPLEX(dp), ALLOCATABLE :: solver(:)
 
@@ -147,6 +150,7 @@ CONTAINS
     !!
     !! 3. We construct a frequency grid for W.
     !!
+    freq%imag_sigma = imag_sigma
     IF (.NOT.imag_sigma) THEN
       !!
       !! - if imag_sigma is cleared, we use an equidistant grid on the real axis
