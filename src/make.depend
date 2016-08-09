@@ -621,7 +621,10 @@ sigcre.o : sigma_io.o
 sigcre.o : timing.o
 sigma.o : ../../Modules/fft_custom.o
 sigma.o : ../../Modules/kind.o
+sigma.o : ../../Modules/mp_images.o
 sigma.o : fft6.o
+sigma.o : freqbins.o
+sigma.o : green.o
 sigma.o : timing.o
 sigma_exch.o : ../../LR_Modules/lrcom.o
 sigma_exch.o : ../../Modules/cell_base.o
