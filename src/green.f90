@@ -35,7 +35,7 @@ CONTAINS
   !! Because QE stores some information in global modules, we need to initialize
   !! those quantities appropriatly so that the function calls work as intented.
   !!
-  SUBROUTINE green_prepare(kpt, gcutcorr, map)
+  SUBROUTINE green_prepare(kpt, gcutcorr, map, num_g)
 
     USE cell_base,         ONLY: tpiba2
     USE expand_igk_module, ONLY: expand_igk
@@ -45,19 +45,22 @@ CONTAINS
     USE klist,             ONLY: igk_k, ngk, xk, nks
     USE reorder_mod,       ONLY: create_map
     USE uspp,              ONLY: vkb
-    USE wvfct,             ONLY: npw, g2kin
+    USE wvfct,             ONLY: g2kin
 
     !> The k-point at which the Green's function is evaluated.
-    REAL(dp), INTENT(IN) :: kpt(3)
+    REAL(dp), INTENT(IN)  :: kpt(3)
 
     !> The G-vector cutoff for the correlation.
-    INTEGER,  INTENT(IN) :: gcutcorr
+    INTEGER,  INTENT(IN)  :: gcutcorr
 
     !> The map from G-vectors at current k to global array.
     INTEGER,  INTENT(OUT), ALLOCATABLE :: map(:)
 
+    !> The total number of G-vectors at this k-point
+    INTEGER,  INTENT(OUT) :: num_g
+
     !> number of G-vectors for correlation
-    INTEGER num_g
+    INTEGER num_g_corr
 
     !> loop variable for G-vectors
     INTEGER ig
@@ -74,7 +77,8 @@ CONTAINS
     xk(:, indx) = kpt
 
     ! evaluate the igk-map of the current k-point
-    CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), ngk(indx), igk_k(:,indx), g2kin)
+    CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), num_g, igk_k(:,indx), g2kin)
+    ngk(indx) = num_g
 
     ! rescale to lattice units
     g2kin = g2kin * tpiba2
@@ -83,10 +87,10 @@ CONTAINS
     ! create the output map array
     !
     ! count the number of G vectors used for correlation
-    num_g = COUNT((igk_k(:,indx) > 0) .AND. (igk_k(:,indx) <= gcutcorr))
+    num_g_corr = COUNT((igk_k(:,indx) > 0) .AND. (igk_k(:,indx) <= gcutcorr))
 
     ! allocate the array
-    ALLOCATE(map(num_g))
+    ALLOCATE(map(num_g_corr))
     ALLOCATE(map_(SIZE(igk_k, 1)))
 
     ! create the map and copy to result array
@@ -100,7 +104,7 @@ CONTAINS
     ! call necessary global initialize routines
     !
     ! initialize PP projectors
-    CALL init_us_2(npw, igk_k(:,indx), kpt, vkb)
+    CALL init_us_2(num_g, igk_k(:,indx), kpt, vkb)
 
   END SUBROUTINE green_prepare
 
