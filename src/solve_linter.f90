@@ -76,7 +76,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   USE mp,                   ONLY : mp_sum, mp_barrier
   USE mp_pools,             ONLY : inter_pool_comm
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
-  USE qpoint,               ONLY : npwq, nksq, igkq, ikks, ikqs
+  USE qpoint,               ONLY : npwq, nksq, ikks, ikqs
   USE timing_module,        ONLY : time_coul_solver
   USE units_gw,             ONLY : iubar, lrbar, iuwfc, lrwfc
   USE uspp,                 ONLY : vkb
@@ -280,9 +280,6 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
       ikq  = ikqs(ik)
       npw  = ngk(ikk)
       npwq = ngk(ikq)
-      ! this is necessary for now until all instances of igkq
-      ! are replaced with the appropriate igk_k
-      igkq = igk_k(:,ikq)
       !
       current_k = ikq
       IF (lsda) current_spin = isk(ikk)
