@@ -45,7 +45,7 @@ CONTAINS
     USE klist,             ONLY: igk_k, ngk, xk, nks
     USE reorder_mod,       ONLY: create_map
     USE uspp,              ONLY: vkb
-    USE wvfct,             ONLY: npw, igk, g2kin
+    USE wvfct,             ONLY: npw, g2kin
 
     !> The k-point at which the Green's function is evaluated.
     REAL(dp), INTENT(IN) :: kpt(3)
@@ -62,36 +62,35 @@ CONTAINS
     !> loop variable for G-vectors
     INTEGER ig
 
-    !> current active index of output igk array
+    !> current active index of the igk_k array
     INTEGER indx
 
     !> temporary copy of the map array
     INTEGER, ALLOCATABLE :: map_(:)
 
+    ! expand the igk array by one element
+    CALL expand_igk()
+    indx = nks + 1
+    xk(:, indx) = kpt
+
     ! evaluate the igk-map of the current k-point
-    CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), npw, igk, g2kin)
+    CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), ngk(indx), igk_k(:,indx), g2kin)
 
     ! rescale to lattice units
     g2kin = g2kin * tpiba2
-
-    ! store the igk of the k-point in an extra element
-    CALL expand_igk()
-    igk_k(:, nks + 1) = igk
-    ngk(nks + 1) = npw
-    xk(:, nks + 1) = kpt
 
     !
     ! create the output map array
     !
     ! count the number of G vectors used for correlation
-    num_g = COUNT((igk > 0) .AND. (igk <= gcutcorr))
+    num_g = COUNT((igk_k(:,indx) > 0) .AND. (igk_k(:,indx) <= gcutcorr))
 
     ! allocate the array
     ALLOCATE(map(num_g))
-    ALLOCATE(map_(SIZE(igk)))
+    ALLOCATE(map_(SIZE(igk_k, 1)))
 
     ! create the map and copy to result array
-    map_ = create_map(igk, gcutcorr)
+    map_ = create_map(igk_k(:,indx), gcutcorr)
     map = map_(:gcutcorr)
 
     ! free memory
@@ -101,7 +100,7 @@ CONTAINS
     ! call necessary global initialize routines
     !
     ! initialize PP projectors
-    CALL init_us_2(npw, igk, kpt, vkb)
+    CALL init_us_2(npw, igk_k(:,indx), kpt, vkb)
 
   END SUBROUTINE green_prepare
 
