@@ -114,7 +114,7 @@ CONTAINS
   !! The product is evaluated in real space. Because the Green's function can
   !! be used for several W values, we expect that the Green's function is
   !! already transformed to real space by the calling routine.
-  SUBROUTINE sigma_prod(omega, fft_cust, alpha, green, array)
+  SUBROUTINE sigma_prod(omega, fft_cust, alpha, gmapsym, green, array)
 
     USE fft_custom,     ONLY: fft_cus
     USE fft6_module,    ONLY: invfft6, fwfft6
@@ -129,6 +129,9 @@ CONTAINS
 
     !> The prefactor with which the self-energy is multiplied
     COMPLEX(dp),   INTENT(IN)    :: alpha
+
+    !> the symmetry mapping from the reduced to the full G mesh
+    INTEGER,       INTENT(IN)    :: gmapsym(:)
 
     !> the Green's function in real space \f$G(r, r')\f$
     COMPLEX(dp),   INTENT(IN)    :: green(:,:)
@@ -163,12 +166,14 @@ CONTAINS
       CALL errore(__FILE__, "size of array inconsistent with FFT definition", 1)
     IF (SIZE(array, 2) /= num_r) &
       CALL errore(__FILE__, "array is not a square matrix", 1)
+    IF (SIZE(gmapsym) /= num_g) &
+      CALL errore(__FILE__, "gmapsym is inconsistent with FFT definition", 1)
 
     !!
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
     !!
     ! array contains W(r, r')
-    CALL invfft6('Custom', array, fft_cust%dfftt, fft_cust%nlt, omega)
+    CALL invfft6('Custom', array, fft_cust%dfftt, fft_cust%nlt(gmapsym), omega)
 
     !!
     !! 2. We evaluate the product in real space 
@@ -197,7 +202,7 @@ CONTAINS
   !! The algorithm consists of the following steps:
   SUBROUTINE sigma_correlation(omega, fft_cust, multishift, lmax, threshold,  &
                                mu, alpha, kpt, freq, first_sigma, &!eval, evec, &
-                               coulomb, sigma)
+                               gmapsym, coulomb, sigma)
 
     USE fft_custom,      ONLY: fft_cus
     USE fft6_module,     ONLY: invfft6
@@ -241,6 +246,9 @@ CONTAINS
 !
 !    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
 !    COMPLEX(dp),   INTENT(IN)  :: evec(:,:)
+
+    !> the symmetry mapping from the reduced to the full G mesh
+    INTEGER,       INTENT(IN)  :: gmapsym(:)
 
     !> The screened Coulomb interaction in reciprocal space
     COMPLEX(dp),   INTENT(IN)  :: coulomb(:,:,:)
@@ -319,6 +327,8 @@ CONTAINS
       CALL errore(__FILE__, "self energy must be a square matrix", 1)
     IF (first_sigma + num_task - 1 > freq%num_sigma()) &
       CALL errore(__FILE__, "frequency index is out of bounds of the frequency array", 1)
+    IF (SIZE(gmapsym) /= num_g_corr) &
+      CALL errore(__FILE__, "gmapsym and FFT type are inconsistent", 1)
 
     !!
     !! 1. shift the frequency grid so that the origin is at the Fermi energy
@@ -384,7 +394,7 @@ CONTAINS
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
         ! work will contain Sigma(G, G', wS)
-        CALL sigma_prod(omega, fft_cust, alpha_weight, green(:,:,igreen), work)
+        CALL sigma_prod(omega, fft_cust, alpha_weight, gmapsym, green(:,:,igreen), work)
         !
         !!
         !! 9. add the result to \f$\Sigma\f$
