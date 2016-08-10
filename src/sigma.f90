@@ -97,17 +97,206 @@ MODULE sigma_module
 
   PRIVATE
 
-  PUBLIC sigma_real, sigma_imag, sigma_correlation
+  PUBLIC sigma_wrapper
 
 CONTAINS
 
-  !> Implements the product on the real axis.
-  SUBROUTINE sigma_real
-  END SUBROUTINE sigma_real
+  !> This function provides a wrapper that extracts the necessary information
+  !! from the global modules to evaluate the self energy.
+  SUBROUTINE sigma_wrapper(ikpt, freq)
 
-  !> Implements the product on the imaginary axis.
-  SUBROUTINE sigma_imag
-  END SUBROUTINE sigma_imag
+    USE cell_base,       ONLY: at, bg, omega
+    USE constants,       ONLY: tpi
+    USE control_gw,      ONLY: multishift, tr2_green
+    USE disp,            ONLY: nqs, x_q, wq
+    USE ener,            ONLY: ef
+    USE freqbins_module, ONLY: freqbins_type
+    USE gvect,           ONLY: ngm
+    USE gwsigma,         ONLY: sigma_c_st, gcutcorr
+    USE kinds,           ONLY: dp
+    USE klist,           ONLY: lgauss
+    USE mp_images,       ONLY: my_image_id, inter_image_comm
+    USE mp_pools,        ONLY: inter_pool_comm
+    USE parallel_module, ONLY: parallel_task
+    USE symm_base,       ONLY: nsym, s, invs, ftau, nrot
+    USE timing_module,   ONLY: time_sigma_c, time_sigma_setup
+    USE units_gw,        ONLY: iuncoul, lrcoul
+
+    !> index of the k-point for which the self energy is evaluated
+    INTEGER, INTENT(IN) :: ikpt
+
+    !> type containing the information about the frequencies used for the integration
+    TYPE(freqbins_type), INTENT(IN) :: freq
+
+    !> complex constant of zero
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    !> real constant of 0.5
+    REAL(dp),    PARAMETER :: half = 0.5_dp
+
+    !> complex prefactor <br>
+    !! for real frequency integration it is \f$ i / 2 \pi N\f$ <br>
+    !! for imaginary frequencies it is \f$-1 / 2 \pi N\f$
+    COMPLEX(dp) prefactor
+
+    !> the prefactor including the q dependent parts
+    COMPLEX(dp) alpha
+
+    !> number of q-points in star
+    INTEGER num_star
+
+    !> index of +q for all symmetry operations
+    INTEGER indx_sq(48)
+
+    !> index of -q if necessary
+    INTEGER indx_mq
+
+    !> number of symmetry operations that lead to certain q point
+    INTEGER num_symq(48)
+
+    !> the star of the q-point
+    REAL(dp) star_xq(3, 48)
+
+    !> counter on the points in the star
+    INTEGER istar
+
+    !> counter on the symmetry operations in the star
+    INTEGER isymop
+
+    !> the symmetry map from reduced to full G mesh
+    INTEGER, ALLOCATABLE :: gmapsym(:,:)
+
+    !> the phase associated with the symmetry
+    COMPLEX(dp), ALLOCATABLE :: eigv(:,:)
+
+    !> the highest and lowest occupied state (in Ry)
+    REAL(dp) ehomo, elumo
+
+    !> the chemical potential of the system
+    REAL(dp) mu
+
+    !> the screened Coulomb interaction
+    COMPLEX(dp), ALLOCATABLE :: coulomb(:,:,:)
+
+    !> the self-energy at the current k-point
+    COMPLEX(dp), ALLOCATABLE :: sigma(:,:,:)
+
+    !> the upper and lower boundary of the q-points calculated on this process
+    INTEGER iq_start, iq_stop
+
+    !> a counter on the q-points
+    INTEGER iq
+
+    !> index of the point k - q
+    INTEGER ikq
+
+    !> the number of q-point tasks done by the various processes
+    INTEGER, ALLOCATABLE :: num_q_task(:)
+
+    !> the upper and lower boundary of the frequencies
+    INTEGER first_sigma, last_sigma
+
+    !> the number of frequency tasks done by the various processes
+    INTEGER, ALLOCATABLE :: num_sigma_task(:)
+
+    CALL start_clock(time_sigma_c)
+    CALL start_clock(time_sigma_setup)
+
+    !
+    ! set the prefactor depending on whether we integrate along the real or
+    ! the imaginary frequency axis
+    !
+    IF (freq%imag_sigma) THEN
+      prefactor = CMPLX(-1.0 / (tpi * REAL(nsym, KIND=dp)), 0.0_dp, KIND=dp)
+    ELSE
+      prefactor = CMPLX(0.0_dp, 1.0 / (tpi * REAL(nsym, KIND=dp)), KIND=dp)
+    END IF
+
+    !
+    ! determine symmetry
+    !
+    ALLOCATE(gmapsym(ngm, nrot))
+    ALLOCATE(eigv(ngm, nrot))
+    CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+    DEALLOCATE(eigv)
+
+    !
+    ! define the chemical potential
+    !
+    IF (.NOT.lgauss) THEN
+      !
+      ! for semiconductors choose the middle of the gap
+      CALL get_homo_lumo(ehomo, elumo)
+      mu = half * (ehomo + elumo)
+      !
+    ELSE
+      !
+      ! for metals set it to the Fermi energy
+      mu = ef
+      !
+    END IF
+
+    !
+    ! parallelize frequencies over images and q-points over pools
+    !
+    CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_q_task)
+    CALL parallel_task(inter_image_comm, freq%num_sigma(), first_sigma, last_sigma, num_sigma_task)
+
+    CALL stop_clock(time_sigma_setup)
+
+    !
+    ! initialize self energy
+    !
+    ALLOCATE(sigma(gcutcorr, gcutcorr, num_sigma_task(my_image_id + 1)))
+    sigma = zero
+
+    !
+    ! sum over all q-points
+    !
+    ikq = 1
+    DO iq = iq_start, iq_stop
+      !
+      ! determine the star of this q-point
+      !
+      CALL star_q(x_q(:,iq), at, bg, nsym, s, invs, num_star, star_xq, indx_sq, num_symq, indx_mq, .FALSE.)
+      !
+      ! evaluate the coefficients for the analytic continuation of W
+      !
+      ALLOCATE(coulomb(gcutcorr, gcutcorr, freq%num_freq()))
+      CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
+      CALL coulpade(coulomb, x_q(:,iq))
+      !
+      ! sum over all q-points in the star
+      DO istar = 1, num_star
+        !
+        ! determine symmetry operation that maps q to star(q)
+        !
+        DO isymop = 1, nsym
+          IF (indx_sq(isymop) == istar) EXIT
+        END DO ! isymop
+        IF (isymop > nsym) CALL errore(__FILE__, "point in star not found", 1)
+        !
+        ! determine the prefactor
+        !
+        alpha = wq(iq) * REAL(num_symq(istar), KIND=dp) * prefactor
+        !
+        ! evaluate Sigma
+        !
+        ikq = ikq + 1
+        CALL sigma_correlation(omega, sigma_c_st, multishift, 4, tr2_green, &
+                               mu, alpha, ikq, freq, first_sigma,           &
+                               gmapsym(1:gcutcorr, invs(isymop)),           &
+                               coulomb, sigma)
+        !
+      END DO ! istar
+      !
+      DEALLOCATE(coulomb)
+      !
+    END DO ! iq
+
+    CALL stop_clock(time_sigma_c)
+
+  END SUBROUTINE sigma_wrapper
 
   !> Evaluate the product \f$\Sigma = \alpha G W\f$.
   !!
@@ -200,14 +389,14 @@ CONTAINS
   !> Evaluate the correlation self-energy for a given frequency range.
   !!
   !! The algorithm consists of the following steps:
-  SUBROUTINE sigma_correlation(omega, fft_cust, multishift, lmax, threshold,  &
-                               mu, alpha, kpt, freq, first_sigma, &!eval, evec, &
+  SUBROUTINE sigma_correlation(omega, fft_cust, multishift, lmax, threshold, &
+                               mu, alpha, ikq, freq, first_sigma,            &
                                gmapsym, coulomb, sigma)
 
     USE fft_custom,      ONLY: fft_cus
     USE fft6_module,     ONLY: invfft6
     USE freqbins_module, ONLY: freqbins_type
-    USE green_module,    ONLY: green_prepare, green_function
+    USE green_module,    ONLY: green_prepare, green_function, green_nonanalytic
     USE kinds,           ONLY: dp
     USE mp_images,       ONLY: inter_image_comm
 
@@ -232,20 +421,14 @@ CONTAINS
     !> The prefactor with which the self-energy is multiplied
     COMPLEX(dp),   INTENT(IN)  :: alpha
 
-    !> The k point at which the Green's function is evaluated
-    REAL(dp),      INTENT(IN)  :: kpt(:)
+    !> The index of the point k - q at which the Green's function is evaluated
+    INTEGER,       INTENT(IN)  :: ikq
 
     !> This type defines the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
 
     !> the first frequency done on this process
     INTEGER,       INTENT(IN)  :: first_sigma
-
-!    !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
-!    COMPLEX(dp),   INTENT(IN)  :: eval(:)
-!
-!    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
-!    COMPLEX(dp),   INTENT(IN)  :: evec(:,:)
 
     !> the symmetry mapping from the reduced to the full G mesh
     INTEGER,       INTENT(IN)  :: gmapsym(:)
@@ -308,6 +491,12 @@ CONTAINS
     !> work array; contains either W or \f$\Sigma\f$
     COMPLEX(dp), ALLOCATABLE :: work(:,:)
 
+    !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
+    COMPLEX(dp), ALLOCATABLE :: eval(:)
+
+    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
+    COMPLEX(dp), ALLOCATABLE :: evec(:,:)
+
     !> complex constant of 0
     COMPLEX(dp), PARAMETER   :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
@@ -333,7 +522,7 @@ CONTAINS
     !!
     !! 1. shift the frequency grid so that the origin is at the Fermi energy
     !!
-    mu_ = CMPLX(mu, 0.0_dp)
+    mu_ = CMPLX(mu, 0.0_dp, KIND=dp)
     num_green = 2 * freq%num_coul()
     ALLOCATE(freq_green(num_green))
     ALLOCATE(freq_sigma(freq%num_sigma()))
@@ -344,7 +533,7 @@ CONTAINS
     !! 2. prepare the QE module so that we can evaluate the Green's function
     !!
     ! this will allocate map
-    CALL green_prepare(kpt, num_g_corr, map, num_g)
+    CALL green_prepare(ikq, num_g_corr, map, num_g, eval, evec)
 
     !!
     !! 3. evaluate the Green's function of the system
@@ -358,9 +547,10 @@ CONTAINS
     !!
     !! 4. we add the nonanalytic part if on the real axis
     !!
-!    IF (.NOT. freq%imag_sigma) THEN
-!      CALL green_nonanalytic(map, freq_green, eval, evec, green)
-!    END IF
+    IF (.NOT. freq%imag_sigma) THEN
+      CALL green_nonanalytic(map, freq_green, eval, evec, green)
+    END IF
+    DEALLOCATE(eval, evec)
 
     !!
     !! 5. Fourier transform Green's function to real space
