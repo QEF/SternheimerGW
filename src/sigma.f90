@@ -107,20 +107,23 @@ CONTAINS
 
     USE cell_base,       ONLY: at, bg, omega
     USE constants,       ONLY: tpi
-    USE control_gw,      ONLY: multishift, tr2_green
+    USE control_gw,      ONLY: multishift, tr2_green, output
     USE disp,            ONLY: nqs, x_q, wq
     USE ener,            ONLY: ef
     USE freqbins_module, ONLY: freqbins_type
     USE gvect,           ONLY: ngm
     USE gwsigma,         ONLY: sigma_c_st, gcutcorr
+    USE io_global,       ONLY: meta_ionode
     USE kinds,           ONLY: dp
     USE klist,           ONLY: lgauss
-    USE mp_images,       ONLY: my_image_id, inter_image_comm
-    USE mp_pools,        ONLY: inter_pool_comm
-    USE parallel_module, ONLY: parallel_task
+    USE mp_images,       ONLY: my_image_id, inter_image_comm, root_image
+    USE mp_pools,        ONLY: inter_pool_comm, root_pool
+    USE parallel_module, ONLY: parallel_task, mp_root_sum, mp_gatherv
+    USE sigma_io_module, ONLY: sigma_io_write_c
     USE symm_base,       ONLY: nsym, s, invs, ftau, nrot
-    USE timing_module,   ONLY: time_sigma_c, time_sigma_setup
-    USE units_gw,        ONLY: iuncoul, lrcoul
+    USE timing_module,   ONLY: time_sigma_c, time_sigma_setup, &
+                               time_sigma_io, time_sigma_comm
+    USE units_gw,        ONLY: iuncoul, lrcoul, iunsigma, lrsigma
 
     !> index of the k-point for which the self energy is evaluated
     INTEGER, INTENT(IN) :: ikpt
@@ -181,6 +184,9 @@ CONTAINS
     !> the self-energy at the current k-point
     COMPLEX(dp), ALLOCATABLE :: sigma(:,:,:)
 
+    !> the self-energy at the current k-point collected on the root process
+    COMPLEX(dp), ALLOCATABLE :: sigma_root(:,:,:)
+
     !> the upper and lower boundary of the q-points calculated on this process
     INTEGER iq_start, iq_stop
 
@@ -190,14 +196,11 @@ CONTAINS
     !> index of the point k - q
     INTEGER ikq
 
-    !> the number of q-point tasks done by the various processes
-    INTEGER, ALLOCATABLE :: num_q_task(:)
-
     !> the upper and lower boundary of the frequencies
     INTEGER first_sigma, last_sigma
 
     !> the number of frequency tasks done by the various processes
-    INTEGER, ALLOCATABLE :: num_sigma_task(:)
+    INTEGER, ALLOCATABLE :: num_task(:)
 
     CALL start_clock(time_sigma_c)
     CALL start_clock(time_sigma_setup)
@@ -239,15 +242,16 @@ CONTAINS
     !
     ! parallelize frequencies over images and q-points over pools
     !
-    CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_q_task)
-    CALL parallel_task(inter_image_comm, freq%num_sigma(), first_sigma, last_sigma, num_sigma_task)
+    CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_task)
+    DEALLOCATE(num_task)
+    CALL parallel_task(inter_image_comm, freq%num_sigma(), first_sigma, last_sigma, num_task)
 
     CALL stop_clock(time_sigma_setup)
 
     !
     ! initialize self energy
     !
-    ALLOCATE(sigma(gcutcorr, gcutcorr, num_sigma_task(my_image_id + 1)))
+    ALLOCATE(sigma(gcutcorr, gcutcorr, num_task(my_image_id + 1)))
     sigma = zero
 
     !
@@ -293,6 +297,35 @@ CONTAINS
       DEALLOCATE(coulomb)
       !
     END DO ! iq
+
+    DEALLOCATE(gmapsym)
+
+    !
+    ! collect sigma on a single process
+    !
+    CALL start_clock(time_sigma_comm)
+
+    ! first sum sigma across the pool
+    CALL mp_root_sum(inter_pool_comm, root_pool, sigma)
+    ! the gather the array across the images
+    CALL mp_gatherv(inter_image_comm, root_image, num_task, sigma, sigma_root)
+    DEALLOCATE(num_task)
+    DEALLOCATE(sigma)
+
+    CALL stop_clock(time_sigma_comm)
+
+    !
+    ! the root process writes sigma to file
+    !
+    CALL start_clock(time_sigma_io)
+    IF (meta_ionode) THEN
+      !
+      CALL davcio(sigma_root, lrsigma, iunsigma, ikpt, 1)
+      CALL sigma_io_write_c(output%unit_sigma, ikpt, sigma_root)
+      DEALLOCATE(sigma_root)
+      !
+    END IF ! ionode
+    CALL stop_clock(time_sigma_io)
 
     CALL stop_clock(time_sigma_c)
 
