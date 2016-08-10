@@ -597,10 +597,10 @@ SUBROUTINE test_mp_root_sum(this)
   INTEGER, PARAMETER :: root = 0
 
   ! real arrays that will be communicated
-  REAL(dp), ALLOCATABLE :: array_rv(:)
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:), array_rt(:,:,:)
 
   ! complex arrays that will be communicated
-  COMPLEX(dp), ALLOCATABLE :: array_cv(:)
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:), array_ct(:,:,:)
 
   ! helper variable
   REAL(dp) tmp
@@ -665,5 +665,135 @@ SUBROUTINE test_mp_root_sum(this)
   END IF ! root
 
   DEALLOCATE(array_cv)
+
+  ! fill real array
+  ALLOCATE(array_rm(dim_one, dim_two))
+  DO jj = 1, dim_two
+    DO ii = 1, dim_one
+      array_rm(ii, jj) = SQRT(REAL(100 * jj + ii, KIND=dp))
+    END DO ! ii
+  END DO ! jj
+
+  CALL mp_root_sum(comm, root, array_rm)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual(size * SQRT(REAL(100 * jj + ii, KIND=dp)), array_rm(ii, jj), eps14)
+      END DO ! ii
+    END DO ! jj
+  ELSE ! not root
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual(SQRT(REAL(100 * jj + ii, KIND=dp)), array_rm(ii, jj), eps14)
+      END DO ! ii
+    END DO ! jj
+  END IF ! root
+
+  DEALLOCATE(array_rm)
+
+  ! fill complex array
+  ALLOCATE(array_cm(dim_one, dim_two))
+  DO jj = 1, dim_two
+    DO ii = 1, dim_one
+      tmp = REAL(100 * jj + ii, KIND=dp)
+      array_cm(ii, jj) = CMPLX(tmp, SQRT(tmp), KIND=dp)
+    END DO ! ii
+  END DO ! jj
+
+  CALL mp_root_sum(comm, root, array_cm)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        tmp = REAL(100 * jj + ii, KIND=dp)
+        @assertEqual(size * tmp, REAL(array_cm(ii, jj)), eps14)
+        @assertEqual(size * SQRT(tmp), AIMAG(array_cm(ii, jj)), eps14)
+      END DO ! ii
+    END DO ! jj
+  ELSE ! not root
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        tmp = REAL(100 * jj + ii, KIND=dp)
+        @assertEqual(tmp, REAL(array_cm(ii, jj)), eps14)
+        @assertEqual(SQRT(tmp), AIMAG(array_cm(ii, jj)), eps14)
+      END DO ! ii
+    END DO ! jj
+  END IF ! root
+
+  DEALLOCATE(array_cm)
+
+  ! fill real array
+  ALLOCATE(array_rt(dim_one, dim_two, dim_three))
+  DO kk = 1, dim_three
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_rt(ii, jj, kk) = SQRT(REAL(10000 * kk + 100 * jj + ii, KIND=dp))
+      END DO ! ii
+    END DO ! jj
+  END DO ! kk
+
+  CALL mp_root_sum(comm, root, array_rt)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual(size * SQRT(REAL(10000 * kk + 100 * jj + ii, KIND=dp)), array_rt(ii, jj, kk), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  ELSE ! not root
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual(SQRT(REAL(10000 * kk + 100 * jj + ii, KIND=dp)), array_rt(ii, jj, kk), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  END IF ! root
+
+  DEALLOCATE(array_rt)
+
+  ! fill complex array
+  ALLOCATE(array_ct(dim_one, dim_two, dim_three))
+  DO kk = 1, dim_three
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        tmp = REAL(10000 * kk + 100 * jj + ii, KIND=dp)
+        array_ct(ii, jj, kk) = CMPLX(tmp, SQRT(tmp), KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! kk
+
+  CALL mp_root_sum(comm, root, array_ct)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          tmp = REAL(10000 * kk + 100 * jj + ii, KIND=dp)
+          @assertEqual(size * tmp, REAL(array_ct(ii, jj, kk)), eps14)
+          @assertEqual(size * SQRT(tmp), AIMAG(array_ct(ii, jj, kk)), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  ELSE ! not root
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          tmp = REAL(10000 * kk + 100 * jj + ii, KIND=dp)
+          @assertEqual(tmp, REAL(array_ct(ii, jj, kk)), eps14)
+          @assertEqual(SQRT(tmp), AIMAG(array_ct(ii, jj, kk)), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  END IF ! root
+
+  DEALLOCATE(array_ct)
 
 END SUBROUTINE test_mp_root_sum
