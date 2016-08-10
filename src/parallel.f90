@@ -21,6 +21,9 @@
 !
 !------------------------------------------------------------------------------ 
 !> This module provides the subroutines to parallelize a task over a communicator.
+!!
+!! In addition it provides the subroutines to gather the parallelized results on
+!! a single or all processes or to sum them to a single process.
 MODULE parallel_module
 
   IMPLICIT NONE
@@ -55,7 +58,17 @@ MODULE parallel_module
 
   PRIVATE
 
-  PUBLIC parallel_task, mp_allgatherv, mp_gatherv
+  !> wrapper for the MPI_REDUCE routine with MPI_SUM operator
+  !!
+  !! The subroutine collects sums a distributed array to the root process.
+  !! In contrast to the QE implementation an in-place operation is used
+  !! and the functionality is provided for more array shapes.
+  INTERFACE mp_root_sum
+    MODULE PROCEDURE mp_root_sum_rv, &
+                     mp_root_sum_cv
+  END INTERFACE mp_root_sum
+
+  PUBLIC parallel_task, mp_allgatherv, mp_gatherv, mp_root_sum
 
 CONTAINS
 
@@ -1133,5 +1146,99 @@ CONTAINS
 #endif
 
   END SUBROUTINE mp_gatherv_c3d
+
+  !> sum a real vector to the root process
+  SUBROUTINE mp_root_sum_rv(comm, root, array)
+
+    USE kinds, ONLY: dp
+    USE mp,    ONLY: mp_rank
+    USE parallel_include
+
+    !> The communicator across which the tasks are distributed.
+    INTEGER,  INTENT(IN)    :: comm
+
+    !> The root process on which the output is gathered.
+    INTEGER,  INTENT(IN)    :: root
+
+    !> The array that is distributed across the processes.
+    REAL(dp), INTENT(INOUT) :: array(:)
+
+    !> the rank of this process
+    INTEGER my_rank
+
+    ! MPI error code
+    INTEGER ierr
+
+    ! we only need to sum if the array is distributed
+#ifdef __MPI
+
+    ! determine rank of this process
+    my_rank = mp_rank(comm)
+
+    ! at the root process
+    IF (my_rank == root) THEN
+
+      CALL MPI_REDUCE(MPI_IN_PLACE, array, SIZE(array), MPI_DOUBLE_PRECISION, &
+                      MPI_SUM, root, comm, ierr)
+      CALL errore(__FILE__, "error in mpi_reduce call", ierr)
+
+    ELSE ! not root
+
+      CALL MPI_REDUCE(array, array, SIZE(array), MPI_DOUBLE_PRECISION, &
+                      MPI_SUM, root, comm, ierr)
+      CALL errore(__FILE__, "error in mpi_reduce call", ierr)
+
+    END IF ! root
+
+#endif
+    
+  END SUBROUTINE mp_root_sum_rv
+
+  !> sum a complex vector to the root process
+  SUBROUTINE mp_root_sum_cv(comm, root, array)
+
+    USE kinds, ONLY: dp
+    USE mp,    ONLY: mp_rank
+    USE parallel_include
+
+    !> The communicator across which the tasks are distributed.
+    INTEGER,  INTENT(IN) :: comm
+
+    !> The root process on which the output is gathered.
+    INTEGER,  INTENT(IN) :: root
+
+    !> The array that is distributed across the processes.
+    COMPLEX(dp), INTENT(INOUT) :: array(:)
+
+    !> the rank of this process
+    INTEGER my_rank
+
+    ! MPI error code
+    INTEGER ierr
+
+    ! we only need to sum if the array is distributed
+#ifdef __MPI
+
+    ! determine rank of this process
+    my_rank = mp_rank(comm)
+
+    ! at the root process
+    IF (my_rank == root) THEN
+
+      CALL MPI_REDUCE(MPI_IN_PLACE, array, SIZE(array), MPI_DOUBLE_COMPLEX, &
+                      MPI_SUM, root, comm, ierr)
+      CALL errore(__FILE__, "error in mpi_reduce call", ierr)
+
+    ELSE ! not root
+
+      CALL MPI_REDUCE(array, array, SIZE(array), MPI_DOUBLE_COMPLEX, &
+                      MPI_SUM, root, comm, ierr)
+      CALL errore(__FILE__, "error in mpi_reduce call", ierr)
+
+    END IF ! root
+
+#endif
+
+  END SUBROUTINE mp_root_sum_cv
 
 END MODULE parallel_module
