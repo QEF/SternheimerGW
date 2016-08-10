@@ -43,7 +43,7 @@ SUBROUTINE sigma_exchG(ik0)
   USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
   USE mp_world,             ONLY : nproc, mpime
   USE noncollin_module,     ONLY : npol, nspin_mag
-  USE qpoint,               ONLY : xq, npwq, igkq, nksq
+  USE qpoint,               ONLY : xq, npwq, nksq
   USE save_gw,              ONLY : tmp_dir_save
   USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot,&
                                    copy_sym, inverse_s, s_axis_to_cart
@@ -131,7 +131,6 @@ SUBROUTINE sigma_exchG(ik0)
   barcoul(:) = dcmplx(0.0d0,0.0d0)
   npwkp   = 0 
   igk(:)  = 0
-  igkq(:) = 0
   igkp(:) = 0
   aq(:)   = 0.0d0
 ! pick up psikp we are interested in !
@@ -155,7 +154,6 @@ SUBROUTINE sigma_exchG(ik0)
      call gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
                   npw, igk, g2kin)
      npwq = npw 
-     igkq = igk
 !only sum over small group of q
 !sym(1:nsym) = .true.
 !call smallg_q (xk(1,ik1), 1, at, bg, 1, s, ftau, sym, minus_q)
@@ -233,7 +231,7 @@ SUBROUTINE sigma_exchG(ik0)
         do vbnd = 1, nbnd_occ(ik1)
            psi (:) = (0.d0, 0.d0)
            do ig = 1, npw 
-              psi(nls(gmapsym(igkq(ig), invs(isymop)))) = psik(ig, vbnd)
+              psi(nls(gmapsym(igk(ig), invs(isymop)))) = psik(ig, vbnd)
            enddo
            call invfft ('Wave', psi(:), dffts)
 !Just diagonal elements of exchange operator

@@ -43,7 +43,7 @@ SUBROUTINE sigma_exch(ik0)
   USE mp_pools,             ONLY : inter_pool_comm, npool, kunit, my_pool_id
   USE mp_world,             ONLY : nproc, mpime
   USE noncollin_module,     ONLY : npol, nspin_mag
-  USE qpoint,               ONLY : npwq, igkq, nksq
+  USE qpoint,               ONLY : npwq, nksq
   USE save_gw,              ONLY : tmp_dir_save
   USE sigma_io_module,      ONLY : sigma_io_write_x
   USE symm_base,            ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
@@ -139,8 +139,6 @@ SUBROUTINE sigma_exch(ik0)
         call gk_sort(xk(1,ik1), ngm, g, ( ecutwfc / tpiba2 ), &
                       npw, igk, g2kin )
         npwq = npw
-        igkq = igk
-!igkq = igk
         do ig = 1, npw
            if((igk(ig).le.sigma_x_st%ngmt).and.((igk(ig)).gt.0)) then
            !if((igk(ig).le.gexcut).and.((igk(ig)).gt.0)) then
