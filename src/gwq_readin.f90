@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_readin()
+SUBROUTINE gwq_readin(freq)
   !----------------------------------------------------------------------------
   !
   !    This routine reads the control variables for the program GW.
@@ -46,6 +46,7 @@ SUBROUTINE gwq_readin()
   USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir
   USE uspp,          ONLY : okvan
   USE fixed_occ,     ONLY : tfixed_occ
+  USE freqbins_module, ONLY : freqbins_type
   USE lsda_mod,      ONLY : lsda, nspin
   USE run_info,      ONLY : title
   USE control_gw,    ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
@@ -92,6 +93,9 @@ SUBROUTINE gwq_readin()
   !
   !
   IMPLICIT NONE
+  !
+  !> We store the frequency for the Coulomb solver in this type.
+  TYPE(freqbins_type), INTENT(OUT) :: freq
   !
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
@@ -437,7 +441,7 @@ SUBROUTINE gwq_readin()
   CALL mp_bcast(nfs, meta_ionode_id, world_comm )
 
   if (nfs < 1) call errore('gwq_readin','Too few frequencies',1)
-  ALLOCATE(fiu(nfs))
+  ALLOCATE(fiu(nfs), freq%solver(nfs))
 
   IF (meta_ionode) THEN
      IF ( TRIM(card) == 'FREQUENCIES' .OR. &
@@ -446,10 +450,11 @@ SUBROUTINE gwq_readin()
         DO i = 1, nfs
            !HL Need to convert frequencies from electron volts into Rydbergs
            READ (5, *, iostat = ios) ar, ai 
-           fiu(i) = dcmplx(ar, ai) / dcmplx(RYTOEV,0.0d0)
+           freq%solver(i) = dcmplx(ar, ai) / RYTOEV
         END DO
      END IF
   END IF
+  fiu = freq%solver
 
   CALL mp_bcast(ios, meta_ionode_id, world_comm)
   CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )

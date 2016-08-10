@@ -63,7 +63,7 @@ program gw
   call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
   
-  call gwq_readin()
+  call gwq_readin(freq)
   call check_stop_init()
   call check_initial_status(auxdyn)
 ! Initialize frequency grids, FFT grids for correlation
