@@ -107,17 +107,19 @@ CONTAINS
 
     USE cell_base,       ONLY: at, bg, omega
     USE constants,       ONLY: tpi
-    USE control_gw,      ONLY: multishift, tr2_green, output
+    USE control_gw,      ONLY: multishift, tr2_green, output, tmp_dir_coul
     USE disp,            ONLY: nqs, x_q, wq
     USE ener,            ONLY: ef
     USE freqbins_module, ONLY: freqbins_type
     USE gvect,           ONLY: ngm
     USE gwsigma,         ONLY: sigma_c_st, gcutcorr
+    USE io_files,        ONLY: prefix
     USE io_global,       ONLY: meta_ionode
     USE kinds,           ONLY: dp
     USE klist,           ONLY: lgauss
     USE mp_images,       ONLY: my_image_id, inter_image_comm, root_image
     USE mp_pools,        ONLY: inter_pool_comm, root_pool
+    USE output_mod,      ONLY: filcoul
     USE parallel_module, ONLY: parallel_task, mp_root_sum, mp_gatherv
     USE sigma_io_module, ONLY: sigma_io_write_c
     USE symm_base,       ONLY: nsym, s, invs, ftau, nrot
@@ -202,6 +204,18 @@ CONTAINS
     !> the number of frequency tasks done by the various processes
     INTEGER, ALLOCATABLE :: num_task(:)
 
+    !> number of bytes in a real
+    INTEGER, PARAMETER   :: byte_real = 8
+
+    !> name of file in which the Coulomb interaction is store
+    CHARACTER(:), ALLOCATABLE :: filename
+
+    !> error flag from file opening
+    INTEGER ierr
+
+    !> flag indicating whether Coulomb file is already opened
+    LOGICAL opend
+
     CALL start_clock(time_sigma_c)
     CALL start_clock(time_sigma_setup)
 
@@ -253,6 +267,20 @@ CONTAINS
     !
     ALLOCATE(sigma(gcutcorr, gcutcorr, num_task(my_image_id + 1)))
     sigma = zero
+
+    !
+    ! open the file containing the coulomb interaction
+    ! TODO a wrapper routine for all I/O
+    !
+    INQUIRE(UNIT = iuncoul, OPENED = opend)
+    IF (.NOT. opend) THEN
+      !
+      filename = TRIM(tmp_dir_coul) // TRIM(prefix) // "." // TRIM(filcoul) // "1"
+      OPEN(UNIT = iuncoul, FILE = filename, IOSTAT = ierr, &
+           ACCESS = 'direct', STATUS = 'old', RECL = byte_real * lrcoul)
+      CALL errore(__FILE__, "error opening " // filename, ierr)
+      !
+    END IF ! open file
 
     !
     ! sum over all q-points
