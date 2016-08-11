@@ -68,7 +68,6 @@ clean_pw_gw.o : ../../Modules/kind.o
 clean_pw_gw.o : gwcom.o
 clean_pw_gw.o : save_gw_input.o
 close_gwq.o : ../../Modules/control_flags.o
-close_gwq.o : ../../Modules/io_files.o
 close_gwq.o : ../../Modules/io_global.o
 close_gwq.o : ../../Modules/paw_variables.o
 close_gwq.o : ../../Modules/uspp.o
@@ -316,7 +315,6 @@ gwq_init.o : ../../Modules/becmod.o
 gwq_init.o : ../../Modules/cell_base.o
 gwq_init.o : ../../Modules/constants.o
 gwq_init.o : ../../Modules/gvecw.o
-gwq_init.o : ../../Modules/io_files.o
 gwq_init.o : ../../Modules/io_global.o
 gwq_init.o : ../../Modules/ions_base.o
 gwq_init.o : ../../Modules/kind.o
@@ -491,7 +489,9 @@ rotate_w.o : ../../Modules/kind.o
 rotate_w.o : ../../Modules/recvec.o
 rotate_w.o : ../../PW/src/symm_base.o
 rotate_w.o : gwcom.o
+run_nscf.o : ../../FFTXlib/fft_types.o
 run_nscf.o : ../../LR_Modules/lrcom.o
+run_nscf.o : ../../Modules/cell_base.o
 run_nscf.o : ../../Modules/check_stop.o
 run_nscf.o : ../../Modules/control_flags.o
 run_nscf.o : ../../Modules/fft_base.o
@@ -500,6 +500,7 @@ run_nscf.o : ../../Modules/io_files.o
 run_nscf.o : ../../Modules/io_global.o
 run_nscf.o : ../../Modules/kind.o
 run_nscf.o : ../../Modules/mp_bands.o
+run_nscf.o : ../../Modules/recvec.o
 run_nscf.o : ../../PW/src/atomic_wfc_mod.o
 run_nscf.o : ../../PW/src/pwcom.o
 run_nscf.o : gwcom.o
@@ -615,7 +616,6 @@ sigma_grids.o : ../../Modules/cell_base.o
 sigma_grids.o : ../../Modules/control_flags.o
 sigma_grids.o : ../../Modules/fft_base.o
 sigma_grids.o : ../../Modules/fft_custom.o
-sigma_grids.o : ../../Modules/griddim.o
 sigma_grids.o : ../../Modules/io_global.o
 sigma_grids.o : ../../Modules/kind.o
 sigma_grids.o : ../../Modules/mp.o

@@ -26,14 +26,11 @@ SUBROUTINE sigma_grids()
   USE fft_custom,       ONLY : fft_cus, set_custom_grid, ggent, gvec_init
   USE gvect,            ONLY : nl, ngm, g, nlm, gstart, gl, igtongl
   USE control_flags,    ONLY : gamma_only
-  USE grid_subroutines, ONLY : realspace_grid_init
-  !USE grid_subroutines, ONLY : realspace_grid_init_custom
   USE fft_base,         ONLY : dfftp
   USE klist,            ONLY : xk, nks
   USE gvect,            ONLY : gcutm
   USE stick_set,        ONLY : pstickset_custom
-  USE fft_types,        ONLY : fft_dlay_descriptor, fft_dlay_allocate,&
-                               fft_dlay_set, fft_dlay_scalar
+  USE fft_types,        ONLY : fft_type_allocate, realspace_grids_info
   USE mp,               ONLY : mp_sum, mp_max,mp_barrier
   USE mp_pools,         ONLY : inter_pool_comm, nproc_pool
   USE mp_bands,         ONLY : me_bgrp, nproc_bgrp, inter_bgrp_comm, &
@@ -41,7 +38,6 @@ SUBROUTINE sigma_grids()
   USE io_global,        ONLY : stdout, ionode, ionode_id
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, gcutcorr
   USE gwsigma,          ONLY : ecutsex, ecutsco, gexcut
-  USE grid_subroutines, ONLY : realspace_grids_info 
   USE freq_gw,          ONLY : nwgreen, nwcoul, nfs, nwsigma
 
   IMPLICIT NONE
@@ -91,8 +87,7 @@ SUBROUTINE sigma_grids()
      if ( gl( igtongl (ng) ) .le. sigma_x_st%gcutmt ) gexcut = ng
   enddo
   CALL set_custom_grid(sigma_x_st)
-!  CALL realspace_grid_init_custom(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt)
-  CALL realspace_grid_init(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt)
+  CALL fft_type_allocate(sigma_x_st%dfftt, at, bg, sigma_x_st%gcutmt, intra_bgrp_comm)
   CALL pstickset_custom( gamma_only, bg, sigma_x_st%gcutmt, gkcut, sigma_x_st%gcutmt, &
                   dfftp, sigma_x_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
@@ -123,8 +118,7 @@ SUBROUTINE sigma_grids()
      if ( gl( igtongl (ng) ) .le. sigma_c_st%gcutmt ) sigma_c_st%ngmt_g = ng
   enddo
   CALL set_custom_grid(sigma_c_st)
-  CALL realspace_grid_init(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
-!  CALL realspace_grid_init_custom(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt)
+  CALL fft_type_allocate(sigma_c_st%dfftt, at, bg, sigma_c_st%gcutmt, intra_bgrp_comm)
   CALL pstickset_custom( gamma_only, bg, sigma_c_st%gcutmt, gkcut, sigma_c_st%gcutmt, &
                   dfftp, sigma_c_st%dfftt, ngw_ , ngm_, ngs_, me, root, nproc, &
                   intra_comm, nogrp )
@@ -139,7 +133,7 @@ SUBROUTINE sigma_grids()
   WRITE(stdout, '(5x, "Ecut, Ngmsco:")')
   WRITE(stdout, '(5x, f6.2, i8, //)') sigma_c_st%ecutt, sigma_c_st%ngmt
 
-  CALL realspace_grids_info(sigma_c_st%dfftt, sigma_c_st%dfftt, nproc_pool)
+  CALL realspace_grids_info(sigma_c_st%dfftt, sigma_c_st%dfftt, nproc_pool, ionode)
 
   Gb = (DBLE(2)**26)
   WRITE ( stdout, '("MEMORY USAGE:")' )

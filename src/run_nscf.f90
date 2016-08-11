@@ -48,6 +48,14 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   USE klist,           ONLY : xk, wk, nks, nkstot
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE wvfct,           ONLY : nbnd
+  !!! copy ugly fix from PH
+  USE fft_base,  ONLY: dffts, dfftp
+  USE fft_types, ONLY: fft_type_allocate
+  USE cell_base, ONLY: at, bg
+  USE gvect,     ONLY: gcutm
+  USE gvecs,     ONLY: gcutms
+  USE mp_bands,  ONLY: intra_bgrp_comm
+  !!!
   !
   IMPLICIT NONE
   !
@@ -79,6 +87,10 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   conv_ions=.true.
 ! Generate all eigenvectors in IBZ_{k} for Green's function or IBZ_{q} otherwise.
   if(do_matel) nbnd = nbnd_sig
+  !!! copy ugly fix from PH 
+  CALL fft_type_allocate(dfftp, at, bg, gcutm, intra_bgrp_comm)
+  CALL fft_type_allocate(dffts, at, bg, gcutms, intra_bgrp_comm)
+  !!!
   CALL setup_nscf_green (xq, do_matel)
   CALL init_run()
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
