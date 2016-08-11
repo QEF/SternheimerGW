@@ -42,6 +42,7 @@ program gw
   USE input_parameters,  ONLY : max_seconds, force_symmorphic
   USE sigma_grid_module, ONLY : sigma_grid
   USE sigma_io_module,   ONLY : sigma_io_close_write
+  USE sigma_module,      ONLY : sigma_wrapper
   USE timing_module,     ONLY : time_setup
   USE units_gw,          ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,             ONLY : nbnd
@@ -79,21 +80,14 @@ program gw
   ik = 1
   do_band  = .TRUE.
   do_matel = .TRUE.
-  if (do_q0_only) goto 127
 ! Calculation of CORRELATION energy \Sigma^{c}_{k}=\sum_{q}G_{k-q}{W_{q}-v_{q}}:
-  if (do_imag) then
+  if (.not.do_q0_only) then
       do ik = w_of_k_start, w_of_k_stop
          call start_clock(time_setup)
          call run_nscf(do_band, do_matel, ik)
          call initialize_gw(.FALSE.)
-         if (do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
-         if (do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet', lralphabeta, exst)
          call stop_clock(time_setup)
-         if (do_sigma_c) call sigma_c_im(ik, freq)
-         if (do_sigma_c.and.multishift) then
-            close(unit = iunresid, status = 'DELETE')
-            close(unit = iunalphabeta, status = 'DELETE')
-         endif
+         if (do_sigma_c) call sigma_wrapper(ik, freq)
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
          if (do_sigma_exx) call exchange_wrapper(ik)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
@@ -105,29 +99,7 @@ program gw
          end if
          call clean_pw_gw(ik, .TRUE.)
       enddo
-  else
-      do ik = w_of_k_start, w_of_k_stop
-         call start_clock(time_setup)
-         call run_nscf(do_band, do_matel, ik)
-         call initialize_gw()
-         if(do_sigma_c.and.multishift) call diropn(iunresid, 'resid', lrresid, exst)
-         if(do_sigma_c.and.multishift) call diropn(iunalphabeta, 'alphbet',lralphabeta, exst)
-         call stop_clock(time_setup)
-         if(do_sigma_c) call sigma_c_re(ik, freq)
-         if (do_sigma_c.and.multishift) then
-            close(unit = iunresid, status = 'DELETE')
-            close(unit = iunalphabeta, status = 'DELETE')
-         endif
-         if (do_sigma_exx .and. .not.do_sigma_exxG) then   
-             call sigma_exch(ik)
-         else if(do_sigma_exx .and. do_sigma_exxG) then
-             call sigma_exchg(ik)
-         endif
-         if (do_sigma_matel) call sigma_matel(ik, freq)
-         call clean_pw_gw(ik, .TRUE.)
-      enddo
-  endif
-  127 continue
+  end if
   call close_gwq(.TRUE.)
   IF (meta_ionode) CALL sigma_io_close_write(output%unit_sigma)
   call stop_gw( .TRUE. )
