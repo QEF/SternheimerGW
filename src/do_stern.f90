@@ -89,6 +89,7 @@ IMPLICIT NONE
   ALLOCATE(ig_unique(gcutcorr))
   ALLOCATE(sym_ig(gcutcorr))
   ALLOCATE(sym_friend(gcutcorr))
+  ALLOCATE(eps_m(nfs))
 
   do_iq    = .TRUE.
   setup_pw = .TRUE.
@@ -119,7 +120,6 @@ IMPLICIT NONE
     IF (lgamma .AND. is_root) THEN
 
       ! create and initialize array for dielectric constant at q + G = 0
-      ALLOCATE(eps_m(nfs))
       eps_m = zero
 
       CALL prepare_q0(do_band, do_iq, setup_pw, iq)
@@ -197,7 +197,6 @@ IMPLICIT NONE
     DEALLOCATE(scrcoul_loc)
     IF (is_root) DEALLOCATE(scrcoul_root)
     IF (ALLOCATED(num_task)) DEALLOCATE(num_task)
-    IF (ALLOCATED(eps_m))    DEALLOCATE(eps_m)
 
     CALL mp_barrier(inter_image_comm)
     CALL clean_pw_gw(iq, .FALSE.)
@@ -209,6 +208,7 @@ IMPLICIT NONE
 
   WRITE(stdout, '("Finished Calculating Screened Coulomb")')
   IF (ALLOCATED(scrcoul_g)) DEALLOCATE(scrcoul_g)
+  DEALLOCATE(eps_m)
   DEALLOCATE(ig_unique)
   DEALLOCATE(sym_ig)
   DEALLOCATE(sym_friend)
