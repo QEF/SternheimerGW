@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE setup_nscf_green(xq)
+SUBROUTINE setup_nscf(xq)
 
   !----------------------------------------------------------------------------
   !
@@ -100,15 +100,11 @@ SUBROUTINE setup_nscf_green(xq)
   time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
   minus_q=.false.
 
-  time_reversal = .true.
-!   For systems without inversion symmetry we
-!   must recover -q via time reversal this
-!   ensures the k list generates negative q
-!   W_{q} is still generated with time_reversal.
-   ! if(.not.invsym) time_reversal = .false.
-  if(.not.invsym) WRITE(stdout, '("Generating klist without time reversal.")')
-  sym(1:nsym)   = .true.
-  !call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
+  time_reversal = .false.
+  sym(1:1)   = .true.
+!Symmetry is applied by hand in stern_symm
+  sym(2:nsym)= .false.
+  call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
   if ( .not. time_reversal ) minus_q = .false.
   ! Here we re-order all rotations in such a way that true sym.ops.
   ! are the first nsymq; rotations that are not sym.ops. follow
@@ -135,8 +131,7 @@ SUBROUTINE setup_nscf_green(xq)
      xk(:,1:nkstot) = xk_start(:,1:nkstot)
      wk(1:nkstot)   = wk_start(1:nkstot)
   else
-     !In this case I generate a new set of k-points
-     CALL kpoint_grid ( nsym, time_reversal, .false., s, t_rev, &
+    CALL kpoint_grid ( nsym, .false., .false., s, t_rev, &
                         bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
   endif
   ! ... If some symmetries of the lattice no longer apply for this kpoint
@@ -207,4 +202,106 @@ SUBROUTINE setup_nscf_green(xq)
   !
   RETURN
   !
-END SUBROUTINE setup_nscf_green
+END SUBROUTINE setup_nscf
+
+!
+!-----------------------------------------------------------------------
+subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
+  !-----------------------------------------------------------------------
+  !
+  ! This routine selects, among the symmetry matrices of the point group
+  ! of a crystal, the symmetry operations which leave q unchanged.
+  ! Furthermore it checks if one of the above matrices send q --> -q+G.
+  ! In this case minus_q is set true.
+  !
+  !  input-output variables
+  !
+  USE kinds, ONLY : DP
+  implicit none
+
+  real(DP), parameter :: accep = 1.e-5_dp
+
+  real(DP), intent(in) :: bg (3, 3), at (3, 3), xq (3)
+  ! input: the reciprocal lattice vectors
+  ! input: the direct lattice vectors
+  ! input: the q point of the crystal
+
+  integer, intent(in) :: s (3, 3, 48), nrot, ftau (3, 48), modenum
+  ! input: the symmetry matrices
+  ! input: number of symmetry operations
+  ! input: fft grid dimension (units for ftau)
+  ! input: fractionary translation of each symmetr
+  ! input: main switch of the program, used for
+  !        q<>0 to restrict the small group of q
+  !        to operation such that Sq=q (exactly,
+  !        without G vectors) when iswitch = -3.
+  logical, intent(inout) :: sym (48), minus_q
+  ! input-output: .true. if symm. op. S q = q + G
+  ! output: .true. if there is an op. sym.: S q = - q + G
+  !
+  !  local variables
+  !
+
+  real(DP) :: aq (3), raq (3), zero (3)
+  ! q vector in crystal basis
+  ! the rotated of the q vector
+  ! the zero vector
+
+  integer :: irot, ipol, jpol
+  ! counter on symmetry op.
+  ! counter on polarizations
+  ! counter on polarizations
+
+  logical :: eqvect
+  ! logical function, check if two vectors are equa
+  !
+  ! return immediately (with minus_q=.true.) if xq=(0,0,0)
+  !
+  minus_q = .true.
+  if ( (xq (1) == 0.d0) .and. (xq (2) == 0.d0) .and. (xq (3) == 0.d0) ) &
+       return
+  !
+  !   Set to zero some variables
+  !
+  minus_q = .false.
+  zero(:) = 0.d0
+  !
+  !   Transform xq to the crystal basis
+  !
+  aq = xq
+  call cryst_to_cart (1, aq, at, - 1)
+  !
+  !   Test all symmetries to see if this operation send Sq in q+G or in -q+G
+  !
+  do irot = 1, nrot
+     if (.not.sym (irot) ) goto 100
+     raq(:) = 0.d0
+     do ipol = 1, 3
+        do jpol = 1, 3
+           raq(ipol) = raq(ipol) + DBLE( s(ipol,jpol,irot) ) * aq( jpol)
+        enddo
+     enddo
+     sym (irot) = eqvect (raq, aq, zero, accep)
+     !
+     !  if "iswitch.le.-3" (modenum.ne.0) S must be such that Sq=q exactly !
+     !
+     if (modenum.ne.0 .and. sym(irot) ) then
+        do ipol = 1, 3
+           sym(irot) = sym(irot) .and. (abs(raq(ipol)-aq(ipol)) < 1.0d-5)
+        enddo
+     endif
+!     if (.not.minus_q) then
+     if (sym(irot).and..not.minus_q) then
+        raq = - raq
+        minus_q = eqvect (raq, aq, zero, accep)
+     endif
+100  continue
+  enddo
+  !
+  !  if "iswitch.le.-3" (modenum.ne.0) time reversal symmetry is not included !
+  !
+  if (modenum.ne.0) minus_q = .false.
+  !
+  return
+end subroutine smallg_q
+

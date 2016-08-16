@@ -91,7 +91,11 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   CALL fft_type_allocate(dfftp, at, bg, gcutm, intra_bgrp_comm)
   CALL fft_type_allocate(dffts, at, bg, gcutms, intra_bgrp_comm)
   !!!
-  CALL setup_nscf_green (xq, do_matel)
+  IF (do_matel) THEN
+    CALL setup_nscf_green(xq)
+  ELSE
+    CALL setup_nscf(xq)
+  END IF
   CALL init_run()
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
   IF (do_band) CALL non_scf ( )
