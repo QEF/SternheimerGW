@@ -22,12 +22,17 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE setup_nscf_green(xq)
+!> This routine initializes the global modules for the nscf run.
+!!
+!! For the calculation of \f$Sigma\f$, we want to convolute \f$G_{k - q}\f$
+!! and \f$W_q\f$. Hence, we construct for a given k point and q grid all points
+!! \f$k - q\f$ to evaluate the Green's function at these points.
+!------------------------------------------------------------------------------ 
+SUBROUTINE setup_nscf_green(kpt)
 
-  !----------------------------------------------------------------------------
   !
   ! ... This routine initializes variables for the non-scf calculations at k 
-  ! ... and k+q required by the linear response calculation at finite q.
+  ! ... and k-q required by the linear response calculation at finite q.
   ! ... Here we find the symmetry group of the crystal that leaves
   ! ... the GW q-vector (xq) unchanged. 
   ! ... "nsym" crystal symmetries s, ftau, t_rev, "nrot" lattice symetries "s"
@@ -39,40 +44,55 @@ SUBROUTINE setup_nscf_green(xq)
   !
   !----------------------------------------------------------------------------
 
-  USE kinds,              ONLY : DP
-  USE parameters,         ONLY : npk
-  USE io_global,          ONLY : stdout
-  USE constants,          ONLY : pi, degspin, eps8
-  USE cell_base,          ONLY : at, bg
-  USE ions_base,          ONLY : nat, tau, ityp, zv
   USE basis,              ONLY : natomwfc
-  USE klist,              ONLY : xk, wk, nks, nelec, degauss, lgauss, &
-                                 nkstot, qnorm
-  USE lsda_mod,           ONLY : lsda, nspin, current_spin, isk, &
-                                 starting_magnetization
-  USE wvfct,              ONLY : nbnd, nbndx
+  USE cell_base,          ONLY : at, bg
   USE control_flags,      ONLY : ethr, isolve, david, &
-                                 noinv, modenum, use_para_diag, max_cg_iter
-  USE mp_pools,           ONLY : kunit
-  USE spin_orb,           ONLY : domag
+                                 use_para_diag, max_cg_iter
+  USE disp,               ONLY : nqs, x_q
+  USE ions_base,          ONLY : nat, ityp
+  USE kinds,              ONLY : dp
+  USE klist,              ONLY : xk, wk, nks, nkstot, qnorm, nelec
+  USE mp,                 ONLY : mp_sum
+  USE mp_pools,           ONLY : inter_pool_comm
   USE noncollin_module,   ONLY : noncolin
-  USE start_k,            ONLY : nks_start, xk_start, wk_start, nk1, nk2, nk3,&
-                                 k1, k2, k3
-  USE paw_variables,      ONLY : okpaw
-  USE lr_symm_base,       ONLY : nsymq, invsymq
-  USE disp,               ONLY : xk_kpoints
+  USE parameters,         ONLY : npk
+  USE parallel_module,    ONLY : parallel_task
+  USE symm_base,          ONLY : s, nsym, invs
   USE uspp_param,         ONLY : n_atom_wfc
-  USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &
-                                 time_reversal, copy_sym, inverse_s, s_axis_to_cart, &
-                                 invsym
-  USE control_gw,         ONLY : newgrid, lgamma
+  USE wvfct,              ONLY : nbnd, nbndx
 
   !
   IMPLICIT NONE
   !
-  REAL (DP), INTENT(IN) :: xq(3)
-  INTEGER   :: ik
-  LOGICAL  :: minus_q, magnetic_sym, sym(48)
+  !> The point at which, we want to evaluate \f$\Sigma\f$
+  REAL(dp), INTENT(IN) :: kpt(3)
+  !
+  !> Temporary array for the number of tasks
+  INTEGER, ALLOCATABLE :: num_task(:)
+  !
+  !> first and last q point done on this process
+  INTEGER iq_start, iq_stop
+  !
+  !> counter on the q points
+  INTEGER iq
+  !
+  !> number of points in the star of q
+  INTEGER num_star
+  !
+  !> counter on the points in the star
+  INTEGER istar
+  !
+  !> index of +q for all symmetry operations
+  INTEGER indx_sq(48)
+  !
+  !> index of -q if necessary
+  INTEGER indx_mq
+  !
+  !> number of symmetry operations that lead to certain q point
+  INTEGER num_symq(48)
+  !
+  !> the point in the star
+  REAL(dp) star_xq(3, 48)
   !
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
@@ -87,123 +107,51 @@ SUBROUTINE setup_nscf_green(xq)
   max_cg_iter = 20
   natomwfc    = n_atom_wfc( nat, ityp, noncolin )
   !
-#ifdef __PARA
-  IF ( use_para_diag )  CALL check_para_diag( nbnd )
+#ifdef __MPI
+  IF ( use_para_diag ) CALL check_para_diag( nbnd )
 #else
   use_para_diag = .FALSE.
 #endif
-
+  !
   ! ... Symmetry and k-point section
-  ! ... time_reversal = use q=>-q symmetry for k-point generation
-
-  magnetic_sym = noncolin .AND. domag 
-  time_reversal = .NOT. noinv .AND. .NOT. magnetic_sym
-  minus_q=.false.
-
-  time_reversal = .true.
-!   For systems without inversion symmetry we
-!   must recover -q via time reversal this
-!   ensures the k list generates negative q
-!   W_{q} is still generated with time_reversal.
-   ! if(.not.invsym) time_reversal = .false.
-  if(.not.invsym) WRITE(stdout, '("Generating klist without time reversal.")')
-  sym(1:nsym)   = .true.
-  !call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
-  if ( .not. time_reversal ) minus_q = .false.
-  ! Here we re-order all rotations in such a way that true sym.ops.
-  ! are the first nsymq; rotations that are not sym.ops. follow
-   nsymq = copy_sym ( nsym, sym )
-   call inverse_s ( )
-  ! check if inversion (I) is a symmetry. If so, there should be nsymq/2
-  ! symmetries without inversion, followed by nsymq/2 with inversion
-  ! Since identity is always s(:,:,1), inversion should be s(:,:,1+nsymq/2)
-
-    invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
-    if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
-    if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')
-    write(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4, i4)') nsym,  nsymq, nrot 
-  ! Since the order of the s matrices is changed we need to recalculate:
-    call s_axis_to_cart () 
-  ! ... Input k-points are assumed to be  given in the IBZ of the Bravais
-  ! ... lattice, with the full point symmetry of the lattice.
-  if( nks_start > 0 .AND. .NOT. newgrid ) then
-     !
-     !  In this case I keep the same points of the Charge density
-     !  calculations
-     !
-     nkstot = nks_start
-     xk(:,1:nkstot) = xk_start(:,1:nkstot)
-     wk(1:nkstot)   = wk_start(1:nkstot)
-  else
-     !In this case I generate a new set of k-points
-     CALL kpoint_grid ( nsym, time_reversal, .false., s, t_rev, &
-                        bg, nk1*nk2*nk3, k1,k2,k3, nk1,nk2,nk3, nkstot, xk, wk)
-  endif
-  ! ... If some symmetries of the lattice no longer apply for this kpoint
-  ! ... "irreducible_BZ" generates the missing k-points with the reduced number of
-  ! ... symmetry operations. 
-  CALL irreducible_BZ (nsym, s, nsymq, minus_q, magnetic_sym, &
-                       at, bg, npk, nkstot, xk, wk, t_rev)
-  !wk(contains weights 
-  CALL set_kplusq( xk, wk, xq, nkstot, npk )
   !
-  IF ( lsda ) THEN
-     !
-     ! ... LSDA case: two different spin polarizations,
-     ! ...            each with its own kpoints
-     !
-     if (nspin /= 2) call errore ('setup','nspin should be 2; check iosys',1)
-     !
-     CALL set_kup_and_kdw( xk, wk, isk, nkstot, npk )
-     !
-  ELSE IF ( noncolin ) THEN
-     !
-     ! ... noncolinear magnetism: potential and charge have dimension 4 (1+3)
-     !
-     if (nspin /= 4) call errore ('setup','nspin should be 4; check iosys',1)
-     current_spin = 1
-     !
-  ELSE
-     !
-     ! ... LDA case: the two spin polarizations are identical
-     !
-     wk(1:nkstot)    = wk(1:nkstot) * degspin
-     current_spin = 1
-     !
-     IF ( nspin /= 1 ) &
-        CALL errore( 'setup', 'nspin should be 1; check iosys', 1 )
-     !
-  END IF
+  ! the first k-point is used for Sigma
+  nks = 1
+  xk(:, nks) = kpt
+  wk(nks) = 1.0_dp
   !
-  IF ( nkstot > npk ) CALL errore( 'setup', 'too many k points', nkstot )
+  ! evaluate the eigenvalues/-vectors for all points on this pool
+  CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_task)
+  DEALLOCATE(num_task)
+  !
+  ! loop over local q-points
+  DO iq = iq_start, iq_stop
+    !
+    ! determine the star of this q-point
+    !
+    CALL star_q(x_q(:,iq), at, bg, nsym, s, invs, num_star, star_xq, indx_sq, num_symq, indx_mq, .FALSE.)
+    !
+    DO istar = 1, num_star
+      !
+      ! for G, we need the eigenvalues at k - q
+      nks = nks + 1
+      xk(:, nks) = kpt - star_xq(:, istar)
+      wk(nks) = 0.0_dp
+      !
+    END DO ! istar
+    ! 
+  END DO ! iq
+  !
+  ! sum over all processes
+  nkstot = nks
+  CALL mp_sum(nkstot, inter_pool_comm)
+  !
+  IF (nkstot > npk) CALL errore('setup', 'too many k points', nkstot)
   !
   ! ...notice: qnorm is used by allocate_nlpot to determine
   ! the correct size of the interpolation table "qrad"
   !
-  qnorm = sqrt(xq(1)**2 + xq(2)**2 + xq(3)**2)
-  !
-#ifdef __PARA
-  !
-  ! ... set the granularity for k-point distribution
-  !
-  IF (lgamma) THEN
-  !
-       kunit = 1
-  !
-  ELSE
-  !
-     kunit = 2
-  !
-  ENDIF
-  !
-
-   CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
-  !
-#else
-  !
-  nks = nkstot
-  !
-#endif
+  qnorm = SQRT(SUM(kpt(:)**2))
   !
   RETURN
   !

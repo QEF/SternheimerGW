@@ -129,7 +129,7 @@ IMPLICIT NONE
       CALL run_nscf(do_band, do_matel, iq)
       CALL stop_clock(time_coul_nscf)
 
-      CALL initialize_gw()
+      CALL initialize_gw(.TRUE.)
       CALL coulomb_q0G0(eps_m)
       scrcoul_g(1,1,:) = eps_m
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
@@ -148,7 +148,7 @@ IMPLICIT NONE
     CALL run_nscf(do_band, do_matel, iq)
     CALL stop_clock(time_coul_nscf)
 
-    CALL initialize_gw()
+    CALL initialize_gw(.TRUE.)
 
     ! symmetrize the G vectors -> only unique ones are calculated
     IF (use_symm) THEN

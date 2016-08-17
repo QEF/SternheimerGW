@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_init()
+SUBROUTINE gwq_init(coulomb)
 !----------------------------------------------------------------------------
   !
   !     0) initializes the structure factors
@@ -62,6 +62,8 @@ SUBROUTINE gwq_init()
   !
   IMPLICIT NONE
   !
+  !> are we in the Coulomb or the self-energy step?
+  LOGICAL, INTENT(IN) :: coulomb
   ! ... local variables
 
   INTEGER :: nt, ik, ikq, ipol, ibnd, ikk, na, ig, irr, imode0
@@ -114,7 +116,7 @@ SUBROUTINE gwq_init()
      !
      ! ... if there is only one k-point evc, evq, npw, igk stay in memory
      !
-     IF ( .NOT. lgamma ) THEN
+     IF ( .NOT. lgamma .AND. coulomb ) THEN
      !
         IF ( ABS( xq(1) - ( xk(1,ikq) - xk(1,ikk) ) ) > eps8 .OR. &
              ABS( xq(2) - ( xk(2,ikq) - xk(2,ikk) ) ) > eps8 .OR. &
