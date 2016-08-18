@@ -32,6 +32,7 @@ dgradcorr.o\
 do_stern.o\
 dv_of_drho.o\
 dvqpsi_us.o\
+exchange.o\
 expand_igk.o\
 fft6.o\
 fft6_c.o\
