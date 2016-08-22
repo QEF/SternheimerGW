@@ -62,6 +62,8 @@ MODULE exchange_module
 
   PRIVATE
 
+  PUBLIC exchange_wrapper
+
   !> a number indicating that the map is out of the boundary of the array
   INTEGER, PARAMETER :: out_of_bound = 0
 
@@ -78,8 +80,7 @@ CONTAINS
   !! so that the array contains the sum over all \f$(nq)\f$ in the end.
   SUBROUTINE exchange_convolution(occupation, coulomb, evec, map, sigma)
 
-    USE constants, ONLY: eps12
-    USE kinds,     ONLY: dp
+    USE kinds, ONLY: dp
 
     !> The occupation \f$f_{nk-q}\f$ of the state \f$(nk-q)\f$.
     REAL(dp),    INTENT(IN)    :: occupation
@@ -147,5 +148,115 @@ CONTAINS
     END DO ! igpp
 
   END SUBROUTINE exchange_convolution
+
+  !> Extract the necessary quantities and evaluate the exchange according
+  !! to the following algorithm.
+  SUBROUTINE exchange_wrapper(ikpt)
+
+    USE control_gw,         ONLY: output, nbnd_occ
+    USE eqv_gw,             ONLY: evq
+    USE gwsigma,            ONLY: gexcut
+    USE io_global,          ONLY: meta_ionode
+    USE kinds,              ONLY: dp
+    USE klist,              ONLY: xk, igk_k
+    USE mp_images,          ONLY: inter_image_comm, root_image
+    USE mp_pools,           ONLY: inter_pool_comm, root_pool
+    USE qpoint,             ONLY: nksq, ikks, ikqs
+    USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
+    USE timing_module,      ONLY: time_sigma_x
+    USE wvfct,              ONLY: wg
+
+    !> The index of the k-point for which the exchange is evaluated
+    INTEGER, INTENT(IN) :: ikpt
+
+    !> temporary array to distribute the work
+    INTEGER, ALLOCATABLE :: num_task(:)
+
+    !> the first and last q-point on this process
+    INTEGER iq_start, iq_stop
+
+    !> counter on the q points
+    INTEGER iq
+
+    !> the first and last band on this process
+    INTEGER iband_start, iband_stop
+
+    !> counter on the bands
+    INTEGER iband
+
+    !> index of the wave function k - q
+    INTEGER ikq
+
+    !> the q point at which the Coulomb potential is evaluated
+    REAL(dp) qpt(3)
+
+    !> a map from two G indices on the index of their difference
+    INTEGER,     ALLOCATABLE :: map(:,:)
+
+    !> the truncated Coulomb potential
+    REAL(dp),    ALLOCATABLE :: coulomb(:)
+
+    !> the exchange self-energy
+    COMPLEX(dp), ALLOCATABLE :: sigma(:,:)
+
+    CALL start_clock(time_sigma_x)
+
+    !!
+    !! 1. Distribute the work over the process grid
+    !!
+    CALL parallel_task(inter_pool_comm, nksq, iq_start, iq_stop, num_task)
+    CALL parallel_task(inter_image_comm, nbnd_occ(ikpt), iband_start, iband_stop, num_task)
+
+    !!
+    !! 2. Extract the wave function of every q-point
+    !!
+    DO iq = iq_start, iq_stop
+      !
+      ! sanity check - k-point of input and in module are the same
+      IF (ikks(iq) /= ikpt) &
+        CALL errore(__FILE__, "unexpected mismatch of ikks and ikpt", 1)
+      !
+      ikq  = ikqs(iq)
+      !
+      CALL get_buffer(evq, lrwfc, iuwfc, ikq)
+      !
+      !!
+      !! 3. construct the Coulomb potential
+      !!
+      ! q = k - (k - q)
+      qpt = xk(:, ikpt) - xk(:, ikq)
+      ! CALL exchange_coulomb(qpt, gexcut, g, igk_k(:, ikq), coulomb, map)
+      !!
+      !! 4. every process evaluates his contribution to sigma
+      !!
+      DO iband = iband_start, iband_stop
+        !
+        CALL exchange_convolution(wg(ikq, iband), coulomb, evq(:,iband), map, sigma)
+        !
+      END DO ! iband
+      !
+    END DO ! iq
+
+    !!
+    !! 5. collect the self-energy on the root process
+    !!
+    CALL mp_root_sum(inter_image_comm, root_image, sigma)
+    CALL mp_root_sum(inter_pool_comm,  root_pool,  sigma)
+
+    !!
+    !! 6. write the self-energy to file
+    !!
+    IF (meta_ionode) THEN
+      !
+      ! write unformatted
+      CALL davcio(sigma, lrsex, iunsex, ikpt, 1)
+      ! write formatted
+      CALL sigma_io_write_x(output%unit_sigma, ikpt, sigma)
+      !
+    END IF ! meta_ionode
+
+    CALL stop_clock(time_sigma_x)
+
+  END SUBROUTINE exchange_wrapper
 
 END MODULE exchange_module
