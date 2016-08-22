@@ -34,6 +34,7 @@ program gw
   USE gwsigma,          ONLY : sigma_x_st, sigma_c_st, nbnd_sig
   USE io_files,         ONLY : diropn
   USE io_global,        ONLY : meta_ionode
+  USE sigma_grid_module, ONLY: sigma_grid
   USE sigma_io_module,  ONLY : sigma_io_close_write
   USE units_gw,         ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,            ONLY : nbnd
@@ -60,7 +61,7 @@ program gw
 ! Initialize frequency grids, FFT grids for correlation
 ! and exchange operators, open relevant GW-files.
   call freqbins()
-  call sigma_grids()
+  call sigma_grid()
   call opengwfil()
 ! Calculation W
   if(do_coulomb) call do_stern()
