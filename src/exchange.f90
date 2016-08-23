@@ -221,7 +221,7 @@ CONTAINS
   END SUBROUTINE exchange_map
 
   !> Evaluate the Coulomb potential for all vectors within the exchange grid.
-  SUBROUTINE exchange_coulomb(tpiba, method, exchange_grid, qvec, gvec, coulomb, index_g_coul)
+  SUBROUTINE exchange_coulomb(tpiba, method, exchange_grid, qvec, coulomb)
 
     USE fft_custom,        ONLY: fft_cus
     USE kinds,             ONLY: dp
@@ -233,20 +233,14 @@ CONTAINS
     !> The ID of the truncation method used
     INTEGER,  INTENT(IN) :: method
 
-    !> The grid used to calculate the exchange defining the cutoff \f$q_{\text{cut}}\f$
+    !> The grid used to calculate the exchange defining the G grid
     TYPE(fft_cus), INTENT(IN) :: exchange_grid
 
     !> The q-point at which the Coulomb potential is evaluated
     REAL(dp), INTENT(IN) :: qvec(3)
 
-    !> The list of G vectors used
-    REAL(dp), INTENT(IN) :: gvec(:,:)
-
-    !> The truncated Coulomb potential for all \f$|q + G| < q_{\text{cut}}\f$
+    !> The truncated Coulomb potential for all G vectors in the grid
     REAL(dp), ALLOCATABLE, INTENT(OUT) :: coulomb(:)
-
-    !> The indices of the G vectors used for the Coulomb potential
-    INTEGER,  ALLOCATABLE, INTENT(OUT) :: index_g_coul(:)
 
     !> the vector q + G
     REAL(dp) q_G(3)
@@ -254,33 +248,20 @@ CONTAINS
     !> counter on the G vectors
     INTEGER ig
 
-    !> counter on the found G vectors
-    INTEGER ifound
-
     !
     ! allocate arrays of the appropriate size
     !
     ALLOCATE(coulomb(exchange_grid%ngmt))
-    ALLOCATE(index_g_coul(exchange_grid%ngmt))
-    index_g_coul = out_of_bound
 
     !
-    ! find all |q + G| < q_cut and determine the Coulomb potential for it
+    ! generate the Coulomb potential for all q + G
     !
-    ifound = 0
-    DO ig = 1, SIZE(gvec, 2)
+    DO ig = 1, exchange_grid%ngmt
       !
-      q_G = qvec + gvec(:,ig)
-      !
-      ! skip points outside of q_cut
-      IF (SQRT(SUM(q_G**2)) >= exchange_grid%gcutmt) CYCLE
-      !
-      ! store the new point
-      ifound = ifound + 1
-      index_g_coul(ifound) = ig
+      q_G = (qvec + exchange_grid%gt(:,ig)) * tpiba
       !
       ! evaluate the truncated coulomb potential
-      coulomb(ifound) = truncate(method, q_G * tpiba)
+      coulomb(ig) = truncate(method, q_G)
       !
     END DO ! ig
 
@@ -294,7 +275,7 @@ CONTAINS
     USE cell_base,          ONLY: tpiba
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE eqv_gw,             ONLY: evq
-    USE gvect,              ONLY: mill, g
+    USE gvect,              ONLY: mill
     USE gwsigma,            ONLY: sigma_x_st
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
@@ -374,7 +355,7 @@ CONTAINS
       !!
       ! q = k - (k - q)
       qvec = xk(:, ikpt) - xk(:, ikq)
-      CALL exchange_coulomb(tpiba, truncation, sigma_x_st, qvec, g, coulomb, index_g_coul)
+      CALL exchange_coulomb(tpiba, truncation, sigma_x_st, qvec, coulomb)
       !!
       !! 5. every process evaluates his contribution to sigma
       !!
