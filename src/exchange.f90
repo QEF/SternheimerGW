@@ -150,38 +150,68 @@ CONTAINS
   END SUBROUTINE exchange_convolution
 
   !> Construct a map from G and G' to G - G'.
-  SUBROUTINE exchange_map(gvec, index_g_evec, map)
+  SUBROUTINE exchange_map(unit_cell, exchange_grid, mill, index_g, map)
 
-    !> The list of G vectors used
-    INTEGER,  INTENT(IN) :: gvec(:,:)
+    USE fft_custom, ONLY: fft_cus
+    USE kinds,      ONLY: dp
 
-    !> The indices of the G vectors used for the wave function
-    INTEGER,  INTENT(IN) :: index_g_evec(:)
+    !> The unit cell of the crystal
+    REAL(dp),             INTENT(IN)  :: unit_cell(3,3)
+
+    !> The grid used to calculate the exchange
+    TYPE(fft_cus),        INTENT(IN)  :: exchange_grid
+
+    !> The global list of G vectors
+    INTEGER,              INTENT(IN)  :: mill(:,:)
+
+    !> The index of a G vector in the wave function
+    INTEGER,              INTENT(IN)  :: index_g(:)
 
     !> The map from G and G' to G - G'
-    INTEGER,  ALLOCATABLE, INTENT(OUT) :: map(:,:)
+    INTEGER, ALLOCATABLE, INTENT(OUT) :: map(:,:)
 
-    ! the maximum value in the gvec array
+    !> Flag that indicates that we transform to crystal units.
+    INTEGER,    PARAMETER :: to_crystal = -1
+
+    !> The G vectors in crystal coordinates (float)
+    REAL(dp), ALLOCATABLE :: gvec_r(:,:)
+
+    !> The G vectors in crystal coordinates (integer)
+    INTEGER,  ALLOCATABLE :: gvec_i(:,:)
+
+    !> the index of a certain G vector
+    INTEGER,  ALLOCATABLE :: g_index(:,:,:)
+
+    !> the maximum value in the gvec array
     INTEGER max_g(3)
 
-    ! the index of a certain G vector
-    INTEGER, ALLOCATABLE :: g_index(:,:,:)
+    !> the difference of G and G'
+    INTEGER delta_g(3)
 
-    ! the number of G vectors
-    INTEGER num_g
-
-    ! counter on the G and G' vector
+    !> counter on the G and G' vector
     INTEGER ig, igp
 
-    ! the difference of G and G'
-    INTEGER delta_g(3)
+    !
+    ! transform the grid to crystal coordinates
+    !
+    ALLOCATE(gvec_r(3, exchange_grid%ngmt))
+    gvec_r = exchange_grid%gt
+    CALL cryst_to_cart(exchange_grid%ngmt, gvec_r, unit_cell, to_crystal)
+    !
+    ALLOCATE(gvec_i(3, exchange_grid%ngmt))
+    gvec_i = NINT(gvec_r)
+    DEALLOCATE(gvec_r)
+    !
+    ! the algorithm assumes that G(1) = (0, 0, 0)
+    IF (ANY(gvec_i(:,1) /= 0)) &
+      CALL errore(__FILE__, "first G vector must be 0", 1)
 
     !
     ! create the map for G and G' to G - G'
     !
     ! determine size of helper array
     DO ig = 1, 3
-      max_g(ig) = MAXVAL(ABS(gvec(ig,:)))
+      max_g(ig) = MAXVAL(ABS(mill(ig,:)))
     END DO ! ig
     !
     ! create helper array
@@ -189,33 +219,36 @@ CONTAINS
     g_index = out_of_bound
     !
     ! create map from vector to index
-    DO ig = 1, SIZE(gvec, 2)
-      g_index(gvec(:,1), gvec(:,2), gvec(:,3)) = ig
+    DO ig = 1, SIZE(index_g)
+      !
+      ! skip last elements not present on current k point
+      IF (index_g(ig) == out_of_bound) EXIT
+      !
+      ! distance of the origin
+      delta_g = mill(:, index_g(ig))
+      !
+      ! set pointer to wave function index
+      g_index(delta_g(1), delta_g(2), delta_g(3)) = ig
+      !
     END DO ! ig
     !
     ! now create the output map
-    num_g = SIZE(index_g_evec)
-    ALLOCATE(map(num_g, num_g))
+    ALLOCATE(map(exchange_grid%ngmt, exchange_grid%ngmt))
     map = out_of_bound
     !
-    DO igp = 1, num_g
+    DO igp = 1, exchange_grid%ngmt
       !
-      ! skip elements that are out of bounds
-      IF (index_g_evec(igp) == out_of_bound) CYCLE
-      !
-      DO ig = 1, num_g
-        !
-        ! skip elements that are out of bounds
-        IF (index_g_evec(ig) == out_of_bound) CYCLE
+      DO ig = 1, exchange_grid%ngmt
         !
         ! evaluate vector G - G' and test if it is within array boundaries
-        delta_g = gvec(:,ig) - gvec(:,igp)
+        delta_g = gvec_i(:,ig) - gvec_i(:,igp)
         IF (ANY(ABS(delta_g) > max_g)) CYCLE
         !
         ! find the index corresponding to G - G'
         map(ig, igp) = g_index(delta_g(1), delta_g(2), delta_g(3))
         !
       END DO ! ig
+      !
     END DO ! igp
 
   END SUBROUTINE exchange_map
@@ -233,7 +266,7 @@ CONTAINS
     !> The ID of the truncation method used
     INTEGER,  INTENT(IN) :: method
 
-    !> The grid used to calculate the exchange defining the G grid
+    !> The grid used to calculate the exchange
     TYPE(fft_cus), INTENT(IN) :: exchange_grid
 
     !> The q-point at which the Coulomb potential is evaluated
@@ -272,7 +305,7 @@ CONTAINS
   SUBROUTINE exchange_wrapper(ikpt)
 
     USE buffers,            ONLY: get_buffer
-    USE cell_base,          ONLY: tpiba
+    USE cell_base,          ONLY: tpiba, at
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE eqv_gw,             ONLY: evq
     USE gvect,              ONLY: mill
@@ -349,7 +382,7 @@ CONTAINS
       !!
       !! 3. construct the map from G and G' to G - G'
       !!
-      CALL exchange_map(mill, igk_k(:, ikq), map)
+      CALL exchange_map(at, sigma_x_st, mill, igk_k(:,ikq), map)
       !!
       !! 4. construct the Coulomb potential
       !!
