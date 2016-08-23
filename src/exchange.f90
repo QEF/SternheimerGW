@@ -149,13 +149,85 @@ CONTAINS
 
   END SUBROUTINE exchange_convolution
 
+  !> Construct a map from G and G' to G - G'.
+  SUBROUTINE exchange_map(gvec, index_g_evec, map)
+
+    !> The list of G vectors used
+    INTEGER,  INTENT(IN) :: gvec(:,:)
+
+    !> The indices of the G vectors used for the wave function
+    INTEGER,  INTENT(IN) :: index_g_evec(:)
+
+    !> The map from G and G' to G - G'
+    INTEGER,  ALLOCATABLE, INTENT(OUT) :: map(:,:)
+
+    ! the maximum value in the gvec array
+    INTEGER max_g(3)
+
+    ! the index of a certain G vector
+    INTEGER, ALLOCATABLE :: g_index(:,:,:)
+
+    ! the number of G vectors
+    INTEGER num_g
+
+    ! counter on the G and G' vector
+    INTEGER ig, igp
+
+    ! the difference of G and G'
+    INTEGER delta_g(3)
+
+    !
+    ! create the map for G and G' to G - G'
+    !
+    ! determine size of helper array
+    DO ig = 1, 3
+      max_g(ig) = MAXVAL(ABS(gvec(ig,:)))
+    END DO ! ig
+    !
+    ! create helper array
+    ALLOCATE(g_index(-max_g(1):max_g(1), -max_g(2):max_g(2), -max_g(3):max_g(3)))
+    g_index = out_of_bound
+    !
+    ! create map from vector to index
+    DO ig = 1, SIZE(gvec, 2)
+      g_index(gvec(:,1), gvec(:,2), gvec(:,3)) = ig
+    END DO ! ig
+    !
+    ! now create the output map
+    num_g = SIZE(index_g_evec)
+    ALLOCATE(map(num_g, num_g))
+    map = out_of_bound
+    !
+    DO igp = 1, num_g
+      !
+      ! skip elements that are out of bounds
+      IF (index_g_evec(igp) == out_of_bound) CYCLE
+      !
+      DO ig = 1, num_g
+        !
+        ! skip elements that are out of bounds
+        IF (index_g_evec(ig) == out_of_bound) CYCLE
+        !
+        ! evaluate vector G - G' and test if it is within array boundaries
+        delta_g = gvec(:,ig) - gvec(:,igp)
+        IF (ANY(ABS(delta_g) > max_g)) CYCLE
+        !
+        ! find the index corresponding to G - G'
+        map(ig, igp) = g_index(delta_g(1), delta_g(2), delta_g(3))
+        !
+      END DO ! ig
+    END DO ! igp
+
+  END SUBROUTINE exchange_map
+
   !> Extract the necessary quantities and evaluate the exchange according
   !! to the following algorithm.
   SUBROUTINE exchange_wrapper(ikpt)
 
     USE control_gw,         ONLY: output, nbnd_occ
     USE eqv_gw,             ONLY: evq
-    USE gwsigma,            ONLY: gexcut
+    USE gvect,              ONLY: mill, g
+    USE gwsigma,            ONLY: sigma_x_st
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
     USE klist,              ONLY: xk, igk_k
@@ -193,6 +265,9 @@ CONTAINS
     !> a map from two G indices on the index of their difference
     INTEGER,     ALLOCATABLE :: map(:,:)
 
+    !> the indices of the G vectors at q
+    INTEGER,     ALLOCATABLE :: index_g_coul(:)
+
     !> the truncated Coulomb potential
     REAL(dp),    ALLOCATABLE :: coulomb(:)
 
@@ -221,13 +296,17 @@ CONTAINS
       CALL get_buffer(evq, lrwfc, iuwfc, ikq)
       !
       !!
-      !! 3. construct the Coulomb potential
+      !! 3. construct the map from G and G' to G - G'
+      !!
+      CALL exchange_map(mill, igk_k(:, ikq), map)
+      !!
+      !! 4. construct the Coulomb potential
       !!
       ! q = k - (k - q)
       qpt = xk(:, ikpt) - xk(:, ikq)
-      ! CALL exchange_coulomb(qpt, gexcut, g, igk_k(:, ikq), coulomb, map)
+      ! CALL exchange_coulomb(qpt, exchange_grid, g, coulomb, index_g_coul)
       !!
-      !! 4. every process evaluates his contribution to sigma
+      !! 5. every process evaluates his contribution to sigma
       !!
       DO iband = iband_start, iband_stop
         !
@@ -238,13 +317,13 @@ CONTAINS
     END DO ! iq
 
     !!
-    !! 5. collect the self-energy on the root process
+    !! 6. collect the self-energy on the root process
     !!
     CALL mp_root_sum(inter_image_comm, root_image, sigma)
     CALL mp_root_sum(inter_pool_comm,  root_pool,  sigma)
 
     !!
-    !! 6. write the self-energy to file
+    !! 7. write the self-energy to file
     !!
     IF (meta_ionode) THEN
       !
