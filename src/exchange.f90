@@ -290,6 +290,7 @@ CONTAINS
   !! to the following algorithm.
   SUBROUTINE exchange_wrapper(ikpt)
 
+    USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE eqv_gw,             ONLY: evq
@@ -300,7 +301,9 @@ CONTAINS
     USE klist,              ONLY: xk, igk_k
     USE mp_images,          ONLY: inter_image_comm, root_image
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
+    USE parallel_module,    ONLY: parallel_task, mp_root_sum
     USE qpoint,             ONLY: nksq, ikks, ikqs
+    USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
     USE timing_module,      ONLY: time_sigma_x
     USE wvfct,              ONLY: wg
