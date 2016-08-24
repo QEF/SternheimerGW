@@ -30,6 +30,7 @@ program gw
                                 do_imag, lgamma, output
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
+  USE exchange_module,   ONLY : exchange_wrapper
   USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul,&
                                 wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,   ONLY : freqbins, freqbins_type
@@ -94,11 +95,7 @@ program gw
             close(unit = iunalphabeta, status = 'DELETE')
          endif
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
-         if (do_sigma_exx .and. .not.do_sigma_exxG) then   
-             call sigma_exch(ik)
-         else if(do_sigma_exx .and. do_sigma_exxG) then
-             call sigma_exchg(ik)
-         endif
+         if (do_sigma_exx) call exchange_wrapper(ik)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
          if (do_sigma_matel) then
            if (meta_ionode .AND. ik == w_of_k_start) then         

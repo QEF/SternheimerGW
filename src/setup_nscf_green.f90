@@ -46,9 +46,10 @@ SUBROUTINE setup_nscf_green(kpt)
 
   USE basis,              ONLY : natomwfc
   USE cell_base,          ONLY : at, bg
+  USE constants,          ONLY : degspin
   USE control_flags,      ONLY : ethr, isolve, david, &
                                  use_para_diag, max_cg_iter
-  USE disp,               ONLY : nqs, x_q
+  USE disp,               ONLY : nqs, x_q, wq
   USE ions_base,          ONLY : nat, ityp
   USE kinds,              ONLY : dp
   USE klist,              ONLY : xk, wk, nks, nkstot, qnorm, nelec
@@ -118,7 +119,7 @@ SUBROUTINE setup_nscf_green(kpt)
   ! the first k-point is used for Sigma
   nks = 1
   xk(:, nks) = kpt
-  wk(nks) = 1.0_dp
+  wk(nks) = 0.0_dp
   !
   ! evaluate the eigenvalues/-vectors for all points on this pool
   CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_task)
@@ -136,7 +137,7 @@ SUBROUTINE setup_nscf_green(kpt)
       ! for G, we need the eigenvalues at k - q
       nks = nks + 1
       xk(:, nks) = kpt - star_xq(:, istar)
-      wk(nks) = 0.0_dp
+      wk(nks) = wq(iq) / REAL(num_star, KIND=dp)
       !
     END DO ! istar
     ! 
