@@ -22,39 +22,39 @@
 !------------------------------------------------------------------------------ 
 !> This module provides the routines to evaluate the exchange self-energy.
 !!
-!! In real space the exchange energy is defined as
+!! The exchange self energy is defined as
 !! \f{equation}{
-!!   \Sigma_{k}^{\text{x}}(r, r') = -\sum_{nq} f_{nk-q} 
-!!   \frac{\psi_{nk-q}^\ast(r) \psi_{nk-q}(r')}{|r - r'|}~.
+!!   \Sigma_k^{\text{x}}(G, G') = \sum_{nq} w_{nk-q} \langle k + G, n k - q \lvert 
+!!   V \rvert n k - q, k + G'\rangle~,
 !! \f}
-!! Here, the \f$f_{nk}\f$ and \f$\psi_{nk}\f$ are the occupation and the
-!! eigenfunction for band \f$n\f$ and wave vector \f$k\f$, respectively.
-!! We are interested in the quantity in reciprocal space, which is related to
-!! the real space self-energy in the following way
+!! where \f$\lvert k + G\rangle\f$ is a plane wave, \f$\lvert n k\rangle\f$
+!! are the eigenstates of the Hamiltonian
 !! \f{equation}{
-!!   \Sigma_{k}^{\text{x}}(G, G') = \Omega \sum_{r,r'} e^{i (k + G) r}
-!!   \Sigma_{k}^{\text{x}}(r, r') e^{-i (k + G') r'}~.
+!!   H \lvert n k \rangle = \epsilon_{nk} \lvert n k \rangle~,
 !! \f}
-!! To evaluate this quantity, we conveniently evaluate the Coulomb potential
-!! in reciprocal space
-!! \f{equation}{
-!!   V_k(G) = \sum_{r} \frac{e^{i (k + G) r}}{r} = \frac{4\pi}{|k + G|^2}~.
-!! \f}
-!! For practical calculations, we need to truncate the integration, which is
-!! handled in the truncation_module.
+!! \f$w_{nk}\f$ is weight times occupation of state \f$\lvert n k\rangle\f$, and \f$V\f$
+!! is the (truncated) Coulomb potential.
 !!
-!! We remind of the fact that the wave function contains a Bloch phase and
-!! a lattice periodic part
+!! To evaluate this equation, we expand the eigenstates in the plane wave basis
 !! \f{equation}{
-!!   \psi_{nk}(r) = e^{ikr} u_{nk}(r)
+!!   \lvert n k \rangle = \sum_{G} c_{nk}(G) \lvert k + H \rangle~.
 !! \f}
-!! Replacing the Coulomb potential by the Fourier transform resolves the
-!! convolution of \f$r\f$ and \f$r'\f$. The product of exponential and lattice
-!! periodic part of the wave function corresponds to the Fourier transform of
-!! the lattice periodic part. We obtain the following single \f$G''\f$ summation
+!! This leads to the following expression for the self-energy
 !! \f{equation}{
-!!   \Sigma_{k}^{\text{x}}(G, G') = -\sum_{nq} f_{nk-q} \sum_{G''}
-!!   V_q(G'') u_{nk-q}^\ast(G - G'') u_{nk-q}(G'' - G')~.
+!!   \Sigma_k^{\text{x}}(G, G') = \sum_{nq} w_{nk-q} \sum_{G_1 G_2} c^\ast_{nk-q}(G_1) c_{nk-q}(G_2)
+!!   \langle k + G, k - q + G_1 \lvert V \rvert k - q + G_2, k + G'\rangle~.
+!! \f}
+!! We can evaluate the exchange integral in the basis of plane waves
+!! \f{equation}{
+!!   \langle k + G, k - q + G_1 \lvert V \rvert k - q + G_2, k + G'\rangle
+!!   = \frac{1}{\Omega} V_q(G - G_2) \delta(G_1 - [G_2 + G' - G])~.
+!! \f}
+!! Here, \f$V_q(G)\f$ is the Fourier transform of the (truncated) Coulomb potential.
+!! Introducing \f$G'' = G - G_2\f$ and resolving the summation over \f$G_1\f$ with the
+!! \f$\delta\f$ function yields
+!! \f{equation}{
+!!   \Sigma_k^{\text{x}}(G, G') = \sum_{nq} w_{nk-q} \sum_{G''}
+!!     c^\ast_{nk-q}(G' - G'') c_{nk-q}(G - G'') V_q(G'')~.
 !! \f}
 MODULE exchange_module
 
@@ -73,22 +73,22 @@ CONTAINS
   !!
   !! The individual parts of the exchange self-energy are given as
   !! \f{equation}{
-  !!   \Sigma_{k,q}^{\text{x}} = f_{nk-q} \sum_{G''}V_q(G'') 
-  !!   u_{nk-q}^\ast(G - G'') u_{nk-q}(G'' - G')~.
+  !!   \Sigma_{k,q}^{\text{x}} = w_{nk-q} \sum_{G''}V_q(G'') 
+  !!   c_{nk-q}^\ast(G - G'') c_{nk-q}(G' - G'')~.
   !! \f}
   !! This routine adds the current element to the previously calculated ones,
-  !! so that the array contains the sum over all \f$(nq)\f$ in the end.
+  !! so that the array contains the sum over all \w$(nq)\f$ in the end.
   SUBROUTINE exchange_convolution(occupation, coulomb, evec, map, sigma)
 
     USE kinds, ONLY: dp
 
-    !> The occupation \f$f_{nk-q}\f$ of the state \f$(nk-q)\f$.
+    !> The occupation \f$w_{nk-q}\f$ of the state \f$\lvert nk-q\rangle\f$.
     REAL(dp),    INTENT(IN)    :: occupation
 
     !> The coulomb potential \f$V_q(G'')\f$.
     REAL(dp),    INTENT(IN)    :: coulomb(:)
 
-    !> The eigenvector \f$u_{nk-q}(G)\f$.
+    !> The eigenvector \f$c_{nk-q}(G)\f$.
     COMPLEX(dp), INTENT(IN)    :: evec(:)
 
     !> A map of two G indices onto the index of their difference, i.e.,
@@ -102,18 +102,18 @@ CONTAINS
     !> the number of G points
     INTEGER num_g
 
-    !> counter on the G, G' and G''
+    !> counter on the \f$G,~G'~\text{and}~G''\f$
     INTEGER ig, igp, igpp
 
-    !> pointer to G - G'' and G'' - G'
-    INTEGER g_gpp, gpp_gp
+    !> pointer to \f$G - G''\f$ and \f$G' - G''\f$
+    INTEGER g_gpp, gp_gpp
 
     !
     ! sanity test
     !
     ! num_g contains number of G
-    num_g = SIZE(evec)
-    IF (ANY(map > num_g)) &
+    num_g = SIZE(coulomb)
+    IF (ANY(map > SIZE(evec))) &
       CALL errore(__FILE__, "map points out of the bounds of the array", 1)
     IF (SIZE(sigma, 1) /= num_g) &
       CALL errore(__FILE__, "1st dim of self-energy not consistent with eigenvector", 1)
@@ -123,14 +123,14 @@ CONTAINS
     !
     ! summation over G''
     !
-    DO igpp = 1, SIZE(coulomb)
+    DO igpp = 1, num_g
       !
       ! loop over G'
       DO igp = 1, num_g
         !
-        ! skip element if G'' - G' is out of bounds
-        gpp_gp = map(igpp, igp)
-        IF (gpp_gp == out_of_bound) CYCLE
+        ! skip element if G' - G'' is out of bounds
+        gp_gpp = map(igp, igpp)
+        IF (gp_gpp == out_of_bound) CYCLE
         !
         ! loop over G
         DO ig = 1, num_g
@@ -139,9 +139,9 @@ CONTAINS
           g_gpp = map(ig, igpp)
           IF (g_gpp == out_of_bound) CYCLE
           !
-          ! sigma += f_{nk-q} V_q(G'') u*_nk-q(G - G'') u_nk-q(G'' - G')
-          sigma(ig, igp) = sigma(ig, igp) + occupation * coulomb(igpp) &
-                                          * CONJG(evec(g_gpp)) * evec(gpp_gp)
+          ! sigma -= w_{nk-q} V_q(G'') c*_nk-q(G - G'') c_nk-q(G' - G'')
+          sigma(ig, igp) = sigma(ig, igp) - occupation * coulomb(igpp) &
+                                          * CONJG(evec(g_gpp)) * evec(gp_gpp)
           !
         END DO ! ig
       END DO ! igp
@@ -201,10 +201,6 @@ CONTAINS
     ALLOCATE(gvec_i(3, exchange_grid%ngmt))
     gvec_i = NINT(gvec_r)
     DEALLOCATE(gvec_r)
-    !
-    ! the algorithm assumes that G(1) = (0, 0, 0)
-    IF (ANY(gvec_i(:,1) /= 0)) &
-      CALL errore(__FILE__, "first G vector must be 0", 1)
 
     !
     ! create the map for G and G' to G - G'
@@ -305,14 +301,14 @@ CONTAINS
   SUBROUTINE exchange_wrapper(ikpt)
 
     USE buffers,            ONLY: get_buffer
-    USE cell_base,          ONLY: tpiba, at
+    USE cell_base,          ONLY: tpiba, at, omega
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE eqv_gw,             ONLY: evq
     USE gvect,              ONLY: mill
     USE gwsigma,            ONLY: sigma_x_st
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
-    USE klist,              ONLY: xk, igk_k
+    USE klist,              ONLY: xk, wk, igk_k
     USE mp_images,          ONLY: inter_image_comm, root_image
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
     USE parallel_module,    ONLY: parallel_task, mp_root_sum
@@ -320,7 +316,6 @@ CONTAINS
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
     USE timing_module,      ONLY: time_sigma_x
-    USE wvfct,              ONLY: wg
 
     !> The index of the k-point for which the exchange is evaluated
     INTEGER, INTENT(IN) :: ikpt
@@ -358,7 +353,18 @@ CONTAINS
     !> the exchange self-energy
     COMPLEX(dp), ALLOCATABLE :: sigma(:,:)
 
+    !> status of allocation
+    INTEGER ierr
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
     CALL start_clock(time_sigma_x)
+
+    ! allocate array for self energy and initialize to 0
+    ALLOCATE(sigma(sigma_x_st%ngmt, sigma_x_st%ngmt), STAT=ierr)
+    CALL errore(__FILE__, "error allocating array for exchange self energy", ierr)
+    sigma = zero
 
     !!
     !! 1. Distribute the work over the process grid
@@ -394,7 +400,7 @@ CONTAINS
       !!
       DO iband = iband_start, iband_stop
         !
-        CALL exchange_convolution(wg(ikq, iband), coulomb, evq(:,iband), map, sigma)
+        CALL exchange_convolution(wk(ikq), coulomb, evq(:,iband), map, sigma)
         !
       END DO ! iband
       !
@@ -411,6 +417,7 @@ CONTAINS
     !!
     IF (meta_ionode) THEN
       !
+      sigma = sigma / omega
       ! write unformatted
       CALL davcio(sigma, lrsex, iunsex, ikpt, 1)
       ! write formatted
