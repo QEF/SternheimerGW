@@ -35,13 +35,15 @@ CONTAINS
   !! Because QE stores some information in global modules, we need to initialize
   !! those quantities appropriatly so that the function calls work as intented.
   !!
-  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g)
+  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g, eval, evec)
 
+    USE buffers,           ONLY: get_buffer
     USE kinds,             ONLY: dp
     USE klist,             ONLY: igk_k, xk, ngk
     USE reorder_mod,       ONLY: create_map
+    USE units_gw,          ONLY: lrwfc, iuwfc
     USE uspp,              ONLY: vkb
-    USE wvfct,             ONLY: current_k
+    USE wvfct,             ONLY: current_k, et, npwx
 
     !> The index of the point k - q
     INTEGER,  INTENT(IN)  :: ikq
@@ -55,6 +57,12 @@ CONTAINS
     !> The total number of G-vectors at this k-point
     INTEGER,  INTENT(OUT) :: num_g
 
+    !> eigenvalue of all bands at k - q
+    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: eval(:)
+
+    !> eigenvector of all bands at k - q
+    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: evec(:,:)
+
     !> number of G-vectors for correlation
     INTEGER num_g_corr
 
@@ -62,9 +70,6 @@ CONTAINS
     INTEGER, ALLOCATABLE :: map_(:)
 
     current_k = ikq
-
-    ! evaluate kinetic energy
-    CALL g2_kin(ikq)
 
     !
     ! create the output map array
@@ -87,8 +92,23 @@ CONTAINS
     !
     ! call necessary global initialize routines
     !
+    ! evaluate kinetic energy
+    CALL g2_kin(ikq)
+
     ! initialize PP projectors
     CALL init_us_2(num_g, igk_k(:,ikq), xk(:,ikq), vkb)
+
+    !
+    ! read eigenvalue and eigenvector
+    !
+    ALLOCATE(eval(SIZE(et, 1)))
+    ALLOCATE(evec(npwx, SIZE(et, 1)))
+
+    ! set eigenvalue (complex to allow shifting it into the complex plane)
+    eval = CMPLX(et(:,ikq), 0.0_dp, KIND=dp)
+
+    ! read wave function
+    CALL get_buffer(evec, lrwfc, iuwfc, ikq)
 
   END SUBROUTINE green_prepare
 
