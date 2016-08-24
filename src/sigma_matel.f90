@@ -26,7 +26,7 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE buiol,                ONLY : buiol_check_unit
   USE cell_base,            ONLY : tpiba2
   USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE control_gw,           ONLY : lgamma, do_imag, do_sigma_exxG, output
+  USE control_gw,           ONLY : lgamma, do_imag, output
   USE disp,                 ONLY : xk_kpoints
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
@@ -154,38 +154,28 @@ IMPLICIT NONE
   !
   ! expectation value of Sigma_x
   !
-  IF( .NOT. do_sigma_exxG) THEN
+  ! open file containing exchange part of sigma
+  INQUIRE( UNIT=iunsex, OPENED=opnd )
+  IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
 
-    ! open file containing exchange part of sigma
-    INQUIRE( UNIT=iunsex, OPENED=opnd )
-    IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
-
-    ! sanity check
-    IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
-        sigma_x_ngm = sigma_x_st%ngmt
-    ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
-      DO ng = 1, ngm
-         IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
-      END DO
-    ELSE
-      CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
-    END IF
-
-    ! evaluate matrix elements for exchange
-    CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
-    WRITE(1000+mpime,*) 
-    WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
-    WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
-    WRITE(1000+mpime,*) 
-    WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
-
-  ELSE ! do_sigma_exxG = .true.
-
-    DO ibnd = 1, nbnd_sig
-      sigma_band_x(ibnd,ibnd,1) = sigma_band_exg(ibnd)
+  ! sanity check
+  IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
+      sigma_x_ngm = sigma_x_st%ngmt
+  ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
+    DO ng = 1, ngm
+       IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
     END DO
-
+  ELSE
+    CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
   END IF
+
+  ! evaluate matrix elements for exchange
+  CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
+  WRITE(1000+mpime,*) 
+  WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
+  WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
+  WRITE(1000+mpime,*) 
+  WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
 
   !
   ! expectation value of Sigma_c:

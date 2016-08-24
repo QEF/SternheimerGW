@@ -191,7 +191,6 @@ MODULE control_gw
              do_coulomb, &
              do_sigma_c, &
              do_sigma_exx, &
-             do_sigma_exxG, &
              do_green, &
              do_sigma_matel,&
              do_q0_only,&

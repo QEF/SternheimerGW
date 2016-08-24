@@ -22,7 +22,7 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE opengwfil()
 
-  USE control_gw,      ONLY : multishift, do_sigma_exxG, output
+  USE control_gw,      ONLY : multishift, output
   USE disp,            ONLY : xk_kpoints, num_k_pts
   USE freq_gw,         ONLY : nfs, nwsigma
   USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, gcutcorr
@@ -54,12 +54,10 @@ IMPLICIT  NONE
   END IF
 
   ! file for \Sigma^{x}(\G,\G';\omega)
-  IF (.NOT.do_sigma_exxG) THEN
-     lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
-     IF (meta_ionode) THEN
-       iunsex = find_free_unit()
-       CALL diropn(iunsex, filsigx, lrsex, exst)
-     END IF
+  lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
+  IF (meta_ionode) THEN
+    iunsex = find_free_unit()
+    CALL diropn(iunsex, filsigx, lrsex, exst)
   END IF
 
   ! file for output of sigma

@@ -54,8 +54,7 @@ SUBROUTINE gwq_readin(freq)
                             nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                             last_irr, start_q, last_q, current_iq, tmp_dir_gw, tmp_dir_coul, &
                             ext_recover, ext_restart, u_from_file, modielec, eta, &
-                            do_coulomb, do_sigma_c, do_sigma_exx,  do_sigma_exxG,&
-                            do_green, do_sigma_matel, &
+                            do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
                             do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
                             cohsex, multishift, do_sigma_extra, &
                             solve_direct, w_green_start, tinvert, coul_multishift,&
@@ -146,7 +145,7 @@ SUBROUTINE gwq_readin(freq)
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
+                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, &
                        wsigmamax, wcoulmax, nwsigma,&
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, do_sigma_extra,&
@@ -290,7 +289,6 @@ SUBROUTINE gwq_readin(freq)
   do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
-  do_sigma_exxG  = .TRUE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.

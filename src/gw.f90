@@ -25,7 +25,7 @@ program gw
 !... This is the main driver of the Sternheimer-GW code.
 !-----------------------------------------------------------------------
   USE check_stop,        ONLY : check_stop_init
-  USE control_gw,        ONLY : do_sigma_exx, do_sigma_exxG, do_sigma_matel, do_coulomb,&
+  USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
                                 do_green, multishift, do_sigma_c, do_q0_only,&
                                 do_imag, lgamma, output
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
