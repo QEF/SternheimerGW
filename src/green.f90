@@ -35,20 +35,16 @@ CONTAINS
   !! Because QE stores some information in global modules, we need to initialize
   !! those quantities appropriatly so that the function calls work as intented.
   !!
-  SUBROUTINE green_prepare(kpt, gcutcorr, map, num_g)
+  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g)
 
-    USE cell_base,         ONLY: tpiba2
-    USE expand_igk_module, ONLY: expand_igk
-    USE gvect,             ONLY: g, ngm
-    USE gvecw,             ONLY: ecutwfc
     USE kinds,             ONLY: dp
-    USE klist,             ONLY: igk_k, ngk, xk, nks
+    USE klist,             ONLY: igk_k, xk, ngk
     USE reorder_mod,       ONLY: create_map
     USE uspp,              ONLY: vkb
-    USE wvfct,             ONLY: g2kin
+    USE wvfct,             ONLY: current_k
 
-    !> The k-point at which the Green's function is evaluated.
-    REAL(dp), INTENT(IN)  :: kpt(3)
+    !> The index of the point k - q
+    INTEGER,  INTENT(IN)  :: ikq
 
     !> The G-vector cutoff for the correlation.
     INTEGER,  INTENT(IN)  :: gcutcorr
@@ -62,39 +58,27 @@ CONTAINS
     !> number of G-vectors for correlation
     INTEGER num_g_corr
 
-    !> loop variable for G-vectors
-    INTEGER ig
-
-    !> current active index of the igk_k array
-    INTEGER indx
-
     !> temporary copy of the map array
     INTEGER, ALLOCATABLE :: map_(:)
 
-    ! expand the igk array by one element
-    CALL expand_igk()
-    indx = nks + 1
-    xk(:, indx) = kpt
+    current_k = ikq
 
-    ! evaluate the igk-map of the current k-point
-    CALL gk_sort_safe(kpt, ngm, g, (ecutwfc / tpiba2), num_g, igk_k(:,indx), g2kin)
-    ngk(indx) = num_g
-
-    ! rescale to lattice units
-    g2kin = g2kin * tpiba2
+    ! evaluate kinetic energy
+    CALL g2_kin(ikq)
 
     !
     ! create the output map array
     !
     ! count the number of G vectors used for correlation
-    num_g_corr = COUNT((igk_k(:,indx) > 0) .AND. (igk_k(:,indx) <= gcutcorr))
+    num_g = ngk(ikq)
+    num_g_corr = COUNT((igk_k(:,ikq) > 0) .AND. (igk_k(:,ikq) <= gcutcorr))
 
     ! allocate the array
     ALLOCATE(map(num_g_corr))
-    ALLOCATE(map_(SIZE(igk_k, 1)))
+    ALLOCATE(map_(SIZE(igk_k, ikq)))
 
     ! create the map and copy to result array
-    map_ = create_map(igk_k(:,indx), gcutcorr)
+    map_ = create_map(igk_k(:,ikq), gcutcorr)
     map = map_(:gcutcorr)
 
     ! free memory
@@ -104,7 +88,7 @@ CONTAINS
     ! call necessary global initialize routines
     !
     ! initialize PP projectors
-    CALL init_us_2(num_g, igk_k(:,indx), kpt, vkb)
+    CALL init_us_2(num_g, igk_k(:,ikq), xk(:,ikq), vkb)
 
   END SUBROUTINE green_prepare
 
@@ -405,9 +389,8 @@ CONTAINS
   SUBROUTINE green_operator(omega, psi, A_psi)
 
     USE kinds,            ONLY: dp
-    USE klist,            ONLY: nks
     USE linear_op_module, ONLY: linear_op
-    USE wvfct,            ONLY: npwx
+    USE wvfct,            ONLY: npwx, current_k
 
     !> The initial shift
     complex(dp), INTENT(IN)  :: omega
@@ -455,9 +438,8 @@ CONTAINS
     ! apply the linear operator (H - w) psi
     !
     ! for the Green's function
-    ! current_k = nks + 1
     ! alpha_pv = 0
-    CALL linear_op(nks + 1, num_g, omega_, zero, psi_, A_psi_)
+    CALL linear_op(current_k, num_g, omega_, zero, psi_, A_psi_)
 
     ! extract result
     A_psi = A_psi_(:num_g,1)
