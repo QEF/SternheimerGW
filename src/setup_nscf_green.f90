@@ -77,6 +77,9 @@ SUBROUTINE setup_nscf_green(kpt)
   !> counter on the q points
   INTEGER iq
   !
+  !> counter on the k points
+  INTEGER ik
+  !
   !> number of points in the star of q
   INTEGER num_star
   !
@@ -95,6 +98,9 @@ SUBROUTINE setup_nscf_green(kpt)
   !> the point in the star
   REAL(dp) star_xq(3, 48)
   !
+  !> map to distribute the k points
+  INTEGER,  ALLOCATABLE :: map(:)
+  !
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
   !
@@ -106,10 +112,10 @@ SUBROUTINE setup_nscf_green(kpt)
   david  = 4
   nbndx  = david*nbnd
   max_cg_iter = 20
-  natomwfc    = n_atom_wfc( nat, ityp, noncolin )
+  natomwfc    = n_atom_wfc(nat, ityp, noncolin)
   !
 #ifdef __MPI
-  IF ( use_para_diag ) CALL check_para_diag( nbnd )
+  IF (use_para_diag) CALL check_para_diag(nbnd)
 #else
   use_para_diag = .FALSE.
 #endif
@@ -117,16 +123,12 @@ SUBROUTINE setup_nscf_green(kpt)
   ! ... Symmetry and k-point section
   !
   ! the first k-point is used for Sigma
-  nks = 1
-  xk(:, nks) = kpt
-  wk(nks) = 0.0_dp
+  nkstot = 1
+  xk(:, nkstot) = kpt
+  wk(nkstot) = 0.0_dp
   !
-  ! evaluate the eigenvalues/-vectors for all points on this pool
-  CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_task)
-  DEALLOCATE(num_task)
-  !
-  ! loop over local q-points
-  DO iq = iq_start, iq_stop
+  ! loop over all q-points
+  DO iq = 1, nqs
     !
     ! determine the star of this q-point
     !
@@ -135,19 +137,27 @@ SUBROUTINE setup_nscf_green(kpt)
     DO istar = 1, num_star
       !
       ! for G, we need the eigenvalues at k - q
-      nks = nks + 1
-      xk(:, nks) = kpt - star_xq(:, istar)
-      wk(nks) = wq(iq) / REAL(num_star, KIND=dp)
+      nkstot = nkstot + 1
+      xk(:, nkstot) = kpt - star_xq(:, istar)
+      wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp)
       !
     END DO ! istar
     ! 
   END DO ! iq
   !
-  ! sum over all processes
-  nkstot = nks
-  CALL mp_sum(nkstot, inter_pool_comm)
-  !
   IF (nkstot > npk) CALL errore('setup', 'too many k points', nkstot)
+
+  !
+  ! distribute the k-points across the pool
+  !
+  ! k-points are distributed in batches of 1
+  kunit = 1
+  !
+  ! distribute xk, wk, and map
+  ALLOCATE(map(nkstot))
+  map = [(ik, ik = 1, nkstot)]
+  CALL divide_et_impera(xk, wk, map, .TRUE., nkstot, nks)
+
   !
   ! ...notice: qnorm is used by allocate_nlpot to determine
   ! the correct size of the interpolation table "qrad"
