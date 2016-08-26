@@ -83,12 +83,8 @@ save_gw_input.o\
 setup_nscf.o\
 setup_nscf_green.o\
 sgw_opening.o\
-sigcim.o\
-sigcre.o\
 sigprod.o\
 sigma.o\
-sigma_exch.o\
-sigma_exchG.o\
 sigma_expect.o\
 sigma_grid.o\
 sigma_io.o\

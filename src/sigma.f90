@@ -93,22 +93,41 @@
 !!     </a>
 MODULE sigma_module
 
+  USE kinds, ONLY: dp
+
   IMPLICIT NONE
 
   PRIVATE
 
-  PUBLIC sigma_wrapper
+  PUBLIC sigma_wrapper, sigma_config_type
+
+  !> This type contains the information necessary to evaluate the self-energy.
+  TYPE sigma_config_type
+
+    !> The index of the q point at which the Coulomb potential is evaluated.
+    INTEGER index_q
+ 
+    !> The index of the k - q point at which the Green's function is evaluated.
+    INTEGER index_kq
+
+    !> The inverse symmetry operation to go from q to star(q).
+    INTEGER inv_op
+
+    !> weight of the active point
+    REAL(dp) weight
+
+  END TYPE sigma_config_type
 
 CONTAINS
 
   !> This function provides a wrapper that extracts the necessary information
   !! from the global modules to evaluate the self energy.
-  SUBROUTINE sigma_wrapper(ikpt, freq)
+  SUBROUTINE sigma_wrapper(ikpt, freq, config)
 
-    USE cell_base,       ONLY: at, bg, omega
+    USE cell_base,       ONLY: omega
     USE constants,       ONLY: tpi
     USE control_gw,      ONLY: multishift, tr2_green, output, tmp_dir_coul
-    USE disp,            ONLY: nqs, x_q, wq
+    USE disp,            ONLY: x_q
     USE ener,            ONLY: ef
     USE freqbins_module, ONLY: freqbins_type
     USE gvect,           ONLY: ngm
@@ -134,11 +153,20 @@ CONTAINS
     !> type containing the information about the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
 
+    !> evaluate the self-energy for these configurations
+    TYPE(sigma_config_type), INTENT(IN) :: config(:)
+
     !> complex constant of zero
     COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
     !> real constant of 0.5
     REAL(dp),    PARAMETER :: half = 0.5_dp
+
+    !> counter on the configurations
+    INTEGER icon
+
+    !> store the index of the q-point (to avoid rereading the Coulomb matrix)
+    INTEGER iq
 
     !> complex prefactor <br>
     !! for real frequency integration it is \f$ i / 2 \pi N\f$ <br>
@@ -147,27 +175,6 @@ CONTAINS
 
     !> the prefactor including the q dependent parts
     COMPLEX(dp) alpha
-
-    !> number of q-points in star
-    INTEGER num_star
-
-    !> index of +q for all symmetry operations
-    INTEGER indx_sq(48)
-
-    !> index of -q if necessary
-    INTEGER indx_mq
-
-    !> number of symmetry operations that lead to certain q point
-    INTEGER num_symq(48)
-
-    !> the star of the q-point
-    REAL(dp) star_xq(3, 48)
-
-    !> counter on the points in the star
-    INTEGER istar
-
-    !> counter on the symmetry operations in the star
-    INTEGER isymop
 
     !> the symmetry map from reduced to full G mesh
     INTEGER, ALLOCATABLE :: gmapsym(:,:)
@@ -189,15 +196,6 @@ CONTAINS
 
     !> the self-energy at the current k-point collected on the root process
     COMPLEX(dp), ALLOCATABLE :: sigma_root(:,:,:)
-
-    !> the upper and lower boundary of the q-points calculated on this process
-    INTEGER iq_start, iq_stop
-
-    !> a counter on the q-points
-    INTEGER iq
-
-    !> index of the point k - q
-    INTEGER ikq
 
     !> the upper and lower boundary of the frequencies
     INTEGER first_sigma, last_sigma
@@ -256,10 +254,8 @@ CONTAINS
     CALL mp_bcast(mu, ionode_id, inter_pool_comm)
 
     !
-    ! parallelize frequencies over images and q-points over pools
+    ! parallelize frequencies over images
     !
-    CALL parallel_task(inter_pool_comm, nqs, iq_start, iq_stop, num_task)
-    DEALLOCATE(num_task)
     CALL parallel_task(inter_image_comm, freq%num_sigma(), first_sigma, last_sigma, num_task)
 
     CALL stop_clock(time_sigma_setup)
@@ -283,52 +279,41 @@ CONTAINS
       CALL errore(__FILE__, "error opening " // filename, ierr)
       !
     END IF ! open file
+    !
+    ! initialize index of q (set to 0 so that it is always read on first call)
+    iq = 0
+    !
+    ! allocate array for the coulomb matrix
+    ALLOCATE(coulomb(gcutcorr, gcutcorr, freq%num_freq()))
 
     !
     ! sum over all q-points
     !
-    ikq = 1
-    DO iq = iq_start, iq_stop
-      !
-      ! determine the star of this q-point
-      !
-      CALL star_q(x_q(:,iq), at, bg, nsym, s, invs, num_star, star_xq, indx_sq, num_symq, indx_mq, .FALSE.)
+    DO icon = 1, SIZE(config)
       !
       ! evaluate the coefficients for the analytic continuation of W
       !
-      ALLOCATE(coulomb(gcutcorr, gcutcorr, freq%num_freq()))
-      CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-      CALL coulpade(coulomb, x_q(:,iq))
+      IF (config(icon)%index_q /= iq) THEN
+        iq = config(icon)%index_q
+        CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
+        CALL coulpade(coulomb, x_q(:,iq))
+      END IF
       !
-      ! sum over all q-points in the star
-      DO istar = 1, num_star
-        !
-        ! determine symmetry operation that maps q to star(q)
-        !
-        DO isymop = 1, nsym
-          IF (indx_sq(isymop) == istar) EXIT
-        END DO ! isymop
-        IF (isymop > nsym) CALL errore(__FILE__, "point in star not found", 1)
-        !
-        ! determine the prefactor
-        !
-        alpha = wq(iq) * REAL(num_symq(istar), KIND=dp) * prefactor
-        !
-        ! evaluate Sigma
-        !
-        ikq = ikq + 1
-        CALL sigma_correlation(omega, sigma_c_st, multishift, 4, tr2_green, &
-                               mu, alpha, ikq, freq, first_sigma,           &
-                               gmapsym(1:gcutcorr, invs(isymop)),           &
-                               coulomb, sigma)
-        !
-      END DO ! istar
+      ! determine the prefactor
       !
-      DEALLOCATE(coulomb)
+      alpha = config(icon)%weight * prefactor
       !
-    END DO ! iq
+      ! evaluate Sigma
+      !
+      CALL sigma_correlation(omega, sigma_c_st, multishift, 4, tr2_green, &
+                             mu, alpha, config(icon)%index_kq, freq, first_sigma, &
+                             gmapsym(:gcutcorr, config(icon)%inv_op), &
+                             coulomb, sigma)
+      !
+    END DO ! icon
 
     DEALLOCATE(gmapsym)
+    DEALLOCATE(coulomb)
 
     !
     ! collect sigma on a single process

@@ -38,6 +38,7 @@ SUBROUTINE do_stern()
   USE mp_images,        ONLY : inter_image_comm, my_image_id
   USE mp_world,         ONLY : mpime
   USE parallel_module,  ONLY : parallel_task, mp_gatherv
+  USE run_nscf_module,  ONLY : run_nscf
   USE timing_module,    ONLY : time_coulomb, time_coul_nscf
   USE units_gw,         ONLY : lrcoul, iuncoul
 

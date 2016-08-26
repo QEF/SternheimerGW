@@ -303,6 +303,7 @@ CONTAINS
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
     USE control_gw,         ONLY: output, nbnd_occ, truncation
+    USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
     USE gvect,              ONLY: mill
     USE gwsigma,            ONLY: sigma_x_st
@@ -376,11 +377,7 @@ CONTAINS
     !!
     DO iq = 1, nksq
       !
-      ! sanity check - k-point of input and in module are the same
-      IF (ikks(iq) /= ikpt) &
-        CALL errore(__FILE__, "unexpected mismatch of ikks and ikpt", 1)
-      !
-      ikq  = ikqs(iq)
+      ikq = ikqs(iq)
       !
       CALL get_buffer(evq, lrwfc, iuwfc, ikq)
       !
@@ -392,7 +389,7 @@ CONTAINS
       !! 4. construct the Coulomb potential
       !!
       ! q = k - (k - q)
-      qvec = xk(:, ikpt) - xk(:, ikq)
+      qvec = xk_kpoints(:, ikpt) - xk(:, ikq)
       CALL exchange_coulomb(tpiba, truncation, sigma_x_st, qvec, coulomb)
       !!
       !! 5. every process evaluates his contribution to sigma

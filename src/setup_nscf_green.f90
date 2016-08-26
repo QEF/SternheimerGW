@@ -22,13 +22,17 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+MODULE setup_nscf_module
+
+CONTAINS
+
 !> This routine initializes the global modules for the nscf run.
 !!
 !! For the calculation of \f$Sigma\f$, we want to convolute \f$G_{k - q}\f$
 !! and \f$W_q\f$. Hence, we construct for a given k point and q grid all points
 !! \f$k - q\f$ to evaluate the Green's function at these points.
 !------------------------------------------------------------------------------ 
-SUBROUTINE setup_nscf_green(kpt)
+SUBROUTINE setup_nscf_green(kpt, config)
 
   !
   ! ... This routine initializes variables for the non-scf calculations at k 
@@ -54,10 +58,11 @@ SUBROUTINE setup_nscf_green(kpt)
   USE kinds,              ONLY : dp
   USE klist,              ONLY : xk, wk, nks, nkstot, qnorm, nelec
   USE mp,                 ONLY : mp_sum
-  USE mp_pools,           ONLY : inter_pool_comm, kunit
+  USE mp_pools,           ONLY : kunit
   USE noncollin_module,   ONLY : noncolin
   USE parameters,         ONLY : npk
   USE qpoint,             ONLY : nksq, ikks, ikqs
+  USE sigma_module,       ONLY : sigma_config_type
   USE symm_base,          ONLY : s, nsym, invs
   USE uspp_param,         ONLY : n_atom_wfc
   USE wvfct,              ONLY : nbnd, nbndx
@@ -68,11 +73,8 @@ SUBROUTINE setup_nscf_green(kpt)
   !> The point at which, we want to evaluate \f$\Sigma\f$
   REAL(dp), INTENT(IN) :: kpt(3)
   !
-  !> Temporary array for the number of tasks
-  INTEGER, ALLOCATABLE :: num_task(:)
-  !
-  !> first and last q point done on this process
-  INTEGER iq_start, iq_stop
+  !> Stores the configuration used to evaluate \f$\Sigma\f$
+  TYPE(sigma_config_type), INTENT(OUT), ALLOCATABLE :: config(:)
   !
   !> counter on the q points
   INTEGER iq
@@ -86,6 +88,9 @@ SUBROUTINE setup_nscf_green(kpt)
   !> counter on the points in the star
   INTEGER istar
   !
+  !> counter on the symmetry operations in the star
+  INTEGER isymop
+  !
   !> index of +q for all symmetry operations
   INTEGER indx_sq(48)
   !
@@ -97,6 +102,15 @@ SUBROUTINE setup_nscf_green(kpt)
   !
   !> the point in the star
   REAL(dp) star_xq(3, 48)
+  !
+  !> index of the q point
+  INTEGER,  ALLOCATABLE :: index_q(:)
+  !
+  !> index of the inverse symmetry operation
+  INTEGER,  ALLOCATABLE :: inv_op(:)
+  !
+  !> the weight of a certain k - q point
+  REAL(dp), ALLOCATABLE :: weight(:)
   !
   !> map to distribute the k points
   INTEGER,  ALLOCATABLE :: map(:)
@@ -122,6 +136,11 @@ SUBROUTINE setup_nscf_green(kpt)
   !
   ! ... Symmetry and k-point section
   !
+  ! allocate temporary arrays (will be copied to config type at the end)
+  ALLOCATE(index_q(nqs * nsym))
+  ALLOCATE(inv_op(nqs * nsym))
+  ALLOCATE(weight(nqs * nsym))
+
   ! the first k-point is used for Sigma
   nkstot = 1
   xk(:, nkstot) = kpt
@@ -136,10 +155,20 @@ SUBROUTINE setup_nscf_green(kpt)
     !
     DO istar = 1, num_star
       !
+      ! determine symmetry operation that maps q to star(q)
+      !
+      DO isymop = 1, nsym
+        IF (indx_sq(isymop) == istar) EXIT
+      END DO ! isymop
+      IF (isymop > nsym) CALL errore(__FILE__, "point in star not found", 1)
+      !
       ! for G, we need the eigenvalues at k - q
       nkstot = nkstot + 1
       xk(:, nkstot) = kpt - star_xq(:, istar)
       wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp)
+      index_q(nkstot) = iq
+      inv_op(nkstot) = invs(isymop)
+      weight(nkstot) = wq(iq) * REAL(num_symq(istar), KIND=dp) 
       !
     END DO ! istar
     ! 
@@ -159,10 +188,14 @@ SUBROUTINE setup_nscf_green(kpt)
   CALL divide_et_impera(xk, wk, map, .TRUE., nkstot, nks)
 
   !
+  ! create config type and fill with data
+  ! initialize nksq, ikks, ikqs
+  !
   ! exclude the first k point which is not a k - q point
   nksq = COUNT(map(:nks) > 1)
   !
   ! allocate necessary arrays
+  ALLOCATE(config(nksq))
   ALLOCATE(ikks(nksq), ikqs(nksq))
   !
   ! ikks is initialized to 0
@@ -182,6 +215,13 @@ SUBROUTINE setup_nscf_green(kpt)
     END IF
     !
     iq = iq + 1
+    !
+    ! copy data to type
+    config(iq)%index_kq = ik
+    config(iq)%index_q  = index_q(map(ik))
+    config(iq)%inv_op   = inv_op(map(ik))
+    config(iq)%weight   = weight(map(ik))
+    !
     ! set ikqs
     ikqs(iq) = ik
     !
@@ -196,3 +236,5 @@ SUBROUTINE setup_nscf_green(kpt)
   RETURN
   !
 END SUBROUTINE setup_nscf_green
+
+END MODULE setup_nscf_module

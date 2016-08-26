@@ -146,6 +146,7 @@ do_stern.o : ../../Modules/mp_world.o
 do_stern.o : ../../PW/src/pwcom.o
 do_stern.o : gwcom.o
 do_stern.o : parallel.o
+do_stern.o : run_nscf.o
 do_stern.o : timing.o
 dv_of_drho.o : ../../FFTXlib/fft_interfaces.o
 dv_of_drho.o : ../../LR_Modules/lrcom.o
@@ -250,15 +251,15 @@ gmap_sym.o : gwcom.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
 godby_needs.o : ../../Modules/mp_world.o
-green.o : ../../Modules/cell_base.o
-green.o : ../../Modules/gvecw.o
+green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
-green.o : ../../Modules/recvec.o
 green.o : ../../Modules/uspp.o
+green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : bicgstab.o
-green.o : expand_igk.o
+green.o : gwcom.o
 green.o : linear_op.o
+green.o : parallel.o
 green.o : reorder.o
 green.o : timing.o
 green_linsys_shift_im.o : ../../LR_Modules/lrcom.o
@@ -327,6 +328,7 @@ gw.o : exchange.o
 gw.o : freqbins.o
 gw.o : gwcom.o
 gw.o : pp_output.o
+gw.o : run_nscf.o
 gw.o : sigma.o
 gw.o : sigma_grid.o
 gw.o : sigma_io.o
@@ -538,6 +540,8 @@ run_nscf.o : ../../PW/src/atomic_wfc_mod.o
 run_nscf.o : ../../PW/src/pwcom.o
 run_nscf.o : gwcom.o
 run_nscf.o : save_gw_input.o
+run_nscf.o : setup_nscf_green.o
+run_nscf.o : sigma.o
 save_gw_input.o : ../../Modules/io_files.o
 save_gw_input.o : ../../Modules/ions_base.o
 save_gw_input.o : ../../Modules/kind.o
@@ -559,6 +563,7 @@ setup_nscf.o : ../../PW/src/pwcom.o
 setup_nscf.o : ../../PW/src/start_k.o
 setup_nscf.o : ../../PW/src/symm_base.o
 setup_nscf.o : gwcom.o
+setup_nscf_green.o : ../../LR_Modules/lrcom.o
 setup_nscf_green.o : ../../Modules/cell_base.o
 setup_nscf_green.o : ../../Modules/constants.o
 setup_nscf_green.o : ../../Modules/control_flags.o
@@ -573,7 +578,7 @@ setup_nscf_green.o : ../../PW/src/atomic_wfc_mod.o
 setup_nscf_green.o : ../../PW/src/pwcom.o
 setup_nscf_green.o : ../../PW/src/symm_base.o
 setup_nscf_green.o : gwcom.o
-setup_nscf_green.o : parallel.o
+setup_nscf_green.o : sigma.o
 sgw_opening.o : ../../Modules/io_global.o
 sgw_opening.o : version.o
 sigcim.o : ../../LR_Modules/lrcom.o
@@ -627,6 +632,7 @@ sigma.o : ../../Modules/fft_custom.o
 sigma.o : ../../Modules/io_files.o
 sigma.o : ../../Modules/io_global.o
 sigma.o : ../../Modules/kind.o
+sigma.o : ../../Modules/mp.o
 sigma.o : ../../Modules/mp_images.o
 sigma.o : ../../Modules/mp_pools.o
 sigma.o : ../../Modules/recvec.o

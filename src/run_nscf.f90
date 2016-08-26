@@ -22,7 +22,13 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE run_nscf(do_band, do_matel, ik)
+MODULE run_nscf_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+SUBROUTINE run_nscf(do_band, do_matel, ik, config)
 !-----------------------------------------------------------------------
 !
 ! This is the driver for when gw calls pwscf.
@@ -42,6 +48,8 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   USE control_gw,      ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
                               ext_restart, bands_computed, lgamma
   USE save_gw,         ONLY : tmp_dir_save
+  USE setup_nscf_module, ONLY : setup_nscf_green
+  USE sigma_module,    ONLY : sigma_config_type
   USE control_flags,   ONLY : iprint, io_level
   USE mp_bands,        ONLY : ntask_groups
   USE disp,            ONLY : xk_kpoints, nqs
@@ -59,6 +67,9 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   IMPLICIT NONE
   !
+  !> must be present if do_matel is set to contain the configuration of sigma
+  TYPE(sigma_config_type), INTENT(OUT), ALLOCATABLE, OPTIONAL :: config(:)
+  !
   CHARACTER(LEN=256) :: dirname, file_base_in, file_base_out
   !
   INTEGER   :: ik
@@ -73,7 +84,11 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   CALL close_files( .true. )
   !
-  if(do_matel) xq(:) = xk_kpoints(:, ik)
+  IF (do_matel) THEN
+    xq(:) = xk_kpoints(:, ik)
+    IF (.NOT.PRESENT(config)) &
+      CALL errore(__FILE__, "config is not optional when do_matel is set", 1)
+  END IF
   lgamma = ( (ABS(xq(1))<1.D-8).AND.(ABS(xq(2))<1.D-8).AND.(ABS(xq(3))<1.D-8) )
  !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw
@@ -92,7 +107,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   CALL fft_type_allocate(dffts, at, bg, gcutms, intra_bgrp_comm)
   !!!
   IF (do_matel) THEN
-    CALL setup_nscf_green(xq)
+    CALL setup_nscf_green(xq, config)
   ELSE
     CALL setup_nscf(xq)
   END IF
@@ -133,3 +148,5 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   RETURN
 END SUBROUTINE run_nscf
+
+END MODULE run_nscf_module
