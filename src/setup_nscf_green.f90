@@ -57,7 +57,7 @@ SUBROUTINE setup_nscf_green(kpt)
   USE mp_pools,           ONLY : inter_pool_comm, kunit
   USE noncollin_module,   ONLY : noncolin
   USE parameters,         ONLY : npk
-  USE parallel_module,    ONLY : parallel_task
+  USE qpoint,             ONLY : nksq, ikks, ikqs
   USE symm_base,          ONLY : s, nsym, invs
   USE uspp_param,         ONLY : n_atom_wfc
   USE wvfct,              ONLY : nbnd, nbndx
@@ -100,7 +100,7 @@ SUBROUTINE setup_nscf_green(kpt)
   !
   !> map to distribute the k points
   INTEGER,  ALLOCATABLE :: map(:)
-  !
+
   !
   ! ... threshold for diagonalization ethr - should be good for all cases
   !
@@ -159,12 +159,39 @@ SUBROUTINE setup_nscf_green(kpt)
   CALL divide_et_impera(xk, wk, map, .TRUE., nkstot, nks)
 
   !
+  ! exclude the first k point which is not a k - q point
+  nksq = COUNT(map(:nks) > 1)
+  !
+  ! allocate necessary arrays
+  ALLOCATE(ikks(nksq), ikqs(nksq))
+  !
+  ! ikks is initialized to 0
+  ikks = 0
+  !
+  iq = 0
+  DO ik = 1, nks
+    !
+    ! set ikks if this process contains the element 1
+    IF (map(ik) == 1) THEN
+      !
+      ikks = ik
+      !
+      ! do not copy the first element to config type
+      CYCLE
+      !
+    END IF
+    !
+    iq = iq + 1
+    ! set ikqs
+    ikqs(iq) = ik
+    !
+  END DO ! iq
+
+  !
   ! ...notice: qnorm is used by allocate_nlpot to determine
   ! the correct size of the interpolation table "qrad"
   !
   qnorm = SQRT(SUM(kpt(:)**2))
-  !
-  kunit = 1
   !
   RETURN
   !

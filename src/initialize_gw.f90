@@ -68,15 +68,7 @@ SUBROUTINE initialize_gw(coulomb)
     !
   ELSE ! not coulomb
     !
-    ! for the self energy the first point is k and all other points
-    ! are the k - q points in the q mesh
-    !
-    nksq = nks - 1
-    ALLOCATE(ikks(nksq), ikqs(nksq))
-    DO ik = 1, nksq
-      ikks(ik) = 1
-      ikqs(ik) = ik + 1
-    END DO ! ik
+    ! nksq, ikks, and ikqs is already set in setup_nscf_green
     !
   END IF
   !
