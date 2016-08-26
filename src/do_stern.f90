@@ -31,7 +31,7 @@ SUBROUTINE do_stern()
   USE freq_gw,          ONLY : nfs
   USE gwsigma,          ONLY : gcutcorr
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
-  USE io_global,        ONLY : stdout
+  USE io_global,        ONLY : stdout, meta_ionode
   USE kinds,            ONLY : DP
   USE klist,            ONLY : lgauss
   USE mp,               ONLY : mp_sum, mp_barrier
@@ -83,7 +83,7 @@ IMPLICIT NONE
   ! some tasks are only done by the root process
   is_root = my_image_id == root_id
 
-  IF (is_root) ALLOCATE(scrcoul_g(gcutcorr, gcutcorr, nfs))
+  IF (meta_ionode) ALLOCATE(scrcoul_g(gcutcorr, gcutcorr, nfs))
 
   ! allocate arrays for symmetry routine
   ALLOCATE(ig_unique(gcutcorr))
@@ -131,7 +131,7 @@ IMPLICIT NONE
 
       CALL initialize_gw(.TRUE.)
       CALL coulomb_q0G0(eps_m)
-      scrcoul_g(1,1,:) = eps_m
+      IF (meta_ionode) scrcoul_g(1,1,:) = eps_m
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
       CALL clean_pw_gw(iq, .FALSE.)
@@ -178,7 +178,7 @@ IMPLICIT NONE
     CALL mp_gatherv(inter_image_comm, root_id, num_task, scrcoul_loc, scrcoul_root)
 
     ! Only the root of the image should write to file
-    IF (is_root) THEN
+    IF (meta_ionode) THEN
 
       ! unfold W from reduced array to full array
       ! also reorder the indices
@@ -195,7 +195,7 @@ IMPLICIT NONE
     END IF ! root
 
     DEALLOCATE(scrcoul_loc)
-    IF (is_root) DEALLOCATE(scrcoul_root)
+    IF (meta_ionode) DEALLOCATE(scrcoul_root)
     IF (ALLOCATED(num_task)) DEALLOCATE(num_task)
 
     CALL mp_barrier(inter_image_comm)

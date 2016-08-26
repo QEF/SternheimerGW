@@ -54,7 +54,7 @@ SUBROUTINE setup_nscf_green(kpt)
   USE kinds,              ONLY : dp
   USE klist,              ONLY : xk, wk, nks, nkstot, qnorm, nelec
   USE mp,                 ONLY : mp_sum
-  USE mp_pools,           ONLY : inter_pool_comm
+  USE mp_pools,           ONLY : inter_pool_comm, kunit
   USE noncollin_module,   ONLY : noncolin
   USE parameters,         ONLY : npk
   USE parallel_module,    ONLY : parallel_task
@@ -153,6 +153,8 @@ SUBROUTINE setup_nscf_green(kpt)
   ! the correct size of the interpolation table "qrad"
   !
   qnorm = SQRT(SUM(kpt(:)**2))
+  !
+  kunit = 1
   !
   RETURN
   !

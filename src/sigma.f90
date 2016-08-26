@@ -114,9 +114,10 @@ CONTAINS
     USE gvect,           ONLY: ngm
     USE gwsigma,         ONLY: sigma_c_st, gcutcorr
     USE io_files,        ONLY: prefix
-    USE io_global,       ONLY: meta_ionode
+    USE io_global,       ONLY: meta_ionode, ionode_id
     USE kinds,           ONLY: dp
     USE klist,           ONLY: lgauss
+    USE mp,              ONLY: mp_bcast
     USE mp_images,       ONLY: my_image_id, inter_image_comm, root_image
     USE mp_pools,        ONLY: inter_pool_comm, root_pool
     USE output_mod,      ONLY: filcoul
@@ -252,6 +253,7 @@ CONTAINS
       mu = ef
       !
     END IF
+    CALL mp_bcast(mu, ionode_id, inter_pool_comm)
 
     !
     ! parallelize frequencies over images and q-points over pools

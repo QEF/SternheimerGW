@@ -369,13 +369,12 @@ CONTAINS
     !!
     !! 1. Distribute the work over the process grid
     !!
-    CALL parallel_task(inter_pool_comm, nksq, iq_start, iq_stop, num_task)
     CALL parallel_task(inter_image_comm, nbnd_occ(ikpt), iband_start, iband_stop, num_task)
 
     !!
     !! 2. Extract the wave function of every q-point
     !!
-    DO iq = iq_start, iq_stop
+    DO iq = 1, nksq
       !
       ! sanity check - k-point of input and in module are the same
       IF (ikks(iq) /= ikpt) &
