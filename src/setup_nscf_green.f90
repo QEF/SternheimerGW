@@ -185,7 +185,7 @@ SUBROUTINE setup_nscf_green(kpt, config)
   ! distribute xk, wk, and map
   ALLOCATE(map(nkstot))
   map = [(ik, ik = 1, nkstot)]
-  CALL divide_et_impera(xk, wk, map, .TRUE., nkstot, nks)
+  CALL divide_et_impera(nkstot, xk, wk, map, nks)
 
   !
   ! create config type and fill with data

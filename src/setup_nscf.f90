@@ -192,7 +192,7 @@ SUBROUTINE setup_nscf(xq)
   ENDIF
   !
 
-   CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
+   CALL divide_et_impera(nkstot, xk, wk, isk, nks)
   !
 #else
   !
