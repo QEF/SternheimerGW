@@ -28,6 +28,7 @@ program gw
   USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
                                 do_green, multishift, do_sigma_c, do_q0_only,&
                                 do_imag, lgamma, output
+  USE coulomb_vcut_module, ONLY : vcut_type
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
   USE exchange_module,   ONLY : exchange_wrapper
@@ -59,6 +60,9 @@ program gw
   !> stores the frequencies uses for the calculation
   TYPE(freqbins_type) freq
 
+  !> stores the truncated Coulomb potential
+  TYPE(vcut_type) vcut
+
   !> stores the configuration of the self-energy calculation
   TYPE(sigma_config_type), ALLOCATABLE :: config(:)
 
@@ -69,7 +73,7 @@ program gw
   call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
   
-  call gwq_readin(freq)
+  call gwq_readin(freq, vcut)
   call check_stop_init()
   call check_initial_status(auxdyn)
 ! Initialize frequency grids, FFT grids for correlation

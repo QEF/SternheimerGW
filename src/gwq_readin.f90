@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_readin(freq)
+SUBROUTINE gwq_readin(freq, vcut)
   !----------------------------------------------------------------------------
   !
   !    This routine reads the control variables for the program GW.
@@ -33,6 +33,7 @@ SUBROUTINE gwq_readin(freq)
   !
   USE kinds,         ONLY : DP
   USE parameters,    ONLY : nsx
+  USE cell_base,     ONLY : at, alat
   USE constants,     ONLY : RYTOEV
   USE ions_base,     ONLY : nat, ntyp => nsp
   USE io_global,     ONLY : ionode_id
@@ -46,6 +47,7 @@ SUBROUTINE gwq_readin(freq)
   USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir
   USE uspp,          ONLY : okvan
   USE fixed_occ,     ONLY : tfixed_occ
+  USE coulomb_vcut_module, ONLY : vcut_type, vcut_init, vcut_info
   USE freqbins_module, ONLY : freqbins_type
   USE lsda_mod,      ONLY : lsda, nspin
   USE run_info,      ONLY : title
@@ -96,6 +98,15 @@ SUBROUTINE gwq_readin(freq)
   !> We store the frequency for the Coulomb solver in this type.
   TYPE(freqbins_type), INTENT(OUT) :: freq
   !
+  !> We store the truncated Coulomb potential in this type.
+  TYPE(vcut_type),     INTENT(OUT) :: vcut
+  !
+  !> size of the Wigner-Seitz cell
+  REAL(dp) atws(3,3)
+  !
+  !> the cutoff used for the truncated potential
+  REAL(dp) ecut_vcut
+
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
   INTEGER :: ios, ipol, iter, na, it, ierr
@@ -592,5 +603,25 @@ SUBROUTINE gwq_readin(freq)
   ENDIF
   IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
       CALL errore('gwq_readin','nq1, nq2, and nq3 must be greater than 0',1)
-  RETURN
+
+  !
+  ! setup the truncation
+  !
+  ! determine supercell
+  atws = alat * at
+  !
+  atws(:,1) = atws(:,1) * nq1
+  atws(:,2) = atws(:,2) * nq2
+  atws(:,3) = atws(:,3) * nq3
+  !
+  ! we should use a quarter of the cutoff, because vcut assumes WF cutoff
+  ! and converts to density cutoff, but for some reason the scaling is
+  ! a bit different then for the custom FFT type, so that we increase the
+  ! prefactor to 0.3 to be on the safe side
+  ecut_vcut = 0.30_dp * MAX(ecutsco, ecutsex)
+  CALL vcut_init(vcut, atws, ecut_vcut)
+  CALL vcut_info(stdout, vcut)
+
+  FLUSH(stdout)
+
 END SUBROUTINE gwq_readin
