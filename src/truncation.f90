@@ -24,6 +24,7 @@
 MODULE truncation_module
 
   USE kinds, ONLY: dp
+  USE coulomb_vcut_module
 
   IMPLICIT NONE
 
@@ -120,7 +121,6 @@ CONTAINS
 
     USE cell_base,           ONLY: at, alat, omega
     USE constants,           ONLY: fpi
-    USE coulomb_vcut_module, ONLY: vcut_type, vcut_spheric_get, vcut_get
     USE disp,                ONLY: nq1, nq2, nq3
 
     !> Truncation method used; must be one of the integer constants

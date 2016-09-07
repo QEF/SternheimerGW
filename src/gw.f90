@@ -28,7 +28,6 @@ program gw
   USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
                                 do_green, multishift, do_sigma_c, do_q0_only,&
                                 do_imag, lgamma, output
-  USE coulomb_vcut_module, ONLY : vcut_type
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
   USE exchange_module,   ONLY : exchange_wrapper
@@ -46,6 +45,7 @@ program gw
   USE sigma_io_module,   ONLY : sigma_io_close_write
   USE sigma_module,      ONLY : sigma_wrapper, sigma_config_type
   USE timing_module,     ONLY : time_setup
+  USE truncation_module, ONLY : vcut_type
   USE units_gw,          ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
   USE wvfct,             ONLY : nbnd
 

@@ -124,29 +124,29 @@ CONTAINS
   !! from the global modules to evaluate the self energy.
   SUBROUTINE sigma_wrapper(ikpt, freq, vcut, config)
 
-    USE cell_base,       ONLY: omega
-    USE constants,       ONLY: tpi
-    USE control_gw,      ONLY: multishift, tr2_green, output, tmp_dir_coul
-    USE coulomb_vcut_module, ONLY: vcut_type
-    USE disp,            ONLY: x_q
-    USE ener,            ONLY: ef
-    USE freqbins_module, ONLY: freqbins_type
-    USE gvect,           ONLY: ngm
-    USE gwsigma,         ONLY: sigma_c_st, gcutcorr
-    USE io_files,        ONLY: prefix
-    USE io_global,       ONLY: meta_ionode, ionode_id
-    USE kinds,           ONLY: dp
-    USE klist,           ONLY: lgauss
-    USE mp,              ONLY: mp_bcast
-    USE mp_images,       ONLY: my_image_id, inter_image_comm, root_image
-    USE mp_pools,        ONLY: inter_pool_comm, root_pool
-    USE output_mod,      ONLY: filcoul
-    USE parallel_module, ONLY: parallel_task, mp_root_sum, mp_gatherv
-    USE sigma_io_module, ONLY: sigma_io_write_c
-    USE symm_base,       ONLY: nsym, s, invs, ftau, nrot
-    USE timing_module,   ONLY: time_sigma_c, time_sigma_setup, &
-                               time_sigma_io, time_sigma_comm
-    USE units_gw,        ONLY: iuncoul, lrcoul, iunsigma, lrsigma
+    USE cell_base,         ONLY: omega
+    USE constants,         ONLY: tpi
+    USE control_gw,        ONLY: multishift, tr2_green, output, tmp_dir_coul
+    USE disp,              ONLY: x_q
+    USE ener,              ONLY: ef
+    USE freqbins_module,   ONLY: freqbins_type
+    USE gvect,             ONLY: ngm
+    USE gwsigma,           ONLY: sigma_c_st, gcutcorr
+    USE io_files,          ONLY: prefix
+    USE io_global,         ONLY: meta_ionode, ionode_id
+    USE kinds,             ONLY: dp
+    USE klist,             ONLY: lgauss
+    USE mp,                ONLY: mp_bcast
+    USE mp_images,         ONLY: my_image_id, inter_image_comm, root_image
+    USE mp_pools,          ONLY: inter_pool_comm, root_pool
+    USE output_mod,        ONLY: filcoul
+    USE parallel_module,   ONLY: parallel_task, mp_root_sum, mp_gatherv
+    USE sigma_io_module,   ONLY: sigma_io_write_c
+    USE symm_base,         ONLY: nsym, s, invs, ftau, nrot
+    USE timing_module,     ONLY: time_sigma_c, time_sigma_setup, &
+                                 time_sigma_io, time_sigma_comm
+    USE truncation_module, ONLY: vcut_type
+    USE units_gw,          ONLY: iuncoul, lrcoul, iunsigma, lrsigma
 
     !> index of the k-point for which the self energy is evaluated
     INTEGER, INTENT(IN) :: ikpt

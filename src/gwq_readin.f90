@@ -47,7 +47,6 @@ SUBROUTINE gwq_readin(freq, vcut)
   USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir
   USE uspp,          ONLY : okvan
   USE fixed_occ,     ONLY : tfixed_occ
-  USE coulomb_vcut_module, ONLY : vcut_type, vcut_init, vcut_info
   USE freqbins_module, ONLY : freqbins_type
   USE lsda_mod,      ONLY : lsda, nspin
   USE run_info,      ONLY : title

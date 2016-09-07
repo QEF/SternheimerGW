@@ -24,7 +24,6 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk, vcut)
   USE kinds,         ONLY : DP
   USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
   USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, truncation
-  USE coulomb_vcut_module, ONLY : vcut_type
   USE freq_gw,       ONLY : fiu, nfs
   USE gwsigma,       ONLY : sigma_c_st, gcutcorr
   USE gvect,         ONLY : g, ngm, nl
@@ -32,7 +31,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk, vcut)
   USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
   USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
   USE lr_symm_base,  ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
-  USE truncation_module, ONLY : truncate
+  USE truncation_module, ONLY : truncate, vcut_type
 
   IMPLICIT NONE
 

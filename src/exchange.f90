@@ -252,12 +252,9 @@ CONTAINS
   !> Evaluate the Coulomb potential for all vectors within the exchange grid.
   SUBROUTINE exchange_coulomb(tpiba, method, vcut, exchange_grid, qvec, coulomb)
 
-    use cell_base, only: at
-
-    USE coulomb_vcut_module, ONLY: vcut_type
     USE fft_custom,          ONLY: fft_cus
     USE kinds,               ONLY: dp
-    USE truncation_module,   ONLY: truncate
+    USE truncation_module,   ONLY: truncate, vcut_type
 
     !> \f$2 \pi / a\f$ where \f$a\f$ is the first dimension of the lattice
     REAL(dp), INTENT(IN) :: tpiba
@@ -309,7 +306,6 @@ CONTAINS
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
     USE control_gw,         ONLY: output, nbnd_occ, truncation
-    USE coulomb_vcut_module,ONLY: vcut_type
     USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
     USE gvect,              ONLY: mill
@@ -324,6 +320,7 @@ CONTAINS
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
     USE timing_module,      ONLY: time_sigma_x
+    USE truncation_module,  ONLY: vcut_type
 
     !> The index of the k-point for which the exchange is evaluated
     INTEGER, INTENT(IN) :: ikpt

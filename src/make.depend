@@ -119,7 +119,6 @@ coulomb_q0G0.o : solve_linter.o
 coulpade.o : ../../LR_Modules/lrcom.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/constants.o
-coulpade.o : ../../Modules/coulomb_vcut.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
 coulpade.o : ../../PW/src/symm_base.o
@@ -171,7 +170,6 @@ environment_sgw.o : ../../Modules/mp_world.o
 environment_sgw.o : ../../Modules/version.o
 exchange.o : ../../LR_Modules/lrcom.o
 exchange.o : ../../Modules/cell_base.o
-exchange.o : ../../Modules/coulomb_vcut.o
 exchange.o : ../../Modules/fft_custom.o
 exchange.o : ../../Modules/io_global.o
 exchange.o : ../../Modules/kind.o
@@ -307,7 +305,6 @@ green_multishift_im.o : ../../PW/src/pwcom.o
 green_multishift_im.o : gwcom.o
 green_multishift_im.o : timing.o
 gw.o : ../../Modules/check_stop.o
-gw.o : ../../Modules/coulomb_vcut.o
 gw.o : ../../Modules/environment.o
 gw.o : ../../Modules/input_parameters.o
 gw.o : ../../Modules/io_files.o
@@ -323,6 +320,7 @@ gw.o : sigma.o
 gw.o : sigma_grid.o
 gw.o : sigma_io.o
 gw.o : timing.o
+gw.o : truncation.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
 gwcom.o : ../../Modules/fft_custom.o
@@ -353,7 +351,6 @@ gwq_readin.o : ../../LR_Modules/lrcom.o
 gwq_readin.o : ../../Modules/cell_base.o
 gwq_readin.o : ../../Modules/constants.o
 gwq_readin.o : ../../Modules/control_flags.o
-gwq_readin.o : ../../Modules/coulomb_vcut.o
 gwq_readin.o : ../../Modules/input_parameters.o
 gwq_readin.o : ../../Modules/io_files.o
 gwq_readin.o : ../../Modules/io_global.o
@@ -620,7 +617,6 @@ sigcre.o : sigma_io.o
 sigcre.o : timing.o
 sigma.o : ../../Modules/cell_base.o
 sigma.o : ../../Modules/constants.o
-sigma.o : ../../Modules/coulomb_vcut.o
 sigma.o : ../../Modules/fft_custom.o
 sigma.o : ../../Modules/io_files.o
 sigma.o : ../../Modules/io_global.o
@@ -638,6 +634,7 @@ sigma.o : gwcom.o
 sigma.o : parallel.o
 sigma.o : sigma_io.o
 sigma.o : timing.o
+sigma.o : truncation.o
 sigma_exch.o : ../../LR_Modules/lrcom.o
 sigma_exch.o : ../../Modules/cell_base.o
 sigma_exch.o : ../../Modules/constants.o
