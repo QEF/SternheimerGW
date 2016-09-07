@@ -630,7 +630,7 @@ SUBROUTINE gwq_readin(freq, vcut)
     ! a bit different then for the custom FFT type, so that we increase the
     ! prefactor to 0.3 to be on the safe side
     ecut_vcut = 0.30_dp * MAX(ecutsco, ecutsex)
-    CALL vcut_init(vcut, atws, ecut_vcut)
+    CALL vcut_reinit(vcut, atws, ecut_vcut, tmp_dir_gw)
     CALL vcut_info(stdout, vcut)
     !
   END IF ! vcut truncation methods
