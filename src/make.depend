@@ -119,6 +119,7 @@ coulomb_q0G0.o : solve_linter.o
 coulpade.o : ../../LR_Modules/lrcom.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/constants.o
+coulpade.o : ../../Modules/coulomb_vcut.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
 coulpade.o : ../../PW/src/symm_base.o
@@ -148,19 +149,6 @@ do_stern.o : gwcom.o
 do_stern.o : parallel.o
 do_stern.o : run_nscf.o
 do_stern.o : timing.o
-dv_of_drho.o : ../../FFTXlib/fft_interfaces.o
-dv_of_drho.o : ../../LR_Modules/lrcom.o
-dv_of_drho.o : ../../Modules/cell_base.o
-dv_of_drho.o : ../../Modules/constants.o
-dv_of_drho.o : ../../Modules/control_flags.o
-dv_of_drho.o : ../../Modules/fft_base.o
-dv_of_drho.o : ../../Modules/funct.o
-dv_of_drho.o : ../../Modules/kind.o
-dv_of_drho.o : ../../Modules/noncol.o
-dv_of_drho.o : ../../Modules/recvec.o
-dv_of_drho.o : ../../PW/src/scf_mod.o
-dv_of_drho.o : gwcom.o
-dv_of_drho.o : truncation.o
 dvqpsi_us.o : ../../FFTXlib/fft_interfaces.o
 dvqpsi_us.o : ../../LR_Modules/lrcom.o
 dvqpsi_us.o : ../../Modules/cell_base.o
@@ -183,6 +171,7 @@ environment_sgw.o : ../../Modules/mp_world.o
 environment_sgw.o : ../../Modules/version.o
 exchange.o : ../../LR_Modules/lrcom.o
 exchange.o : ../../Modules/cell_base.o
+exchange.o : ../../Modules/coulomb_vcut.o
 exchange.o : ../../Modules/fft_custom.o
 exchange.o : ../../Modules/io_global.o
 exchange.o : ../../Modules/kind.o
@@ -631,6 +620,7 @@ sigcre.o : sigma_io.o
 sigcre.o : timing.o
 sigma.o : ../../Modules/cell_base.o
 sigma.o : ../../Modules/constants.o
+sigma.o : ../../Modules/coulomb_vcut.o
 sigma.o : ../../Modules/fft_custom.o
 sigma.o : ../../Modules/io_files.o
 sigma.o : ../../Modules/io_global.o
@@ -799,6 +789,7 @@ truncate_2d.o : ../../Modules/recvec.o
 truncate_2d.o : gwcom.o
 truncation.o : ../../Modules/cell_base.o
 truncation.o : ../../Modules/constants.o
+truncation.o : ../../Modules/coulomb_vcut.o
 truncation.o : ../../Modules/kind.o
 truncation.o : gwcom.o
 unfold_w.o : ../../LR_Modules/lrcom.o

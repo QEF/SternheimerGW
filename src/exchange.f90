@@ -250,17 +250,23 @@ CONTAINS
   END SUBROUTINE exchange_map
 
   !> Evaluate the Coulomb potential for all vectors within the exchange grid.
-  SUBROUTINE exchange_coulomb(tpiba, method, exchange_grid, qvec, coulomb)
+  SUBROUTINE exchange_coulomb(tpiba, method, vcut, exchange_grid, qvec, coulomb)
 
-    USE fft_custom,        ONLY: fft_cus
-    USE kinds,             ONLY: dp
-    USE truncation_module, ONLY: truncate
+    use cell_base, only: at
+
+    USE coulomb_vcut_module, ONLY: vcut_type
+    USE fft_custom,          ONLY: fft_cus
+    USE kinds,               ONLY: dp
+    USE truncation_module,   ONLY: truncate
 
     !> \f$2 \pi / a\f$ where \f$a\f$ is the first dimension of the lattice
     REAL(dp), INTENT(IN) :: tpiba
 
     !> The ID of the truncation method used
     INTEGER,  INTENT(IN) :: method
+
+    !> The truncated Coulomb potential
+    TYPE(vcut_type), INTENT(IN) :: vcut
 
     !> The grid used to calculate the exchange
     TYPE(fft_cus), INTENT(IN) :: exchange_grid
@@ -290,7 +296,7 @@ CONTAINS
       q_G = (qvec + exchange_grid%gt(:,ig)) * tpiba
       !
       ! evaluate the truncated coulomb potential
-      coulomb(ig) = truncate(method, q_G)
+      coulomb(ig) = truncate(method, vcut, q_G)
       !
     END DO ! ig
 
@@ -298,11 +304,12 @@ CONTAINS
 
   !> Extract the necessary quantities and evaluate the exchange according
   !! to the following algorithm.
-  SUBROUTINE exchange_wrapper(ikpt)
+  SUBROUTINE exchange_wrapper(ikpt, vcut)
 
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
     USE control_gw,         ONLY: output, nbnd_occ, truncation
+    USE coulomb_vcut_module,ONLY: vcut_type
     USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
     USE gvect,              ONLY: mill
@@ -320,6 +327,9 @@ CONTAINS
 
     !> The index of the k-point for which the exchange is evaluated
     INTEGER, INTENT(IN) :: ikpt
+
+    !> The truncated Coulomb potential
+    TYPE(vcut_type), INTENT(IN) :: vcut
 
     !> temporary array to distribute the work
     INTEGER, ALLOCATABLE :: num_task(:)
@@ -390,7 +400,7 @@ CONTAINS
       !!
       ! q = k - (k - q)
       qvec = xk_kpoints(:, ikpt) - xk(:, ikq)
-      CALL exchange_coulomb(tpiba, truncation, sigma_x_st, qvec, coulomb)
+      CALL exchange_coulomb(tpiba, truncation, vcut, sigma_x_st, qvec, coulomb)
       !!
       !! 5. every process evaluates his contribution to sigma
       !!

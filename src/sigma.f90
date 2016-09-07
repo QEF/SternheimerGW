@@ -122,11 +122,12 @@ CONTAINS
 
   !> This function provides a wrapper that extracts the necessary information
   !! from the global modules to evaluate the self energy.
-  SUBROUTINE sigma_wrapper(ikpt, freq, config)
+  SUBROUTINE sigma_wrapper(ikpt, freq, vcut, config)
 
     USE cell_base,       ONLY: omega
     USE constants,       ONLY: tpi
     USE control_gw,      ONLY: multishift, tr2_green, output, tmp_dir_coul
+    USE coulomb_vcut_module, ONLY: vcut_type
     USE disp,            ONLY: x_q
     USE ener,            ONLY: ef
     USE freqbins_module, ONLY: freqbins_type
@@ -152,6 +153,9 @@ CONTAINS
 
     !> type containing the information about the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
+
+    !> the truncated Coulomb potential
+    TYPE(vcut_type), INTENT(IN) :: vcut
 
     !> evaluate the self-energy for these configurations
     TYPE(sigma_config_type), INTENT(IN) :: config(:)
@@ -296,7 +300,7 @@ CONTAINS
       IF (config(icon)%index_q /= iq) THEN
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-        CALL coulpade(coulomb, x_q(:,iq))
+        CALL coulpade(coulomb, x_q(:,iq), vcut)
       END IF
       !
       ! determine the prefactor

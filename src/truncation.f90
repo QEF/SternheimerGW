@@ -57,6 +57,20 @@ MODULE truncation_module
   CHARACTER(LEN=trunc_length), PARAMETER :: FILM_TRUNCATION_3 = '2d'
   CHARACTER(LEN=trunc_length), PARAMETER :: FILM_TRUNCATION_4 = '2d truncation'
 
+  !> spherical truncation using the QE coulomb_vcut module
+  INTEGER, PARAMETER :: VCUT_SPHERICAL_TRUNCATION = 3
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_SPHERICAL_TRUNCATION_1 = 'vcut spherical'
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_SPHERICAL_TRUNCATION_2 = 'vcut spherical truncation'
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_SPHERICAL_TRUNCATION_3 = 'spherical vcut'
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_SPHERICAL_TRUNCATION_4 = 'spherical truncation vcut'
+
+  !> Wigner-Seitz truncation using the QE coulomb_vcut module
+  INTEGER, PARAMETER :: VCUT_WIGNER_SEITZ_TRUNCATION = 4
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_WIGNER_SEITZ_TRUNCATION_1 = 'wigner-seitz'
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_WIGNER_SEITZ_TRUNCATION_2 = 'wigner-seitz truncation'
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_WIGNER_SEITZ_TRUNCATION_3 = 'ws'
+  CHARACTER(LEN=trunc_length), PARAMETER :: VCUT_WIGNER_SEITZ_TRUNCATION_4 = 'ws truncation'
+
   PRIVATE truncate_bare, truncate_spherical, truncate_film
  
 CONTAINS
@@ -79,21 +93,41 @@ CONTAINS
   !! this truncation scheme, set truncation to 'on', 'true', 'yes', 'spherical', or
   !! 'spherical truncation' in the input file.
   !!
+  !! There is an alternative implementation of the spherical truncation inside of
+  !! QuantumEspresso. To activate it set truncation to 'vcut spherical', 'vcut
+  !! spherical truncation', 'spherical vcut', or 'spherical truncation vcut' in the
+  !! input file. The difference between these implementations is only in the choice
+  !! of the radius of the sphere. Note that this will significantly increase the
+  !! setup time, because the vcut type is initialized.
+  !!
   !! <h4> Film truncation </h4>
   !! We truncate at a certain height Z, which eliminates the divergence in reciprocal
   !! space. For details refer to Ismail-Beigi, Phys. Rev. B 73, 233103 (2006). To
   !! activate this truncation scheme, set truncation to 'film', '2d', 'film truncation',
   !! or '2d truncation' in the input file.
   !!
-  FUNCTION truncate(method, kpt) RESULT (factor)
+  !! <h4> Wigner-Seitz truncation </h4>
+  !! We truncate the potential to the actual super cell of the calculation as defined
+  !! by the q-point mesh. For this we separate the potential into a short- and a 
+  !! long-range part. The short-range part is evaluated analytically and the long-range
+  !! one via a Fourier transform. Because this evaluation is computationally costly,
+  !! it is done once at the beginning of the calculation and tabulated. Expect an
+  !! significantly increases setup time, though. To select this truncation set
+  !! truncation to 'wigner-seitz', 'wigner-seitz truncation', 'ws', or 'ws truncation'
+  !! in the input file.
+  !!
+  FUNCTION truncate(method, vcut, kpt) RESULT (factor)
 
-    USE cell_base, ONLY: at, alat, omega
-    USE constants, ONLY: fpi
-    USE disp,      ONLY: nq1, nq2, nq3
+    USE cell_base,           ONLY: at, alat, omega
+    USE constants,           ONLY: fpi
+    USE coulomb_vcut_module, ONLY: vcut_type, vcut_spheric_get, vcut_get
+    USE disp,                ONLY: nq1, nq2, nq3
 
     !> Truncation method used; must be one of the integer constants
     !! defined in this module.
     INTEGER,  INTENT(IN) :: method
+    !> The truncated potential evaluated with the QE coulomb_vcut module
+    TYPE(vcut_type), INTENT(IN) :: vcut
     !> Reciprocal lattice vector for which the quantity is truncated.
     REAL(dp), INTENT(IN) :: kpt(3)
 
@@ -119,6 +153,14 @@ CONTAINS
       ! cutoff height
       length_cut = 0.5 * SQRT(SUM(at(:,3)**2)) * alat * nq3
       factor = truncate_film(kpt, length_cut)
+
+    CASE (VCUT_SPHERICAL_TRUNCATION)
+
+      factor = vcut_spheric_get(vcut, kpt)
+
+    CASE (VCUT_WIGNER_SEITZ_TRUNCATION)
+
+      factor = vcut_get(vcut,kpt)
 
     END SELECT ! method
 

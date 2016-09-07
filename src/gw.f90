@@ -95,9 +95,9 @@ program gw
          call run_nscf(do_band, do_matel, ik, config)
          call initialize_gw(.FALSE.)
          call stop_clock(time_setup)
-         if (do_sigma_c) call sigma_wrapper(ik, freq, config)
+         if (do_sigma_c) call sigma_wrapper(ik, freq, vcut, config)
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
-         if (do_sigma_exx) call exchange_wrapper(ik)
+         if (do_sigma_exx) call exchange_wrapper(ik, vcut)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
          if (do_sigma_matel) then
            if (meta_ionode .AND. ik == w_of_k_start) then         

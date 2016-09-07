@@ -341,6 +341,14 @@ SUBROUTINE gwq_readin(freq, vcut)
     CASE (FILM_TRUNCATION_1, FILM_TRUNCATION_2, FILM_TRUNCATION_3, FILM_TRUNCATION_4)
       method_truncation = FILM_TRUNCATION
 
+    CASE (VCUT_SPHERICAL_TRUNCATION_1, VCUT_SPHERICAL_TRUNCATION_2, &
+          VCUT_SPHERICAL_TRUNCATION_3, VCUT_SPHERICAL_TRUNCATION_4)
+      method_truncation = VCUT_SPHERICAL_TRUNCATION
+
+    CASE (VCUT_WIGNER_SEITZ_TRUNCATION_1, VCUT_WIGNER_SEITZ_TRUNCATION_2, &
+          VCUT_WIGNER_SEITZ_TRUNCATION_3, VCUT_WIGNER_SEITZ_TRUNCATION_4)
+      method_truncation = VCUT_WIGNER_SEITZ_TRUNCATION
+
     END SELECT ! truncation
 
     ! convert frequencies to Ry
@@ -607,20 +615,26 @@ SUBROUTINE gwq_readin(freq, vcut)
   !
   ! setup the truncation
   !
-  ! determine supercell
-  atws = alat * at
-  !
-  atws(:,1) = atws(:,1) * nq1
-  atws(:,2) = atws(:,2) * nq2
-  atws(:,3) = atws(:,3) * nq3
-  !
-  ! we should use a quarter of the cutoff, because vcut assumes WF cutoff
-  ! and converts to density cutoff, but for some reason the scaling is
-  ! a bit different then for the custom FFT type, so that we increase the
-  ! prefactor to 0.3 to be on the safe side
-  ecut_vcut = 0.30_dp * MAX(ecutsco, ecutsex)
-  CALL vcut_init(vcut, atws, ecut_vcut)
-  CALL vcut_info(stdout, vcut)
+  ! note: this step is computationally expensive, so we only do it if necessary
+  IF (method_truncation == VCUT_SPHERICAL_TRUNCATION .OR. &
+      method_truncation == VCUT_WIGNER_SEITZ_TRUNCATION) THEN
+    !
+    ! determine supercell
+    atws = alat * at
+    !
+    atws(:,1) = atws(:,1) * nq1
+    atws(:,2) = atws(:,2) * nq2
+    atws(:,3) = atws(:,3) * nq3
+    !
+    ! we should use a quarter of the cutoff, because vcut assumes WF cutoff
+    ! and converts to density cutoff, but for some reason the scaling is
+    ! a bit different then for the custom FFT type, so that we increase the
+    ! prefactor to 0.3 to be on the safe side
+    ecut_vcut = 0.30_dp * MAX(ecutsco, ecutsex)
+    CALL vcut_init(vcut, atws, ecut_vcut)
+    CALL vcut_info(stdout, vcut)
+    !
+  END IF ! vcut truncation methods
 
   FLUSH(stdout)
 
