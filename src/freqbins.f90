@@ -157,7 +157,9 @@ CONTAINS
       !!
       CALL freqbins_equidist_grid(zero, max_coul, num_coul, grid)
       ALLOCATE(freq%coul(num_coul))
+      ALLOCATE(freq%weight(num_coul))
       freq%coul = CMPLX(grid, zero, KIND = dp)
+      freq%weight = max_coul / REAL(num_coul, KIND = dp)
       DEALLOCATE(grid)
       !
     ELSE
