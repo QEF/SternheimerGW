@@ -58,7 +58,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   USE bicgstab_module,      ONLY : bicgstab
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
-  USE constants,            ONLY : degspin
+  USE constants,            ONLY : eps14
   USE control_gw,           ONLY : nmix_gw, tr2_gw, &
                                    lgamma, convt, nbnd_occ, alpha_mix
   USE dv_of_drho_lr,        ONLY : dv_of_drho
@@ -202,14 +202,11 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   !> 10^-10
   REAL(dp),    PARAMETER :: eps10 = 1e-10_dp
 
-  !> empty string
-  CHARACTER(LEN=256), PARAMETER :: empty = ''
-
   CALL start_clock (time_coul_solver)
 
   ! determine number of frequencies
   num_freq = SIZE(freq)
-  zero_freq = freq(1) == zero
+  zero_freq = ABS(freq(1)) < eps14
 
   ! use the direct solver
   direct_solver = num_iter == 1
@@ -256,7 +253,11 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   ELSE
     dvscfins => dvscfin
   ENDIF
-  IF (noncolin) ALLOCATE (dbecsum_nc(nhm, nhm, nat, nspin, num_freq))
+  IF (noncolin) THEN
+    ALLOCATE(dbecsum_nc(nhm, nhm, nat, nspin, num_freq))
+  ELSE
+    ALLOCATE(dbecsum_nc(1, 1, nat, nspin, num_freq))
+  END IF
   ALLOCATE(aux(dffts%nnr, npol))
 
   convt = .FALSE.
@@ -586,7 +587,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   DEALLOCATE(dvscfin)
   DEALLOCATE(dpsi)
   IF (doublegrid) DEALLOCATE(dvscfins)
-  IF (noncolin) DEALLOCATE(dbecsum_nc)
+  DEALLOCATE(dbecsum_nc)
 
   CALL stop_clock(time_coul_solver)
 
