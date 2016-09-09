@@ -349,7 +349,7 @@ CONTAINS
     REAL(dp) lorentzian
 
     !> 2 pi i
-    COMPLEX(dp), PARAMETER :: c2PiI = CMPLX(tpi, 1.0, KIND=dp)
+    COMPLEX(dp), PARAMETER :: c2PiI = CMPLX(0.0_dp, tpi, KIND=dp)
 
     CALL start_clock(time_green)
 
