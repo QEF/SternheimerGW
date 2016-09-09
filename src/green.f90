@@ -381,7 +381,7 @@ CONTAINS
         freq_eps = freq(ifreq) - eval(iband)
 
         ! determine the value of the Lorentzian
-        lorentzian = IMAG(freq(ifreq)) / (pi * ABS(freq_eps)**2)
+        lorentzian = AIMAG(freq(ifreq)) / (pi * ABS(freq_eps)**2)
 
         ! loop over G and G'
         DO igp = 1, num_g_corr
