@@ -105,7 +105,7 @@ program gw
            end if
            call sigma_matel(ik, freq)
          end if
-         call clean_pw_gw(ik, .TRUE.)
+         call clean_pw_gw(.TRUE.)
       enddo
   end if
   call close_gwq(.TRUE.)

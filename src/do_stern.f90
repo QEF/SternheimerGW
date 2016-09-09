@@ -135,7 +135,7 @@ IMPLICIT NONE
       IF (meta_ionode) scrcoul_g(1,1,:) = eps_m
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
-      CALL clean_pw_gw(iq, .FALSE.)
+      CALL clean_pw_gw(.FALSE.)
 
     END IF ! gamma & root
 
@@ -200,7 +200,7 @@ IMPLICIT NONE
     IF (ALLOCATED(num_task)) DEALLOCATE(num_task)
 
     CALL mp_barrier(inter_image_comm)
-    CALL clean_pw_gw(iq, .FALSE.)
+    CALL clean_pw_gw(.FALSE.)
     IF(do_q0_only) EXIT
     CALL print_clock ('epsilq')
     CALL stop_clock ('epsilq')
