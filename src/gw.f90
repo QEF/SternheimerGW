@@ -75,7 +75,7 @@ program gw
   
   call gwq_readin(freq, vcut)
   call check_stop_init()
-  call check_initial_status(auxdyn)
+  call check_initial_status()
 ! Initialize frequency grids, FFT grids for correlation
 ! and exchange operators, open relevant GW-files.
   call freqbins(do_imag, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
