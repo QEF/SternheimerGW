@@ -698,7 +698,7 @@ CONTAINS
 #else
 
     ! create a copy of the input array
-    ALLOCATE(array_out(SIZE(array_in, 1), SIZE(array_in, 2)))
+    ALLOCATE(array_out(SIZE(array_in, 1)))
     array_out = array_in
 
 #endif
