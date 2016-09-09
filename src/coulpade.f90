@@ -21,16 +21,13 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE coulpade(scrcoul_g, xq_ibk, vcut)
-  USE kinds,         ONLY : DP
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, truncation
-  USE freq_gw,       ONLY : fiu, nfs
-  USE gwsigma,       ONLY : sigma_c_st, gcutcorr
-  USE gvect,         ONLY : g, ngm, nl
-  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
-  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE lr_symm_base,  ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
+
+  USE cell_base,         ONLY : tpiba
+  USE control_gw,        ONLY : godbyneeds, padecont, modielec, truncation
+  USE freq_gw,           ONLY : fiu, nfs
+  USE gwsigma,           ONLY : gcutcorr
+  USE gvect,             ONLY : g
+  USE kinds,             ONLY : DP
   USE truncation_module, ONLY : truncate, vcut_type
 
   IMPLICIT NONE
@@ -40,25 +37,15 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk, vcut)
 
   complex(DP) ::  scrcoul_g   (gcutcorr, gcutcorr, nfs)
   complex(DP) :: z(nfs), u(nfs), a(nfs)
-  complex(DP) :: phase
-  complex(DP) :: eigv     (ngm, nrot)  
 
-  real(DP) :: qg2, qg, qxy, qz, q_G(3)
-  real(DP) :: rcut, spal, zcut, factor
-  real(DP) :: xq_ibk(3), xq_ibz(3)
+  real(DP) :: q_G(3)
+  real(DP) :: factor
+  real(DP) :: xq_ibk(3)
 
-  integer :: gmapsym  (ngm, nrot) 
-  integer :: ig, igp, irr, icounter, ir, irp
-  integer :: iwim, iw, ikq
-  integer :: iqstart, iqstop, iqs, nkr
-  integer :: iq, ipol, iqrec, isym
-
-  logical :: pade_catch
-  logical :: found_q
-  logical :: limq, inv_q, found
+  integer :: ig, igp
+  integer :: iw
 
 !Rotate G_vectors for FFT.
-   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    if(.not.modielec) THEN
        do iw = 1, nfs
          do ig = 1, gcutcorr
@@ -77,7 +64,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk, vcut)
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
                do iw = 1, nfs
-                  z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
+                  z(iw) = cmplx(aimag(fiu(iw)), 0.0_dp, kind=dp)
                   u(iw) = scrcoul_g(ig, igp, iw)
                enddo
                call godby_needs_coeffs(nfs, z, u, a)
