@@ -64,6 +64,8 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq, nwgreen, w_ryd)
 
   IMPLICIT NONE 
 
+  INTEGER, INTENT(IN) :: nwgreen
+
   !should be freq blocks...
   COMPLEX(DP) :: gr_A_shift(npwx, nwgreen)
   COMPLEX(DP) :: gr_A(npwx, 1), rhs(npwx , 1)
@@ -79,7 +81,7 @@ SUBROUTINE green_linsys_shift_re (green, mu, iq, nwgreen, w_ryd)
   REAL(DP) :: thresh, anorm, averlt, dr2, sqrtpi
   REAL(DP) :: tr_cgsolve = 1.0d-4
   REAL(DP) :: ehomo, elumo, mu
-  INTEGER :: iw, igp, iw0, nwgreen
+  INTEGER :: iw, igp, iw0
   INTEGER :: iq, ik0
   INTEGER :: rec0, n1, gveccount
   INTEGER, ALLOCATABLE      :: niters(:)
