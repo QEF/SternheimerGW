@@ -31,34 +31,22 @@ SUBROUTINE gwq_init(coulomb)
   !     3) Computes the preconditioner for the linear system solver.
   !
   !
-  USE kinds,                ONLY : DP
-  USE cell_base,            ONLY : bg, tpiba, tpiba2, omega
-  USE ions_base,            ONLY : nat, ntyp => nsp, ityp, tau
   USE becmod,               ONLY : calbec
+  USE buffers,              ONLY : get_buffer
   USE constants,            ONLY : eps8, tpi
-  USE gvect,                ONLY : g, ngm
+  USE control_gw,           ONLY : nbnd_occ, lgamma
+  USE eqv_gw,               ONLY : evq, eprectot
+  USE io_global,            ONLY : stdout
+  USE ions_base,            ONLY : nat, tau
+  USE kinds,                ONLY : DP
   USE klist,                ONLY : xk, nkstot, ngk
   USE lsda_mod,             ONLY : lsda, current_spin, isk
-  USE buffers,              ONLY : get_buffer
-  USE io_global,            ONLY : stdout, meta_ionode_id
-  USE atom,                 ONLY : msh, rgrid
-  USE vlocal,               ONLY : strf
-  USE spin_orb,             ONLY : lspinorb
-  USE wvfct,                ONLY : g2kin, npwx, npw, nbnd
-  USE gvecw,                ONLY : ecutwfc
-  USE wavefunctions_module, ONLY : evc
+  USE mp,                   ONLY : mp_sum
+  USE mp_pools,             ONLY : inter_pool_comm, my_pool_id, npool, kunit
   USE noncollin_module,     ONLY : noncolin, npol
-  USE uspp,                 ONLY : okvan, vkb
-  USE uspp_param,           ONLY : upf
-  USE eqv_gw,               ONLY : vlocq, evq, eprectot
-  USE nlcc_gw,              ONLY : nlcc_any
-  USE control_gw,           ONLY : nbnd_occ, lgamma
-  USE units_gw,             ONLY : lrwfc, iuwfc
   USE qpoint,               ONLY : xq, npwq, nksq, eigqts, ikks, ikqs
-  USE mp_bands,            ONLY : intra_bgrp_comm
-  USE mp,                  ONLY : mp_sum
-  USE mp_pools,            ONLY : inter_pool_comm, my_pool_id, npool, kunit
-  USE mp_world,             ONLY : nproc, mpime
+  USE units_gw,             ONLY : lrwfc, iuwfc
+  USE wvfct,                ONLY : g2kin, npwx, npw, nbnd
   !
   IMPLICIT NONE
   !
@@ -66,8 +54,7 @@ SUBROUTINE gwq_init(coulomb)
   LOGICAL, INTENT(IN) :: coulomb
   ! ... local variables
 
-  INTEGER :: nt, ik, ikq, ipol, ibnd, ikk, na, ig, irr, imode0
-    ! counter on atom types
+  INTEGER :: ik, ikq, ipol, ibnd, ikk, na, ig
     ! counter on k points
     ! counter on k+q points
     ! counter on polarizations
@@ -155,7 +142,7 @@ SUBROUTINE gwq_init(coulomb)
      END IF
      !
      DO ibnd= 1, nbnd_occ(ikk)
-        eprectot (ibnd, nbase+ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
+        eprectot (ibnd, nbase+ik) = 1.35d0 * REAL(zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1))
      END DO
      !
   END DO
