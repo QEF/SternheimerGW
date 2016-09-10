@@ -62,72 +62,30 @@
   !   followed by the remaining nrot-nsym sym.ops. of the Bravais  group
   !
 
-  USE kinds,         ONLY : DP
-  USE ions_base,     ONLY : tau, nat, ntyp => nsp, ityp
-  USE cell_base,     ONLY : at, bg  
-  USE io_global,     ONLY : stdout
-  USE ener,          ONLY : Ef
-  USE klist,         ONLY : xk, lgauss, degauss, ngauss, nks, nelec
-  USE ktetra,        ONLY : ltetra, tetra
-  USE lsda_mod,      ONLY : nspin, lsda, starting_magnetization
-  USE scf,           ONLY : v, vrs, vltot, rho, rho_core, kedtau
-  USE fft_base,      ONLY : dfftp
-  USE gvect,         ONLY : ngm
-  USE gvecs,       ONLY : doublegrid
-  USE symm_base,     ONLY : nrot, nsym, s, ftau, irt, t_rev, time_reversal, &
-                            sr, invs, inverse_s
-  USE uspp_param,    ONLY : upf
-  USE spin_orb,      ONLY : domag
-  USE constants,     ONLY : degspin, pi
-  USE noncollin_module,   ONLY : noncolin, m_loc, angle1, angle2, ux, nspin_mag
-  USE wvfct,              ONLY : nbnd, et
-  USE nlcc_gw,       ONLY : drc, nlcc_any
-  USE eqv,           ONLY : dmuxc
-  USE control_gw,    ONLY : rec_code, lgamma_gamma, search_sym, start_irr, &
-                            last_irr, niter_gw, alpha_mix, all_done, &
-                            epsil, lgamma, recover, where_rec, alpha_pv, &
-                            nbnd_occ, flmixdpot, reduce_io, rec_code_read, &
-                            done_epsil, zeu, done_zeu, current_iq, just_corr
-  USE output_mod,    ONLY : fildrho
-  USE lr_symm_base,  ONLY : gi, gimq, irgq, minus_q, nsymq, rtau
-  USE efield_mod,    ONLY : epsilon, zstareu
-  USE qpoint,        ONLY : xq
-  USE partial,       ONLY : comp_irr, atomo, nat_todo, list, nrapp, all_comp, &
-                            done_irr
-  USE gamma_gamma,   ONLY : has_equivalent, asr, nasr, n_diff_sites, &
-                            equiv_atoms, n_equiv_atoms, with_symmetry
-  USE control_flags, ONLY : iverbosity, modenum, noinv
-  USE disp,          ONLY : comp_irr_iq
-  USE funct,         ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
-  USE mp,            ONLY : mp_max, mp_min
-  USE mp_pools,      ONLY : inter_pool_comm, npool
+  USE constants,          ONLY : eps14
+  USE control_flags,      ONLY : noinv
+  USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot
+  USE fft_base,           ONLY : dfftp
+  USE funct,              ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
+  USE gvecs,              ONLY : doublegrid
+  USE gvect,              ONLY : ngm
+  USE ions_base,          ONLY : ntyp => nsp
+  USE lsda_mod,           ONLY : nspin
+  USE mp,                 ONLY : mp_max, mp_min
+  USE nlcc_gw,            ONLY : drc, nlcc_any
+  USE noncollin_module,   ONLY : noncolin
+  USE scf,                ONLY : v, vrs, vltot, kedtau
+  USE spin_orb,           ONLY : domag
+  USE symm_base,          ONLY : time_reversal, inverse_s
+  USE uspp_param,         ONLY : upf
 
 
   implicit none
 
-  real(DP) :: rhotot, rhoup, rhodw, target, small, fac, xmax, emin, emax
-  ! total charge
-  ! total up charge
-  ! total down charge
-  ! auxiliary variables used
-  ! to set nbnd_occ in the metallic case
-  ! minimum band energy
-  ! maximum band energy
-
-  real(DP) :: sr_is(3,3,48)
-
-  integer :: ir, isym, jsym, irot, ik, ibnd, ipol, &
-       mu, nu, imode0, irr, ipert, na, it, nt, is, js, nsym_is, last_irr_eff
+  integer :: it
   ! counters
 
-  real(DP) :: auxdmuxc(4,4)
-  real(DP), allocatable :: w2(:)
-
-  logical :: sym (48), is_symmorgwic, magnetic_sym
-  integer, allocatable :: ifat(:)
-  integer :: ierr
-
-  real(DP) :: dmxc_corr
+  logical :: magnetic_sym
 
   call start_clock ('gwq_setup')
   !
@@ -186,7 +144,7 @@
   !set the alpha_mix parameter
   !HL probably want restart functionality here.
   do it = 2, niter_gw
-     if (alpha_mix (it) .eq.0.d0) alpha_mix (it) = alpha_mix (it - 1)
+     if (alpha_mix (it) < eps14) alpha_mix (it) = alpha_mix (it - 1)
   enddo
 
   flmixdpot = 'mixd'
@@ -215,7 +173,7 @@ function dmxc_corr (rho)
   !
   ! local variables
   !
-  real(DP) :: dr, vxp, vcp, vxm, vcm, vx, ex, ec, rs
+  real(DP) :: dr, vxp, vcp, vxm, vcm, ex, ec, rs
   real(DP), external :: dpz
   integer :: iflg
   !
