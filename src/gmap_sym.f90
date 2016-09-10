@@ -41,20 +41,13 @@
   !
   !
   !----------------------------------------------------------------------
-!#include "f_defs.h"
-  USE kinds,         ONLY : DP
-  USE io_global,     ONLY : stdout
-  USE control_flags, ONLY : iverbosity
-  USE gvect,         ONLY : mill, ngm, g
-  USE cell_base,     ONLY : at, bg
-  USE mp_world,      ONLY : mpime
-  USE fft_base,      ONLY : dfftp
-  USE fft_custom,     ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE gwsigma,       ONLY : sigma_x_st, nbnd_sig
 
-#ifdef __PARA
-  USE mp_global,    ONLY : my_pool_id
-#endif
+  USE fft_base,      ONLY : dfftp
+  USE fft_custom,    ONLY : set_custom_grid, ggent, gvec_init
+  USE gvect,         ONLY : mill, ngm
+  USE kinds,         ONLY : DP
+  USE mp_world,      ONLY : mpime
+
   implicit none
   !
   ! input variables
@@ -78,10 +71,9 @@
   integer :: ig, jg, i, j, k, notfound, isym, ism1
   logical :: tfound
   real(kind=DP), PARAMETER :: twopi = 6.28318530717959
-  real(kind=DP) :: rdotk, ft(3)
+  real(kind=DP) :: rdotk
   complex(kind=DP), PARAMETER :: ci = (0.d0,1.d0), &
-     czero = (0.d0, 0.d0), cone = (1.d0, 0.d0)
-  TYPE(fft_cus) fc 
+     cone = (1.d0, 0.d0)
 
   !
   !  loop on the symmetries of the crystal
