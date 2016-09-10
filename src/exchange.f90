@@ -316,7 +316,7 @@ CONTAINS
     USE mp_images,          ONLY: inter_image_comm, root_image
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
     USE parallel_module,    ONLY: parallel_task, mp_root_sum
-    USE qpoint,             ONLY: nksq, ikks, ikqs
+    USE qpoint,             ONLY: nksq, ikqs
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
     USE timing_module,      ONLY: time_sigma_x
@@ -330,9 +330,6 @@ CONTAINS
 
     !> temporary array to distribute the work
     INTEGER, ALLOCATABLE :: num_task(:)
-
-    !> the first and last q-point on this process
-    INTEGER iq_start, iq_stop
 
     !> counter on the q points
     INTEGER iq
@@ -351,9 +348,6 @@ CONTAINS
 
     !> a map from two G indices on the index of their difference
     INTEGER,     ALLOCATABLE :: map(:,:)
-
-    !> the indices of the G vectors at q
-    INTEGER,     ALLOCATABLE :: index_g_coul(:)
 
     !> the truncated Coulomb potential
     REAL(dp),    ALLOCATABLE :: coulomb(:)
