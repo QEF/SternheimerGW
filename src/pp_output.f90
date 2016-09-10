@@ -67,8 +67,6 @@ CONTAINS
     INTEGER, INTENT(IN) :: nw_im
     TYPE(output_type), INTENT(INOUT) :: output
 
-    INTEGER dim_re, dim_im
-
     CHARACTER(LEN=name_length) prefix
 
     ! bands for band structures
