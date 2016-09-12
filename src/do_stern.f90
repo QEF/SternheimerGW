@@ -188,7 +188,7 @@ IMPLICIT NONE
 
       ! unfold W from reduced array to full array
       ! also reorder the indices
-      CALL unfold_w(iq, scrcoul_root, scrcoul_g)
+      CALL unfold_w(scrcoul_root, scrcoul_g)
 
       ! for the direct solver W = eps^-1
       IF (solve_direct .AND. tinvert) THEN
