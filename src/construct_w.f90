@@ -22,12 +22,11 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
 
-  USE cell_base,     ONLY : tpiba2, omega
-  USE constants,     ONLY : e2, fpi, eps8, pi
+  USE cell_base,     ONLY : omega
+  USE constants,     ONLY : pi
   USE control_gw,    ONLY : eta, godbyneeds, padecont, modielec, do_imag
   USE disp,          ONLY : nq1, nq2, nq3
   USE freq_gw,       ONLY : fiu, nfs
-  USE gvect,         ONLY : g
   USE gwsigma,       ONLY : gcutcorr
   USE kinds,         ONLY : DP
   USE mp_global,     ONLY : mp_global_end
@@ -39,15 +38,11 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
   complex(DP) :: z(nfs), a(nfs)
   complex(DP)  :: scrcoul_g    (gcutcorr, gcutcorr, nfs) 
 
-  real(DP) :: qg2, qg
   real(DP) :: w_ryd
-  real(DP) :: rcut, spal
-  real(DP) :: xq_ibk(3)
+  real(DP) :: rcut
 
   integer :: ig, igp
   integer  :: iwim
-
-  logical             :: limq
 
   CALL start_clock(time_construct_w)
 
@@ -73,24 +68,8 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
            endif
         enddo
      enddo
-   else if (modielec) then
-       do ig = 1, gcutcorr
-          CALL mod_diel(ig, xq_ibk, w_ryd, scrcoul_pade_g(ig,ig), 1)
-!scrcoul_pade_g(ig,ig) = mod_dielec_(xq,w_ryd,ig)*v_(q+G,truncation)
-           qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-           limq = (qg2.lt.eps8) 
-           if(.not.limq) then
-              scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*cmplx(e2 * fpi / (tpiba2 * qg2), 0.0_dp, kind=dp)
-           endif
-           qg = sqrt(qg2)
-           spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!Normal case using truncated coulomb potential.
-           if(.not.limq) then
-                 scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*cmplx(spal, 0.0_dp, kind=dp)
-           else
-                 scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*cmplx((fpi * e2 * rcut**2) / 2.0_dp, 0.0_dp, kind=dp)
-           endif
-        enddo
+   else
+     CALL errore(__FILE__, "modielec not maintained anymore", 1)
    endif
 
    CALL stop_clock(time_construct_w)

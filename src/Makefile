@@ -41,7 +41,6 @@ invert_epsilon.o\
 kind_gw.o\
 linear_op.o\
 mix_pot_c.o\
-mod_diel.o\
 openfilq.o\
 opengwfil.o\
 pade.o\
