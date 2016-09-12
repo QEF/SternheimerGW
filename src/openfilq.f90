@@ -27,42 +27,22 @@ SUBROUTINE openfilq()
 ! ... This subroutine opens all the files necessary for the GW q
 ! ... calculation.
  
-  USE kinds,          ONLY : DP
-  USE control_flags,  ONLY : io_level, modenum
-  USE units_gw,       ONLY : iuwfc, iudwf, iubar, iucom, iudvkb3, &
-                             iudrhous, iuebar, iudrho, iudyn, iudvscf, &
-                             lrwfc, lrdwf, lrbar, lrcom, lrdvkb3, lrcoul, &
-                             lrdrhous, lrebar, lrdrho, iudwfm, iudwfp, iuncoul, lrgrn, iungreen
-  USE io_files,       ONLY : tmp_dir, diropn, seqopn, wfc_dir
-  USE freq_gw,        ONLY : nfs
-  USE control_gw,     ONLY : ext_recover, trans, tmp_dir_gw, lgamma, do_coulomb
-  USE save_gw,        ONLY : tmp_dir_save
-  USE qpoint,         ONLY : nksq
-  USE output_mod,     ONLY : fildyn, fildvscf
-  USE wvfct,          ONLY : nbnd, npwx
-  USE fft_base,       ONLY : dfftp, dffts
-  USE lsda_mod,         ONLY : nspin
-  USE uspp,             ONLY : nkb, okvan
-  USE io_files,         ONLY : prefix
-  USE noncollin_module, ONLY : npol, nspin_mag
-  USE control_flags,    ONLY : twfcollect, io_level
-  USE mp_global,        ONLY : me_pool
-  USE io_global,        ONLY : ionode
   USE buffers,          ONLY : open_buffer
-  USE input_parameters, ONLY : nk1, nk2, nk3
-  USE mp_world,      ONLY : nproc, mpime
+  USE control_flags,    ONLY : io_level
+  USE control_gw,       ONLY : ext_recover, tmp_dir_gw, lgamma, do_coulomb
+  USE fft_base,         ONLY : dfftp
+  USE io_files,         ONLY : tmp_dir, diropn, seqopn, prefix
+  USE noncollin_module, ONLY : npol, nspin_mag
+  USE save_gw,          ONLY : tmp_dir_save
+  USE units_gw,         ONLY : iuwfc, iudwf, iubar, iudrhous, iudrho, lrwfc, &
+                               lrdwf, lrbar, lrdrhous, lrdrho, iudwfm, iudwfp
+  USE uspp,             ONLY : okvan
+  USE wvfct,            ONLY : nbnd, npwx
   !
   IMPLICIT NONE
   !
-  INTEGER :: ios
-  ! integer variable for I/O control
-  CHARACTER (len=256) :: filint
-  ! the name of the file
   LOGICAL :: exst, exst_mem
   ! logical variable to check file existe
-  !
-  REAL(DP) :: edum(1,1), wdum(1,1)
-  INTEGER :: ndr, ierr
   !
   !
   IF (LEN_TRIM(prefix) == 0) CALL errore ('openfilq', 'wrong prefix', 1)
