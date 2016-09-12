@@ -26,27 +26,25 @@ SUBROUTINE stern_symm()
 !of G vectors obtained here we uniquely reconstruct the full set of G vectors
 !even though I'm pretty sure that's the case...
 
-USE kinds,         ONLY : DP
-USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
-USE gwsigma,       ONLY : sigma_c_st, gcutcorr
+USE cell_base,     ONLY : at
+USE gvect,         ONLY : ngm
+USE gwsigma,       ONLY : gcutcorr
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
-USE gvect,         ONLY : g, ngm
-USE control_gw,    ONLY : loqua
-USE cell_base,     ONLY : at, bg
-USE qpoint,        ONLY : xq
 USE io_global,     ONLY : stdout
-USE symm_base,     ONLY : s, t_rev, irt, ftau, nrot, nsym, &
-                          time_reversal, copy_sym, inverse_s, s_axis_to_cart
+USE kinds,         ONLY : DP
+USE qpoint,        ONLY : xq
+USE symm_base,     ONLY : nsym, s, time_reversal, ftau, invs, &
+                          copy_sym, inverse_s, s_axis_to_cart
 
 IMPLICIT NONE
 
-INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
+INTEGER      :: ig, igp
 INTEGER      :: isym
 INTEGER      :: gmapsym(ngm,48)
 INTEGER      :: nsymq
 COMPLEX(DP)  :: eigv(ngm,48)
 LOGICAL      :: unique_g, invsymq
-LOGICAL      :: minus_q, magnetic_sym, sym(48)
+LOGICAL      :: minus_q, sym(48)
 
   ig_unique(:)  = 0
   gmapsym(:,:)  = 0
@@ -57,7 +55,7 @@ LOGICAL      :: minus_q, magnetic_sym, sym(48)
   ngmunique = 0
   minus_q=.false.
   sym(1:nsym)=.true.
-  call smallg_q (xq, 1, at, bg, nsym, s, ftau, sym, minus_q)
+  call smallg_q (xq, 1, at, nsym, s, sym, minus_q)
   IF ( .not. time_reversal ) minus_q = .false.
  ! Here we re-order all rotations in such a way that true sym.ops.
  ! are the first nsymq; rotations that are not sym.ops. follow
@@ -69,7 +67,7 @@ LOGICAL      :: minus_q, magnetic_sym, sym(48)
   invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
   if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
   if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')
-  WRITE(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4)') nsym,  nsymq
+  WRITE(stdout,'(/5x, "nsym, nsymq ", i4, i4)') nsym,  nsymq
   CALL s_axis_to_cart () 
   do isym = 1, nsymq
    WRITE(6,'(3i4)') s(:,:,isym)

@@ -63,12 +63,11 @@
   integer :: N
   complex(DP) :: z(N), u(N)
   complex(DP) :: g(N,N), a(N)
-  real(DP) :: ar, ai
   complex(DP) :: tmp1, tmp2
 
   !complex(selevted_real_kind(18,50))?
 
-  integer :: i, j, p
+  integer :: i, p
   !
   do p = 1, N
     if (p.eq.1) then
@@ -83,12 +82,6 @@
       enddo
     endif
     a(p) = g (p,p)
-  ! check whether a(p) is not NaN
-    ar = real(a(p))
-    ai = aimag(a(p))
-    if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-          a(:) = (0.0d0, 0.0d0)
-    endif
     !
   enddo
   !
@@ -123,7 +116,6 @@
   complex(DP) :: a(N), z(N), acap(0:N), bcap(0:N)
   complex(DP) :: w, padapp
   integer :: i
-  real(DP) :: ar, ai
 
   !
   acap(0) = 0.d0
@@ -137,12 +129,6 @@
   enddo
   padapp = acap(N)/bcap(N)
 
-!Turning on pade catch.
-  ar = real(padapp)
-  ai = aimag(padapp)
-  if ( ( ar .ne. ar ) .or. ( ai .ne. ai ) ) then
-    padapp = (0.0d0,0.0d0)
-  endif
   !
   end subroutine pade_eval
   !-----------------------------------------------------------

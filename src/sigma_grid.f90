@@ -191,12 +191,10 @@ CONTAINS
     USE cell_base,        ONLY : tpiba2
     USE control_flags,    ONLY : gamma_only
     USE freqbins_module,  ONLY : freqbins_type
-    USE gvecw,            ONLY : ecutwfc
     USE gwsigma,          ONLY : ecutsex, sigma_x_st, gexcut, &
                                  ecutsco, sigma_c_st, gcutcorr
     USE io_global,        ONLY : stdout, ionode
     USE kinds,            ONLY : dp
-    USE klist,            ONLY : qnorm
     USE mp_bands,         ONLY : comm => intra_bgrp_comm
     ! 
     IMPLICIT NONE

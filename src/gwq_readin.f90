@@ -31,65 +31,52 @@ SUBROUTINE gwq_readin(freq, vcut)
   !    by the self-consistent program.
   !
   !
-  USE kinds,         ONLY : DP
-  USE parameters,    ONLY : nsx
-  USE cell_base,     ONLY : at, alat
-  USE constants,     ONLY : RYTOEV
-  USE ions_base,     ONLY : nat, ntyp => nsp
-  USE io_global,     ONLY : ionode_id
-  USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
-  USE mp,               ONLY : mp_bcast
-  USE mp_world,         ONLY : world_comm
-  USE start_k,          ONLY : reset_grid, nks_start
-  USE input_parameters, ONLY : max_seconds, force_symmorphic
-  USE ions_base,     ONLY : amass, atm
-  USE klist,         ONLY : xk, nks, nkstot, lgauss, two_fermi_energies
-  USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir
-  USE uspp,          ONLY : okvan
-  USE fixed_occ,     ONLY : tfixed_occ
-  USE freqbins_module, ONLY : freqbins_type
-  USE lsda_mod,      ONLY : lsda, nspin
-  USE run_info,      ONLY : title
-  USE control_gw,    ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
-                            reduce_io, tr2_gw, niter_gw, tr2_green, &
-                            nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
-                            last_irr, start_q, last_q, current_iq, tmp_dir_gw, tmp_dir_coul, &
-                            ext_recover, ext_restart, u_from_file, modielec, eta, &
-                            do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                            cohsex, multishift, do_sigma_extra, &
-                            solve_direct, w_green_start, tinvert, coul_multishift,&
-                            trunc_2d, do_epsil, &
-                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                            high_io, prec_direct, prec_shift, just_corr,&
-                            double_grid, name_length, output, &
-                            method_truncation => truncation
-  USE save_gw,       ONLY : tmp_dir_save
-  USE qpoint,        ONLY : nksq, xq
-  USE partial,       ONLY : atomo, list, nat_todo, nrapp
-  USE output_mod,    ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
-  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
-                            xk_kpoints, kpoints, num_k_pts, & 
-                            w_of_q_start, w_of_k_start, w_of_k_stop
-  USE io_files,         ONLY : tmp_dir, prefix
-  USE noncollin_module, ONLY : i_cons, noncolin
-  USE ldaU,             ONLY : lda_plus_u
-  USE control_flags, ONLY : iverbosity, modenum
-  USE io_global,     ONLY : meta_ionode, meta_ionode_id, ionode, ionode_id, stdout
-  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
-                            me_image, nproc_image
-  USE mp_global,     ONLY : nproc_pool_file, &
-                            nproc_bgrp_file, nproc_image_file
-  USE mp_pools,      ONLY : nproc_pool, npool
-  USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
-  USE control_flags, ONLY : twfcollect
-  USE paw_variables, ONLY : okpaw
-  USE freq_gw,       ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
-                            wsig_wind_min, wsig_wind_max, nwsigwin
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
-  USE gwsymm,        ONLY : use_symm
+  USE cell_base,         ONLY : at, alat
+  USE constants,         ONLY : RYTOEV, eps12
+  USE control_flags,     ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
+  USE control_gw,        ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
+                                reduce_io, tr2_gw, niter_gw, tr2_green, &
+                                nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
+                                last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
+                                ext_recover, ext_restart, modielec, eta, &
+                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
+                                do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
+                                cohsex, multishift, do_sigma_extra, &
+                                solve_direct, w_green_start, tinvert, coul_multishift,&
+                                trunc_2d, do_epsil, &
+                                do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
+                                high_io, prec_direct, prec_shift, just_corr,&
+                                double_grid, name_length, output, &
+                                method_truncation => truncation
+  USE disp,              ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
+                                xk_kpoints, kpoints, num_k_pts, & 
+                                w_of_q_start, w_of_k_start, w_of_k_stop
+  USE freq_gw,           ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
+                                wsig_wind_min, wsig_wind_max, nwsigwin
+  USE freqbins_module,   ONLY : freqbins_type
+  USE gwsigma,           ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
+  USE gwsymm,            ONLY : use_symm
+  USE input_parameters,  ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
+  USE io_files,          ONLY : tmp_dir, prefix
+  USE io_global,         ONLY : meta_ionode, meta_ionode_id, stdout
+  USE ions_base,         ONLY : nat, amass
+  USE kinds,             ONLY : DP
+  USE klist,             ONLY : xk, nks, nkstot
+  USE lsda_mod,          ONLY : nspin
+  USE mp,                ONLY : mp_bcast
+  USE mp_global,         ONLY : nproc_pool_file, nproc_image_file
+  USE mp_images,         ONLY : my_image_id, nproc_image
+  USE mp_pools,          ONLY : nproc_pool
+  USE mp_world,          ONLY : world_comm
+  USE output_mod,        ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
+  USE parameters,        ONLY : nsx
+  USE partial,           ONLY : atomo, list, nat_todo, nrapp
+  USE qpoint,            ONLY : nksq, xq
+  USE run_info,          ONLY : title
+  USE save_gw,           ONLY : tmp_dir_save
+  USE start_k,           ONLY : reset_grid
   USE truncation_module
-  USE wrappers,      ONLY : f_mkdir_safe
+  USE wrappers,          ONLY : f_mkdir_safe
   !
   !
   IMPLICIT NONE
@@ -108,7 +95,7 @@ SUBROUTINE gwq_readin(freq, vcut)
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
-  INTEGER :: ios, ipol, iter, na, it, ierr
+  INTEGER :: ios, ipol, iter, na, ierr
   ! integer variable for I/O control
   ! counter on polarizations
   ! counter on iterations
@@ -394,7 +381,7 @@ SUBROUTINE gwq_readin(freq, vcut)
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
-  if(corr_conv.eq.0) corr_conv = ecutsco
+  if(ABS(corr_conv) < eps12) corr_conv = ecutsco
 !HL TEST PARA FINE
 30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
    CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
@@ -466,7 +453,7 @@ SUBROUTINE gwq_readin(freq, vcut)
         DO i = 1, nfs
            !HL Need to convert frequencies from electron volts into Rydbergs
            READ (5, *, iostat = ios) ar, ai 
-           freq%solver(i) = dcmplx(ar, ai) / RYTOEV
+           freq%solver(i) = CMPLX(ar, ai, KIND=dp) / RYTOEV
         END DO
      END IF
   END IF
@@ -546,8 +533,6 @@ SUBROUTINE gwq_readin(freq, vcut)
   ext_restart=.FALSE.
   ext_recover=.FALSE.
   recover=.false.
-
-1001 continue
 
   CALL read_file ( )
   force_symmorphic = .true.

@@ -25,19 +25,17 @@
 subroutine q_points ( )
 !---------------------------------------------------------
 
-  use kinds,      only : dp
-  use io_global,  only :  stdout, ionode, ionode_id
+  use cell_base,  only : bg
   use disp,       only : nq1, nq2, nq3, x_q, nqs, wq, iq1, iq2, iq3
-  use output_mod, only : fildyn
-  use symm_base,  only : nsym, s, time_reversal, t_rev, invs, nrot
-  use cell_base,  only : at, bg
-  use mp_images,  only : intra_image_comm
+  use io_global,  only : stdout
+  use kinds,      only : dp
   use mp,         only : mp_bcast
+  use symm_base,  only : nsym, s, time_reversal, t_rev
 
   implicit none
 
-  integer :: i, iq, ierr, iudyn = 26
-  logical :: exist_gamma, check, skip_equivalence=.FALSE.
+  integer :: i, iq
+  logical :: exist_gamma, skip_equivalence=.FALSE.
   logical, external :: check_q_points_sym
   real(DP), allocatable :: xq(:,:)
 

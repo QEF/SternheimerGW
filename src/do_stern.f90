@@ -26,6 +26,7 @@
 !! in the input file either a direct or an iterative solver is used.
 SUBROUTINE do_stern()
 
+  USE constants,        ONLY : eps6
   USE control_gw,       ONLY : do_q0_only, solve_direct, tinvert, do_epsil
   USE disp,             ONLY : nqs, num_k_pts, w_of_q_start, x_q
   USE freq_gw,          ONLY : nfs
@@ -84,7 +85,11 @@ IMPLICIT NONE
   ! some tasks are only done by the root process
   is_root = my_image_id == root_id
 
-  IF (meta_ionode) ALLOCATE(scrcoul_g(gcutcorr, gcutcorr, nfs))
+  IF (meta_ionode) THEN
+    ALLOCATE(scrcoul_g(gcutcorr, gcutcorr, nfs))
+  ELSE
+    ALLOCATE(scrcoul_g(1,1,1))
+  END IF
 
   ! allocate arrays for symmetry routine
   ALLOCATE(ig_unique(gcutcorr))
@@ -117,7 +122,7 @@ IMPLICIT NONE
     ! shift the vector by a small delta q so that the solver has a
     ! nonvanishing solution
     ! the gamma point is evaluated at the root process
-    lgamma = ALL(x_q(:,iq) == 0)
+    lgamma = ALL(ABS(x_q(:,iq)) < eps6)
     IF (lgamma .AND. is_root) THEN
 
       ! create and initialize array for dielectric constant at q + G = 0
@@ -135,7 +140,7 @@ IMPLICIT NONE
       IF (meta_ionode) scrcoul_g(1,1,:) = eps_m
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
-      CALL clean_pw_gw(iq, .FALSE.)
+      CALL clean_pw_gw(.FALSE.)
 
     END IF ! gamma & root
 
@@ -183,7 +188,7 @@ IMPLICIT NONE
 
       ! unfold W from reduced array to full array
       ! also reorder the indices
-      CALL unfold_w(iq, scrcoul_root, scrcoul_g)
+      CALL unfold_w(scrcoul_root, scrcoul_g)
 
       ! for the direct solver W = eps^-1
       IF (solve_direct .AND. tinvert) THEN
@@ -200,7 +205,7 @@ IMPLICIT NONE
     IF (ALLOCATED(num_task)) DEALLOCATE(num_task)
 
     CALL mp_barrier(inter_image_comm)
-    CALL clean_pw_gw(iq, .FALSE.)
+    CALL clean_pw_gw(.FALSE.)
     IF(do_q0_only) EXIT
     CALL print_clock ('epsilq')
     CALL stop_clock ('epsilq')

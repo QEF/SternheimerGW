@@ -21,8 +21,9 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE gauleg_grid(x1, x2, x, w, n)
+
+  USE constants,  ONLY : pi
   USE kinds,      ONLY : DP
-  USE constants,  ONLY : RYTOEV, pi
      
   IMPLICIT NONE 
    

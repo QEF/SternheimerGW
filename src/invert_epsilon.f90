@@ -21,20 +21,27 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE invert_epsilon(scrcoul_g_in, lgamma, eps_m)
-USE kinds,         ONLY : DP
-USE gwsigma,       ONLY : sigma_c_st, gcutcorr
-USE freq_gw,       ONLY : fiu, nfs
+
 USE control_gw,    ONLY : solve_direct
+USE freq_gw,       ONLY : nfs
+USE gwsigma,       ONLY : gcutcorr
+USE kinds,         ONLY : DP
 
 IMPLICIT NONE    
 
 COMPLEX(DP)       :: scrcoul_g_in(gcutcorr, gcutcorr, nfs, 1)
 COMPLEX(DP)       :: work(gcutcorr)
 COMPLEX(DP)       :: eps_m(nfs)
-INTEGER           :: ig, igp, npe, irr, icounter, ir, irp
-INTEGER           :: isym, iwim, iw
+INTEGER           :: ig, igp
+INTEGER           :: iw
 INTEGER           :: iwork(gcutcorr), info
 LOGICAL           :: lgamma
+
+!> complex constant of 0
+COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+!> complex constant of 1
+COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
 
 !Overwrite with eps_m calculated using q0G0.
 !Place hold with 1/epsilon^{-1}_{00}(q=0
@@ -51,10 +58,10 @@ endif
 if(lgamma) then
   do iw = 1, nfs
     do ig = 2, gcutcorr
-       scrcoul_g_in(ig,1,iw,1)  = dcmplx(0.0d0,0.0d0)
+       scrcoul_g_in(ig,1,iw,1)  = zero 
     enddo
     do igp = 2, gcutcorr
-       scrcoul_g_in(1,igp,iw,1) = dcmplx(0.0d0,0.0d0)
+       scrcoul_g_in(1,igp,iw,1) = zero
     enddo
   enddo
 endif
@@ -81,17 +88,17 @@ if(lgamma) then
   endif
   do iw = 1, nfs
      do ig = 2, gcutcorr
-        scrcoul_g_in(ig,1,iw,1) = dcmplx(0.0d0,0.0d0)
+        scrcoul_g_in(ig,1,iw,1) = zero
      enddo
      do igp = 2, gcutcorr
-        scrcoul_g_in(1,igp,iw,1) = dcmplx(0.0d0,0.0d0)
+        scrcoul_g_in(1,igp,iw,1) = zero
      enddo
   enddo
 endif
 !We store epsilon-1 to disk:
 do iw = 1, nfs
    do ig = 1, gcutcorr
-      scrcoul_g_in(ig,ig,iw,1) = scrcoul_g_in(ig,ig,iw,1) - dcmplx(1.0d0,0.0d0)
+      scrcoul_g_in(ig,ig,iw,1) = scrcoul_g_in(ig,ig,iw,1) - one
    enddo
 enddo
 

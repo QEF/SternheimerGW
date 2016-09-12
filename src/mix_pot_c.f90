@@ -57,8 +57,6 @@
   !USE parameters, only : DP, maxter => nmax_iter 
 
   USE kinds,       ONLY : DP 
-  USE control_gw,  ONLY : nmix_gw
-
 
   !max number of iterations used in mixing: n_iter must be.le.maxter
   implicit none
@@ -77,7 +75,7 @@
   integer :: maxter
   parameter (maxter = 8)
 
-  integer :: iunit, iunmix, n, i, j, iwork (maxter), info, iter_used, &
+  integer :: n, i, j, iwork (maxter), info, iter_used, &
        ipos, inext, ndimtot
   ! work space containing info from previous iterations:
   ! must be kept in memory and saved between calls 
@@ -136,8 +134,8 @@
      enddo
      norm = (DZNRM2 (ndim, df (1, ipos), 1) ) **2
      norm = sqrt (norm)
-     call ZSCAL (ndim, dcmplx ( 1.d0 / norm, 0.d0), df (1, ipos), 1)
-     call ZSCAL (ndim, dcmplx ( 1.d0 / norm, 0.d0), dv (1, ipos), 1)
+     CALL ZSCAL(ndim, CMPLX(1.0_dp / norm, 0.0_dp, KIND=dp), df(1, ipos), 1)
+     CALL ZSCAL(ndim, CMPLX(1.0_dp / norm, 0.0_dp, KIND=dp), dv(1, ipos), 1)
   endif
   !
   call ZCOPY (ndim, vin, 1, vinsave, 1)
@@ -159,7 +157,7 @@
 
  do i = 1, iter_used
     do j = i + 1, iter_used
-       beta (j, i) = dconjg ( beta (i, j) ) 
+       beta(j, i) = CONJG(beta(i, j)) 
     enddo
  enddo
 !
@@ -168,7 +166,7 @@
   enddo
 !
   do n = 1, ndim
-     vin (n) = vin (n) + dcmplx(alphamix, 0.00) * vout (n) 
+     vin(n) = vin(n) + CMPLX(alphamix, 0.0_dp, KIND=dp) * vout(n) 
   enddo
 !
   do i = 1, iter_used

@@ -25,16 +25,15 @@ program gw
 !... This is the main driver of the Sternheimer-GW code.
 !-----------------------------------------------------------------------
   USE check_stop,        ONLY : check_stop_init
-  USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb,&
-                                do_green, multishift, do_sigma_c, do_q0_only,&
-                                do_imag, lgamma, output
+  USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb, &
+                                do_sigma_c, do_q0_only, do_imag, output
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
   USE exchange_module,   ONLY : exchange_wrapper
-  USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul,&
+  USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
                                 wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,   ONLY : freqbins, freqbins_type
-  USE gwsigma,           ONLY : sigma_x_st, sigma_c_st, nbnd_sig
+  USE gwsigma,           ONLY : nbnd_sig
   USE input_parameters,  ONLY : max_seconds, force_symmorphic
   USE io_files,          ONLY : diropn
   USE io_global,         ONLY : meta_ionode
@@ -46,16 +45,12 @@ program gw
   USE sigma_module,      ONLY : sigma_wrapper, sigma_config_type
   USE timing_module,     ONLY : time_setup
   USE truncation_module, ONLY : vcut_type
-  USE units_gw,          ONLY : iunresid, lrresid, iunalphabeta, lralphabeta
-  USE wvfct,             ONLY : nbnd
 
   IMPLICIT NONE
 
-  integer             :: iq, ik, ierr
-  character (LEN=9)   :: codepw = 'PW'
+  integer             :: ik
   character (LEN=9)   :: code   = 'SGW'
-  character (LEN=256) :: auxdyn
-  logical             :: do_band, exst, do_matel
+  logical             :: do_band, do_matel
 
   !> stores the frequencies uses for the calculation
   TYPE(freqbins_type) freq
@@ -75,7 +70,7 @@ program gw
   
   call gwq_readin(freq, vcut)
   call check_stop_init()
-  call check_initial_status(auxdyn)
+  call check_initial_status()
 ! Initialize frequency grids, FFT grids for correlation
 ! and exchange operators, open relevant GW-files.
   call freqbins(do_imag, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
@@ -105,7 +100,7 @@ program gw
            end if
            call sigma_matel(ik, freq)
          end if
-         call clean_pw_gw(ik, .TRUE.)
+         call clean_pw_gw(.TRUE.)
       enddo
   end if
   call close_gwq(.TRUE.)

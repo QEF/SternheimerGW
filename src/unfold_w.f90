@@ -20,26 +20,21 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE unfold_w(iq, scrcoul_in, scrcoul_out)
-USE kinds,         ONLY : DP
-USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs
-USE gwsymm,        ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
-USE gvect,         ONLY : g, ngm, nl
-USE freq_gw,       ONLY : fiu, nfs
-USE control_gw,    ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont
-USE qpoint,        ONLY : xq
-USE cell_base,     ONLY : at
-USE gwsigma,       ONLY : sigma_c_st
-USE noncollin_module, ONLY : noncolin, nspin_mag
+SUBROUTINE unfold_w(scrcoul_in, scrcoul_out)
+
+USE cell_base,        ONLY : at
+USE control_gw,       ONLY : modielec
+USE freq_gw,          ONLY : nfs
+USE gvect,            ONLY : ngm
+USE gwsigma,          ONLY : sigma_c_st
+USE gwsymm,           ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
 USE io_global,        ONLY : stdout
-USE symm_base,        ONLY : s, t_rev, irt, ftau, nrot, nsym, &
-                             time_reversal, copy_sym, inverse_s, s_axis_to_cart
-USE cell_base,        ONLY : at, bg
+USE kinds,            ONLY : DP
+USE qpoint,           ONLY : xq
+USE symm_base,        ONLY : nsym, s, time_reversal, ftau, invs, &
+                             copy_sym, inverse_s, s_axis_to_cart
 
 IMPLICIT NONE
-
-!> the index of the active q point
-INTEGER,     INTENT(IN)  :: iq
 
 !> the screened coulomb interaction only symmetrized elements
 COMPLEX(DP), INTENT(IN)  :: scrcoul_in(sigma_c_st%ngmt, nfs, ngmunique)
@@ -49,13 +44,12 @@ COMPLEX(DP), INTENT(OUT) :: scrcoul_out(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
 
 COMPLEX(DP)  :: scrcoul_tmp(sigma_c_st%ngmt, nfs)
 COMPLEX(DP)  :: phase
-INTEGER      :: ig, igp, npe, irr, icounter, ir, irp
-INTEGER      :: isym, iwim, iw
+INTEGER      :: ig, igp
+INTEGER      :: isym, iwim
 INTEGER      :: done, ngmdone
 INTEGER      :: ngmdonelist(sigma_c_st%ngmt)
 INTEGER      :: gmapsym(ngm,48)
 COMPLEX(DP)  :: eigv(ngm,48)
-LOGICAL      :: not_unique 
 REAL(DP)     :: xq_loc(3)
 INTEGER      :: nsymq
 LOGICAL      :: sym(48), minus_q, invsymq
@@ -66,7 +60,7 @@ LOGICAL      :: sym(48), minus_q, invsymq
 !Again a local smallg_q so it doesn't conflict with solver_linter.
   minus_q=.false.
   sym(1:nsym)=.true.
-  call smallg_q (xq, 1, at, bg, nsym, s, ftau, sym, minus_q)
+  call smallg_q (xq, 1, at, nsym, s, sym, minus_q)
   IF ( .not. time_reversal ) minus_q = .false.
 !Here we re-order all rotations in such a way that true sym.ops.
 !are the first nsymq; rotations that are not sym.ops. follow
@@ -78,7 +72,7 @@ LOGICAL      :: sym(48), minus_q, invsymq
   invsymq = ALL ( s(:,:,nsymq/2+1) == -s(:,:,1) )
   if (invsymq)      WRITE(stdout,'(/5x, "qpoint HAS inversion symmetry")')
   if (.not.invsymq) WRITE(stdout,'(/5x, "qpoint does NOT have inversion symmetry")')
-  WRITE(stdout,'(/5x, "nsym, nsymq, nrot ", i4, i4)') nsym,  nsymq
+  WRITE(stdout,'(/5x, "nsym, nsymq ", i4, i4)') nsym,  nsymq
   ! Since the order of the s matrices is changed we need to recalculate:
   CALL s_axis_to_cart () 
   gmapsym(:,:) = 0

@@ -162,6 +162,11 @@ CONTAINS
 
       factor = vcut_get(vcut,kpt)
 
+    CASE DEFAULT
+
+      CALL errore(__FILE__, "unknown truncation method", 1)
+      factor = 0.0_dp
+
     END SELECT ! method
 
   END FUNCTION truncate

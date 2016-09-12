@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE check_initial_status(auxdyn)
+SUBROUTINE check_initial_status()
   !-----------------------------------------------------------------------
   ! This routine checks the initial status of the phonon run and sets
   ! the variables that control the run, dealing with the image
@@ -34,35 +34,19 @@ SUBROUTINE check_initial_status(auxdyn)
   ! fiu : which frequencies 
   ! The flags that control which tensors to calculate
   !
-  USE io_global,       ONLY : stdout
-  USE control_flags,   ONLY : modenum
-  USE ions_base,       ONLY : nat
+  USE control_gw,      ONLY : tmp_dir_gw
   USE io_files,        ONLY : tmp_dir
-  USE lsda_mod,        ONLY : nspin
-  USE scf,             ONLY : rho
-  USE disp,            ONLY : nqs, x_q, nq1, nq2, nq3
-  USE qpoint,          ONLY : xq
-  USE output_mod,      ONLY : fildyn
-  USE control_gw,      ONLY : ldisp, recover, done_bands,  &
-                              start_q, last_q, current_iq, tmp_dir_gw, lgamma, &
-                              ext_recover, ext_restart
-  USE save_gw,         ONLY : tmp_dir_save
-  USE units_gw,        ONLY : iudyn
   USE io_rho_xml,      ONLY : write_rho
-  USE mp_images,       ONLY : nimage, intra_image_comm
-  USE io_global,       ONLY : ionode, ionode_id
-  USE io_files,        ONLY : prefix
+  USE lsda_mod,        ONLY : nspin
   USE mp,              ONLY : mp_bcast
-  USE xml_io_base,     ONLY : create_directory
   USE mp_global,       ONLY : mp_global_end
+  USE scf,             ONLY : rho
+  USE xml_io_base,     ONLY : create_directory
   !
   !
   IMPLICIT NONE
   !
-  CHARACTER (LEN=256) :: auxdyn, filename
   CHARACTER (LEN=6), EXTERNAL :: int_to_char
-  LOGICAL :: exst
-  INTEGER :: iq, iq_start, ierr
   !
   tmp_dir=tmp_dir_gw
   !

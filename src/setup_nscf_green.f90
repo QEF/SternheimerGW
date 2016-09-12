@@ -50,7 +50,6 @@ SUBROUTINE setup_nscf_green(kpt, config)
 
   USE basis,              ONLY : natomwfc
   USE cell_base,          ONLY : at, bg
-  USE constants,          ONLY : degspin
   USE control_flags,      ONLY : ethr, isolve, david, &
                                  use_para_diag, max_cg_iter
   USE disp,               ONLY : nqs, x_q, wq

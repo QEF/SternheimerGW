@@ -22,22 +22,22 @@
 !------------------------------------------------------------------------------ 
 subroutine print_matel(ikq, vxc, sigma_band_ex, sigma_band_c, w_ryd, nwsigma) 
 
-use kinds,                only : DP
-use cell_base,            only : at, bg
-use gwsigma,              only : ngmsig, nbnd_sig
-use klist,                only : xk, wk, nkstot, nks
-use constants,            only : e2, fpi, RYTOEV, tpi, pi
-use io_global,            only : stdout, ionode_id, ionode
-use wvfct,                only : nbnd, npw, npwx, g2kin, et
+use cell_base,            only : at
+use constants,            only : RYTOEV, pi
 use gwcom,                only : output
+use gwsigma,              only : nbnd_sig
+use io_global,            only : stdout
+use kinds,                only : DP
+use klist,                only : xk
 use pp_output_mod,        only : pp_output, pp_output_xml
+use wvfct,                only : nbnd, et
 
 implicit none
 
 integer                   ::   nwsigma
-complex(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
+complex(DP)               ::   sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
-complex(DP)               ::   czero, temp
+complex(DP)               ::   czero
 real(DP)                  ::   wsigma(nwsigma)
 real(DP)                  ::   w_ryd(nwsigma), xkcryst(3)
 real(DP)                  ::   one
@@ -47,9 +47,9 @@ real(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(n
                                sigma_ex_tr, sigma_ex_diag(nbnd_sig)
 real(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                et_qp_tr, z_tr, z(nbnd_sig)
-integer                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
-integer                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
-logical                   ::   do_band, do_iq, setup_pw, exst, single_line
+integer                   ::   iw, ibnd, jbnd
+integer                   ::   iman, nman, ndeg(nbnd_sig), ideg, ikq
+logical                   ::   single_line
 
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)
@@ -278,8 +278,8 @@ end subroutine print_matel
   SUBROUTINE  qp_eigval ( nw, w, sig, et, et_qp, z )
 !----------------------------------------------------------------
 !
+  use constants,     only : RYTOEV
   use kinds,         only : DP
-  use constants,     only : e2, fpi, RYTOEV, tpi, pi
 
   IMPLICIT NONE
 
@@ -297,6 +297,8 @@ end subroutine print_matel
  endif
 
   iw = 1
+  iw1 = 1
+  iw2 = 1
   do while ((iw.lt.nw).and.(w(iw).lt.et))
     iw = iw + 1
     iw1 = iw-1

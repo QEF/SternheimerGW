@@ -25,8 +25,8 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE buffers,              ONLY : get_buffer, close_buffer
   USE buiol,                ONLY : buiol_check_unit
   USE cell_base,            ONLY : tpiba2
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE control_gw,           ONLY : lgamma, do_imag, output
+  USE constants,            ONLY : RYTOEV, eps14
+  USE control_gw,           ONLY : lgamma, do_imag
   USE disp,                 ONLY : xk_kpoints
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
@@ -41,7 +41,6 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE io_files,             ONLY : diropn 
   USE io_global,            ONLY : stdout, meta_ionode
   USE kinds,                ONLY : DP
-  USE kinds_gw,             ONLY : i8b
   USE klist,                ONLY : xk
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
   USE mp_images,            ONLY : my_image_id
@@ -65,10 +64,13 @@ IMPLICIT NONE
                                sigma_band_x(nbnd_sig, nbnd_sig, 1), vxc(nbnd_sig,nbnd_sig)
   REAL(DP)                  :: vtxc, etxc
   INTEGER                   :: igk(npwx), ikq
-  INTEGER                   :: ig, iw, ibnd, jbnd, ipol, ik0, ir
+  INTEGER                   :: ig, ibnd, jbnd, ipol, ik0, ir
   INTEGER                   :: ng
   INTEGER                   :: sigma_c_ngm, sigma_x_ngm
   LOGICAL                   :: exst, opnd
+
+  !> complex constant of 0
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
   CALL start_clock(time_matel)
 
@@ -78,7 +80,7 @@ IMPLICIT NONE
   lgamma = .true.
 
   ! check for gamma point
-  IF( ALL(xk_kpoints(:,ik0) == 0.0) ) THEN
+  IF(ALL(ABS(xk_kpoints(:,ik0)) <= eps14)) THEN
      ikq = 1
   ELSE
      ikq = 2
@@ -159,8 +161,9 @@ IMPLICIT NONE
   IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
 
   ! sanity check
-  IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
-      sigma_x_ngm = sigma_x_st%ngmt
+  IF (ABS(exch_conv - sigma_x_st%ecutt) < eps14 .OR. &
+      ABS(exch_conv) < eps14) THEN
+    sigma_x_ngm = sigma_x_st%ngmt
   ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
     DO ng = 1, ngm
        IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
@@ -189,7 +192,7 @@ IMPLICIT NONE
 
   ! For convergence tests corr_conv can be set at input lower than ecutsco.
   ! This allows you to calculate the correlation energy at lower energy cutoffs
-  IF (corr_conv == sigma_c_st%ecutt) THEN
+  IF (ABS(corr_conv - sigma_c_st%ecutt) < eps14) THEN
     sigma_c_ngm = gcutcorr
   ELSE IF(corr_conv < sigma_c_st%ecutt .AND. corr_conv > 0.0) THEN
     DO ng = 1, ngm
@@ -217,7 +220,7 @@ IMPLICIT NONE
     ! print selfenergy on the imaginary axis.
     CALL print_matel_im(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), AIMAG(freq%sigma), nwsigma)
     ! do analytic continuation and print selfenergy on the real axis.
-    sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
+    sigma_band_con(:,:,:) = zero
     CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), AIMAG(freq%sigma), freq%window, nwsigwin)
     CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), freq%window, nwsigwin)
    deallocate(sigma_band_con)

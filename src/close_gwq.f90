@@ -32,10 +32,9 @@ SUBROUTINE close_gwq( flag )
   USE buffers,         ONLY : close_buffer
   USE control_flags,   ONLY : twfcollect
   USE control_gw,      ONLY : do_coulomb
-  USE io_global,       ONLY : ionode, stdout
+  USE io_global,       ONLY : ionode
   USE output_mod,      ONLY : fildrho, fildvscf
-  USE paw_variables,   ONLY : okpaw
-  USE units_gw,        ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iuebar, iudrho, &
+  USE units_gw,        ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iudrho, &
                               iudvscf
   USE uspp,            ONLY : okvan
 
@@ -43,7 +42,7 @@ SUBROUTINE close_gwq( flag )
   IMPLICIT NONE
   !
   LOGICAL :: flag
-  LOGICAL :: exst, opnd
+  LOGICAL :: opnd
   !
   !
   IF ( twfcollect ) THEN
