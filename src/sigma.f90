@@ -227,9 +227,9 @@ CONTAINS
     ! the imaginary frequency axis
     !
     IF (freq%imag_sigma) THEN
-      prefactor = CMPLX(-1.0 / (tpi * REAL(nsym, KIND=dp)), 0.0_dp, KIND=dp)
+      prefactor = CMPLX(-1.0_dp / (tpi * REAL(nsym, KIND=dp)), 0.0_dp, KIND=dp)
     ELSE
-      prefactor = CMPLX(0.0_dp, 1.0 / (tpi * REAL(nsym, KIND=dp)), KIND=dp)
+      prefactor = CMPLX(0.0_dp, 1.0_dp / (tpi * REAL(nsym, KIND=dp)), KIND=dp)
     END IF
 
     !
@@ -521,6 +521,9 @@ CONTAINS
     !> The map from G-vectors at current k to global array.
     INTEGER,     ALLOCATABLE :: map(:)
 
+    !> the occupation of the states
+    REAL(dp),    ALLOCATABLE :: occupation(:)
+
     !> complex value of the chemical potential
     COMPLEX(dp) mu_
 
@@ -585,7 +588,7 @@ CONTAINS
     !! 2. prepare the QE module so that we can evaluate the Green's function
     !!
     ! this will allocate map
-    CALL green_prepare(ikq, num_g_corr, map, num_g, eval, evec)
+    CALL green_prepare(ikq, num_g_corr, map, num_g, occupation, eval, evec)
 
     !!
     !! 3. evaluate the Green's function of the system
@@ -600,9 +603,9 @@ CONTAINS
     !! 4. we add the nonanalytic part if on the real axis
     !!
     IF (.NOT. freq%imag_sigma) THEN
-      CALL green_nonanalytic(map, freq_green, eval, evec, green)
+      CALL green_nonanalytic(map, freq_green, occupation, eval, evec, green)
     END IF
-    DEALLOCATE(eval, evec)
+    DEALLOCATE(occupation, eval, evec)
 
     !!
     !! 5. Fourier transform Green's function to real space

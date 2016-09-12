@@ -35,9 +35,10 @@ CONTAINS
   !! Because QE stores some information in global modules, we need to initialize
   !! those quantities appropriatly so that the function calls work as intented.
   !!
-  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g, eval, evec)
+  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g, occupation, eval, evec)
 
     USE buffers,           ONLY: get_buffer
+    USE control_gw,        ONLY: nbnd_occ
     USE kinds,             ONLY: dp
     USE klist,             ONLY: igk_k, xk, ngk
     USE reorder_mod,       ONLY: create_map
@@ -57,17 +58,29 @@ CONTAINS
     !> The total number of G-vectors at this k-point
     INTEGER,  INTENT(OUT) :: num_g
 
+    !> The occupation of the eigenstates
+    REAL(dp),    INTENT(OUT), ALLOCATABLE :: occupation(:)
+
     !> eigenvalue of all bands at k - q
     COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: eval(:)
 
     !> eigenvector of all bands at k - q
     COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: evec(:,:)
 
+    !> helper for the number of occupied bands
+    INTEGER num_band_occ
+
     !> number of G-vectors for correlation
     INTEGER num_g_corr
 
     !> temporary copy of the map array
     INTEGER, ALLOCATABLE :: map_(:)
+
+    !> constant of 1 indicating a fully occupied state
+    REAL(dp), PARAMETER :: occupied = 1.0_dp
+
+    !> constant of 0 indicating an unoccupied state
+    REAL(dp), PARAMETER :: unoccupied = 0.0_dp
 
     current_k = ikq
 
@@ -99,10 +112,16 @@ CONTAINS
     CALL init_us_2(num_g, igk_k(:,ikq), xk(:,ikq), vkb)
 
     !
-    ! read eigenvalue and eigenvector
+    ! read eigenvalue and eigenvector and set the occupation
     !
+    ALLOCATE(occupation(SIZE(et, 1)))
     ALLOCATE(eval(SIZE(et, 1)))
     ALLOCATE(evec(npwx, SIZE(et, 1)))
+
+    ! set the occupation of the eigenstates
+    num_band_occ = nbnd_occ(ikq)
+    occupation(:num_band_occ)     = occupied
+    occupation(num_band_occ + 1:) = unoccupied
 
     ! set eigenvalue (complex to allow shifting it into the complex plane)
     eval = CMPLX(et(:,ikq), 0.0_dp, KIND=dp)
@@ -287,16 +306,17 @@ CONTAINS
   !! Green's function so that the resulting analytic part has no poles above
   !! the real axis. The nonanalytic part is given as
   !! \f{equation}{
-  !!   G_{\text{N}}(G, G', \omega) = 2 \pi i \sum_{\text{v}}
-  !!   \delta(\omega - \epsilon_{\text v}) u_{\text{v}}^\ast(G) u_{\text{v}}(G')
+  !!   G_{\text{N}}(G, G', \omega) = 2 \pi i \sum_{n} f_n
+  !!   \delta(\omega - \epsilon_{n}) u_{n}^\ast(G) u_{n}(G')
   !! \f}
-  !! where the \f$u_{\text v}(G)\f$ are the eigenvectors. Note that the sum
-  !! runs over the occupied states only.
+  !! where the \f$u_{n}(G)\f$ are the eigenvectors. Note that the sum runs over
+  !! the occupied states only, which is controlled by the occupation factor
+  !! \f$f_n\f$.
   !! We approximate the \f$\delta\f$ function by a Cauchy-Lorentz distribution
   !! \f{equation}{
   !!   \delta(\omega) \approx \frac{\eta}{\pi(\omega^2 + \eta^2)}
   !! \f}
-  SUBROUTINE green_nonanalytic(map, freq, eval, evec, green)
+  SUBROUTINE green_nonanalytic(map, freq, occupation, eval, evec, green)
 
     USE constants,     ONLY: pi, tpi
     USE kinds,         ONLY: dp
@@ -311,6 +331,9 @@ CONTAINS
     !! @note This is a complex \f$\omega + i \eta\f$
     COMPLEX(dp), INTENT(IN)    :: freq(:)
 
+    !> Occupation \f$f_n\f$ of a certain state.
+    REAL(dp),    INTENT(IN)    :: occupation(:)
+
     !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
     COMPLEX(dp), INTENT(IN)    :: eval(:)
 
@@ -321,7 +344,7 @@ CONTAINS
     !! whatever is already found in the array.
     COMPLEX(dp), INTENT(INOUT) :: green(:,:,:)
 
-    !> the number of valence bands
+    !> the number of occupied bands
     INTEGER num_band
 
     !> the number of G vectors at the k-point
@@ -360,6 +383,8 @@ CONTAINS
     num_g_corr = SIZE(map)
 
     ! sanity check of the input
+    IF (SIZE(occupation) /= num_band) &
+      CALL errore(__FILE__, "size of occupation and eigenvalue array inconsistent", 1)
     IF (SIZE(evec, 2) /= num_band) &
       CALL errore(__FILE__, "size of eigenvalue and eigenvector inconsistent", 1)
     IF (num_g < num_g_corr) &
@@ -388,9 +413,9 @@ CONTAINS
           DO ig = 1, num_g_corr
 
             ! add nonanalytic part to Green's function
-            ! 2 pi i u*(G) u(G') delta 
-            green(ig, igp, ifreq) = green(ig, igp, ifreq) + &
-              c2PiI * CONJG(evec(map(ig), iband)) * evec(map(igp), iband) * lorentzian
+            ! 2 pi i f_n u_n*(G) u_n(G') delta
+            green(ig, igp, ifreq) = green(ig, igp, ifreq) + c2PiI * occupation(iband) &
+              * CONJG(evec(map(ig), iband)) * evec(map(igp), iband) * lorentzian
 
           END DO ! ig
         END DO ! igp
