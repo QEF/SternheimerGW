@@ -57,7 +57,7 @@ LOGICAL      :: minus_q, magnetic_sym, sym(48)
   ngmunique = 0
   minus_q=.false.
   sym(1:nsym)=.true.
-  call smallg_q (xq, 1, at, bg, nsym, s, ftau, sym, minus_q)
+  call smallg_q (xq, 1, at, nsym, s, sym, minus_q)
   IF ( .not. time_reversal ) minus_q = .false.
  ! Here we re-order all rotations in such a way that true sym.ops.
  ! are the first nsymq; rotations that are not sym.ops. follow

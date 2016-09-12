@@ -39,39 +39,30 @@ SUBROUTINE setup_nscf(xq)
   !
   !----------------------------------------------------------------------------
 
-  USE kinds,              ONLY : DP
-  USE parameters,         ONLY : npk
-  USE io_global,          ONLY : stdout
-  USE constants,          ONLY : pi, degspin, eps8
-  USE cell_base,          ONLY : at, bg
-  USE ions_base,          ONLY : nat, tau, ityp, zv
   USE basis,              ONLY : natomwfc
-  USE klist,              ONLY : xk, wk, nks, nelec, degauss, lgauss, &
-                                 nkstot, qnorm
-  USE lsda_mod,           ONLY : lsda, nspin, current_spin, isk, &
-                                 starting_magnetization
-  USE wvfct,              ONLY : nbnd, nbndx
-  USE control_flags,      ONLY : ethr, isolve, david, &
-                                 noinv, modenum, use_para_diag, max_cg_iter
-  USE mp_pools,           ONLY : kunit
-  USE spin_orb,           ONLY : domag
-  USE noncollin_module,   ONLY : noncolin
-  USE start_k,            ONLY : nks_start, xk_start, wk_start, nk1, nk2, nk3,&
-                                 k1, k2, k3
-  USE paw_variables,      ONLY : okpaw
-  USE lr_symm_base,       ONLY : nsymq, invsymq
-  USE disp,               ONLY : xk_kpoints
-  USE uspp_param,         ONLY : n_atom_wfc
-  USE symm_base,          ONLY : s, t_rev, irt, ftau, nrot, nsym, &
-                                 time_reversal, copy_sym, inverse_s, s_axis_to_cart, &
-                                 invsym
+  USE cell_base,          ONLY : at, bg
+  USE constants,          ONLY : degspin
+  USE control_flags,      ONLY : ethr, isolve, david, noinv, use_para_diag, max_cg_iter
   USE control_gw,         ONLY : newgrid, lgamma
+  USE io_global,          ONLY : stdout
+  USE ions_base,          ONLY : nat, ityp
+  USE kinds,              ONLY : DP
+  USE klist,              ONLY : xk, wk, nks, nelec, nkstot, qnorm
+  USE lr_symm_base,       ONLY : nsymq, invsymq
+  USE lsda_mod,           ONLY : lsda, nspin, current_spin, isk
+  USE mp_pools,           ONLY : kunit
+  USE noncollin_module,   ONLY : noncolin
+  USE parameters,         ONLY : npk
+  USE spin_orb,           ONLY : domag
+  USE start_k,            ONLY : nks_start, xk_start, wk_start, nk1, nk2, nk3, k1, k2, k3
+  USE symm_base,          ONLY : s, t_rev, nrot, nsym, time_reversal, copy_sym, inverse_s, s_axis_to_cart
+  USE uspp_param,         ONLY : n_atom_wfc
+  USE wvfct,              ONLY : nbnd, nbndx
 
   !
   IMPLICIT NONE
   !
   REAL (DP), INTENT(IN) :: xq(3)
-  INTEGER   :: ik
   LOGICAL  :: minus_q, magnetic_sym, sym(48)
   !
   !
@@ -87,7 +78,7 @@ SUBROUTINE setup_nscf(xq)
   max_cg_iter = 20
   natomwfc    = n_atom_wfc( nat, ityp, noncolin )
   !
-#ifdef __PARA
+#if defined(__MPI)
   IF ( use_para_diag )  CALL check_para_diag( nbnd )
 #else
   use_para_diag = .FALSE.
@@ -104,7 +95,7 @@ SUBROUTINE setup_nscf(xq)
   sym(1:1)   = .true.
 !Symmetry is applied by hand in stern_symm
   sym(2:nsym)= .false.
-  call smallg_q (xq, 1, at, bg, 1, s, ftau, sym, minus_q)
+  call smallg_q (xq, 1, at, 1, s, sym, minus_q)
   if ( .not. time_reversal ) minus_q = .false.
   ! Here we re-order all rotations in such a way that true sym.ops.
   ! are the first nsymq; rotations that are not sym.ops. follow
@@ -177,13 +168,13 @@ SUBROUTINE setup_nscf(xq)
   !
   qnorm = sqrt(xq(1)**2 + xq(2)**2 + xq(3)**2)
   !
-#ifdef __PARA
+#if defined(__MPI)
   !
   ! ... set the granularity for k-point distribution
   !
   IF (lgamma) THEN
   !
-       kunit = 1
+     kunit = 1
   !
   ELSE
   !
@@ -206,7 +197,7 @@ END SUBROUTINE setup_nscf
 
 !
 !-----------------------------------------------------------------------
-subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
+subroutine smallg_q (xq, modenum, at, nrot, s, sym, minus_q)
   !-----------------------------------------------------------------------
   !
   ! This routine selects, among the symmetry matrices of the point group
@@ -216,21 +207,20 @@ subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
   !
   !  input-output variables
   !
-  USE kinds, ONLY : DP
+  USE constants, ONLY : eps12
+  USE kinds,     ONLY : DP
   implicit none
 
   real(DP), parameter :: accep = 1.e-5_dp
 
-  real(DP), intent(in) :: bg (3, 3), at (3, 3), xq (3)
-  ! input: the reciprocal lattice vectors
+  real(DP), intent(in) :: at (3, 3), xq (3)
   ! input: the direct lattice vectors
   ! input: the q point of the crystal
 
-  integer, intent(in) :: s (3, 3, 48), nrot, ftau (3, 48), modenum
+  integer, intent(in) :: s (3, 3, 48), nrot, modenum
   ! input: the symmetry matrices
   ! input: number of symmetry operations
   ! input: fft grid dimension (units for ftau)
-  ! input: fractionary translation of each symmetr
   ! input: main switch of the program, used for
   !        q<>0 to restrict the small group of q
   !        to operation such that Sq=q (exactly,
@@ -258,7 +248,7 @@ subroutine smallg_q (xq, modenum, at, bg, nrot, s, ftau, sym, minus_q)
   ! return immediately (with minus_q=.true.) if xq=(0,0,0)
   !
   minus_q = .true.
-  if ( (xq (1) == 0.d0) .and. (xq (2) == 0.d0) .and. (xq (3) == 0.d0) ) &
+  if (ALL(ABS(xq) < eps12)) &
        return
   !
   !   Set to zero some variables
