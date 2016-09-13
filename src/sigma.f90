@@ -39,14 +39,22 @@
 !!
 !! <h4>The real axis integration</h4>
 !! If the frequencies of interest are on the real axis, we perform the following
-!! integral [1]
-!! \f{equation}{ \label{sig:real}
-!!   \Sigma_k(\omega) = \frac{i}{N} \sum_{q} \int \frac{d\omega'}{2\pi} 
-!!   G_{k-q}(\omega + \omega') W_{q}(\omega') e^{i \delta \omega'}~.
+!! integral [1,2]
+!! \f{equation}{
+!!   \Sigma_k(\omega) = \frac{i}{2 \pi N} \sum_{q} \int d\omega'
+!!   G_{k-q}(\omega + \omega') W_{q}(\omega') e^{-i \delta \omega'}~.
 !! \f}
 !! Here, \f$\delta\f$ is a small positive number that ensures the correct time
 !! order. \f$N\f$ is the number of \f$q\f$ points in the calculation. Note, that
-!! we suppressed the spacial coordiantes for clarity.
+!! we suppressed the spacial coordiantes for clarity. Because \f$W\f$ is evaluated
+!! on the imaginary axis and continued to the real axis, it is convenient to
+!! shift the integration boundaries
+!! \f{equation}{ \label{sig:real}
+!!   \Sigma_k(\omega) = \frac{i}{2 \pi N} \sum_{q} \int d\omega'
+!!   G_{k-q}(\omega') W_{q}(\omega - \omega') e^{-i \delta (\omega - \omega')}~.
+!! \f}
+!! In this way, we can evaluate the Green's function on the integration grid once
+!! and only the Coulomb potential is reevaluated for every frequency.
 !!
 !! <h4>The imaginary axis integration</h4>
 !! The Fourier transform between frequency and time domain are defined as
@@ -57,7 +65,7 @@
 !! \f{equation}{
 !!   f(\omega) = \int dt f(t) e^{-i\omega t}~.
 !! \f}
-!! One can extend this concept to time and frequency on the imaginary axis [2]
+!! One can extend this concept to time and frequency on the imaginary axis [3]
 !! \f{equation}{
 !!   f(it) = i \int \frac{d\omega}{2\pi} f(i\omega) e^{i\omega t}
 !! \f}
@@ -80,15 +88,22 @@
 !! transform brings us back to frequency space
 !! \f{equation}{
 !!   \Sigma_k(i\omega) = -\frac{1}{N} \sum_q \int \frac{d \omega'}{2\pi}
-!!   G_{k-q}(i\omega + i\omega') W_{q}(i\omega') e^{-\delta \omega'}.
+!!   G_{k-q}(i\omega') W_{q}(i\omega - i\omega') e^{-\delta \omega'}.
 !! \f}
+!! Because the Green's function is evaluated on the imaginary axis (where it
+!! is smooth), we can take the limit \f$\delta \rightarrow 0\f$ without
+!! numerical problems.
 !! 
 !! <h4>References</h4>
 !! [1] <a href="http://link.aps.org/doi/10.1103/PhysRevB.81.115105">
 !!       Giustino, Cohen, Louie, Phys. Rev. B **81**, 115105 (2010)
 !!     </a>
 !!
-!! [2] <a href="http://www.sciencedirect.com/science/article/pii/S001046559800174X">
+!! [2] <a href="http://link.aps.org/doi/10.1103/PhysRevB.88.075117">
+!!       Lambert, Giustino, Phys. Rev. B **88**, 075117 (2013)
+!!     </a>
+!!
+!! [3] <a href="http://www.sciencedirect.com/science/article/pii/S001046559800174X">
 !!       Rieger, *et al.*, Comput. Phys. Comm. **117**, 211 (1999)
 !!     </a>
 MODULE sigma_module

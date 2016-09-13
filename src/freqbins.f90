@@ -53,6 +53,9 @@ MODULE freqbins_module
     !> The grid used for the output of the self-energy.
     REAL(dp),    ALLOCATABLE :: window(:)
 
+    !> The small shift from the real axis into the complex plane
+    REAL(dp) eta
+
   CONTAINS
 
     PROCEDURE :: num_freq   => freqbins_num_freq
@@ -140,12 +143,15 @@ CONTAINS
     !!
     !! 2. Depending on the imag_sigma flag, we initialize either the
     !!    real or imaginary part.
+    !!
     ALLOCATE(freq%sigma(num_sigma))
+    !
     IF (imag_sigma) THEN 
       freq%sigma = CMPLX(zero, grid, KIND = dp)
     ELSE
       freq%sigma = CMPLX(grid, zero, KIND = dp)
     END IF
+    !
     DEALLOCATE(grid)
     !!
     !! 3. We construct a frequency grid for W.
@@ -156,10 +162,13 @@ CONTAINS
       !! - if imag_sigma is cleared, we use an equidistant grid on the real axis
       !!
       CALL freqbins_equidist_grid(zero, max_coul, num_coul, grid)
+      !
       ALLOCATE(freq%coul(num_coul))
       ALLOCATE(freq%weight(num_coul))
-      freq%coul = CMPLX(grid, zero, KIND = dp)
+      !
+      freq%coul = CMPLX(grid, 0.0_dp, KIND = dp)
       freq%weight = max_coul / REAL(num_coul, KIND = dp)
+      !
       DEALLOCATE(grid)
       !
     ELSE
@@ -168,8 +177,11 @@ CONTAINS
       !!
       ALLOCATE(grid(num_coul))
       ALLOCATE(freq%weight(num_coul))
+      !
       CALL gauleg_grid(zero, max_coul, grid, freq%weight, num_coul)
+      !
       ALLOCATE(freq%coul(num_coul))
+      !
       freq%coul = CMPLX(zero, grid, KIND = dp)
       !
     END IF
@@ -178,39 +190,10 @@ CONTAINS
     !!
     CALL freqbins_equidist_grid(min_window, max_window, num_window, freq%window)
 
-!    ! Print out Frequencies on Imaginary Axis for reference.
-!    WRITE(stdout, '(//5x,"Frequency Grids (eV):")')
-!    WRITE(stdout, '(/5x, "wsigmamin, wsigmamax, deltaw")')
-!    WRITE(stdout, '(5x, 3f10.4 )') wsigmamin, wsigmamax, deltaw 
-!    WRITE(stdout, '(/5x, "wcoulmax:", 1f10.4, " eV")') wcoulmax
-!    WRITE(stdout, '(5x, "nwgreen:", i5)') nwgreen
-!    WRITE(stdout, '(5x, "nwcoul:", i5)') nwcoul
-!    WRITE(stdout,'(//5x, "Dynamic Screening Model:")')
-!    IF(godbyneeds) THEN
-!      WRITE(stdout, '(/6x, "Godby Needs Plasmon-Pole")')
-!    ELSE IF (padecont) THEN
-!      WRITE(stdout, '(/6x, "Analytic Continuation")')
-!    ELSE IF (.NOT.padecont .AND. .NOT.godbyneeds) THEN
-!      WRITE(stdout, '(/6x, "No screening model chosen!")')
-!    END IF
-!    WRITE(stdout, '(/7x, "Imag. Frequencies: ")')
-!    DO i = 1, nfs
-!      WRITE(stdout,'(8x, i4, 4x, 2f9.4)')i, fiu(i)*RYTOEV
-!    END DO
-!    WRITE(stdout, '(/5x, "Broadening: ", 1f10.4)') eta
-!
-!    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-!    WRITE(stdout, '(/5x, "Spherical Cutoff: ", 1f10.4)') rcut
-!
-!    WRITE(stdout, '(/7x, "K-points: ", i4)') num_k_pts
-!    DO i = 1, num_k_pts
-!      WRITE(stdout,'(8x, i4, 4x, 3f9.4)') i, xk_kpoints(:, i)
-!    END DO
-
-  !  References
-  !! [1] <a href="http://link.aps.org/doi/10.1103/PhysRevB.74.035101">
-  !!     Shishkin, Kresse, Phys. Rev. B, **74**, 035101 (2006)
-  !!     </a>
+    !! References
+    !! [1] <a href="http://link.aps.org/doi/10.1103/PhysRevB.74.035101">
+    !!     Shishkin, Kresse, Phys. Rev. B, **74**, 035101 (2006)
+    !!     </a>
 
   END SUBROUTINE freqbins
 
@@ -307,8 +290,8 @@ CONTAINS
     num_coul = this%num_coul()
 
     ALLOCATE(freq_green(2 * num_coul))
-    freq_green(:num_coul) = freq_sigma + this%coul
-    freq_green(num_coul + 1:) = freq_sigma - this%coul
+    freq_green(:num_coul) = freq_sigma + this%coul + CMPLX(0.0_dp, this%eta, KIND=dp)
+    freq_green(num_coul + 1:) = freq_sigma - this%coul + CMPLX(0.0_dp, this%eta, KIND=dp)
 
   END FUNCTION freqbins_green
 

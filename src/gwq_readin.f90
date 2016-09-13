@@ -459,6 +459,20 @@ SUBROUTINE gwq_readin(freq, vcut)
   END IF
   fiu = freq%solver
 
+  ! set the small shift into the complex plane
+  IF (do_imag) THEN
+    !
+    ! if we are already in the complex plane, we don't need to shift
+    freq%eta = 0.0_dp
+    !
+  ELSE
+    !
+    ! if we are on the real axis, we shift by a small amount into the
+    ! complex plane for a numerically stable treatment of the poles
+    freq%eta = eta
+    !
+  END IF
+
   CALL mp_bcast(ios, meta_ionode_id, world_comm)
   CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
   CALL mp_bcast(fiu, meta_ionode_id, world_comm )
