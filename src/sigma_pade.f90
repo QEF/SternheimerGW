@@ -20,14 +20,12 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine sigma_pade(sigma_band_c, sigma_band_con, w_ryd, w_ryd2, nwsigwin)
+subroutine sigma_pade(sigma_band_c, sigma_band_con, mu, w_ryd, w_ryd2, nwsigwin)
 
   use control_gw,           only : eta, double_grid
-  use ener,                 only : ef
   use freq_gw,              only : nwsigma
   use gwsigma,              only : nbnd_sig
   use kinds,                only : dp
-  use klist,                only : lgauss
 
   implicit none
 
@@ -37,7 +35,7 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, w_ryd, w_ryd2, nwsigwin)
   complex(dp), allocatable :: z(:), u(:), a(:)
   complex(dp), allocatable :: z2(:), u2(:), a2(:)
   real(dp)                 :: w_ryd(nwsigma), w_ryd2(nwsigwin)
-  real(dp)                 :: ehomo, elumo, mu
+  real(dp)                 :: mu
   integer                  :: iw, ibnd, jbnd
 
 !nwsigma is the number of points we have calculated sigma at.
@@ -47,12 +45,6 @@ subroutine sigma_pade(sigma_band_c, sigma_band_con, w_ryd, w_ryd2, nwsigwin)
 !We then exploit the symmetry of the selfenergy on the imaginary axis.
 !Re(Sig(w)) = Re(Sig(-w)) and Im(Sig(w)) = -Im(Sig(-w))
     allocate ( z2(2*nwsigma-1), a2(2*nwsigma-1), u2(2*nwsigma-1))
-    CALL get_homo_lumo (ehomo, elumo)
-    if(.not.lgauss) then
-      mu = ehomo + 0.5d0*(elumo-ehomo)
-    else
-      mu = ef
-    endif
    !mu = ehomo
    !write(6, '(f14.7)'), mu 
 if (double_grid) then

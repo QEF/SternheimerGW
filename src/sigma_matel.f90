@@ -28,6 +28,7 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE constants,            ONLY : RYTOEV, eps14
   USE control_gw,           ONLY : lgamma, do_imag
   USE disp,                 ONLY : xk_kpoints
+  USE ener,                 ONLY : ef
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
@@ -41,7 +42,7 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE io_files,             ONLY : diropn 
   USE io_global,            ONLY : stdout, meta_ionode
   USE kinds,                ONLY : DP
-  USE klist,                ONLY : xk
+  USE klist,                ONLY : xk, lgauss
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
   USE mp_images,            ONLY : my_image_id
   USE mp_world,             ONLY : mpime
@@ -69,6 +70,18 @@ IMPLICIT NONE
   INTEGER                   :: sigma_c_ngm, sigma_x_ngm
   LOGICAL                   :: exst, opnd
 
+  !> energy of the highest occupied state
+  REAL(dp) ehomo
+
+  !> energy of the lowest unoccupied state
+  REAL(dp) elumo
+
+  !> the chemical potential
+  REAL(dp) mu
+
+  !> real constant of 0.5
+  REAL(dp),    PARAMETER :: half = 0.5_dp
+
   !> complex constant of 0
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
@@ -78,6 +91,22 @@ IMPLICIT NONE
 
   nbnd   = nbnd_sig 
   lgamma = .true.
+
+  !
+  ! define the chemical potential
+  !
+  IF (.NOT.lgauss) THEN
+    !
+    ! for semiconductors choose the middle of the gap
+    CALL get_homo_lumo(ehomo, elumo)
+    mu = half * (ehomo + elumo)
+    !
+  ELSE
+    !
+    ! for metals set it to the Fermi energy
+    mu = ef
+    !
+  END IF
 
   ! check for gamma point
   IF(ALL(ABS(xk_kpoints(:,ik0)) <= eps14)) THEN
@@ -221,12 +250,12 @@ IMPLICIT NONE
     CALL print_matel_im(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), AIMAG(freq%sigma), nwsigma)
     ! do analytic continuation and print selfenergy on the real axis.
     sigma_band_con(:,:,:) = zero
-    CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), AIMAG(freq%sigma), freq%window, nwsigwin)
+    CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), mu, AIMAG(freq%sigma), freq%window, nwsigwin)
     CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), freq%window, nwsigwin)
    deallocate(sigma_band_con)
   ELSE
     ! print sigma on real axis
-    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), REAL(freq%sigma), nwsigma)
+    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), REAL(freq%sigma) + mu, nwsigma)
   END IF
   IF (allocated(sigma_band_exg)) DEALLOCATE(sigma_band_exg)
 

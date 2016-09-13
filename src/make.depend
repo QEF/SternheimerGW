@@ -370,7 +370,6 @@ sigma_matel.o : gwcom.o
 sigma_matel.o : sigma_expect.o
 sigma_matel.o : timing.o
 sigma_pade.o : ../../Modules/kind.o
-sigma_pade.o : ../../PW/src/pwcom.o
 sigma_pade.o : gwcom.o
 solve_linter.o : ../../FFTXlib/fft_interfaces.o
 solve_linter.o : ../../LR_Modules/dv_of_drho.o
