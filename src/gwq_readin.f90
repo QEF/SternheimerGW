@@ -530,8 +530,13 @@ SUBROUTINE gwq_readin(freq, vcut)
   tmp_dir_save=tmp_dir
   tmp_dir_gw= TRIM (tmp_dir) //'_gw'//trim(int_to_char(my_image_id))//'/'
   tmp_dir_coul= TRIM (tmp_dir) //'_gw0'//'/'
+
   ! set output directory if not defined
-  IF (output%directory == '') output%directory = tmp_dir_gw
+  IF (output%directory == '') THEN
+    output%directory = trimcheck(tmp_dir_gw)
+  ELSE
+    output%directory = trimcheck(output%directory)
+  END IF
   output%prefix = prefix
 
   ! create directory (if it doesn't exist)
