@@ -226,10 +226,8 @@ SUBROUTINE gwq_readin(freq, vcut)
   reduce_io    = .FALSE.
   prec_direct  = .FALSE.
   prec_shift  = .FALSE.
-  IF ( TRIM(outdir) == './') THEN
-     CALL get_environment_variable( 'ESPRESSO_TMPDIR', outdir )
-     IF ( TRIM( outdir ) == ' ' ) outdir = './'
-  ENDIF
+  CALL get_environment_variable( 'ESPRESSO_TMPDIR', outdir )
+  IF ( TRIM( outdir ) == ' ' ) outdir = './'
   prefix       = 'pwscf'
   fildyn       = 'matdyn'
   fildrho      = ' '

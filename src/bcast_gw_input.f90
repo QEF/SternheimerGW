@@ -29,7 +29,7 @@ subroutine bcast_gw_input ( )
   !     the other processors
   !
   !
-#ifdef __PARA
+#if defined(__MPI)
   use mp,          ONLY : mp_bcast
   use mp_world,    ONLY : world_comm
   USE io_global,   ONLY : meta_ionode_id
