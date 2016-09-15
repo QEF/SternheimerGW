@@ -93,7 +93,7 @@ CONTAINS
 
     ! allocate the array
     ALLOCATE(map(num_g_corr))
-    ALLOCATE(map_(SIZE(igk_k, ikq)))
+    ALLOCATE(map_(SIZE(igk_k, 1)))
 
     ! create the map and copy to result array
     map_ = create_map(igk_k(:,ikq), gcutcorr)
