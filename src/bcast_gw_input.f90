@@ -30,37 +30,38 @@ subroutine bcast_gw_input ( )
   !
   !
 #if defined(__MPI)
-  use mp,          ONLY : mp_bcast
-  use mp_world,    ONLY : world_comm
-  USE io_global,   ONLY : meta_ionode_id
-  USE control_gw,  ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
-                          niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
-                          ldisp, elgw, reduce_io, zue, zeu, epsil, trans, &
-                          lgamma, eta, modielec, do_coulomb, do_sigma_c,& 
-                          do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
-                          do_q0_only, maxter_coul, maxter_green, godbyneeds, cohsex, padecont,&
-                          multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
-                          coul_multishift, trunc_2d, do_epsil, do_diag_g, do_diag_w,&
-                          do_imag, do_pade_coul, newgrid, high_io, &
-                          prec_direct, tmp_dir_coul, prec_shift, just_corr,&
-                          double_grid, output, truncation
-  USE disp,        ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
-                          w_of_k_start, w_of_k_stop
-  USE partial,     ONLY : nat_todo, nrapp
-  USE freq_gw,     ONLY : wsigmamin, wsigmamax, wcoulmax, nwcoul,&
-                          wsig_wind_min, wsig_wind_max, nwsigma, nwsigwin
-  USE output_mod,  ONLY : fildvscf, fildyn, fildrho, filsigx, filsigc, filcoul
-  use io_files,    ONLY : tmp_dir, prefix
-  USE control_flags,    ONLY: iverbosity, modenum
-  USE input_parameters, ONLY: max_seconds
-  USE units_gw,         ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, lrsigma, lrsex, iunsex
+  USE control_flags,    ONLY : iverbosity, modenum
+  USE control_gw,       ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
+                               niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
+                               ldisp, reduce_io, trans, &
+                               eta, modielec, do_coulomb, do_sigma_c,& 
+                               do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
+                               do_q0_only, maxter_coul, maxter_green, godbyneeds, cohsex, padecont,&
+                               multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
+                               coul_multishift, trunc_2d, do_epsil, do_diag_g, do_diag_w,&
+                               do_imag, do_pade_coul, newgrid, high_io, &
+                               prec_direct, tmp_dir_coul, prec_shift, just_corr,&
+                               double_grid, output, truncation
+  USE disp,             ONLY : iq1, iq2, iq3, nq1, nq2, nq3, kpoints, w_of_q_start,&
+                               w_of_k_start, w_of_k_stop
+  USE freq_gw,          ONLY : wsigmamin, wsigmamax, wcoulmax, nwcoul,&
+                               wsig_wind_min, wsig_wind_max, nwsigma, nwsigwin
+  USE gwsigma,          ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv,&
+                               exch_conv
+  USE gwsymm,           ONLY : use_symm
+  USE input_parameters, ONLY : max_seconds
+  USE io_files,         ONLY : tmp_dir, prefix
+  USE io_global,        ONLY : meta_ionode_id
   USE ions_base,        ONLY : amass
+  use mp,               ONLY : mp_bcast
+  use mp_world,         ONLY : world_comm
+  USE output_mod,       ONLY : fildvscf, fildyn, fildrho, filsigx, filsigc, filcoul
+  USE partial,          ONLY : nat_todo, nrapp
   USE run_info,         ONLY : title
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv,&
-                            exch_conv
-  USE gwsymm,        ONLY : use_symm
+  USE units_gw,         ONLY : lrgrn, lrcoul
  
-  implicit none
+  IMPLICIT NONE
+
   call mp_bcast (trans, meta_ionode_id, world_comm )
   call mp_bcast (reduce_io, meta_ionode_id, world_comm )
   call mp_bcast (ldisp, meta_ionode_id, world_comm )
