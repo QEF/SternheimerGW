@@ -114,7 +114,7 @@ CONTAINS
     !> The custom FFT type initialized by this routine
     TYPE(fft_cus), INTENT(INOUT) :: fft_cust
 
-#ifdef __MPI
+#if defined(__MPI)
     LOGICAL, PARAMETER :: lpara = .TRUE.
 #else
     LOGICAL, PARAMETER :: lpara = .FALSE.
