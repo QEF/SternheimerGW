@@ -371,7 +371,7 @@ CONTAINS
     !!
     !! 1. Distribute the work over the process grid
     !!
-    CALL parallel_task(inter_image_comm, nbnd_occ(ikpt), iband_start, iband_stop, num_task)
+    CALL parallel_task(inter_image_comm, nbnd_occ(1), iband_start, iband_stop, num_task)
 
     !!
     !! 2. Extract the wave function of every q-point
