@@ -128,7 +128,7 @@ SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
   !
   ! we compute the projector in the valence band
   !
-  IF (ABS(alpha_pv) < eps14) THEN
+  IF (ABS(alpha_pv) > eps14) THEN
     CALL projector_psi(num_g, nbnd_occ(current_k), alpha_pv, spsi)
     DO iband = 1, num_band
       CALL ZAXPY(num_g, one, spsi(1, iband), 1, A_psi(1, iband), 1)  
