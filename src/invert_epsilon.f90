@@ -20,9 +20,8 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE invert_epsilon(scrcoul_g_in, lgamma, eps_m)
+SUBROUTINE invert_epsilon(scrcoul_g_in, lgamma)
 
-USE control_gw,    ONLY : solve_direct
 USE freq_gw,       ONLY : nfs
 USE gwsigma,       ONLY : gcutcorr
 USE kinds,         ONLY : DP
@@ -31,7 +30,6 @@ IMPLICIT NONE
 
 COMPLEX(DP)       :: scrcoul_g_in(gcutcorr, gcutcorr, nfs, 1)
 COMPLEX(DP)       :: work(gcutcorr)
-COMPLEX(DP)       :: eps_m(nfs)
 INTEGER           :: ig, igp
 INTEGER           :: iw
 INTEGER           :: iwork(gcutcorr), info
@@ -43,17 +41,6 @@ COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 !> complex constant of 1
 COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
 
-!Overwrite with eps_m calculated using q0G0.
-!Place hold with 1/epsilon^{-1}_{00}(q=0
-if(lgamma) then
-  do iw = 1, nfs
-    if (solve_direct) then
-        scrcoul_g_in(1,1,iw,1) = eps_m(iw)
-      else
-        scrcoul_g_in(1,1,iw,1) = 1.0d0/(eps_m(iw)+1.0d0)
-    endif
-  enddo
-endif
 !at Gamma wings of \Chi are 0.
 if(lgamma) then
   do iw = 1, nfs
@@ -65,6 +52,7 @@ if(lgamma) then
     enddo
   enddo
 endif
+
 !Need block inversion routine if iq is gamma.
 do iw = 1, nfs
    call ZGETRF (gcutcorr, gcutcorr,&
@@ -80,12 +68,6 @@ write(6,'(5x, "Done epsilon inversion.")')
 write(6,'(5x, "")') 
 
 if(lgamma) then
-!Overwrite with eps_m calculated using q0G0.
-  if(.not.solve_direct) then
-    do iw = 1, nfs
-       scrcoul_g_in(1,1,iw,1) = eps_m(iw)
-    enddo
-  endif
   do iw = 1, nfs
      do ig = 2, gcutcorr
         scrcoul_g_in(ig,1,iw,1) = zero
@@ -95,6 +77,7 @@ if(lgamma) then
      enddo
   enddo
 endif
+
 !We store epsilon-1 to disk:
 do iw = 1, nfs
    do ig = 1, gcutcorr
