@@ -64,16 +64,6 @@ MODULE timing_module
   CHARACTER(*), PARAMETER :: time_coul_solver = 'coul_solver'
 
   !
-  ! split Green's function into part
-  !
-
-  !> label for the clock measuring the linear solver (G part)
-  CHARACTER(*), PARAMETER :: time_green_solver = 'green_solver'
-
-  !> label for the clock measuring the time for the multishift solver (G part)
-  CHARACTER(*), PARAMETER :: time_green_multishift = 'green_multi'
-
-  !
   ! split Sigma_c into parts
   !
 
@@ -157,21 +147,6 @@ CONTAINS
 
     ! print the time needed for the linear solver
     CALL print_clock(time_coul_solver)
-
-    !
-    ! Detailed part of Green's function
-    !
-    ! empty line to separate it from the rest of the output
-    WRITE(stdout, *)
-
-    ! info line
-    WRITE(stdout,'(a)') "Needed for Green's function"
-
-    ! print the time needed for the linear solver
-    CALL print_clock(time_green_solver)
-
-    ! print the time needed for the multishift solver
-    CALL print_clock(time_green_multishift)
 
     !
     ! Detailed part of correlation part of Sigma

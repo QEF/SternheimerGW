@@ -76,6 +76,9 @@ CONTAINS
     !> temporary copy of the map array
     INTEGER, ALLOCATABLE :: map_(:)
 
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
     !> constant of 1 indicating a fully occupied state
     REAL(dp), PARAMETER :: occupied = 1.0_dp
 
@@ -128,6 +131,7 @@ CONTAINS
 
     ! read wave function
     CALL get_buffer(evec, lrwfc, iuwfc, ikq)
+    evec(num_g + 1:, :) = zero
 
   END SUBROUTINE green_prepare
 

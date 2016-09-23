@@ -166,7 +166,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -224,7 +224,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -285,7 +285,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -351,7 +351,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -417,7 +417,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -483,7 +483,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -560,7 +560,7 @@ CONTAINS
 
     
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -654,7 +654,7 @@ CONTAINS
 
     
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -754,7 +754,7 @@ CONTAINS
 
     
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -862,7 +862,7 @@ CONTAINS
 
     
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -972,7 +972,7 @@ CONTAINS
     INTEGER array_dim
     
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -1085,7 +1085,7 @@ CONTAINS
     INTEGER array_dim
     
     ! we only need to gather the vector if it is distributed
-#ifdef __MPI
+#if defined(__MPI)
   
     ! determine number of processes
     num_proc = SIZE(num_task)
@@ -1170,7 +1170,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to sum if the array is distributed
-#ifdef __MPI
+#if defined(__MPI)
 
     ! determine rank of this process
     my_rank = mp_rank(comm)
@@ -1217,7 +1217,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to sum if the array is distributed
-#ifdef __MPI
+#if defined(__MPI)
 
     ! determine rank of this process
     my_rank = mp_rank(comm)
@@ -1264,7 +1264,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to sum if the array is distributed
-#ifdef __MPI
+#if defined(__MPI)
 
     ! determine rank of this process
     my_rank = mp_rank(comm)
@@ -1311,7 +1311,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to sum if the array is distributed
-#ifdef __MPI
+#if defined(__MPI)
 
     ! determine rank of this process
     my_rank = mp_rank(comm)
@@ -1358,7 +1358,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to sum if the array is distributed
-#ifdef __MPI
+#if defined(__MPI)
 
     ! determine rank of this process
     my_rank = mp_rank(comm)
@@ -1405,7 +1405,7 @@ CONTAINS
     INTEGER ierr
 
     ! we only need to sum if the array is distributed
-#ifdef __MPI
+#if defined(__MPI)
 
     ! determine rank of this process
     my_rank = mp_rank(comm)

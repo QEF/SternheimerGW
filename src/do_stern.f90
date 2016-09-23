@@ -137,7 +137,6 @@ IMPLICIT NONE
 
       CALL initialize_gw(.TRUE.)
       CALL coulomb_q0G0(eps_m)
-      IF (meta_ionode) scrcoul_g(1,1,:) = eps_m
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
       CALL clean_pw_gw(.FALSE.)
@@ -190,10 +189,13 @@ IMPLICIT NONE
       ! also reorder the indices
       CALL unfold_w(scrcoul_root, scrcoul_g)
 
+      ! set the special |q + G| = 0 element
+      IF (lgamma) scrcoul_g(1,1,:) = eps_m
+
       ! for the direct solver W = eps^-1
       IF (solve_direct .AND. tinvert) THEN
         WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
-        CALL invert_epsilon(scrcoul_g, lgamma, eps_m)
+        CALL invert_epsilon(scrcoul_g, lgamma)
       END IF
 
       ! write to file
