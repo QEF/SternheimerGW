@@ -131,6 +131,7 @@ IMPLICIT NONE
   npwq = npw
   ! read wave functions at current k-point
   CALL get_buffer (evc, lrwfc, iuwfc, ikq)
+  evc(npw + 1:, :) = zero
 
   !
   ! expectation value of V_xc

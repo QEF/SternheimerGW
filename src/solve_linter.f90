@@ -289,9 +289,12 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
       IF (nksq > 1) THEN
         IF (lgamma) THEN
           CALL get_buffer(evc, lrwfc, iuwfc, ikk)
+          evc(npw + 1:, :) = zero
         ELSE
           CALL get_buffer(evc, lrwfc, iuwfc, ikk)
           CALL get_buffer(evq, lrwfc, iuwfc, ikq)
+          evc(npw  + 1:, :) = zero
+          evq(npwq + 1:, :) = zero
         END IF
       END IF
       !

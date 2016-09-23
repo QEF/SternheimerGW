@@ -312,11 +312,11 @@ CONTAINS
     USE gwsigma,            ONLY: sigma_x_st
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
-    USE klist,              ONLY: xk, wk, igk_k
+    USE klist,              ONLY: xk, wk, igk_k, ngk
     USE mp_images,          ONLY: inter_image_comm, root_image
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
     USE parallel_module,    ONLY: parallel_task, mp_root_sum
-    USE qpoint,             ONLY: nksq, ikqs
+    USE qpoint,             ONLY: nksq, ikqs, npwq
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
     USE timing_module,      ONLY: time_sigma_x
@@ -378,9 +378,11 @@ CONTAINS
     !!
     DO iq = 1, nksq
       !
-      ikq = ikqs(iq)
+      ikq  = ikqs(iq)
+      npwq = ngk(ikq)
       !
       CALL get_buffer(evq, lrwfc, iuwfc, ikq)
+      evq(npwq + 1:, :) = zero
       !
       !!
       !! 3. construct the map from G and G' to G - G'
