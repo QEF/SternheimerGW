@@ -137,11 +137,12 @@ CONTAINS
 
   !> This function provides a wrapper that extracts the necessary information
   !! from the global modules to evaluate the self energy.
-  SUBROUTINE sigma_wrapper(ikpt, freq, vcut, config)
+  SUBROUTINE sigma_wrapper(ikpt, freq, vcut, config, debug)
 
     USE cell_base,         ONLY: omega
     USE constants,         ONLY: tpi
     USE control_gw,        ONLY: multishift, tr2_green, output, tmp_dir_coul
+    USE debug_module,      ONLY: debug_type
     USE disp,              ONLY: x_q
     USE ener,              ONLY: ef
     USE freqbins_module,   ONLY: freqbins_type
@@ -174,6 +175,9 @@ CONTAINS
 
     !> evaluate the self-energy for these configurations
     TYPE(sigma_config_type), INTENT(IN) :: config(:)
+
+    !> the debug configuration of the calculation
+    TYPE(debug_type), INTENT(IN) :: debug
 
     !> complex constant of zero
     COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
@@ -327,7 +331,7 @@ CONTAINS
       CALL sigma_correlation(omega, sigma_c_st, multishift, 4, tr2_green, &
                              mu, alpha, config(icon)%index_kq, freq, first_sigma, &
                              gmapsym(:gcutcorr, config(icon)%inv_op), &
-                             coulomb, sigma)
+                             coulomb, sigma, debug)
       !
     END DO ! icon
 
@@ -458,8 +462,9 @@ CONTAINS
   !! The algorithm consists of the following steps:
   SUBROUTINE sigma_correlation(omega, fft_cust, multishift, lmax, threshold, &
                                mu, alpha, ikq, freq, first_sigma,            &
-                               gmapsym, coulomb, sigma)
+                               gmapsym, coulomb, sigma, debug)
 
+    USE debug_module,    ONLY: debug_type
     USE fft_custom,      ONLY: fft_cus
     USE fft6_module,     ONLY: invfft6
     USE freqbins_module, ONLY: freqbins_type
@@ -505,6 +510,9 @@ CONTAINS
 
     !> The self-energy \f$\Sigma\f$ at the specified frequency points
     COMPLEX(dp),   INTENT(OUT) :: sigma(:,:,:)
+
+    !> the debug configuration of the calculation
+    TYPE(debug_type), INTENT(IN) :: debug
 
     !> the number of real space points used for the correlation
     INTEGER num_r_corr
@@ -612,7 +620,7 @@ CONTAINS
     ALLOCATE(green(num_r_corr, num_r_corr, num_green))
     ! after this call, we obtained G(G, G', w)
     CALL green_function(inter_image_comm, multishift, lmax, threshold, map, &
-                        num_g, freq_green, green)
+                        num_g, freq_green, green, debug)
 
     !!
     !! 4. we add the nonanalytic part if on the real axis

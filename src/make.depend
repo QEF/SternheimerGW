@@ -122,6 +122,7 @@ green.o : ../../Modules/uspp.o
 green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : bicgstab.o
+green.o : debug.o
 green.o : gwcom.o
 green.o : linear_op.o
 green.o : parallel.o
@@ -133,6 +134,7 @@ gw.o : ../../Modules/input_parameters.o
 gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
+gw.o : debug.o
 gw.o : exchange.o
 gw.o : freqbins.o
 gw.o : gwcom.o
@@ -180,6 +182,7 @@ gwq_readin.o : ../../Modules/run_info.o
 gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
+gwq_readin.o : debug.o
 gwq_readin.o : freqbins.o
 gwq_readin.o : gwcom.o
 gwq_readin.o : save_gw_input.o
@@ -226,6 +229,7 @@ opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : gwcom.o
 opengwfil.o : sigma_io.o
+pade.o : ../../Modules/constants.o
 pade.o : ../../Modules/kind.o
 parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp.o
@@ -325,6 +329,7 @@ sigma.o : ../../Modules/mp_pools.o
 sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
+sigma.o : debug.o
 sigma.o : fft6.o
 sigma.o : freqbins.o
 sigma.o : green.o

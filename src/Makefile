@@ -21,6 +21,7 @@ coulomb.o\
 coulomb_q0G0.o\
 coulpade.o\
 deallocate_gwq.o\
+debug.o\
 do_stern.o\
 dvqpsi_us.o\
 exchange.o\
@@ -79,10 +80,18 @@ LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
 
-all : version libgw.a gw.x
+no_debug : .no_debug all
+.no_debug:
+	-if [ -f .debug ]; then rm debug.o .debug; fi
+	-touch $@
 
 debug : DFLAGS += -D__DEBUG
-debug : all
+debug : .debug all
+.debug:
+	-if [ -f .no_debug ]; then rm debug.o .no_debug; fi
+	-touch $@
+
+all : version libgw.a gw.x
 
 version : 
 	bash update_version

@@ -145,9 +145,10 @@ CONTAINS
   !! where \f$H_k\f$ is the Hamiltonian at a certain k-point, \f$\omega\f$ is
   !! the frequency, and \f$\delta_{G,G'}\f$ is the Kronecker delta.
   !!
-  SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green)
+  SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green, debug)
 
     USE bicgstab_module, ONLY: bicgstab
+    USE debug_module,    ONLY: debug_type, debug_set
     USE kinds,           ONLY: dp
     USE parallel_module, ONLY: parallel_task, mp_allgatherv
     USE timing_module,   ONLY: time_green
@@ -177,6 +178,9 @@ CONTAINS
 
     !> The Green's function of the system.
     COMPLEX(dp), INTENT(OUT) :: green(:,:,:)
+
+    !> the debug configuration of the calculation
+    TYPE(debug_type), INTENT(IN) :: debug
 
     !> distribution of the tasks over the process grid
     INTEGER,     ALLOCATABLE :: num_task(:)
@@ -280,6 +284,9 @@ CONTAINS
         END DO ! ifreq
 
       END IF
+
+      ! debug the solver
+      IF (debug_set) CALL green_solver_debug(omega, bb, green_comm(:,:,ig), debug)
 
     END DO ! ig
 
@@ -442,7 +449,7 @@ CONTAINS
     USE wvfct,            ONLY: npwx, current_k
 
     !> The initial shift
-    complex(dp), INTENT(IN)  :: omega
+    COMPLEX(dp), INTENT(IN)  :: omega
 
     !> The input vector.
     COMPLEX(dp), INTENT(IN)  :: psi(:)
@@ -497,5 +504,28 @@ CONTAINS
     DEALLOCATE(psi_, A_psi_)
 
   END SUBROUTINE green_operator
+
+  !> This routine writes the Hamiltonian to file in matrix format
+  SUBROUTINE green_solver_debug(omega, bb, green, debug)
+
+    USE debug_module, ONLY: debug_type
+    USE kinds,        ONLY: dp
+
+    !> The initial shift
+    COMPLEX(dp), INTENT(IN) :: omega(:)
+
+    !> the right hand side of the linear equation
+    COMPLEX(dp), INTENT(IN) :: bb(:)
+
+    !> the calculated Green's function
+    COMPLEX(dp), INTENT(IN) :: green(:,:)
+
+    !> the configuration for the debug run
+    TYPE(debug_type), INTENT(IN) :: debug
+
+    ! trivial case - do not debug this option
+    IF (.NOT.debug%solver_green) RETURN
+
+  END SUBROUTINE green_solver_debug
 
 END MODULE green_module
