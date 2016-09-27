@@ -64,6 +64,7 @@ sigma_grid.o\
 sigma_io.o\
 sigma_matel.o\
 sigma_pade.o\
+sleep.o\
 solve_linter.o\
 star_q.o\
 stern_symm.o\
