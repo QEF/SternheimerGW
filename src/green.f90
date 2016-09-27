@@ -512,7 +512,11 @@ CONTAINS
   SUBROUTINE green_solver_debug(omega, threshold, bb, green, debug)
 
     USE debug_module, ONLY: debug_type, test_nan
+    USE iotk_module,  ONLY: iotk_free_unit, iotk_index, &
+                            iotk_open_write, iotk_write_dat, iotk_close_write
     USE kinds,        ONLY: dp
+    USE mp_world,     ONLY: mpime
+    USE sleep_module, ONLY: sleep, two_min
 
     !> The initial shift
     COMPLEX(dp), INTENT(IN) :: omega(:)
@@ -535,17 +539,32 @@ CONTAINS
     !> the number of G vectors
     INTEGER num_g
 
+    !> counter om the G vectors
+    INTEGER ig
+
     !> the number of frequencies
     INTEGER num_freq
 
     !> counter on the number of frequencies
     INTEGER ifreq
 
+    !> unit for file I/O
+    INTEGER iunit
+
     !> residual error of the linear operator
     REAL(dp) residual
 
     !> work array for the check of the linear operator
     COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    !> the full Hamiltonian
+    COMPLEX(dp), ALLOCATABLE :: hamil(:, :)
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex constant of 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
 
     !> complex constant of minus 1
     COMPLEX(dp), PARAMETER :: minus_one = CMPLX(-1.0_dp, 0.0_dp, KIND=dp)
@@ -603,14 +622,57 @@ CONTAINS
         !
       END DO ! ifreq
       !
+      DEALLOCATE(work)
+      !
     END IF ! check if (H - w) G = -delta
 
     !
-    ! now prepare the extensive test
+    ! prepare the extensive test
     !
     IF (.NOT.extensive_test) RETURN
+    !
+    WRITE(debug%note, *) 'extensive test necessary'
+    !
+    ! allocate work array and Hamiltonian
+    ALLOCATE(work(num_g))
+    ALLOCATE(hamil(num_g, num_g))
 
-    WRITE(0,*) 'extensive test necessary'
+    !
+    ! generate the full Hamiltonian
+    !
+    DO ig = 1, num_g
+      !
+      ! initialize a single element of work to 1
+      work     = zero
+      work(ig) = one
+      !
+      ! evaluate one column of the Hamiltonian
+      CALL green_operator(zero, work, hamil(:, ig))
+      !
+    END DO ! ig
+
+    !
+    ! write everything to file
+    !
+    CALL iotk_free_unit(iunit)
+    CALL iotk_open_write(iunit, 'green_solver' // TRIM(iotk_index(mpime)) // '.xml', &
+                         binary = .TRUE., root = 'LINEAR_PROBLEM')
+    CALL iotk_write_dat(iunit, 'DIMENSION', num_g)
+    CALL iotk_write_dat(iunit, 'NUMBER_SHIFT', num_freq)
+    CALL iotk_write_dat(iunit, 'LIST_SHIFT', omega)
+    CALL iotk_write_dat(iunit, 'LINEAR_OPERATOR', hamil)
+    CALL iotk_write_dat(iunit, 'RIGHT_HAND_SIDE', bb)
+    CALL iotk_write_dat(iunit, 'INCORRECT_SOLUTION', green)
+    CALL iotk_close_write(iunit)
+    
+    !
+    ! finish extensive test - stop calculation after short buffer period
+    !
+    WRITE(debug%note, *) 'linear problem written to file'
+    !
+    ! wait for two minutes before stopping so that other processors may reach this point
+    ifreq = sleep(two_min)
+    !
     CALL errore(__FILE__, "linear solver for Green's function did not pass a test", 1)
 
   END SUBROUTINE green_solver_debug
