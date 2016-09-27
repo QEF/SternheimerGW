@@ -81,6 +81,9 @@ TLDEPS= bindir mods libs pw-lib lr-lib
 
 all : version libgw.a gw.x
 
+debug : DFLAGS += -D__DEBUG
+debug : all
+
 version : 
 	bash update_version
 
@@ -98,7 +101,7 @@ libgw.a : $(GWOBJS)
 clean :
 	- rm *.x *.o *.a *.mod
 
-.PHONY: all version clean
+.PHONY: all version clean debug
 
 # DO NOT DELETE
 include make.depend
