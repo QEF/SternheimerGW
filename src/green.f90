@@ -270,6 +270,9 @@ CONTAINS
         ! copy from temporary array to communicated array
         green_comm(:, :, ig) = green_part(map, :)
 
+        ! debug the solver
+        IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
+
       ! without multishift, we solve every frequency separately
       ELSE
 
@@ -281,12 +284,12 @@ CONTAINS
           ! copy from temporary array to communicated array
           green_comm(:, ifreq, ig) = green_part(map, 1)
 
+          ! debug the solver
+          IF (debug_set) CALL green_solver_debug(omega(ifreq:ifreq), threshold, bb, green_part, debug)
+
         END DO ! ifreq
 
       END IF
-
-      ! debug the solver
-      IF (debug_set) CALL green_solver_debug(omega, bb, green_comm(:,:,ig), debug)
 
     END DO ! ig
 
@@ -506,13 +509,16 @@ CONTAINS
   END SUBROUTINE green_operator
 
   !> This routine writes the Hamiltonian to file in matrix format
-  SUBROUTINE green_solver_debug(omega, bb, green, debug)
+  SUBROUTINE green_solver_debug(omega, threshold, bb, green, debug)
 
-    USE debug_module, ONLY: debug_type
+    USE debug_module, ONLY: debug_type, test_nan
     USE kinds,        ONLY: dp
 
     !> The initial shift
     COMPLEX(dp), INTENT(IN) :: omega(:)
+
+    !> The target threshold of the linear solver
+    REAL(dp),    INTENT(IN) :: threshold
 
     !> the right hand side of the linear equation
     COMPLEX(dp), INTENT(IN) :: bb(:)
@@ -523,8 +529,89 @@ CONTAINS
     !> the configuration for the debug run
     TYPE(debug_type), INTENT(IN) :: debug
 
+    !> this flag will be set if an extensive test is necessary
+    LOGICAL extensive_test
+
+    !> the number of G vectors
+    INTEGER num_g
+
+    !> the number of frequencies
+    INTEGER num_freq
+
+    !> counter on the number of frequencies
+    INTEGER ifreq
+
+    !> residual error of the linear operator
+    REAL(dp) residual
+
+    !> work array for the check of the linear operator
+    COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    !> complex constant of minus 1
+    COMPLEX(dp), PARAMETER :: minus_one = CMPLX(-1.0_dp, 0.0_dp, KIND=dp)
+
+    !> LAPACK function to evaluate the 2-norm
+    REAL(dp), EXTERNAL :: DNRM2
+
     ! trivial case - do not debug this option
     IF (.NOT.debug%solver_green) RETURN
+
+    !
+    ! sanity test of the input
+    !
+    num_g = SIZE(bb)
+    num_freq = SIZE(omega)
+    IF (SIZE(green, 1) /= num_g) &
+      CALL errore(__FILE__, "Green's function has incorrect first dimension", 1)
+    IF (SIZE(green, 2) /= num_freq) &
+      CALL errore(__FILE__, "Green's function has incorrect second dimension", 1)
+
+    !
+    ! check if there is anything that requires an extensive test
+    !
+    extensive_test = ANY(test_nan(green))
+    !
+    IF (extensive_test) THEN
+      !
+      WRITE(debug%note, *) 'debug green_solver: NaN found'
+      !
+    ELSE
+      ! if an extensive test is already necessary, we don't need to do the
+      ! expensive test whether (H - w) G = -delta is fulfilled
+      !
+      ALLOCATE(work(num_g))
+      !
+      ! test all frequencies
+      DO ifreq = 1, num_freq
+        !
+        ! evaluate work = (H - w) G
+        CALL green_operator(omega(ifreq), green(:, ifreq), work)
+        !
+        ! work = (H - w) G - bb (should be ~ 0)
+        CALL ZAXPY(num_g, minus_one, bb, 1, work, 1)
+        !
+        ! determine the residual = sum(|work|**2) (note: factor 2 for complex)
+        residual = DNRM2(2 * num_g, work, 1)
+        !
+        ! if residual is not of same order of magnitude as threshold we may want extensive test
+        extensive_test = residual > 10.0_dp * threshold
+        !
+        IF (extensive_test) THEN
+          WRITE(debug%note, *) 'debug green_solver: failed', residual
+          EXIT
+        END IF
+        !
+      END DO ! ifreq
+      !
+    END IF ! check if (H - w) G = -delta
+
+    !
+    ! now prepare the extensive test
+    !
+    IF (.NOT.extensive_test) RETURN
+
+    WRITE(0,*) 'extensive test necessary'
+    CALL errore(__FILE__, "linear solver for Green's function did not pass a test", 1)
 
   END SUBROUTINE green_solver_debug
 

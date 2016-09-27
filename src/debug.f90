@@ -40,9 +40,52 @@ MODULE debug_module
     !> debug linear solver for the Green's function
     LOGICAL :: solver_green = .FALSE.
 
+    !> the unit into which the debug log is written
+    INTEGER :: note = 6
+
   END TYPE debug_type
+
+  !> this is a wrapper for the ieee_arithmetic and/or gfortran's isnan
+  !! it also extends the functionality to complex quantities
+  INTERFACE test_nan
+    MODULE PROCEDURE test_nan_real, test_nan_complex
+  END INTERFACE test_nan
 
 CONTAINS
 
- 
+  !> test if the input value is NaN
+  ELEMENTAL FUNCTION test_nan_real(x) RESULT(is_nan)
+
+    USE kinds, ONLY: dp
+
+! gfortran only supports ieee_arithmetic since v5.0
+#if !defined(__GFORTRAN) || (__GNUC__ > 4)
+    USE, INTRINSIC :: ieee_arithmetic, ONLY: isnan => ieee_is_nan
+#endif
+
+    !> the tested variable
+    REAL(dp), INTENT(IN) :: x
+
+    !> is the tested variable NaN
+    LOGICAL is_nan
+
+    is_nan = isnan(x)
+
+  END FUNCTION test_nan_real
+
+  !> test if the input value is NaN
+  ELEMENTAL FUNCTION test_nan_complex(x) RESULT(is_nan)
+
+    USE kinds, ONLY: dp
+
+    !> the tested variable
+    COMPLEX(dp), INTENT(IN) :: x
+
+    !> is the tested variable NaN
+    LOGICAL is_nan
+
+    is_nan = test_nan_real(REAL(x)) .OR. test_nan_real(AIMAG(x))
+
+  END FUNCTION test_nan_complex
+
 END MODULE debug_module

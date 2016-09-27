@@ -68,6 +68,7 @@ coulpade.o : truncation.o
 deallocate_gwq.o : ../../LR_Modules/lrcom.o
 deallocate_gwq.o : ../../Modules/becmod.o
 deallocate_gwq.o : gwcom.o
+debug.o : ../../Modules/kind.o
 do_stern.o : ../../Modules/constants.o
 do_stern.o : ../../Modules/io_global.o
 do_stern.o : ../../Modules/kind.o
