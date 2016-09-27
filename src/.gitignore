@@ -1,3 +1,5 @@
 obsolete
 version.f90
 version.f90.tmp
+.debug
+.no_debug

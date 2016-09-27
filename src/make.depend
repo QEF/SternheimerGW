@@ -68,6 +68,7 @@ coulpade.o : truncation.o
 deallocate_gwq.o : ../../LR_Modules/lrcom.o
 deallocate_gwq.o : ../../Modules/becmod.o
 deallocate_gwq.o : gwcom.o
+debug.o : ../../Modules/kind.o
 do_stern.o : ../../Modules/constants.o
 do_stern.o : ../../Modules/io_global.o
 do_stern.o : ../../Modules/kind.o
@@ -118,14 +119,18 @@ godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
 green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
+green.o : ../../Modules/mp_world.o
 green.o : ../../Modules/uspp.o
 green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
+green.o : ../../iotk/src/iotk_module.o
 green.o : bicgstab.o
+green.o : debug.o
 green.o : gwcom.o
 green.o : linear_op.o
 green.o : parallel.o
 green.o : reorder.o
+green.o : sleep.o
 green.o : timing.o
 gw.o : ../../Modules/check_stop.o
 gw.o : ../../Modules/environment.o
@@ -133,6 +138,7 @@ gw.o : ../../Modules/input_parameters.o
 gw.o : ../../Modules/io_files.o
 gw.o : ../../Modules/io_global.o
 gw.o : ../../Modules/mp_global.o
+gw.o : debug.o
 gw.o : exchange.o
 gw.o : freqbins.o
 gw.o : gwcom.o
@@ -180,6 +186,7 @@ gwq_readin.o : ../../Modules/run_info.o
 gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
+gwq_readin.o : debug.o
 gwq_readin.o : freqbins.o
 gwq_readin.o : gwcom.o
 gwq_readin.o : save_gw_input.o
@@ -226,6 +233,7 @@ opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : gwcom.o
 opengwfil.o : sigma_io.o
+pade.o : ../../Modules/constants.o
 pade.o : ../../Modules/kind.o
 parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp.o
@@ -325,6 +333,7 @@ sigma.o : ../../Modules/mp_pools.o
 sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
+sigma.o : debug.o
 sigma.o : fft6.o
 sigma.o : freqbins.o
 sigma.o : green.o

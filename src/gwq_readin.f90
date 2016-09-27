@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_readin(freq, vcut)
+SUBROUTINE gwq_readin(freq, vcut, debug)
   !----------------------------------------------------------------------------
   !
   !    This routine reads the control variables for the program GW.
@@ -48,6 +48,7 @@ SUBROUTINE gwq_readin(freq, vcut)
                                 high_io, prec_direct, prec_shift, just_corr,&
                                 double_grid, name_length, output, &
                                 method_truncation => truncation
+  USE debug_module,      ONLY : debug_type
   USE disp,              ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
                                 xk_kpoints, kpoints, num_k_pts, & 
                                 w_of_q_start, w_of_k_start, w_of_k_stop
@@ -86,6 +87,9 @@ SUBROUTINE gwq_readin(freq, vcut)
   !
   !> We store the truncated Coulomb potential in this type.
   TYPE(vcut_type),     INTENT(OUT) :: vcut
+  !
+  !> we store the debug information in this type
+  TYPE(debug_type),    INTENT(OUT) :: debug
   !
   !> size of the Wigner-Seitz cell
   REAL(dp) atws(3,3)
@@ -150,7 +154,7 @@ SUBROUTINE gwq_readin(freq, vcut)
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        prec_direct, tmp_dir, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
-                       filsigx, filsigc, filcoul
+                       filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
                        file_spec, file_spec_iw, directory, file_sigma

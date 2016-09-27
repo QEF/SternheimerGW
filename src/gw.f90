@@ -27,6 +27,7 @@ program gw
   USE check_stop,        ONLY : check_stop_init
   USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb, &
                                 do_sigma_c, do_q0_only, do_imag, output
+  USE debug_module,      ONLY : debug_type
   USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
   USE environment,       ONLY : environment_start
   USE exchange_module,   ONLY : exchange_wrapper
@@ -61,6 +62,9 @@ program gw
   !> stores the configuration of the self-energy calculation
   TYPE(sigma_config_type), ALLOCATABLE :: config(:)
 
+  !> the debug configuration of the calculation
+  TYPE(debug_type) debug
+
 ! Initialize MPI, clocks, print initial messages
   call mp_startup ( start_images=.true. )
   call environment_start ( code )
@@ -68,7 +72,7 @@ program gw
   call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
   
-  call gwq_readin(freq, vcut)
+  call gwq_readin(freq, vcut, debug)
   call check_stop_init()
   call check_initial_status()
 ! Initialize frequency grids, FFT grids for correlation
@@ -90,7 +94,7 @@ program gw
          call run_nscf(do_band, do_matel, ik, config)
          call initialize_gw(.FALSE.)
          call stop_clock(time_setup)
-         if (do_sigma_c) call sigma_wrapper(ik, freq, vcut, config)
+         if (do_sigma_c) call sigma_wrapper(ik, freq, vcut, config, debug)
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
          if (do_sigma_exx) call exchange_wrapper(ik, vcut)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:

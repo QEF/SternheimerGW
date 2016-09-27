@@ -145,9 +145,10 @@ CONTAINS
   !! where \f$H_k\f$ is the Hamiltonian at a certain k-point, \f$\omega\f$ is
   !! the frequency, and \f$\delta_{G,G'}\f$ is the Kronecker delta.
   !!
-  SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green)
+  SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green, debug)
 
     USE bicgstab_module, ONLY: bicgstab
+    USE debug_module,    ONLY: debug_type, debug_set
     USE kinds,           ONLY: dp
     USE parallel_module, ONLY: parallel_task, mp_allgatherv
     USE timing_module,   ONLY: time_green
@@ -177,6 +178,9 @@ CONTAINS
 
     !> The Green's function of the system.
     COMPLEX(dp), INTENT(OUT) :: green(:,:,:)
+
+    !> the debug configuration of the calculation
+    TYPE(debug_type), INTENT(IN) :: debug
 
     !> distribution of the tasks over the process grid
     INTEGER,     ALLOCATABLE :: num_task(:)
@@ -266,6 +270,9 @@ CONTAINS
         ! copy from temporary array to communicated array
         green_comm(:, :, ig) = green_part(map, :)
 
+        ! debug the solver
+        IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
+
       ! without multishift, we solve every frequency separately
       ELSE
 
@@ -276,6 +283,9 @@ CONTAINS
 
           ! copy from temporary array to communicated array
           green_comm(:, ifreq, ig) = green_part(map, 1)
+
+          ! debug the solver
+          IF (debug_set) CALL green_solver_debug(omega(ifreq:ifreq), threshold, bb, green_part, debug)
 
         END DO ! ifreq
 
@@ -442,7 +452,7 @@ CONTAINS
     USE wvfct,            ONLY: npwx, current_k
 
     !> The initial shift
-    complex(dp), INTENT(IN)  :: omega
+    COMPLEX(dp), INTENT(IN)  :: omega
 
     !> The input vector.
     COMPLEX(dp), INTENT(IN)  :: psi(:)
@@ -497,5 +507,174 @@ CONTAINS
     DEALLOCATE(psi_, A_psi_)
 
   END SUBROUTINE green_operator
+
+  !> This routine writes the Hamiltonian to file in matrix format
+  SUBROUTINE green_solver_debug(omega, threshold, bb, green, debug)
+
+    USE debug_module, ONLY: debug_type, test_nan
+    USE iotk_module,  ONLY: iotk_free_unit, iotk_index, &
+                            iotk_open_write, iotk_write_dat, iotk_close_write
+    USE kinds,        ONLY: dp
+    USE mp_world,     ONLY: mpime
+    USE sleep_module, ONLY: sleep, two_min
+
+    !> The initial shift
+    COMPLEX(dp), INTENT(IN) :: omega(:)
+
+    !> The target threshold of the linear solver
+    REAL(dp),    INTENT(IN) :: threshold
+
+    !> the right hand side of the linear equation
+    COMPLEX(dp), INTENT(IN) :: bb(:)
+
+    !> the calculated Green's function
+    COMPLEX(dp), INTENT(IN) :: green(:,:)
+
+    !> the configuration for the debug run
+    TYPE(debug_type), INTENT(IN) :: debug
+
+    !> this flag will be set if an extensive test is necessary
+    LOGICAL extensive_test
+
+    !> the number of G vectors
+    INTEGER num_g
+
+    !> counter om the G vectors
+    INTEGER ig
+
+    !> the number of frequencies
+    INTEGER num_freq
+
+    !> counter on the number of frequencies
+    INTEGER ifreq
+
+    !> unit for file I/O
+    INTEGER iunit
+
+    !> residual error of the linear operator
+    REAL(dp) residual
+
+    !> work array for the check of the linear operator
+    COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    !> the full Hamiltonian
+    COMPLEX(dp), ALLOCATABLE :: hamil(:, :)
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex constant of 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex constant of minus 1
+    COMPLEX(dp), PARAMETER :: minus_one = CMPLX(-1.0_dp, 0.0_dp, KIND=dp)
+
+    !> LAPACK function to evaluate the 2-norm
+    REAL(dp), EXTERNAL :: DNRM2
+
+    ! trivial case - do not debug this option
+    IF (.NOT.debug%solver_green) RETURN
+
+    !
+    ! sanity test of the input
+    !
+    num_g = SIZE(bb)
+    num_freq = SIZE(omega)
+    IF (SIZE(green, 1) /= num_g) &
+      CALL errore(__FILE__, "Green's function has incorrect first dimension", 1)
+    IF (SIZE(green, 2) /= num_freq) &
+      CALL errore(__FILE__, "Green's function has incorrect second dimension", 1)
+
+    !
+    ! check if there is anything that requires an extensive test
+    !
+    extensive_test = ANY(test_nan(green))
+    !
+    IF (extensive_test) THEN
+      !
+      WRITE(debug%note, *) 'debug green_solver: NaN found'
+      !
+    ELSE
+      ! if an extensive test is already necessary, we don't need to do the
+      ! expensive test whether (H - w) G = -delta is fulfilled
+      !
+      ALLOCATE(work(num_g))
+      !
+      ! test all frequencies
+      DO ifreq = 1, num_freq
+        !
+        ! evaluate work = (H - w) G
+        CALL green_operator(omega(ifreq), green(:, ifreq), work)
+        !
+        ! work = (H - w) G - bb (should be ~ 0)
+        CALL ZAXPY(num_g, minus_one, bb, 1, work, 1)
+        !
+        ! determine the residual = sum(|work|**2) (note: factor 2 for complex)
+        residual = DNRM2(2 * num_g, work, 1)
+        !
+        ! if residual is not of same order of magnitude as threshold we may want extensive test
+        extensive_test = residual > 10.0_dp * threshold
+        !
+        IF (extensive_test) THEN
+          WRITE(debug%note, *) 'debug green_solver: failed', residual
+          EXIT
+        END IF
+        !
+      END DO ! ifreq
+      !
+      DEALLOCATE(work)
+      !
+    END IF ! check if (H - w) G = -delta
+
+    !
+    ! prepare the extensive test
+    !
+    IF (.NOT.extensive_test) RETURN
+    !
+    WRITE(debug%note, *) 'extensive test necessary'
+    !
+    ! allocate work array and Hamiltonian
+    ALLOCATE(work(num_g))
+    ALLOCATE(hamil(num_g, num_g))
+
+    !
+    ! generate the full Hamiltonian
+    !
+    DO ig = 1, num_g
+      !
+      ! initialize a single element of work to 1
+      work     = zero
+      work(ig) = one
+      !
+      ! evaluate one column of the Hamiltonian
+      CALL green_operator(zero, work, hamil(:, ig))
+      !
+    END DO ! ig
+
+    !
+    ! write everything to file
+    !
+    CALL iotk_free_unit(iunit)
+    CALL iotk_open_write(iunit, 'green_solver' // TRIM(iotk_index(mpime)) // '.xml', &
+                         binary = .TRUE., root = 'LINEAR_PROBLEM')
+    CALL iotk_write_dat(iunit, 'DIMENSION', num_g)
+    CALL iotk_write_dat(iunit, 'NUMBER_SHIFT', num_freq)
+    CALL iotk_write_dat(iunit, 'LIST_SHIFT', omega)
+    CALL iotk_write_dat(iunit, 'LINEAR_OPERATOR', hamil)
+    CALL iotk_write_dat(iunit, 'RIGHT_HAND_SIDE', bb)
+    CALL iotk_write_dat(iunit, 'INCORRECT_SOLUTION', green)
+    CALL iotk_close_write(iunit)
+    
+    !
+    ! finish extensive test - stop calculation after short buffer period
+    !
+    WRITE(debug%note, *) 'linear problem written to file'
+    !
+    ! wait for two minutes before stopping so that other processors may reach this point
+    ifreq = sleep(two_min)
+    !
+    CALL errore(__FILE__, "linear solver for Green's function did not pass a test", 1)
+
+  END SUBROUTINE green_solver_debug
 
 END MODULE green_module
