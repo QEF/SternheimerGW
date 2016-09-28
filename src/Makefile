@@ -111,7 +111,7 @@ libgw.a : $(GWOBJS)
 clean :
 	- rm *.x *.o *.a *.mod
 
-.PHONY: all version clean debug
+.PHONY: all version clean debug no_debug
 
 # DO NOT DELETE
 include make.depend
