@@ -6,7 +6,8 @@ on develop
 
 Add the debug module that allows to set debugging options. If the code is
 compiled with the __DEBUG flag it will examine the requested parts in more
-detail. The only current option is to check (H - w) G = -delta.
+detail. The only current option is to check (H - w) G = -delta. The unit
+test can be used to investigate the behavior of the linear problem.
 
 Version 0.10
 ------------

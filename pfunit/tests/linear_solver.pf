@@ -1,0 +1,154 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the Sternheimer-GW code.
+! 
+! Copyright (C) 2010 - 2016 
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! Sternheimer-GW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Sternheimer-GW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Sternheimer-GW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+!
+! test if the linear solver works
+!
+@test(npes=[1])
+SUBROUTINE test_bicgstab(this)
+
+  USE bicgstab_module,       ONLY: bicgstab
+  USE debug_module,          ONLY: test_nan
+  USE kinds,                 ONLY: dp
+  USE linear_problem_module, ONLY: linear_problem_read, linear_problem_apply
+  USE pfunit_mod
+  USE test_log_module
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! name of the file that is tested
+  CHARACTER(*), PARAMETER :: filename = 'lin_prob.xml'
+
+  ! the parts of the linear problem
+  COMPLEX(dp), ALLOCATABLE :: bb(:), xx(:,:), sigma(:)
+
+  ! the solution of the linear problem
+  COMPLEX(dp), ALLOCATABLE :: solution(:,:)
+
+  ! a work array to test the solution
+  COMPLEX(dp), ALLOCATABLE :: work(:)
+
+  ! flag indicates if the file exists
+  LOGICAL lexist
+
+  ! range of l values to be tested
+  INTEGER, PARAMETER :: lmin = 1, lmax = 15
+
+  ! counter on the l value
+  INTEGER ll
+
+  ! dimension of the problem
+  INTEGER vec_size
+
+  ! number of shifts
+  INTEGER num_shift
+
+  ! counter on the shifts
+  INTEGER ishift
+
+  ! threshold for convergence
+  REAL(dp), PARAMETER :: threshold = 1e-6_dp
+
+  ! the residual error
+  REAL(dp) residual
+
+  !> LAPACK function to evaluate the 2-norm
+  REAL(dp), EXTERNAL :: DNRM2
+
+  CALL test_log_start(__FILE__, __LINE__, "Test if the linear solver works")
+
+  ! abort if the file does not exist
+  INQUIRE(FILE = filename, EXIST = lexist)
+  IF (.NOT.lexist) THEN
+    WRITE(test_log,*) 'file ' // filename // ' not found'
+    WRITE(test_log,*) 'test of linear solver aborted'
+    RETURN
+  END IF
+
+  ! read the linear problem (note: A is stored in module)
+  CALL linear_problem_read(filename, sigma, bb, xx)
+
+  vec_size = SIZE(bb)
+  num_shift = SIZE(sigma)
+  ALLOCATE(work(vec_size))
+
+  !
+  ! test the solver without multishift
+  !
+  ALLOCATE(solution(vec_size, 1))
+  !
+  DO ll = lmin, lmax
+    !
+    DO ishift = 1, num_shift
+      !
+      CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma(ishift:ishift), solution)
+      !
+      ! sanity check: no NaN
+      @assertFalse(ANY(test_nan(solution)))
+      !
+      ! check if |(A + sigma I) x - b| < threshold
+      CALL linear_problem_apply(sigma(ishift), solution(:, 1), work)
+      work = work - bb
+      residual = DNRM2(2 * vec_size, work, 1)
+      @assertEqual(0.0_dp, residual, threshold)
+      !
+    END DO ! ishift
+    !
+    WRITE(test_log,'(a,i4,a)') 'All test w/o multishift and l = ', ll, ' passed.'
+    !
+  END DO ! ll
+  !
+  DEALLOCATE(solution)
+
+  !
+  ! test the solver with multishift
+  !
+  ALLOCATE(solution(vec_size, num_shift))
+  !
+  DO ll = lmin, lmax
+    !
+    CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma, solution)
+    !
+    ! sanity check: no NaN
+    @assertFalse(ANY(test_nan(solution)))
+    !
+    ! check if |(A + sigma I) x - b| < threshold
+    DO ishift = 1, num_shift
+      !
+      CALL linear_problem_apply(sigma(ishift), solution(:, ishift), work)
+      work = work - bb
+      residual = DNRM2(2 * vec_size, work, 1)
+      !
+      ! we allow for same order of magnitude, because the shifted systems might converge slower
+      @assertEqual(0.0_dp, residual, 10.0_dp * threshold)
+      !
+    END DO ! ishift
+    !
+    WRITE(test_log,'(a,i3,a)') 'All test with multishift and l = ', ll, ' passed.'
+    !
+  END DO ! ll
+  !
+  DEALLOCATE(solution)
+
+END SUBROUTINE test_bicgstab
