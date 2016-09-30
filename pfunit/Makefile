@@ -1,5 +1,7 @@
 .PHONY: clean distclean tests all
 .DEFAULT_GOAL = tests
+DATA = lin_prob.xml
+.INTERMEDIATE: $(DATA)
 
 TOP_DIR := $(shell pwd)
 SRC_DIR = $(TOP_DIR)/../src
@@ -28,7 +30,7 @@ LIBS += $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(
 
 EXE = tests$(EXE_EXT)
 
-all: $(EXE)
+all: $(EXE) $(DATA)
 	mpirun -np 4 ./$(EXE)
 
 SUT:
@@ -61,6 +63,9 @@ local-E0-clean:
 	make -C $(UTIL_DIR) clean
 	make -C $(TEST_DIR) clean
 	rm -f $(EXE) *$(OBJ_EXT)
+
+lin_prob.xml : $(TEST_DIR)/lin_prob.xml.bz2
+	bzcat $< > $@
 
 export FC
 export FPPFLAGS

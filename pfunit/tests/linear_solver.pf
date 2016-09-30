@@ -52,7 +52,7 @@ SUBROUTINE test_bicgstab(this)
   LOGICAL lexist
 
   ! range of l values to be tested
-  INTEGER, PARAMETER :: lmin = 1, lmax = 20
+  INTEGER, PARAMETER :: lmin = 1, lmax = 15
 
   ! counter on the l value
   INTEGER ll
@@ -99,8 +99,6 @@ SUBROUTINE test_bicgstab(this)
     !
     DO ishift = 1, num_shift
       !
-      write(0,'(a,2i6)', ADVANCE='no') 'test', ll, ishift
-      !
       CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma(ishift:ishift), solution)
       !
       ! sanity check: no NaN
@@ -112,9 +110,39 @@ SUBROUTINE test_bicgstab(this)
       residual = DNRM2(2 * vec_size, work, 1)
       @assertEqual(0.0_dp, residual, threshold)
       !
-      write(0,*) 'passed'
+    END DO ! ishift
+    !
+    WRITE(0,'(a,i4,a)') 'All test w/o multishift and l = ', ll, ' passed.'
+    !
+  END DO ! ll
+  !
+  DEALLOCATE(solution)
+
+  !
+  ! test the solver with multishift
+  !
+  ALLOCATE(solution(vec_size, num_shift))
+  !
+  DO ll = lmin, lmax
+    !
+    CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma, solution)
+    !
+    ! sanity check: no NaN
+    @assertFalse(ANY(test_nan(solution)))
+    !
+    ! check if |(A + sigma I) x - b| < threshold
+    DO ishift = 1, num_shift
+      !
+      CALL linear_problem_apply(sigma(ishift), solution(:, ishift), work)
+      work = work - bb
+      residual = DNRM2(2 * vec_size, work, 1)
+      !
+      ! we allow for same order of magnitude, because the shifted systems might converge slower
+      @assertEqual(0.0_dp, residual, 10.0_dp * threshold)
       !
     END DO ! ishift
+    !
+    WRITE(0,'(a,i3,a)') 'All test with multishift and l = ', ll, ' passed.'
     !
   END DO ! ll
   !

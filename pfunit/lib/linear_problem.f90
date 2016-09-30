@@ -36,7 +36,7 @@ CONTAINS
   !!
   !! The linear problem is defined by
   !! \f{equation}{
-  !!   (A + \sigma I) x = b
+  !!   (A - \sigma I) x = b
   !! \f}
   !! with the idea to solve the shifted systems in the same step as
   !! the unshifted one.
@@ -96,7 +96,7 @@ CONTAINS
 
   END SUBROUTINE linear_problem_read
 
-  !> Evaluate \f$(A + \simga I) x\f$.
+  !> Evaluate \f$(A - \sigma I) x\f$.
   SUBROUTINE linear_problem_apply(sigma, xx, Ax)
 
     !> The shift of this system.
@@ -108,7 +108,7 @@ CONTAINS
     !> The operator applied to the vector.
     COMPLEX(dp), INTENT(OUT) :: Ax(:)
 
-    Ax = MATMUL(AA, xx) + sigma * xx
+    Ax = MATMUL(AA, xx) - sigma * xx
 
   END SUBROUTINE linear_problem_apply
 
