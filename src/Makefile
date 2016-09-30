@@ -6,6 +6,7 @@ include $(ESPRESSO)/make.inc
 # location of needed modules and included files (if any)
 MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_FLAG)$(ESPRESSO)/LAXlib \
           $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG) $(ESPRESSO)/LR_Modules $(MOD_FLAG).
+EXE = gw.x
 
 IFLAGS=
 
@@ -86,10 +87,10 @@ version :
 
 version.f90 : version
 
-gw.x : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ gw.o libgw.a \
+$(EXE) : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ $< libgw.a \
 		 $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
-	- ( cd ../bin ; ln -fs ../src/gw.x . )
+	- ( mkdir -p ../bin ; ln -fs ../src/$(EXE) ../bin/$(EXE) )
 
 libgw.a : $(GWOBJS)
 	$(AR) $(ARFLAGS) $@ $?
