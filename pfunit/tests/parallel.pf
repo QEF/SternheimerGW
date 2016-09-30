@@ -27,6 +27,7 @@ SUBROUTINE test_parallel_task(this)
 
   USE parallel_module, ONLY: parallel_task
   USE pfunit_mod
+  USE test_log_module
 
   IMPLICIT NONE
 
@@ -51,6 +52,8 @@ SUBROUTINE test_parallel_task(this)
   comm = this%getMpiCommunicator()
   size = this%getNumProcesses()
   rank = this%getProcessRank()
+
+  CALL test_log_start(__FILE__, __LINE__, "Test if distribution of task across process grid works", rank, size)
 
   !
   ! first test - split num_task_1 tasks over processes
@@ -211,6 +214,7 @@ SUBROUTINE test_mp_allgatherv(this)
   USE kinds,           ONLY: dp
   USE parallel_module, ONLY: parallel_task, mp_allgatherv
   USE pfunit_mod
+  USE test_log_module
 
   IMPLICIT NONE
 
@@ -237,8 +241,8 @@ SUBROUTINE test_mp_allgatherv(this)
   ! loop over dimensions
   INTEGER ii, jj
 
-  ! the MPI communicator
-  INTEGER comm
+  ! the MPI communicator, its size, and the rank of this process
+  INTEGER comm, size, rank
 
   ! real arrays that are communicated
   REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:), array_rt(:,:,:)
@@ -247,6 +251,10 @@ SUBROUTINE test_mp_allgatherv(this)
   COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:), array_ct(:,:,:)
 
   comm = this%getMpiCommunicator()
+  size = this%getNumProcesses()
+  rank = this%getProcessRank()
+
+  CALL test_log_start(__FILE__, __LINE__, "Test if the mp_allgatherv routine works", rank, size)
 
   ! distribute the tasks
   CALL parallel_task(comm, num_task_total, first_task, last_task, num_task)
@@ -383,6 +391,7 @@ SUBROUTINE test_mp_gatherv(this)
   USE kinds,           ONLY: dp
   USE parallel_module, ONLY: parallel_task, mp_gatherv
   USE pfunit_mod
+  USE test_log_module
 
   IMPLICIT NONE
 
@@ -418,6 +427,9 @@ SUBROUTINE test_mp_gatherv(this)
   ! the MPI communicator
   INTEGER comm
 
+  ! the size of the communicator
+  INTEGER size
+
   ! this process is root
   LOGICAL is_root
 
@@ -432,8 +444,11 @@ SUBROUTINE test_mp_gatherv(this)
   COMPLEX(dp), ALLOCATABLE :: array_ct(:,:,:), array_ct_root(:,:,:)
 
   rank = this%getProcessRank()
+  size = this%getNumProcesses()
   comm = this%getMpiCommunicator()
   is_root = rank == root
+
+  CALL test_log_start(__FILE__, __LINE__, "Test if the mp_gatherv routine works", rank, size)
 
   ! distribute the tasks
   CALL parallel_task(comm, num_task_total, first_task, last_task, num_task)
@@ -601,6 +616,7 @@ SUBROUTINE test_mp_root_sum(this)
   USE kinds,           ONLY: dp
   USE parallel_module, ONLY: mp_root_sum
   USE pfunit_mod
+  USE test_log_module
 
   IMPLICIT NONE
 
@@ -641,6 +657,8 @@ SUBROUTINE test_mp_root_sum(this)
   rank = this%getProcessRank()
   is_root = rank == root
  
+  CALL test_log_start(__FILE__, __LINE__, "Test if the mp_root_sum routine works", rank, size)
+
   ! fill real array
   ALLOCATE(array_rv(dim_one))
   DO ii = 1, dim_one

@@ -31,6 +31,7 @@ SUBROUTINE test_bicgstab(this)
   USE kinds,                 ONLY: dp
   USE linear_problem_module, ONLY: linear_problem_read, linear_problem_apply
   USE pfunit_mod
+  USE test_log_module
 
   IMPLICIT NONE
 
@@ -75,11 +76,13 @@ SUBROUTINE test_bicgstab(this)
   !> LAPACK function to evaluate the 2-norm
   REAL(dp), EXTERNAL :: DNRM2
 
+  CALL test_log_start(__FILE__, __LINE__, "Test if the linear solver works")
+
   ! abort if the file does not exist
   INQUIRE(FILE = filename, EXIST = lexist)
   IF (.NOT.lexist) THEN
-    WRITE(0,*) 'file ' // filename // ' not found'
-    WRITE(0,*) 'test of linear solver aborted'
+    WRITE(test_log,*) 'file ' // filename // ' not found'
+    WRITE(test_log,*) 'test of linear solver aborted'
     RETURN
   END IF
 
@@ -112,7 +115,7 @@ SUBROUTINE test_bicgstab(this)
       !
     END DO ! ishift
     !
-    WRITE(0,'(a,i4,a)') 'All test w/o multishift and l = ', ll, ' passed.'
+    WRITE(test_log,'(a,i4,a)') 'All test w/o multishift and l = ', ll, ' passed.'
     !
   END DO ! ll
   !
@@ -142,7 +145,7 @@ SUBROUTINE test_bicgstab(this)
       !
     END DO ! ishift
     !
-    WRITE(0,'(a,i3,a)') 'All test with multishift and l = ', ll, ' passed.'
+    WRITE(test_log,'(a,i3,a)') 'All test with multishift and l = ', ll, ' passed.'
     !
   END DO ! ll
   !
