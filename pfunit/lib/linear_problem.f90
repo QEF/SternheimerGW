@@ -23,7 +23,12 @@
 !> This module provides the routines to set up the linear problem from input.
 MODULE linear_problem_module
 
+  USE kinds, ONLY: dp
+
   IMPLICIT NONE
+
+  !> the linear operator
+  COMPLEX(dp), ALLOCATABLE :: AA(:,:)
 
 CONTAINS
 
@@ -35,9 +40,9 @@ CONTAINS
   !! \f}
   !! with the idea to solve the shifted systems in the same step as
   !! the unshifted one.
-  SUBROUTINE linear_problem_read(filename, AA, sigma, bb, xx)
+  !! @note the linear operator is store as a module variable
+  SUBROUTINE linear_problem_read(filename, sigma, bb, xx)
 
-    USE kinds,       ONLY: dp
     USE iotk_module, ONLY: iotk_free_unit, iotk_scan_dat, &
                            iotk_open_read, iotk_close_read
 
@@ -53,9 +58,6 @@ CONTAINS
     !> number of shifts in the file
     INTEGER num_shift
 
-    !> the linear operator
-    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: AA(:,:)
-
     !> the shifts of the linear problem
     COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: sigma(:)
 
@@ -64,6 +66,9 @@ CONTAINS
 
     !> the incorrect solution of the problem we want to test
     COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: xx(:,:)
+
+    ! abort if AA is already allocated
+    IF (ALLOCATED(AA)) CALL errore(__FILE__, "you may only treat one linear problem at a time -> deallocate AA", 1)
 
     !
     ! read the data from the given file
@@ -90,5 +95,21 @@ CONTAINS
     CALL iotk_close_read(iunit)
 
   END SUBROUTINE linear_problem_read
+
+  !> Evaluate \f$(A + \simga I) x\f$.
+  SUBROUTINE linear_problem_apply(sigma, xx, Ax)
+
+    !> The shift of this system.
+    COMPLEX(dp), INTENT(IN)  :: sigma
+
+    !> The input vector.
+    COMPLEX(dp), INTENT(IN)  :: xx(:)
+
+    !> The operator applied to the vector.
+    COMPLEX(dp), INTENT(OUT) :: Ax(:)
+
+    Ax = MATMUL(AA, xx) + sigma * xx
+
+  END SUBROUTINE linear_problem_apply
 
 END MODULE linear_problem_module

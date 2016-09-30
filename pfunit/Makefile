@@ -23,6 +23,7 @@ PWOBJS  = $(ESPRESSO)/PW/src/libpw.a
 QEMODS  = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESSO)/LAXlib/libqela.a
 LIBOBJS = $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 LIBS += $(SGWOBJS) $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS)
+LIBS += $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) ${HDF5_LIB} $(LD_LIBS)
 
 
 EXE = tests$(EXE_EXT)

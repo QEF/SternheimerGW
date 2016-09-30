@@ -23,14 +23,13 @@
 !
 ! test if the linear solver works
 !
-
-! test without multishift
 @test(npes=[1])
 SUBROUTINE test_bicgstab(this)
 
   USE bicgstab_module,       ONLY: bicgstab
+  USE debug_module,          ONLY: test_nan
   USE kinds,                 ONLY: dp
-  USE linear_problem_module, ONLY: linear_problem_read
+  USE linear_problem_module, ONLY: linear_problem_read, linear_problem_apply
   USE pfunit_mod
 
   IMPLICIT NONE
@@ -41,13 +40,40 @@ SUBROUTINE test_bicgstab(this)
   CHARACTER(*), PARAMETER :: filename = 'lin_prob.xml'
 
   ! the parts of the linear problem
-  COMPLEX(dp), ALLOCATABLE :: AA(:,:), bb(:), xx(:,:), sigma(:)
+  COMPLEX(dp), ALLOCATABLE :: bb(:), xx(:,:), sigma(:)
+
+  ! the solution of the linear problem
+  COMPLEX(dp), ALLOCATABLE :: solution(:,:)
+
+  ! a work array to test the solution
+  COMPLEX(dp), ALLOCATABLE :: work(:)
 
   ! flag indicates if the file exists
   LOGICAL lexist
 
-  ! counter on the frequencies
-  INTEGER ifreq
+  ! range of l values to be tested
+  INTEGER, PARAMETER :: lmin = 1, lmax = 20
+
+  ! counter on the l value
+  INTEGER ll
+
+  ! dimension of the problem
+  INTEGER vec_size
+
+  ! number of shifts
+  INTEGER num_shift
+
+  ! counter on the shifts
+  INTEGER ishift
+
+  ! threshold for convergence
+  REAL(dp), PARAMETER :: threshold = 1e-6_dp
+
+  ! the residual error
+  REAL(dp) residual
+
+  !> LAPACK function to evaluate the 2-norm
+  REAL(dp), EXTERNAL :: DNRM2
 
   ! abort if the file does not exist
   INQUIRE(FILE = filename, EXIST = lexist)
@@ -57,6 +83,41 @@ SUBROUTINE test_bicgstab(this)
     RETURN
   END IF
 
-  CALL linear_problem_read(filename, AA, sigma, bb, xx)
+  ! read the linear problem (note: A is stored in module)
+  CALL linear_problem_read(filename, sigma, bb, xx)
+
+  vec_size = SIZE(bb)
+  num_shift = SIZE(sigma)
+  ALLOCATE(work(vec_size))
+
+  !
+  ! test the solver without multishift
+  !
+  ALLOCATE(solution(vec_size, 1))
+  !
+  DO ll = lmin, lmax
+    !
+    DO ishift = 1, num_shift
+      !
+      write(0,'(a,2i6)', ADVANCE='no') 'test', ll, ishift
+      !
+      CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma(ishift:ishift), solution)
+      !
+      ! sanity check: no NaN
+      @assertFalse(ANY(test_nan(solution)))
+      !
+      ! check if |(A + sigma I) x - b| < threshold
+      CALL linear_problem_apply(sigma(ishift), solution(:, 1), work)
+      work = work - bb
+      residual = DNRM2(2 * vec_size, work, 1)
+      @assertEqual(0.0_dp, residual, threshold)
+      !
+      write(0,*) 'passed'
+      !
+    END DO ! ishift
+    !
+  END DO ! ll
+  !
+  DEALLOCATE(solution)
 
 END SUBROUTINE test_bicgstab
