@@ -43,6 +43,7 @@ own Wigner-Seitz truncation.
 
 Change Sigma_x calculation from real to reciprocal space which is more in line
 with the implementation of the hybrid functionals and a bit faster.
+> compatible QE version 6.0 revision 13079
 
 Version 0.9
 -----------
