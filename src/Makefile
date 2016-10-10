@@ -42,6 +42,7 @@ initialize_gw.o\
 invert_epsilon.o\
 kind_gw.o\
 linear_op.o\
+linear_solver.o\
 mix_pot_c.o\
 openfilq.o\
 opengwfil.o\
