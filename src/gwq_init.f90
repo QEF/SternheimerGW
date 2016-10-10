@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_init()
+SUBROUTINE gwq_init(coulomb)
 !----------------------------------------------------------------------------
   !
   !     0) initializes the structure factors
@@ -31,41 +31,29 @@ SUBROUTINE gwq_init()
   !     3) Computes the preconditioner for the linear system solver.
   !
   !
-  USE kinds,                ONLY : DP
-  USE cell_base,            ONLY : bg, tpiba, tpiba2, omega
-  USE ions_base,            ONLY : nat, ntyp => nsp, ityp, tau
   USE becmod,               ONLY : calbec
+  USE buffers,              ONLY : get_buffer
   USE constants,            ONLY : eps8, tpi
-  USE gvect,                ONLY : g, ngm
+  USE control_gw,           ONLY : lgamma
+  USE eqv_gw,               ONLY : eprectot
+  USE io_global,            ONLY : stdout
+  USE ions_base,            ONLY : nat, tau
+  USE kinds,                ONLY : DP
   USE klist,                ONLY : xk, nkstot, ngk
   USE lsda_mod,             ONLY : lsda, current_spin, isk
-  USE buffers,              ONLY : get_buffer
-  USE io_global,            ONLY : stdout, meta_ionode_id
-  USE atom,                 ONLY : msh, rgrid
-  USE vlocal,               ONLY : strf
-  USE spin_orb,             ONLY : lspinorb
-  USE wvfct,                ONLY : g2kin, npwx, npw, nbnd
-  USE gvecw,                ONLY : ecutwfc
-  USE wavefunctions_module, ONLY : evc
-  USE noncollin_module,     ONLY : noncolin, npol
-  USE uspp,                 ONLY : okvan, vkb
-  USE uspp_param,           ONLY : upf
-  USE eqv_gw,               ONLY : vlocq, evq, eprectot
-  USE nlcc_gw,              ONLY : nlcc_any
-  USE control_gw,           ONLY : nbnd_occ, lgamma
-  USE units_gw,             ONLY : lrwfc, iuwfc
+  USE mp,                   ONLY : mp_sum
+  USE mp_pools,             ONLY : my_pool_id, npool, kunit
+  USE noncollin_module,     ONLY : npol
   USE qpoint,               ONLY : xq, npwq, nksq, eigqts, ikks, ikqs
-  USE mp_bands,            ONLY : intra_bgrp_comm
-  USE mp,                  ONLY : mp_sum
-  USE mp_pools,            ONLY : inter_pool_comm, my_pool_id, npool, kunit
-  USE mp_world,             ONLY : nproc, mpime
+  USE wvfct,                ONLY : npwx, npw, nbnd
   !
   IMPLICIT NONE
   !
+  !> are we in the Coulomb or the self-energy step?
+  LOGICAL, INTENT(IN) :: coulomb
   ! ... local variables
 
-  INTEGER :: nt, ik, ikq, ipol, ibnd, ikk, na, ig, irr, imode0
-    ! counter on atom types
+  INTEGER :: ik, ikq, ipol, ikk, na
     ! counter on k points
     ! counter on k+q points
     ! counter on polarizations
@@ -105,16 +93,20 @@ SUBROUTINE gwq_init()
 
   eprectot(:,:) = 0.0d0
   DO ik = 1, nksq
-     ikk  = ikks(ik)
+     !
+     IF (coulomb) THEN
+       ikk  = ikks(ik)
+       npw  = ngk(ikk)
+     END IF
+     !
      ikq  = ikqs(ik)
-     npw  = ngk(ikk)
      npwq = ngk(ikq)
      !
-     IF ( lsda ) current_spin = isk( ikk )
+     IF (lsda .AND. coulomb) current_spin = isk(ikk)
      !
      ! ... if there is only one k-point evc, evq, npw, igk stay in memory
      !
-     IF ( .NOT. lgamma ) THEN
+     IF ( .NOT. lgamma .AND. coulomb ) THEN
      !
         IF ( ABS( xq(1) - ( xk(1,ikq) - xk(1,ikk) ) ) > eps8 .OR. &
              ABS( xq(2) - ( xk(2,ikq) - xk(2,ikk) ) ) > eps8 .OR. &
@@ -129,38 +121,7 @@ SUBROUTINE gwq_init()
         !
      END IF
      !
-     ! ... read the wavefunctions at k+1
-     !
-     CALL get_buffer( evq, lrwfc, iuwfc, ikq )
-     !
-     !
-     ! diagonal elements of the unperturbed Hamiltonian,
-     ! needed for preconditioning
-     !
-     CALL g2_kin(ikq)
-     !
-     aux1 = (0.d0,0.d0)
-     DO ig = 1, npwq
-        aux1 (ig,1:nbnd_occ(ikk)) = g2kin (ig) * evq (ig, 1:nbnd_occ(ikk))
-     END DO
-     !
-     !
-     IF (noncolin) THEN
-        DO ig = 1, npwq
-           aux1 (ig+npwx,1:nbnd_occ(ikk)) = g2kin (ig)* &
-                                  evq (ig+npwx, 1:nbnd_occ(ikk))
-        END DO
-     END IF
-     !
-     DO ibnd= 1, nbnd_occ(ikk)
-        eprectot (ibnd, nbase+ik) = 1.35d0 * zdotc(npwx*npol,evq(1,ibnd),1,aux1(1,ibnd),1)
-     END DO
-     !
   END DO
-  !
-  CALL mp_sum   ( eprectot, inter_pool_comm )
-  !
-  DEALLOCATE( aux1 )
   !
   CALL stop_clock( 'gwq_init' )
   !

@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
+SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   !-----------------------------------------------------------------------
   !
   !  This routine prepares a few variables that are needed to control
@@ -35,20 +35,16 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
   !  setup_pw : if .true. the pw_setup has to be run
   !  do_band : if .true. the bands need to be calculated before phonon
   
-  USE control_flags,   ONLY : modenum
-  USE io_global,       ONLY : stdout, ionode
-  USE klist,           ONLY : lgauss
+  USE constants,       ONLY : eps6
+  USE control_gw,      ONLY : ldisp, lgamma, current_iq, do_epsil
+  USE disp,            ONLY : x_q, xk_kpoints
   USE qpoint,          ONLY : xq
-  USE disp,            ONLY : x_q, comp_iq, xk_kpoints
-  USE control_gw,      ONLY : ldisp, lgamma, current_iq, done_bands, do_epsil
   !
   IMPLICIT NONE
   !
   INTEGER, INTENT(IN) :: iq
-  LOGICAL, INTENT(INOUT) :: minq
   LOGICAL, INTENT(OUT) :: do_band, do_iq, setup_pw
   CHARACTER (LEN=6), EXTERNAL :: int_to_char
-  INTEGER :: irr
   !
   !
   current_iq = iq
@@ -60,7 +56,7 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq, minq)
         !if ( xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0 ) xq(1) = 0.001d0
      !In case we want to calulate eps(q) where q is given in the input file:
         if (do_epsil) xq(:) = xk_kpoints(:, iq)
-        lgamma = (xq(1) == 0.D0 .AND. xq(2) == 0.D0 .AND. xq(3) == 0.D0)
+        lgamma = ALL(ABS(xq) < eps6)
   ENDIF
   do_band=.true.
   setup_pw=.true.

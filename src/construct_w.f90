@@ -21,36 +21,30 @@
 !
 !------------------------------------------------------------------------------ 
 SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
-  use kinds,         only : DP
-  use constants,     only : e2, fpi, RYTOEV, tpi, eps8, pi
-  use control_gw,    only : lgamma, eta, godbyneeds, padecont, modielec, trunc_2d, do_imag
-  use freq_gw,       only : fpol, fiu, nfs, nfsmax, &
-                            nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
-                            wgreen, wsigma, wsigmamin, wsigmamax, &
-                            deltaw, wcoulmax
-  use gwsigma,       only : sigma_c_st, gcutcorr
-  use gvect,         only : g, ngm, nl
-  use disp,          only : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  use cell_base,     only : tpiba2, tpiba, omega, alat, at
-  use mp_global,     only : mp_global_end
+
+  USE cell_base,     ONLY : omega
+  USE constants,     ONLY : pi
+  USE control_gw,    ONLY : eta, godbyneeds, padecont, modielec, do_imag
+  USE disp,          ONLY : nq1, nq2, nq3
+  USE freq_gw,       ONLY : fiu, nfs
+  USE gwsigma,       ONLY : gcutcorr
+  USE kinds,         ONLY : DP
+  USE mp_global,     ONLY : mp_global_end
+  USE timing_module, ONLY : time_construct_w
 
   implicit none
 
   complex(DP) :: scrcoul_pade_g (gcutcorr, gcutcorr)
-  complex(DP) :: z(nfs), u(nfs), a(nfs)
+  complex(DP) :: z(nfs), a(nfs)
   complex(DP)  :: scrcoul_g    (gcutcorr, gcutcorr, nfs) 
 
-  real(DP) :: qg2, qg, qxy, qz
   real(DP) :: w_ryd
-  real(DP) :: rcut, spal, zcut
-  real(DP) :: xq_ibk(3), xq_ibz(3)
+  real(DP) :: rcut
 
-  integer :: ig, igp, irr, icounter, ir, irp
-  integer  :: iwim, iw, ikq
+  integer :: ig, igp
+  integer  :: iwim
 
-  logical             :: pade_catch
-  logical             :: found_q
-  logical             :: limq, inv_q, found, trev
+  CALL start_clock(time_construct_w)
 
    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
@@ -62,11 +56,11 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
                a(iwim) = scrcoul_g (ig,igp,iwim)
            enddo
            if (padecont) then
-               call pade_eval ( nfs, z, a, dcmplx(0.0d0, w_ryd), scrcoul_pade_g (ig,igp))
+               call pade_eval ( nfs, z, a, cmplx(0.0_dp, w_ryd, kind=dp), scrcoul_pade_g (ig,igp))
            else if (godbyneeds .and. do_imag) then
                scrcoul_pade_g(ig,igp) = -a(2)/(w_ryd**2+(a(1))**2)
            else if (godbyneeds .and. .not. do_imag) then
-               scrcoul_pade_g(ig,igp) = a(2)/(dcmplx(w_ryd**2,0.0d0)-(a(1)-(0.0d0,1.0d0)*eta)**2)
+               scrcoul_pade_g(ig,igp) = a(2)/(cmplx(w_ryd**2, 0.0_dp, kind=dp)-(a(1)-(0.0d0,1.0d0)*eta)**2)
            else
                 write(6,'("No screening model chosen!")')
                 stop
@@ -74,23 +68,10 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
            endif
         enddo
      enddo
-   else if (modielec) then
-       do ig = 1, gcutcorr
-          CALL mod_diel(ig, xq_ibk, w_ryd, scrcoul_pade_g(ig,ig), 1)
-!scrcoul_pade_g(ig,ig) = mod_dielec_(xq,w_ryd,ig)*v_(q+G,truncation)
-           qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-           limq = (qg2.lt.eps8) 
-           if(.not.limq) then
-              scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx(e2*fpi/(tpiba2*qg2), 0.0d0)
-           endif
-           qg = sqrt(qg2)
-           spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!Normal case using truncated coulomb potential.
-           if(.not.limq) then
-                 scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx(spal, 0.0d0)
-           else
-                 scrcoul_pade_g(ig, ig) = scrcoul_pade_g(ig,ig)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-           endif
-        enddo
+   else
+     CALL errore(__FILE__, "modielec not maintained anymore", 1)
    endif
+
+   CALL stop_clock(time_construct_w)
+
 end SUBROUTINE construct_w

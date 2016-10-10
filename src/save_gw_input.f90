@@ -50,8 +50,7 @@ MODULE save_gw
       !------------------------------------------------------------------------
       !
       USE io_files,   ONLY : tmp_dir
-      USE ions_base,  ONLY : nat
-      USE partial,    ONLY : list, atomo, nat_todo, nrapp
+      USE partial,    ONLY : nat_todo, nrapp
       !
       IMPLICIT NONE
       !

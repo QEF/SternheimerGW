@@ -27,23 +27,17 @@ subroutine deallocate_gwq
 !
 !  deallocates the variables allocated by allocate_gwq
 !
-  USE noncollin_module,      ONLY: m_loc
   USE becmod,                ONLY: bec_type, becp, deallocate_bec_type
-  USE wavefunctions_module,  ONLY: evc
-  USE qpoint,                ONLY: eigqts, igkq, ikks, ikqs, nksq
-  USE gc_lr,                 ONLY: grho, gmag, dvxc_rr,  dvxc_sr,  dvxc_ss, dvxc_s, &
-                                   vsgga, segni
-  USE gamma_gamma,           ONLY : with_symmetry, has_equivalent, equiv_atoms, &
-                                    n_equiv_atoms
-  USE eqv_gw,                ONLY : dmuxc, vlocq, dpsi, dvpsi, evq, eprectot, &
-                                    dpsim, dpsip, dvbare
-  USE nlcc_gw,               ONLY : drc
-  USE units_gw,              ONLY : this_dvkb3_is_on_file, this_pcxpsi_is_on_file
-  USE control_gw,            ONLY : lgamma, nbnd_occ
-  USE lrus,                  ONLY : becp1
+  USE control_gw,            ONLY: lgamma, nbnd_occ
+  USE eqv_gw,                ONLY: dmuxc, vlocq, dpsi, dvpsi, evq, eprectot, &
+                                   dpsim, dpsip, dvbare
+  USE lrus,                  ONLY: becp1
+  USE nlcc_gw,               ONLY: drc
+  USE qpoint,                ONLY: eigqts, igkq, ikks, ikqs
+  USE units_gw,              ONLY: this_dvkb3_is_on_file, this_pcxpsi_is_on_file
 
   IMPLICIT NONE
-  INTEGER :: ik, ipol
+  INTEGER :: ik
 
 
   !IMPORTANT igk arrays need to be nullified/deallocated???

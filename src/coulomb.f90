@@ -20,145 +20,137 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE coulomb(iq, igstart, igstop, scrcoul) 
+!> This subroutine is the main driver of the COULOMB self consistent cycle
+!! which calculates the dielectric matrix by generating the density response
+!! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
+!! The dielectric matrix is given by:
+!! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
 !-----------------------------------------------------------------------
-! This subroutine is the main driver of the COULOMB self consistent cycle
-! which calculates the dielectric matrix by generating the density response
-! to a charge dvbare(nl(ig)) = 1.00 + i*0.00 at a single fourier component (G).
-! The dielectric matrix is given by:
-! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
-  USE kinds,      ONLY : DP
-  USE ions_base,  ONLY : nat
-  USE constants,  ONLY : e2, fpi, RYTOEV, pi, eps8
-  USE cell_base,  ONLY : alat, tpiba2, omega
-  USE lsda_mod,   ONLY : nspin
-  USE io_global,  ONLY : stdout, ionode
-  USE uspp,       ONLY : okvan
-  USE control_gw, ONLY : zue, convt, rec_code, modielec, eta, godbyneeds, padecont,&
-                         solve_direct, do_epsil, do_q0_only, tinvert
-  USE partial,    ONLY : done_irr, comp_irr
-  USE uspp_param, ONLY : nhm
-  USE eqv_gw,     ONLY : drhoscfs, dvbare
-  USE paw_variables,    ONLY : okpaw
-  USE noncollin_module, ONLY : noncolin, nspin_mag
-  USE gwsigma,     ONLY : sigma_c_st, gcutcorr
-  USE qpoint,      ONLY : xq
-  USE freq_gw,     ONLY : fpol, fiu, nfs, nfsmax, nwcoul, wcoul
-  USE units_gw,    ONLY : iuncoul, lrcoul
-  USE disp,        ONLY : nqs, nq1, nq2, nq3
- !Symmetry Stuff
-  USE gwsymm,          ONLY : ig_unique, ngmunique
- !FFTS 
-  USE gvect,           ONLY : ngm, g, nl
-  USE gvecs,           ONLY : nls
-  USE fft_base,        ONLY : dfftp, dffts
-  USE fft_interfaces,  ONLY : invfft, fwfft
-  USE klist,           ONLY : lgauss
-  USE mp_world,        ONLY : mpime
-  USE mp_pools,        ONLY : me_pool, root_pool, inter_pool_comm
-  USE mp,                   ONLY : mp_sum, mp_barrier
-  USE mp_global,  ONLY : inter_image_comm, intra_image_comm, &
-                         my_image_id, nimage, root_image
+SUBROUTINE coulomb(igstart, num_task, scrcoul) 
+!-----------------------------------------------------------------------
+  USE constants,        ONLY : eps8
+  USE control_gw,       ONLY : solve_direct, niter_gw
+  USE eqv_gw,           ONLY : drhoscfs, dvbare
+  USE fft_base,         ONLY : dfftp, dffts
+  USE fft_interfaces,   ONLY : invfft, fwfft
+  USE freq_gw,          ONLY : fiu, nfs
+  USE gvecs,            ONLY : nls
+  USE gvect,            ONLY : g
+  USE gwsigma,          ONLY : gcutcorr
+  USE gwsymm,           ONLY : ig_unique
+  USE io_global,        ONLY : stdout, ionode
+  USE noncollin_module, ONLY : nspin_mag
+  USE kinds,            ONLY : dp
+  USE qpoint,           ONLY : xq
+  USE solve_module,     ONLY : solve_linter
 
   IMPLICIT NONE
 
-  REAL(DP) :: tcpu, get_clock
-! timing variables
-  REAL(DP) :: qg2, qg2coul
-  INTEGER :: ig, igp, iw, npe, irr, icounter
-  INTEGER :: igstart, igstop, igpert, isp
-  COMPLEX(DP), allocatable :: drhoaux (:,:) 
-  COMPLEX(DP) :: padapp, w
-!HL temp variable for scrcoul to write to file.  
-  COMPLEX(DP) :: cw
-  INTEGER :: unf_recl, recl, ios
-  INTEGER :: iq, screening 
-  LOGICAL :: exst
-!again should decide if this should be allocated globally. 
-  COMPLEX(DP) :: scrcoul(gcutcorr, gcutcorr, nfs, 1)
-!modeps and spencer-alavi vars
-  REAL(DP) :: wwp, eps0, q0, wwq, fac
-  REAL(DP) :: qg, rcut, spal
-! used to test the recover file
-  EXTERNAL get_clock
-  CALL start_clock ('coulomb')
+  !> first index of the G vector evaluated on this process
+  INTEGER, INTENT(IN) :: igstart
 
-if(solve_direct) then
-  ALLOCATE (drhoscfs(dffts%nnr, nfs, 1))    
-else
-!for self-consistent solution we only consider one
-!frequency at a time. To save memory and time and lines of codes etc.
-!we use the frequency variable for multishift as the nspin_mag var.
-!to extend this to magnetic with multishift we need to add another
-!dimension to drhoscfrs
-  WRITE(stdout, '(4x,4x,"nspinmag", i4)') nspin_mag
-  ALLOCATE (drhoscfs(dffts%nnr, nspin_mag, 1))    
-endif
+  !> number of G vector evaluated by this process
+  INTEGER, INTENT(IN) :: num_task
 
-irr=1
-!scrcoul(:,:,:,:) = (0.d0, 0.0d0)
-!LOOP OVER ig, unique g vectors only. 
-!g is sorted in magnitude order.
-!WRITE(1000+mpime, '(2i4)') igstart, igstop
-!WRITE(1000+mpime, *) ig_unique(:)
-DO ig = igstart, igstop
-!     if (do_q0_only.and.ig.gt.1) CYCLE
-      qg2 = (g(1,ig_unique(ig))+xq(1))**2+(g(2,ig_unique(ig))+xq(2))**2+(g(3,ig_unique(ig))+xq(3))**2
-      IF(solve_direct) THEN
-         ! q + G = 0 is treated differently
-         IF(tinvert .AND. qg2 < eps8) CYCLE 
-         drhoscfs = dcmplx(0.0d0, 0.0d0)
-         dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-         dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-         CALL invfft('Smooth', dvbare, dffts)
-         CALL solve_lindir (dvbare, drhoscfs(:,:,1))
-         CALL fwfft('Smooth', dvbare, dffts)
-         do iw = 1, nfs
-            CALL fwfft ('Dense', drhoscfs(:,iw,1), dffts)
-            WRITE(stdout, '(4x,4x,"eps_{GG}(q,w) = ", 2f10.4)') &
-              drhoscfs(nls(ig_unique(ig)),iw,1)+dvbare(nls(ig_unique(ig)))
-            do igp = 1, gcutcorr
-               if(igp.ne.ig_unique(ig)) then
-!diagonal elements drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw, 1)
-               else
-!diagonal elements eps(\G,\G') = \delta(G,G') - drho(G,G').
-                  scrcoul(ig_unique(ig), igp, iw, nspin_mag) = drhoscfs(nls(igp), iw, 1) + dvbare(nls(ig_unique(ig)))
-               endif
-            enddo
-         enddo !iw
-      ELSE
-        IF (qg2 < eps8) CYCLE
-        if(qg2.lt.0.001.AND.lgauss) then 
-          write(stdout,'("Not calculating static electric field applied to metal, cycling coulomb")')
-          WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) =   0.000000   0.0000000")')
-          CYCLE
-        endif
-        DO iw = 1, nfs
-           drhoscfs = dcmplx(0.0d0, 0.0d0)
-           dvbare(:)     = dcmplx(0.0d0, 0.0d0)
-           dvbare (nls(ig_unique(ig)) ) = dcmplx(1.d0, 0.d0)
-           CALL invfft('Smooth', dvbare, dffts)
-           CALL solve_linter (dvbare, iw, drhoscfs(:,:,1))
-           CALL fwfft('Smooth', dvbare, dffts)
-           DO isp =1 , nspin_mag
-              CALL fwfft('Dense', drhoscfs(:,isp,1), dffts)
-           ENDDO
-           IF(ionode) THEN
-             WRITE(stdout, '(4x,4x,"inveps_{GG}(q,w) = ", 2f12.5)') &
-               drhoscfs(nls(ig_unique(ig)), 1, 1) + dvbare(nls(ig_unique(ig)))
-             DO isp = 1, nspin_mag
-               DO igp = 1, gcutcorr
-                  scrcoul(ig_unique(ig), igp, iw, isp) = drhoscfs(nl(igp), isp, 1)
-               ENDDO
-             ENDDO
-           ENDIF
-        ENDDO
-      ENDIF !solve_direct/solve_linter
-ENDDO 
-545 CONTINUE
-tcpu = get_clock ('GW')
-DEALLOCATE (drhoscfs)
-CALL stop_clock ('coulomb')
-RETURN
+  !> the screened coulomb interaction
+  COMPLEX(dp), INTENT(OUT) :: scrcoul(gcutcorr, nfs, num_task)
+
+  !> actual index inside the array
+  INTEGER indx
+
+  !> complex constant of zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  !> complex constant of one
+  COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND = dp)
+
+  !> square of the length |q + G|
+  REAL(dp) qg2
+
+  !> index of G and G'
+  INTEGER ig, igp
+
+  !> index of the frequency
+  INTEGER iw
+
+  !> number of iterations - set to 1 for direct solver
+  INTEGER num_iter
+
+  !> format used to print eps/inveps for direct/iterative solver
+  CHARACTER(LEN=:), ALLOCATABLE :: format_str
+
+  ! we use the frequency as equivalent of the perturbation in phonon
+  ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, nfs))
+  IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
+  scrcoul = zero
+
+  ! determine number of iterations and set format string
+  IF (solve_direct) THEN
+    num_iter = 1
+    format_str = '(8x,"eps_{GG}(q,w) = ", 2f12.5)'
+  ELSE IF (niter_gw > 1) THEN
+    num_iter = niter_gw
+    format_str = '(5x,"inveps_{GG}(q,w) = ", 2f12.5)'
+  ELSE
+    CALL errore(__FILE__, "for iterative solver, we need to use more iterations", 1)
+    format_str = '(*)'
+  END IF
+
+  !
+  ! loop over tasks = G vectors done in this image
+  !
+  DO indx = 1, num_task
+    !
+    ! determine index of G vector
+    ig = igstart + indx - 1
+    !
+    ! square of length |q + G|
+    qg2 = SUM((g(:, ig_unique(ig)) + xq)**2)
+    !
+    ! the case q + G = 0 is treated by separate routine
+    IF (qg2 < eps8) CYCLE
+    !
+    ! initialize the potential for a single G to 1
+    drhoscfs = zero 
+    dvbare   = zero 
+    dvbare(nls(ig_unique(ig))) = one
+    !
+    ! potential in real space
+    CALL invfft('Smooth', dvbare, dffts)
+    !
+    ! solve for linear response due to this perturbation
+    CALL solve_linter(num_iter, dvbare, fiu(:nfs), drhoscfs)
+    !
+    ! back to reciprocal space
+    CALL fwfft('Smooth', dvbare, dffts)
+    !
+    ! loop over frequencies
+    DO iw = 1, nfs
+      !
+      ! evaluate response in reciprocal space
+      CALL fwfft ('Dense', drhoscfs(:, 1, iw), dffts)
+      !
+      ! copy to output array
+      DO igp = 1, gcutcorr
+        scrcoul(igp, iw, indx) = drhoscfs(nls(igp), 1, iw)
+      END DO ! igp
+      !
+      ! for the direct solver at bare potential in diagonal
+      IF (solve_direct) THEN
+        igp = ig_unique(ig)
+        scrcoul(igp, iw, indx) = scrcoul(igp, iw, indx) + dvbare(nls(igp))
+      END IF
+      !
+      ! print the diagonal element
+      IF (ionode) THEN
+        igp = nls(ig_unique(ig))
+        WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp)
+      END IF
+      !
+    END DO ! iw
+    !
+  END DO ! indx
+
+  DEALLOCATE(drhoscfs)
+
 END SUBROUTINE coulomb

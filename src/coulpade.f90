@@ -20,80 +20,42 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE coulpade(scrcoul_g, xq_ibk)
-  USE kinds,         ONLY : DP
-  USE constants,     ONLY : e2, fpi, RYTOEV, tpi, eps8, pi
-  USE control_gw,    ONLY : lgamma, eta, godbyneeds, padecont, modielec, truncation
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, &
-                            nwcoul, nwgreen, nwalloc, nwsigma, wtmp, wcoul, &
-                            wgreen, wsigma, wsigmamin, wsigmamax, &
-                            deltaw, wcoulmax
-  USE gwsigma,       ONLY : sigma_c_st, gcutcorr
-  USE gvect,         ONLY : g, ngm, nl
-  USE disp,          ONLY : nqs, nq1, nq2, nq3, wq, x_q, xk_kpoints
-  USE cell_base,     ONLY : tpiba2, tpiba, omega, alat, at
-  USE symm_base,     ONLY : nsym, s, time_reversal, t_rev, ftau, invs, nrot
-  USE lr_symm_base,  ONLY : nsymq, invsymq, gi, gimq, irgq, irotmq, minus_q
-  USE truncation_module, ONLY : truncate
+SUBROUTINE coulpade(scrcoul_g, xq_ibk, vcut)
+
+  USE cell_base,         ONLY : tpiba
+  USE control_gw,        ONLY : godbyneeds, padecont, modielec, truncation
+  USE freq_gw,           ONLY : fiu, nfs
+  USE gwsigma,           ONLY : gcutcorr
+  USE gvect,             ONLY : g
+  USE kinds,             ONLY : DP
+  USE truncation_module, ONLY : truncate, vcut_type
 
   IMPLICIT NONE
 
+  !> the truncated Coulomb potential
+  TYPE(vcut_type), INTENT(IN) :: vcut
+
   complex(DP) ::  scrcoul_g   (gcutcorr, gcutcorr, nfs)
   complex(DP) :: z(nfs), u(nfs), a(nfs)
-  complex(DP) :: phase
-  complex(DP) :: eigv     (ngm, nrot)  
 
-  real(DP) :: qg2, qg, qxy, qz, q_G(3)
-  real(DP) :: rcut, spal, zcut, factor
-  real(DP) :: xq_ibk(3), xq_ibz(3)
+  real(DP) :: q_G(3)
+  real(DP) :: factor
+  real(DP) :: xq_ibk(3)
 
-  integer :: gmapsym  (ngm, nrot) 
-  integer :: ig, igp, irr, icounter, ir, irp
-  integer :: iwim, iw, ikq
-  integer :: iqstart, iqstop, iqs, nkr
-  integer :: iq, ipol, iqrec, isym
-
-  logical :: pade_catch
-  logical :: found_q
-  logical :: limq, inv_q, found
+  integer :: ig, igp
+  integer :: iw
 
 !Rotate G_vectors for FFT.
-   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    if(.not.modielec) THEN
-!SPHERICAL SCREENING
-!    if(.not.trunc_2d) THEN
        do iw = 1, nfs
          do ig = 1, gcutcorr
             q_G = tpiba * (g(:,ig) + xq_ibk)
-            factor = truncate(truncation, q_G)
+            factor = truncate(truncation, vcut, q_G)
             do igp = 1, gcutcorr
               scrcoul_g(ig, igp, iw) = scrcoul_g(ig, igp, iw) * factor 
             end do
-!            qg2 = (g(1,ig) + xq_ibk(1))**2 + (g(2,ig) + xq_ibk(2))**2 + (g(3,ig)+xq_ibk(3))**2
-!            qg = sqrt(qg2)
-!            limq = (qg2.lt.eps8) 
-!            if(.not.limq) THEN
-!               spal = 1.0d0 - cos(rcut*sqrt(tpiba2)*qg)
-!               do igp = 1, gcutcorr
-!                  scrcoul_g(ig, igp, iw) = scrcoul_g(ig,igp,iw)*dcmplx(e2*fpi/(tpiba2*qg2)*spal, 0.0d0)
-!               enddo
-!            else
-!               scrcoul_g(ig, ig, iw) = scrcoul_g(ig,ig,iw)*dcmplx((fpi*e2*(rcut**2))/2.0d0, 0.0d0)
-!!zero wings of matrix for xq+G = 0
-!             limq = SQRT(SUM(q_G**2)) < eps8
-!             IF (limq) THEN
-!               do igp = 2, gcutcorr
-!                  scrcoul_g(1, igp, iw) = 0.0d0
-!               enddo
-!               do igp = 2, gcutcorr
-!                  scrcoul_g(igp, 1, iw) = 0.0d0
-!               enddo
-!            endif
          enddo!ig
        enddo!nfs
-!    else
-!       call truncate_2d(scrcoul_g(1,1,1), xq_ibk, 2)
-!    endif
   endif
     if(.not.modielec) THEN
         if(godbyneeds) THEN
@@ -102,7 +64,7 @@ SUBROUTINE coulpade(scrcoul_g, xq_ibk)
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
                do iw = 1, nfs
-                  z(iw) = dcmplx(aimag(fiu(iw)), 0.0d0)
+                  z(iw) = cmplx(aimag(fiu(iw)), 0.0_dp, kind=dp)
                   u(iw) = scrcoul_g(ig, igp, iw)
                enddo
                call godby_needs_coeffs(nfs, z, u, a)

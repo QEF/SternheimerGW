@@ -191,7 +191,6 @@ MODULE control_gw
              do_coulomb, &
              do_sigma_c, &
              do_sigma_exx, &
-             do_sigma_exxG, &
              do_green, &
              do_sigma_matel,&
              do_q0_only,&
@@ -214,7 +213,6 @@ MODULE control_gw
              newgrid = .FALSE.,&
              loqua   = .FALSE.,&
              high_io, &  
-             freq_gl, &
              just_corr,&
              double_grid
 
@@ -229,26 +227,18 @@ MODULE freq_gw
   !
   SAVE
   ! ... the variables for computing frequency dependent dielectric constant
-  LOGICAL :: fpol ! if .TRUE. dynamic dielectric constant is computed
-  INTEGER, PARAMETER :: nfsmax=350  ! # of maximum frequencies
   INTEGER :: nfs                   ! # of frequencies
-  !REAL (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
-  COMPLEX (KIND=DP) :: fiu(nfsmax)    ! values  of frequency
+  COMPLEX(KIND = dp), ALLOCATABLE :: fiu(:)    ! values  of frequency
   !variables for convolution
-  INTEGER :: nwcoul, nwgreen, nwalloc, nwsigma, nwsigwin
+  INTEGER :: nwcoul, nwsigma, nwsigwin
 
   !The wsigmamin, wsigmamax, etc is currently being set in freqbins. 
   !I will change this so that it becomes a user defined option in the punchcard
   !with default values eventually. 
 
-  REAL(DP) :: wsigmamin, wsigmamax, deltaw, wcoulmax, wgreenmin, wgreenmax 
+  REAL(DP) :: wsigmamin, wsigmamax, wcoulmax
   !Grid for the analytic continuation
-  REAL(DP) :: wsig_wind_max, wsig_wind_min, deltaws
-  REAL(DP), ALLOCATABLE :: wtmp(:), wcoul(:), wgreen(:), wsigma(:), wgtcoul(:) 
-  INTEGER, ALLOCATABLE :: ind_w0mw (:,:), ind_w0pw (:,:)
-  REAL,    ALLOCATABLE :: w0pmw (:,:)
-  REAL(DP) :: plasmon
-  REAL(DP) :: greenzero
+  REAL(DP) :: wsig_wind_max, wsig_wind_min
 
 END MODULE freq_gw
 !

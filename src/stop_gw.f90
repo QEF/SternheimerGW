@@ -22,28 +22,23 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE stop_gw( flag )
+SUBROUTINE stop_gw(flag)
   !----------------------------------------------------------------------------
   !
   ! ... Synchronize processes before stopping.
   !
-  USE kinds, ONLY : DP
-  USE mp_global, ONLY : mp_global_end
-! Need to check what is closed in destroy_status_run:
-! USE save_gw,         ONLY : clean_input_variables
-  USE environment,     ONLY : environment_end
+  USE environment,   ONLY : environment_end
+  USE mp_global,     ONLY : mp_global_end
+  USE timing_module, ONLY : timing_print_clock
   !
   IMPLICIT NONE
   !
-  LOGICAL :: flag
+  LOGICAL, INTENT(IN) :: flag
   !
   !
-  CALL print_clock_gw()
-  !
+  CALL timing_print_clock() 
   !
   CALL environment_end('SGW')
-  !FOR images parallelism
-  !CALL collect_grid_files()
   !
   CALL mp_global_end()
   !
@@ -60,15 +55,12 @@ SUBROUTINE stop_gw( flag )
 END SUBROUTINE stop_gw
 
 SUBROUTINE stop_smoothly_gw(flag)
-IMPLICIT NONE
-LOGICAL, INTENT(IN) :: flag
 
+  IMPLICIT NONE
+  LOGICAL, INTENT(IN) :: flag
 
-!images:
-!CALL collect_grid_files()
+  CALL close_gwq(.FALSE.)
 
-CALL close_gwq(.FALSE.)
-
-CALL stop_gw(flag)
+  CALL stop_gw(flag)
 
 END SUBROUTINE stop_smoothly_gw

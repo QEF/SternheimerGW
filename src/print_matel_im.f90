@@ -20,25 +20,25 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, wsigma, nwsigma) 
+subroutine print_matel_im(ikq, vxc, sigma_band_ex, sigma_band_c, w_ryd, nwsigma) 
 
-  USE kinds,                ONLY : DP
-  USE gwsigma,              ONLY : ngmsig, nbnd_sig
-  USE klist,                ONLY : xk
-  USE io_global,            ONLY : stdout, ionode_id, ionode
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin, et
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
+  USE constants,            ONLY : RYTOEV, pi
   USE gwcom,                ONLY : output
+  USE gwsigma,              ONLY : nbnd_sig
+  USE io_global,            ONLY : stdout
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : xk
   USE pp_output_mod,        ONLY : pp_output, pp_output_xml
+  USE wvfct,                ONLY : nbnd, et
 
 implicit none
 
 INTEGER                   ::   nwsigma
 REAL(DP)                  ::   wsigma(nwsigma) 
-INTEGER                   ::   ig, igp, nw, iw, ibnd, jbnd, ios, ipol, ik0, ir,irp, counter
+INTEGER                   ::   iw, ibnd, jbnd
 REAL(DP)                  ::   w_ryd(nwsigma)
 REAL(DP)                  ::   one
-COMPLEX(DP)               ::   ZDOTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
+COMPLEX(DP)               ::   sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_ex(nbnd_sig, nbnd_sig), vxc(nbnd_sig,nbnd_sig)
 REAL(DP)                  ::   resig_diag(nwsigma,nbnd_sig), imsig_diag(nwsigma,nbnd_sig),&
                                et_qp(nbnd_sig), a_diag(nwsigma,nbnd_sig)
@@ -48,15 +48,15 @@ REAL(DP)                  ::   dresig_diag(nwsigma,nbnd_sig), vxc_tr, vxc_diag(n
 REAL(DP)                  ::   resig_diag_tr(nwsigma), imsig_diag_tr(nwsigma), a_diag_tr(nwsigma),&
                                et_qp_tr, z_tr, z(nbnd_sig)
 
-COMPLEX(DP)               ::   czero, temp
+COMPLEX(DP)               ::   czero
 
-INTEGER                   ::   iman, nman, ndeg(nbnd_sig), ideg, iq, ikq
-LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
+INTEGER                   ::   iman, nman, ndeg(nbnd_sig), ideg, ikq
+LOGICAL                   ::   single_line
 
      one   = 1.0d0 
      czero = (0.0d0, 0.0d0)
      nbnd  = nbnd_sig 
-     w_ryd(:) = wsigma(:)/RYTOEV
+     wsigma(:) = w_ryd(:) * RYTOEV
 
      do ibnd = 1, nbnd_sig
         do iw = 1, nwsigma
@@ -187,7 +187,6 @@ LOGICAL                   ::   do_band, do_iq, setup_pw, exst, single_line
   CALL pp_output_xml(output%pp_im_corr_iw, ikq, xk(:,ikq), wsigma, imsig_diag * RYTOEV)
   CALL pp_output_xml(output%pp_spec_iw,    ikq, xk(:,ikq), wsigma, a_diag / RYTOEV)
 
-  9000 format(21x, 8(1x,f7.2))
   9005 format(8(1x,f14.7))
 RETURN
 end subroutine print_matel_im

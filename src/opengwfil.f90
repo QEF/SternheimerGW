@@ -22,18 +22,17 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE opengwfil()
 
-  USE control_gw,      ONLY : multishift, do_sigma_exxG, output
+  USE control_gw,      ONLY : multishift, output
   USE disp,            ONLY : xk_kpoints, num_k_pts
   USE freq_gw,         ONLY : nfs, nwsigma
-  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, gcutcorr
-  USE io_files,        ONLY : tmp_dir, diropn, seqopn
+  USE gwsigma,         ONLY : sigma_x_st, gcutcorr
+  USE io_files,        ONLY : diropn, seqopn
   USE io_global,       ONLY : meta_ionode
   USE output_mod,      ONLY : filcoul, filsigx, filsigc
   USE sigma_io_module, ONLY : sigma_io_open_write
-  USE units_gw,        ONLY : iuncoul, iungreen, lrgrn, lrcoul, iunsigma, &
+  USE units_gw,        ONLY : iuncoul, lrcoul, iunsigma, &
                               lrsigma, lrsex, iunsex, iunresid, lrresid, & 
-                              iunalphabeta, lralphabeta, iunsigext, lrsigext
-  USE wvfct,           ONLY : nbnd,npwx
+                              iunalphabeta, lralphabeta
 
 IMPLICIT  NONE
   LOGICAL :: exst
@@ -54,12 +53,10 @@ IMPLICIT  NONE
   END IF
 
   ! file for \Sigma^{x}(\G,\G';\omega)
-  IF (.NOT.do_sigma_exxG) THEN
-     lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
-     IF (meta_ionode) THEN
-       iunsex = find_free_unit()
-       CALL diropn(iunsex, filsigx, lrsex, exst)
-     END IF
+  lrsex = 2 * sigma_x_st%ngmt * sigma_x_st%ngmt
+  IF (meta_ionode) THEN
+    iunsex = find_free_unit()
+    CALL diropn(iunsex, filsigx, lrsex, exst)
   END IF
 
   ! file for output of sigma

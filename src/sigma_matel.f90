@@ -20,59 +20,96 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE sigma_matel (ik0)
-  USE io_global,            ONLY : stdout, meta_ionode
-  USE io_files,             ONLY : diropn 
+SUBROUTINE sigma_matel (ik0, freq)
+
   USE buffers,              ONLY : get_buffer, close_buffer
-  USE kinds,                ONLY : DP
-  USE kinds_gw,             ONLY : i8b
-  USE gvect,                ONLY : ngm, g, gl, igtongl
-  USE gvecs,                ONLY : nls
-  USE constants,            ONLY : e2, fpi, RYTOEV, tpi, pi
-  USE freq_gw,              ONLY : nwsigma, wsigma, wsig_wind_min, wsig_wind_max, deltaws, nwsigwin
-  USE klist,                ONLY : xk
-  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
-  USE gvecw,                ONLY : ecutwfc
-  USE qpoint,               ONLY : npwq
-  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
-  USE control_gw,           ONLY : lgamma, do_imag, do_sigma_exxG
-  USE wavefunctions_module, ONLY : evc
-  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
-                                   sigma_band_exg, gcutcorr
-  USE disp,                 ONLY : xk_kpoints
-  USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
-  USE cell_base,            ONLY : tpiba2
   USE buiol,                ONLY : buiol_check_unit
+  USE cell_base,            ONLY : tpiba2
+  USE constants,            ONLY : RYTOEV, eps14
+  USE control_gw,           ONLY : lgamma, do_imag
+  USE disp,                 ONLY : xk_kpoints
+  USE ener,                 ONLY : ef
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
-  USE mp_world,             ONLY : mpime
-  USE mp_images,            ONLY : my_image_id
+  USE freq_gw,              ONLY : nwsigma, nwsigwin
+  USE freqbins_module,      ONLY : freqbins_type
+  USE gvecs,                ONLY : nls
+  USE gvect,                ONLY : ngm, g, gl, igtongl
+  USE gvecw,                ONLY : ecutwfc
+  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
+                                   sigma_band_exg, gcutcorr
+  USE io_files,             ONLY : diropn 
+  USE io_global,            ONLY : stdout, meta_ionode
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : xk, lgauss
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
-  USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
+  USE mp_images,            ONLY : my_image_id
+  USE mp_world,             ONLY : mpime
   USE output_mod,           ONLY : filsigx, filsigc
+  USE qpoint,               ONLY : npwq
+  USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
+  USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
+  USE timing_module,        ONLY : time_matel
+  USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
+  USE wavefunctions_module, ONLY : evc
+  USE wvfct,                ONLY : nbnd, npw, npwx, g2kin
 
 IMPLICIT NONE
+
+  TYPE(freqbins_type), INTENT(IN) :: freq
 
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP)               :: psic(dffts%nnr), vpsi(ngm)
   COMPLEX(DP)               :: ZdoTC, sigma_band_c(nbnd_sig, nbnd_sig, nwsigma),&
                                sigma_band_x(nbnd_sig, nbnd_sig, 1), vxc(nbnd_sig,nbnd_sig)
-  REAL(DP), ALLOCATABLE     :: wsigwin(:)
   REAL(DP)                  :: vtxc, etxc
   INTEGER                   :: igk(npwx), ikq
-  INTEGER                   :: ig, iw, ibnd, jbnd, ipol, ik0, ir
+  INTEGER                   :: ig, ibnd, jbnd, ipol, ik0, ir
   INTEGER                   :: ng
   INTEGER                   :: sigma_c_ngm, sigma_x_ngm
   LOGICAL                   :: exst, opnd
+
+  !> energy of the highest occupied state
+  REAL(dp) ehomo
+
+  !> energy of the lowest unoccupied state
+  REAL(dp) elumo
+
+  !> the chemical potential
+  REAL(dp) mu
+
+  !> real constant of 0.5
+  REAL(dp),    PARAMETER :: half = 0.5_dp
+
+  !> complex constant of 0
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+  CALL start_clock(time_matel)
 
   IF ( .NOT. meta_ionode ) RETURN
 
   nbnd   = nbnd_sig 
   lgamma = .true.
 
+  !
+  ! define the chemical potential
+  !
+  IF (.NOT.lgauss) THEN
+    !
+    ! for semiconductors choose the middle of the gap
+    CALL get_homo_lumo(ehomo, elumo)
+    mu = half * (ehomo + elumo)
+    !
+  ELSE
+    !
+    ! for metals set it to the Fermi energy
+    mu = ef
+    !
+  END IF
+
   ! check for gamma point
-  IF( ALL(xk_kpoints(:,ik0) == 0.0) ) THEN
+  IF(ALL(ABS(xk_kpoints(:,ik0)) <= eps14)) THEN
      ikq = 1
   ELSE
      ikq = 2
@@ -94,6 +131,7 @@ IMPLICIT NONE
   npwq = npw
   ! read wave functions at current k-point
   CALL get_buffer (evc, lrwfc, iuwfc, ikq)
+  evc(npw + 1:, :) = zero
 
   !
   ! expectation value of V_xc
@@ -148,38 +186,29 @@ IMPLICIT NONE
   !
   ! expectation value of Sigma_x
   !
-  IF( .NOT. do_sigma_exxG) THEN
+  ! open file containing exchange part of sigma
+  INQUIRE( UNIT=iunsex, OPENED=opnd )
+  IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
 
-    ! open file containing exchange part of sigma
-    INQUIRE( UNIT=iunsex, OPENED=opnd )
-    IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
-
-    ! sanity check
-    IF ((exch_conv == sigma_x_st%ecutt) .OR. (exch_conv == 0.0)) THEN
-        sigma_x_ngm = sigma_x_st%ngmt
-    ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
-      DO ng = 1, ngm
-         IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
-      END DO
-    ELSE
-      CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
-    END IF
-
-    ! evaluate matrix elements for exchange
-    CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
-    WRITE(1000+mpime,*) 
-    WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
-    WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
-    WRITE(1000+mpime,*) 
-    WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
-
-  ELSE ! do_sigma_exxG = .true.
-
-    DO ibnd = 1, nbnd_sig
-      sigma_band_x(ibnd,ibnd,1) = sigma_band_exg(ibnd)
+  ! sanity check
+  IF (ABS(exch_conv - sigma_x_st%ecutt) < eps14 .OR. &
+      ABS(exch_conv) < eps14) THEN
+    sigma_x_ngm = sigma_x_st%ngmt
+  ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
+    DO ng = 1, ngm
+       IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
     END DO
-
+  ELSE
+    CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
   END IF
+
+  ! evaluate matrix elements for exchange
+  CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
+  WRITE(1000+mpime,*) 
+  WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
+  WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
+  WRITE(1000+mpime,*) 
+  WRITE(1000+mpime,'(8(1x,f7.3))') aimag(sigma_band_x)*RYTOEV
 
   !
   ! expectation value of Sigma_c:
@@ -193,7 +222,7 @@ IMPLICIT NONE
 
   ! For convergence tests corr_conv can be set at input lower than ecutsco.
   ! This allows you to calculate the correlation energy at lower energy cutoffs
-  IF (corr_conv == sigma_c_st%ecutt) THEN
+  IF (ABS(corr_conv - sigma_c_st%ecutt) < eps14) THEN
     sigma_c_ngm = gcutcorr
   ELSE IF(corr_conv < sigma_c_st%ecutt .AND. corr_conv > 0.0) THEN
     DO ng = 1, ngm
@@ -217,22 +246,20 @@ IMPLICIT NONE
   ! 
   IF (do_imag) THEN
     ! We can set arbitrary \Sigma(\omega) energy windows with analytic continuation:
-    ALLOCATE (wsigwin(nwsigwin))
-    DO iw = 1, nwsigwin
-        wsigwin(iw) = wsig_wind_min + (wsig_wind_max-wsig_wind_min)/float(nwsigwin-1)*float(iw-1)
-    END DO
     ALLOCATE (sigma_band_con(nbnd_sig, nbnd_sig, nwsigwin))
     ! print selfenergy on the imaginary axis.
-    CALL print_matel_im(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+    CALL print_matel_im(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), AIMAG(freq%sigma), nwsigma)
     ! do analytic continuation and print selfenergy on the real axis.
-    sigma_band_con(:,:,:) = dcmplx(0.0d0, 0.d0)
-    CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
-    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), wsigwin(1), nwsigwin)
+    sigma_band_con(:,:,:) = zero
+    CALL sigma_pade(sigma_band_c(1,1,1), sigma_band_con(1,1,1), mu, AIMAG(freq%sigma), freq%window, nwsigwin)
+    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_con(1,1,1), freq%window, nwsigwin)
    deallocate(sigma_band_con)
   ELSE
     ! print sigma on real axis
-    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), wsigma(1), nwsigma)
+    CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), REAL(freq%sigma) + mu, nwsigma)
   END IF
   IF (allocated(sigma_band_exg)) DEALLOCATE(sigma_band_exg)
+
+  CALL stop_clock(time_matel)
 
 END SUBROUTINE sigma_matel

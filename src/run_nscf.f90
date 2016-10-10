@@ -22,44 +22,43 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE run_nscf(do_band, do_matel, ik)
+MODULE run_nscf_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+SUBROUTINE run_nscf(do_band, do_matel, ik, config)
 !-----------------------------------------------------------------------
 !
 ! This is the driver for when gw calls pwscf.
 !
 !
-  USE kinds,              ONLY : DP
-  USE control_flags,   ONLY : io_level, conv_ions, twfcollect
-  USE basis,           ONLY : starting_wfc, starting_pot, startingconfig
-  USE io_files,        ONLY : prefix, tmp_dir, wfc_dir, seqopn, iunwfc
-  USE io_global,      ONLY : stdout
-  USE lsda_mod,        ONLY : nspin
-  USE input_parameters,ONLY : pseudo_dir, force_symmorphic
-  USE control_flags,   ONLY : restart
-  USE fft_base,        ONLY : dtgs
-  USE qpoint,          ONLY : xq
-  USE check_stop,      ONLY : check_stop_now
-  USE control_gw,      ONLY : done_bands, reduce_io, recover, tmp_dir_gw, &
-                              ext_restart, bands_computed, lgamma
-  USE save_gw,         ONLY : tmp_dir_save
-  USE control_flags,   ONLY : iprint, io_level
-  USE mp_bands,        ONLY : ntask_groups
-  USE disp,            ONLY : xk_kpoints, nqs
-  USE klist,           ONLY : xk, wk, nks, nkstot
-  USE gwsigma,         ONLY : sigma_x_st, sigma_c_st, nbnd_sig
-  USE wvfct,           ONLY : nbnd
-  !!! copy ugly fix from PH
-  USE fft_base,  ONLY: dffts, dfftp
-  USE fft_types, ONLY: fft_type_allocate
-  USE cell_base, ONLY: at, bg
-  USE gvect,     ONLY: gcutm
-  USE gvecs,     ONLY: gcutms
-  USE mp_bands,  ONLY: intra_bgrp_comm
-  !!!
+  USE basis,             ONLY: starting_wfc, starting_pot, startingconfig
+  USE cell_base,         ONLY: at, bg
+  USE check_stop,        ONLY: check_stop_now
+  USE control_flags,     ONLY: io_level, conv_ions, twfcollect, restart
+  USE control_gw,        ONLY: reduce_io, tmp_dir_gw, ext_restart, bands_computed, lgamma
+  USE disp,              ONLY: xk_kpoints, nqs
+  USE fft_base,          ONLY: dtgs, dffts, dfftp
+  USE fft_types,         ONLY: fft_type_allocate
+  USE gvect,             ONLY: gcutm
+  USE gvecs,             ONLY: gcutms
+  USE gwsigma,           ONLY: nbnd_sig
+  USE input_parameters,  ONLY: pseudo_dir, force_symmorphic
+  USE io_files,          ONLY: tmp_dir, wfc_dir, seqopn, iunwfc
+  USE io_global,         ONLY: stdout
+  USE klist,             ONLY: nks, nkstot
+  USE mp_bands,          ONLY: ntask_groups, intra_bgrp_comm
+  USE qpoint,            ONLY: xq
+  USE setup_nscf_module, ONLY: setup_nscf_green
+  USE sigma_module,      ONLY: sigma_config_type
+  USE wvfct,             ONLY: nbnd
   !
   IMPLICIT NONE
   !
-  CHARACTER(LEN=256) :: dirname, file_base_in, file_base_out
+  !> must be present if do_matel is set to contain the configuration of sigma
+  TYPE(sigma_config_type), INTENT(OUT), ALLOCATABLE, OPTIONAL :: config(:)
   !
   INTEGER   :: ik
   !
@@ -73,7 +72,11 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   CALL close_files( .true. )
   !
-  if(do_matel) xq(:) = xk_kpoints(:, ik)
+  IF (do_matel) THEN
+    xq(:) = xk_kpoints(:, ik)
+    IF (.NOT.PRESENT(config)) &
+      CALL errore(__FILE__, "config is not optional when do_matel is set", 1)
+  END IF
   lgamma = ( (ABS(xq(1))<1.D-8).AND.(ABS(xq(2))<1.D-8).AND.(ABS(xq(3))<1.D-8) )
  !From now on, work only on the _gw virtual directory
   wfc_dir=tmp_dir_gw
@@ -87,11 +90,15 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   conv_ions=.true.
 ! Generate all eigenvectors in IBZ_{k} for Green's function or IBZ_{q} otherwise.
   if(do_matel) nbnd = nbnd_sig
-  !!! copy ugly fix from PH 
+  !
   CALL fft_type_allocate(dfftp, at, bg, gcutm, intra_bgrp_comm)
   CALL fft_type_allocate(dffts, at, bg, gcutms, intra_bgrp_comm)
-  !!!
-  CALL setup_nscf_green (xq, do_matel)
+  !
+  IF (do_matel) THEN
+    CALL setup_nscf_green(xq, config)
+  ELSE
+    CALL setup_nscf(xq)
+  END IF
   CALL init_run()
   WRITE( stdout, '(/,5X,"Calculation of q = ",3F12.7)') xq
   IF (do_band) CALL non_scf ( )
@@ -129,3 +136,5 @@ SUBROUTINE run_nscf(do_band, do_matel, ik)
   !
   RETURN
 END SUBROUTINE run_nscf
+
+END MODULE run_nscf_module

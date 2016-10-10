@@ -25,10 +25,13 @@
 !! We use semantic versioning as much as is reasonably possible for a code
 !! relying on the occationally rapid changes in the Quantum Espresso package.
 !! A detailed description can be found here http://semver.org/ .
-!! We do not use the patch sublevel of the version number. These commits
-!! are identified by the git hash tag.
 !!
-!! Here is an outline of the general principles:
+!! In addition, we make use of a 
+!! <a href="http://nvie.com/posts/a-successful-git-branching-model/> Gitflow</a>
+!! <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow">
+!! Workflow</a>.
+!!
+!! Here is an outline of the general principles for naming versions:
 !! - Whenever there is an incompatible change to the API, update the major
 !!   version number. In practice this means that if you make significant
 !!   changes to the interface of a subroutine or the input file.
@@ -38,25 +41,61 @@
 !!   the minor revision number. Every time you do a minor release update the 
 !!   compatible_QE_revision field to the correct revision, so that one knows
 !!   with which revision of QE the code should compile.
-!! 
-!! Use tags to identify releases and add the compatible QE release. Example:
-!! If version 1.15 of SGW is released with QE version 6.2 use the tag
-!! v1.15_QE_v6.2. Do only use this form of the tag if the version corresponds
-!! excactly to the unmodified version of QE; otherwise use simply the
-!! v1.15 tag.
+!! - Use the patch sublevel only if you must fix the master between releases.
+!!   Typically the QE release cycle should be so fast that this won't be
+!!   necessary, but if a very severe bug occurs fix it and release a new
+!!   version increasing the third digit.
+!! - Use tags to identify releases and add the compatible QE release. Example:
+!!   If version 1.15 of SGW is released with QE version 6.2 use the tag
+!!   v1.15+QE6.2. Do only use this form of the tag if the version corresponds
+!!   excactly to the unmodified version of QE; otherwise use simply the
+!!   v1.15 tag.
+!! - For versions between commits the git-describe functionality is used to
+!!   determine the version number.
 !!
-!! For versions between commits the git-describe functionality is used to
-!! determine the version number.
+!! Here is an outline of the Gitflow Workflow
+!! - The master branch of the project should be in production ready state all
+!!   the time. You want to update the master typically with every release of
+!!   QE so that SGW remains compatible and occassionally in between if an
+!!   important feature is added and the next QE release is far away.
+!! - To create a new release fork a release branch from the develop branch and
+!!   do all the necessary adjustments there. This includes the update of the
+!!   version number, bugfixes if necessary, and any last minute adjustment if
+!!   the QE API changes. When the release branch is ready merge it into the
+!!   master using --no-ff to create a commit. Also merge it back into develop
+!!   so that the version number is updated there, too. There **must** not be any
+!!   new feature added to the release branch after it forked. Check that the
+!!   branch passes the buildbot before merging it into the master!
+!! - The develop branch is the working branch in which new features are added
+!!   for a future release. It is supposed to be in a working state at all time,
+!!   but occassionally it might be broken. For this the branch is constantly
+!!   monitored by the buildbot. On this branch you should see the following
+!!   commits: hotfixes to master (merged into develop); bugfixes due to API
+!!   changes in QE; bugfixes to the develop branch detected by the devloper or
+!!   the buildbot; and importantly new feature commits (see below). Keep in mind
+!!   to update the QE compatibility when you commit to develop.
+!! - The main body of your work should take place in feature branches. In these
+!!   you can play around and try out new stuff. If you develop a complex feature
+!!   try to see if you can chop it into smaller logical units, so that the
+!!   lifetime of a feature branch doesn't get to long. When you are confident
+!!   that the feature is stable you merge it into the develop branch so that it
+!!   get's roled out into the next release. If you find someone to code review
+!!   your changes before merging all the better. When you merge the feature
+!!   into develop, remember to update the release notes, so that your changes
+!!   get documented in the next release.
+!! - On the public repository only the master and the develop branch are stored.
+!!   If you want to share a feature branch, use a local repository instead.
+!!
 !----------------------------------------------------------------------------
 MODULE sgw_version
   !
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: sgw_version_number = '0.9'
+  CHARACTER(*), PARAMETER :: sgw_version_number = '0.10'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: sgw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev12824'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE6.0 rev13079'
   !
 END MODULE sgw_version

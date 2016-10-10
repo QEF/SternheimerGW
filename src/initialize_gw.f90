@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE initialize_gw()
+SUBROUTINE initialize_gw(coulomb)
   !-----------------------------------------------------------------------
   !
   ! This is a driver to the GW initialization routine. Again ever so slightly adapted from phonon initialization
@@ -32,30 +32,45 @@ SUBROUTINE initialize_gw()
   USE control_gw, ONLY : lgamma
 
   IMPLICIT NONE
+
+  !> are we in the Coulomb or the self-energy step?
+  LOGICAL, INTENT(IN) :: coulomb
+
   INTEGER :: ik
 
   !
   ! ... nksq is the number of k-points, NOT including k+q points
   !
-   IF ( lgamma ) THEN
+  IF (coulomb) THEN
+    !
+    ! for the screened Coulomb interaction, k and k + q alternate for
+    ! all points except Gamma, where k and k + q are identical
+    !
+    IF ( lgamma ) THEN
       !
       nksq = nks
       ALLOCATE(ikks(nksq), ikqs(nksq))
       DO ik=1,nksq
-         ikks(ik) = ik
-         ikqs(ik) = ik
+        ikks(ik) = ik
+        ikqs(ik) = ik
       ENDDO
      !
-   ELSE
+    ELSE
      !
       nksq = nks / 2
       ALLOCATE(ikks(nksq), ikqs(nksq))
       DO ik=1,nksq
-         ikks(ik) = 2 * ik - 1
-         ikqs(ik) = 2 * ik
+        ikks(ik) = 2 * ik - 1
+        ikqs(ik) = 2 * ik
       ENDDO
       !
-   END IF
+    END IF
+    !
+  ELSE ! not coulomb
+    !
+    ! nksq, ikks, and ikqs is already set in setup_nscf_green
+    !
+  END IF
   !
   !Allocate the gw variables
   !
@@ -72,7 +87,7 @@ SUBROUTINE initialize_gw()
   !All necessary quantities to describe the local and nonlocal 
   !pseudopotential in the GW program.
   !
-  CALL gwq_init()
+  CALL gwq_init(coulomb)
   !
   CALL print_clock( 'GW' )
   !

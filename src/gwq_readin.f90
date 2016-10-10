@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_readin()
+SUBROUTINE gwq_readin(freq, vcut)
   !----------------------------------------------------------------------------
   !
   !    This routine reads the control variables for the program GW.
@@ -31,71 +31,71 @@ SUBROUTINE gwq_readin()
   !    by the self-consistent program.
   !
   !
-  USE kinds,         ONLY : DP
-  USE parameters,    ONLY : nsx
-  USE constants,     ONLY : RYTOEV
-  USE ions_base,     ONLY : nat, ntyp => nsp
-  USE io_global,     ONLY : ionode_id
-  USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
-  USE mp,               ONLY : mp_bcast
-  USE mp_world,         ONLY : world_comm
-  USE start_k,          ONLY : reset_grid, nks_start
-  USE input_parameters, ONLY : max_seconds, force_symmorphic
-  USE ions_base,     ONLY : amass, atm
-  USE klist,         ONLY : xk, nks, nkstot, lgauss, two_fermi_energies
-  USE control_flags, ONLY : gamma_only, tqr, restart, lkpoint_dir
-  USE uspp,          ONLY : okvan
-  USE fixed_occ,     ONLY : tfixed_occ
-  USE lsda_mod,      ONLY : lsda, nspin
-  USE run_info,      ONLY : title
-  USE control_gw,    ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
-                            reduce_io, tr2_gw, niter_gw, tr2_green, &
-                            nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
-                            last_irr, start_q, last_q, current_iq, tmp_dir_gw, tmp_dir_coul, &
-                            ext_recover, ext_restart, u_from_file, modielec, eta, &
-                            do_coulomb, do_sigma_c, do_sigma_exx,  do_sigma_exxG,&
-                            do_green, do_sigma_matel, &
-                            do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                            cohsex, multishift, do_sigma_extra, &
-                            solve_direct, w_green_start, tinvert, coul_multishift,&
-                            trunc_2d, do_epsil, &
-                            do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                            high_io, freq_gl, prec_direct, prec_shift, just_corr,&
-                            double_grid, name_length, output, &
-                            method_truncation => truncation
-  USE save_gw,       ONLY : tmp_dir_save
-  USE qpoint,        ONLY : nksq, xq
-  USE partial,       ONLY : atomo, list, nat_todo, nrapp
-  USE output_mod,    ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
-  USE disp,          ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
-                            xk_kpoints, kpoints, num_k_pts, & 
-                            w_of_q_start, w_of_k_start, w_of_k_stop
-  USE io_files,         ONLY : tmp_dir, prefix
-  USE noncollin_module, ONLY : i_cons, noncolin
-  USE ldaU,             ONLY : lda_plus_u
-  USE control_flags, ONLY : iverbosity, modenum
-  USE io_global,     ONLY : meta_ionode, meta_ionode_id, ionode, ionode_id, stdout
-  USE mp_images,     ONLY : nimage, my_image_id, intra_image_comm,   &
-                            me_image, nproc_image
-  USE mp_global,     ONLY : nproc_pool_file, &
-                            nproc_bgrp_file, nproc_image_file
-  USE mp_pools,      ONLY : nproc_pool, npool
-  USE mp_bands,      ONLY : nproc_bgrp, ntask_groups
-  USE control_flags, ONLY : twfcollect
-  USE paw_variables, ONLY : okpaw
-  USE freq_gw,       ONLY : fpol, fiu, nfs, nfsmax, wsigmamin, wsigmamax, deltaw, wcoulmax, plasmon,&
-                            greenzero, nwcoul, wsig_wind_min, wsig_wind_max, deltaws
-  USE gwsigma,       ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
-  USE gwsymm,        ONLY : use_symm
+  USE cell_base,         ONLY : at, alat
+  USE constants,         ONLY : RYTOEV, eps12
+  USE control_flags,     ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
+  USE control_gw,        ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
+                                reduce_io, tr2_gw, niter_gw, tr2_green, &
+                                nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
+                                last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
+                                ext_recover, ext_restart, modielec, eta, &
+                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
+                                do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
+                                cohsex, multishift, do_sigma_extra, &
+                                solve_direct, w_green_start, tinvert, coul_multishift,&
+                                trunc_2d, do_epsil, &
+                                do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
+                                high_io, prec_direct, prec_shift, just_corr,&
+                                double_grid, name_length, output, &
+                                method_truncation => truncation
+  USE disp,              ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
+                                xk_kpoints, kpoints, num_k_pts, & 
+                                w_of_q_start, w_of_k_start, w_of_k_stop
+  USE freq_gw,           ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
+                                wsig_wind_min, wsig_wind_max, nwsigwin
+  USE freqbins_module,   ONLY : freqbins_type
+  USE gwsigma,           ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
+  USE gwsymm,            ONLY : use_symm
+  USE input_parameters,  ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
+  USE io_files,          ONLY : tmp_dir, prefix
+  USE io_global,         ONLY : meta_ionode, meta_ionode_id, stdout
+  USE ions_base,         ONLY : nat, amass
+  USE kinds,             ONLY : DP
+  USE klist,             ONLY : xk, nks, nkstot
+  USE lsda_mod,          ONLY : nspin
+  USE mp,                ONLY : mp_bcast
+  USE mp_global,         ONLY : nproc_pool_file, nproc_image_file
+  USE mp_images,         ONLY : my_image_id, nproc_image
+  USE mp_pools,          ONLY : nproc_pool
+  USE mp_world,          ONLY : world_comm
+  USE output_mod,        ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
+  USE parameters,        ONLY : nsx
+  USE partial,           ONLY : atomo, list, nat_todo, nrapp
+  USE qpoint,            ONLY : nksq, xq
+  USE run_info,          ONLY : title
+  USE save_gw,           ONLY : tmp_dir_save
+  USE start_k,           ONLY : reset_grid
   USE truncation_module
-  USE wrappers,      ONLY : f_mkdir_safe
+  USE wrappers,          ONLY : f_mkdir_safe
   !
   !
   IMPLICIT NONE
   !
+  !> We store the frequency for the Coulomb solver in this type.
+  TYPE(freqbins_type), INTENT(OUT) :: freq
+  !
+  !> We store the truncated Coulomb potential in this type.
+  TYPE(vcut_type),     INTENT(OUT) :: vcut
+  !
+  !> size of the Wigner-Seitz cell
+  REAL(dp) atws(3,3)
+  !
+  !> the cutoff used for the truncated potential
+  REAL(dp) ecut_vcut
+
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
-  INTEGER :: ios, ipol, iter, na, it, ierr
+  INTEGER :: ios, ipol, iter, na, ierr
   ! integer variable for I/O control
   ! counter on polarizations
   ! counter on iterations
@@ -139,17 +139,17 @@ SUBROUTINE gwq_readin()
                        nrapp, max_seconds, reduce_io, &
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
-                       recover, fpol, lrpa, lnoloc, start_irr, last_irr, &
+                       recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, do_sigma_exxG,&
-                       wsigmamax, deltaw, wcoulmax,&
+                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, &
+                       wsigmamax, wcoulmax, nwsigma,&
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
-                       padecont, cohsex, multishift, plasmon, do_sigma_extra,&
-                       greenzero, solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
+                       padecont, cohsex, multishift, do_sigma_extra,&
+                       solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       freq_gl, prec_direct, tmp_dir, prec_shift, just_corr,& 
-                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, deltaws, truncation, &
+                       prec_direct, tmp_dir, prec_shift, just_corr,& 
+                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
                        filsigx, filsigc, filcoul
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
@@ -222,15 +222,12 @@ SUBROUTINE gwq_readin()
   iverbosity   = 0
   lnoloc       = .FALSE.
   epsil        = .FALSE.
-  fpol         = .FALSE.
   max_seconds  =  1.E+7_DP
   reduce_io    = .FALSE.
   prec_direct  = .FALSE.
   prec_shift  = .FALSE.
-  IF ( TRIM(outdir) == './') THEN
-     CALL get_environment_variable( 'ESPRESSO_TMPDIR', outdir )
-     IF ( TRIM( outdir ) == ' ' ) outdir = './'
-  ENDIF
+  CALL get_environment_variable( 'ESPRESSO_TMPDIR', outdir )
+  IF ( TRIM( outdir ) == ' ' ) outdir = './'
   prefix       = 'pwscf'
   fildyn       = 'matdyn'
   fildrho      = ' '
@@ -265,18 +262,16 @@ SUBROUTINE gwq_readin()
   do_pade_coul    = .FALSE.
   double_grid     = .TRUE.
   high_io    = .TRUE.
-  freq_gl    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
-  plasmon      = 17.0d0
-  greenzero    = 0.0d0 
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
   ecutsco      = 5.0
   ecutsex      = 5.0
-  corr_conv    = 0.0
   ecutprec     = 15.0
   nbnd_sig     = 8
   nwcoul       = 35
+  nwsigma      = 11
+  nwsigwin     = 801
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   godbyneeds   = .FALSE.
@@ -289,7 +284,6 @@ SUBROUTINE gwq_readin()
   do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
-  do_sigma_exxG  = .TRUE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.
@@ -299,11 +293,9 @@ SUBROUTINE gwq_readin()
 !Frequency variables
   wsigmamin      = 0.0d0
   wsigmamax      = 20.0d0
-  deltaw         =  2.0d0 
   wcoulmax       = 80.0d0   
   wsig_wind_min   = -50.0
   wsig_wind_max   =  30.0
-  deltaws   =   0.1
 
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
@@ -333,7 +325,22 @@ SUBROUTINE gwq_readin()
     CASE (FILM_TRUNCATION_1, FILM_TRUNCATION_2, FILM_TRUNCATION_3, FILM_TRUNCATION_4)
       method_truncation = FILM_TRUNCATION
 
+    CASE (VCUT_SPHERICAL_TRUNCATION_1, VCUT_SPHERICAL_TRUNCATION_2, &
+          VCUT_SPHERICAL_TRUNCATION_3, VCUT_SPHERICAL_TRUNCATION_4)
+      method_truncation = VCUT_SPHERICAL_TRUNCATION
+
+    CASE (VCUT_WIGNER_SEITZ_TRUNCATION_1, VCUT_WIGNER_SEITZ_TRUNCATION_2, &
+          VCUT_WIGNER_SEITZ_TRUNCATION_3, VCUT_WIGNER_SEITZ_TRUNCATION_4)
+      method_truncation = VCUT_WIGNER_SEITZ_TRUNCATION
+
     END SELECT ! truncation
+
+    ! convert frequencies to Ry
+    wsigmamin = wsigmamin / RYTOEV
+    wsigmamax = wsigmamax / RYTOEV
+    wcoulmax  = wcoulmax  / RYTOEV
+    wsig_wind_max = wsig_wind_max / RYTOEV
+    wsig_wind_min = wsig_wind_min / RYTOEV
 
   END IF ! meta_ionode
 
@@ -372,7 +379,7 @@ SUBROUTINE gwq_readin()
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
-  if(corr_conv.eq.0) corr_conv = ecutsco
+  if(ABS(corr_conv) < eps12) corr_conv = ecutsco
 !HL TEST PARA FINE
 30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
    CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
@@ -420,49 +427,54 @@ SUBROUTINE gwq_readin()
 ! HL here we can just use this to readin the list of frequencies that we want to calculate
 ! Stored in array  fiu(:), of size nfs.
 ! reads the frequencies ( just if fpol = .true. )
-  IF ( fpol ) THEN
-     nfs=0
-     IF (meta_ionode) THEN
-        READ (5, *, iostat = ios) card
-        IF ( TRIM(card)=='FREQUENCIES'.OR. &
-             TRIM(card)=='frequencies'.OR. &
-             TRIM(card)=='Frequencies') THEN
-           READ (5, *, iostat = ios) nfs
-        ENDIF
+  nfs=0
+  IF (meta_ionode) THEN
+     READ (5, *, iostat = ios) card
+     IF ( TRIM(card)=='FREQUENCIES'.OR. &
+          TRIM(card)=='frequencies'.OR. &
+          TRIM(card)=='Frequencies') THEN
+        READ (5, *, iostat = ios) nfs
      ENDIF
+  ENDIF
 
-     CALL mp_bcast(ios, meta_ionode_id, world_comm )
-     CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
-     CALL mp_bcast(nfs, meta_ionode_id, world_comm )
+  CALL mp_bcast(ios, meta_ionode_id, world_comm )
+  CALL errore ('gwq_readin', 'reading number of FREQUENCIES', ABS(ios) )
+  CALL mp_bcast(nfs, meta_ionode_id, world_comm )
 
-!No adaptive grid for real freq calc (YET)
-     if(.not.do_imag) freq_gl=.false.
-     CALL mp_bcast(freq_gl,meta_ionode_id, world_comm)
+  if (nfs < 1) call errore('gwq_readin','Too few frequencies',1)
+  ALLOCATE(fiu(nfs), freq%solver(nfs))
 
-     if (nfs > nfsmax) call errore('gwq_readin','Too many frequencies',1) 
-     if (nfs < 1) call errore('gwq_readin','Too few frequencies',1) 
-
-     IF (meta_ionode) THEN
-        IF ( TRIM(card) == 'FREQUENCIES' .OR. &
-             TRIM(card) == 'frequencies' .OR. &
-             TRIM(card) == 'Frequencies' ) THEN
-           DO i = 1, nfs
-              !HL Need to convert frequencies from electron volts into Rydbergs
-              READ (5, *, iostat = ios) ar, ai 
-              fiu(i) = dcmplx(ar, ai) / dcmplx(RYTOEV,0.0d0)
-           END DO
-        END IF
+  IF (meta_ionode) THEN
+     IF ( TRIM(card) == 'FREQUENCIES' .OR. &
+          TRIM(card) == 'frequencies' .OR. &
+          TRIM(card) == 'Frequencies' ) THEN
+        DO i = 1, nfs
+           !HL Need to convert frequencies from electron volts into Rydbergs
+           READ (5, *, iostat = ios) ar, ai 
+           freq%solver(i) = CMPLX(ar, ai, KIND=dp) / RYTOEV
+        END DO
      END IF
-
-     CALL mp_bcast(ios, meta_ionode_id, world_comm)
-     CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
-     CALL mp_bcast(fiu, meta_ionode_id, world_comm )
-  ELSE
-      nfs=0
-     !fiu=0.0_DP
-      fiu=DCMPLX(0.0d0, 0.d0)
-      CALL mp_bcast(fiu, meta_ionode_id, world_comm )
   END IF
+  fiu = freq%solver
+
+  ! set the small shift into the complex plane
+  IF (do_imag) THEN
+    !
+    ! if we are already in the complex plane, we don't need to shift
+    freq%eta = 0.0_dp
+    !
+  ELSE
+    !
+    ! if we are on the real axis, we shift by a small amount into the
+    ! complex plane for a numerically stable treatment of the poles
+    freq%eta = eta
+    !
+  END IF
+
+  CALL mp_bcast(ios, meta_ionode_id, world_comm)
+  CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
+  CALL mp_bcast(fiu, meta_ionode_id, world_comm )
+
  IF (kpoints) then
      num_k_pts = 0
      IF (meta_ionode) THEN
@@ -518,8 +530,13 @@ SUBROUTINE gwq_readin()
   tmp_dir_save=tmp_dir
   tmp_dir_gw= TRIM (tmp_dir) //'_gw'//trim(int_to_char(my_image_id))//'/'
   tmp_dir_coul= TRIM (tmp_dir) //'_gw0'//'/'
+
   ! set output directory if not defined
-  IF (output%directory == '') output%directory = tmp_dir_gw
+  IF (output%directory == '') THEN
+    output%directory = trimcheck(tmp_dir_gw)
+  ELSE
+    output%directory = trimcheck(output%directory)
+  END IF
   output%prefix = prefix
 
   ! create directory (if it doesn't exist)
@@ -533,8 +550,6 @@ SUBROUTINE gwq_readin()
   ext_restart=.FALSE.
   ext_recover=.FALSE.
   recover=.false.
-
-1001 continue
 
   CALL read_file ( )
   force_symmorphic = .true.
@@ -597,5 +612,31 @@ SUBROUTINE gwq_readin()
   ENDIF
   IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
       CALL errore('gwq_readin','nq1, nq2, and nq3 must be greater than 0',1)
-  RETURN
+
+  !
+  ! setup the truncation
+  !
+  ! note: this step is computationally expensive, so we only do it if necessary
+  IF (method_truncation == VCUT_SPHERICAL_TRUNCATION .OR. &
+      method_truncation == VCUT_WIGNER_SEITZ_TRUNCATION) THEN
+    !
+    ! determine supercell
+    atws = alat * at
+    !
+    atws(:,1) = atws(:,1) * nq1
+    atws(:,2) = atws(:,2) * nq2
+    atws(:,3) = atws(:,3) * nq3
+    !
+    ! we should use a quarter of the cutoff, because vcut assumes WF cutoff
+    ! and converts to density cutoff, but for some reason the scaling is
+    ! a bit different then for the custom FFT type, so that we increase the
+    ! prefactor to 0.3 to be on the safe side
+    ecut_vcut = 0.30_dp * MAX(ecutsco, ecutsex)
+    CALL vcut_reinit(vcut, atws, ecut_vcut, tmp_dir_gw)
+    CALL vcut_info(stdout, vcut)
+    !
+  END IF ! vcut truncation methods
+
+  FLUSH(stdout)
+
 END SUBROUTINE gwq_readin

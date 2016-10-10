@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE clean_pw_gw(iq, flag)
+SUBROUTINE clean_pw_gw(flag)
   !-----------------------------------------------------------------------
   !
   ! This routine deallocates all the variables of pwscf and of the
@@ -30,18 +30,12 @@ SUBROUTINE clean_pw_gw(iq, flag)
   ! gwq_readin, so that it is possible to start a calculation at
   ! a new q.
   !
-  USE kinds,           ONLY : DP
   USE control_flags,   ONLY : twfcollect
+  USE control_gw,      ONLY : done_bands
   USE lr_symm_base,    ONLY : nsymq
-  USE disp,            ONLY : done_iq
-  USE control_gw,      ONLY : done_bands, rec_code_read
-  USE save_gw,         ONLY : restore_gw_input_variables
   !
   IMPLICIT NONE
   !
-  INTEGER, INTENT(IN) :: iq
-  !
-  INTEGER :: irr
   LOGICAL :: flag
   !
   done_bands=.FALSE.

@@ -29,35 +29,29 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
   !Initializes the electric field potential the perturbing potential generated in Coulomb.
   !
 
-  USE kinds, only : DP
-  USE ions_base, ONLY : nat, ityp
-  USE cell_base, ONLY : tpiba
-  USE lsda_mod,  ONLY : lsda, isk
-  USE noncollin_module, ONLY : npol
-  use uspp_param,ONLY : upf
-  USE wvfct,     ONLY : nbnd, npw, npwx
-  USE wavefunctions_module,  ONLY: evc
-  USE nlcc_gw,    ONLY : nlcc_any, drc
-  USE eqv,        ONLY : dvpsi, dmuxc, vlocq
-  USE qpoint,     ONLY : npwq, igkq, xq, eigqts, ikks, ikqs
-
-  USE gvect,      ONLY : ngm, g, nl
-  USE gvecs,      ONLY : nls, doublegrid
-  USE fft_base,   ONLY : dfftp, dffts
-  USE fft_interfaces, ONLY : invfft, fwfft
-  USE klist,      ONLY : igk_k
+  USE eqv,                  ONLY: dvpsi
+  USE fft_base,             ONLY: dfftp, dffts
+  USE fft_interfaces,       ONLY: invfft, fwfft
+  USE gvecs,                ONLY: nls, doublegrid
+  USE kinds,                ONLY: dp
+  USE klist,                ONLY: igk_k
+  USE nlcc_gw,              ONLY: nlcc_any
+  USE noncollin_module,     ONLY: npol
+  USE qpoint,               ONLY: npwq, ikks, ikqs
+  USE wavefunctions_module, ONLY: evc
+  USE wvfct,                ONLY: nbnd, npw, npwx
 
   implicit none
   !
   !   The dummy variables
-  integer :: ik, igpert
+  integer :: ik
   ! input: the k point
   ! counter for G-vector for plane wave perturbation  
   logical :: addnlcc
   !
   !   And the local variables
   !
-  integer :: na, mu, ikk, ikq, ig, nt, ibnd, ir, is, ip
+  integer :: ikk, ikq, ig, ibnd, ir, ip
   ! counter on atoms
   ! counter on modes
   ! the point k
