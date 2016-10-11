@@ -284,17 +284,20 @@ CONTAINS
     !> the number of basis functions in the subspace
     INTEGER num_basis
 
+    !> counter on the basis function
+    INTEGER ibasis
+
     !> the norm of the residual
     REAL(dp) norm
 
     !> LAPACK function to evaluate the 2-norm
     REAL(dp), EXTERNAL :: DNRM2
 
-    !> complex value of 1
-    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
+    !> overlap of right-hand side and basis vector
+    COMPLEX(dp) overlap
 
-    !> complex value of -1
-    COMPLEX(dp), PARAMETER :: minus_one = -one
+    !> LAPACK routine to evaluate dot product
+    COMPLEX(dp), EXTERNAL :: ZDOTC
 
     ! set helper variables
     vec_size    = SIZE(BB, 1)
@@ -311,10 +314,14 @@ CONTAINS
     ! loop over right-hand side
     DO iproblem = 1, num_problem
 
-      ! r = b - W b
-      ! W is a matrix with the columns w_i
-      CALL ZGEMV('N', vec_size, num_basis, minus_one, subspace%ww, num_basis, &
-                 BB(:,iproblem), 1, one, residual(:,iproblem), 1)
+      ! loop over basis functions
+      DO ibasis = 1, num_basis
+
+        ! r = b - (w_i, b) w_i
+        overlap = ZDOTC(vec_size, BB(:,iproblem), 1, subspace%ww(:,ibasis), 1)
+        residual(:,iproblem) = residual(:,iproblem) - overlap * subspace%ww(:,ibasis)
+
+      END DO ! ibasis
 
       ! check convergence (factor 2 because of complex)
       IF (conv) THEN
