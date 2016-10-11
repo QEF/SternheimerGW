@@ -39,16 +39,32 @@ MODULE linear_solver_module
   !> stores the configuration of the linear solver
   TYPE linear_solver_config
 
-    !> the threshold when the calculation is considered converged
+    !> the relative threshold when the calculation is considered converged
     REAL(dp) :: threshold = 1e-4_dp
 
     !> maximum number of iterations before aborting
     INTEGER  :: max_iter = 10000
 
+    !> the absolute threshold used to check when the calculation is converged
+    REAL(dp), ALLOCATABLE :: abs_threshold(:)
+
   END TYPE linear_solver_config
 
-  !> store the Krylov subspace that is already generated
+  !> Store the Krylov subspace that is already generated.
+  !!
+  !! This type contains the trial vectors \f$v_i\f$ and the resulting vectors
+  !! \f$w_i =  A v_i\f$ after application of the linear operator. We can then
+  !! construct a basis from the \f$w_i\f$ and express the right-hand side in
+  !! it. Note that the basis has to be orthogonalized again when a shift is
+  !! employed.
   TYPE linear_solver_subspace
+
+    !> the trial vectors \f$v_i\f$
+    COMPLEX(dp), ALLOCATABLE :: vv(:,:)
+
+    !> the basis vectors \f$w_i\f$
+    COMPLEX(dp), ALLOCATABLE :: ww(:,:)
+
   END TYPE linear_solver_subspace
 
 CONTAINS
@@ -121,21 +137,24 @@ CONTAINS
 
       conv = .FALSE.
 
+      !! 2. the subspace is orthogonalized for the current shift
+      CALL linear_solver_orthogonal_subspace(config, sigma(ishift), subspace)
+
       ! loop until converged
       DO iter = 1, config%max_iter
 
-        !! 2. determine residual for given shift and right-hand sides 
+        !! 3. determine residual for given shift and right-hand sides 
         ! work contains the residual
-        CALL linear_solver_residual(config, sigma(ishift), BB, subspace, work, conv)
+        CALL linear_solver_residual(config, BB, subspace, work, conv)
 
         ! exit the loop once convergence is achieved
         IF (conv) EXIT
 
-        !! 3. apply linear operator to residual vector
+        !! 4. apply linear operator to residual vector
         ! work contains A applied to the residual
         CALL AA(sigma(ishift), work)
 
-        !! 4. expand the Krylov subspace
+        !! 5. expand the Krylov subspace
         CALL linear_solver_expand_subspace(config, work, subspace)
 
       END DO ! iter
@@ -145,13 +164,55 @@ CONTAINS
         CALL errore(__FILE__, "linear solver did not converge", 1)
       END IF
       
-      !! 5. we repeat step 2 - 4 until convergence is achieved, then we determine
+      !! 6. we repeat step 3 - 5 until convergence is achieved, then we determine
       !!    the solution to the linear problem from the subspace information
       CALL linear_solver_obtain_result(config, sigma(ishift), BB, subspace, XX(:, :, ishift))
 
     END DO ! ishift
 
   END SUBROUTINE linear_solver
+
+  !> Determine the absolute thresholds used from the relative one.
+  !!
+  !! The absolute threshold is the relative threshold multiplied with the norm
+  !! of the right-hand side of the equation.
+  SUBROUTINE linear_solver_threshold(BB, rel_threshold, abs_threshold)
+
+    !> the right hand side of the equation
+    COMPLEX(dp), INTENT(IN) :: BB(:,:)
+
+    !> the relative threshold to check for convergence
+    REAL(dp),    INTENT(IN) :: rel_threshold
+
+    !> the absolute threshold to check for convergence
+    REAL(dp),    INTENT(OUT), ALLOCATABLE :: abs_threshold(:)
+
+    !> the dimensionality of the problem
+    INTEGER vec_size
+
+    !> the number of right hand side equations
+    INTEGER num_problem
+
+    !> counter on the right hand side of the linear problem
+    INTEGER iproblem
+
+    !> LAPACK function to evaluate the 2-norm
+    REAL(dp), EXTERNAL :: DNRM2
+
+    ! initialize helper variables
+    ! note: factor 2 because DNRM2 takes real instead of complex
+    vec_size    = 2 * SIZE(BB, 1)
+    num_problem = SIZE(BB, 2)
+
+    ALLOCATE(abs_threshold(num_problem))
+
+    DO iproblem = 1, num_problem
+      !
+      abs_threshold(iproblem) = DNRM2(vec_size, BB(:, iproblem), 1)
+      !
+    END DO ! iproblem
+
+  END SUBROUTINE linear_solver_threshold
 
   !> Recover Krylov subspace from memory, file, or generate empty one.
   !!
@@ -170,14 +231,34 @@ CONTAINS
 
   END SUBROUTINE linear_solver_recover_subspace
 
+  !> orthogonalize the basis of the subspace for the current shift
+  SUBROUTINE linear_solver_orthogonal_subspace(config, sigma, subspace)
+
+    !> configuration of the linear solver
+    TYPE(linear_solver_config),   INTENT(IN)    :: config
+
+    !> the shift of the linear problem
+    COMPLEX(dp),                  INTENT(IN)    :: sigma
+
+    !> the Krylov subspace to be orthogonalized
+    TYPE(linear_solver_subspace), INTENT(INOUT) :: subspace
+
+  END SUBROUTINE linear_solver_orthogonal_subspace
+
   !> Determine the residual of the linear equation.
-  SUBROUTINE linear_solver_residual(config, sigma, BB, subspace, residual, conv)
+  !!
+  !! The right hand \f$\vert b \rangle\f$ side of the equation can be expanded
+  !! in the basis functions \f$\vert w_i \rangle\f$ of the subspace. The
+  !! residual error is given as
+  !! \f{equation}{
+  !!   \vert r \rangle = \vert b \rangle - \sum_i \vert w_i \rangle \langle w_i \vert b \rangle~.
+  !! \f}
+  !! If the norm of \f$\vert r\rangle\f$ decreases below a given threshold the
+  !! calculation is converged.
+  SUBROUTINE linear_solver_residual(config, BB, subspace, residual, conv)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)  :: config
-
-    !> the shift of the linear problem
-    COMPLEX(dp),                  INTENT(IN)  :: sigma
 
     !> the right hand side of the problem
     COMPLEX(dp),                  INTENT(IN)  :: BB(:,:)
@@ -190,6 +271,58 @@ CONTAINS
 
     !> did the residual error converge
     LOGICAL,                      INTENT(OUT) :: conv
+
+    !> the dimensionality of the problem
+    INTEGER vec_size
+
+    !> the number of right hand side terms
+    INTEGER num_problem
+
+    !> counter on the right hand size terms
+    INTEGER iproblem
+
+    !> the number of basis functions in the subspace
+    INTEGER num_basis
+
+    !> the norm of the residual
+    REAL(dp) norm
+
+    !> LAPACK function to evaluate the 2-norm
+    REAL(dp), EXTERNAL :: DNRM2
+
+    !> complex value of 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex value of -1
+    COMPLEX(dp), PARAMETER :: minus_one = -one
+
+    ! set helper variables
+    vec_size    = SIZE(BB, 1)
+    num_problem = SIZE(BB, 2)
+    num_basis   = SIZE(subspace%ww, 2)
+
+    ! convergence flag is initially set, but cleared if any problem did not converge
+    conv = .TRUE.
+
+    ! copy B to residual
+    ALLOCATE(residual(vec_size, num_problem))
+    CALL ZCOPY(SIZE(BB), BB, 1, residual, 1)
+
+    ! loop over right-hand side
+    DO iproblem = 1, num_problem
+
+      ! r = b - W b
+      ! W is a matrix with the columns w_i
+      CALL ZGEMV('N', vec_size, num_basis, minus_one, subspace%ww, num_basis, &
+                 BB(:,iproblem), 1, one, residual(:,iproblem), 1)
+
+      ! check convergence (factor 2 because of complex)
+      IF (conv) THEN
+        norm = DNRM2(2 * vec_size, residual(:,iproblem), 1)
+        conv = conv .AND. (norm < config%abs_threshold(iproblem))
+      END IF
+
+    END DO ! iproblem
 
   END SUBROUTINE linear_solver_residual
 
