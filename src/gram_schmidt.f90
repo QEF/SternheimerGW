@@ -75,6 +75,14 @@ CONTAINS
     num_basis = SIZE(basis, 2)
     transform = PRESENT(vector)
 
+    ! sanity check
+    IF (vec_size < num_basis) &
+      CALL errore(__FILE__, "number of vectors larger than dimension", 1)
+    IF (transform) THEN
+      IF (ANY(SHAPE(basis) /= SHAPE(vector))) &
+        CALL errore(__FILE__, "basis and vector array inconsistent", 1)
+    END IF
+
     !!
     !! 1. Orthogonalize to the existing basis \f$\vert w_i\rangle \f$
     !!    \f{equation}{
@@ -85,9 +93,12 @@ CONTAINS
       !
       DO jbasis = 1, first - 1
         !
-        ! v_i = v_i - sum_j (w_j, v_i) w_j
+        ! v_i = v_i - (w_j, v_i) w_j
         norm = ZDOTC(vec_size, basis(:, jbasis), 1, basis(:, ibasis), 1)
         CALL ZAXPY(vec_size, -norm, basis(:, jbasis), 1, basis(:, ibasis), 1)
+        !
+        ! t_i = t_i - (w_j, v_i) t_j
+        IF (transform) CALL ZAXPY(vec_size, -norm, vector(:, jbasis), 1, vector(:, ibasis), 1)
         !
       END DO
       !
@@ -102,6 +113,8 @@ CONTAINS
       !  note: factor 2 because of complex
       norm = one / DNRM2(2 * vec_size, basis(:, ibasis), 1)
       CALL ZSCAL(vec_size, norm, basis(:, ibasis), 1)
+      !
+      IF (transform) CALL ZSCAL(vec_size, norm, vector(:, ibasis), 1)
       !!
       !! 4. orthogonalize all other vector with respect to current one
       !!
@@ -110,6 +123,9 @@ CONTAINS
         ! v_j = v_j - (v_i, v_j) v_i
         norm = ZDOTC(vec_size, basis(:, ibasis), 1, basis(:, jbasis), 1)
         CALL ZAXPY(vec_size, -norm, basis(:, ibasis), 1, basis(:, jbasis), 1)
+        !
+        ! t_j = t_j - (v_i, v_j) v_i
+        IF (transform) CALL ZAXPY(vec_size, -norm, vector(:, ibasis), 1, vector(:, jbasis), 1)
         !
       END DO ! jbasis
       !

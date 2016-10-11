@@ -26,7 +26,7 @@
 @test(npes=[1])
 SUBROUTINE test_gram_schmidt(this)
 
-  USE constants,           ONLY: eps14
+  USE constants,           ONLY: eps14, eps12
   USE gram_schmidt_module, ONLY: gram_schmidt
   USE kinds,               ONLY: dp
   USE pfunit_mod
@@ -39,8 +39,12 @@ SUBROUTINE test_gram_schmidt(this)
   INTEGER, PARAMETER :: problem_size = 10, half_size = problem_size / 2
 
   ! the basis that we want to orthonormalize
-  REAL(dp) real_part(problem_size, problem_size), imag_part(problem_size, problem_size)
+  REAL(dp) real_part(problem_size, problem_size)
+  REAL(dp) imag_part(problem_size, problem_size)
   COMPLEX(dp) basis(problem_size, problem_size)
+  COMPLEX(dp) vector(problem_size, problem_size)
+  COMPLEX(dp) linear_op(problem_size, problem_size)
+  COMPLEX(dp) reference(problem_size, problem_size)
 
   ! counter variables
   INTEGER ii, jj
@@ -50,6 +54,9 @@ SUBROUTINE test_gram_schmidt(this)
 
   ! LAPACK function to evaluate dot product
   COMPLEX(dp), EXTERNAL :: ZDOTC
+
+  ! complex constants of 1 and 0
+  COMPLEX(dp), PARAMETER :: one = 1.0_dp, zero = 0.0_dp
 
   CALL test_log_start(__FILE__, __LINE__, "Test if the Gram Schmidt orthonormalization")
 
@@ -115,5 +122,38 @@ SUBROUTINE test_gram_schmidt(this)
     END DO ! jj
   END DO ! ii
   WRITE(test_log, *) 'passed testing the extension of the basis'
+
+  !
+  ! assemble new random arrays
+  !
+  CALL RANDOM_NUMBER(real_part)
+  CALL RANDOM_NUMBER(imag_part)
+  linear_op = CMPLX(real_part, imag_part)
+  CALL RANDOM_NUMBER(real_part)
+  CALL RANDOM_NUMBER(imag_part)
+  vector = CMPLX(real_part, imag_part)
+  !
+  ! basis = linear_op * vector
+  CALL ZGEMM('N', 'N', problem_size, problem_size, problem_size, one, linear_op, problem_size, &
+             vector, problem_size, zero, basis, problem_size)
+
+  !
+  ! third test - generate orthonormal basis for half the vectors
+  !              keeping track of an additional set of vectors
+  !
+  CALL gram_schmidt(1, basis(:,:half_size), vector(:,:half_size))
+  CALL gram_schmidt(half_size + 1, basis, vector)
+  !
+  ! test if basis = linear_op * vector is still fulfilled
+  CALL ZGEMM('N', 'N', problem_size, problem_size, problem_size, one, linear_op, problem_size, &
+             vector, problem_size, zero, reference, problem_size)
+  ! check if all elements of basis are equal to reference
+  DO jj = 1, problem_size
+    DO ii = 1, problem_size
+      @assertEqual(REAL(reference(ii,jj)), REAL(basis(ii,jj)), eps12)
+      @assertEqual(AIMAG(reference(ii,jj)), AIMAG(basis(ii,jj)), eps12)
+    END DO
+  END DO
+  WRITE(test_log, *) 'passed testing if A v = b is fulfilled after orthonormalization'
 
 END SUBROUTINE test_gram_schmidt
