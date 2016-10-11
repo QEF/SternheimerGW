@@ -26,7 +26,6 @@
 @test(npes=[1])
 SUBROUTINE test_gram_schmidt(this)
 
-  USE constants,           ONLY: eps14, eps12
   USE gram_schmidt_module, ONLY: gram_schmidt
   USE kinds,               ONLY: dp
   USE pfunit_mod
@@ -36,7 +35,7 @@ SUBROUTINE test_gram_schmidt(this)
 
   CLASS(MpiTestMethod) :: this
 
-  INTEGER, PARAMETER :: problem_size = 10, half_size = problem_size / 2
+  INTEGER, PARAMETER :: problem_size = 300, half_size = problem_size / 2
 
   ! the basis that we want to orthonormalize
   REAL(dp) real_part(problem_size, problem_size)
@@ -80,16 +79,16 @@ SUBROUTINE test_gram_schmidt(this)
       !
       IF (ii == jj) THEN
         ! diagonal element should be 1
-        @assertEqual(1.0_dp, REAL(overlap), eps14)
+        @assertEqual(1.0_dp, REAL(overlap), 1e-14_dp)
         !
       ELSE
         ! off-diagonal elements should vanish
-        @assertEqual(0.0_dp, REAL(overlap), eps14)
+        @assertEqual(0.0_dp, REAL(overlap), 1e-12_dp)
         !
       END IF
       !
       ! complex part should always be zero
-      @assertEqual(0.0_dp, AIMAG(overlap), eps14)
+      @assertEqual(0.0_dp, AIMAG(overlap), 1e-12_dp)
       !
     END DO ! jj
   END DO ! ii
@@ -108,16 +107,16 @@ SUBROUTINE test_gram_schmidt(this)
       !
       IF (ii == jj) THEN
         ! diagonal element should be 1
-        @assertEqual(1.0_dp, REAL(overlap), eps14)
+        @assertEqual(1.0_dp, REAL(overlap), 1e-14_dp)
         !
       ELSE
         ! off-diagonal elements should vanish
-        @assertEqual(0.0_dp, REAL(overlap), eps14)
+        @assertEqual(0.0_dp, REAL(overlap), 1e-12_dp)
         !
       END IF
       !
       ! complex part should always be zero
-      @assertEqual(0.0_dp, AIMAG(overlap), eps14)
+      @assertEqual(0.0_dp, AIMAG(overlap), 1e-12_dp)
       !
     END DO ! jj
   END DO ! ii
@@ -150,8 +149,8 @@ SUBROUTINE test_gram_schmidt(this)
   ! check if all elements of basis are equal to reference
   DO jj = 1, problem_size
     DO ii = 1, problem_size
-      @assertEqual(REAL(reference(ii,jj)), REAL(basis(ii,jj)), eps12)
-      @assertEqual(AIMAG(reference(ii,jj)), AIMAG(basis(ii,jj)), eps12)
+      @assertEqual(REAL(reference(ii,jj)), REAL(basis(ii,jj)), 1e-10_dp)
+      @assertEqual(AIMAG(reference(ii,jj)), AIMAG(basis(ii,jj)), 1e-10_dp)
     END DO
   END DO
   WRITE(test_log, *) 'passed testing if A v = b is fulfilled after orthonormalization'
