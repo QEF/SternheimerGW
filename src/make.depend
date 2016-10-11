@@ -117,6 +117,7 @@ gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
+gram_schmidt.o : ../../Modules/kind.o
 green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
 green.o : ../../Modules/mp_world.o
@@ -219,6 +220,7 @@ linear_op.o : ../../Modules/uspp.o
 linear_op.o : ../../PW/src/pwcom.o
 linear_op.o : gwcom.o
 linear_op.o : timing.o
+linear_solver.o : ../../Modules/kind.o
 mix_pot_c.o : ../../Modules/kind.o
 openfilq.o : ../../Modules/control_flags.o
 openfilq.o : ../../Modules/fft_base.o

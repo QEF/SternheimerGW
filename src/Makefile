@@ -31,6 +31,7 @@ freqbins.o\
 gauleg_grid.o\
 gmap_sym.o\
 godby_needs.o\
+gram_schmidt.o\
 green.o\
 gw.o\
 gw_type.o\

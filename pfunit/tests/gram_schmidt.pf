@@ -1,0 +1,119 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the Sternheimer-GW code.
+! 
+! Copyright (C) 2010 - 2016 
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! Sternheimer-GW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Sternheimer-GW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Sternheimer-GW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+!
+! test if the linear solver works
+!
+@test(npes=[1])
+SUBROUTINE test_gram_schmidt(this)
+
+  USE constants,           ONLY: eps14
+  USE gram_schmidt_module, ONLY: gram_schmidt
+  USE kinds,               ONLY: dp
+  USE pfunit_mod
+  USE test_log_module
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  INTEGER, PARAMETER :: problem_size = 10, half_size = problem_size / 2
+
+  ! the basis that we want to orthonormalize
+  REAL(dp) real_part(problem_size, problem_size), imag_part(problem_size, problem_size)
+  COMPLEX(dp) basis(problem_size, problem_size)
+
+  ! counter variables
+  INTEGER ii, jj
+
+  ! overlap of two vectors
+  COMPLEX(dp) overlap
+
+  ! LAPACK function to evaluate dot product
+  COMPLEX(dp), EXTERNAL :: ZDOTC
+
+  CALL test_log_start(__FILE__, __LINE__, "Test if the Gram Schmidt orthonormalization")
+
+  !
+  ! assemble random array
+  !
+  CALL RANDOM_NUMBER(real_part)
+  CALL RANDOM_NUMBER(imag_part)
+  basis = CMPLX(real_part, imag_part)
+
+  !
+  ! first test - generate orthonormal basis for half the vectors
+  !
+  CALL gram_schmidt(1, basis(:,:half_size))
+  !
+  ! pairwise check for orthonormality
+  DO ii = 1, half_size
+    DO jj = 1, ii
+      !
+      overlap = ZDOTC(problem_size, basis(:,ii), 1, basis(:,jj), 1)
+      !
+      IF (ii == jj) THEN
+        ! diagonal element should be 1
+        @assertEqual(1.0_dp, REAL(overlap), eps14)
+        !
+      ELSE
+        ! off-diagonal elements should vanish
+        @assertEqual(0.0_dp, REAL(overlap), eps14)
+        !
+      END IF
+      !
+      ! complex part should always be zero
+      @assertEqual(0.0_dp, AIMAG(overlap), eps14)
+      !
+    END DO ! jj
+  END DO ! ii
+  WRITE(test_log, *) 'passed testing the initial orthonormalization'
+
+  !
+  ! second test - extend the orthonormal basis with the other half of the vectors
+  !
+  CALL gram_schmidt(half_size + 1, basis)
+  !
+  ! pairwise check for orthonormality
+  DO ii = 1, problem_size
+    DO jj = 1, ii
+      !
+      overlap = ZDOTC(problem_size, basis(:,ii), 1, basis(:,jj), 1)
+      !
+      IF (ii == jj) THEN
+        ! diagonal element should be 1
+        @assertEqual(1.0_dp, REAL(overlap), eps14)
+        !
+      ELSE
+        ! off-diagonal elements should vanish
+        @assertEqual(0.0_dp, REAL(overlap), eps14)
+        !
+      END IF
+      !
+      ! complex part should always be zero
+      @assertEqual(0.0_dp, AIMAG(overlap), eps14)
+      !
+    END DO ! jj
+  END DO ! ii
+  WRITE(test_log, *) 'passed testing the extension of the basis'
+
+END SUBROUTINE test_gram_schmidt
