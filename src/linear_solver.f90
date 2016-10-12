@@ -59,6 +59,9 @@ MODULE linear_solver_module
   !! employed.
   TYPE linear_solver_subspace
 
+    !> the last shift that was used
+    COMPLEX(dp) sigma
+
     !> the trial vectors \f$v_i\f$
     COMPLEX(dp), ALLOCATABLE :: vv(:,:)
 
@@ -232,7 +235,28 @@ CONTAINS
   END SUBROUTINE linear_solver_recover_subspace
 
   !> orthogonalize the basis of the subspace for the current shift
+  !!
+  !! The original vectors are constructed with a \f$\sigma_{\text{old}}\f$
+  !! \f{equation}{
+  !!   (A + \sigma_{\text{old}} I) \vert v_i \rangle = \vert w_i^{\text{old}} \rangle
+  !! \f}
+  !! and we want to construct a basis for the new shift \f$\sigma_{\text{new}}\f$
+  !! \f{equation}{
+  !!   (A + \sigma_{\text{new}} I) \vert v_i \rangle = \vert w_i^{\text{new}} \rangle~.
+  !! \f}
+  !! From the difference of these two equations, we obtain
+  !! \f{equation}{
+  !!   \vert w_i^{\text{new}} \rangle = \vert w_i^{\text{old}} \rangle +
+  !!     (\sigma_{\text{new}} - \sigma_{\text{old}}) \vert v_i \rangle~.
+  !! \f}
+  !! Then the \f$\vert w_i \rangle\f$ that we want to use as basis functions are
+  !! not orthonormal anymore, so that we use a Gram-Schmidt orthonormalization.
+  !! In this step, we keep track of the transformation of the \f$\vert v_i\rangle\f$
+  !! so that these and the basis functions are still related by the linear operator.
   SUBROUTINE linear_solver_orthogonal_subspace(config, sigma, subspace)
+
+    USE gram_schmidt_module, ONLY: gram_schmidt
+    USE kinds,               ONLY: dp
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)    :: config
@@ -242,6 +266,21 @@ CONTAINS
 
     !> the Krylov subspace to be orthogonalized
     TYPE(linear_solver_subspace), INTENT(INOUT) :: subspace
+
+    !> the difference of old and new shift
+    COMPLEX(dp) diff_sigma
+
+    ! determine the difference of current and last sigma
+    diff_sigma = sigma - subspace%sigma
+
+    ! update the w_i = w_i + diff_sigma * v_i
+    CALL ZAXPY(SIZE(subspace%ww), diff_sigma, subspace%vv, 1, subspace%ww, 1)
+
+    ! orthogonalize the new w_i keeping the linear relation intact
+    CALL gram_schmidt(1, subspace%ww, subspace%vv)
+
+    ! store the current sigma in the subspace
+    subspace%sigma = sigma
 
   END SUBROUTINE linear_solver_orthogonal_subspace
 
