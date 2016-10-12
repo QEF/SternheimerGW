@@ -222,7 +222,7 @@ CONTAINS
 
     DO iproblem = 1, num_problem
       !
-      abs_threshold(iproblem) = DNRM2(vec_size, BB(:, iproblem), 1)
+      abs_threshold(iproblem) = rel_threshold * DNRM2(vec_size, BB(:, iproblem), 1)
       !
     END DO ! iproblem
 
@@ -386,7 +386,7 @@ CONTAINS
       DO ibasis = 1, num_basis
 
         ! r = b - (w_i, b) w_i
-        overlap = ZDOTC(vec_size, BB(:,iproblem), 1, subspace%ww(:,ibasis), 1)
+        overlap = ZDOTC(vec_size, subspace%ww(:,ibasis), 1, BB(:,iproblem), 1)
         residual(:,iproblem) = residual(:,iproblem) - overlap * subspace%ww(:,ibasis)
 
       END DO ! ibasis
@@ -399,6 +399,10 @@ CONTAINS
 
     END DO ! iproblem
 
+    IF (.NOT.conv .AND. vec_size == num_basis) THEN
+      CALL errore(__FILE__, "right-hand side cannot be mapped by complete basis", 1)
+    END IF
+
   END SUBROUTINE linear_solver_residual
 
   !> Expand the subspace to increase the precision of the linear solver
@@ -407,6 +411,9 @@ CONTAINS
   !! we transform the trial vectors such that
   !! \f$(A + sigma I) \vert v rangle = \vert w \rangle\f$ is
   !! still fulfilled after the orthonormalization.
+  !!
+  !! @note New basis functions may be discarded if the system would be linear
+  !! dependent.
   SUBROUTINE linear_solver_expand_subspace(config, ww, vv, subspace)
 
     USE gram_schmidt_module, ONLY: gram_schmidt
@@ -437,7 +444,7 @@ CONTAINS
 
     ! set the helper variables
     vec_size = SIZE(subspace%ww, 1)
-    num_basis = SIZE(subspace%ww, 2) + SIZE(ww, 2)
+    num_basis = MIN(vec_size, SIZE(subspace%ww, 2) + SIZE(ww, 2))
     first = SIZE(subspace%ww, 2) + 1
 
     !
@@ -446,13 +453,13 @@ CONTAINS
     ! create a bigger array for w, copy the old elements, and replace the array
     ALLOCATE(work(vec_size, num_basis))
     CALL ZCOPY(SIZE(subspace%ww), subspace%ww, 1, work, 1)
-    CALL ZCOPY(SIZE(ww), ww, 1, work(:, first), 1)
+    CALL ZCOPY(SIZE(work) - SIZE(subspace%ww), ww, 1, work(:, first), 1)
     CALL MOVE_ALLOC(work, subspace%ww)
     !
     ! create a bigger array for v, copy the old elements, and replace the array
     ALLOCATE(work(vec_size, num_basis))
     CALL ZCOPY(SIZE(subspace%vv), subspace%vv, 1, work, 1)
-    CALL ZCOPY(SIZE(vv), vv, 1, work(:, first), 1)
+    CALL ZCOPY(SIZE(work) - SIZE(subspace%vv), vv, 1, work(:, first), 1)
     CALL MOVE_ALLOC(work, subspace%vv)
 
     !
@@ -513,6 +520,11 @@ CONTAINS
 
     ! initialize solution
     XX = zero
+
+    ! initialize helper variables
+    vec_size = SIZE(BB, 1)
+    num_problem = SIZE(BB, 2)
+    num_basis = SIZE(subspace%ww, 2)
 
     ! determine the solution for all right-hand sides
     DO iproblem = 1, num_problem
