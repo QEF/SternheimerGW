@@ -36,14 +36,20 @@ MODULE linear_solver_module
   PRIVATE
   PUBLIC linear_solver, linear_solver_config
 
+  !> restart the linear solver from scratch
+  INTEGER, PARAMETER :: LINEAR_SOLVER_SCRATCH = 1
+
   !> stores the configuration of the linear solver
   TYPE linear_solver_config
 
-    !> the relative threshold when the calculation is considered converged
-    REAL(dp) :: threshold = 1e-4_dp
+    !> determines how the initial Krylov subspace is set up
+    INTEGER  :: recover_subspace = LINEAR_SOLVER_SCRATCH
 
     !> maximum number of iterations before aborting
     INTEGER  :: max_iter = 10000
+
+    !> the relative threshold when the calculation is considered converged
+    REAL(dp) :: threshold = 1e-4_dp
 
     !> the absolute threshold used to check when the calculation is converged
     REAL(dp), ALLOCATABLE :: abs_threshold(:)
@@ -77,16 +83,16 @@ CONTAINS
   SUBROUTINE linear_solver(config, AA, sigma, BB, XX)
 
     !> configuration of the linear solver
-    TYPE(linear_solver_config), INTENT(IN) :: config
+    TYPE(linear_solver_config), INTENT(INOUT) :: config
 
     !> Function pointer that applies the linear operator to a vector.
     INTERFACE
       SUBROUTINE AA(sigma, xx, Ax)
         USE kinds, ONLY: dp
         !> The shift of this system.
-        COMPLEX(dp), INTENT(IN)  :: sigma
+        COMPLEX(dp), INTENT(IN) :: sigma
         !> the vector to which the linear operator is applied
-        COMPLEX(dp), INTENT(IN)  :: xx(:,:)
+        COMPLEX(dp), INTENT(IN) :: xx(:,:)
         !! the vector after applying the linear operator
         COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: Ax(:,:)
       END SUBROUTINE AA
@@ -136,6 +142,9 @@ CONTAINS
     ! create array for solution
     ALLOCATE(XX(vec_size, num_problem, num_shift))
 
+    ! initialize the absolute convergence threshold
+    CALL linear_solver_threshold(BB, config%threshold, config%abs_threshold)
+
     !! 1. recover previous Krylov subspace information
     CALL linear_solver_recover_subspace(config, vec_size, subspace)
 
@@ -171,7 +180,7 @@ CONTAINS
       
       !! 6. we repeat step 3 - 5 until convergence is achieved, then we determine
       !!    the solution to the linear problem from the subspace information
-      CALL linear_solver_obtain_result(config, sigma(ishift), BB, subspace, XX(:, :, ishift))
+      CALL linear_solver_obtain_result(config, BB, subspace, XX(:, :, ishift))
 
     END DO ! ishift
 
@@ -233,6 +242,25 @@ CONTAINS
 
     !> read the Krylov subspace from previous iteration or generate new one
     TYPE(linear_solver_subspace), INTENT(OUT) :: subspace
+
+    !> complex constant of zero
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    ! setup of the Krylov subspace depends on configuration
+    SELECT CASE (config%recover_subspace)
+
+    !
+    ! restart from scratch - create empty subspace
+    !
+    CASE (LINEAR_SOLVER_SCRATCH)
+      subspace%sigma = zero
+      ALLOCATE(subspace%vv(vec_size, 0))
+      ALLOCATE(subspace%ww(vec_size, 0))
+
+    CASE DEFAULT
+      CALL errore(__FILE__, "unknown option for recover subspace", 1)
+
+    END SELECT ! config%recover_subspace
 
   END SUBROUTINE linear_solver_recover_subspace
 
@@ -376,7 +404,8 @@ CONTAINS
   !> Expand the subspace to increase the precision of the linear solver
   !!
   !! We add the new basis functions w to the subspace and orthonormalize it,
-  !! we transform the trial vectors such that \f$(A + sigma I) v = w\f$ is
+  !! we transform the trial vectors such that
+  !! \f$(A + sigma I) \vert v rangle = \vert w \rangle\f$ is
   !! still fulfilled after the orthonormalization.
   SUBROUTINE linear_solver_expand_subspace(config, ww, vv, subspace)
 
@@ -433,14 +462,21 @@ CONTAINS
  
   END SUBROUTINE linear_solver_expand_subspace
 
-  !> Determine the result in
-  SUBROUTINE linear_solver_obtain_result(config, sigma, BB, subspace, XX)
+  !> Determine the result of the linear problem by expanding in the basis.
+  !!
+  !! We have now a set of basis vectors \f$\vert w_i \rangle\f$ that are related
+  !! to a set of trial vectors \f$\vert v_i \rangle\f$ by a linear operation
+  !! \f{equation}{
+  !!   (A + \sigma I) \vert v_i \rangle = \vert w_i \rangle~. 
+  !! \f}
+  !! Then the linear equation is solved by
+  !! \f{equation}{
+  !!   \vert x \rangle = \sum_i \vert v_i \rangle \langle w_i \vert b \rangle~.
+  !! \f}
+  SUBROUTINE linear_solver_obtain_result(config, BB, subspace, XX)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)  :: config
-
-    !> the shift of the linear problem
-    COMPLEX(dp),                  INTENT(IN)  :: sigma
 
     !> the right hand side of the problem
     COMPLEX(dp),                  INTENT(IN)  :: BB(:,:)
@@ -450,6 +486,49 @@ CONTAINS
 
     !> the solution of the linear problem
     COMPLEX(dp),                  INTENT(OUT) :: XX(:,:)
+
+    !> the dimensionality of the problem
+    INTEGER vec_size
+
+    !> the number of right-hand side terms
+    INTEGER num_problem
+
+    !> counter on the right-hand side
+    INTEGER iproblem
+
+    !> the number of basis function
+    INTEGER num_basis
+
+    !> counter on the basis function
+    INTEGER ibasis
+
+    !> the overlap of w and b
+    COMPLEX(dp) overlap
+
+    !> LAPACK function to evaluate the overlap
+    COMPLEX(dp), EXTERNAL :: ZDOTC
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    ! initialize solution
+    XX = zero
+
+    ! determine the solution for all right-hand sides
+    DO iproblem = 1, num_problem
+
+      ! sum over all basis function
+      DO ibasis = 1, num_basis
+
+        ! evaluate the projection < w_i | b >
+        overlap = ZDOTC(vec_size, subspace%ww(:,ibasis), 1, BB(:,iproblem), 1)
+
+        ! x = sum_i v_i < w_i | b >
+        CALL ZAXPY(vec_size, overlap, subspace%vv(:,ibasis), 1, XX(:,iproblem), 1)
+
+      END DO ! ibasis
+
+    END DO ! iproblem
 
   END SUBROUTINE linear_solver_obtain_result
 
