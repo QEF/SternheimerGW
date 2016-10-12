@@ -81,13 +81,14 @@ CONTAINS
 
     !> Function pointer that applies the linear operator to a vector.
     INTERFACE
-      SUBROUTINE AA(sigma, work)
+      SUBROUTINE AA(sigma, xx, Ax)
         USE kinds, ONLY: dp
         !> The shift of this system.
-        COMPLEX(dp), INTENT(IN)   :: sigma
-        !> *on input* - the vector to which the linear operator is applied <br>
-        !! *on output* - the vector after applying the linear operator
-        COMPLEX(dp), INTENT(INOUT) :: work(:,:)
+        COMPLEX(dp), INTENT(IN)  :: sigma
+        !> the vector to which the linear operator is applied
+        COMPLEX(dp), INTENT(IN)  :: xx(:,:)
+        !! the vector after applying the linear operator
+        COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: Ax(:,:)
       END SUBROUTINE AA
     END INTERFACE
 
@@ -121,8 +122,11 @@ CONTAINS
     !> store the Krylov subspace that is already generated
     TYPE(linear_solver_subspace) subspace
 
-    !> work array used for multiple purposes throughout the calculation
-    COMPLEX(dp), ALLOCATABLE :: work(:,:)
+    !> the residual of the linear problem
+    COMPLEX(dp), ALLOCATABLE :: residual(:,:)
+
+    !> the vectors used to expand the subspace
+    COMPLEX(dp), ALLOCATABLE :: new_vector(:,:)
 
     ! set helper variables
     vec_size = SIZE(BB, 1)
@@ -147,18 +151,16 @@ CONTAINS
       DO iter = 1, config%max_iter
 
         !! 3. determine residual for given shift and right-hand sides 
-        ! work contains the residual
-        CALL linear_solver_residual(config, BB, subspace, work, conv)
+        CALL linear_solver_residual(config, BB, subspace, residual, conv)
 
         ! exit the loop once convergence is achieved
         IF (conv) EXIT
 
         !! 4. apply linear operator to residual vector
-        ! work contains A applied to the residual
-        CALL AA(sigma(ishift), work)
+        CALL AA(sigma(ishift), residual, new_vector)
 
         !! 5. expand the Krylov subspace
-        CALL linear_solver_expand_subspace(config, work, subspace)
+        CALL linear_solver_expand_subspace(config, new_vector, residual, subspace)
 
       END DO ! iter
 
@@ -373,13 +375,16 @@ CONTAINS
   END SUBROUTINE linear_solver_residual
 
   !> Expand the subspace to increase the precision of the linear solver
-  SUBROUTINE linear_solver_expand_subspace(config, new_vector, subspace)
+  SUBROUTINE linear_solver_expand_subspace(config, ww, vv, subspace)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)    :: config
 
     !> a set of new vectors used to expand the subspace
-    COMPLEX(dp),                  INTENT(IN)    :: new_vector(:,:)
+    COMPLEX(dp),                  INTENT(IN)    :: ww(:,:)
+
+    !> the corresponding set of trial vectors
+    COMPLEX(dp),                  INTENT(IN)    :: vv(:,:)
 
     !> the Krylov subspace to be expanded
     TYPE(linear_solver_subspace), INTENT(INOUT) :: subspace
