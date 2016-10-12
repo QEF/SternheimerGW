@@ -258,7 +258,6 @@ CONTAINS
   SUBROUTINE linear_solver_orthogonal_subspace(config, sigma, subspace)
 
     USE gram_schmidt_module, ONLY: gram_schmidt
-    USE kinds,               ONLY: dp
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)    :: config
@@ -375,20 +374,63 @@ CONTAINS
   END SUBROUTINE linear_solver_residual
 
   !> Expand the subspace to increase the precision of the linear solver
+  !!
+  !! We add the new basis functions w to the subspace and orthonormalize it,
+  !! we transform the trial vectors such that \f$(A + sigma I) v = w\f$ is
+  !! still fulfilled after the orthonormalization.
   SUBROUTINE linear_solver_expand_subspace(config, ww, vv, subspace)
 
+    USE gram_schmidt_module, ONLY: gram_schmidt
+    
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)    :: config
 
-    !> a set of new vectors used to expand the subspace
+    !> a set of new vectors w used to expand the subspace
     COMPLEX(dp),                  INTENT(IN)    :: ww(:,:)
 
-    !> the corresponding set of trial vectors
+    !> the corresponding set of trial vectors v
     COMPLEX(dp),                  INTENT(IN)    :: vv(:,:)
 
     !> the Krylov subspace to be expanded
     TYPE(linear_solver_subspace), INTENT(INOUT) :: subspace
 
+    !> the size of the problem
+    INTEGER vec_size
+
+    !> the extended size of the subspace
+    INTEGER num_basis
+
+    !> index of the first new element
+    INTEGER first
+
+    !> a temporary array used to copy the data to the new bigger array
+    COMPLEX(dp), ALLOCATABLE :: work(:,:)
+
+    ! set the helper variables
+    vec_size = SIZE(subspace%ww, 1)
+    num_basis = SIZE(subspace%ww, 2) + SIZE(ww, 2)
+    first = SIZE(subspace%ww, 2) + 1
+
+    !
+    ! expand the subspace by new elements
+    !
+    ! create a bigger array for w, copy the old elements, and replace the array
+    ALLOCATE(work(vec_size, num_basis))
+    CALL ZCOPY(SIZE(subspace%ww), subspace%ww, 1, work, 1)
+    CALL ZCOPY(SIZE(ww), ww, 1, work(:, first), 1)
+    CALL MOVE_ALLOC(work, subspace%ww)
+    !
+    ! create a bigger array for v, copy the old elements, and replace the array
+    ALLOCATE(work(vec_size, num_basis))
+    CALL ZCOPY(SIZE(subspace%vv), subspace%vv, 1, work, 1)
+    CALL ZCOPY(SIZE(vv), vv, 1, work(:, first), 1)
+    CALL MOVE_ALLOC(work, subspace%vv)
+
+    !
+    ! orthonormalize the new elements to the existing basis
+    !
+    CALL gram_schmidt(first, subspace%ww, subspace%vv)
+ 
   END SUBROUTINE linear_solver_expand_subspace
 
   !> Determine the result in
