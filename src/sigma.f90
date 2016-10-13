@@ -141,7 +141,7 @@ CONTAINS
 
     USE cell_base,         ONLY: omega
     USE constants,         ONLY: tpi
-    USE control_gw,        ONLY: multishift, tr2_green, output, tmp_dir_coul
+    USE control_gw,        ONLY: multishift, tr2_green, lmax_green, output, tmp_dir_coul
     USE debug_module,      ONLY: debug_type
     USE disp,              ONLY: x_q
     USE ener,              ONLY: ef
@@ -328,7 +328,7 @@ CONTAINS
       !
       ! evaluate Sigma
       !
-      CALL sigma_correlation(omega, sigma_c_st, multishift, 4, tr2_green, &
+      CALL sigma_correlation(omega, sigma_c_st, multishift, lmax_green, tr2_green, &
                              mu, alpha, config(icon)%index_kq, freq, first_sigma, &
                              gmapsym(:gcutcorr, config(icon)%inv_op), &
                              coulomb, sigma, debug)

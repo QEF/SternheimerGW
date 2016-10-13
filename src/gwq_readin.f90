@@ -35,7 +35,7 @@ SUBROUTINE gwq_readin(freq, vcut, debug)
   USE constants,         ONLY : RYTOEV, eps12
   USE control_flags,     ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
   USE control_gw,        ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
-                                reduce_io, tr2_gw, niter_gw, tr2_green, &
+                                reduce_io, tr2_gw, niter_gw, lmax_gw, tr2_green, lmax_green, &
                                 nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
                                 last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
                                 ext_recover, ext_restart, modielec, eta, &
@@ -138,7 +138,7 @@ SUBROUTINE gwq_readin(freq, vcut, debug)
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
 
-  NAMELIST / INPUTGW / tr2_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
+  NAMELIST / INPUTGW / tr2_gw, lmax_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
                        nrapp, max_seconds, reduce_io, &
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
@@ -146,7 +146,7 @@ SUBROUTINE gwq_readin(freq, vcut, debug)
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, &
+                       do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
                        wsigmamax, wcoulmax, nwsigma,&
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, do_sigma_extra,&
@@ -212,6 +212,8 @@ SUBROUTINE gwq_readin(freq, vcut, debug)
   !
   tr2_gw       = 1.D-4
   tr2_green    = 1.D-3
+  lmax_gw      = 4
+  lmax_green   = 4
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
   !for bulk systems alpha_mix = 0.7 is standard

@@ -32,10 +32,10 @@ subroutine bcast_gw_input ( )
 #if defined(__MPI)
   USE control_flags,    ONLY : iverbosity, modenum
   USE control_gw,       ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
-                               niter_gw, lnoloc, alpha_mix, tr2_gw, lrpa, recover, &
+                               niter_gw, lnoloc, alpha_mix, tr2_gw, lmax_gw, lrpa, recover, &
                                ldisp, reduce_io, trans, &
                                eta, modielec, do_coulomb, do_sigma_c,& 
-                               do_sigma_exx, do_green, do_sigma_matel, tr2_green,&
+                               do_sigma_exx, do_green, do_sigma_matel, tr2_green, lmax_green, &
                                do_q0_only, maxter_coul, maxter_green, godbyneeds, cohsex, padecont,&
                                multishift, do_sigma_extra, solve_direct, w_green_start, tinvert,&
                                coul_multishift, trunc_2d, do_epsil, do_diag_g, do_diag_w,&
@@ -87,6 +87,8 @@ subroutine bcast_gw_input ( )
   CALL mp_bcast( iq1, meta_ionode_id, world_comm )
   CALL mp_bcast( iq2, meta_ionode_id, world_comm )
   CALL mp_bcast( iq3, meta_ionode_id, world_comm )
+  CALL mp_bcast(lmax_gw, meta_ionode_id, world_comm)
+  CALL mp_bcast(lmax_green, meta_ionode_id, world_comm)
 !
 ! real*8
 !
