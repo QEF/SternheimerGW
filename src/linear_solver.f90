@@ -25,8 +25,7 @@
 !!
 !! We need a solver capable of solving the linear equation \f$(A + \sigma I) x = b\f$.
 !! Here, A is a linear operator, \f$\sigma\f$ is a shift, x is the solutions of the
-!! problem, and b is the right-hand side of the problem. One can expand the operator
-!! to matrices and solve for multiple right-hand sides at once.
+!! problem, and b is the right-hand side of the problem.
 MODULE linear_solver_module
 
   USE kinds, ONLY: dp
@@ -52,7 +51,7 @@ MODULE linear_solver_module
     REAL(dp) :: threshold = 1e-4_dp
 
     !> the absolute threshold used to check when the calculation is converged
-    REAL(dp), ALLOCATABLE :: abs_threshold(:)
+    REAL(dp) :: abs_threshold
 
   END TYPE linear_solver_config
 
@@ -80,7 +79,7 @@ CONTAINS
 
   !! We use the following algorithm continuously updating the solution and the
   !! residual error of the solution.
-  SUBROUTINE linear_solver(config, AA, sigma, BB, XX)
+  SUBROUTINE linear_solver(config, AA, sigma, bb, xx)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config), INTENT(INOUT) :: config
@@ -90,28 +89,25 @@ CONTAINS
       SUBROUTINE AA(sigma, xx, Ax)
         USE kinds, ONLY: dp
         !> The shift of this system.
-        COMPLEX(dp), INTENT(IN) :: sigma
+        COMPLEX(dp), INTENT(IN)  :: sigma
         !> the vector to which the linear operator is applied
-        COMPLEX(dp), INTENT(IN) :: xx(:,:)
+        COMPLEX(dp), INTENT(IN)  :: xx(:)
         !! the vector after applying the linear operator
-        COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: Ax(:,:)
+        COMPLEX(dp), INTENT(OUT) :: Ax(:)
       END SUBROUTINE AA
     END INTERFACE
 
     !> Right hand side of the linear equation.
-    COMPLEX(dp), INTENT(IN) :: BB(:,:)
+    COMPLEX(dp), INTENT(IN)  :: bb(:)
 
     !> Shift \f$\sigma\f$ in the linear operator.
-    COMPLEX(dp), INTENT(IN) :: sigma(:)
+    COMPLEX(dp), INTENT(IN)  :: sigma(:)
 
     !> On output: the solution of the linear system
-    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: XX(:,:,:)
+    COMPLEX(dp), INTENT(OUT) :: xx(:,:)
 
     !> the size of the linear problem
     INTEGER vec_size
-
-    !> number of linear problems solved at the same time
-    INTEGER num_problem
 
     !> number of shifts for which we solve
     INTEGER num_shift
@@ -129,29 +125,26 @@ CONTAINS
     TYPE(linear_solver_subspace) subspace
 
     !> the residual of the linear problem
-    COMPLEX(dp), ALLOCATABLE :: residual(:,:)
+    COMPLEX(dp), ALLOCATABLE :: residual(:)
 
     !> the vectors used to expand the subspace
-    COMPLEX(dp), ALLOCATABLE :: new_vector(:,:)
+    COMPLEX(dp), ALLOCATABLE :: new_vector(:)
 
     ! set helper variables
-    vec_size = SIZE(BB, 1)
-    num_problem = SIZE(BB, 2)
+    vec_size = SIZE(bb)
     num_shift = SIZE(sigma)
 
-    ! create array for solution
-    ALLOCATE(XX(vec_size, num_problem, num_shift))
+    ! create vector expanding the subspace
+    ALLOCATE(new_vector(vec_size))
 
     ! initialize the absolute convergence threshold
-    CALL linear_solver_threshold(BB, config%threshold, config%abs_threshold)
+    CALL linear_solver_threshold(bb, config%threshold, config%abs_threshold)
 
     !! 1. recover previous Krylov subspace information
     CALL linear_solver_recover_subspace(config, vec_size, subspace)
 
     ! loop over all shifts
     DO ishift = 1, num_shift
-
-      conv = .FALSE.
 
       !! 2. the subspace is orthogonalized for the current shift
       CALL linear_solver_orthogonal_subspace(config, sigma(ishift), subspace)
@@ -160,7 +153,7 @@ CONTAINS
       DO iter = 1, config%max_iter
 
         !! 3. determine residual for given shift and right-hand sides 
-        CALL linear_solver_residual(config, BB, subspace, residual, conv)
+        CALL linear_solver_residual(config, bb, subspace, residual, conv)
 
         ! exit the loop once convergence is achieved
         IF (conv) EXIT
@@ -180,7 +173,7 @@ CONTAINS
       
       !! 6. we repeat step 3 - 5 until convergence is achieved, then we determine
       !!    the solution to the linear problem from the subspace information
-      CALL linear_solver_obtain_result(config, BB, subspace, XX(:, :, ishift))
+      CALL linear_solver_obtain_result(config, bb, subspace, xx(:, ishift))
 
     END DO ! ishift
 
@@ -190,41 +183,28 @@ CONTAINS
   !!
   !! The absolute threshold is the relative threshold multiplied with the norm
   !! of the right-hand side of the equation.
-  SUBROUTINE linear_solver_threshold(BB, rel_threshold, abs_threshold)
+  SUBROUTINE linear_solver_threshold(bb, rel_threshold, abs_threshold)
 
     !> the right hand side of the equation
-    COMPLEX(dp), INTENT(IN) :: BB(:,:)
+    COMPLEX(dp), INTENT(IN)  :: bb(:)
 
     !> the relative threshold to check for convergence
-    REAL(dp),    INTENT(IN) :: rel_threshold
+    REAL(dp),    INTENT(IN)  :: rel_threshold
 
     !> the absolute threshold to check for convergence
-    REAL(dp),    INTENT(OUT), ALLOCATABLE :: abs_threshold(:)
+    REAL(dp),    INTENT(OUT) :: abs_threshold
 
     !> the dimensionality of the problem
     INTEGER vec_size
-
-    !> the number of right hand side equations
-    INTEGER num_problem
-
-    !> counter on the right hand side of the linear problem
-    INTEGER iproblem
 
     !> LAPACK function to evaluate the 2-norm
     REAL(dp), EXTERNAL :: DNRM2
 
     ! initialize helper variables
     ! note: factor 2 because DNRM2 takes real instead of complex
-    vec_size    = 2 * SIZE(BB, 1)
-    num_problem = SIZE(BB, 2)
+    vec_size    = 2 * SIZE(bb)
 
-    ALLOCATE(abs_threshold(num_problem))
-
-    DO iproblem = 1, num_problem
-      !
-      abs_threshold(iproblem) = rel_threshold * DNRM2(vec_size, BB(:, iproblem), 1)
-      !
-    END DO ! iproblem
+    abs_threshold = rel_threshold * DNRM2(vec_size, bb, 1)
 
   END SUBROUTINE linear_solver_threshold
 
@@ -323,31 +303,25 @@ CONTAINS
   !! \f}
   !! If the norm of \f$\vert r\rangle\f$ decreases below a given threshold the
   !! calculation is converged.
-  SUBROUTINE linear_solver_residual(config, BB, subspace, residual, conv)
+  SUBROUTINE linear_solver_residual(config, bb, subspace, residual, conv)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)  :: config
 
     !> the right hand side of the problem
-    COMPLEX(dp),                  INTENT(IN)  :: BB(:,:)
+    COMPLEX(dp),                  INTENT(IN)  :: bb(:)
 
     !> the Krylov subspace generated so far
     TYPE(linear_solver_subspace), INTENT(IN)  :: subspace
 
     !> the residual error of the solution
-    COMPLEX(dp), ALLOCATABLE,     INTENT(OUT) :: residual(:,:)
+    COMPLEX(dp), ALLOCATABLE,     INTENT(OUT) :: residual(:)
 
     !> did the residual error converge
     LOGICAL,                      INTENT(OUT) :: conv
 
     !> the dimensionality of the problem
     INTEGER vec_size
-
-    !> the number of right hand side terms
-    INTEGER num_problem
-
-    !> counter on the right hand size terms
-    INTEGER iproblem
 
     !> the number of basis functions in the subspace
     INTEGER num_basis
@@ -368,36 +342,25 @@ CONTAINS
     COMPLEX(dp), EXTERNAL :: ZDOTC
 
     ! set helper variables
-    vec_size    = SIZE(BB, 1)
-    num_problem = SIZE(BB, 2)
+    vec_size    = SIZE(bb)
     num_basis   = SIZE(subspace%ww, 2)
 
-    ! convergence flag is initially set, but cleared if any problem did not converge
-    conv = .TRUE.
-
     ! copy B to residual
-    ALLOCATE(residual(vec_size, num_problem))
-    CALL ZCOPY(SIZE(BB), BB, 1, residual, 1)
+    ALLOCATE(residual(vec_size))
+    CALL ZCOPY(vec_size, bb, 1, residual, 1)
 
-    ! loop over right-hand side
-    DO iproblem = 1, num_problem
+    ! loop over basis functions
+    DO ibasis = 1, num_basis
 
-      ! loop over basis functions
-      DO ibasis = 1, num_basis
+      ! r = b - (w_i, b) w_i
+      overlap = ZDOTC(vec_size, subspace%ww(:,ibasis), 1, bb, 1)
+      residual = residual - overlap * subspace%ww(:,ibasis)
 
-        ! r = b - (w_i, b) w_i
-        overlap = ZDOTC(vec_size, subspace%ww(:,ibasis), 1, BB(:,iproblem), 1)
-        residual(:,iproblem) = residual(:,iproblem) - overlap * subspace%ww(:,ibasis)
+    END DO ! ibasis
 
-      END DO ! ibasis
-
-      ! check convergence (factor 2 because of complex)
-      IF (conv) THEN
-        norm = DNRM2(2 * vec_size, residual(:,iproblem), 1)
-        conv = conv .AND. (norm < config%abs_threshold(iproblem))
-      END IF
-
-    END DO ! iproblem
+    ! check convergence (factor 2 because of complex)
+    norm = DNRM2(2 * vec_size, residual, 1)
+    conv = norm < config%abs_threshold
 
     IF (.NOT.conv .AND. vec_size == num_basis) THEN
       CALL errore(__FILE__, "right-hand side cannot be mapped by complete basis", 1)
@@ -411,9 +374,6 @@ CONTAINS
   !! we transform the trial vectors such that
   !! \f$(A + sigma I) \vert v rangle = \vert w \rangle\f$ is
   !! still fulfilled after the orthonormalization.
-  !!
-  !! @note New basis functions may be discarded if the system would be linear
-  !! dependent.
   SUBROUTINE linear_solver_expand_subspace(config, ww, vv, subspace)
 
     USE gram_schmidt_module, ONLY: gram_schmidt
@@ -422,10 +382,10 @@ CONTAINS
     TYPE(linear_solver_config),   INTENT(IN)    :: config
 
     !> a set of new vectors w used to expand the subspace
-    COMPLEX(dp),                  INTENT(IN)    :: ww(:,:)
+    COMPLEX(dp),                  INTENT(IN)    :: ww(:)
 
     !> the corresponding set of trial vectors v
-    COMPLEX(dp),                  INTENT(IN)    :: vv(:,:)
+    COMPLEX(dp),                  INTENT(IN)    :: vv(:)
 
     !> the Krylov subspace to be expanded
     TYPE(linear_solver_subspace), INTENT(INOUT) :: subspace
@@ -436,16 +396,12 @@ CONTAINS
     !> the extended size of the subspace
     INTEGER num_basis
 
-    !> index of the first new element
-    INTEGER first
-
     !> a temporary array used to copy the data to the new bigger array
     COMPLEX(dp), ALLOCATABLE :: work(:,:)
 
     ! set the helper variables
     vec_size = SIZE(subspace%ww, 1)
-    num_basis = MIN(vec_size, SIZE(subspace%ww, 2) + SIZE(ww, 2))
-    first = SIZE(subspace%ww, 2) + 1
+    num_basis = SIZE(subspace%ww, 2) + 1
 
     !
     ! expand the subspace by new elements
@@ -453,19 +409,19 @@ CONTAINS
     ! create a bigger array for w, copy the old elements, and replace the array
     ALLOCATE(work(vec_size, num_basis))
     CALL ZCOPY(SIZE(subspace%ww), subspace%ww, 1, work, 1)
-    CALL ZCOPY(SIZE(work) - SIZE(subspace%ww), ww, 1, work(:, first), 1)
+    CALL ZCOPY(vec_size, ww, 1, work(:, num_basis), 1)
     CALL MOVE_ALLOC(work, subspace%ww)
     !
     ! create a bigger array for v, copy the old elements, and replace the array
     ALLOCATE(work(vec_size, num_basis))
     CALL ZCOPY(SIZE(subspace%vv), subspace%vv, 1, work, 1)
-    CALL ZCOPY(SIZE(work) - SIZE(subspace%vv), vv, 1, work(:, first), 1)
+    CALL ZCOPY(vec_size, vv, 1, work(:, num_basis), 1)
     CALL MOVE_ALLOC(work, subspace%vv)
 
     !
     ! orthonormalize the new elements to the existing basis
     !
-    CALL gram_schmidt(first, subspace%ww, subspace%vv)
+    CALL gram_schmidt(num_basis, subspace%ww, subspace%vv)
  
   END SUBROUTINE linear_solver_expand_subspace
 
@@ -480,28 +436,22 @@ CONTAINS
   !! \f{equation}{
   !!   \vert x \rangle = \sum_i \vert v_i \rangle \langle w_i \vert b \rangle~.
   !! \f}
-  SUBROUTINE linear_solver_obtain_result(config, BB, subspace, XX)
+  SUBROUTINE linear_solver_obtain_result(config, bb, subspace, xx)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)  :: config
 
     !> the right hand side of the problem
-    COMPLEX(dp),                  INTENT(IN)  :: BB(:,:)
+    COMPLEX(dp),                  INTENT(IN)  :: bb(:)
 
     !> the Krylov subspace generated so far
     TYPE(linear_solver_subspace), INTENT(IN)  :: subspace
 
     !> the solution of the linear problem
-    COMPLEX(dp),                  INTENT(OUT) :: XX(:,:)
+    COMPLEX(dp),                  INTENT(OUT) :: xx(:)
 
     !> the dimensionality of the problem
     INTEGER vec_size
-
-    !> the number of right-hand side terms
-    INTEGER num_problem
-
-    !> counter on the right-hand side
-    INTEGER iproblem
 
     !> the number of basis function
     INTEGER num_basis
@@ -519,28 +469,22 @@ CONTAINS
     COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
     ! initialize solution
-    XX = zero
+    xx = zero
 
     ! initialize helper variables
-    vec_size = SIZE(BB, 1)
-    num_problem = SIZE(BB, 2)
+    vec_size = SIZE(bb)
     num_basis = SIZE(subspace%ww, 2)
 
-    ! determine the solution for all right-hand sides
-    DO iproblem = 1, num_problem
+    ! sum over all basis function
+    DO ibasis = 1, num_basis
 
-      ! sum over all basis function
-      DO ibasis = 1, num_basis
+      ! evaluate the projection < w_i | b >
+      overlap = ZDOTC(vec_size, subspace%ww(:,ibasis), 1, bb, 1)
 
-        ! evaluate the projection < w_i | b >
-        overlap = ZDOTC(vec_size, subspace%ww(:,ibasis), 1, BB(:,iproblem), 1)
+      ! x = sum_i v_i < w_i | b >
+      CALL ZAXPY(vec_size, overlap, subspace%vv(:,ibasis), 1, xx, 1)
 
-        ! x = sum_i v_i < w_i | b >
-        CALL ZAXPY(vec_size, overlap, subspace%vv(:,ibasis), 1, XX(:,iproblem), 1)
-
-      END DO ! ibasis
-
-    END DO ! iproblem
+    END DO ! ibasis
 
   END SUBROUTINE linear_solver_obtain_result
 
