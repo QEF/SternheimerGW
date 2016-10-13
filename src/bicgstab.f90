@@ -437,8 +437,7 @@ CONTAINS
       shift_system(ishift)%phi     = 1.0
       shift_system(ishift)%theta   = 1.0
       ! subtract the shift of the initial system
-!      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
-      shift_system(ishift)%sigma   = sigma(1) - sigma(ishift + 1)
+      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
 
       ! construct sigma_pow array
       sigma_pow(0) = 1.0

@@ -96,6 +96,6 @@ MODULE sgw_version
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: sgw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE6.0 rev13079'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev13110'
   !
 END MODULE sgw_version

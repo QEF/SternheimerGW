@@ -108,8 +108,14 @@ CONTAINS
     !> The operator applied to the vector.
     COMPLEX(dp), INTENT(OUT) :: Ax(:)
 
-    Ax = MATMUL(AA, xx) - sigma * xx
+    Ax = MATMUL(AA, xx) + sigma * xx
 
   END SUBROUTINE linear_problem_apply
 
+  !> deallocate the linear operator
+  SUBROUTINE linear_problem_reset()
+
+    IF (ALLOCATED(AA)) DEALLOCATE(AA)
+
+  END SUBROUTINE linear_problem_reset
 END MODULE linear_problem_module

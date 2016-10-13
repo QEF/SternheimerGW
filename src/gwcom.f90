@@ -146,6 +146,9 @@ MODULE control_gw
   ! initial q in the list, last_q in the list
   real(DP) :: tr2_gw, tr2_green
   !
+  ! lmax values for green and w
+  integer lmax_gw, lmax_green
+  !
   real(DP) :: eta
   ! threshold for gw calculation
   REAL (DP) :: alpha_mix(maxter), time_now

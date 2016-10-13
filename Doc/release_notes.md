@@ -4,6 +4,10 @@ Release notes
 on develop
 ----------
 
+Add new linear solver that construct a Krylov subspace that is used for all
+frequencies but might be extended if one requires a tighter convergence setting.
+This linear solver is activated when multishift is set to false.
+
 Add the debug module that allows to set debugging options. If the code is
 compiled with the __DEBUG flag it will examine the requested parts in more
 detail. The only current option is to check (H - w) G = -delta. The unit
