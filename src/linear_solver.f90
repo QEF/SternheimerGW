@@ -79,7 +79,7 @@ CONTAINS
 
   !! We use the following algorithm continuously updating the solution and the
   !! residual error of the solution.
-  SUBROUTINE linear_solver(config, AA, sigma, bb, xx)
+  SUBROUTINE linear_solver(config, AA, bb, sigma, xx)
 
     !> configuration of the linear solver
     TYPE(linear_solver_config), INTENT(INOUT) :: config

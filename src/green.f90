@@ -147,11 +147,12 @@ CONTAINS
   !!
   SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green, debug)
 
-    USE bicgstab_module, ONLY: bicgstab
-    USE debug_module,    ONLY: debug_type, debug_set
-    USE kinds,           ONLY: dp
-    USE parallel_module, ONLY: parallel_task, mp_allgatherv
-    USE timing_module,   ONLY: time_green
+    USE bicgstab_module,      ONLY: bicgstab
+    USE debug_module,         ONLY: debug_type, debug_set
+    USE kinds,                ONLY: dp
+    USE linear_solver_module, ONLY: linear_solver, linear_solver_config
+    USE parallel_module,      ONLY: parallel_task, mp_allgatherv
+    USE timing_module,        ONLY: time_green
 
     !> Parallelize the calculation over this communicator
     INTEGER,     INTENT(IN)  :: comm
@@ -212,6 +213,9 @@ CONTAINS
     !> check error in array allocation
     INTEGER ierr
 
+    !> the configuration for the solver in the non-multishift case
+    TYPE(linear_solver_config) config
+
     !> complex zero
     COMPLEX(dp), PARAMETER :: zero = 0.0_dp
 
@@ -240,11 +244,7 @@ CONTAINS
     green = zero
 
     ! allocate array for result of the linear system
-    IF (multishift) THEN
-      ALLOCATE(green_part(num_g, num_freq), STAT = ierr)
-    ELSE
-      ALLOCATE(green_part(num_g, 1), STAT = ierr)
-    END IF
+    ALLOCATE(green_part(num_g, num_freq), STAT = ierr)
     CALL errore(__FILE__, "could not allocate green_part", ierr)
 
     ! parallelize over communicator
@@ -267,29 +267,20 @@ CONTAINS
         ! solve the linear system
         CALL bicgstab(lmax, threshold, green_operator, bb, -omega, green_part)
 
-        ! copy from temporary array to communicated array
-        green_comm(:, :, ig) = green_part(map, :)
-
-        ! debug the solver
-        IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
-
       ! without multishift, we solve every frequency separately
       ELSE
 
-        DO ifreq = 1, num_freq
-
-          ! solve the linear system
-          CALL bicgstab(lmax, threshold, green_operator, bb, -omega(ifreq:ifreq), green_part)
-
-          ! copy from temporary array to communicated array
-          green_comm(:, ifreq, ig) = green_part(map, 1)
-
-          ! debug the solver
-          IF (debug_set) CALL green_solver_debug(omega(ifreq:ifreq), threshold, bb, green_part, debug)
-
-        END DO ! ifreq
+        ! solve the linear system reusing the Krylov subspace
+        config%threshold = threshold
+        CALL linear_solver(config, green_operator, bb, -omega, green_part)
 
       END IF
+
+      ! copy from temporary array to communicated array
+      green_comm(:, :, ig) = green_part(map, :)
+
+      ! debug the solver
+      IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
 
     END DO ! ig
 

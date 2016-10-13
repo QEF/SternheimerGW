@@ -211,7 +211,7 @@ SUBROUTINE test_linear_solver
   CALL linear_problem_read(filename, sigma, bb, xx)
 
   ! solve the linear problem with default configuration
-  CALL linear_solver(config, linear_problem_apply, sigma, bb, xx)
+  CALL linear_solver(config, linear_problem_apply, bb, sigma, xx)
 
   !
   ! check if (A + sigma I) x = b

@@ -129,6 +129,7 @@ green.o : bicgstab.o
 green.o : debug.o
 green.o : gwcom.o
 green.o : linear_op.o
+green.o : linear_solver.o
 green.o : parallel.o
 green.o : reorder.o
 green.o : sleep.o
