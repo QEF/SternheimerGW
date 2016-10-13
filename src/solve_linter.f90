@@ -354,7 +354,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
         ! use the BiCGstab solver
         !
         DO ibnd = 1, nbnd_occ(ik)
-          CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), et(ibnd, ikk) + omega, dpsi(:npwq, ibnd, :))
+          CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :))
         END DO ! ibnd
         !
       ELSE ! general case iter > 1
@@ -416,7 +416,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
             !
             ! solve +omega
             CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), &
-                          et(ibnd, ikk) + omega(ifreq:ifreq),              &
+                          -(et(ibnd, ikk) + omega(ifreq:ifreq)),           &
                           dpsi(:npwq, ibnd, ifreq:ifreq))
             !
             ! solve -omega
@@ -669,8 +669,7 @@ SUBROUTINE coulomb_operator(omega, psi, A_psi)
   ! initialize helper
   !
 
-  ! negative omega so that (H - omega) psi is calculated
-  omega_ = -omega
+  omega_ = omega
 
   ! zero the elements outside of the definition
   psi_(:num_g, 1) = psi

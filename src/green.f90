@@ -265,7 +265,7 @@ CONTAINS
       IF (multishift) THEN
 
         ! solve the linear system
-        CALL bicgstab(lmax, threshold, green_operator, bb, omega, green_part)
+        CALL bicgstab(lmax, threshold, green_operator, bb, -omega, green_part)
 
         ! copy from temporary array to communicated array
         green_comm(:, :, ig) = green_part(map, :)
@@ -279,7 +279,7 @@ CONTAINS
         DO ifreq = 1, num_freq
 
           ! solve the linear system
-          CALL bicgstab(lmax, threshold, green_operator, bb, omega(ifreq:ifreq), green_part)
+          CALL bicgstab(lmax, threshold, green_operator, bb, -omega(ifreq:ifreq), green_part)
 
           ! copy from temporary array to communicated array
           green_comm(:, ifreq, ig) = green_part(map, 1)
@@ -486,8 +486,7 @@ CONTAINS
     ! initialize helper
     !
 
-    ! negative omega so that (H - omega) psi is calculated
-    omega_ = -omega
+    omega_ = omega
 
     ! zero the elements outside of the definition
     psi_(:num_g, 1) = psi
@@ -604,7 +603,7 @@ CONTAINS
       DO ifreq = 1, num_freq
         !
         ! evaluate work = (H - w) G
-        CALL green_operator(omega(ifreq), green(:, ifreq), work)
+        CALL green_operator(-omega(ifreq), green(:, ifreq), work)
         !
         ! work = (H - w) G - bb (should be ~ 0)
         CALL ZAXPY(num_g, minus_one, bb, 1, work, 1)
