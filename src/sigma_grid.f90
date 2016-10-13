@@ -101,9 +101,9 @@ CONTAINS
   SUBROUTINE wrapper_fft_type_init(comm, gamma_only, fft_cust)
 
     USE cell_base,  ONLY: at, bg
-    USE fft_base,   ONLY: smap
     USE fft_custom, ONLY: fft_cus
     USE fft_types,  ONLY: fft_type_init
+    USE stick_base, ONLY: sticks_map
 
     !> The communicator over which we parallelize
     INTEGER,       INTENT(IN)    :: comm
@@ -114,6 +114,9 @@ CONTAINS
     !> The custom FFT type initialized by this routine
     TYPE(fft_cus), INTENT(INOUT) :: fft_cust
 
+    !> the sticks map created by fft type init
+    TYPE(sticks_map) smap
+ 
 #if defined(__MPI)
     LOGICAL, PARAMETER :: lpara = .TRUE.
 #else
@@ -192,10 +195,11 @@ CONTAINS
     USE control_flags,    ONLY : gamma_only
     USE freqbins_module,  ONLY : freqbins_type
     USE gwsigma,          ONLY : ecutsex, sigma_x_st, gexcut, &
-                                 ecutsco, sigma_c_st, gcutcorr
+                                 ecutsco, sigma_c_st, sigma_c_par, gcutcorr
     USE io_global,        ONLY : stdout, ionode
     USE kinds,            ONLY : dp
     USE mp_bands,         ONLY : comm => intra_bgrp_comm
+    USE mp_images,        ONLY : inter_image_comm, nimage
     ! 
     IMPLICIT NONE
     !
@@ -213,9 +217,11 @@ CONTAINS
     CHARACTER(*), PARAMETER :: myfmt = '(5x,a,2x,f9.1,1x,a)'
     !
     !> helper variables for the number of G in exchange and correlation grid
-    REAL(dp) num_g_x, num_g_c
+    REAL(dp) num_g_x, num_g_c, num_g_ci
     !> helper variables for the number of r in exchange and correlation grid
-    REAL(dp) num_r_x, num_r_c
+    REAL(dp) num_r_x, num_r_c, num_r_ci
+    !> helper product for the correlation grid
+    REAL(dp) num_g_c_pr, num_r_c_pr
 
     !> number of frequencies used in the linear solver
     INTEGER num_freq
@@ -243,24 +249,39 @@ CONTAINS
     CALL sigma_grid_create(comm, gamma_only, tpiba2, ecutsco, sigma_c_st)
     IF (ionode) CALL sigma_grid_info(sigma_c_st, 'Correlation')
     gcutcorr = sigma_c_st%ngmt
+    !
+    IF (nimage == 1) THEN
+      ! reuse the same grid if only 1 image is used
+      sigma_c_par = sigma_c_st
+    ELSE
+      ! create a grid parallelized over images
+      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecutsco, sigma_c_par)
+      IF (ionode) CALL sigma_grid_info(sigma_c_par, 'Correlation (images)')
+    END IF
 
     !
     ! Print info about array size
     !
-    num_g_x = REAL(sigma_x_st%ngmt, KIND=dp)
-    num_g_c = REAL(sigma_c_st%ngmt, KIND=dp)
-    num_r_x = REAL(sigma_x_st%dfftt%nnr, KIND=dp)
-    num_r_c = REAL(sigma_c_st%dfftt%nnr, KIND=dp)
+    num_g_x  = REAL(sigma_x_st%ngmt, KIND=dp)
+    num_g_c  = REAL(sigma_c_st%ngmt, KIND=dp)
+    num_g_ci = REAL(sigma_c_par%ngmt, KIND=dp)
+    num_r_x  = REAL(sigma_x_st%dfftt%nnr, KIND=dp)
+    num_r_c  = REAL(sigma_c_st%dfftt%nnr, KIND=dp)
+    num_r_ci = REAL(sigma_c_par%dfftt%nnr, KIND=dp)
+    !
+    ! evaluate product of grid size
+    num_g_c_pr = num_g_c * num_g_ci
+    num_r_c_pr = num_r_c * num_r_ci
     !
     WRITE(stdout,*)
     WRITE(stdout,'(5x,a)') 'Memory Usage:'
     WRITE(stdout,*)
-    WRITE(stdout, myfmt) "G(G, G'; w):    ", num_g_c**2 * REAL(num_green, KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "G(r, r'; w):    ", num_r_c**2 * REAL(num_green, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "G(G, G'; w):    ", num_g_c_pr * REAL(num_green, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "G(r, r'; w):    ", num_r_c_pr * REAL(num_green, KIND=dp) * in_MB, 'MB'
     WRITE(stdout, myfmt) "W(G, G'; w):    ", num_g_c**2 * REAL(num_freq,  KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "W(r, r'):       ", num_r_c**2                            * in_MB, 'MB'
-    WRITE(stdout, myfmt) "Sigma(G, G'; w):", num_g_c**2 * REAL(num_sigma, KIND=dp) * in_MB, 'MB'
-    WRITE(stdout, myfmt) "Sigma(r, r'; w):", num_r_c**2 * REAL(num_sigma, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "W(r, r'):       ", num_r_c_pr                            * in_MB, 'MB'
+    WRITE(stdout, myfmt) "Sigma(G, G'; w):", num_g_c_pr * REAL(num_sigma, KIND=dp) * in_MB, 'MB'
+    WRITE(stdout, myfmt) "Sigma(r, r'; w):", num_r_c_pr * REAL(num_sigma, KIND=dp) * in_MB, 'MB'
     WRITE(stdout, myfmt) "V(G, G'):       ", num_g_x**2                            * in_MB, 'MB'
     WRITE(stdout, myfmt) "V(r, r'):       ", num_r_x**2                            * in_MB, 'MB'
     WRITE(stdout,*)
