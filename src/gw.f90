@@ -109,7 +109,7 @@ program gw
            if (meta_ionode .AND. ik == w_of_k_start) then         
              call pp_output_open_all(num_k_pts, nbnd_sig, nwsigwin, nwsigma, output)
            end if
-           call sigma_matel(ik, freq)
+           call sigma_matel(ik, grid, freq)
          end if
          call clean_pw_gw(.TRUE.)
       enddo
