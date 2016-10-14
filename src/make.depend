@@ -343,6 +343,7 @@ sigma.o : freqbins.o
 sigma.o : green.o
 sigma.o : gwcom.o
 sigma.o : parallel.o
+sigma.o : sigma_grid.o
 sigma.o : sigma_io.o
 sigma.o : timing.o
 sigma.o : truncation.o

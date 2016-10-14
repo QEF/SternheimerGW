@@ -137,7 +137,7 @@ CONTAINS
 
   !> This function provides a wrapper that extracts the necessary information
   !! from the global modules to evaluate the self energy.
-  SUBROUTINE sigma_wrapper(ikpt, freq, vcut, config, debug)
+  SUBROUTINE sigma_wrapper(ikpt, grid, freq, vcut, config, debug)
 
     USE cell_base,         ONLY: omega
     USE constants,         ONLY: tpi
@@ -147,7 +147,6 @@ CONTAINS
     USE ener,              ONLY: ef
     USE freqbins_module,   ONLY: freqbins_type
     USE gvect,             ONLY: ngm
-    USE gwsigma,           ONLY: sigma_c_st, gcutcorr
     USE io_files,          ONLY: prefix
     USE io_global,         ONLY: meta_ionode, ionode_id
     USE kinds,             ONLY: dp
@@ -157,6 +156,7 @@ CONTAINS
     USE mp_pools,          ONLY: inter_pool_comm, root_pool
     USE output_mod,        ONLY: filcoul
     USE parallel_module,   ONLY: parallel_task, mp_root_sum, mp_gatherv
+    USE sigma_grid_module, ONLY: sigma_grid_type
     USE sigma_io_module,   ONLY: sigma_io_write_c
     USE symm_base,         ONLY: nsym, s, invs, ftau, nrot
     USE timing_module,     ONLY: time_sigma_c, time_sigma_setup, &
@@ -166,6 +166,9 @@ CONTAINS
 
     !> index of the k-point for which the self energy is evaluated
     INTEGER, INTENT(IN) :: ikpt
+
+    !> the FFT grids used for the Fourier transformation
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> type containing the information about the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
@@ -184,6 +187,9 @@ CONTAINS
 
     !> real constant of 0.5
     REAL(dp),    PARAMETER :: half = 0.5_dp
+
+    !> number of G vectors in correlation grid
+    INTEGER num_g_corr
 
     !> counter on the configurations
     INTEGER icon
@@ -241,6 +247,9 @@ CONTAINS
     CALL start_clock(time_sigma_c)
     CALL start_clock(time_sigma_setup)
 
+    ! set helper variable
+    num_g_corr = grid%corr%ngmt
+
     !
     ! set the prefactor depending on whether we integrate along the real or
     ! the imaginary frequency axis
@@ -286,7 +295,7 @@ CONTAINS
     !
     ! initialize self energy
     !
-    ALLOCATE(sigma(gcutcorr, gcutcorr, num_task(my_image_id + 1)))
+    ALLOCATE(sigma(num_g_corr, num_g_corr, num_task(my_image_id + 1)))
     sigma = zero
 
     !
@@ -307,7 +316,7 @@ CONTAINS
     iq = 0
     !
     ! allocate array for the coulomb matrix
-    ALLOCATE(coulomb(gcutcorr, gcutcorr, freq%num_freq()))
+    ALLOCATE(coulomb(num_g_corr, num_g_corr, freq%num_freq()))
 
     !
     ! sum over all q-points
@@ -328,9 +337,9 @@ CONTAINS
       !
       ! evaluate Sigma
       !
-      CALL sigma_correlation(omega, sigma_c_st, multishift, lmax_green, tr2_green, &
+      CALL sigma_correlation(omega, grid%corr, multishift, lmax_green, tr2_green, &
                              mu, alpha, config(icon)%index_kq, freq, first_sigma, &
-                             gmapsym(:gcutcorr, config(icon)%inv_op), &
+                             gmapsym(:num_g_corr, config(icon)%inv_op), &
                              coulomb, sigma, debug)
       !
     END DO ! icon
