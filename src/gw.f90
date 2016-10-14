@@ -123,11 +123,8 @@ CONTAINS
   ! temporary solution until grid in gwcom are unnecessary
   SUBROUTINE copy_grid
 
-    USE gwsigma, ONLY: sigma_x_st, sigma_c_st, sigma_c_par, gcutcorr
+    USE gwsigma, ONLY: gcutcorr
 
-    sigma_x_st = grid%exch
-    sigma_c_st = grid%corr
-    sigma_c_par = grid%corr_par
     gcutcorr = grid%corr%ngmt
 
   END SUBROUTINE copy_grid

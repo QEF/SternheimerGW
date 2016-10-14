@@ -187,7 +187,7 @@ IMPLICIT NONE
 
       ! unfold W from reduced array to full array
       ! also reorder the indices
-      CALL unfold_w(scrcoul_root, scrcoul_g)
+      CALL unfold_w(gcutcorr, scrcoul_root, scrcoul_g)
 
       ! set the special |q + G| = 0 element
       IF (lgamma) scrcoul_g(1,1,:) = eps_m

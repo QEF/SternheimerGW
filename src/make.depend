@@ -153,7 +153,6 @@ gw.o : timing.o
 gw.o : truncation.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
-gwcom.o : ../../Modules/fft_custom.o
 gwcom.o : ../../Modules/kind.o
 gwcom.o : ../../Modules/parameters.o
 gwcom.o : gw_type.o
