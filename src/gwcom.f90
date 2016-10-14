@@ -368,7 +368,7 @@ MODULE gwsigma
 ! Old FFT routines
 ! Real space mesh for description of self-energy.
   REAL(DP)    :: gcutmsig
-  INTEGER     :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn, gcutcorr
+  INTEGER     :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
 END MODULE gwsigma
 
 

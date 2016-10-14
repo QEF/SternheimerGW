@@ -85,8 +85,6 @@ program gw
   call freqbins(do_imag, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                 wsig_wind_min, wsig_wind_max, nwsigwin, freq)
   call sigma_grid(freq, ecutsex, ecutsco, grid)
-  ! tempory fix until grid is passed to all relevant routines
-  CALL copy_grid
   call opengwfil(grid)
   call stop_clock(time_setup)
 ! Calculation W
@@ -117,16 +115,5 @@ program gw
   call close_gwq(.TRUE.)
   IF (meta_ionode) CALL sigma_io_close_write(output%unit_sigma)
   call stop_gw( .TRUE. )
-
-CONTAINS
-
-  ! temporary solution until grid in gwcom are unnecessary
-  SUBROUTINE copy_grid
-
-    USE gwsigma, ONLY: gcutcorr
-
-    gcutcorr = grid%corr%ngmt
-
-  END SUBROUTINE copy_grid
 
 end program gw

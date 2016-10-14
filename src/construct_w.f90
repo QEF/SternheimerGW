@@ -20,23 +20,25 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
+SUBROUTINE construct_w(num_g_corr, scrcoul_g, scrcoul_pade_g, w_ryd)
 
   USE cell_base,     ONLY : omega
   USE constants,     ONLY : pi
   USE control_gw,    ONLY : eta, godbyneeds, padecont, modielec, do_imag
   USE disp,          ONLY : nq1, nq2, nq3
   USE freq_gw,       ONLY : fiu, nfs
-  USE gwsigma,       ONLY : gcutcorr
   USE kinds,         ONLY : DP
   USE mp_global,     ONLY : mp_global_end
   USE timing_module, ONLY : time_construct_w
 
   implicit none
 
-  complex(DP) :: scrcoul_pade_g (gcutcorr, gcutcorr)
+  !> the number of G vectors in the correlation grid
+  INTEGER, INTENT(IN) :: num_g_corr
+
+  complex(DP) :: scrcoul_pade_g (num_g_corr, num_g_corr)
   complex(DP) :: z(nfs), a(nfs)
-  complex(DP)  :: scrcoul_g    (gcutcorr, gcutcorr, nfs) 
+  complex(DP)  :: scrcoul_g    (num_g_corr, num_g_corr, nfs) 
 
   real(DP) :: w_ryd
   real(DP) :: rcut
@@ -49,8 +51,8 @@ SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
    rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
    scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
    if(.NOT.modielec) then
-     do ig = 1, gcutcorr
-        do igp = 1, gcutcorr
+     do ig = 1, num_g_corr
+        do igp = 1, num_g_corr
            do iwim = 1, nfs
                z(iwim) = fiu(iwim)
                a(iwim) = scrcoul_g (ig,igp,iwim)

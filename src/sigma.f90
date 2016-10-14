@@ -328,7 +328,7 @@ CONTAINS
       IF (config(icon)%index_q /= iq) THEN
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-        CALL coulpade(coulomb, x_q(:,iq), vcut)
+        CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
       END IF
       !
       ! determine the prefactor
@@ -664,7 +664,7 @@ CONTAINS
         work = zero
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
         ! work will contain W(G, G', wS - wG)
-        CALL construct_w(coulomb, work(1:num_g_corr, 1:num_g_corr), ABS(freq_coul))
+        CALL construct_w(num_g_corr, coulomb, work(1:num_g_corr, 1:num_g_corr), ABS(freq_coul))
         !!
         !! 8. convolute G and W
         !!
