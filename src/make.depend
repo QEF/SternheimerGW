@@ -358,7 +358,6 @@ sigma_grid.o : ../../Modules/kind.o
 sigma_grid.o : ../../Modules/mp_bands.o
 sigma_grid.o : ../../Modules/mp_images.o
 sigma_grid.o : freqbins.o
-sigma_grid.o : gwcom.o
 sigma_io.o : ../../Modules/kind.o
 sigma_io.o : ../../iotk/src/iotk_module.o
 sigma_matel.o : ../../FFTXlib/fft_interfaces.o

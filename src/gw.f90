@@ -34,14 +34,14 @@ program gw
   USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
                                 wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,   ONLY : freqbins, freqbins_type
-  USE gwsigma,           ONLY : nbnd_sig
+  USE gwsigma,           ONLY : nbnd_sig, ecutsco, ecutsex
   USE input_parameters,  ONLY : max_seconds, force_symmorphic
   USE io_files,          ONLY : diropn
   USE io_global,         ONLY : meta_ionode
   USE mp_global,         ONLY : mp_startup
   USE pp_output_mod,     ONLY : pp_output_open_all
   USE run_nscf_module,   ONLY : run_nscf
-  USE sigma_grid_module, ONLY : sigma_grid
+  USE sigma_grid_module, ONLY : sigma_grid, sigma_grid_type
   USE sigma_io_module,   ONLY : sigma_io_close_write
   USE sigma_module,      ONLY : sigma_wrapper, sigma_config_type
   USE timing_module,     ONLY : time_setup
@@ -49,12 +49,17 @@ program gw
 
   IMPLICIT NONE
 
-  integer             :: ik
-  character (LEN=9)   :: code   = 'SGW'
-  logical             :: do_band, do_matel
+  !> the name of the code
+  CHARACTER(*), PARAMETER :: code = 'SGW'
+
+  INTEGER             :: ik
+  LOGICAL             :: do_band, do_matel
 
   !> stores the frequencies uses for the calculation
   TYPE(freqbins_type) freq
+
+  !> stores the FFT grids used in the calculation
+  TYPE(sigma_grid_type) grid
 
   !> stores the truncated Coulomb potential
   TYPE(vcut_type) vcut
@@ -79,7 +84,9 @@ program gw
 ! and exchange operators, open relevant GW-files.
   call freqbins(do_imag, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                 wsig_wind_min, wsig_wind_max, nwsigwin, freq)
-  call sigma_grid(freq)
+  call sigma_grid(freq, ecutsex, ecutsco, grid)
+  ! tempory fix until grid is passed to all relevant routines
+  CALL copy_grid
   call opengwfil()
   call stop_clock(time_setup)
 ! Calculation W
@@ -110,4 +117,19 @@ program gw
   call close_gwq(.TRUE.)
   IF (meta_ionode) CALL sigma_io_close_write(output%unit_sigma)
   call stop_gw( .TRUE. )
+
+CONTAINS
+
+  ! temporary solution until grid in gwcom are unnecessary
+  SUBROUTINE copy_grid
+
+    USE gwsigma, ONLY: sigma_x_st, sigma_c_st, sigma_c_par, gcutcorr
+
+    sigma_x_st = grid%exch
+    sigma_c_st = grid%corr
+    sigma_c_par = grid%corr_par
+    gcutcorr = grid%corr%ngmt
+
+  END SUBROUTINE copy_grid
+
 end program gw

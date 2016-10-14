@@ -31,9 +31,25 @@
 !!
 MODULE sigma_grid_module
 
+  USE fft_custom, ONLY: fft_cus
+
   IMPLICIT NONE
 
-  PUBLIC sigma_grid
+  PUBLIC sigma_grid, sigma_grid_type
+
+  !> contains the FFT grids used for exchange and correlation
+  TYPE sigma_grid_type
+
+    !> grid used for exchange
+    TYPE(fft_cus) exch
+
+    !> grid used for correlation
+    TYPE(fft_cus) corr
+
+    !> grid used for correlation (parallelized over images)
+    TYPE(fft_cus) corr_par
+
+  END TYPE
 
 CONTAINS
 
@@ -189,22 +205,29 @@ CONTAINS
   !! some information about the generated grids and estimates the necessary
   !! memory.
   !!
-  SUBROUTINE sigma_grid(freq)
+  SUBROUTINE sigma_grid(freq, ecut_x, ecut_c, grid)
     !
     USE cell_base,        ONLY : tpiba2
     USE control_flags,    ONLY : gamma_only
     USE freqbins_module,  ONLY : freqbins_type
-    USE gwsigma,          ONLY : ecutsex, sigma_x_st, gexcut, &
-                                 ecutsco, sigma_c_st, sigma_c_par, gcutcorr
     USE io_global,        ONLY : stdout, ionode
     USE kinds,            ONLY : dp
-    USE mp_bands,         ONLY : comm => intra_bgrp_comm
+    USE mp_bands,         ONLY : intra_bgrp_comm
     USE mp_images,        ONLY : inter_image_comm, nimage
     ! 
     IMPLICIT NONE
     !
     !> type that defines the frequencies used
-    TYPE(freqbins_type), INTENT(IN) :: freq
+    TYPE(freqbins_type),   INTENT(IN)  :: freq
+    !
+    !> the energy cutoff used for exchange
+    REAL(dp),              INTENT(IN)  :: ecut_x
+    !
+    !> the energy cutoff used for correlation
+    REAL(dp),              INTENT(IN)  :: ecut_c
+    !
+    !> the FFT grid used in the code
+    TYPE(sigma_grid_type), INTENT(OUT) :: grid
     !
     !> number of bytes in a complex
     REAL(dp), PARAMETER :: complex_byte = 16.0_dp
@@ -239,35 +262,33 @@ CONTAINS
     !
     ! Generate the exchange grid
     !
-    CALL sigma_grid_create(comm, gamma_only, tpiba2, ecutsex, sigma_x_st)
-    IF (ionode) CALL sigma_grid_info(sigma_x_st, 'Exchange')
-    gexcut = sigma_x_st%ngmt
+    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch)
+    IF (ionode) CALL sigma_grid_info(grid%exch, 'Exchange')
   
     !
     ! Generate the correlation grid
     !
-    CALL sigma_grid_create(comm, gamma_only, tpiba2, ecutsco, sigma_c_st)
-    IF (ionode) CALL sigma_grid_info(sigma_c_st, 'Correlation')
-    gcutcorr = sigma_c_st%ngmt
+    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr)
+    IF (ionode) CALL sigma_grid_info(grid%corr, 'Correlation')
     !
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
-      sigma_c_par = sigma_c_st
+      grid%corr_par = grid%corr
     ELSE
       ! create a grid parallelized over images
-      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecutsco, sigma_c_par)
-      IF (ionode) CALL sigma_grid_info(sigma_c_par, 'Correlation (images)')
+      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par)
+      IF (ionode) CALL sigma_grid_info(grid%corr_par, 'Correlation (images)')
     END IF
 
     !
     ! Print info about array size
     !
-    num_g_x  = REAL(sigma_x_st%ngmt, KIND=dp)
-    num_g_c  = REAL(sigma_c_st%ngmt, KIND=dp)
-    num_g_ci = REAL(sigma_c_par%ngmt, KIND=dp)
-    num_r_x  = REAL(sigma_x_st%dfftt%nnr, KIND=dp)
-    num_r_c  = REAL(sigma_c_st%dfftt%nnr, KIND=dp)
-    num_r_ci = REAL(sigma_c_par%dfftt%nnr, KIND=dp)
+    num_g_x  = REAL(grid%exch%ngmt, KIND=dp)
+    num_g_c  = REAL(grid%corr%ngmt, KIND=dp)
+    num_g_ci = REAL(grid%corr_par%ngmt, KIND=dp)
+    num_r_x  = REAL(grid%exch%dfftt%nnr, KIND=dp)
+    num_r_c  = REAL(grid%corr%dfftt%nnr, KIND=dp)
+    num_r_ci = REAL(grid%corr_par%dfftt%nnr, KIND=dp)
     !
     ! evaluate product of grid size
     num_g_c_pr = num_g_c * num_g_ci
