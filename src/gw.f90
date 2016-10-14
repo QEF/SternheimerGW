@@ -87,7 +87,7 @@ program gw
   call sigma_grid(freq, ecutsex, ecutsco, grid)
   ! tempory fix until grid is passed to all relevant routines
   CALL copy_grid
-  call opengwfil()
+  call opengwfil(grid)
   call stop_clock(time_setup)
 ! Calculation W
   if(do_coulomb) call do_stern()

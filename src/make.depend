@@ -236,6 +236,7 @@ openfilq.o : save_gw_input.o
 opengwfil.o : ../../Modules/io_files.o
 opengwfil.o : ../../Modules/io_global.o
 opengwfil.o : gwcom.o
+opengwfil.o : sigma_grid.o
 opengwfil.o : sigma_io.o
 pade.o : ../../Modules/constants.o
 pade.o : ../../Modules/kind.o
