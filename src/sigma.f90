@@ -125,8 +125,8 @@ MODULE sigma_module
     !> The index of the k - q point at which the Green's function is evaluated.
     INTEGER index_kq
 
-    !> The inverse symmetry operation to go from q to star(q).
-    INTEGER inv_op
+    !> The symmetry operation to go from q to star(q).
+    INTEGER sym_op
 
     !> weight of the active point
     REAL(dp) weight
@@ -328,7 +328,7 @@ CONTAINS
       !
       CALL sigma_correlation(omega, grid, multishift, lmax_green, tr2_green, &
                              mu, alpha, config(icon)%index_kq, freq,         &
-                             gmapsym(:num_g_corr, config(icon)%inv_op),      &
+                             gmapsym(:num_g_corr, config(icon)%sym_op),      &
                              coulomb, sigma, debug)
       !
     END DO ! icon
@@ -372,7 +372,7 @@ CONTAINS
   !! The product is evaluated in real space. Because the Green's function can
   !! be used for several W values, we expect that the Green's function is
   !! already transformed to real space by the calling routine.
-  SUBROUTINE sigma_prod(omega, grid, alpha, gmapsym, green, array)
+  SUBROUTINE sigma_prod(omega, grid, alpha, green, array)
 
     USE fft6_module,       ONLY: invfft6, fwfft6
     USE kinds,             ONLY: dp
@@ -387,9 +387,6 @@ CONTAINS
 
     !> The prefactor with which the self-energy is multiplied
     COMPLEX(dp),   INTENT(IN)    :: alpha
-
-    !> the symmetry mapping from the reduced to the full G mesh
-    INTEGER,       INTENT(IN)    :: gmapsym(:)
 
     !> the Green's function in real space \f$G(r, r')\f$
     COMPLEX(dp),   INTENT(IN)    :: green(:,:)
@@ -426,15 +423,13 @@ CONTAINS
       CALL errore(__FILE__, "size of array inconsistent with G-vector FFT definition", 1)
     IF (SIZE(array, 2) /= num_rp) &
       CALL errore(__FILE__, "size of array inconsistent with G'-vector FFT definition", 1)
-    IF (SIZE(gmapsym) < num_g .OR. SIZE(gmapsym) < num_gp) &
-      CALL errore(__FILE__, "gmapsym is inconsistent with FFT definition", 1)
 
     !!
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
     !!
     ! array contains W(r, r')
     CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
-                 grid%corr%nlt(gmapsym(:num_g)), grid%corr_par%nlt(gmapsym(:num_gp)), omega)
+                 grid%corr%nlt, grid%corr_par%nlt, omega)
 
     !!
     !! 2. We evaluate the product in real space 
@@ -651,13 +646,14 @@ CONTAINS
         ! work will contain W(G, G', wS - wG)
         CALL construct_w(num_g_corr, num_gp_corr, coulomb, &
                          work(1:num_g_corr, 1:num_gp_corr), ABS(freq_coul))
+        work(1:num_g_corr, 1:num_gp_corr) = work(gmapsym, gmapsym)
         !!
         !! 8. convolute G and W
         !!
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
         ! work will contain Sigma(G, G', wS)
-        CALL sigma_prod(omega, grid, alpha_weight, gmapsym, green(:,:,igreen), work)
+        CALL sigma_prod(omega, grid, alpha_weight, green(:,:,igreen), work)
         !
         !!
         !! 9. add the result to \f$\Sigma\f$
