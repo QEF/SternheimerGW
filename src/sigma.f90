@@ -152,7 +152,8 @@ CONTAINS
     USE kinds,             ONLY: dp
     USE klist,             ONLY: lgauss
     USE mp,                ONLY: mp_bcast
-    USE mp_pools,          ONLY: inter_pool_comm, root_pool
+    USE mp_images,         ONLY: inter_image_comm, root_image
+    USE mp_pools,          ONLY: inter_pool_comm, root_pool, me_pool
     USE output_mod,        ONLY: filcoul
     USE parallel_module,   ONLY: mp_root_sum
     USE sigma_grid_module, ONLY: sigma_grid_type
@@ -230,6 +231,9 @@ CONTAINS
 
     !> name of file in which the Coulomb interaction is store
     CHARACTER(:), ALLOCATABLE :: filename
+
+    !> counter on the frequencies
+    INTEGER ifreq
 
     !> error flag from file opening
     INTEGER ierr
@@ -339,12 +343,30 @@ CONTAINS
     !
     ! collect sigma on a single process
     !
+    ! TODO replace this by parallel I/O
     CALL start_clock(time_sigma_comm)
 
     ! first sum sigma across the pool
     CALL mp_root_sum(inter_pool_comm, root_pool, sigma)
-    ! TODO image parallelization
-    sigma_root = sigma
+
+    ! unpack sigma in the large array
+    IF (me_pool == root_pool) THEN
+      !
+      ALLOCATE(sigma_root(num_g_corr, num_g_corr, freq%num_sigma()), STAT = ierr)
+      IF (ierr /= 0) THEN
+        CALL errore(__FILE__, "error allocating array to collect sigma", ierr)
+        RETURN
+      END IF
+      !
+      sigma_root = zero
+      !
+      DO ifreq = 1, freq%num_sigma()
+        sigma_root(:, grid%corr_par%ig_l2gt, ifreq) = sigma(:,:,ifreq)
+      END DO
+      !
+      CALL mp_root_sum(inter_image_comm, root_image, sigma_root)
+      !
+    END IF
 
     DEALLOCATE(sigma)
 
@@ -354,11 +376,10 @@ CONTAINS
     ! the root process writes sigma to file
     !
     CALL start_clock(time_sigma_io)
-    IF (meta_ionode) THEN
+    IF (meta_ionode .AND. ALLOCATED(sigma_root)) THEN
       !
       CALL davcio(sigma_root, lrsigma, iunsigma, ikpt, 1)
       CALL sigma_io_write_c(output%unit_sigma, ikpt, sigma_root)
-      DEALLOCATE(sigma_root)
       !
     END IF ! ionode
     CALL stop_clock(time_sigma_io)

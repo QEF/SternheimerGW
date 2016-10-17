@@ -330,6 +330,7 @@ sigma.o : ../../Modules/io_files.o
 sigma.o : ../../Modules/io_global.o
 sigma.o : ../../Modules/kind.o
 sigma.o : ../../Modules/mp.o
+sigma.o : ../../Modules/mp_images.o
 sigma.o : ../../Modules/mp_pools.o
 sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
