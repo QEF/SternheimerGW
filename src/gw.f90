@@ -34,14 +34,14 @@ program gw
   USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
                                 wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,   ONLY : freqbins, freqbins_type
-  USE gwsigma,           ONLY : nbnd_sig
+  USE gwsigma,           ONLY : nbnd_sig, ecutsco, ecutsex
   USE input_parameters,  ONLY : max_seconds, force_symmorphic
   USE io_files,          ONLY : diropn
   USE io_global,         ONLY : meta_ionode
   USE mp_global,         ONLY : mp_startup
   USE pp_output_mod,     ONLY : pp_output_open_all
   USE run_nscf_module,   ONLY : run_nscf
-  USE sigma_grid_module, ONLY : sigma_grid
+  USE sigma_grid_module, ONLY : sigma_grid, sigma_grid_type
   USE sigma_io_module,   ONLY : sigma_io_close_write
   USE sigma_module,      ONLY : sigma_wrapper, sigma_config_type
   USE timing_module,     ONLY : time_setup
@@ -49,12 +49,17 @@ program gw
 
   IMPLICIT NONE
 
-  integer             :: ik
-  character (LEN=9)   :: code   = 'SGW'
-  logical             :: do_band, do_matel
+  !> the name of the code
+  CHARACTER(*), PARAMETER :: code = 'SGW'
+
+  INTEGER             :: ik
+  LOGICAL             :: do_band, do_matel
 
   !> stores the frequencies uses for the calculation
   TYPE(freqbins_type) freq
+
+  !> stores the FFT grids used in the calculation
+  TYPE(sigma_grid_type) grid
 
   !> stores the truncated Coulomb potential
   TYPE(vcut_type) vcut
@@ -79,11 +84,11 @@ program gw
 ! and exchange operators, open relevant GW-files.
   call freqbins(do_imag, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                 wsig_wind_min, wsig_wind_max, nwsigwin, freq)
-  call sigma_grid(freq)
-  call opengwfil()
+  call sigma_grid(freq, ecutsex, ecutsco, grid)
+  call opengwfil(grid)
   call stop_clock(time_setup)
 ! Calculation W
-  if(do_coulomb) call do_stern()
+  if(do_coulomb) call do_stern(grid%corr%ngmt)
   ik = 1
   do_band  = .TRUE.
   do_matel = .TRUE.
@@ -94,15 +99,15 @@ program gw
          call run_nscf(do_band, do_matel, ik, config)
          call initialize_gw(.FALSE.)
          call stop_clock(time_setup)
-         if (do_sigma_c) call sigma_wrapper(ik, freq, vcut, config, debug)
+         if (do_sigma_c) call sigma_wrapper(ik, grid, freq, vcut, config, debug)
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
-         if (do_sigma_exx) call exchange_wrapper(ik, vcut)
+         if (do_sigma_exx) call exchange_wrapper(ik, grid%exch, vcut)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
          if (do_sigma_matel) then
            if (meta_ionode .AND. ik == w_of_k_start) then         
              call pp_output_open_all(num_k_pts, nbnd_sig, nwsigwin, nwsigma, output)
            end if
-           call sigma_matel(ik, freq)
+           call sigma_matel(ik, grid, freq)
          end if
          call clean_pw_gw(.TRUE.)
       enddo
@@ -110,4 +115,5 @@ program gw
   call close_gwq(.TRUE.)
   IF (meta_ionode) CALL sigma_io_close_write(output%unit_sigma)
   call stop_gw( .TRUE. )
+
 end program gw

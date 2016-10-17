@@ -121,10 +121,6 @@
             + float( mill(2,ig) * ftau (2, isym) ) / float (dfftp%nr2) &
             + float( mill(3,ig) * ftau (3, isym) ) / float (dfftp%nr3)
 
-!       rdotk = float( mill(1,ig) * ftau (1, isym) ) / float (sigma_x_st%dfftt%nr1) &
-!             + float( mill(2,ig) * ftau (2, isym) ) / float (sigma_x_st%dfftt%nr2) &
-!             + float( mill(3,ig) * ftau (3, isym) ) / float (sigma_x_st%dfftt%nr3)
-
         !     ft(:)    = at(:,1)*ftau(1,ns)/nr1 + &
         !                at(:,2)*ftau(2,ns)/nr2 + &
         !                at(:,3)*ftau(3,ns)/nr3

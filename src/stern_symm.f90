@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE stern_symm()
+SUBROUTINE stern_symm(num_g_corr)
 !Finds a list of unique G vectors to run Sternheimer linear system on.
 !I still can't find an easy way to prove that from the irreducible set
 !of G vectors obtained here we uniquely reconstruct the full set of G vectors
@@ -28,7 +28,6 @@ SUBROUTINE stern_symm()
 
 USE cell_base,     ONLY : at
 USE gvect,         ONLY : ngm
-USE gwsigma,       ONLY : gcutcorr
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE io_global,     ONLY : stdout
 USE kinds,         ONLY : DP
@@ -37,6 +36,9 @@ USE symm_base,     ONLY : nsym, s, time_reversal, ftau, invs, &
                           copy_sym, inverse_s, s_axis_to_cart
 
 IMPLICIT NONE
+
+  !> the number of G vectors in the correlation grid
+  INTEGER, INTENT(IN) :: num_g_corr
 
 INTEGER      :: ig, igp
 INTEGER      :: isym
@@ -80,7 +82,7 @@ LOGICAL      :: minus_q, sym(48)
 !Find number of unique vectors:
 ngmunique = 1
 ig_unique(1) = 1
-DO ig = 2, gcutcorr
+DO ig = 2, num_g_corr
    unique_g = .true.
 !Loop over symmetry operations in small group of q.
    DO isym = 1, nsymq
@@ -101,5 +103,5 @@ DO ig = 2, gcutcorr
    ENDIF
 ENDDO
 write(6,'(/5x, "Number of symmops in Small G_q: ", i4)') nsymq
-write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)') gcutcorr, ngmunique
+write(6,'(5x,  "ngmpol ", i4, " and ngmunique ", i4)') num_g_corr, ngmunique
 END SUBROUTINE stern_symm

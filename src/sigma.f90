@@ -125,8 +125,8 @@ MODULE sigma_module
     !> The index of the k - q point at which the Green's function is evaluated.
     INTEGER index_kq
 
-    !> The inverse symmetry operation to go from q to star(q).
-    INTEGER inv_op
+    !> The symmetry operation to go from q to star(q).
+    INTEGER sym_op
 
     !> weight of the active point
     REAL(dp) weight
@@ -137,7 +137,7 @@ CONTAINS
 
   !> This function provides a wrapper that extracts the necessary information
   !! from the global modules to evaluate the self energy.
-  SUBROUTINE sigma_wrapper(ikpt, freq, vcut, config, debug)
+  SUBROUTINE sigma_wrapper(ikpt, grid, freq, vcut, config, debug)
 
     USE cell_base,         ONLY: omega
     USE constants,         ONLY: tpi
@@ -147,16 +147,16 @@ CONTAINS
     USE ener,              ONLY: ef
     USE freqbins_module,   ONLY: freqbins_type
     USE gvect,             ONLY: ngm
-    USE gwsigma,           ONLY: sigma_c_st, gcutcorr
     USE io_files,          ONLY: prefix
     USE io_global,         ONLY: meta_ionode, ionode_id
     USE kinds,             ONLY: dp
     USE klist,             ONLY: lgauss
     USE mp,                ONLY: mp_bcast
-    USE mp_images,         ONLY: my_image_id, inter_image_comm, root_image
-    USE mp_pools,          ONLY: inter_pool_comm, root_pool
+    USE mp_images,         ONLY: inter_image_comm, root_image
+    USE mp_pools,          ONLY: inter_pool_comm, root_pool, me_pool
     USE output_mod,        ONLY: filcoul
-    USE parallel_module,   ONLY: parallel_task, mp_root_sum, mp_gatherv
+    USE parallel_module,   ONLY: mp_root_sum
+    USE sigma_grid_module, ONLY: sigma_grid_type
     USE sigma_io_module,   ONLY: sigma_io_write_c
     USE symm_base,         ONLY: nsym, s, invs, ftau, nrot
     USE timing_module,     ONLY: time_sigma_c, time_sigma_setup, &
@@ -166,6 +166,9 @@ CONTAINS
 
     !> index of the k-point for which the self energy is evaluated
     INTEGER, INTENT(IN) :: ikpt
+
+    !> the FFT grids used for the Fourier transformation
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> type containing the information about the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
@@ -184,6 +187,9 @@ CONTAINS
 
     !> real constant of 0.5
     REAL(dp),    PARAMETER :: half = 0.5_dp
+
+    !> number of G and G' vectors in correlation grid
+    INTEGER num_g_corr, num_gp_corr
 
     !> counter on the configurations
     INTEGER icon
@@ -220,17 +226,14 @@ CONTAINS
     !> the self-energy at the current k-point collected on the root process
     COMPLEX(dp), ALLOCATABLE :: sigma_root(:,:,:)
 
-    !> the upper and lower boundary of the frequencies
-    INTEGER first_sigma, last_sigma
-
-    !> the number of frequency tasks done by the various processes
-    INTEGER, ALLOCATABLE :: num_task(:)
-
     !> number of bytes in a real
     INTEGER, PARAMETER   :: byte_real = 8
 
     !> name of file in which the Coulomb interaction is store
     CHARACTER(:), ALLOCATABLE :: filename
+
+    !> counter on the frequencies
+    INTEGER ifreq
 
     !> error flag from file opening
     INTEGER ierr
@@ -240,6 +243,10 @@ CONTAINS
 
     CALL start_clock(time_sigma_c)
     CALL start_clock(time_sigma_setup)
+
+    ! set helper variable
+    num_g_corr  = grid%corr%ngmt
+    num_gp_corr = grid%corr_par%ngmt
 
     !
     ! set the prefactor depending on whether we integrate along the real or
@@ -276,17 +283,12 @@ CONTAINS
     END IF
     CALL mp_bcast(mu, ionode_id, inter_pool_comm)
 
-    !
-    ! parallelize frequencies over images
-    !
-    CALL parallel_task(inter_image_comm, freq%num_sigma(), first_sigma, last_sigma, num_task)
-
     CALL stop_clock(time_sigma_setup)
 
     !
     ! initialize self energy
     !
-    ALLOCATE(sigma(gcutcorr, gcutcorr, num_task(my_image_id + 1)))
+    ALLOCATE(sigma(num_g_corr, num_gp_corr, freq%num_sigma()))
     sigma = zero
 
     !
@@ -307,7 +309,7 @@ CONTAINS
     iq = 0
     !
     ! allocate array for the coulomb matrix
-    ALLOCATE(coulomb(gcutcorr, gcutcorr, freq%num_freq()))
+    ALLOCATE(coulomb(num_g_corr, num_g_corr, freq%num_freq()))
 
     !
     ! sum over all q-points
@@ -319,7 +321,7 @@ CONTAINS
       IF (config(icon)%index_q /= iq) THEN
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-        CALL coulpade(coulomb, x_q(:,iq), vcut)
+        CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
       END IF
       !
       ! determine the prefactor
@@ -328,9 +330,9 @@ CONTAINS
       !
       ! evaluate Sigma
       !
-      CALL sigma_correlation(omega, sigma_c_st, multishift, lmax_green, tr2_green, &
-                             mu, alpha, config(icon)%index_kq, freq, first_sigma, &
-                             gmapsym(:gcutcorr, config(icon)%inv_op), &
+      CALL sigma_correlation(omega, grid, multishift, lmax_green, tr2_green, &
+                             mu, alpha, config(icon)%index_kq, freq,         &
+                             gmapsym(:num_g_corr, config(icon)%sym_op),      &
                              coulomb, sigma, debug)
       !
     END DO ! icon
@@ -341,13 +343,31 @@ CONTAINS
     !
     ! collect sigma on a single process
     !
+    ! TODO replace this by parallel I/O
     CALL start_clock(time_sigma_comm)
 
     ! first sum sigma across the pool
     CALL mp_root_sum(inter_pool_comm, root_pool, sigma)
-    ! the gather the array across the images
-    CALL mp_gatherv(inter_image_comm, root_image, num_task, sigma, sigma_root)
-    DEALLOCATE(num_task)
+
+    ! unpack sigma in the large array
+    IF (me_pool == root_pool) THEN
+      !
+      ALLOCATE(sigma_root(num_g_corr, num_g_corr, freq%num_sigma()), STAT = ierr)
+      IF (ierr /= 0) THEN
+        CALL errore(__FILE__, "error allocating array to collect sigma", ierr)
+        RETURN
+      END IF
+      !
+      sigma_root = zero
+      !
+      DO ifreq = 1, freq%num_sigma()
+        sigma_root(:, grid%corr_par%ig_l2gt, ifreq) = sigma(:,:,ifreq)
+      END DO
+      !
+      CALL mp_root_sum(inter_image_comm, root_image, sigma_root)
+      !
+    END IF
+
     DEALLOCATE(sigma)
 
     CALL stop_clock(time_sigma_comm)
@@ -356,11 +376,10 @@ CONTAINS
     ! the root process writes sigma to file
     !
     CALL start_clock(time_sigma_io)
-    IF (meta_ionode) THEN
+    IF (meta_ionode .AND. ALLOCATED(sigma_root)) THEN
       !
       CALL davcio(sigma_root, lrsigma, iunsigma, ikpt, 1)
       CALL sigma_io_write_c(output%unit_sigma, ikpt, sigma_root)
-      DEALLOCATE(sigma_root)
       !
     END IF ! ionode
     CALL stop_clock(time_sigma_io)
@@ -374,24 +393,21 @@ CONTAINS
   !! The product is evaluated in real space. Because the Green's function can
   !! be used for several W values, we expect that the Green's function is
   !! already transformed to real space by the calling routine.
-  SUBROUTINE sigma_prod(omega, fft_cust, alpha, gmapsym, green, array)
+  SUBROUTINE sigma_prod(omega, grid, alpha, green, array)
 
-    USE fft_custom,     ONLY: fft_cus
-    USE fft6_module,    ONLY: invfft6, fwfft6
-    USE kinds,          ONLY: dp
-    USE timing_module,  ONLY: time_GW_product
+    USE fft6_module,       ONLY: invfft6, fwfft6
+    USE kinds,             ONLY: dp
+    USE sigma_grid_module, ONLY: sigma_grid_type
+    USE timing_module,     ONLY: time_GW_product
 
     !> volume of the unit cell
     REAL(dp),      INTENT(IN)    :: omega
 
     !> type that defines the custom Fourier transform for Sigma
-    TYPE(fft_cus), INTENT(IN)    :: fft_cust
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> The prefactor with which the self-energy is multiplied
     COMPLEX(dp),   INTENT(IN)    :: alpha
-
-    !> the symmetry mapping from the reduced to the full G mesh
-    INTEGER,       INTENT(IN)    :: gmapsym(:)
 
     !> the Green's function in real space \f$G(r, r')\f$
     COMPLEX(dp),   INTENT(IN)    :: green(:,:)
@@ -401,10 +417,10 @@ CONTAINS
     COMPLEX(dp),   INTENT(INOUT) :: array(:,:)
 
     !> the number of points in real space
-    INTEGER num_r
+    INTEGER num_r, num_rp
 
     !> the number of G vectors defining the reciprocal space
-    INTEGER num_g
+    INTEGER num_g, num_gp
 
     !> counter on G vectors
     INTEGER ig
@@ -412,28 +428,29 @@ CONTAINS
     CALL start_clock(time_GW_product)
 
     ! determine the helper variables
-    num_r = fft_cust%dfftt%nnr
-    num_g = fft_cust%ngmt
+    num_r  = grid%corr%dfftt%nnr
+    num_rp = grid%corr_par%dfftt%nnr
+    num_g  = grid%corr%ngmt
+    num_gp = grid%corr_par%ngmt
 
     !
     ! sanity check of the input
     !
     IF (SIZE(green, 1) /= num_r) &
-      CALL errore(__FILE__, "size of G inconsistent with FFT definition", 1)
-    IF (SIZE(green, 2) /= num_r) &
-      CALL errore(__FILE__, "Green's function not a square matrix", 1)
+      CALL errore(__FILE__, "size of G inconsistent with G-vector FFT definition", 1)
+    IF (SIZE(green, 2) /= num_rp) &
+      CALL errore(__FILE__, "size of G inconsistent with G'-vector FFT definition", 1)
     IF (SIZE(array, 1) /= num_r) &
-      CALL errore(__FILE__, "size of array inconsistent with FFT definition", 1)
-    IF (SIZE(array, 2) /= num_r) &
-      CALL errore(__FILE__, "array is not a square matrix", 1)
-    IF (SIZE(gmapsym) /= num_g) &
-      CALL errore(__FILE__, "gmapsym is inconsistent with FFT definition", 1)
+      CALL errore(__FILE__, "size of array inconsistent with G-vector FFT definition", 1)
+    IF (SIZE(array, 2) /= num_rp) &
+      CALL errore(__FILE__, "size of array inconsistent with G'-vector FFT definition", 1)
 
     !!
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
     !!
     ! array contains W(r, r')
-    CALL invfft6('Custom', array, fft_cust%dfftt, fft_cust%nlt(gmapsym), omega)
+    CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
+                 grid%corr%nlt, grid%corr_par%nlt, omega)
 
     !!
     !! 2. We evaluate the product in real space 
@@ -446,10 +463,11 @@ CONTAINS
     !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
     !!
     !. array contains Sigma(G, G') / alpha
-    CALL fwfft6('Custom', array, fft_cust%dfftt, fft_cust%nlt, omega)
+    CALL fwfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
+                grid%corr%nlt, grid%corr_par%nlt, omega)
 
     !! 4. We multiply with the prefactor \f$\alpha\f$.
-    DO ig = 1, num_g
+    DO ig = 1, num_gp
       array(:num_g, ig) = alpha * array(:num_g, ig)
     END DO ! ig
 
@@ -460,23 +478,23 @@ CONTAINS
   !> Evaluate the correlation self-energy for a given frequency range.
   !!
   !! The algorithm consists of the following steps:
-  SUBROUTINE sigma_correlation(omega, fft_cust, multishift, lmax, threshold, &
-                               mu, alpha, ikq, freq, first_sigma,            &
+  SUBROUTINE sigma_correlation(omega, grid, multishift, lmax, threshold, &
+                               mu, alpha, ikq, freq,                     &
                                gmapsym, coulomb, sigma, debug)
 
-    USE debug_module,    ONLY: debug_type
-    USE fft_custom,      ONLY: fft_cus
-    USE fft6_module,     ONLY: invfft6
-    USE freqbins_module, ONLY: freqbins_type
-    USE green_module,    ONLY: green_prepare, green_function, green_nonanalytic
-    USE kinds,           ONLY: dp
-    USE mp_images,       ONLY: inter_image_comm
+    USE construct_w_module, ONLY: construct_w
+    USE debug_module,       ONLY: debug_type
+    USE fft6_module,        ONLY: invfft6
+    USE freqbins_module,    ONLY: freqbins_type
+    USE green_module,       ONLY: green_prepare, green_function, green_nonanalytic
+    USE kinds,              ONLY: dp
+    USE sigma_grid_module,  ONLY: sigma_grid_type
 
     !> Volume of the unit cell
     REAL(dp),      INTENT(IN)  :: omega
 
     !> Type that defines the custom Fourier transform for Sigma
-    TYPE(fft_cus), INTENT(IN)  :: fft_cust
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> If this flag is set, we use the multishift solver
     LOGICAL,       INTENT(IN)  :: multishift
@@ -499,9 +517,6 @@ CONTAINS
     !> This type defines the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
 
-    !> the first frequency done on this process
-    INTEGER,       INTENT(IN)  :: first_sigma
-
     !> the symmetry mapping from the reduced to the full G mesh
     INTEGER,       INTENT(IN)  :: gmapsym(:)
 
@@ -515,19 +530,13 @@ CONTAINS
     TYPE(debug_type), INTENT(IN) :: debug
 
     !> the number of real space points used for the correlation
-    INTEGER num_r_corr
+    INTEGER num_r_corr, num_rp_corr
 
     !> The number of plane-waves in the NSCF calculation.
     INTEGER num_g
 
     !> the number of G vectors used for the correlation
-    INTEGER num_g_corr
-
-    !> the number of tasks done by this process
-    INTEGER num_task
-
-    !> counter on the number of tasks
-    INTEGER itask
+    INTEGER num_g_corr, num_gp_corr
 
     !> the number of frequencies for the Green's function
     INTEGER num_green
@@ -575,25 +584,23 @@ CONTAINS
     !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
     COMPLEX(dp), ALLOCATABLE :: evec(:,:)
 
-    !> complex constant of 0
-    COMPLEX(dp), PARAMETER   :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
-
     !
     ! sanity check of the input
     !
-    num_r_corr = fft_cust%dfftt%nnr
-    num_g_corr = fft_cust%ngmt
-    num_task = SIZE(sigma, 3)
+    num_r_corr  = grid%corr%dfftt%nnr
+    num_rp_corr = grid%corr_par%dfftt%nnr
+    num_g_corr  = grid%corr%ngmt
+    num_gp_corr = grid%corr_par%ngmt
     IF (SIZE(coulomb, 1) /= num_g_corr) &
-      CALL errore(__FILE__, "screened Coulomb and FFT type inconsistent", 1)
+      CALL errore(__FILE__, "screened Coulomb and G-vector FFT type inconsistent", 1)
     IF (SIZE(coulomb, 2) /= num_g_corr) &
-      CALL errore(__FILE__, "screened Coulomb must be a square matrix", 1)
+      CALL errore(__FILE__, "screened Coulomb not a square matrix", 1)
     IF (SIZE(sigma, 1) /= num_g_corr) &
-      CALL errore(__FILE__, "self energy and FFT type inconsistent", 1)
-    IF (SIZE(sigma, 2) /= num_g_corr) &
-      CALL errore(__FILE__, "self energy must be a square matrix", 1)
-    IF (first_sigma + num_task - 1 > freq%num_sigma()) &
-      CALL errore(__FILE__, "frequency index is out of bounds of the frequency array", 1)
+      CALL errore(__FILE__, "self energy and G-vector FFT type inconsistent", 1)
+    IF (SIZE(sigma, 2) /= num_gp_corr) &
+      CALL errore(__FILE__, "self energy and G'-vector FFT type inconsistent", 1)
+    IF (SIZE(sigma, 3) /= freq%num_sigma()) &
+      CALL errore(__FILE__, "frequency dimension of self energy not correct size", 1)
     IF (SIZE(gmapsym) /= num_g_corr) &
       CALL errore(__FILE__, "gmapsym and FFT type are inconsistent", 1)
 
@@ -616,17 +623,15 @@ CONTAINS
     !!
     !! 3. evaluate the Green's function of the system
     !!
-    ! allocate an array that can contain the Fourier transformed quanity
-    ALLOCATE(green(num_r_corr, num_r_corr, num_green))
     ! after this call, we obtained G(G, G', w)
-    CALL green_function(inter_image_comm, multishift, lmax, threshold, map, &
+    CALL green_function(grid, multishift, lmax, threshold, map, &
                         num_g, freq_green, green, debug)
 
     !!
     !! 4. we add the nonanalytic part if on the real axis
     !!
     IF (.NOT. freq%imag_sigma) THEN
-      CALL green_nonanalytic(map, freq_green, occupation, eval, evec, green)
+      CALL green_nonanalytic(grid, map, freq_green, occupation, eval, evec, green)
     END IF
     DEALLOCATE(occupation, eval, evec)
 
@@ -635,39 +640,34 @@ CONTAINS
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
-      CALL invfft6('Custom', green(:,:,igreen), fft_cust%dfftt, fft_cust%nlt, omega)
+      CALL invfft6('Custom', green(:,:,igreen), grid%corr%dfftt, grid%corr_par%dfftt, &
+                   grid%corr%nlt, grid%corr_par%nlt, omega)
     END DO ! igreen
-
-    ! create work array
-    ALLOCATE(work(num_r_corr, num_r_corr))
 
     !!
     !! 6. distribute the frequencies of \f$\Sigma\f$ across the image
     !!
-    DO itask = 1, num_task
-      !
-      isigma = first_sigma + itask - 1
+    DO isigma = 1, freq%num_sigma()
       !
       DO igreen = 1, num_green
         !!
         !! 7. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
         !!
-        work = zero
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
-        ! work will contain W(G, G', wS - wG)
-        CALL construct_w(coulomb, work(1:num_g_corr, 1:num_g_corr), ABS(freq_coul))
+        ! work will be allocated and contain W(G, G', wS - wG)
+        CALL construct_w(gmapsym, grid, freq, coulomb, freq_coul, work)
         !!
         !! 8. convolute G and W
         !!
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
         ! work will contain Sigma(G, G', wS)
-        CALL sigma_prod(omega, fft_cust, alpha_weight, gmapsym, green(:,:,igreen), work)
+        CALL sigma_prod(omega, grid, alpha_weight, green(:,:,igreen), work)
         !
         !!
         !! 9. add the result to \f$\Sigma\f$
         !!
-        sigma(:,:,itask) = sigma(:,:,itask) + work(1:num_g_corr, 1:num_g_corr)
+        sigma(:,:,isigma) = sigma(:,:,isigma) + work(1:num_g_corr, 1:num_gp_corr)
         !
       END DO ! igreen
       !

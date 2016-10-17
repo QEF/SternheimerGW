@@ -4,6 +4,12 @@ Release notes
 on develop
 ----------
 
+Add G parallelization to the second index in the convolution of G and W. This
+is more expensive, because the FFT now requires communication, but the only
+solution to calculate large memory systems. In the new approach the memory
+requirement for the Greens function is distributed across the processes leading
+to a reduced overall memory consumption.
+
 Add new linear solver that construct a Krylov subspace that is used for all
 frequencies but might be extended if one requires a tighter convergence setting.
 This linear solver is activated when multishift is set to false.

@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE sigma_matel (ik0, freq)
+SUBROUTINE sigma_matel(ik0, grid, freq)
 
   USE buffers,              ONLY : get_buffer, close_buffer
   USE buiol,                ONLY : buiol_check_unit
@@ -37,8 +37,7 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE gvecs,                ONLY : nls
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
-  USE gwsigma,              ONLY : sigma_x_st, sigma_c_st, nbnd_sig, corr_conv, exch_conv, &
-                                   sigma_band_exg, gcutcorr
+  USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv, sigma_band_exg
   USE io_files,             ONLY : diropn 
   USE io_global,            ONLY : stdout, meta_ionode
   USE kinds,                ONLY : DP
@@ -50,6 +49,7 @@ SUBROUTINE sigma_matel (ik0, freq)
   USE qpoint,               ONLY : npwq
   USE scf,                  ONLY : rho, rho_core, rhog_core, scf_type, v
   USE sigma_expect_mod,     ONLY : sigma_expect, sigma_expect_file
+  USE sigma_grid_module,    ONLY : sigma_grid_type
   USE timing_module,        ONLY : time_matel
   USE units_gw,             ONLY : iunsigma, iuwfc, lrwfc, lrsigma, lrsex, iunsex
   USE wavefunctions_module, ONLY : evc
@@ -57,7 +57,11 @@ SUBROUTINE sigma_matel (ik0, freq)
 
 IMPLICIT NONE
 
-  TYPE(freqbins_type), INTENT(IN) :: freq
+  !> the FFT grid used
+  TYPE(sigma_grid_type), INTENT(IN) :: grid
+
+  !> the frequency grid used
+  TYPE(freqbins_type),   INTENT(IN) :: freq
 
   COMPLEX(DP), ALLOCATABLE  :: sigma_band_con(:,:,:)
   COMPLEX(DP)               :: psic(dffts%nnr), vpsi(ngm)
@@ -191,10 +195,10 @@ IMPLICIT NONE
   IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
 
   ! sanity check
-  IF (ABS(exch_conv - sigma_x_st%ecutt) < eps14 .OR. &
+  IF (ABS(exch_conv - grid%exch%ecutt) < eps14 .OR. &
       ABS(exch_conv) < eps14) THEN
-    sigma_x_ngm = sigma_x_st%ngmt
-  ELSE IF((exch_conv < sigma_x_st%ecutt) .AND. (exch_conv > 0.0)) THEN
+    sigma_x_ngm = grid%exch%ngmt
+  ELSE IF((exch_conv < grid%exch%ecutt) .AND. (exch_conv > 0.0)) THEN
     DO ng = 1, ngm
        IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
     END DO
@@ -222,9 +226,9 @@ IMPLICIT NONE
 
   ! For convergence tests corr_conv can be set at input lower than ecutsco.
   ! This allows you to calculate the correlation energy at lower energy cutoffs
-  IF (ABS(corr_conv - sigma_c_st%ecutt) < eps14) THEN
-    sigma_c_ngm = gcutcorr
-  ELSE IF(corr_conv < sigma_c_st%ecutt .AND. corr_conv > 0.0) THEN
+  IF (ABS(corr_conv - grid%corr%ecutt) < eps14) THEN
+    sigma_c_ngm = grid%corr%ngmt
+  ELSE IF(corr_conv < grid%corr%ecutt .AND. corr_conv > 0.0) THEN
     DO ng = 1, ngm
       IF (gl( igtongl (ng) ) <= (corr_conv/tpiba2)) sigma_c_ngm = ng
     END DO

@@ -20,58 +20,110 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE construct_w(scrcoul_g, scrcoul_pade_g, w_ryd)
+!> Evaluate the analytic continuation of the screened Coulomb interaction.
+!!
+MODULE construct_w_module
 
-  USE cell_base,     ONLY : omega
-  USE constants,     ONLY : pi
-  USE control_gw,    ONLY : eta, godbyneeds, padecont, modielec, do_imag
-  USE disp,          ONLY : nq1, nq2, nq3
-  USE freq_gw,       ONLY : fiu, nfs
-  USE gwsigma,       ONLY : gcutcorr
-  USE kinds,         ONLY : DP
-  USE mp_global,     ONLY : mp_global_end
-  USE timing_module, ONLY : time_construct_w
+  IMPLICIT NONE
 
-  implicit none
+CONTAINS
 
-  complex(DP) :: scrcoul_pade_g (gcutcorr, gcutcorr)
-  complex(DP) :: z(nfs), a(nfs)
-  complex(DP)  :: scrcoul_g    (gcutcorr, gcutcorr, nfs) 
+  !> Construct the screened Coulomb interaction for an arbitrary frequency.
+  SUBROUTINE construct_w(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
-  real(DP) :: w_ryd
-  real(DP) :: rcut
+    USE control_gw,        ONLY : godbyneeds, padecont
+    USE freqbins_module,   ONLY : freqbins_type
+    USE kinds,             ONLY : dp
+    USE sigma_grid_module, ONLY : sigma_grid_type
+    USE timing_module,     ONLY : time_construct_w
 
-  integer :: ig, igp
-  integer  :: iwim
+    !> The symmetry map from the irreducible point to the current one
+    INTEGER,                  INTENT(IN)  :: gmapsym(:)
 
-  CALL start_clock(time_construct_w)
+    !> the FFT grids on which the screened Coulomb interaction is evaluated
+    TYPE(sigma_grid_type),    INTENT(IN)  :: grid
 
-   rcut = (float(3)/float(4)/pi*omega*float(nq1*nq2*nq3))**(float(1)/float(3))
-   scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
-   if(.NOT.modielec) then
-     do ig = 1, gcutcorr
-        do igp = 1, gcutcorr
-           do iwim = 1, nfs
-               z(iwim) = fiu(iwim)
-               a(iwim) = scrcoul_g (ig,igp,iwim)
-           enddo
-           if (padecont) then
-               call pade_eval ( nfs, z, a, cmplx(0.0_dp, w_ryd, kind=dp), scrcoul_pade_g (ig,igp))
-           else if (godbyneeds .and. do_imag) then
-               scrcoul_pade_g(ig,igp) = -a(2)/(w_ryd**2+(a(1))**2)
-           else if (godbyneeds .and. .not. do_imag) then
-               scrcoul_pade_g(ig,igp) = a(2)/(cmplx(w_ryd**2, 0.0_dp, kind=dp)-(a(1)-(0.0d0,1.0d0)*eta)**2)
-           else
-                write(6,'("No screening model chosen!")')
-                stop
-                call mp_global_end()
-           endif
-        enddo
-     enddo
-   else
-     CALL errore(__FILE__, "modielec not maintained anymore", 1)
-   endif
+    !> the frequency grid on which W was evaluated
+    TYPE(freqbins_type),      INTENT(IN)  :: freq_in
 
-   CALL stop_clock(time_construct_w)
+    !> the coefficients of the screened Coulomb potential used for the analytic continuation
+    COMPLEX(dp),              INTENT(IN)  :: scrcoul_coeff(:,:,:)
 
-end SUBROUTINE construct_w
+    !> the frequency for which the screened Coulomb potential is evaluated
+    COMPLEX(dp),              INTENT(IN)  :: freq_out
+
+    !> The screened Coulomb interaction symmetry transformed and parallelized over images.
+    !! The array is appropriately sized to do a FFT on the output.
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: scrcoul(:,:)
+
+    !> Counter on the G and G' vector
+    INTEGER ig, igp
+
+    !> corresponding point to G' in global G list
+    INTEGER igp_g
+
+    !> allocation error flag
+    INTEGER ierr
+
+    !> helper array to extract the current coefficients
+    COMPLEX(dp), ALLOCATABLE :: coeff(:)
+
+    !> complex constant of zero
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+    CALL start_clock(time_construct_w)
+
+    !
+    ! create and initialize output array
+    ! allocate space so that we can perform an in-place FFT on the array
+    !
+    ALLOCATE(scrcoul(grid%corr%dfftt%nnr, grid%corr_par%dfftt%nnr), STAT = ierr)
+    IF (ierr /= 0) THEN
+      CALL errore(__FILE__, "allocation of screened Coulomb potential failed", 1)
+      RETURN
+    END IF
+    scrcoul = zero
+
+    !
+    ! construct screened Coulomb interaction
+    !
+    !! The screened Coulomb interaction is interpolated with either Pade or
+    !! Godby-Needs analytic continuation. We only evaluate W at the irreducible
+    !! mesh, but any other point may be obtained by
+    !! \f{equation}{
+    !!   W_{S q}(G, G') = W_{q}(S^{-1} G, S^{-1} G')~.
+    !! \f}
+    ALLOCATE(coeff(freq_in%num_freq()))
+    DO igp = 1, grid%corr_par%ngmt
+      !
+      ! get the global corresponding index
+      igp_g = grid%corr_par%ig_l2gt(igp)
+
+      DO ig = 1, grid%corr%ngmt
+
+        ! symmetry transformation of the coefficients
+        coeff = scrcoul_coeff(gmapsym(ig), gmapsym(igp_g), :)
+
+        IF (padecont) THEN
+          !
+          ! Pade analytic continuation
+          CALL pade_eval(freq_in%num_freq(), freq_in%solver, coeff, freq_out, scrcoul(ig, igp))
+
+        ELSE IF (godbyneeds) THEN
+          !
+          ! Godby-Needs Pole model
+          scrcoul(ig, igp) = coeff(2) / (freq_out**2 - coeff(1)**2)
+
+        ELSE
+          CALL errore(__FILE__, "No screening model chosen!", 1)
+
+        END IF
+
+      END DO ! ig
+    END DO ! igp
+
+    CALL stop_clock(time_construct_w)
+
+  END SUBROUTINE construct_w
+
+END MODULE construct_w_module
