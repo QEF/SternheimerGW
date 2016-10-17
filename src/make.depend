@@ -327,7 +327,6 @@ sgw_opening.o : ../../Modules/io_global.o
 sgw_opening.o : version.o
 sigma.o : ../../Modules/cell_base.o
 sigma.o : ../../Modules/constants.o
-sigma.o : ../../Modules/fft_custom.o
 sigma.o : ../../Modules/io_files.o
 sigma.o : ../../Modules/io_global.o
 sigma.o : ../../Modules/kind.o
