@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE construct_w(num_g_corr, scrcoul_g, scrcoul_pade_g, w_ryd)
+SUBROUTINE construct_w(num_g_corr, num_gp_corr, scrcoul_g, scrcoul_pade_g, w_ryd)
 
   USE cell_base,     ONLY : omega
   USE constants,     ONLY : pi
@@ -36,9 +36,12 @@ SUBROUTINE construct_w(num_g_corr, scrcoul_g, scrcoul_pade_g, w_ryd)
   !> the number of G vectors in the correlation grid
   INTEGER, INTENT(IN) :: num_g_corr
 
-  complex(DP) :: scrcoul_pade_g (num_g_corr, num_g_corr)
+  !> the number of G' vectors in the correlation grid
+  INTEGER, INTENT(IN) :: num_gp_corr
+
+  complex(DP) :: scrcoul_pade_g (num_g_corr, num_gp_corr)
   complex(DP) :: z(nfs), a(nfs)
-  complex(DP)  :: scrcoul_g    (num_g_corr, num_g_corr, nfs) 
+  complex(DP)  :: scrcoul_g    (num_g_corr, num_gp_corr, nfs) 
 
   real(DP) :: w_ryd
   real(DP) :: rcut
@@ -52,7 +55,7 @@ SUBROUTINE construct_w(num_g_corr, scrcoul_g, scrcoul_pade_g, w_ryd)
    scrcoul_pade_g(:,:) = (0.0d0, 0.0d0)
    if(.NOT.modielec) then
      do ig = 1, num_g_corr
-        do igp = 1, num_g_corr
+        do igp = 1, num_gp_corr
            do iwim = 1, nfs
                z(iwim) = fiu(iwim)
                a(iwim) = scrcoul_g (ig,igp,iwim)
