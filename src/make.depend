@@ -34,11 +34,10 @@ close_gwq.o : ../../Modules/io_global.o
 close_gwq.o : ../../Modules/uspp.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
-construct_w.o : ../../Modules/cell_base.o
-construct_w.o : ../../Modules/constants.o
 construct_w.o : ../../Modules/kind.o
-construct_w.o : ../../Modules/mp_global.o
+construct_w.o : freqbins.o
 construct_w.o : gwcom.o
+construct_w.o : sigma_grid.o
 construct_w.o : timing.o
 coulomb.o : ../../FFTXlib/fft_interfaces.o
 coulomb.o : ../../LR_Modules/lrcom.o
@@ -335,6 +334,7 @@ sigma.o : ../../Modules/mp_pools.o
 sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
+sigma.o : construct_w.o
 sigma.o : debug.o
 sigma.o : fft6.o
 sigma.o : freqbins.o

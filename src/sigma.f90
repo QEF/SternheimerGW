@@ -461,12 +461,13 @@ CONTAINS
                                mu, alpha, ikq, freq,                     &
                                gmapsym, coulomb, sigma, debug)
 
-    USE debug_module,      ONLY: debug_type
-    USE fft6_module,       ONLY: invfft6
-    USE freqbins_module,   ONLY: freqbins_type
-    USE green_module,      ONLY: green_prepare, green_function, green_nonanalytic
-    USE kinds,             ONLY: dp
-    USE sigma_grid_module, ONLY: sigma_grid_type
+    USE construct_w_module, ONLY: construct_w
+    USE debug_module,       ONLY: debug_type
+    USE fft6_module,        ONLY: invfft6
+    USE freqbins_module,    ONLY: freqbins_type
+    USE green_module,       ONLY: green_prepare, green_function, green_nonanalytic
+    USE kinds,              ONLY: dp
+    USE sigma_grid_module,  ONLY: sigma_grid_type
 
     !> Volume of the unit cell
     REAL(dp),      INTENT(IN)  :: omega
@@ -528,9 +529,6 @@ CONTAINS
     !> Counter for the frequencies of the self energy.
     INTEGER isigma
 
-    !> error flag for array allocation
-    INTEGER ierr
-
     !> The map from G-vectors at current k to global array.
     INTEGER,     ALLOCATABLE :: map(:)
 
@@ -564,9 +562,6 @@ CONTAINS
 
     !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
     COMPLEX(dp), ALLOCATABLE :: evec(:,:)
-
-    !> complex constant of 0
-    COMPLEX(dp), PARAMETER   :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
     !
     ! sanity check of the input
@@ -628,10 +623,6 @@ CONTAINS
                    grid%corr%nlt, grid%corr_par%nlt, omega)
     END DO ! igreen
 
-    ! create work array
-    ALLOCATE(work(num_r_corr, num_rp_corr), STAT=ierr)
-    CALL errore(__FILE__, "allocation of work array failed", ierr)
-
     !!
     !! 6. distribute the frequencies of \f$\Sigma\f$ across the image
     !!
@@ -641,12 +632,9 @@ CONTAINS
         !!
         !! 7. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
         !!
-        work = zero
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
-        ! work will contain W(G, G', wS - wG)
-        CALL construct_w(num_g_corr, num_gp_corr, coulomb, &
-                         work(1:num_g_corr, 1:num_gp_corr), ABS(freq_coul))
-        work(1:num_g_corr, 1:num_gp_corr) = work(gmapsym, gmapsym)
+        ! work will be allocated and contain W(G, G', wS - wG)
+        CALL construct_w(gmapsym, grid, freq, coulomb, freq_coul, work)
         !!
         !! 8. convolute G and W
         !!
