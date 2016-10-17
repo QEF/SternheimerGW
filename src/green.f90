@@ -145,17 +145,17 @@ CONTAINS
   !! where \f$H_k\f$ is the Hamiltonian at a certain k-point, \f$\omega\f$ is
   !! the frequency, and \f$\delta_{G,G'}\f$ is the Kronecker delta.
   !!
-  SUBROUTINE green_function(comm, multishift, lmax, threshold, map, num_g, omega, green, debug)
+  SUBROUTINE green_function(grid, multishift, lmax, threshold, map, num_g, omega, green, debug)
 
     USE bicgstab_module,      ONLY: bicgstab
     USE debug_module,         ONLY: debug_type, debug_set
     USE kinds,                ONLY: dp
     USE linear_solver_module, ONLY: linear_solver, linear_solver_config
-    USE parallel_module,      ONLY: parallel_task, mp_allgatherv
+    USE sigma_grid_module,    ONLY: sigma_grid_type
     USE timing_module,        ONLY: time_green
 
-    !> Parallelize the calculation over this communicator
-    INTEGER,     INTENT(IN)  :: comm
+    !> Definition of the FFT grid used for first and second dimension
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> Use the multishift solver to determine the Green's function
     LOGICAL,     INTENT(IN)  :: multishift
@@ -178,13 +178,10 @@ CONTAINS
     COMPLEX(dp), INTENT(IN)  :: omega(:)
 
     !> The Green's function of the system.
-    COMPLEX(dp), INTENT(OUT) :: green(:,:,:)
+    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: green(:,:,:)
 
     !> the debug configuration of the calculation
     TYPE(debug_type), INTENT(IN) :: debug
-
-    !> distribution of the tasks over the process grid
-    INTEGER,     ALLOCATABLE :: num_task(:)
 
     !> The right hand side of the linear equation
     COMPLEX(dp), ALLOCATABLE :: bb(:)
@@ -192,23 +189,17 @@ CONTAINS
     !> Helper array storing the result of the linear equation
     COMPLEX(dp), ALLOCATABLE :: green_part(:,:)
 
-    !> Green's function that is gathered across the processes
-    COMPLEX(dp), ALLOCATABLE :: green_comm(:,:,:)
-
     !> The number of frequencies.
     INTEGER num_freq
 
-    !> The number of G-vectors for the correlation
-    INTEGER num_g_corr
-
-    !> First and last G-vector done on this process
-    INTEGER ig_start, ig_stop
-
-    !> loop variable for G loop
-    INTEGER ig, igp
-
-    !> loop over frequencies
+    !> loop variable for frequency
     INTEGER ifreq
+
+    !> The number of G-vectors for the correlation
+    INTEGER num_g_corr, num_gp_corr
+
+    !> loop variable for G and G' loop
+    INTEGER ig, igp
 
     !> check error in array allocation
     INTEGER ierr
@@ -225,41 +216,38 @@ CONTAINS
     CALL start_clock(time_green)
 
     ! determine helper variables
-    num_g_corr = SIZE(map)
-    num_freq = SIZE(omega)
+    num_g_corr  = grid%corr%ngmt
+    num_gp_corr = grid%corr_par%ngmt
+    num_freq    = SIZE(omega)
 
     ! sanity test of the input
-    IF (SIZE(green, 1) < num_g_corr) &
-      CALL errore(__FILE__, "first dimension of Green's functions to small", 1)
-    IF (SIZE(green, 2) < num_g_corr) &
-      CALL errore(__FILE__, "second dimension of Green's function to small", 1)
-    IF (SIZE(green, 3) /= num_freq) &
-      CALL errore(__FILE__, "Green's function and omega are inconsistent", 1)
+    IF (SIZE(map) < num_g_corr) &
+      CALL errore(__FILE__, "not enough G vectors for all points in FFT mesh", 1)
+    IF (ANY(grid%corr_par%ig_l2gt > SIZE(map))) &
+      CALL errore(__FILE__, "some elements of parallelized mesh out of bounds", 1)
+
+    ! allocate array for the calculation of the Green's function
+    ALLOCATE(green(grid%corr%dfftt%nnr, grid%corr_par%dfftt%nnr, num_freq), STAT=ierr)
+    CALL errore(__FILE__, "could not allocate array for Green's function", ierr)
+    green = zero
 
     ! allocate array for the right hand side
     ALLOCATE(bb(num_g), STAT = ierr)
     CALL errore(__FILE__, "could not allocate bb", ierr)
 
-    ! initialize array
-    green = zero
-
     ! allocate array for result of the linear system
     ALLOCATE(green_part(num_g, num_freq), STAT = ierr)
     CALL errore(__FILE__, "could not allocate green_part", ierr)
 
-    ! parallelize over communicator
-    CALL parallel_task(comm, num_g_corr, ig_start, ig_stop, num_task)
+    ! loop over all G'-vectors
+    DO igp = 1, num_gp_corr
 
-    ! allocate array to gather Green's function
-    ALLOCATE(green_comm(num_g_corr, num_freq, num_g_corr), STAT = ierr)
-    CALL errore(__FILE__, "could not allocate green_comm", ierr)
-
-    ! loop over all G-vectors
-    DO ig = ig_start, ig_stop
+      ! determine map in global array
+      ig = map(grid%corr_par%ig_l2gt(igp))
 
       ! set right-hand side
       bb = zero
-      bb(map(ig)) = -one
+      bb(ig) = -one
 
       ! if multishift is set, we solve all frequencies at once
       IF (multishift) THEN
@@ -276,8 +264,10 @@ CONTAINS
 
       END IF
 
-      ! copy from temporary array to communicated array
-      green_comm(:, :, ig) = green_part(map, :)
+      ! copy from temporary array to output array
+      DO ifreq = 1, num_freq
+        green(:, igp, ifreq) = green_part(map, ifreq)
+      END DO ! ifreq
 
       ! debug the solver
       IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
@@ -287,19 +277,6 @@ CONTAINS
     ! free memory
     DEALLOCATE(bb)
     DEALLOCATE(green_part)
-
-    ! gather the result from all processes
-    CALL mp_allgatherv(comm, num_task, green_comm)
-
-    ! reorder into result array
-    DO ig = 1, num_g_corr
-      DO igp = 1, num_g_corr
-        green(ig, igp, :) = green_comm(igp, :, ig)
-      END DO ! igp
-    END DO ! ig
-
-    DEALLOCATE(num_task)
-    DEALLOCATE(green_comm)
 
     CALL stop_clock(time_green)
 
@@ -321,11 +298,15 @@ CONTAINS
   !! \f{equation}{
   !!   \delta(\omega) \approx \frac{\eta}{\pi(\omega^2 + \eta^2)}
   !! \f}
-  SUBROUTINE green_nonanalytic(map, freq, occupation, eval, evec, green)
+  SUBROUTINE green_nonanalytic(grid, map, freq, occupation, eval, evec, green)
 
-    USE constants,     ONLY: pi, tpi
-    USE kinds,         ONLY: dp
-    USE timing_module, ONLY: time_green
+    USE constants,         ONLY: pi, tpi
+    USE kinds,             ONLY: dp
+    USE sigma_grid_module, ONLY: sigma_grid_type
+    USE timing_module,     ONLY: time_green
+
+    !> The FFT grids used to evaluate the self energy
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> The reverse list from global G vector order to current k-point.
     !! Generate this by a call to create_map in reorder.
@@ -355,9 +336,6 @@ CONTAINS
     !> the number of G vectors at the k-point
     INTEGER num_g
 
-    !> the number of G vectors used for the correlation
-    INTEGER num_g_corr
-
     !> the number of frequency points
     INTEGER num_freq
 
@@ -367,7 +345,10 @@ CONTAINS
     !> loop variable for frequencies
     INTEGER ifreq
 
-    !> loop variable for G and G'
+    !> loop over G and G' in local array
+    INTEGER igmt, igpmt
+
+    !> pointer to G and G' in global array
     INTEGER ig, igp
 
     !> the value of \f$\omega - \epsilon_{\text{v}} + \imag \eta\f$
@@ -385,18 +366,15 @@ CONTAINS
     num_band = SIZE(eval)
     num_freq = SIZE(freq)
     num_g    = SIZE(evec, 1)
-    num_g_corr = SIZE(map)
 
     ! sanity check of the input
     IF (SIZE(occupation) /= num_band) &
       CALL errore(__FILE__, "size of occupation and eigenvalue array inconsistent", 1)
     IF (SIZE(evec, 2) /= num_band) &
       CALL errore(__FILE__, "size of eigenvalue and eigenvector inconsistent", 1)
-    IF (num_g < num_g_corr) &
-      CALL errore(__FILE__, "cannot use more G's for correlation that available", 1)
-    IF (SIZE(green, 1) < num_g_corr) &
+    IF (SIZE(green, 1) < grid%corr%ngmt) &
       CALL errore(__FILE__, "1st dimension of Green's function to small", 1)
-    IF (SIZE(green, 2) < num_g_corr) &
+    IF (SIZE(green, 2) < grid%corr_par%ngmt) &
       CALL errore(__FILE__, "2nd dimension of Green's function to small", 1)
     IF (SIZE(green, 3) /= num_freq) &
       CALL errore(__FILE__, "3rd dimension of Green's function should be number of frequencies", 1)
@@ -414,8 +392,11 @@ CONTAINS
         lorentzian = AIMAG(freq(ifreq)) / (pi * ABS(freq_eps)**2)
 
         ! loop over G and G'
-        DO igp = 1, num_g_corr
-          DO ig = 1, num_g_corr
+        DO igpmt = 1, grid%corr_par%ngmt
+          igp = grid%corr_par%ig_l2gt(igpmt)
+
+          DO igmt = 1, grid%corr%ngmt
+            ig = grid%corr%ig_l2gt(igmt)
 
             ! add nonanalytic part to Green's function
             ! 2 pi i f_n u_n*(G) u_n(G') delta

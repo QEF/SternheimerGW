@@ -337,7 +337,7 @@ CONTAINS
       !
       ! evaluate Sigma
       !
-      CALL sigma_correlation(omega, grid%corr, multishift, lmax_green, tr2_green, &
+      CALL sigma_correlation(omega, grid, multishift, lmax_green, tr2_green, &
                              mu, alpha, config(icon)%index_kq, freq, first_sigma, &
                              gmapsym(:num_g_corr, config(icon)%inv_op), &
                              coulomb, sigma, debug)
@@ -469,23 +469,22 @@ CONTAINS
   !> Evaluate the correlation self-energy for a given frequency range.
   !!
   !! The algorithm consists of the following steps:
-  SUBROUTINE sigma_correlation(omega, fft_cust, multishift, lmax, threshold, &
-                               mu, alpha, ikq, freq, first_sigma,            &
+  SUBROUTINE sigma_correlation(omega, grid, multishift, lmax, threshold, &
+                               mu, alpha, ikq, freq, first_sigma,        &
                                gmapsym, coulomb, sigma, debug)
 
-    USE debug_module,    ONLY: debug_type
-    USE fft_custom,      ONLY: fft_cus
-    USE fft6_module,     ONLY: invfft6
-    USE freqbins_module, ONLY: freqbins_type
-    USE green_module,    ONLY: green_prepare, green_function, green_nonanalytic
-    USE kinds,           ONLY: dp
-    USE mp_images,       ONLY: inter_image_comm
+    USE debug_module,      ONLY: debug_type
+    USE fft6_module,       ONLY: invfft6
+    USE freqbins_module,   ONLY: freqbins_type
+    USE green_module,      ONLY: green_prepare, green_function, green_nonanalytic
+    USE kinds,             ONLY: dp
+    USE sigma_grid_module, ONLY: sigma_grid_type
 
     !> Volume of the unit cell
     REAL(dp),      INTENT(IN)  :: omega
 
     !> Type that defines the custom Fourier transform for Sigma
-    TYPE(fft_cus), INTENT(IN)  :: fft_cust
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> If this flag is set, we use the multishift solver
     LOGICAL,       INTENT(IN)  :: multishift
@@ -590,8 +589,8 @@ CONTAINS
     !
     ! sanity check of the input
     !
-    num_r_corr = fft_cust%dfftt%nnr
-    num_g_corr = fft_cust%ngmt
+    num_r_corr = grid%corr%dfftt%nnr
+    num_g_corr = grid%corr%ngmt
     num_task = SIZE(sigma, 3)
     IF (SIZE(coulomb, 1) /= num_g_corr) &
       CALL errore(__FILE__, "screened Coulomb and FFT type inconsistent", 1)
@@ -625,17 +624,15 @@ CONTAINS
     !!
     !! 3. evaluate the Green's function of the system
     !!
-    ! allocate an array that can contain the Fourier transformed quanity
-    ALLOCATE(green(num_r_corr, num_r_corr, num_green))
     ! after this call, we obtained G(G, G', w)
-    CALL green_function(inter_image_comm, multishift, lmax, threshold, map, &
+    CALL green_function(grid, multishift, lmax, threshold, map, &
                         num_g, freq_green, green, debug)
 
     !!
     !! 4. we add the nonanalytic part if on the real axis
     !!
     IF (.NOT. freq%imag_sigma) THEN
-      CALL green_nonanalytic(map, freq_green, occupation, eval, evec, green)
+      CALL green_nonanalytic(grid, map, freq_green, occupation, eval, evec, green)
     END IF
     DEALLOCATE(occupation, eval, evec)
 
@@ -644,7 +641,7 @@ CONTAINS
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
-      CALL invfft6('Custom', green(:,:,igreen), fft_cust%dfftt, fft_cust%nlt, omega)
+      CALL invfft6('Custom', green(:,:,igreen), grid%corr%dfftt, grid%corr%nlt, omega)
     END DO ! igreen
 
     ! create work array
@@ -671,7 +668,7 @@ CONTAINS
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
         ! work will contain Sigma(G, G', wS)
-        CALL sigma_prod(omega, fft_cust, alpha_weight, gmapsym, green(:,:,igreen), work)
+        CALL sigma_prod(omega, grid%corr, alpha_weight, gmapsym, green(:,:,igreen), work)
         !
         !!
         !! 9. add the result to \f$\Sigma\f$
