@@ -20,7 +20,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE coulpade(num_g_corr, num_gp_corr, scrcoul_g, xq_ibk, vcut)
+SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
 
   USE cell_base,         ONLY : tpiba
   USE control_gw,        ONLY : godbyneeds, padecont, modielec, truncation
@@ -34,13 +34,10 @@ SUBROUTINE coulpade(num_g_corr, num_gp_corr, scrcoul_g, xq_ibk, vcut)
   !> the number of G vectors in the correlation grid
   INTEGER, INTENT(IN) :: num_g_corr
 
-  !> the number of G' vectors in the correlation grid
-  INTEGER, INTENT(IN) :: num_gp_corr
-
   !> the truncated Coulomb potential
   TYPE(vcut_type), INTENT(IN) :: vcut
 
-  complex(DP) ::  scrcoul_g   (num_g_corr, num_gp_corr, nfs)
+  complex(DP) ::  scrcoul_g   (num_g_corr, num_g_corr, nfs)
   complex(DP) :: z(nfs), u(nfs), a(nfs)
 
   real(DP) :: q_G(3)
@@ -56,7 +53,7 @@ SUBROUTINE coulpade(num_g_corr, num_gp_corr, scrcoul_g, xq_ibk, vcut)
          do ig = 1, num_g_corr
             q_G = tpiba * (g(:,ig) + xq_ibk)
             factor = truncate(truncation, vcut, q_G)
-            do igp = 1, num_gp_corr
+            do igp = 1, num_g_corr
               scrcoul_g(ig, igp, iw) = scrcoul_g(ig, igp, iw) * factor 
             end do
          enddo!ig
@@ -65,7 +62,7 @@ SUBROUTINE coulpade(num_g_corr, num_gp_corr, scrcoul_g, xq_ibk, vcut)
     if(.not.modielec) THEN
         if(godbyneeds) THEN
           do ig = 1, num_g_corr
-            do igp = 1, num_gp_corr 
+            do igp = 1, num_g_corr 
 !For godby-needs plasmon pole the algebra is done assuming real frequency*i.
 !that is: the calculation is done at i*wp but we pass a real number as the freq.
                do iw = 1, nfs
@@ -81,7 +78,7 @@ SUBROUTINE coulpade(num_g_corr, num_gp_corr, scrcoul_g, xq_ibk, vcut)
          enddo
        else if (padecont) THEN
          do igp = 1, num_g_corr
-          do ig = 1, num_gp_corr
+          do ig = 1, num_g_corr
 !Pade input points on the imaginary axis
              do iw = 1, nfs
                 z(iw) = fiu(iw)

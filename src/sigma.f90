@@ -152,7 +152,6 @@ CONTAINS
     USE kinds,             ONLY: dp
     USE klist,             ONLY: lgauss
     USE mp,                ONLY: mp_bcast
-    USE mp_images,         ONLY: my_image_id, inter_image_comm, root_image
     USE mp_pools,          ONLY: inter_pool_comm, root_pool
     USE output_mod,        ONLY: filcoul
     USE parallel_module,   ONLY: mp_root_sum
@@ -318,11 +317,7 @@ CONTAINS
       IF (config(icon)%index_q /= iq) THEN
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-        !
-        ! temporary fix until Coulomb matrix is written with proper image parallelization
-        CALL pack_coulomb(grid, coulomb)
-        !
-        CALL coulpade(num_g_corr, num_gp_corr, coulomb, x_q(:,iq), vcut)
+        CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
       END IF
       !
       ! determine the prefactor
@@ -369,54 +364,6 @@ CONTAINS
     CALL stop_clock(time_sigma_io)
 
     CALL stop_clock(time_sigma_c)
-
-  CONTAINS
-
-    !> pack the second dimension of Coulomb matrix
-    !!
-    !! remove elements that are not treated on current process
-    SUBROUTINE pack_coulomb(grid, coulomb)
-
-      USE sigma_grid_module, ONLY: sigma_grid_type
-
-      !> The FFT grids for the self energy
-      TYPE(sigma_grid_type), INTENT(IN) :: grid
-
-      !> The screened Coulomb interaction
-      COMPLEX(dp), INTENT(INOUT), ALLOCATABLE :: coulomb(:,:,:)
-
-      !> work array used to pack Coulomb matrix
-      COMPLEX(dp), ALLOCATABLE :: work(:,:,:)
-
-      !> counter on the elements on this process
-      INTEGER igp
-
-      !> corresponding element in the global array
-      INTEGER igp_g
-
-      !> counter on the frequencies
-      INTEGER ifreq
-
-      ! create copy of Coulomb ignoring elements not on this process
-      ALLOCATE(work(grid%corr%ngmt, grid%corr_par%ngmt, SIZE(coulomb, 3)))
-
-      ! loop over all elements of array
-      DO ifreq = 1, SIZE(coulomb, 3)
-        DO igp = 1, grid%corr_par%ngmt
-
-          ! find corresponding index in large array
-          igp_g = grid%corr_par%ig_l2gt(igp)
-
-          ! copy element
-          work(:, igp, ifreq) = coulomb(:, igp_g, ifreq)
-
-        END DO ! igp
-      END DO ! ifreq
-
-      ! replace Coulomb with the packed array
-      CALL MOVE_ALLOC(work, coulomb)
-
-    END SUBROUTINE pack_coulomb
 
   END SUBROUTINE sigma_wrapper
 
@@ -635,8 +582,8 @@ CONTAINS
     num_gp_corr = grid%corr_par%ngmt
     IF (SIZE(coulomb, 1) /= num_g_corr) &
       CALL errore(__FILE__, "screened Coulomb and G-vector FFT type inconsistent", 1)
-    IF (SIZE(coulomb, 2) /= num_gp_corr) &
-      CALL errore(__FILE__, "screened Coulomb and G'-vector FFT type inconsistent", 1)
+    IF (SIZE(coulomb, 2) /= num_g_corr) &
+      CALL errore(__FILE__, "screened Coulomb not a square matrix", 1)
     IF (SIZE(sigma, 1) /= num_g_corr) &
       CALL errore(__FILE__, "self energy and G-vector FFT type inconsistent", 1)
     IF (SIZE(sigma, 2) /= num_gp_corr) &
