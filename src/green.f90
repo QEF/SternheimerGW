@@ -266,7 +266,7 @@ CONTAINS
 
       ! copy from temporary array to output array
       DO ifreq = 1, num_freq
-        green(:, igp, ifreq) = green_part(map, ifreq)
+        green(:num_g_corr, igp, ifreq) = green_part(map, ifreq)
       END DO ! ifreq
 
       ! debug the solver
