@@ -26,9 +26,6 @@
 # Edit this line 
 #export ESPRESSO_ROOT=/home/fspiga/my_q-e
 
-# Edit this line every time a new reference is created
-export REFERENCE_VERSION=SVN
-
 ####################################################################################
 
 # Edit this line _ONLY_ iff you run test-code outside the QE main directory 
