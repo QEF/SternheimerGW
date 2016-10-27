@@ -1,6 +1,14 @@
 Release notes
 =============
 
+Version 0.10.1
+--------------
+
+Bugfix to make systems without inversion symmetry work. There where some arrays
+that were the complex conjugate of the correct value, which did not matter with
+inversion symmetry but resulted in incorrect results for systems without it.
+> compatible QE version 6.0 revision 13079
+
 Version 0.10
 ------------
 

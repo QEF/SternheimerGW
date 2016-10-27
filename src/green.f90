@@ -291,11 +291,11 @@ CONTAINS
     CALL mp_allgatherv(comm, num_task, green_comm)
 
     ! reorder into result array
-    DO ig = 1, num_g_corr
-      DO igp = 1, num_g_corr
-        green(ig, igp, :) = green_comm(igp, :, ig)
-      END DO ! igp
-    END DO ! ig
+    DO igp = 1, num_g_corr
+      DO ig = 1, num_g_corr
+        green(ig, igp, :) = green_comm(ig, :, igp)
+      END DO ! ig
+    END DO ! igp
 
     DEALLOCATE(num_task)
     DEALLOCATE(green_comm)
