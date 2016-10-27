@@ -81,7 +81,7 @@ LOGICAL      :: sym(48), minus_q, invsymq
 ! reorder the input to the output array
 !
   FORALL (ig = 1:ngmunique, igp = 1:sigma_c_st%ngmt, iwim=1:nfs)
-    scrcoul_out(ig_unique(ig), igp, iwim) = scrcoul_in(igp, iwim, ig)
+    scrcoul_out(ig_unique(ig), igp, iwim) = CONJG(scrcoul_in(igp, iwim, ig))
   END FORALL
 ! trivial case
 ! no unfolding needs to be done
