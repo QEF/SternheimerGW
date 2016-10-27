@@ -19,6 +19,14 @@ compiled with the __DEBUG flag it will examine the requested parts in more
 detail. The only current option is to check (H - w) G = -delta. The unit
 test can be used to investigate the behavior of the linear problem.
 
+Version 0.10.1
+--------------
+
+Bugfix to make systems without inversion symmetry work. There where some arrays
+that were the complex conjugate of the correct value, which did not matter with
+inversion symmetry but resulted in incorrect results for systems without it.
+> compatible QE version 6.0 revision 13079
+
 Version 0.10
 ------------
 
