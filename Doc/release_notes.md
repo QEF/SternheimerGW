@@ -4,6 +4,10 @@ Release notes
 on develop
 ----------
 
+Dynamically change the linear solver if the first choice of the solver does
+not converge. Change the linear solver to return error codes and switch to
+a different solver if nonzero error code is returned.
+
 Add G parallelization to the second index in the convolution of G and W. This
 is more expensive, because the FFT now requires communication, but the only
 solution to calculate large memory systems. In the new approach the memory

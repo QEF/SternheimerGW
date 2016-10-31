@@ -145,26 +145,19 @@ CONTAINS
   !! where \f$H_k\f$ is the Hamiltonian at a certain k-point, \f$\omega\f$ is
   !! the frequency, and \f$\delta_{G,G'}\f$ is the Kronecker delta.
   !!
-  SUBROUTINE green_function(grid, multishift, lmax, threshold, map, num_g, omega, green, debug)
+  SUBROUTINE green_function(grid, config, map, num_g, omega, green, debug)
 
-    USE bicgstab_module,      ONLY: bicgstab
     USE debug_module,         ONLY: debug_type, debug_set
     USE kinds,                ONLY: dp
-    USE linear_solver_module, ONLY: linear_solver, linear_solver_config
+    USE select_solver_module, ONLY: select_solver, select_solver_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
     USE timing_module,        ONLY: time_green
 
     !> Definition of the FFT grid used for first and second dimension
-    TYPE(sigma_grid_type), INTENT(IN) :: grid
+    TYPE(sigma_grid_type),    INTENT(IN) :: grid
 
-    !> Use the multishift solver to determine the Green's function
-    LOGICAL,     INTENT(IN)  :: multishift
-
-    !> Depth of the GMRES part of the BiCGstab(l) algorithm.
-    INTEGER,     INTENT(IN)  :: lmax
-
-    !> Threshold for the convergence of the linear system.
-    REAL(dp),    INTENT(IN)  :: threshold
+    !> the configuration for the linear solver
+    TYPE(select_solver_type), INTENT(IN) :: config
 
     !> The reverse list from global G vector order to current k-point.
     !! Generate this by a call to create_map in reorder.
@@ -203,9 +196,6 @@ CONTAINS
 
     !> check error in array allocation
     INTEGER ierr
-
-    !> the configuration for the solver in the non-multishift case
-    TYPE(linear_solver_config) config
 
     !> complex zero
     COMPLEX(dp), PARAMETER :: zero = 0.0_dp
@@ -249,20 +239,9 @@ CONTAINS
       bb = zero
       bb(ig) = -one
 
-      ! if multishift is set, we solve all frequencies at once
-      IF (multishift) THEN
-
-        ! solve the linear system
-        CALL bicgstab(lmax, threshold, green_operator, bb, -omega, green_part)
-
-      ! without multishift, we solve every frequency separately
-      ELSE
-
-        ! solve the linear system reusing the Krylov subspace
-        config%threshold = threshold
-        CALL linear_solver(config, green_operator, bb, -omega, green_part)
-
-      END IF
+      ! solve the linear problem
+      CALL select_solver(config, green_operator, bb, -omega, green_part, ierr)
+      CALL errore(__FILE__, "the linear solver for G did not converge", ierr)
 
       ! copy from temporary array to output array
       DO ifreq = 1, num_freq
@@ -270,7 +249,7 @@ CONTAINS
       END DO ! ifreq
 
       ! debug the solver
-      IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
+      IF (debug_set) CALL green_solver_debug(omega, config%threshold, bb, green_part, debug)
 
     END DO ! ig
 

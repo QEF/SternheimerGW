@@ -137,38 +137,42 @@ CONTAINS
 
   !> This function provides a wrapper that extracts the necessary information
   !! from the global modules to evaluate the self energy.
-  SUBROUTINE sigma_wrapper(ikpt, grid, freq, vcut, config, debug)
+  SUBROUTINE sigma_wrapper(ikpt, grid, config_green, freq, vcut, config, debug)
 
-    USE cell_base,         ONLY: omega
-    USE constants,         ONLY: tpi
-    USE control_gw,        ONLY: multishift, tr2_green, lmax_green, output, tmp_dir_coul
-    USE debug_module,      ONLY: debug_type
-    USE disp,              ONLY: x_q
-    USE ener,              ONLY: ef
-    USE freqbins_module,   ONLY: freqbins_type
-    USE gvect,             ONLY: ngm
-    USE io_files,          ONLY: prefix
-    USE io_global,         ONLY: meta_ionode, ionode_id
-    USE kinds,             ONLY: dp
-    USE klist,             ONLY: lgauss
-    USE mp,                ONLY: mp_bcast
-    USE mp_images,         ONLY: inter_image_comm, root_image
-    USE mp_pools,          ONLY: inter_pool_comm, root_pool, me_pool
-    USE output_mod,        ONLY: filcoul
-    USE parallel_module,   ONLY: mp_root_sum
-    USE sigma_grid_module, ONLY: sigma_grid_type
-    USE sigma_io_module,   ONLY: sigma_io_write_c
-    USE symm_base,         ONLY: nsym, s, invs, ftau, nrot
-    USE timing_module,     ONLY: time_sigma_c, time_sigma_setup, &
-                                 time_sigma_io, time_sigma_comm
-    USE truncation_module, ONLY: vcut_type
-    USE units_gw,          ONLY: iuncoul, lrcoul, iunsigma, lrsigma
+    USE cell_base,            ONLY: omega
+    USE constants,            ONLY: tpi
+    USE control_gw,           ONLY: output, tmp_dir_coul
+    USE debug_module,         ONLY: debug_type
+    USE disp,                 ONLY: x_q
+    USE ener,                 ONLY: ef
+    USE freqbins_module,      ONLY: freqbins_type
+    USE gvect,                ONLY: ngm
+    USE io_files,             ONLY: prefix
+    USE io_global,            ONLY: meta_ionode, ionode_id
+    USE kinds,                ONLY: dp
+    USE klist,                ONLY: lgauss
+    USE mp,                   ONLY: mp_bcast
+    USE mp_images,            ONLY: inter_image_comm, root_image
+    USE mp_pools,             ONLY: inter_pool_comm, root_pool, me_pool
+    USE output_mod,           ONLY: filcoul
+    USE parallel_module,      ONLY: mp_root_sum
+    USE select_solver_module, ONLY: select_solver_type
+    USE sigma_grid_module,    ONLY: sigma_grid_type
+    USE sigma_io_module,      ONLY: sigma_io_write_c
+    USE symm_base,            ONLY: nsym, s, invs, ftau, nrot
+    USE timing_module,        ONLY: time_sigma_c, time_sigma_setup, &
+                                    time_sigma_io, time_sigma_comm
+    USE truncation_module,    ONLY: vcut_type
+    USE units_gw,             ONLY: iuncoul, lrcoul, iunsigma, lrsigma
 
     !> index of the k-point for which the self energy is evaluated
     INTEGER, INTENT(IN) :: ikpt
 
     !> the FFT grids used for the Fourier transformation
     TYPE(sigma_grid_type), INTENT(IN) :: grid
+
+    !> the configuration of the linear solver for the Green's function
+    TYPE(select_solver_type), INTENT(IN) :: config_green
 
     !> type containing the information about the frequencies used for the integration
     TYPE(freqbins_type), INTENT(IN) :: freq
@@ -330,9 +334,9 @@ CONTAINS
       !
       ! evaluate Sigma
       !
-      CALL sigma_correlation(omega, grid, multishift, lmax_green, tr2_green, &
-                             mu, alpha, config(icon)%index_kq, freq,         &
-                             gmapsym(:num_g_corr, config(icon)%sym_op),      &
+      CALL sigma_correlation(omega, grid, config_green,                 &
+                             mu, alpha, config(icon)%index_kq, freq,    &
+                             gmapsym(:num_g_corr, config(icon)%sym_op), &
                              coulomb, sigma, debug)
       !
     END DO ! icon
@@ -478,17 +482,17 @@ CONTAINS
   !> Evaluate the correlation self-energy for a given frequency range.
   !!
   !! The algorithm consists of the following steps:
-  SUBROUTINE sigma_correlation(omega, grid, multishift, lmax, threshold, &
-                               mu, alpha, ikq, freq,                     &
+  SUBROUTINE sigma_correlation(omega, grid, config, mu, alpha, ikq, freq, &
                                gmapsym, coulomb, sigma, debug)
 
-    USE construct_w_module, ONLY: construct_w
-    USE debug_module,       ONLY: debug_type
-    USE fft6_module,        ONLY: invfft6
-    USE freqbins_module,    ONLY: freqbins_type
-    USE green_module,       ONLY: green_prepare, green_function, green_nonanalytic
-    USE kinds,              ONLY: dp
-    USE sigma_grid_module,  ONLY: sigma_grid_type
+    USE construct_w_module,   ONLY: construct_w
+    USE debug_module,         ONLY: debug_type
+    USE fft6_module,          ONLY: invfft6
+    USE freqbins_module,      ONLY: freqbins_type
+    USE green_module,         ONLY: green_prepare, green_function, green_nonanalytic
+    USE kinds,                ONLY: dp
+    USE select_solver_module, ONLY: select_solver_type
+    USE sigma_grid_module,    ONLY: sigma_grid_type
 
     !> Volume of the unit cell
     REAL(dp),      INTENT(IN)  :: omega
@@ -496,14 +500,8 @@ CONTAINS
     !> Type that defines the custom Fourier transform for Sigma
     TYPE(sigma_grid_type), INTENT(IN) :: grid
 
-    !> If this flag is set, we use the multishift solver
-    LOGICAL,       INTENT(IN)  :: multishift
-
-    !> The l value of the BiCGStab(l) algorithm.
-    INTEGER,       INTENT(IN)  :: lmax
-
-    !> The convergence threshold for the solver.
-    REAL(dp),      INTENT(IN)  :: threshold
+    !> The configuration of the linear solver
+    TYPE(select_solver_type), INTENT(IN) :: config
 
     !> The chemical potential of the system.
     REAL(dp),      INTENT(IN)  :: mu
@@ -624,8 +622,7 @@ CONTAINS
     !! 3. evaluate the Green's function of the system
     !!
     ! after this call, we obtained G(G, G', w)
-    CALL green_function(grid, multishift, lmax, threshold, map, &
-                        num_g, freq_green, green, debug)
+    CALL green_function(grid, config, map, num_g, freq_green, green, debug)
 
     !!
     !! 4. we add the nonanalytic part if on the real axis

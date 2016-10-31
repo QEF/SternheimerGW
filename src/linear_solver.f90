@@ -79,7 +79,10 @@ CONTAINS
 
   !! We use the following algorithm continuously updating the solution and the
   !! residual error of the solution.
-  SUBROUTINE linear_solver(config, AA, bb, sigma, xx)
+  SUBROUTINE linear_solver(config, AA, bb, sigma, xx, ierr)
+
+    USE debug_module, ONLY: test_nan
+    USE io_global,    ONLY: stdout
 
     !> configuration of the linear solver
     TYPE(linear_solver_config), INTENT(INOUT) :: config
@@ -105,6 +108,9 @@ CONTAINS
 
     !> On output: the solution of the linear system
     COMPLEX(dp), INTENT(OUT) :: xx(:,:)
+
+    !> error code to indicate that the solver failed
+    INTEGER,     INTENT(OUT) :: ierr
 
     !> the size of the linear problem
     INTEGER vec_size
@@ -153,10 +159,10 @@ CONTAINS
       DO iter = 1, config%max_iter
 
         !! 3. determine residual for given shift and right-hand sides 
-        CALL linear_solver_residual(config, bb, subspace, residual, conv)
+        CALL linear_solver_residual(config, bb, subspace, residual, conv, ierr)
 
         ! exit the loop once convergence is achieved
-        IF (conv) EXIT
+        IF (conv .OR. ierr /= 0) EXIT
 
         !! 4. apply linear operator to residual vector
         CALL AA(sigma(ishift), residual, new_vector)
@@ -168,12 +174,20 @@ CONTAINS
 
       ! check for convergence
       IF (.NOT.conv) THEN
-        CALL errore(__FILE__, "linear solver did not converge", 1)
+        WRITE(stdout, '(a)') "WARNING: SGW linear solver did not converge"
+        ierr = 1
+        EXIT
       END IF
       
       !! 6. we repeat step 3 - 5 until convergence is achieved, then we determine
       !!    the solution to the linear problem from the subspace information
       CALL linear_solver_obtain_result(config, bb, subspace, xx(:, ishift))
+
+      IF (ANY(test_nan(xx(:, ishift)))) THEN
+        WRITE(stdout, '(a)') "WARNING: SGW linear solver produced at least one NaN"
+        ierr = 2
+        EXIT
+      END IF
 
     END DO ! ishift
 
@@ -303,7 +317,9 @@ CONTAINS
   !! \f}
   !! If the norm of \f$\vert r\rangle\f$ decreases below a given threshold the
   !! calculation is converged.
-  SUBROUTINE linear_solver_residual(config, bb, subspace, residual, conv)
+  SUBROUTINE linear_solver_residual(config, bb, subspace, residual, conv, ierr)
+
+    USE io_global, ONLY: stdout
 
     !> configuration of the linear solver
     TYPE(linear_solver_config),   INTENT(IN)  :: config
@@ -319,6 +335,9 @@ CONTAINS
 
     !> did the residual error converge
     LOGICAL,                      INTENT(OUT) :: conv
+
+    !> error code if the solver failed
+    INTEGER,                      INTENT(OUT) :: ierr
 
     !> the dimensionality of the problem
     INTEGER vec_size
@@ -363,7 +382,10 @@ CONTAINS
     conv = norm < config%abs_threshold
 
     IF (.NOT.conv .AND. vec_size == num_basis) THEN
-      CALL errore(__FILE__, "right-hand side cannot be mapped by complete basis", 1)
+      WRITE(stdout, '(a)') "WARNING: SGW linear solver right-hand side cannot be mapped by complete basis"
+      ierr = 3
+    ELSE
+      ierr = 0
     END IF
 
   END SUBROUTINE linear_solver_residual
