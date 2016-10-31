@@ -17,7 +17,9 @@ bcast_gw_input.o : ../../Modules/mp.o
 bcast_gw_input.o : ../../Modules/mp_world.o
 bcast_gw_input.o : ../../Modules/run_info.o
 bcast_gw_input.o : gwcom.o
+bicgstab.o : ../../Modules/io_global.o
 bicgstab.o : ../../Modules/kind.o
+bicgstab.o : debug.o
 check_initial_status.o : ../../Modules/io_files.o
 check_initial_status.o : ../../Modules/mp.o
 check_initial_status.o : ../../Modules/mp_global.o
@@ -124,12 +126,11 @@ green.o : ../../Modules/uspp.o
 green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : ../../iotk/src/iotk_module.o
-green.o : bicgstab.o
 green.o : debug.o
 green.o : gwcom.o
 green.o : linear_op.o
-green.o : linear_solver.o
 green.o : reorder.o
+green.o : select_solver.o
 green.o : sigma_grid.o
 green.o : sleep.o
 green.o : timing.o
@@ -291,6 +292,7 @@ run_nscf.o : sigma.o
 save_gw_input.o : ../../Modules/io_files.o
 save_gw_input.o : ../../Modules/kind.o
 save_gw_input.o : gwcom.o
+select_solver.o : ../../Modules/kind.o
 setup_nscf.o : ../../LR_Modules/lrcom.o
 setup_nscf.o : ../../Modules/cell_base.o
 setup_nscf.o : ../../Modules/constants.o

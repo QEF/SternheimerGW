@@ -147,10 +147,9 @@ CONTAINS
   !!
   SUBROUTINE green_function(grid, multishift, lmax, threshold, map, num_g, omega, green, debug)
 
-    USE bicgstab_module,      ONLY: bicgstab
     USE debug_module,         ONLY: debug_type, debug_set
     USE kinds,                ONLY: dp
-    USE linear_solver_module, ONLY: linear_solver, linear_solver_config
+    USE select_solver_module, ONLY: select_solver, select_solver_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
     USE timing_module,        ONLY: time_green
 
@@ -204,8 +203,8 @@ CONTAINS
     !> check error in array allocation
     INTEGER ierr
 
-    !> the configuration for the solver in the non-multishift case
-    TYPE(linear_solver_config) config
+    !> the configuration for the solver
+    TYPE(select_solver_type) config
 
     !> complex zero
     COMPLEX(dp), PARAMETER :: zero = 0.0_dp
@@ -249,20 +248,9 @@ CONTAINS
       bb = zero
       bb(ig) = -one
 
-      ! if multishift is set, we solve all frequencies at once
-      IF (multishift) THEN
-
-        ! solve the linear system
-        CALL bicgstab(lmax, threshold, green_operator, bb, -omega, green_part)
-
-      ! without multishift, we solve every frequency separately
-      ELSE
-
-        ! solve the linear system reusing the Krylov subspace
-        config%threshold = threshold
-        CALL linear_solver(config, green_operator, bb, -omega, green_part)
-
-      END IF
+      ! solve the linear problem
+      CALL select_solver(config, green_operator, bb, -omega, green_part, ierr)
+      CALL errore(__FILE__, "the linear solver for G did not converge", ierr)
 
       ! copy from temporary array to output array
       DO ifreq = 1, num_freq

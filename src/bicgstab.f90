@@ -35,7 +35,21 @@ MODULE bicgstab_module
 
   PRIVATE
 
-  PUBLIC bicgstab
+  PUBLIC bicgstab, bicgstab_type
+
+  !> Configuration of the BiCGstab solver
+  TYPE bicgstab_type
+
+    !> the number of MR steps before resetting
+    INTEGER  :: lmax = 4
+
+    !> the convergence threshold
+    REAL(dp) :: threshold = 1e-4_dp
+
+    !> the maximum number of iterations
+    INTEGER  :: max_iter = 10000
+
+  END TYPE bicgstab_type
 
   !> Variables and arrays used for the seed system.
   TYPE seed_system_type
@@ -134,10 +148,13 @@ CONTAINS
   !!
   !! This subroutine implements the *Algorithm 2* of Frommer's paper.
   !!
-  SUBROUTINE bicgstab(lmax, threshold, AA, bb, sigma, xx)
+  SUBROUTINE bicgstab(config, AA, bb, sigma, xx, ierr)
 
-    !> Dimensionality of the GMRES algorithm.
-    INTEGER,     INTENT(IN) :: lmax
+    USE debug_module, ONLY: test_nan
+    USE io_global,    ONLY: stdout
+
+    !> the configuration of the BiCGstab solver
+    TYPE(bicgstab_type), INTENT(IN) :: config
 
     !> Function pointer that applies the linear operator to a vector.
     INTERFACE
@@ -159,11 +176,11 @@ CONTAINS
     !! will be used as seed system. The other ones as shifted systems.
     COMPLEX(dp), INTENT(IN)  :: sigma(:)
 
-    !> Stop when convergence threshold is reached.
-    REAL(dp),    INTENT(IN)  :: threshold
-
     !> On output: the solution of the linear system
     COMPLEX(dp), INTENT(OUT) :: xx(:,:)
+
+    !> error code returned if the solver did not converge
+    INTEGER,     INTENT(OUT) :: ierr
 
     !> Size of the right-hand vector.
     INTEGER vec_size
@@ -173,9 +190,6 @@ CONTAINS
 
     !> Counter for number of iterations.
     INTEGER iter
-
-    !> Maximum number of iterations.
-    INTEGER, PARAMETER :: max_iter = 10000
 
     !> Contains the current best guess for the solution of the linear
     !! system and the corresponding residual in the seed system.
@@ -195,41 +209,43 @@ CONTAINS
       CALL errore(__FILE__, "right-hand side and solution must have same size", 1)
     IF (SIZE(xx, 2) /= SIZE(sigma)) &
       CALL errore(__FILE__, "we need one solution vector per shift for the result", 1)
+    ierr = 0
 
     !
     ! initialization seed system
     !
-    CALL init_seed(lmax, bb, sigma(1), seed_system)
+    CALL init_seed(config%lmax, bb, sigma(1), seed_system)
 
     !
     ! initialization shifted systems
     !
-    CALL init_shift(lmax, vec_size, sigma, shift_system)
+    CALL init_shift(config%lmax, vec_size, sigma, shift_system)
 
     ! loop until solution is found
-    DO iter = 1, max_iter
+    DO iter = 1, config%max_iter
 
       !
       ! perform BiCG part (Algorithm 3)
       !
-      CALL bicg_part(lmax, AA, seed_system, shift_system)
+      CALL bicg_part(config%lmax, AA, seed_system, shift_system)
 
       ! stop loop if result is converged
-      IF (converged(threshold, seed_system%rr(:,0))) EXIT
+      IF (converged(config%threshold, seed_system%rr(:,0))) EXIT
 
       !
       ! perform MR part (Algorithm 4)
       !
-      CALL mr_part(lmax, seed_system, shift_system)
+      CALL mr_part(config%lmax, seed_system, shift_system)
 
       ! stop loop if result is converged
-      IF (converged(threshold, seed_system%rr(:,0))) EXIT
+      IF (converged(config%threshold, seed_system%rr(:,0))) EXIT
 
     END DO ! iter
 
-    IF (iter > max_iter) THEN
-      CALL errore(__FILE__, "BiCGstab algorithm did not converge in given&
-                           & number of iterations", max_iter)
+    IF (iter > config%max_iter) THEN
+      WRITE(stdout, '(a,1x,i0,1x,a)') "WARNING: BiCGstab algorithm did not converge in", &
+                                      config%max_iter, "iterations."
+      ierr = 1
     END IF
 
     !
@@ -239,6 +255,12 @@ CONTAINS
     DO ishift = 2, SIZE(sigma)
       CALL ZCOPY(vec_size, shift_system(ishift - 1)%xx, 1, xx(:,ishift), 1)
     END DO ! ishift
+
+    ! check if output is sane
+    IF (ANY(test_nan(xx))) THEN
+      WRITE(stdout, *) 'WARNING: BiCGstab algorithm resulted in one or more NaN'
+      ierr = 2
+    END IF
 
     !
     ! destroy the allocated array in the types
