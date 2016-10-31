@@ -36,13 +36,13 @@ MODULE select_solver_module
   IMPLICIT NONE
 
   !> use the BiCGstab solver with multishift
-  INTEGER, PARAMETER :: bicgstab_multi = 1
+  INTEGER,  PARAMETER :: bicgstab_multi = 1
 
   !> use the BiCGstab solver without multishift
-  INTEGER, PARAMETER :: bicgstab_no_multi = 2
+  INTEGER,  PARAMETER :: bicgstab_no_multi = 2
 
   !> use the solver specialized for SGW
-  INTEGER, PARAMETER :: sgw_linear_solver = 3
+  INTEGER,  PARAMETER :: sgw_linear_solver = 3
 
   !> configuration of the linear solver
   TYPE select_solver_type
@@ -50,12 +50,23 @@ MODULE select_solver_module
     !> priority in which the linear solvers are chosen
     INTEGER, ALLOCATABLE :: priority(:)
 
+    !> maximum number of iterations allowed
+    INTEGER  :: max_iter = 10000
+
+    !> the convergence threshold
+    REAL(dp) :: threshold = 1e-4
+
+    !> the number of MR steps for BiCGstab
+    INTEGER  :: bicg_lmax = 4
+
   END TYPE select_solver_type
 
 CONTAINS
 
   !> select the linear solver based on user preference and convergence
   SUBROUTINE select_solver(config, AA, bb, sigma, xx, ierr)
+
+    USE bicgstab_module,      ONLY: bicgstab, bicgstab_type
 
     !> configuration of the linear solver
     TYPE(select_solver_type), INTENT(IN) :: config
@@ -88,15 +99,41 @@ CONTAINS
     !> counter on the available linear solvers
     INTEGER isolver
 
+    !> counter on the shifts
+    INTEGER ishift
+
+    !> configuration of the BiCGstab solver
+    TYPE(bicgstab_type) bicgstab_config
+
+    !
+    ! sanity test of the linear solver
+    !
+    IF (.NOT.ALLOCATED(config%priority)) THEN
+      CALL errore(__FILE__, "priority of the solvers not specified", 1)
+    END IF
+
     ! set error code and try solvers until it is cleared
     ierr = 1
     DO isolver = 1, SIZE(config%priority)
 
+      !
+      ! select the next solver in the priority list and solve the linear problem
+      !
       SELECT CASE (config%priority(isolver))
 
       CASE (bicgstab_multi)
+        !
+        ! converge using the BiCGstab solver with multishift
+        bicgstab_config = bicg_config(config)
+        CALL bicgstab(bicgstab_config, AA, bb, sigma, xx, ierr)
 
       CASE (bicgstab_no_multi)
+        !
+        ! converge using the BiCGstab solver without multishift
+        bicgstab_config = bicg_config(config)
+        DO ishift = 1, SIZE(sigma)
+          CALL bicgstab(bicgstab_config, AA, bb, sigma, xx, ierr)
+        END DO ! ishift
 
       CASE (sgw_linear_solver)
 
@@ -108,5 +145,26 @@ CONTAINS
     END DO ! isolver
 
   END SUBROUTINE select_solver
+
+  !> generate the configuration for the BiCGstab solver
+  FUNCTION bicg_config(config)
+
+    USE bicgstab_module, ONLY: bicgstab_type
+
+    !> the general configuration of all linear solvers
+    TYPE(select_solver_type), INTENT(IN) :: config
+
+    !> the particular configuration of the BiCGstab solver
+    TYPE(bicgstab_type) bicg_config
+
+    !
+    ! overwrite the variable in the BiCGstab solver with the ones provided
+    ! in the configuration
+    !
+    bicg_config%max_iter  = config%max_iter
+    bicg_config%threshold = config%threshold
+    bicg_config%lmax      = config%bicg_lmax
+
+  END FUNCTION bicg_config
 
 END MODULE select_solver_module
