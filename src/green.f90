@@ -145,7 +145,7 @@ CONTAINS
   !! where \f$H_k\f$ is the Hamiltonian at a certain k-point, \f$\omega\f$ is
   !! the frequency, and \f$\delta_{G,G'}\f$ is the Kronecker delta.
   !!
-  SUBROUTINE green_function(grid, multishift, lmax, threshold, map, num_g, omega, green, debug)
+  SUBROUTINE green_function(grid, config, map, num_g, omega, green, debug)
 
     USE debug_module,         ONLY: debug_type, debug_set
     USE kinds,                ONLY: dp
@@ -154,16 +154,10 @@ CONTAINS
     USE timing_module,        ONLY: time_green
 
     !> Definition of the FFT grid used for first and second dimension
-    TYPE(sigma_grid_type), INTENT(IN) :: grid
+    TYPE(sigma_grid_type),    INTENT(IN) :: grid
 
-    !> Use the multishift solver to determine the Green's function
-    LOGICAL,     INTENT(IN)  :: multishift
-
-    !> Depth of the GMRES part of the BiCGstab(l) algorithm.
-    INTEGER,     INTENT(IN)  :: lmax
-
-    !> Threshold for the convergence of the linear system.
-    REAL(dp),    INTENT(IN)  :: threshold
+    !> the configuration for the linear solver
+    TYPE(select_solver_type), INTENT(IN) :: config
 
     !> The reverse list from global G vector order to current k-point.
     !! Generate this by a call to create_map in reorder.
@@ -202,9 +196,6 @@ CONTAINS
 
     !> check error in array allocation
     INTEGER ierr
-
-    !> the configuration for the solver
-    TYPE(select_solver_type) config
 
     !> complex zero
     COMPLEX(dp), PARAMETER :: zero = 0.0_dp
@@ -258,7 +249,7 @@ CONTAINS
       END DO ! ifreq
 
       ! debug the solver
-      IF (debug_set) CALL green_solver_debug(omega, threshold, bb, green_part, debug)
+      IF (debug_set) CALL green_solver_debug(omega, config%threshold, bb, green_part, debug)
 
     END DO ! ig
 

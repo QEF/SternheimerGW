@@ -24,28 +24,29 @@ program gw
 !-----------------------------------------------------------------------
 !... This is the main driver of the Sternheimer-GW code.
 !-----------------------------------------------------------------------
-  USE check_stop,        ONLY : check_stop_init
-  USE control_gw,        ONLY : do_sigma_exx, do_sigma_matel, do_coulomb, &
-                                do_sigma_c, do_q0_only, do_imag, output
-  USE debug_module,      ONLY : debug_type
-  USE disp,              ONLY : num_k_pts, w_of_k_start, w_of_k_stop
-  USE environment,       ONLY : environment_start
-  USE exchange_module,   ONLY : exchange_wrapper
-  USE freq_gw,           ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
-                                wsig_wind_min, wsig_wind_max, nwsigwin
-  USE freqbins_module,   ONLY : freqbins, freqbins_type
-  USE gwsigma,           ONLY : nbnd_sig, ecutsco, ecutsex
-  USE input_parameters,  ONLY : max_seconds, force_symmorphic
-  USE io_files,          ONLY : diropn
-  USE io_global,         ONLY : meta_ionode
-  USE mp_global,         ONLY : mp_startup
-  USE pp_output_mod,     ONLY : pp_output_open_all
-  USE run_nscf_module,   ONLY : run_nscf
-  USE sigma_grid_module, ONLY : sigma_grid, sigma_grid_type
-  USE sigma_io_module,   ONLY : sigma_io_close_write
-  USE sigma_module,      ONLY : sigma_wrapper, sigma_config_type
-  USE timing_module,     ONLY : time_setup
-  USE truncation_module, ONLY : vcut_type
+  USE check_stop,           ONLY : check_stop_init
+  USE control_gw,           ONLY : do_sigma_exx, do_sigma_matel, do_coulomb, &
+                                   do_sigma_c, do_q0_only, do_imag, output
+  USE debug_module,         ONLY : debug_type
+  USE disp,                 ONLY : num_k_pts, w_of_k_start, w_of_k_stop
+  USE environment,          ONLY : environment_start
+  USE exchange_module,      ONLY : exchange_wrapper
+  USE freq_gw,              ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
+                                   wsig_wind_min, wsig_wind_max, nwsigwin
+  USE freqbins_module,      ONLY : freqbins, freqbins_type
+  USE gwsigma,              ONLY : nbnd_sig, ecutsco, ecutsex
+  USE input_parameters,     ONLY : max_seconds, force_symmorphic
+  USE io_files,             ONLY : diropn
+  USE io_global,            ONLY : meta_ionode
+  USE mp_global,            ONLY : mp_startup
+  USE pp_output_mod,        ONLY : pp_output_open_all
+  USE run_nscf_module,      ONLY : run_nscf
+  USE select_solver_module, ONLY : select_solver_type
+  USE sigma_grid_module,    ONLY : sigma_grid, sigma_grid_type
+  USE sigma_io_module,      ONLY : sigma_io_close_write
+  USE sigma_module,         ONLY : sigma_wrapper, sigma_config_type
+  USE timing_module,        ONLY : time_setup
+  USE truncation_module,    ONLY : vcut_type
 
   IMPLICIT NONE
 
@@ -60,6 +61,9 @@ program gw
 
   !> stores the FFT grids used in the calculation
   TYPE(sigma_grid_type) grid
+
+  !> stores the configuration of the linear solver for the Green's function
+  TYPE(select_solver_type) config_green
 
   !> stores the truncated Coulomb potential
   TYPE(vcut_type) vcut
@@ -77,7 +81,7 @@ program gw
   call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
   
-  call gwq_readin(freq, vcut, debug)
+  call gwq_readin(config_green, freq, vcut, debug)
   call check_stop_init()
   call check_initial_status()
 ! Initialize frequency grids, FFT grids for correlation
@@ -99,7 +103,7 @@ program gw
          call run_nscf(do_band, do_matel, ik, config)
          call initialize_gw(.FALSE.)
          call stop_clock(time_setup)
-         if (do_sigma_c) call sigma_wrapper(ik, grid, freq, vcut, config, debug)
+         if (do_sigma_c) call sigma_wrapper(ik, grid, config_green, freq, vcut, config, debug)
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
          if (do_sigma_exx) call exchange_wrapper(ik, grid%exch, vcut)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
