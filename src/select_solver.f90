@@ -67,6 +67,8 @@ CONTAINS
   SUBROUTINE select_solver(config, AA, bb, sigma, xx, ierr)
 
     USE bicgstab_module,      ONLY: bicgstab, bicgstab_type
+    USE io_global,            ONLY: stdout
+    USE linear_solver_module, ONLY: linear_solver, linear_solver_config
 
     !> configuration of the linear solver
     TYPE(select_solver_type), INTENT(IN) :: config
@@ -105,6 +107,9 @@ CONTAINS
     !> configuration of the BiCGstab solver
     TYPE(bicgstab_type) bicgstab_config
 
+    !> configuration for the SGW linear solver
+    TYPE(linear_solver_config) sgw_solver_config
+
     !
     ! sanity test of the linear solver
     !
@@ -115,6 +120,11 @@ CONTAINS
     ! set error code and try solvers until it is cleared
     ierr = 1
     DO isolver = 1, SIZE(config%priority)
+
+      ! notify user that a different solver will be tried
+      IF (isolver > 1) THEN
+        WRITE(stdout, '(a)') 'First choice of solver did not converge, try a different one'
+      END IF
 
       !
       ! select the next solver in the priority list and solve the linear problem
@@ -136,6 +146,10 @@ CONTAINS
         END DO ! ishift
 
       CASE (sgw_linear_solver)
+        !
+        ! converge using the SGW linear solver
+        sgw_solver_config = solver_config(config)
+        CALL linear_solver(sgw_solver_config, AA, bb, sigma, xx, ierr)
 
       END SELECT ! solver
 
@@ -166,5 +180,25 @@ CONTAINS
     bicg_config%lmax      = config%bicg_lmax
 
   END FUNCTION bicg_config
+
+  !> generate the configuration for the linear solver
+  FUNCTION solver_config(config)
+
+    USE linear_solver_module, ONLY: linear_solver_config
+
+    !> the general configuration of all linear solvers
+    TYPE(select_solver_type), INTENT(IN) :: config
+
+    !> the particular configuration of the SGW linear solver
+    TYPE(linear_solver_config) solver_config
+
+    !
+    ! overwrite the variable in the linear solver configuration with the
+    ! ones provided in the configuration
+    !
+    solver_config%max_iter  = config%max_iter
+    solver_config%threshold = config%threshold
+
+  END FUNCTION solver_config
 
 END MODULE select_solver_module
