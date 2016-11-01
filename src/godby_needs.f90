@@ -106,4 +106,23 @@ SUBROUTINE godby_needs_coeffs(N, z, u, a)
 
 END SUBROUTINE godby_needs_coeffs
 
+  !> construct the screened Coulomb potential
+  FUNCTION godby_needs_model(freq, coeff) RESULT (res)
+
+    USE kinds,     ONLY: dp
+    USE constants, ONLY: eps8
+
+    !> the frequency at which we want to determine the Coulomb potential
+    COMPLEX(dp), INTENT(IN) :: freq
+
+    !> the strength and position of the pole
+    COMPLEX(dp), INTENT(IN) :: coeff(2)
+
+    !> the Coulomb potential at the given frequency
+    COMPLEX(dp) res
+
+    res = coeff(2) / (freq**2 - coeff(1)**2)
+
+  END FUNCTION godby_needs_model
+
 END MODULE godby_needs_module

@@ -31,11 +31,12 @@ CONTAINS
   !> Construct the screened Coulomb interaction for an arbitrary frequency.
   SUBROUTINE construct_w(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
-    USE control_gw,        ONLY : godbyneeds, padecont
-    USE freqbins_module,   ONLY : freqbins_type
-    USE kinds,             ONLY : dp
-    USE sigma_grid_module, ONLY : sigma_grid_type
-    USE timing_module,     ONLY : time_construct_w
+    USE control_gw,         ONLY : godbyneeds, padecont
+    USE freqbins_module,    ONLY : freqbins_type
+    USE godby_needs_module, ONLY : godby_needs_model
+    USE kinds,              ONLY : dp
+    USE sigma_grid_module,  ONLY : sigma_grid_type
+    USE timing_module,      ONLY : time_construct_w
 
     !> The symmetry map from the irreducible point to the current one
     INTEGER,                  INTENT(IN)  :: gmapsym(:)
@@ -112,7 +113,7 @@ CONTAINS
         ELSE IF (godbyneeds) THEN
           !
           ! Godby-Needs Pole model
-          scrcoul(ig, igp) = coeff(2) / (freq_out**2 - coeff(1)**2)
+          scrcoul(ig, igp) = godby_needs_model(freq_out, coeff)
 
         ELSE
           CALL errore(__FILE__, "No screening model chosen!", 1)
