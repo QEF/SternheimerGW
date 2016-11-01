@@ -45,66 +45,83 @@ MODULE godby_needs_module
 
 CONTAINS
 
-SUBROUTINE godby_needs_coeffs(N, z, u, a)
+  !> evaluate the Godby-Needs coefficients
+  SUBROUTINE godby_needs_coeffs(omega_p, coulomb)
 
-  USE kinds,       ONLY: dp
-  USE constants,   ONLY: eps8
+    USE kinds,     ONLY: dp
+    USE constants, ONLY: eps8
 
-  IMPLICIT NONE
+    !> the Plasmon frequency at which the Coulomb potential is evaluated
+    REAL(dp),    INTENT(IN)    :: omega_p
 
-  INTEGER     :: N
-  COMPLEX(dp) :: z(N), u(N)
-  COMPLEX(dp) :: a(N)
+    !> *on input* the screened Coulomb potential at \f$\omega = 0\f$ and
+    !! \f$\omega = i \omega_{\text{p}}\f$ <br>
+    !! *on output* the Godby-Needs coefficients used to evaluate the
+    !! screened Coulomb potential at different frequencies
+    COMPLEX(dp), INTENT(INOUT) :: coulomb(:,:,:)
 
-  !> complex constant of 0
-  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+    !> constant of 1/2
+    REAL(dp),    PARAMETER :: half = 0.5_dp
 
-  !> large complex number
-  COMPLEX(dp), PARAMETER :: large = CMPLX(10.0_dp, 0.0_dp, KIND=dp)
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
-  !! Instead of a higher order pad\'e approximant to the self energy we just calculate two 
-  !! frequency points one at w = 0 and one at w = i\Omega_{p}. and fit it to the plasmon pole
-  !! model: this is the godby_needs plasmon pole.
-  !! The assumed form of the function is:
-  !! \epsilon^{-1}_{\G,\G'}(\q,\omega) = \frac{A_{GG'(q)}}{\omega - \omegatilde + idelta} -
-  !!                                     \frac{A_{GG'(q)}}{\omega + \omegatilde - idelta}
-  a(:) = zero 
-  !! Currently using the same criterion as in SaX
-  !! this essentially checks if the real part of the pole
-  !! is smaller than the imaginary part of the pole and if so
-  !! kills the pole...
-  !! for inclusion of plasmon pole parameters...
-  !! might be more appropriate to think about the conditions some more.
-  !! this essentially says:
-  !! \sqrt(a + ib) = c + id
-  !! a + ib = c**2 - d**2 +2icd
-  !! if a < 0 :: d > c
-  !! so they kill that pole...
-  !! essentially we cast aside any heavily damped oscillations
-  !! (which would not effect the real part of the selfenergy anyway...
-  !! a(1) = \tilde(\omega) a(2) = R
+    !> counter on the G vectors
+    INTEGER ig, igp
 
-  IF (ABS(REAL(u(1) - u(2))) < eps8) THEN 
-    ! We zero the weight of the pole and place the pole way out
-    ! on the real axis to avoid numerical instability.
-    ! although this isn't really that far out....
-    a(2) = large
-    a(1) = zero
+    !> set the current element to 0
+    LOGICAL set_zero
 
-  ELSE IF (REAL(u(2) / (u(1) - u(2))) < 0.0_dp) THEN
-    ! case for wings having been zerod
-    a(2) = large
-    a(1) = zero 
+    !> complex work variable
+    COMPLEX(dp) work
 
-  ELSE
-    ! \tilde{\omega}:
-    a(2) = z(2) * SQRT(REAL(u(2) / (u(1) - u(2))))
-    !(A_{GG'qq}):
-    a(1) = 0.5 * u(1) * a(2)
+    !
+    ! sanity check of the input
+    !
+    ! plasmon frequency positive
+    IF (omega_p < 0) CALL errore(__FILE__, "plasmon frequency must be positive", 1)
+    !
+    IF (SIZE(coulomb, 3) /= 2) &
+      CALL errore(__FILE__, "must provide exactly 2 frequencies", 1)
 
-  END IF
+    DO igp = 1, SIZE(coulomb, 2)
+      DO ig = 1, SIZE(coulomb, 1)
+        !
+        ! work = W(0) - W(wp)
+        work = coulomb(ig, igp, 1) - coulomb(ig, igp, 2)
+        set_zero = ABS(REAL(work)) < eps8
+        !
+        IF (.NOT.set_zero) THEN
+          !
+          ! work = W(wp) / (W(0) - W(wp))
+          work = coulomb(ig, igp, 2) / work
+          set_zero = REAL(work) < eps8
+          !
+        END IF
+        !
+        IF (.NOT.set_zero) THEN
+          !         _____________
+          !        /    W(wp)
+          ! w~ =  / ------------   wp
+          !      V  W(0) - W(wp)
+          !
+          coulomb(ig, igp, 2) = SQRT(work) * omega_p
+          !     1
+          ! A = - W(0) w~
+          !     2
+          coulomb(ig, igp, 1) = half * coulomb(ig, igp, 1) * coulomb(ig, igp, 2)
+          !
+        ELSE
+          !
+          coulomb(ig, igp, 1) = zero
+          coulomb(ig, igp, 2) = zero
+          !
+        END IF
+        !
+      END DO ! ig
+    END DO ! igp
 
-END SUBROUTINE godby_needs_coeffs
+  END SUBROUTINE godby_needs_coeffs
 
   !> construct the screened Coulomb potential
   FUNCTION godby_needs_model(freq, coeff) RESULT (res)
@@ -121,13 +138,22 @@ END SUBROUTINE godby_needs_coeffs
     !> the Coulomb potential at the given frequency
     COMPLEX(dp) res
 
-    !> constant of 1
-    REAL(dp), PARAMETER :: one = 1.0_dp
+    !> complex constant of 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
     !          A        A
     ! W(w) = ------ - ------
     !        w + w~   w - w~
-    res = coeff(1) * (one / (freq + coeff(2)) - one / (freq - coeff(2)))
+    IF (ABS(coeff(1)) > eps8) THEN
+      !
+      res = coeff(1) * (one / (freq + coeff(2)) - one / (freq - coeff(2)))
+      !
+    ELSE
+      res = zero
+    END IF
 
   END FUNCTION godby_needs_model
 
