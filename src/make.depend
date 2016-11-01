@@ -62,6 +62,7 @@ coulomb_q0G0.o : solve_linter.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
+coulpade.o : godby_needs.o
 coulpade.o : gwcom.o
 coulpade.o : truncation.o
 deallocate_gwq.o : ../../LR_Modules/lrcom.o

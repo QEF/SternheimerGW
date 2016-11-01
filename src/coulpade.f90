@@ -22,12 +22,13 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
 
-  USE cell_base,         ONLY : tpiba
-  USE control_gw,        ONLY : godbyneeds, padecont, modielec, truncation
-  USE freq_gw,           ONLY : fiu, nfs
-  USE gvect,             ONLY : g
-  USE kinds,             ONLY : DP
-  USE truncation_module, ONLY : truncate, vcut_type
+  USE cell_base,          ONLY : tpiba
+  USE control_gw,         ONLY : godbyneeds, padecont, modielec, truncation
+  USE freq_gw,            ONLY : fiu, nfs
+  USE godby_needs_module, ONLY : godby_needs_coeffs
+  USE gvect,              ONLY : g
+  USE kinds,              ONLY : DP
+  USE truncation_module,  ONLY : truncate, vcut_type
 
   IMPLICIT NONE
 

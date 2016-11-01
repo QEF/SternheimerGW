@@ -20,6 +20,31 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> Implements the Godby-Needs Plasmon pole model.
+!!
+!! The plasmon pole is defined as
+!! \f{equation}{
+!!   W_{GG'}(\omega) = \frac{A_{GG'}}{\omega + \tilde \omega_{GG'}} 
+!!                   - \frac{A_{GG'}}{\omega - \tilde \omega_{GG'}}
+!! \f}
+!! Godby and Needs suggested to fit this to the values evaluated at two
+!! frequencies \f$\omega = 0\f$ and \f$\omega = i \omega_{\text{p}}\f$. Then
+!! we can determine the constants
+!! \f{equation}{
+!!   A_{GG'} = \frac12 W_{GG'}(0) \tilde \omega
+!! \f}
+!! and
+!! \f{equation}{
+!!   \tilde\omega_{GG'} = \sqrt{
+!!     \frac{W_{GG'}(\omega_{\text{p}})}{W_{GG'}(0) - W_{GG'}(\omega_{\text{p}})]}
+!!   } \omega_{\text{p}}~.
+!! \f}
+MODULE godby_needs_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
 SUBROUTINE godby_needs_coeffs(N, z, u, a)
 
   USE kinds,       ONLY: dp
@@ -80,3 +105,5 @@ SUBROUTINE godby_needs_coeffs(N, z, u, a)
   END IF
 
 END SUBROUTINE godby_needs_coeffs
+
+END MODULE godby_needs_module
