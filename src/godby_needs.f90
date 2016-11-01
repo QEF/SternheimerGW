@@ -88,19 +88,19 @@ SUBROUTINE godby_needs_coeffs(N, z, u, a)
     ! We zero the weight of the pole and place the pole way out
     ! on the real axis to avoid numerical instability.
     ! although this isn't really that far out....
-    a(1) = large
-    a(2) = zero
+    a(2) = large
+    a(1) = zero
 
   ELSE IF (REAL(u(2) / (u(1) - u(2))) < 0.0_dp) THEN
     ! case for wings having been zerod
-    a(1) = large
-    a(2) = zero 
+    a(2) = large
+    a(1) = zero 
 
   ELSE
     ! \tilde{\omega}:
-    a(1) = z(2) * SQRT(REAL(u(2) / (u(1) - u(2))))
+    a(2) = z(2) * SQRT(REAL(u(2) / (u(1) - u(2))))
     !(A_{GG'qq}):
-    a(2) = -u(1) * a(1)**2
+    a(1) = 0.5 * u(1) * a(2)
 
   END IF
 
@@ -121,7 +121,13 @@ END SUBROUTINE godby_needs_coeffs
     !> the Coulomb potential at the given frequency
     COMPLEX(dp) res
 
-    res = coeff(2) / (freq**2 - coeff(1)**2)
+    !> constant of 1
+    REAL(dp), PARAMETER :: one = 1.0_dp
+
+    !          A        A
+    ! W(w) = ------ - ------
+    !        w + w~   w - w~
+    res = coeff(1) * (one / (freq + coeff(2)) - one / (freq - coeff(2)))
 
   END FUNCTION godby_needs_model
 
