@@ -4,6 +4,8 @@ Release notes
 on develop
 ----------
 
+Rewrite of the Godby-Needs plasmon pole to work for real frequency integration.
+
 Dynamically change the linear solver if the first choice of the solver does
 not converge. Change the linear solver to return error codes and switch to
 a different solver if nonzero error code is returned.

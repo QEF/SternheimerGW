@@ -379,7 +379,7 @@ CONTAINS
 
             ! add nonanalytic part to Green's function
             ! 2 pi i f_n u_n*(G) u_n(G') delta
-            green(ig, igp, ifreq) = green(ig, igp, ifreq) + c2PiI * occupation(iband) &
+            green(igmt, igpmt, ifreq) = green(igmt, igpmt, ifreq) + c2PiI * occupation(iband) &
               * CONJG(evec(map(ig), iband)) * evec(map(igp), iband) * lorentzian
 
           END DO ! ig
