@@ -126,8 +126,9 @@ CONTAINS
   !> construct the screened Coulomb potential
   FUNCTION godby_needs_model(freq, coeff) RESULT (res)
 
-    USE kinds,     ONLY: dp
-    USE constants, ONLY: eps8
+    USE kinds,      ONLY: dp
+    USE constants,  ONLY: eps8
+    USE control_gw, ONLY: do_imag
 
     !> the frequency at which we want to determine the Coulomb potential
     COMPLEX(dp), INTENT(IN) :: freq
@@ -145,11 +146,15 @@ CONTAINS
     COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
     !          A        A
-    ! W(w) = ------ - ------
-    !        w + w~   w - w~
+    ! W(w) = ------ + ------
+    !        w~ + w   w~ - w
     IF (ABS(coeff(1)) > eps8) THEN
       !
-      res = coeff(1) * (one / (freq + coeff(2)) - one / (freq - coeff(2)))
+      IF (do_imag) THEN
+        res = coeff(1) * (one / (coeff(2) + freq) + one / (coeff(2) - freq))
+      ELSE
+        res = coeff(1) * (one / (coeff(2) + freq) + one / (coeff(2) - CONJG(freq)))
+      END IF
       !
     ELSE
       res = zero
