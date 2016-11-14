@@ -39,7 +39,7 @@ The following SGW features are tested in this suite
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 
-Test case: sgw\_si\_im\_dir
+Test case: sgw\_si
 ------------------------
 
 Evaluate the GW correction for Si using the direct solver, imaginary frequency
