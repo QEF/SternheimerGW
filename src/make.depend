@@ -120,6 +120,7 @@ gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
+godby_needs.o : gwcom.o
 gram_schmidt.o : ../../Modules/kind.o
 green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
@@ -415,9 +416,9 @@ solve_linter.o : ../../Modules/uspp.o
 solve_linter.o : ../../Modules/wavefunctions.o
 solve_linter.o : ../../PW/src/buffers.o
 solve_linter.o : ../../PW/src/pwcom.o
-solve_linter.o : bicgstab.o
 solve_linter.o : gwcom.o
 solve_linter.o : linear_op.o
+solve_linter.o : select_solver.o
 solve_linter.o : timing.o
 star_q.o : ../../Modules/io_global.o
 star_q.o : ../../Modules/kind.o
