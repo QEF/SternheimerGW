@@ -77,7 +77,7 @@ compare-sgw :
 
 clean:
 	@for x in `find sgw_* -name "test*"`; do rm -rf $$x; done
-	@for x in `ls -d sgw_*`; do rm -rf $$x/tmp; done
+	@for x in `ls -d sgw_*`; do rm -rf $$x/tmp; rm -f $$x/fort.1000; done
 	@rm -rf out.SGW.*
 
 # Calling 'purge' means remove all reference outputs... be careful!

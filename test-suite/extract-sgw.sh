@@ -91,7 +91,16 @@ then
   i=0
   for line in $line_re_sig
   do
+    # add new line character after first element
+    if (( i > 0 ))
+    then
+      re_sig="$re_sig\n"
+      im_sig="$im_sig\n"
+      spec="$spec\n"
+    fi
+
     (( i++ ))
+
     # determine number of frequencies
     num_line=$(echo $line_im_sig | awk "{ split(\$0, arr); print arr[$i] - $line - 2 }")
 
@@ -120,17 +129,17 @@ then
   if [[ $re_sig != "" ]]
   then
     echo "re_sig"
-    echo "$re_sig"
+    echo -e "$re_sig"
   fi
   if [[ $im_sig != "" ]]
   then
     echo "im_sig"
-    echo "$im_sig"
+    echo -e "$im_sig"
   fi
   if [[ $spec != "" ]]
   then
     echo "spec"
-    echo "$spec"
+    echo -e "$spec"
   fi
 
   # maximum number of lines to read
