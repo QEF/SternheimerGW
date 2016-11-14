@@ -1,0 +1,29 @@
+diamond scf calculation
+&control
+    calculation  = 'scf'
+    prefix       = 'diamond'
+    outdir       = './tmp'
+    wf_collect   = .true.
+/
+
+&system
+    ibrav        = 2
+    celldm(1)    = 6.74
+    nat          = 2
+    ntyp         = 1
+    ecutwfc      = 27.0
+    force_symmorphic = .true.
+/
+
+&electrons
+    conv_thr =  1.0d-8
+/
+ATOMIC_SPECIES
+ C   12.0107  C.pz-vbc.UPF
+
+ATOMIC_POSITIONS (alat)
+ C  0.00 0.00 0.00
+ C  0.25 0.25 0.25
+
+K_POINTS AUTOMATIC
+ 2 2 2 0 0 0
