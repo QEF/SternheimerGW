@@ -24,7 +24,7 @@
 !!
 !! The exchange self energy is defined as
 !! \f{equation}{
-!!   \Sigma_k^{\text{x}}(G, G') = \sum_{nq} w_{nk-q} \langle k + G, n k - q \lvert 
+!!   \Sigma_k^{\text{x}}(G, G') = -\sum_{nq} w_{nk-q} \langle k + G, n k - q \lvert 
 !!   V \rvert n k - q, k + G'\rangle~,
 !! \f}
 !! where \f$\lvert k + G\rangle\f$ is a plane wave, \f$\lvert n k\rangle\f$
@@ -37,11 +37,11 @@
 !!
 !! To evaluate this equation, we expand the eigenstates in the plane wave basis
 !! \f{equation}{
-!!   \lvert n k \rangle = \sum_{G} c_{nk}(G) \lvert k + H \rangle~.
+!!   \lvert n k \rangle = \sum_{G} c_{nk}(G) \lvert k + G \rangle~.
 !! \f}
 !! This leads to the following expression for the self-energy
 !! \f{equation}{
-!!   \Sigma_k^{\text{x}}(G, G') = \sum_{nq} w_{nk-q} \sum_{G_1 G_2} c^\ast_{nk-q}(G_1) c_{nk-q}(G_2)
+!!   \Sigma_k^{\text{x}}(G, G') = -\sum_{nq} w_{nk-q} \sum_{G_1 G_2} c^\ast_{nk-q}(G_1) c_{nk-q}(G_2)
 !!   \langle k + G, k - q + G_1 \lvert V \rvert k - q + G_2, k + G'\rangle~.
 !! \f}
 !! We can evaluate the exchange integral in the basis of plane waves
@@ -53,7 +53,7 @@
 !! Introducing \f$G'' = G - G_2\f$ and resolving the summation over \f$G_1\f$ with the
 !! \f$\delta\f$ function yields
 !! \f{equation}{
-!!   \Sigma_k^{\text{x}}(G, G') = \sum_{nq} w_{nk-q} \sum_{G''}
+!!   \Sigma_k^{\text{x}}(G, G') = -\frac{1}{\Omega} \sum_{nq} w_{nk-q} \sum_{G''}
 !!     c^\ast_{nk-q}(G' - G'') c_{nk-q}(G - G'') V_q(G'')~.
 !! \f}
 MODULE exchange_module
@@ -74,7 +74,7 @@ CONTAINS
   !! The individual parts of the exchange self-energy are given as
   !! \f{equation}{
   !!   \Sigma_{k,q}^{\text{x}} = w_{nk-q} \sum_{G''}V_q(G'') 
-  !!   c_{nk-q}^\ast(G - G'') c_{nk-q}(G' - G'')~.
+  !!   c_{nk-q}^\ast(G' - G'') c_{nk-q}(G - G'')~.
   !! \f}
   !! This routine adds the current element to the previously calculated ones,
   !! so that the array contains the sum over all \w$(nq)\f$ in the end.
@@ -139,9 +139,9 @@ CONTAINS
           g_gpp = map(ig, igpp)
           IF (g_gpp == out_of_bound) CYCLE
           !
-          ! sigma -= w_{nk-q} V_q(G'') c*_nk-q(G - G'') c_nk-q(G' - G'')
+          ! sigma -= w_{nk-q} V_q(G'') c*_nk-q(G' - G'') c_nk-q(G - G'')
           sigma(ig, igp) = sigma(ig, igp) - occupation * coulomb(igpp) &
-                                          * CONJG(evec(g_gpp)) * evec(gp_gpp)
+                                          * CONJG(evec(gp_gpp)) * evec(g_gpp)
           !
         END DO ! ig
       END DO ! igp

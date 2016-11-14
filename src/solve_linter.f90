@@ -55,7 +55,7 @@ CONTAINS
 SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
 !-----------------------------------------------------------------------------
 
-  USE bicgstab_module,      ONLY : bicgstab
+  USE bicgstab_module,      ONLY : bicgstab, bicgstab_type
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : eps14
@@ -167,6 +167,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   !> helper variable - length of array in BLAS routines
   INTEGER vec_size
 
+  !> error code returned by the solver
+  INTEGER ierr
+
   !> Change of the potential for e +- w
   !! first dimension  - number of G vector
   !! second dimension - number of bands
@@ -192,6 +195,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
 
   !> norm of the change of the linear response
   REAL(dp) dr2
+
+  !> the configuration of the BiCGstab solver
+  TYPE(bicgstab_type) config
 
   !> complex value of 0
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
@@ -352,10 +358,13 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
         ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
         !
         ! use the BiCGstab solver
+        config%lmax = lmax_gw
+        config%threshold = thresh
         !
         DO ibnd = 1, nbnd_occ(ik)
-          CALL bicgstab(lmax_gw, thresh, coulomb_operator, dvpsi(:npwq, ibnd), &
-                        -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :))
+          CALL bicgstab(config, coulomb_operator, dvpsi(:npwq, ibnd), &
+                        -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :), ierr)
+          CALL errore(__FILE__, "solver did not converge", ierr)
         END DO ! ibnd
         !
       ELSE ! general case iter > 1
@@ -400,6 +409,8 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
           ! threshold for iterative solution of the linear system
           !
           thresh = MIN(1.d-1 * SQRT(dr2), 1.d-2)
+          config%lmax = lmax_gw
+          config%threshold = thresh
           !
           ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
           ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
@@ -416,15 +427,17 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
           DO ibnd = 1, nbnd_occ(ik)
             !
             ! solve +omega
-            CALL bicgstab(lmax_gw, thresh, coulomb_operator, dvpsi(:npwq, ibnd), &
-                          -(et(ibnd, ikk) + omega(ifreq:ifreq)),                 &
-                          dpsi(:npwq, ibnd, ifreq:ifreq))
+            CALL bicgstab(config, coulomb_operator, dvpsi(:npwq, ibnd), &
+                          -(et(ibnd, ikk) + omega(ifreq:ifreq)),        &
+                          dpsi(:npwq, ibnd, ifreq:ifreq), ierr)
+            CALL errore(__FILE__, "solver did not converge", ierr)
             !
             ! solve -omega
             IF (.NOT.zero_freq .OR. ifreq > 1) THEN
-              CALL bicgstab(4, thresh, coulomb_operator, dvpsi(:npwq, ibnd), &
-                            et(ibnd, ikk) + omega(iomega:iomega),            &
-                            dpsi(:npwq, ibnd, iomega:iomega))
+              CALL bicgstab(config, coulomb_operator, dvpsi(:npwq, ibnd), &
+                            et(ibnd, ikk) + omega(iomega:iomega),         &
+                            dpsi(:npwq, ibnd, iomega:iomega), ierr)
+              CALL errore(__FILE__, "solver did not converge", ierr)
             END IF
             !
           END DO ! ibnd

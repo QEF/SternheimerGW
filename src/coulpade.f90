@@ -22,12 +22,13 @@
 !------------------------------------------------------------------------------ 
 SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
 
-  USE cell_base,         ONLY : tpiba
-  USE control_gw,        ONLY : godbyneeds, padecont, modielec, truncation
-  USE freq_gw,           ONLY : fiu, nfs
-  USE gvect,             ONLY : g
-  USE kinds,             ONLY : DP
-  USE truncation_module, ONLY : truncate, vcut_type
+  USE cell_base,          ONLY : tpiba
+  USE control_gw,         ONLY : godbyneeds, padecont, modielec, truncation
+  USE freq_gw,            ONLY : fiu, nfs
+  USE godby_needs_module, ONLY : godby_needs_coeffs
+  USE gvect,              ONLY : g
+  USE kinds,              ONLY : DP
+  USE truncation_module,  ONLY : truncate, vcut_type
 
   IMPLICIT NONE
 
@@ -60,22 +61,11 @@ SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
        enddo!nfs
   endif
     if(.not.modielec) THEN
-        if(godbyneeds) THEN
-          do ig = 1, num_g_corr
-            do igp = 1, num_g_corr 
-!For godby-needs plasmon pole the algebra is done assuming real frequency*i.
-!that is: the calculation is done at i*wp but we pass a real number as the freq.
-               do iw = 1, nfs
-                  z(iw) = cmplx(aimag(fiu(iw)), 0.0_dp, kind=dp)
-                  u(iw) = scrcoul_g(ig, igp, iw)
-               enddo
-               call godby_needs_coeffs(nfs, z, u, a)
-               do iw = 1, nfs 
-!Just overwrite scrcoul_g with godby-needs coefficients.
-                  scrcoul_g (ig, igp, iw) = a(iw)
-               enddo
-          enddo
-         enddo
+       IF (godbyneeds) THEN
+         !
+         ! fit the screened Coulomb potential to Plasmon pole model
+         CALL godby_needs_coeffs(AIMAG(fiu(2)), scrcoul_g)
+         !
        else if (padecont) THEN
          do igp = 1, num_g_corr
           do ig = 1, num_g_corr

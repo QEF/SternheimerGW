@@ -58,6 +58,7 @@ q_points.o\
 reorder.o\
 run_nscf.o\
 save_gw_input.o\
+select_solver.o\
 setup_nscf.o\
 setup_nscf_green.o\
 sgw_opening.o\

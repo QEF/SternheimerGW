@@ -4,6 +4,12 @@ Release notes
 on develop
 ----------
 
+Rewrite of the Godby-Needs plasmon pole to work for real frequency integration.
+
+Dynamically change the linear solver if the first choice of the solver does
+not converge. Change the linear solver to return error codes and switch to
+a different solver if nonzero error code is returned.
+
 Add G parallelization to the second index in the convolution of G and W. This
 is more expensive, because the FFT now requires communication, but the only
 solution to calculate large memory systems. In the new approach the memory
@@ -18,6 +24,14 @@ Add the debug module that allows to set debugging options. If the code is
 compiled with the __DEBUG flag it will examine the requested parts in more
 detail. The only current option is to check (H - w) G = -delta. The unit
 test can be used to investigate the behavior of the linear problem.
+
+Version 0.10.1
+--------------
+
+Bugfix to make systems without inversion symmetry work. There where some arrays
+that were the complex conjugate of the correct value, which did not matter with
+inversion symmetry but resulted in incorrect results for systems without it.
+> compatible QE version 6.0 revision 13079
 
 Version 0.10
 ------------
