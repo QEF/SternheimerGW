@@ -38,6 +38,7 @@ The following SGW features are tested in this suite
 * overcome the divergence of the Coulomb potential with spherical truncation
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
+* restart from previously calculated W
 
 Test case: sgw\_si
 ------------------------
@@ -56,3 +57,4 @@ The following SGW features are tested by this case
 * overcome the divergence of the Coulomb potential with spherical truncation
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
+* restart from previously calculated W

@@ -23,7 +23,7 @@
 
 [sgw_si/]
 program = SGW
-inputs_args = ('scf.in', ''), ('gw.in' ,'')
+inputs_args = ('scf.in', ''), ('gw.in' ,''), ('x.gw.in', '')
 
 [sgw_*/]
 program = SGW
