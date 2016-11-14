@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_readin(config_green, freq, vcut, debug)
+SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !----------------------------------------------------------------------------
   !
   !    This routine reads the control variables for the program GW.
@@ -75,14 +75,16 @@ SUBROUTINE gwq_readin(config_green, freq, vcut, debug)
   USE qpoint,               ONLY : nksq, xq
   USE run_info,             ONLY : title
   USE save_gw,              ONLY : tmp_dir_save
-  USE select_solver_module, ONLY : select_solver_type, bicgstab_multi, bicgstab_no_multi, &
-                                   sgw_linear_solver
+  USE select_solver_module, ONLY : select_solver_type, bicgstab_multi, sgw_linear_solver
   USE start_k,              ONLY : reset_grid
   USE truncation_module
   USE wrappers,             ONLY : f_mkdir_safe
   !
   !
   IMPLICIT NONE
+  !
+  !> We store the configuration for the linear solver for W.
+  TYPE(select_solver_type), INTENT(OUT) :: config_coul
   !
   !> We store the configuration for the linear solver for G.
   TYPE(select_solver_type), INTENT(OUT) :: config_green
@@ -105,7 +107,10 @@ SUBROUTINE gwq_readin(config_green, freq, vcut, debug)
   !> constant indicating unset priority
   INTEGER, PARAMETER :: no_solver = 0
   !
-  !> the priority of the various solvers
+  !> the priority of the various solvers for the screened Coulomb interaction
+  INTEGER priority_coul(10)
+  !
+  !> the priority of the various solvers for the Green's function
   INTEGER priority_green(10)
   !
   !> number of nontrivial priorities
@@ -164,7 +169,7 @@ SUBROUTINE gwq_readin(config_green, freq, vcut, debug)
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
-                       wsigmamax, wcoulmax, nwsigma, priority_green, &
+                       wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, &
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
@@ -231,8 +236,11 @@ SUBROUTINE gwq_readin(config_green, freq, vcut, debug)
   tr2_green    = 1.D-3
   lmax_gw      = 4
   lmax_green   = 4
-  priority_green(1) = bicgstab_multi
-  priority_green(2) = sgw_linear_solver
+  priority_coul(1)   = bicgstab_multi
+  priority_coul(2)   = sgw_linear_solver
+  priority_coul(3:)  = no_solver
+  priority_green(1)  = bicgstab_multi
+  priority_green(2)  = sgw_linear_solver
   priority_green(3:) = no_solver
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
@@ -666,14 +674,39 @@ SUBROUTINE gwq_readin(config_green, freq, vcut, debug)
   !
   ! setup the linear solver
   !
+  config_coul%max_iter = maxter_coul
+  config_coul%threshold = tr2_gw
+  config_coul%bicg_lmax = lmax_gw
   config_green%max_iter = maxter_green
   config_green%threshold = tr2_green
+  config_green%bicg_lmax = lmax_green
   !
+  ! setup priority for Coulomb solver
+  CALL mp_bcast(priority_coul, meta_ionode_id, world_comm)
+  num_priority = COUNT(priority_coul /= no_solver)
+  !
+  IF (num_priority == 0) THEN
+    CALL errore(__FILE__, "priority for Coulomb solver not specified", 1)
+  END IF
+  !
+  ALLOCATE(config_coul%priority(num_priority))
+  ipriority = 0
+  !
+  DO i = 1, SIZE(priority_coul)
+    !
+    IF (priority_coul(i) /= no_solver) THEN
+      ipriority = ipriority + 1
+      config_coul%priority(ipriority) = priority_coul(i)
+    END IF
+    !
+  END DO ! i
+  !
+  ! setup priority for Green's solver
   CALL mp_bcast(priority_green, meta_ionode_id, world_comm)
   num_priority = COUNT(priority_green /= no_solver)
   !
   IF (num_priority == 0) THEN
-    CALL errore(__FILE__, "priority for solvers not specified", 1)
+    CALL errore(__FILE__, "priority for Green solver not specified", 1)
   END IF
   !
   ALLOCATE(config_green%priority(num_priority))

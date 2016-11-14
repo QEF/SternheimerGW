@@ -52,14 +52,13 @@ CONTAINS
 !! 4. calls c_bi_cgsolve_all to solve the linear system
 !! 5. computes Delta rho, Delta V_{SCF}.
 !----------------------------------------------------------------------------
-SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
+SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
 !-----------------------------------------------------------------------------
 
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : eps14
-  USE control_gw,           ONLY : nmix_gw, tr2_gw, lmax_gw, &
-                                   lgamma, convt, nbnd_occ, alpha_mix
+  USE control_gw,           ONLY : nmix_gw, tr2_gw, lgamma, convt, nbnd_occ, alpha_mix
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
@@ -84,6 +83,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k
 
   IMPLICIT NONE
+
+  !> the configuration of the linear solver
+  TYPE(select_solver_type), INTENT(IN) :: config_global
 
   !> number of iterations - use 1 to choose the direct solver
   INTEGER,     INTENT(IN)  :: num_iter
@@ -196,8 +198,8 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   !> norm of the change of the linear response
   REAL(dp) dr2
 
-  !> the configuration of the linear solver
-  TYPE(select_solver_type) config
+  !> local copy of the configuration of the linear solver
+  TYPE(select_solver_type) :: config
 
   !> complex value of 0
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
@@ -210,17 +212,15 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
 
   CALL start_clock (time_coul_solver)
 
-  ! set solver configuration
-  ALLOCATE(config%priority(2))
-  config%priority(1) = 1
-  config%priority(2) = 3
-
   ! determine number of frequencies
   num_freq = SIZE(freq)
   zero_freq = ABS(freq(1)) < eps14
 
   ! use the direct solver
   direct_solver = num_iter == 1
+
+  ! create local copy of the configuration of the linear solver
+  config = config_global
 
   !
   ! sanity test of input
@@ -348,7 +348,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
           !
           ! for the direct solver, we start with the actual threshold
           !
-          thresh = tr2_gw
+          thresh = config_global%threshold
           !
         ELSE
           !
