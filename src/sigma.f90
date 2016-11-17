@@ -142,7 +142,7 @@ CONTAINS
     USE cell_base,            ONLY: omega
     USE constants,            ONLY: tpi
     USE control_gw,           ONLY: output, tmp_dir_coul
-    USE debug_module,         ONLY: debug_type, debug_set, testnan
+    USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
     USE freqbins_module,      ONLY: freqbins_type
@@ -334,7 +334,7 @@ CONTAINS
         !
         ! check if any NaN occured in coulpade
         IF (debug_sigma) THEN
-          IF (ANY(testnan(coulomb))) THEN
+          IF (ANY(test_nan(coulomb))) THEN
             CALL errore(__FILE__, 'Found a NaN in Coulomb after analytic continuation', iq)
           END IF
         END IF
@@ -499,7 +499,7 @@ CONTAINS
                                gmapsym, coulomb, sigma, debug)
 
     USE construct_w_module,   ONLY: construct_w
-    USE debug_module,         ONLY: debug_type, debug_set, testnan
+    USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE fft6_module,          ONLY: invfft6
     USE freqbins_module,      ONLY: freqbins_type
     USE green_module,         ONLY: green_prepare, green_function, green_nonanalytic
@@ -651,7 +651,7 @@ CONTAINS
 
     ! check for NaN in Green's function
     IF (debug_sigma) THEN
-      IF (ANY(testnan(green))) THEN
+      IF (ANY(test_nan(green))) THEN
         CALL errore(__FILE__, "Green's function contains NaN in reciprocal space", ikq)
       END IF
     END IF
@@ -667,7 +667,7 @@ CONTAINS
 
     ! check for NaN in Green's function
     IF (debug_sigma) THEN
-      IF (ANY(testnan(green))) THEN
+      IF (ANY(test_nan(green))) THEN
         CALL errore(__FILE__, "Green's function contains NaN in real space", ikq)
       END IF
     END IF
@@ -687,7 +687,7 @@ CONTAINS
         !
         ! check for NaN in screened Coulomb
         IF (debug_sigma) THEN
-          IF (ANY(testnan(work))) THEN
+          IF (ANY(test_nan(work))) THEN
             CALL errore(__FILE__, "screened Coulomb interaction contains NaN", igreen)
           END IF
         END IF
@@ -701,7 +701,7 @@ CONTAINS
         !
         ! check for NaN after convolution
         IF (debug_sigma) THEN
-          IF (ANY(testnan(work))) THEN
+          IF (ANY(test_nan(work))) THEN
             CALL errore(__FILE__, "convolution of G and W introduced NaN", igreen)
           END IF
         END IF
