@@ -40,6 +40,9 @@ MODULE debug_module
     !> debug linear solver for the Green's function
     LOGICAL :: solver_green = .FALSE.
 
+    !> debug correlation self energy
+    LOGICAL :: sigma_corr = .FALSE.
+
     !> the unit into which the debug log is written
     INTEGER :: note = 6
 

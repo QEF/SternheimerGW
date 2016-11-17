@@ -120,6 +120,7 @@ gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
+godby_needs.o : gwcom.o
 gram_schmidt.o : ../../Modules/kind.o
 green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
