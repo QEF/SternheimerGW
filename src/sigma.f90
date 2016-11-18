@@ -410,8 +410,9 @@ CONTAINS
   !! The product is evaluated in real space. Because the Green's function can
   !! be used for several W values, we expect that the Green's function is
   !! already transformed to real space by the calling routine.
-  SUBROUTINE sigma_prod(omega, grid, alpha, green, array)
+  SUBROUTINE sigma_prod(omega, grid, alpha, green, array, debug)
 
+    USE debug_module,      ONLY: debug_type, debug_set, test_nan
     USE fft6_module,       ONLY: invfft6, fwfft6
     USE kinds,             ONLY: dp
     USE sigma_grid_module, ONLY: sigma_grid_type
@@ -433,6 +434,9 @@ CONTAINS
     !! *on output* the self-energy with both indices in reciprocal space
     COMPLEX(dp),   INTENT(INOUT) :: array(:,:)
 
+    !> the debug configuration of the calculation
+    TYPE(debug_type), INTENT(IN) :: debug
+
     !> the number of points in real space
     INTEGER num_r, num_rp
 
@@ -442,6 +446,9 @@ CONTAINS
     !> counter on G vectors
     INTEGER ig
 
+    !> debug the convolution of G and W
+    LOGICAL debug_sigma
+
     CALL start_clock(time_GW_product)
 
     ! determine the helper variables
@@ -449,6 +456,7 @@ CONTAINS
     num_rp = grid%corr_par%dfftt%nnr
     num_g  = grid%corr%ngmt
     num_gp = grid%corr_par%ngmt
+    debug_sigma = debug_set .AND. debug%sigma_corr
 
     !
     ! sanity check of the input
@@ -461,6 +469,8 @@ CONTAINS
       CALL errore(__FILE__, "size of array inconsistent with G-vector FFT definition", 1)
     IF (SIZE(array, 2) /= num_rp) &
       CALL errore(__FILE__, "size of array inconsistent with G'-vector FFT definition", 1)
+    IF (test_nan(alpha)) &
+      CALL errore(__FILE__, "prefactor of the convolution is NaN", 1)
 
     !!
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
@@ -468,6 +478,12 @@ CONTAINS
     ! array contains W(r, r')
     CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
                  grid%corr%nlt, grid%corr_par%nlt, omega)
+    ! check for NaN after FFT
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(array))) THEN
+        CALL errore(__FILE__, "FFT of W resulted in NaN", 1)
+      END IF
+    END IF
 
     !!
     !! 2. We evaluate the product in real space 
@@ -475,6 +491,12 @@ CONTAINS
     !!
     ! array contains Sigma(r, r') / alpha
     array = green * array
+    ! check for NaN after multiplication
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(array))) THEN
+        CALL errore(__FILE__, "G * W produced a NaN", 1)
+      END IF
+    END IF
 
     !!
     !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
@@ -482,6 +504,12 @@ CONTAINS
     !. array contains Sigma(G, G') / alpha
     CALL fwfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
                 grid%corr%nlt, grid%corr_par%nlt, omega)
+    ! check for NaN after the FFT
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(array(:num_g, :num_gp)))) THEN
+        CALL errore(__FILE__, "FFT of Sigma resulted in NaN", 1)
+      END IF
+    END IF
 
     !! 4. We multiply with the prefactor \f$\alpha\f$.
     DO ig = 1, num_gp
@@ -697,11 +725,11 @@ CONTAINS
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
         ! work will contain Sigma(G, G', wS)
-        CALL sigma_prod(omega, grid, alpha_weight, green(:,:,igreen), work)
+        CALL sigma_prod(omega, grid, alpha_weight, green(:,:,igreen), work, debug)
         !
         ! check for NaN after convolution
         IF (debug_sigma) THEN
-          IF (ANY(test_nan(work))) THEN
+          IF (ANY(test_nan(work(:num_g_corr,:num_gp_corr)))) THEN
             CALL errore(__FILE__, "convolution of G and W introduced NaN", igreen)
           END IF
         END IF
