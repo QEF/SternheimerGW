@@ -170,4 +170,55 @@ CONTAINS
 
   END SUBROUTINE pade_derivative
 
+  !> create a nonsymetric Toeplitz matrix (mathlab-like behavior)
+  SUBROUTINE toeplitz_nonsym(col, row, matrix)
+
+    USE constants, ONLY: eps14
+    USE kinds,     ONLY: dp
+
+    !> the first column of the matrix
+    COMPLEX(dp), INTENT(IN) :: col(:)
+
+    !> the first row of the matrix
+    COMPLEX(dp), INTENT(IN) :: row(:)
+
+    !> the resulting Toeplitz matrix
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: matrix(:,:)
+
+    !> the number of row and colums
+    INTEGER num_row, num_col
+
+    !> counter on row and colums
+    INTEGER irow, icol
+
+    num_row = SIZE(row)
+    num_col = SIZE(col)
+    ALLOCATE(matrix(num_row, num_col))
+
+    ! trivial case - zero length array
+    IF (num_row == 0 .OR. num_col == 0) RETURN
+    
+    ! sanity check of the input
+    IF (ABS(col(1) - row(1)) > eps14) THEN
+      WRITE(0,*) 'Warning: First element of input column does not match first &
+                 &element of input row. Column wins diagonal conflict.'
+    END IF
+
+    ! create the Toeplitz matrix
+    DO icol = 1, num_col
+      DO irow = 1, num_row
+        !
+        IF (irow > icol) THEN
+          ! use row for upper triangle
+          matrix(irow, icol) = row(irow - icol + 1)
+        ELSE
+          ! use col for lower triangle and diagonal
+          matrix(irow, icol) = col(icol - irow + 1)
+        END IF
+        !
+      END DO ! irow
+    END DO ! icol
+
+  END SUBROUTINE toeplitz_nonsym
+
 END MODULE pade_module
