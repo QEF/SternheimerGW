@@ -48,6 +48,7 @@ mix_pot_c.o\
 openfilq.o\
 opengwfil.o\
 pade.o\
+pade_robust.o\
 parallel.o\
 pp_output.o\
 prepare_q.o\
