@@ -86,11 +86,88 @@ CONTAINS
     END IF
 
     ! sanity check of the input
+    IF (radius <= 0) &
+      CALL errore(__FILE__, "radius in the complex plane must be > 0", 1)
     IF (deg_num < 0) &
       CALL errore(__FILE__, "degree of numerator must be positive", deg_num)
     IF (deg_den < 0) &
       CALL errore(__FILE__, "degree of denominator must be positive", deg_den)
 
   END SUBROUTINE pade_robust
+
+  !> determine the derivatives of the function
+  !!
+  !! we use a FFT to evaluate the derivative of the function
+  SUBROUTINE pade_derivative(radius, func, num_deriv, deriv)
+
+    USE constants,  ONLY: eps14
+    USE fft_scalar, ONLY: cft_1z
+    USE kinds,      ONLY: dp
+
+    !> The radius of the circle in the complex plane.
+    REAL(dp),    INTENT(IN) :: radius
+
+    !> The values of the function evaluated on a circle in the complex plane.
+    COMPLEX(dp), INTENT(IN) :: func(:)
+
+    !> The number of derivatives that should be generated
+    INTEGER,     INTENT(IN) :: num_deriv
+
+    !> The derivatives of the functions are computed via FFT.
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: deriv(:)
+
+    !> use a backward FFT
+    INTEGER,     PARAMETER :: backward = -1
+
+    !> the number of FFTs done per call
+    INTEGER,     PARAMETER :: num_fft = 1
+
+    !> real constant of 1
+    REAL(dp),    PARAMETER :: one = 1.0_dp
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    !> the number of points in a FFT
+    INTEGER num_point
+
+    !> counter on the derivatives
+    INTEGER ipoint
+
+    !> rescale the derivatives if the radius is not 1.0
+    REAL(dp) rescale
+
+    !> work array for FFT
+    COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    ! create array for FFT
+    num_point = SIZE(func)
+    ALLOCATE(work(num_point))
+
+    ! evalute FFT of function
+    ! work contains now the derivatives up to a factor
+    CALL cft_1z(func, num_fft, num_point, num_point, backward, work)
+
+    ! create array for the derivatives
+    ALLOCATE(deriv(num_deriv))
+    deriv = zero
+
+    ! evaluate the derivatives (truncating or filling with zeros as needed)
+    num_point = MIN(num_deriv, num_point)
+    deriv(:num_point) = work(:num_point)
+
+    ! rescale the derivatives by radius^(-order of derivative)
+    IF (ABS(radius - one) > eps14) THEN
+      !
+      rescale = one
+      DO ipoint = 2, num_point
+        !
+        rescale = rescale / radius
+        deriv(ipoint) = deriv(ipoint) * rescale
+        !
+      END DO ! ipoint
+    END IF ! radius /= 1
+
+  END SUBROUTINE pade_derivative
 
 END MODULE pade_module

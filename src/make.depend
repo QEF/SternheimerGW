@@ -249,6 +249,7 @@ opengwfil.o : sigma_grid.o
 opengwfil.o : sigma_io.o
 pade.o : ../../Modules/constants.o
 pade.o : ../../Modules/kind.o
+pade_robust.o : ../../FFTXlib/fft_scalar.o
 pade_robust.o : ../../Modules/constants.o
 pade_robust.o : ../../Modules/kind.o
 parallel.o : ../../Modules/kind.o
