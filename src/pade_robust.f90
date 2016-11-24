@@ -221,4 +221,115 @@ CONTAINS
 
   END SUBROUTINE toeplitz_nonsym
 
+  !> wrapper for LAPACK singular value decomposition routine
+  SUBROUTINE svd(matrix, econ0, umat, sigma, vmat)
+
+    USE kinds, ONLY: dp
+
+    !> The matrix for which the SVD \f$A = U \Sigma V^{\text{H}}\f$ is evaluated.
+    COMPLEX(dp), INTENT(IN) :: matrix(:,:)
+
+    !> Use economic setting corresponding to '0' in MATLAB
+    LOGICAL,     INTENT(IN) :: econ0
+
+    !> Unitary matrix U (left)
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: umat(:,:)
+
+    !> singular values of the matrix \f$\Sigma\f$ (ascending)
+    REAL(dp),    ALLOCATABLE, INTENT(OUT) :: sigma(:)
+
+    !> Unitary matrix V (right), note returns \f$V^{\text{H}}\f$.
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: vmat(:,:)
+
+    !> jobz parameter for LAPACK SVD
+    CHARACTER(1) jobz
+
+    !> number of rows M of the input matrix
+    INTEGER num_row
+
+    !> number of columns N of the input matrix
+    INTEGER num_col
+
+    !> miniumum of number of rows and number of columns
+    INTEGER num_min
+
+    !> number of elements in work array
+    INTEGER num_work
+
+    !> error flag returned by LAPACK
+    INTEGER ierr
+
+    !> optimal size of work
+    COMPLEX(dp) opt_size
+
+    !> integer work array for SVD
+    INTEGER,     ALLOCATABLE :: iwork(:)
+
+    !> real work array for SVD
+    REAL(dp),    ALLOCATABLE :: rwork(:)
+
+    !> copy of the input matrix, will be destroyed or overwritten by LAPACK call
+    COMPLEX(dp), ALLOCATABLE :: amat(:,:)
+
+    !> work array for SVD
+    COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    !> LAPACK flag to determine work size
+    INTEGER,     PARAMETER   :: determine = -1
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER   :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    ! set helper variables
+    num_row = SIZE(matrix, 1)
+    num_col = SIZE(matrix, 2)
+    num_min = MIN(num_row, num_col)
+
+    ! allocate arrays for output
+    ! U is M x M matrix
+    ALLOCATE(umat(num_row, num_row))
+    ! V is N x N matrix
+    ALLOCATE(vmat(num_col, num_col))
+    ! Sigma has MIN(N, M) diagonal entries
+    ALLOCATE(sigma(num_min))
+    ! integer work array
+    ALLOCATE(iwork(8 * num_min))
+    ! real work array
+    ALLOCATE(rwork(5 * num_min**2 + 7 * num_min))
+
+    ! create copy of input matrix, because LAPACK destroys input
+    ALLOCATE(amat(num_row, num_col))
+    CALL ZCOPY(SIZE(amat), matrix, 1, amat, 1)
+
+    ! If econ0 is set and the number of rows is larger than the number of
+    ! columns, we only evaluate the first N columns of U, otherwise we
+    ! evaluate all elements.
+    IF (econ0 .AND. num_row > num_col) THEN
+      jobz = 'O'
+    ELSE
+      jobz = 'A'
+    END IF
+
+    ! determine optimum work array size
+    CALL ZGESDD(jobz, num_row, num_col, amat, num_row, sigma, umat, num_row, &
+                vmat, num_col, opt_size, determine, rwork, iwork, ierr)
+    CALL errore(__FILE__, "error calculating work size for SVD", ierr)
+
+    ! create work array
+    num_work = NINT(ABS(opt_size))
+    ALLOCATE(work(num_work))
+
+    ! perform SVD
+    CALL ZGESDD(jobz, num_row, num_col, amat, num_row, sigma, umat, num_row, &
+                vmat, num_col, work, num_work, rwork, iwork, ierr)
+    CALL errore(__FILE__, "error calculating SVD", ierr)
+
+    ! if jobz is 'O' output was written to A instead of U
+    IF (jobz == 'O') THEN
+      umat(:, num_col + 1:) = zero
+      CALL ZCOPY(SIZE(amat), amat, 1, umat, 1)
+    END IF
+
+  END SUBROUTINE svd
+ 
 END MODULE pade_module
