@@ -222,24 +222,21 @@ CONTAINS
   END SUBROUTINE toeplitz_nonsym
 
   !> wrapper for LAPACK singular value decomposition routine
-  SUBROUTINE svd(matrix, econ0, umat, sigma, vmat)
+  SUBROUTINE svd(matrix, sigma, umat, vmat)
 
     USE kinds, ONLY: dp
 
     !> The matrix for which the SVD \f$A = U \Sigma V^{\text{H}}\f$ is evaluated.
     COMPLEX(dp), INTENT(IN) :: matrix(:,:)
 
-    !> Use economic setting corresponding to '0' in MATLAB
-    LOGICAL,     INTENT(IN) :: econ0
-
-    !> Unitary matrix U (left)
-    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: umat(:,:)
-
     !> singular values of the matrix \f$\Sigma\f$ (ascending)
     REAL(dp),    ALLOCATABLE, INTENT(OUT) :: sigma(:)
 
+    !> Unitary matrix U (left)
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT), OPTIONAL :: umat(:,:)
+
     !> Unitary matrix V (right), note returns \f$V^{\text{H}}\f$.
-    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: vmat(:,:)
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT), OPTIONAL :: vmat(:,:)
 
     !> jobz parameter for LAPACK SVD
     CHARACTER(1) jobz
@@ -285,28 +282,41 @@ CONTAINS
     num_col = SIZE(matrix, 2)
     num_min = MIN(num_row, num_col)
 
+    ! sanity check - either both or none of U and V present
+    IF ((PRESENT(umat).AND..NOT.PRESENT(vmat)).OR. &
+        (PRESENT(vmat).AND..NOT.PRESENT(umat))) THEN
+      CALL errore(__FILE__, "either both or none of the optional arguments must be present", 1)
+    END IF
+
     ! allocate arrays for output
     ! U is M x M matrix
-    ALLOCATE(umat(num_row, num_row))
+    IF (PRESENT(umat)) ALLOCATE(umat(num_row, num_row))
     ! V is N x N matrix
-    ALLOCATE(vmat(num_col, num_col))
+    IF (PRESENT(vmat)) ALLOCATE(vmat(num_col, num_col))
     ! Sigma has MIN(N, M) diagonal entries
     ALLOCATE(sigma(num_min))
     ! integer work array
     ALLOCATE(iwork(8 * num_min))
     ! real work array
-    ALLOCATE(rwork(5 * num_min**2 + 7 * num_min))
+    IF (PRESENT(umat)) THEN
+      ALLOCATE(rwork(5 * num_min**2 + 7 * num_min))
+    ELSE
+      ALLOCATE(rwork(5 * num_min))
+    END IF
 
     ! create copy of input matrix, because LAPACK destroys input
     ALLOCATE(amat(num_row, num_col))
     CALL ZCOPY(SIZE(amat), matrix, 1, amat, 1)
 
-    ! If econ0 is set and the number of rows is larger than the number of
-    ! columns, we only evaluate the first N columns of U, otherwise we
-    ! evaluate all elements.
-    IF (econ0 .AND. num_row > num_col) THEN
+    IF (.NOT.PRESENT(umat)) THEN
+      ! we evaluate only the singular values
+      jobz = 'N'
+    ELSE IF (num_row > num_col) THEN
+      ! if the number of rows is larger than the number of columns, 
+      ! we only evaluate the first N columns of U
       jobz = 'O'
     ELSE
+      ! we evaluate all elements.
       jobz = 'A'
     END IF
 
