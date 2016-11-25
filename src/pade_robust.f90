@@ -28,9 +28,12 @@ MODULE pade_module
 
   IMPLICIT NONE
 
-  PRIVATE
+!  PRIVATE
+!
+!  PUBLIC pade_robust
 
-  PUBLIC pade_robust
+  !> LAPACK flag to determine work size
+  INTEGER, PARAMETER :: determine = -1
 
 CONTAINS
 
@@ -271,9 +274,6 @@ CONTAINS
     !> work array for SVD
     COMPLEX(dp), ALLOCATABLE :: work(:)
 
-    !> LAPACK flag to determine work size
-    INTEGER,     PARAMETER   :: determine = -1
-
     !> complex constant of 0
     COMPLEX(dp), PARAMETER   :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
@@ -342,4 +342,64 @@ CONTAINS
 
   END SUBROUTINE svd
  
+  !> wrapper around the LAPACK QR factorization routines
+  SUBROUTINE qr(amat, qmat)
+
+    USE kinds, ONLY: dp
+
+    !> the matrix for which a QR factorization is constructed
+    COMPLEX(dp), INTENT(IN) :: amat(:,:)
+
+    !> the matrix Q of the factorization
+    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: qmat(:,:)
+
+    !> the number of rows in the matrix A
+    INTEGER num_row
+
+    !> the number of columns in the matrix A
+    INTEGER num_col
+
+    !> dimensionalty of the work array
+    INTEGER num_work
+
+    !> error flag raised by LAPACK routines
+    INTEGER ierr
+
+    !> optimal size of the work array
+    COMPLEX(dp) opt_size
+
+    !> array for the scalar reflectors
+    COMPLEX(dp), ALLOCATABLE :: tau(:)
+
+    !> work array for LAPACK
+    COMPLEX(dp), ALLOCATABLE :: work(:)
+
+    ! set helper variable
+    num_row = SIZE(amat, 1)
+    num_col = SIZE(amat, 2)
+
+    ALLOCATE(tau(MIN(num_row, num_col)))
+
+    ! copy A to Q because LAPACK will overwrite the input
+    ALLOCATE(qmat(num_row, num_col))
+    CALL ZCOPY(SIZE(amat), amat, 1, qmat, 1)
+
+    ! determine size for work array
+    CALL ZGEQRF(num_row, num_col, qmat, num_row, tau, opt_size, determine, ierr)
+    CALL errore(__FILE__, "failed to determine size for work in QR factorization", ierr)
+
+    ! create work array
+    num_work = NINT(ABS(opt_size))
+    ALLOCATE(work(num_work))
+
+    ! perform the QR factorization
+    CALL ZGEQRF(num_row, num_col, qmat, num_row, tau, work, num_work, ierr)
+    CALL errore(__FILE__, "error in QR factorization", ierr)
+
+    ! now generate the Q matrix
+    CALL ZUNGQR(num_row, num_col, SIZE(tau), qmat, num_row, tau, work, num_work, ierr)
+    CALL errore(__FILE__, "error constructing Q matrix", ierr)
+
+  END SUBROUTINE qr
+
 END MODULE pade_module
