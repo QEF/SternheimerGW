@@ -28,9 +28,9 @@ MODULE pade_module
 
   IMPLICIT NONE
 
-!  PRIVATE
-!
-!  PUBLIC pade_robust
+  PRIVATE
+
+  PUBLIC pade_robust
 
   !> LAPACK flag to determine work size
   INTEGER, PARAMETER :: determine = -1
@@ -401,5 +401,42 @@ CONTAINS
     CALL errore(__FILE__, "error constructing Q matrix", ierr)
 
   END SUBROUTINE qr
+
+  !> determine norm of a complex vector
+  FUNCTION norm(vector, infinity)
+
+   USE kinds, ONLY: dp
+
+   !> the vector of which the norm is determined
+   COMPLEX(dp), INTENT(IN) :: vector(:)
+
+   !> optionally the infinity norm is calculated (default 2-norm)
+   LOGICAL,     INTENT(IN), OPTIONAL :: infinity
+
+   !> the norm of the vector
+   REAL(dp) norm
+
+   !> character that identifies which norm is used
+   CHARACTER(1) cnorm
+ 
+   !> work for infinity norm
+   REAL(dp) work
+
+   !> declare interface to LAPACK's ZLANGE
+   REAL(dp), EXTERNAL :: ZLANGE
+
+   ! default to 2-norm
+   cnorm = 'F'
+
+   ! if optional flag is present and set switch to infinity norm
+   IF (PRESENT(infinity)) THEN
+     IF (infinity) cnorm = '1'
+   END IF
+
+   ! evaluate infinity norm of the vector
+   ! 1 = vector, i.e. one row
+   norm = ZLANGE(cnorm, 1, SIZE(vector), vector, 1, work)
+
+ END FUNCTION norm
 
 END MODULE pade_module
