@@ -194,8 +194,8 @@ CONTAINS
     !> counter on row and colums
     INTEGER irow, icol
 
-    num_row = SIZE(row)
-    num_col = SIZE(col)
+    num_row = SIZE(col)
+    num_col = SIZE(row)
     ALLOCATE(matrix(num_row, num_col))
 
     ! trivial case - zero length array
@@ -211,12 +211,12 @@ CONTAINS
     DO icol = 1, num_col
       DO irow = 1, num_row
         !
-        IF (irow > icol) THEN
+        IF (irow < icol) THEN
           ! use row for upper triangle
-          matrix(irow, icol) = row(irow - icol + 1)
+          matrix(irow, icol) = row(icol - irow + 1)
         ELSE
           ! use col for lower triangle and diagonal
-          matrix(irow, icol) = col(icol - irow + 1)
+          matrix(irow, icol) = col(irow - icol + 1)
         END IF
         !
       END DO ! irow
@@ -301,7 +301,8 @@ CONTAINS
     IF (PRESENT(umat)) THEN
       ALLOCATE(rwork(5 * num_min**2 + 7 * num_min))
     ELSE
-      ALLOCATE(rwork(5 * num_min))
+      ! note: newer version of LAPACK require only 5 * num_min
+      ALLOCATE(rwork(7 * num_min))
     END IF
 
     ! create copy of input matrix, because LAPACK destroys input
