@@ -440,4 +440,37 @@ CONTAINS
 
  END FUNCTION norm
 
+ !> Evaluate \f$(C D)^{\text{T}}\f$, where D is diagonal.
+ SUBROUTINE matmul_transpose(cmat, dmat)
+
+   USE kinds, ONLY: dp
+
+   !> *on input* the matrix C <br>
+   !! *on output* the result \f$(C D)^{\text{T}}\f$
+   COMPLEX(dp), INTENT(INOUT), ALLOCATABLE :: cmat(:,:)
+
+   !> the diagonal elements of the matrix D
+   COMPLEX(dp), INTENT(IN)  :: dmat(:)
+
+   !> work array that will store the output
+   COMPLEX(dp), ALLOCATABLE :: work(:,:)
+
+   ! counter on the rows of C
+   INTEGER irow
+
+   ! create work array - transpose of C
+   ALLOCATE(work(SIZE(cmat, 2), SIZE(cmat, 1)))
+
+   DO irow = 1, SIZE(cmat, 1)
+     !
+     ! C_ij D_ii
+     work(:, irow) = cmat(irow, :) * dmat(irow)
+     !
+   END DO ! irow
+
+   ! copy work to output
+   CALL MOVE_ALLOC(work, cmat)
+
+ END SUBROUTINE matmul_transpose
+
 END MODULE pade_module
