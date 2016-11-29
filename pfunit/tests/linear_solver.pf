@@ -26,7 +26,7 @@
 @test(npes=[1])
 SUBROUTINE test_bicgstab(this)
 
-  USE bicgstab_module,       ONLY: bicgstab
+  USE bicgstab_module,       ONLY: bicgstab, bicgstab_type
   USE debug_module,          ONLY: test_nan
   USE kinds,                 ONLY: dp
   USE linear_problem_module, ONLY: linear_problem_read, linear_problem_apply, linear_problem_reset
@@ -67,11 +67,17 @@ SUBROUTINE test_bicgstab(this)
   ! counter on the shifts
   INTEGER ishift
 
+  ! error flag returned by the solver
+  INTEGER ierr
+
   ! threshold for convergence
   REAL(dp), PARAMETER :: threshold = 1e-6_dp
 
   ! the residual error
   REAL(dp) residual
+
+  ! configuration of the bicgstab solver
+  TYPE(bicgstab_type) config
 
   !> LAPACK function to evaluate the 2-norm
   REAL(dp), EXTERNAL :: DNRM2
@@ -102,8 +108,12 @@ SUBROUTINE test_bicgstab(this)
     !
     DO ishift = 1, num_shift
       !
-      CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma(ishift:ishift), solution)
+      config%threshold = threshold
+      config%lmax = ll
+      CALL bicgstab(config, linear_problem_apply, bb, sigma(ishift:ishift), solution, ierr)
       !
+      ! check error flag not set
+      @assertTrue(ierr == 0)
       ! sanity check: no NaN
       @assertFalse(ANY(test_nan(solution)))
       !
@@ -128,8 +138,12 @@ SUBROUTINE test_bicgstab(this)
   !
   DO ll = lmin, lmax
     !
-    CALL bicgstab(ll, threshold, linear_problem_apply, bb, sigma, solution)
+    config%threshold = threshold
+    config%lmax = ll
+    CALL bicgstab(config, linear_problem_apply, bb, sigma, solution, ierr)
     !
+    ! check error flag not set
+    @assertTrue(ierr == 0)
     ! sanity check: no NaN
     @assertFalse(ANY(test_nan(solution)))
     !
@@ -191,6 +205,9 @@ SUBROUTINE test_linear_solver
   ! counter on the shifts
   INTEGER ishift
 
+  ! error flag returned by the solver
+  INTEGER ierr
+
   ! flag indicates if the file exists
   LOGICAL lexist
 
@@ -211,7 +228,10 @@ SUBROUTINE test_linear_solver
   CALL linear_problem_read(filename, sigma, bb, xx)
 
   ! solve the linear problem with default configuration
-  CALL linear_solver(config, linear_problem_apply, bb, sigma, xx)
+  CALL linear_solver(config, linear_problem_apply, bb, sigma, xx, ierr)
+
+  ! error flag must not be set
+  @assertTrue(ierr == 0)
 
   !
   ! check if (A + sigma I) x = b
