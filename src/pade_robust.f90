@@ -379,10 +379,14 @@ CONTAINS
     num_row = SIZE(amat, 1)
     num_col = SIZE(amat, 2)
 
+    ! for this implementation we assume that num_row >= num_col
+    IF (num_row < num_col) &
+      CALL errore(__FILE__, "the case num_row < num_col is not implemented", 1)
+    
     ALLOCATE(tau(MIN(num_row, num_col)))
 
     ! copy A to Q because LAPACK will overwrite the input
-    ALLOCATE(qmat(num_row, num_col))
+    ALLOCATE(qmat(num_row, num_row))
     CALL ZCOPY(SIZE(amat), amat, 1, qmat, 1)
 
     ! determine size for work array
@@ -397,8 +401,19 @@ CONTAINS
     CALL ZGEQRF(num_row, num_col, qmat, num_row, tau, work, num_work, ierr)
     CALL errore(__FILE__, "error in QR factorization", ierr)
 
+    ! check if we need a larger work array
+    CALL ZUNGQR(num_row, num_row, SIZE(tau), qmat, num_row, tau, opt_size, determine, ierr)
+    CALL errore(__FILE__, "failed to determine size of work array", ierr)
+
+    ! create larger work array if necessary
+    IF (NINT(ABS(opt_size)) > num_work) THEN
+      DEALLOCATE(work)
+      num_work = NINT(ABS(opt_size))
+      ALLOCATE(work(num_work))
+    END IF
+
     ! now generate the Q matrix
-    CALL ZUNGQR(num_row, num_col, SIZE(tau), qmat, num_row, tau, work, num_work, ierr)
+    CALL ZUNGQR(num_row, num_row, SIZE(tau), qmat, num_row, tau, work, num_work, ierr)
     CALL errore(__FILE__, "error constructing Q matrix", ierr)
 
   END SUBROUTINE qr
