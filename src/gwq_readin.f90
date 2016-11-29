@@ -41,7 +41,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    ext_recover, ext_restart, modielec, eta, &
                                    do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
                                    do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                                   cohsex, multishift, do_sigma_extra, &
+                                   cohsex, multishift, do_sigma_extra, paderobust, &
                                    solve_direct, w_green_start, tinvert, coul_multishift,&
                                    trunc_2d, do_epsil, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
@@ -171,7 +171,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
                        wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, &
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
-                       padecont, cohsex, multishift, do_sigma_extra,&
+                       padecont, paderobust, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        prec_direct, tmp_dir, prec_shift, just_corr,& 
@@ -311,6 +311,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   godbyneeds   = .FALSE.
   cohsex       = .FALSE.
   padecont     = .FALSE.
+  paderobust   = .FALSE.
   multishift   = .FALSE.
 !Imaginary component added to linear system should be in Rydberg
   eta            =  0.02
