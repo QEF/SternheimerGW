@@ -421,71 +421,129 @@ CONTAINS
   !> determine norm of a complex vector
   FUNCTION norm(vector, infinity)
 
-   USE kinds, ONLY: dp
+    USE kinds, ONLY: dp
 
-   !> the vector of which the norm is determined
-   COMPLEX(dp), INTENT(IN) :: vector(:)
+    !> the vector of which the norm is determined
+    COMPLEX(dp), INTENT(IN) :: vector(:)
 
-   !> optionally the infinity norm is calculated (default 2-norm)
-   LOGICAL,     INTENT(IN), OPTIONAL :: infinity
+    !> optionally the infinity norm is calculated (default 2-norm)
+    LOGICAL,     INTENT(IN), OPTIONAL :: infinity
 
-   !> the norm of the vector
-   REAL(dp) norm
+    !> the norm of the vector
+    REAL(dp) norm
 
-   !> character that identifies which norm is used
-   CHARACTER(1) cnorm
+    !> character that identifies which norm is used
+    CHARACTER(1) cnorm
  
-   !> work for infinity norm
-   REAL(dp) work
+    !> work for infinity norm
+    REAL(dp) work
 
-   !> declare interface to LAPACK's ZLANGE
-   REAL(dp), EXTERNAL :: ZLANGE
+    !> declare interface to LAPACK's ZLANGE
+    REAL(dp), EXTERNAL :: ZLANGE
 
-   ! default to 2-norm
-   cnorm = 'F'
+    ! default to 2-norm
+    cnorm = 'F'
 
-   ! if optional flag is present and set switch to infinity norm
-   IF (PRESENT(infinity)) THEN
-     IF (infinity) cnorm = '1'
-   END IF
+    ! if optional flag is present and set switch to infinity norm
+    IF (PRESENT(infinity)) THEN
+      IF (infinity) cnorm = '1'
+    END IF
 
-   ! evaluate infinity norm of the vector
-   ! 1 = vector, i.e. one row
-   norm = ZLANGE(cnorm, 1, SIZE(vector), vector, 1, work)
+    ! evaluate infinity norm of the vector
+    ! 1 = vector, i.e. one row
+    norm = ZLANGE(cnorm, 1, SIZE(vector), vector, 1, work)
 
- END FUNCTION norm
+  END FUNCTION norm
 
- !> Evaluate \f$(C D)^{\text{T}}\f$, where D is diagonal.
- SUBROUTINE matmul_transpose(cmat, dmat)
+  !> Evaluate \f$(C D)^{\text{T}}\f$, where D is diagonal.
+  SUBROUTINE matmul_transpose(cmat, dmat)
 
-   USE kinds, ONLY: dp
+    USE kinds, ONLY: dp
 
-   !> *on input* the matrix C <br>
-   !! *on output* the result \f$(C D)^{\text{T}}\f$
-   COMPLEX(dp), INTENT(INOUT), ALLOCATABLE :: cmat(:,:)
+    !> *on input* the matrix C <br>
+    !! *on output* the result \f$(C D)^{\text{T}}\f$
+    COMPLEX(dp), INTENT(INOUT), ALLOCATABLE :: cmat(:,:)
 
-   !> the diagonal elements of the matrix D
-   COMPLEX(dp), INTENT(IN)  :: dmat(:)
+    !> the diagonal elements of the matrix D
+    COMPLEX(dp), INTENT(IN)  :: dmat(:)
 
-   !> work array that will store the output
-   COMPLEX(dp), ALLOCATABLE :: work(:,:)
+    !> work array that will store the output
+    COMPLEX(dp), ALLOCATABLE :: work(:,:)
 
-   ! counter on the columns of C
-   INTEGER icol
+    ! counter on the columns of C
+    INTEGER icol
 
-   ! create work array - transpose of C
-   ALLOCATE(work(SIZE(cmat, 2), SIZE(cmat, 1)))
+    ! create work array - transpose of C
+    ALLOCATE(work(SIZE(cmat, 2), SIZE(cmat, 1)))
 
-   DO icol = 1, SIZE(cmat, 2)
-     !
-     ! C_ij D_jj
-     work(icol, :) = cmat(:, icol) * dmat(icol)
-     !
-   END DO ! icol
+    DO icol = 1, SIZE(cmat, 2)
+      !
+      ! C_ij D_jj
+      work(icol, :) = cmat(:, icol) * dmat(icol)
+      !
+    END DO ! icol
 
-   ! copy work to output
-   CALL MOVE_ALLOC(work, cmat)
+    ! copy work to output
+    CALL MOVE_ALLOC(work, cmat)
 
- END SUBROUTINE matmul_transpose
+  END SUBROUTINE matmul_transpose
+
+  !> determine first nonzero element of complex array (up to a tolerance)
+  FUNCTION first_nonzero(array, tol)
+
+    USE kinds, ONLY: dp
+
+    !> the array of which the nonzero elements are determined
+    COMPLEX(dp), INTENT(IN) :: array(:)
+
+    !> the tolerance up to which elements are considered as 0
+    REAL(dp),    INTENT(IN) :: tol
+
+    !> the position of the first nonzero element
+    INTEGER first_nonzero
+
+    !> a ordered array of integers
+    INTEGER, ALLOCATABLE :: order(:)
+
+    !> counter to initialize the order array
+    INTEGER ii
+
+    ! create a ordered integer array
+    ALLOCATE(order(SIZE(array)))
+    order = [ (ii, ii = 1, SIZE(array)) ]
+
+    ! determine the first element for which the mask is true
+    first_nonzero = MINLOC(order, 1, ABS(array) > tol)
+
+  END FUNCTION first_nonzero
+
+  !> determine last nonzero element of complex array (up to a tolerance)
+  FUNCTION last_nonzero(array, tol)
+
+    USE kinds, ONLY: dp
+
+    !> the array of which the nonzero elements are determined
+    COMPLEX(dp), INTENT(IN) :: array(:)
+
+    !> the tolerance up to which elements are considered as 0
+    REAL(dp),    INTENT(IN) :: tol
+
+    !> the position of the last nonzero element
+    INTEGER last_nonzero
+
+    !> a ordered array of integers
+    INTEGER, ALLOCATABLE :: order(:)
+
+    !> counter to initialize the order array
+    INTEGER ii
+
+    ! create a ordered integer array
+    ALLOCATE(order(SIZE(array)))
+    order = [ (ii, ii = 1, SIZE(array)) ]
+
+    ! determine the last element for which the mask is true
+    last_nonzero = MAXLOC(order, 1, ABS(array) > tol)
+
+  END FUNCTION last_nonzero
 
 END MODULE pade_module
