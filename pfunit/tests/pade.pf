@@ -50,7 +50,7 @@ SUBROUTINE test_pade_robust(this)
   COMPLEX(dp), ALLOCATABLE :: coeff_num(:), coeff_den(:)
 
   ! tolerance of the calculation
-  REAL(dp) tol
+  REAL(dp) tol, tol_fft
 
   ! threshold for the accuracy
   REAL(dp), PARAMETER :: threshold_exp = 1d-10
@@ -95,17 +95,18 @@ SUBROUTINE test_pade_robust(this)
   ! second test - cosine function
   !
   CALL test_log_start(__FILE__, __LINE__, "Test of Pade approximation to cosine function")
-  radius = 1.0_dp
+  radius = 2.0_dp
   num_point = 25
   deg_num = 5
   deg_den = 11
   tol = 1d-10
+  tol_fft = 1d-15
   !
   ! generate function values on circle
   CALL pade_problem_evaluate(radius, num_point, pade_cos, func)
   !
   ! perform Pade extrapolation
-  CALL pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol)
+  CALL pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol, tol_fft)
   !
   ! compare to results obtained with MATLAB
   !

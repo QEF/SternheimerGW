@@ -20,6 +20,7 @@ bcast_gw_input.o : gwcom.o
 bicgstab.o : ../../Modules/io_global.o
 bicgstab.o : ../../Modules/kind.o
 bicgstab.o : debug.o
+bicgstab.o : norm.o
 check_initial_status.o : ../../Modules/io_files.o
 check_initial_status.o : ../../Modules/mp.o
 check_initial_status.o : ../../Modules/mp_global.o
@@ -125,6 +126,7 @@ godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
 godby_needs.o : gwcom.o
 gram_schmidt.o : ../../Modules/kind.o
+gram_schmidt.o : norm.o
 green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
 green.o : ../../Modules/mp_world.o
@@ -135,6 +137,7 @@ green.o : ../../iotk/src/iotk_module.o
 green.o : debug.o
 green.o : gwcom.o
 green.o : linear_op.o
+green.o : norm.o
 green.o : reorder.o
 green.o : select_solver.o
 green.o : sigma_grid.o
@@ -232,6 +235,7 @@ linear_solver.o : ../../Modules/io_global.o
 linear_solver.o : ../../Modules/kind.o
 linear_solver.o : debug.o
 linear_solver.o : gram_schmidt.o
+linear_solver.o : norm.o
 mix_pot_c.o : ../../Modules/kind.o
 norm.o : ../../Modules/kind.o
 openfilq.o : ../../Modules/control_flags.o
@@ -253,6 +257,7 @@ pade.o : ../../Modules/kind.o
 pade_robust.o : ../../FFTXlib/fft_scalar.o
 pade_robust.o : ../../Modules/constants.o
 pade_robust.o : ../../Modules/kind.o
+pade_robust.o : norm.o
 parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp.o
 parallel.o : ../../Modules/mp_global.o

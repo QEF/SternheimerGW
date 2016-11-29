@@ -273,6 +273,8 @@ CONTAINS
   !> Check if the residual is below the given threshold.
   FUNCTION converged(threshold, residual)
 
+    USE norm_module, ONLY: norm
+
     !> If the norm of the residual drops below this threshold, the system is
     !! considered as converged.
     REAL(dp),    INTENT(IN) :: threshold
@@ -283,21 +285,11 @@ CONTAINS
     !> returns true, if the norm of the residual is smaller than the threshold
     LOGICAL converged
 
-    !> size of the vector
-    INTEGER vec_size
-
     !> norm of the residual
     REAL(dp) norm_residual
 
-    !> BLAS function to evaluate the euclidian norm
-    REAL(dp), EXTERNAL :: DNRM2
-
-    ! determine vector size
-    ! note: factor 2 because we want to evaluate the norm of a complex vector
-    vec_size = 2 * SIZE(residual)
-
     ! check residual of seed system
-    norm_residual = DNRM2(vec_size, residual, 1)
+    norm_residual = norm(residual)
 
     ! if the norm is smaller than the threshold the system is converged
     converged = (norm_residual < threshold)

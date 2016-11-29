@@ -466,6 +466,7 @@ CONTAINS
                             iotk_open_write, iotk_write_dat, iotk_close_write
     USE kinds,        ONLY: dp
     USE mp_world,     ONLY: mpime
+    USE norm_module,  ONLY: norm
     USE sleep_module, ONLY: sleep, two_min
 
     !> The initial shift
@@ -519,9 +520,6 @@ CONTAINS
     !> complex constant of minus 1
     COMPLEX(dp), PARAMETER :: minus_one = CMPLX(-1.0_dp, 0.0_dp, KIND=dp)
 
-    !> LAPACK function to evaluate the 2-norm
-    REAL(dp), EXTERNAL :: DNRM2
-
     ! trivial case - do not debug this option
     IF (.NOT.debug%solver_green) RETURN
 
@@ -559,8 +557,8 @@ CONTAINS
         ! work = (H - w) G - bb (should be ~ 0)
         CALL ZAXPY(num_g, minus_one, bb, 1, work, 1)
         !
-        ! determine the residual = sum(|work|**2) (note: factor 2 for complex)
-        residual = DNRM2(2 * num_g, work, 1)
+        ! determine the residual = sum(|work|**2)
+        residual = norm(work)
         !
         ! if residual is not of same order of magnitude as threshold we may want extensive test
         extensive_test = residual > 10.0_dp * threshold

@@ -50,10 +50,11 @@ CONTAINS
   !! [1] P. Gonnet, S. Guettel, and L. N. Trefethen, "ROBUST PADE APPROXIMATION 
   !!     VIA SVD", SIAM Rev., 55:101-117, 2013.
   !!
-  SUBROUTINE pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol)
+  SUBROUTINE pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol_coeff, tol_fft)
 
-    USE constants, ONLY: eps14
-    USE kinds,     ONLY: dp
+    USE constants,   ONLY: eps14
+    USE kinds,       ONLY: dp
+    USE norm_module, ONLY: norm
 
     !> The radius of the circle in the complex plane.
     REAL(dp),    INTENT(IN) :: radius
@@ -76,9 +77,15 @@ CONTAINS
     !> The Pade coefficient vector of the denominator
     COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: coeff_den(:)
 
-    !> The optional **tol** argument specifies the relative tolerance; if
-    !! omitted, it defaults to 1e-14. Set to 0 to turn off robustness.
-    REAL(dp),    OPTIONAL,    INTENT(IN)  :: tol
+    !> The optional **tol_coeff** argument specifies the relative tolerance for
+    !! the coefficients; if omitted, it defaults to 1e-14. Set to 0 to turn off
+    !! robustness.
+    REAL(dp),    OPTIONAL,    INTENT(IN)  :: tol_coeff
+
+    !> The optional **tol_fft** argument specifies the relative tolerance for
+    !! the FFT. Coefficients smaller than it are set to 0; if omitted it defaults
+    !! to the value of **tol_coeff**.
+    REAL(dp),    OPTIONAL,    INTENT(IN)  :: tol_fft
 
     !> number of converged elements
     INTEGER rho
@@ -91,6 +98,9 @@ CONTAINS
 
     !> absolute value for the tolerance
     REAL(dp) abs_tol
+
+    !> local variable for the relative tolerance of the fft
+    REAL(dp) rel_tol_fft
 
     !> singular values of matrix
     REAL(dp),    ALLOCATABLE :: sigma(:)
@@ -142,15 +152,22 @@ CONTAINS
     IF (deg_den < 0) &
       CALL errore(__FILE__, "degree of denominator must be positive", deg_den)
 
-    ! Compute coefficients
-    CALL pade_derivative(radius, func, deg_num + deg_den + 1, coeff)
-
     ! default value of tolerance 1e-14
-    IF (PRESENT(tol)) THEN
-      rel_tol = tol
+    IF (PRESENT(tol_coeff)) THEN
+      rel_tol = tol_coeff
     ELSE
       rel_tol = eps14
     END IF
+
+    ! use same tolererance for FFT and coeff unless specified otherwise
+    IF (PRESENT(tol_fft)) THEN
+      rel_tol_fft = tol_fft
+    ELSE
+      rel_tol_fft = rel_tol
+    END IF
+
+    ! Compute coefficients
+    CALL pade_derivative(radius, func, rel_tol_fft, deg_num + deg_den + 1, coeff)
 
     ! determine the absolute value of the tolerance
     abs_tol = rel_tol * norm(coeff)
@@ -303,17 +320,21 @@ CONTAINS
   !> determine the derivatives of the function
   !!
   !! we use a FFT to evaluate the derivative of the function
-  SUBROUTINE pade_derivative(radius, func, num_deriv, deriv)
+  SUBROUTINE pade_derivative(radius, func, tol, num_deriv, deriv)
 
-    USE constants,  ONLY: eps14
-    USE fft_scalar, ONLY: cft_1z
-    USE kinds,      ONLY: dp
+    USE constants,   ONLY: eps14
+    USE fft_scalar,  ONLY: cft_1z
+    USE kinds,       ONLY: dp
+    USE norm_module, ONLY: norm
 
     !> The radius of the circle in the complex plane.
     REAL(dp),    INTENT(IN) :: radius
 
     !> The values of the function evaluated on a circle in the complex plane.
     COMPLEX(dp), INTENT(IN) :: func(:)
+
+    !> tolerance to identify small coeffficients
+    REAL(dp),    INTENT(IN) :: tol
 
     !> The number of derivatives that should be generated
     INTEGER,     INTENT(IN) :: num_deriv
@@ -341,6 +362,9 @@ CONTAINS
 
     !> rescale the derivatives if the radius is not 1.0
     REAL(dp) rescale
+
+    !> absolute value of the tolerance
+    REAL(dp) abs_tol
 
     !> work array for FFT
     COMPLEX(dp), ALLOCATABLE :: work(:)
@@ -372,6 +396,17 @@ CONTAINS
         !
       END DO ! ipoint
     END IF ! radius /= 1
+
+    ! Discard near-zero coefficients.
+    abs_tol = tol * norm(deriv)
+    WHERE(ABS(deriv) < abs_tol)
+      deriv = zero
+    END WHERE
+
+    ! Remove imaginary rounding errors. (Make real functions real.)
+    IF (norm(AIMAG(deriv), .TRUE.) < abs_tol) THEN
+      deriv = REAL(deriv)
+    END IF
 
   END SUBROUTINE pade_derivative
 
@@ -619,43 +654,6 @@ CONTAINS
     CALL errore(__FILE__, "error constructing Q matrix", ierr)
 
   END SUBROUTINE qr
-
-  !> determine norm of a complex vector
-  FUNCTION norm(vector, infinity)
-
-    USE kinds, ONLY: dp
-
-    !> the vector of which the norm is determined
-    COMPLEX(dp), INTENT(IN) :: vector(:)
-
-    !> optionally the infinity norm is calculated (default 2-norm)
-    LOGICAL,     INTENT(IN), OPTIONAL :: infinity
-
-    !> the norm of the vector
-    REAL(dp) norm
-
-    !> character that identifies which norm is used
-    CHARACTER(1) cnorm
- 
-    !> work for infinity norm
-    REAL(dp) work
-
-    !> declare interface to LAPACK's ZLANGE
-    REAL(dp), EXTERNAL :: ZLANGE
-
-    ! default to 2-norm
-    cnorm = 'F'
-
-    ! if optional flag is present and set switch to infinity norm
-    IF (PRESENT(infinity)) THEN
-      IF (infinity) cnorm = '1'
-    END IF
-
-    ! evaluate infinity norm of the vector
-    ! 1 = vector, i.e. one row
-    norm = ZLANGE(cnorm, 1, SIZE(vector), vector, 1, work)
-
-  END FUNCTION norm
 
   !> Evaluate \f$(C D)^{\text{T}}\f$, where D is diagonal.
   SUBROUTINE matmul_transpose(cmat, dmat)

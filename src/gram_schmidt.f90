@@ -34,7 +34,8 @@ CONTAINS
   !! second set of vectors with the same transformation at the same time.
   SUBROUTINE gram_schmidt(first, basis, vector)
 
-    USE kinds, ONLY: dp
+    USE kinds,       ONLY: dp
+    USE norm_module, ONLY: znorm => norm
 
     !> the first vector that is not orthonormal to the rest
     !! (set to 1 to orthonormalize all)
@@ -110,8 +111,7 @@ CONTAINS
     DO ibasis = first, num_basis
       !!
       !! 3. normalize the current vector
-      !  note: factor 2 because of complex
-      norm = one / DNRM2(2 * vec_size, basis(:, ibasis), 1)
+      norm = one / znorm(basis(:, ibasis))
       CALL ZSCAL(vec_size, norm, basis(:, ibasis), 1)
       !
       IF (transform) CALL ZSCAL(vec_size, norm, vector(:, ibasis), 1)
