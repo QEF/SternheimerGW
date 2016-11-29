@@ -101,4 +101,19 @@ CONTAINS
 
   END FUNCTION pade_exp
 
+  !> wrapper of complex cosine function
+  FUNCTION pade_cos(zz)
+
+    USE kinds, ONLY: dp
+
+    !> argument of the cosine function
+    COMPLEX(dp), INTENT(IN) :: zz
+
+    !> cosine of the argument
+    COMPLEX(dp) pade_cos
+
+    pade_cos = COS(zz)
+
+  END FUNCTION pade_cos
+
 END MODULE pade_problem_module

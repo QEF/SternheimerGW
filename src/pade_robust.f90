@@ -176,6 +176,16 @@ CONTAINS
       !
     END IF
     !
+    ! general case
+    !
+    ! First row/column of Toeplitz matrix.
+    ALLOCATE(row(deg_den + 1))
+    row = zero
+    row(1) = coeff(1)
+    !
+    ALLOCATE(col(SIZE(coeff)))
+    col = coeff;
+    !
     ! Do diagonal hopping across block. 
     DO WHILE (.TRUE.)
       !
@@ -192,20 +202,8 @@ CONTAINS
         !
       END IF
       !
-      ! general case
-      !
-      ! First row/column of Toeplitz matrix.
-      ALLOCATE(row(deg_den + 1))
-      row = zero
-      row(1) = coeff(1)
-      !
-      ALLOCATE(col(deg_den + deg_num + 1))
-      col = zero
-      col(1:SIZE(coeff)) = coeff;
-      !
       ! Form Toeplitz matrix.
-      CALL toeplitz_nonsym(col, row, zmat)
-      DEALLOCATE(col, row)
+      CALL toeplitz_nonsym(col(1:deg_num + deg_den + 1), row(1:deg_den + 1), zmat)
       !
       ! Compute numerical rank.
       ALLOCATE(cmat(deg_den, SIZE(zmat, 2))) 
