@@ -30,12 +30,86 @@ MODULE pade_module
 
   PRIVATE
 
-  PUBLIC pade_robust
+  PUBLIC pade_robust, pade_coeff_robust
 
   !> LAPACK flag to determine work size
   INTEGER, PARAMETER :: determine = -1
 
 CONTAINS
+
+  !> construct robust Pade coefficients and store them in input array
+  SUBROUTINE pade_coeff_robust(freq, tol, func)
+
+    USE constants, ONLY: eps12
+    USE kinds,     ONLY: dp
+
+    !> frequency mesh - must span circle in complex plane and the first
+    !! element must be (R, 0)
+    COMPLEX(dp), INTENT(IN)    :: freq(:)
+
+    !> tolerance of the Pade approximation (related to solver accuracy)
+    REAL(dp),    INTENT(IN)    :: tol
+
+    !> *on input* values of function on circle <br>
+    !! *on output* first element - degree of numerator; second element
+    !! degree of denominator; remaining elements first numerator then
+    !! denominator
+    COMPLEX(dp), INTENT(INOUT) :: func(:,:,:)
+
+    !> radius of the circle in the complex plane
+    REAL(dp) radius
+
+    !> loop variable for the row and column of array
+    INTEGER ii, jj
+
+    !> degree of the Pade approximation (numerator and denominator)
+    INTEGER deg_num, deg_den
+
+    !> Pade coefficients for numerator
+    COMPLEX(dp), ALLOCATABLE :: coeff_num(:)
+
+    !> Pade coefficients for numerator
+    COMPLEX(dp), ALLOCATABLE :: coeff_den(:)
+
+    !
+    ! sanity check
+    !
+    ! at least 10 frequencies?
+    IF (SIZE(freq) < 10) &
+      CALL errore(__FILE__, "use at least 10 frequencies to form the circle", 1)
+    !
+    ! all frequencies on circle?
+    radius = REAL(freq(1))
+    IF (ANY(ABS(ABS(freq) - radius) > eps12)) &
+      CALL errore(__FILE__, "frequencies must span circle in the complex plane", 1)
+    !
+    ! function and frequency compatible?
+    IF (SIZE(freq) /= SIZE(func, 3)) &
+      CALL errore(__FILE__, "frequency must be last dimension of array", 1)
+
+    !
+    ! evaluate robust Pade approximation
+    !
+    DO jj = 1, SIZE(func, 2)
+      DO ii = 1, SIZE(func, 1)
+        !
+        ! start with (n,n) Pade approximation and choose n to utilize
+        ! most of the frequency points
+        deg_num = SIZE(func, 3) / 2 - 2
+        deg_den = deg_num
+        !
+        ! determine Pade coefficients
+        CALL pade_robust(radius, func(ii, jj, :), deg_num, deg_den, coeff_num, coeff_den, tol, eps12)
+        !
+        ! store degree and Pade coefficients in array
+        func(ii, jj, 1) = deg_num
+        func(ii, jj, 2) = deg_den
+        func(ii, jj, 3:5 + deg_num + deg_den) = [coeff_num, coeff_den]
+        !
+      END DO ! ii
+    END DO ! jj
+
+  END SUBROUTINE pade_coeff_robust
 
   !> Pade approximation to a function.
   !!
