@@ -50,7 +50,7 @@ CONTAINS
   !! [1] P. Gonnet, S. Guettel, and L. N. Trefethen, "ROBUST PADE APPROXIMATION 
   !!     VIA SVD", SIAM Rev., 55:101-117, 2013.
   !!
-  SUBROUTINE pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol_in)
+  SUBROUTINE pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol)
 
     USE constants, ONLY: eps14
     USE kinds,     ONLY: dp
@@ -62,11 +62,13 @@ CONTAINS
     !! The derivatives of the functions are computed via FFT.
     COMPLEX(dp), INTENT(IN) :: func(:)
 
-    !> The degree of the numerator (must be positive)
-    INTEGER,     INTENT(IN) :: deg_num
+    !> The degree of the numerator (must be positive), potentially modified if
+    !! Pade approximation has vanishing terms
+    INTEGER,     INTENT(INOUT) :: deg_num
 
-    !> The degree of the denominator (must be positive)
-    INTEGER,     INTENT(IN) :: deg_den
+    !> The degree of the denominator (must be positive), potentially modified if
+    !! Pade approximation has vanishing terms
+    INTEGER,     INTENT(INOUT) :: deg_den
 
     !> The Pade coefficient vector of the numerator
     COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: coeff_num(:)
@@ -76,17 +78,61 @@ CONTAINS
 
     !> The optional **tol** argument specifies the relative tolerance; if
     !! omitted, it defaults to 1e-14. Set to 0 to turn off robustness.
-    REAL(dp),    OPTIONAL,    INTENT(IN)  :: tol_in
+    REAL(dp),    OPTIONAL,    INTENT(IN)  :: tol
 
-    !> local variable for the tolerance
-    REAL(dp) tol
+    !> number of converged elements
+    INTEGER rho
 
-    ! default value of tolerance 1e-14
-    IF (PRESENT(tol_in)) THEN
-      tol = tol_in
-    ELSE
-      tol = eps14
-    END IF
+    !> number of leading or trailing zeros
+    INTEGER lam
+
+    !> local variable for the relative tolerance
+    REAL(dp) rel_tol
+
+    !> absolute value for the tolerance
+    REAL(dp) abs_tol
+
+    !> singular values of matrix
+    REAL(dp),    ALLOCATABLE :: sigma(:)
+
+    !> the coefficients of the Taylor series
+    COMPLEX(dp), ALLOCATABLE :: coeff(:)
+
+    !> the first row of the Toeplitz matrix
+    COMPLEX(dp), ALLOCATABLE :: row(:)
+
+    !> the first column of the Toeplitz matrix
+    COMPLEX(dp), ALLOCATABLE :: col(:)
+
+    !> the constructed Toeplitz matrix
+    COMPLEX(dp), ALLOCATABLE :: zmat(:,:)
+
+    !> matrix for calculating the numerical rank
+    COMPLEX(dp), ALLOCATABLE :: cmat(:,:)
+
+    !> U matrix for singular value decomposition
+    COMPLEX(dp), ALLOCATABLE :: umat(:,:)
+
+    !> V matrix for singular value decomposition
+    COMPLEX(dp), ALLOCATABLE :: vmat(:,:)
+
+    !> D matrix is diagonal, so we can store it in a vector
+    COMPLEX(dp), ALLOCATABLE :: dmat(:)
+
+    !> Q matrix of the QR factorization
+    COMPLEX(dp), ALLOCATABLE :: qmat(:,:)
+
+    !> numeric precision (1 + eps) > 1
+    REAL(dp),    PARAMETER :: eps = EPSILON(1.0_dp)
+
+    !> complex constant of 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    !> use infinity norm
+    LOGICAL, PARAMETER :: inf = .TRUE.
 
     ! sanity check of the input
     IF (radius <= 0) &
@@ -95,6 +141,164 @@ CONTAINS
       CALL errore(__FILE__, "degree of numerator must be positive", deg_num)
     IF (deg_den < 0) &
       CALL errore(__FILE__, "degree of denominator must be positive", deg_den)
+
+    ! Compute coefficients
+    CALL pade_derivative(radius, func, deg_num + deg_den + 1, coeff)
+
+    ! default value of tolerance 1e-14
+    IF (PRESENT(tol)) THEN
+      rel_tol = tol
+    ELSE
+      rel_tol = eps14
+    END IF
+
+    ! determine the absolute value of the tolerance
+    abs_tol = rel_tol * norm(coeff)
+
+    !
+    ! Compute the Pade approximation.
+    !
+    IF (norm(coeff(1:deg_num + 1), inf) <= rel_tol * norm(coeff, inf)) THEN
+      !
+      ! special case - the function is 0
+      !
+      ! set numerator to 0
+      deg_num = 0
+      ALLOCATE(coeff_num(deg_num + 1))
+      coeff_num = zero
+      !
+      ! set denominator to 1
+      deg_den = 0
+      ALLOCATE(coeff_den(deg_den + 1))
+      coeff_den = one
+      !
+      RETURN
+      !
+    END IF
+    !
+    ! Do diagonal hopping across block. 
+    DO WHILE (.TRUE.)
+      !
+      ! Special case n == 0.
+      IF (deg_den == 0) THEN
+        !
+        ALLOCATE(coeff_num(deg_num + 1))
+        coeff_num = coeff(:deg_num + 1) 
+        !
+        ALLOCATE(coeff_den(deg_den + 1))
+        coeff_den = one
+        !
+        EXIT
+        !
+      END IF
+      !
+      ! general case
+      !
+      ! First row/column of Toeplitz matrix.
+      ALLOCATE(row(deg_den + 1))
+      row = zero
+      row(1) = coeff(1)
+      !
+      ALLOCATE(col(deg_den + deg_num + 1))
+      col = zero
+      col(1:SIZE(coeff)) = coeff;
+      !
+      ! Form Toeplitz matrix.
+      CALL toeplitz_nonsym(col, row, zmat)
+      DEALLOCATE(col, row)
+      !
+      ! Compute numerical rank.
+      ALLOCATE(cmat(deg_den, SIZE(zmat, 2))) 
+      cmat = zmat(deg_num + 2:deg_num + deg_den + 1, :)
+      CALL svd(cmat, sigma)
+      rho = COUNT(sigma > abs_tol)
+      !
+      IF (rho == deg_den) EXIT
+      !
+      ! Decrease mn, n if rank-deficient.
+      deg_num = deg_num - (deg_den - rho)
+      deg_den = rho
+      !
+      DEALLOCATE(zmat, cmat)
+      !
+    END DO ! while
+    !
+    DEALLOCATE(coeff)
+    !
+    ! Hopping finished. Now compute b and a.
+    IF (deg_num > 1) THEN
+      !
+      CALL svd(cmat, sigma, umat, vmat)
+      !
+      ! Null vector gives b.
+      ALLOCATE(coeff_den(deg_den + 1))
+      coeff_den = vmat(deg_den + 1, :)
+      !
+      ! Do final computation via reweighted QR for better zero preservation.
+      ALLOCATE(dmat(SIZE(coeff_den)))
+      dmat = ABS(coeff_den) + SQRT(eps)
+      ! replace C -> (C D)^T
+      CALL matmul_transpose(cmat, dmat)
+      CALL qr(cmat, qmat)
+      !
+      ! Compensate for reweighting.
+      coeff_den = dmat * qmat(:, deg_den + 1)
+      coeff_den = coeff_den / norm(coeff_den)
+      !
+      ! Multiplying gives a.
+      ALLOCATE(coeff_num(deg_num + 1))
+      coeff_num = MATMUL(zmat(1:deg_num + 1, 1:deg_den + 1), coeff_den)
+      !
+      ! Count leading zeros of b.
+      lam = first_nonzero(coeff_den, rel_tol) - 1
+      !
+      IF (lam > 0) THEN
+        !
+        ! Discard leading zeros of b and a.
+        deg_num = deg_num - lam
+        deg_den = deg_den - lam
+        !
+        ALLOCATE(coeff(deg_num + 1))
+        coeff = coeff_num(lam + 1:)
+        CALL MOVE_ALLOC(coeff, coeff_num)
+        !
+        ALLOCATE(coeff(deg_den + 1))
+        coeff = coeff_den(lam + 1:)
+        CALL MOVE_ALLOC(coeff, coeff_den)
+        !
+      END IF ! lam > 0
+      !
+      ! Discard trailing zeros of b.
+      lam = last_nonzero(coeff_den, rel_tol) - 1
+      !
+      IF (lam /= deg_den) THEN
+        !
+        deg_den = lam
+        !
+        ALLOCATE(coeff(deg_den + 1))
+        coeff = coeff_den(:deg_den + 1)
+        CALL MOVE_ALLOC(coeff, coeff_den)
+        !
+      END IF ! lam /= deg_den
+      !
+    END IF ! deg_num > 1
+    !
+    ! Discard trailing zero coefficients in a.
+    lam = last_nonzero(coeff_num, abs_tol) - 1
+    !
+    IF (lam /= deg_num) THEN
+      !
+      deg_num = lam
+      !
+      ALLOCATE(coeff(deg_num + 1))
+      coeff = coeff_num(:deg_num + 1)
+      CALL MOVE_ALLOC(coeff, coeff_num)
+      !
+    END IF ! lam /= deg_num
+    !
+    ! Normalize.
+    coeff_num = coeff_num / coeff_den(1)
+    coeff_den = coeff_den / coeff_den(1)
 
   END SUBROUTINE pade_robust
 

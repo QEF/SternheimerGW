@@ -22,4 +22,5 @@
 !------------------------------------------------------------------------------ 
 ADD_TEST_SUITE(gram_schmidt_suite)
 ADD_TEST_SUITE(linear_solver_suite)
+ADD_TEST_SUITE(pade_suite)
 ADD_TEST_SUITE(parallel_suite)
