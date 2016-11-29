@@ -455,18 +455,18 @@ CONTAINS
    !> work array that will store the output
    COMPLEX(dp), ALLOCATABLE :: work(:,:)
 
-   ! counter on the rows of C
-   INTEGER irow
+   ! counter on the columns of C
+   INTEGER icol
 
    ! create work array - transpose of C
    ALLOCATE(work(SIZE(cmat, 2), SIZE(cmat, 1)))
 
-   DO irow = 1, SIZE(cmat, 1)
+   DO icol = 1, SIZE(cmat, 2)
      !
-     ! C_ij D_ii
-     work(:, irow) = cmat(irow, :) * dmat(irow)
+     ! C_ij D_jj
+     work(icol, :) = cmat(:, icol) * dmat(icol)
      !
-   END DO ! irow
+   END DO ! icol
 
    ! copy work to output
    CALL MOVE_ALLOC(work, cmat)
