@@ -233,6 +233,7 @@ linear_solver.o : ../../Modules/kind.o
 linear_solver.o : debug.o
 linear_solver.o : gram_schmidt.o
 mix_pot_c.o : ../../Modules/kind.o
+norm.o : ../../Modules/kind.o
 openfilq.o : ../../Modules/control_flags.o
 openfilq.o : ../../Modules/fft_base.o
 openfilq.o : ../../Modules/io_files.o
