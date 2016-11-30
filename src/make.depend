@@ -41,6 +41,7 @@ construct_w.o : ../../Modules/kind.o
 construct_w.o : freqbins.o
 construct_w.o : godby_needs.o
 construct_w.o : gwcom.o
+construct_w.o : pade_robust.o
 construct_w.o : sigma_grid.o
 construct_w.o : timing.o
 coulomb.o : ../../FFTXlib/fft_interfaces.o
