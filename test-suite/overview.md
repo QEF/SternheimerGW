@@ -32,6 +32,7 @@ The following SGW features are tested in this suite
 * evaluate the dielectric function on the imaginary axis
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
+* obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain the self energy
@@ -46,17 +47,22 @@ Test case: sgw\_c
 
 Evaluate the GW correction for C using the direct solver, imaginary frequency
 integration, and full frequency integration for W.
+Then evaluate the GW correction with a full frequency integration along the
+real axis. In the first part, we use the padecont flag to go to the real axis,
+in the second part, we restart and use the paderobust flag.
 
 The following SGW features are tested by this case
 
 * evaluate the dielectric function on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
+* obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain self energy
 * overcome the divergence of the Coulomb potential with spherical truncation
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
+* restart from previously calculated W
 
 Test case: sgw\_si
 ------------------

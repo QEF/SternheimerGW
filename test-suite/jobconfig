@@ -23,7 +23,7 @@
 
 [sgw_c/]
 program = SGW
-inputs_args = ('scf.in', ''), ('gw.in', '')
+inputs_args = ('scf.in', ''), ('gw.in', ''), ('real.gw.in', ''), ('robust.gw.in', '')
 
 [sgw_si/]
 program = SGW
