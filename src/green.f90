@@ -35,16 +35,13 @@ CONTAINS
   !! Because QE stores some information in global modules, we need to initialize
   !! those quantities appropriatly so that the function calls work as intented.
   !!
-  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g, occupation, eval, evec)
+  SUBROUTINE green_prepare(ikq, gcutcorr, map, num_g)
 
     USE buffers,           ONLY: get_buffer
-    USE control_gw,        ONLY: nbnd_occ
-    USE kinds,             ONLY: dp
     USE klist,             ONLY: igk_k, xk, ngk
     USE reorder_mod,       ONLY: create_map
-    USE units_gw,          ONLY: lrwfc, iuwfc
     USE uspp,              ONLY: vkb
-    USE wvfct,             ONLY: current_k, et, npwx
+    USE wvfct,             ONLY: current_k
 
     !> The index of the point k - q
     INTEGER,  INTENT(IN)  :: ikq
@@ -58,32 +55,11 @@ CONTAINS
     !> The total number of G-vectors at this k-point
     INTEGER,  INTENT(OUT) :: num_g
 
-    !> The occupation of the eigenstates
-    REAL(dp),    INTENT(OUT), ALLOCATABLE :: occupation(:)
-
-    !> eigenvalue of all bands at k - q
-    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: eval(:)
-
-    !> eigenvector of all bands at k - q
-    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: evec(:,:)
-
-    !> helper for the number of occupied bands
-    INTEGER num_band_occ
-
     !> number of G-vectors for correlation
     INTEGER num_g_corr
 
     !> temporary copy of the map array
     INTEGER, ALLOCATABLE :: map_(:)
-
-    !> complex constant of 0
-    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
-
-    !> constant of 1 indicating a fully occupied state
-    REAL(dp), PARAMETER :: occupied = 1.0_dp
-
-    !> constant of 0 indicating an unoccupied state
-    REAL(dp), PARAMETER :: unoccupied = 0.0_dp
 
     current_k = ikq
 
@@ -113,25 +89,6 @@ CONTAINS
 
     ! initialize PP projectors
     CALL init_us_2(num_g, igk_k(:,ikq), xk(:,ikq), vkb)
-
-    !
-    ! read eigenvalue and eigenvector and set the occupation
-    !
-    ALLOCATE(occupation(SIZE(et, 1)))
-    ALLOCATE(eval(SIZE(et, 1)))
-    ALLOCATE(evec(npwx, SIZE(et, 1)))
-
-    ! set the occupation of the eigenstates
-    num_band_occ = nbnd_occ(ikq)
-    occupation(:num_band_occ)     = occupied
-    occupation(num_band_occ + 1:) = unoccupied
-
-    ! set eigenvalue (complex to allow shifting it into the complex plane)
-    eval = CMPLX(et(:,ikq), 0.0_dp, KIND=dp)
-
-    ! read wave function
-    CALL get_buffer(evec, lrwfc, iuwfc, ikq)
-    evec(num_g + 1:, :) = zero
 
   END SUBROUTINE green_prepare
 

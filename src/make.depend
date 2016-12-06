@@ -137,7 +137,6 @@ green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : ../../iotk/src/iotk_module.o
 green.o : debug.o
-green.o : gwcom.o
 green.o : linear_op.o
 green.o : norm.o
 green.o : reorder.o
