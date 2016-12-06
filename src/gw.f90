@@ -62,6 +62,9 @@ program gw
   !> stores the FFT grids used in the calculation
   TYPE(sigma_grid_type) grid
 
+  !> stores the configuration of the linear solver for the screened Coulomb interaction
+  TYPE(select_solver_type) config_coul
+
   !> stores the configuration of the linear solver for the Green's function
   TYPE(select_solver_type) config_green
 
@@ -81,7 +84,7 @@ program gw
   call sgw_opening_message () 
 ! Initialize GW calculation, Read Ground state information.
   
-  call gwq_readin(config_green, freq, vcut, debug)
+  call gwq_readin(config_coul, config_green, freq, vcut, debug)
   call check_stop_init()
   call check_initial_status()
 ! Initialize frequency grids, FFT grids for correlation
@@ -92,7 +95,7 @@ program gw
   call opengwfil(grid)
   call stop_clock(time_setup)
 ! Calculation W
-  if(do_coulomb) call do_stern(grid%corr%ngmt)
+  if(do_coulomb) call do_stern(config_coul, grid%corr%ngmt)
   ik = 1
   do_band  = .TRUE.
   do_matel = .TRUE.

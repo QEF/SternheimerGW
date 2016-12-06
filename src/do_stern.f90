@@ -24,7 +24,7 @@
 !!
 !! This routine is the driver routine for the solvers. Depending on the choice
 !! in the input file either a direct or an iterative solver is used.
-SUBROUTINE do_stern(num_g_corr)
+SUBROUTINE do_stern(config, num_g_corr)
 
   USE constants,        ONLY : eps6
   USE control_gw,       ONLY : do_q0_only, solve_direct, tinvert, do_epsil
@@ -39,10 +39,14 @@ SUBROUTINE do_stern(num_g_corr)
   USE mp_world,         ONLY : mpime
   USE parallel_module,  ONLY : parallel_task, mp_gatherv
   USE run_nscf_module,  ONLY : run_nscf
+  USE select_solver_module, ONLY : select_solver_type
   USE timing_module,    ONLY : time_coulomb, time_coul_nscf
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
+
+  !> stores the configuration of the linear solver for the screened Coulomb interaction
+  TYPE(select_solver_type), INTENT(IN) :: config
 
   !> the number of G vectors in the correlation grid
   INTEGER, INTENT(IN)  :: num_g_corr
@@ -138,7 +142,7 @@ IMPLICIT NONE
       CALL stop_clock(time_coul_nscf)
 
       CALL initialize_gw(.TRUE.)
-      CALL coulomb_q0G0(eps_m)
+      CALL coulomb_q0G0(config, eps_m)
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
       CALL clean_pw_gw(.FALSE.)
@@ -181,7 +185,7 @@ IMPLICIT NONE
     ALLOCATE(scrcoul_loc(num_g_corr, nfs, num_task_loc))
 
     ! evaluate screened Coulomb interaction and collect on root
-    CALL coulomb(igstart, num_g_corr, num_task_loc, scrcoul_loc)
+    CALL coulomb(config, igstart, num_g_corr, num_task_loc, scrcoul_loc)
     CALL mp_gatherv(inter_image_comm, root_id, num_task, scrcoul_loc, scrcoul_root)
 
     ! Only the root of the image should write to file

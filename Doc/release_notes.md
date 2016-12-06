@@ -4,8 +4,15 @@ Release notes
 on develop
 ----------
 
-Rewrite of the Godby-Needs plasmon pole to work for real frequency integration.
+Reinterpret the real frequency integration. We choose the frequencies for the
+Green's function above or below the real axis depending on whether we are above
+or below the Fermi energy. This leads directly includes the nonanalytic part,
+fixes the inconsistencies between real and imaginary frequency integration, and
+improves the convergence of the real frequency integration with respect to the
+number of necessary frequencies.
 
+Add new linear solver that construct a Krylov subspace that is used for all
+frequencies but might be extended if one requires a tighter convergence setting.
 Dynamically change the linear solver if the first choice of the solver does
 not converge. Change the linear solver to return error codes and switch to
 a different solver if nonzero error code is returned.
@@ -15,10 +22,6 @@ is more expensive, because the FFT now requires communication, but the only
 solution to calculate large memory systems. In the new approach the memory
 requirement for the Greens function is distributed across the processes leading
 to a reduced overall memory consumption.
-
-Add new linear solver that construct a Krylov subspace that is used for all
-frequencies but might be extended if one requires a tighter convergence setting.
-This linear solver is activated when multishift is set to false.
 
 Add the debug module that allows to set debugging options. If the code is
 compiled with the __DEBUG flag it will examine the requested parts in more

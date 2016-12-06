@@ -530,7 +530,7 @@ CONTAINS
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE fft6_module,          ONLY: invfft6
     USE freqbins_module,      ONLY: freqbins_type
-    USE green_module,         ONLY: green_prepare, green_function, green_nonanalytic
+    USE green_module,         ONLY: green_prepare, green_function
     USE kinds,                ONLY: dp
     USE select_solver_module, ONLY: select_solver_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
@@ -595,9 +595,6 @@ CONTAINS
     !> The map from G-vectors at current k to global array.
     INTEGER,     ALLOCATABLE :: map(:)
 
-    !> the occupation of the states
-    REAL(dp),    ALLOCATABLE :: occupation(:)
-
     !> complex value of the chemical potential
     COMPLEX(dp) mu_
 
@@ -619,12 +616,6 @@ CONTAINS
 
     !> work array; contains either W or \f$\Sigma\f$
     COMPLEX(dp), ALLOCATABLE :: work(:,:)
-
-    !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
-    COMPLEX(dp), ALLOCATABLE :: eval(:)
-
-    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
-    COMPLEX(dp), ALLOCATABLE :: evec(:,:)
 
     !
     ! sanity check of the input
@@ -661,21 +652,13 @@ CONTAINS
     !! 2. prepare the QE module so that we can evaluate the Green's function
     !!
     ! this will allocate map
-    CALL green_prepare(ikq, num_g_corr, map, num_g, occupation, eval, evec)
+    CALL green_prepare(ikq, num_g_corr, map, num_g)
 
     !!
     !! 3. evaluate the Green's function of the system
     !!
     ! after this call, we obtained G(G, G', w)
     CALL green_function(grid, config, map, num_g, freq_green, green, debug)
-
-    !!
-    !! 4. we add the nonanalytic part if on the real axis
-    !!
-    IF (.NOT. freq%imag_sigma) THEN
-      CALL green_nonanalytic(grid, map, freq_green, occupation, eval, evec, green)
-    END IF
-    DEALLOCATE(occupation, eval, evec)
 
     ! check for NaN in Green's function
     IF (debug_sigma) THEN
@@ -685,7 +668,7 @@ CONTAINS
     END IF
 
     !!
-    !! 5. Fourier transform Green's function to real space
+    !! 4. Fourier transform Green's function to real space
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
@@ -701,13 +684,13 @@ CONTAINS
     END IF
 
     !!
-    !! 6. distribute the frequencies of \f$\Sigma\f$ across the image
+    !! 5. distribute the frequencies of \f$\Sigma\f$ across the image
     !!
     DO isigma = 1, freq%num_sigma()
       !
       DO igreen = 1, num_green
         !!
-        !! 7. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
+        !! 6. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
         !!
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
         ! work will be allocated and contain W(G, G', wS - wG)
@@ -720,7 +703,7 @@ CONTAINS
           END IF
         END IF
         !!
-        !! 8. convolute G and W
+        !! 7. convolute G and W
         !!
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
@@ -734,7 +717,7 @@ CONTAINS
           END IF
         END IF
         !!
-        !! 9. add the result to \f$\Sigma\f$
+        !! 8. add the result to \f$\Sigma\f$
         !!
         sigma(:,:,isigma) = sigma(:,:,isigma) + work(1:num_g_corr, 1:num_gp_corr)
         !

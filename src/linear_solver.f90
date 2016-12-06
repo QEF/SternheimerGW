@@ -199,6 +199,8 @@ CONTAINS
   !! of the right-hand side of the equation.
   SUBROUTINE linear_solver_threshold(bb, rel_threshold, abs_threshold)
 
+    USE norm_module, ONLY: norm
+
     !> the right hand side of the equation
     COMPLEX(dp), INTENT(IN)  :: bb(:)
 
@@ -208,17 +210,7 @@ CONTAINS
     !> the absolute threshold to check for convergence
     REAL(dp),    INTENT(OUT) :: abs_threshold
 
-    !> the dimensionality of the problem
-    INTEGER vec_size
-
-    !> LAPACK function to evaluate the 2-norm
-    REAL(dp), EXTERNAL :: DNRM2
-
-    ! initialize helper variables
-    ! note: factor 2 because DNRM2 takes real instead of complex
-    vec_size    = 2 * SIZE(bb)
-
-    abs_threshold = rel_threshold * DNRM2(vec_size, bb, 1)
+    abs_threshold = rel_threshold * norm(bb)
 
   END SUBROUTINE linear_solver_threshold
 

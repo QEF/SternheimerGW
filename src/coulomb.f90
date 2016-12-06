@@ -26,7 +26,7 @@
 !! The dielectric matrix is given by:
 !! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
 !-----------------------------------------------------------------------
-SUBROUTINE coulomb(igstart, num_g_corr, num_task, scrcoul) 
+SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul) 
 !-----------------------------------------------------------------------
   USE constants,        ONLY : eps8
   USE control_gw,       ONLY : solve_direct, niter_gw
@@ -41,9 +41,13 @@ SUBROUTINE coulomb(igstart, num_g_corr, num_task, scrcoul)
   USE noncollin_module, ONLY : nspin_mag
   USE kinds,            ONLY : dp
   USE qpoint,           ONLY : xq
+  USE select_solver_module, ONLY : select_solver_type
   USE solve_module,     ONLY : solve_linter
 
   IMPLICIT NONE
+
+  !> stores the configuration of the linear solver for the screened Coulomb interaction
+  TYPE(select_solver_type), INTENT(IN) :: config
 
   !> first index of the G vector evaluated on this process
   INTEGER, INTENT(IN) :: igstart
@@ -121,7 +125,7 @@ SUBROUTINE coulomb(igstart, num_g_corr, num_task, scrcoul)
     CALL invfft('Smooth', dvbare, dffts)
     !
     ! solve for linear response due to this perturbation
-    CALL solve_linter(num_iter, dvbare, fiu(:nfs), drhoscfs)
+    CALL solve_linter(config, num_iter, dvbare, fiu(:nfs), drhoscfs)
     !
     ! back to reciprocal space
     CALL fwfft('Smooth', dvbare, dffts)

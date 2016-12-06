@@ -52,15 +52,13 @@ CONTAINS
 !! 4. calls c_bi_cgsolve_all to solve the linear system
 !! 5. computes Delta rho, Delta V_{SCF}.
 !----------------------------------------------------------------------------
-SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
+SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
 !-----------------------------------------------------------------------------
 
-  USE bicgstab_module,      ONLY : bicgstab, bicgstab_type
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : eps14
-  USE control_gw,           ONLY : nmix_gw, tr2_gw, lmax_gw, &
-                                   lgamma, convt, nbnd_occ, alpha_mix
+  USE control_gw,           ONLY : nmix_gw, tr2_gw, lgamma, convt, nbnd_occ, alpha_mix
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
@@ -76,6 +74,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   USE mp_pools,             ONLY : inter_pool_comm
   USE noncollin_module,     ONLY : noncolin, npol, nspin_mag
   USE qpoint,               ONLY : npwq, nksq, ikks, ikqs
+  USE select_solver_module, ONLY : select_solver, select_solver_type
   USE timing_module,        ONLY : time_coul_solver
   USE units_gw,             ONLY : iubar, lrbar, iuwfc, lrwfc
   USE uspp,                 ONLY : vkb
@@ -84,6 +83,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k
 
   IMPLICIT NONE
+
+  !> the configuration of the linear solver
+  TYPE(select_solver_type), INTENT(IN) :: config_global
 
   !> number of iterations - use 1 to choose the direct solver
   INTEGER,     INTENT(IN)  :: num_iter
@@ -196,8 +198,8 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
   !> norm of the change of the linear response
   REAL(dp) dr2
 
-  !> the configuration of the BiCGstab solver
-  TYPE(bicgstab_type) config
+  !> local copy of the configuration of the linear solver
+  TYPE(select_solver_type) :: config
 
   !> complex value of 0
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
@@ -216,6 +218,9 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
 
   ! use the direct solver
   direct_solver = num_iter == 1
+
+  ! create local copy of the configuration of the linear solver
+  config = config_global
 
   !
   ! sanity test of input
@@ -343,7 +348,7 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
           !
           ! for the direct solver, we start with the actual threshold
           !
-          thresh = tr2_gw
+          thresh = config_global%threshold
           !
         ELSE
           !
@@ -357,13 +362,11 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
         ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
         ! dvpsi=-P_c^+ (dvbare+dvscf)*psi , dvscf fixed.
         !
-        ! use the BiCGstab solver
-        config%lmax = lmax_gw
         config%threshold = thresh
         !
         DO ibnd = 1, nbnd_occ(ik)
-          CALL bicgstab(config, coulomb_operator, dvpsi(:npwq, ibnd), &
-                        -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :), ierr)
+          CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
+                             -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :), ierr)
           CALL errore(__FILE__, "solver did not converge", ierr)
         END DO ! ibnd
         !
@@ -409,7 +412,6 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
           ! threshold for iterative solution of the linear system
           !
           thresh = MIN(1.d-1 * SQRT(dr2), 1.d-2)
-          config%lmax = lmax_gw
           config%threshold = thresh
           !
           ! iterative solution of the linear system (H-eS)*dpsi=dvpsi,
@@ -427,16 +429,16 @@ SUBROUTINE solve_linter(num_iter, dvbarein, freq, drhoscf)
           DO ibnd = 1, nbnd_occ(ik)
             !
             ! solve +omega
-            CALL bicgstab(config, coulomb_operator, dvpsi(:npwq, ibnd), &
-                          -(et(ibnd, ikk) + omega(ifreq:ifreq)),        &
-                          dpsi(:npwq, ibnd, ifreq:ifreq), ierr)
+            CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
+                               -(et(ibnd, ikk) + omega(ifreq:ifreq)),        &
+                               dpsi(:npwq, ibnd, ifreq:ifreq), ierr)
             CALL errore(__FILE__, "solver did not converge", ierr)
             !
             ! solve -omega
             IF (.NOT.zero_freq .OR. ifreq > 1) THEN
-              CALL bicgstab(config, coulomb_operator, dvpsi(:npwq, ibnd), &
-                            et(ibnd, ikk) + omega(iomega:iomega),         &
-                            dpsi(:npwq, ibnd, iomega:iomega), ierr)
+              CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
+                                 et(ibnd, ikk) + omega(iomega:iomega),         &
+                                 dpsi(:npwq, ibnd, iomega:iomega), ierr)
               CALL errore(__FILE__, "solver did not converge", ierr)
             END IF
             !

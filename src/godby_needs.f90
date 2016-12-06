@@ -150,11 +150,7 @@ CONTAINS
     !        w~ + w   w~ - w
     IF (ABS(coeff(1)) > eps8) THEN
       !
-      IF (do_imag) THEN
-        res = coeff(1) * (one / (coeff(2) + freq) + one / (coeff(2) - freq))
-      ELSE
-        res = coeff(1) * (one / (coeff(2) + freq) + one / (coeff(2) - CONJG(freq)))
-      END IF
+      res = coeff(1) * (one / (coeff(2) + freq) + one / (coeff(2) - freq))
       !
     ELSE
       res = zero

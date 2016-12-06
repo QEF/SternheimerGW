@@ -23,11 +23,13 @@
 SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
 
   USE cell_base,          ONLY : tpiba
-  USE control_gw,         ONLY : godbyneeds, padecont, modielec, truncation
+  USE control_gw,         ONLY : godbyneeds, padecont, paderobust, modielec, &
+                                 truncation, tr2_gw
   USE freq_gw,            ONLY : fiu, nfs
   USE godby_needs_module, ONLY : godby_needs_coeffs
   USE gvect,              ONLY : g
   USE kinds,              ONLY : DP
+  USE pade_module,        ONLY : pade_coeff_robust
   USE truncation_module,  ONLY : truncate, vcut_type
 
   IMPLICIT NONE
@@ -81,8 +83,10 @@ SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
              enddo
           enddo !enddo on ig
        enddo  !enddo on igp
-       else if(.not.padecont.and..not.godbyneeds) THEN
-                 WRITE(6,'("No screening model chosen!")')
-       endif
+       ELSEIF (paderobust) THEN
+         CALL pade_coeff_robust(fiu, tr2_gw, scrcoul_g)
+       ELSE 
+         CALL errore(__FILE__, "No screening model chosen!", 1)
+       END IF
     endif
 end SUBROUTINE coulpade

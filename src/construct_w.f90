@@ -31,10 +31,11 @@ CONTAINS
   !> Construct the screened Coulomb interaction for an arbitrary frequency.
   SUBROUTINE construct_w(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
-    USE control_gw,         ONLY : godbyneeds, padecont
+    USE control_gw,         ONLY : godbyneeds, padecont, paderobust
     USE freqbins_module,    ONLY : freqbins_type
     USE godby_needs_module, ONLY : godby_needs_model
     USE kinds,              ONLY : dp
+    USE pade_module,        ONLY : pade_eval_robust
     USE sigma_grid_module,  ONLY : sigma_grid_type
     USE timing_module,      ONLY : time_construct_w
 
@@ -109,6 +110,11 @@ CONTAINS
           !
           ! Pade analytic continuation
           CALL pade_eval(freq_in%num_freq(), freq_in%solver, coeff, freq_out, scrcoul(ig, igp))
+
+        ELSE IF (paderobust) THEN
+          !
+          ! robust Pade analytic continuation
+          CALL pade_eval_robust(coeff, freq_out, scrcoul(ig, igp))
 
         ELSE IF (godbyneeds) THEN
           !
