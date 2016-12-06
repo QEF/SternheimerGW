@@ -627,9 +627,9 @@ CONTAINS
     !!
     !! 4. we add the nonanalytic part if on the real axis
     !!
-    IF (.NOT. freq%imag_sigma) THEN
-      CALL green_nonanalytic(grid, map, freq_green, occupation, eval, evec, green)
-    END IF
+!    IF (.NOT. freq%imag_sigma) THEN
+!      CALL green_nonanalytic(grid, map, freq_green, occupation, eval, evec, green)
+!    END IF
     DEALLOCATE(occupation, eval, evec)
 
     !!
