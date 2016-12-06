@@ -142,7 +142,7 @@ CONTAINS
     USE cell_base,            ONLY: omega
     USE constants,            ONLY: tpi
     USE control_gw,           ONLY: output, tmp_dir_coul
-    USE debug_module,         ONLY: debug_type
+    USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
     USE freqbins_module,      ONLY: freqbins_type
@@ -245,12 +245,16 @@ CONTAINS
     !> flag indicating whether Coulomb file is already opened
     LOGICAL opend
 
+    !> debug correlation part of self energy
+    LOGICAL debug_sigma
+
     CALL start_clock(time_sigma_c)
     CALL start_clock(time_sigma_setup)
 
     ! set helper variable
     num_g_corr  = grid%corr%ngmt
     num_gp_corr = grid%corr_par%ngmt
+    debug_sigma = debug_set .AND. debug%sigma_corr
 
     !
     ! set the prefactor depending on whether we integrate along the real or
@@ -323,9 +327,18 @@ CONTAINS
       ! evaluate the coefficients for the analytic continuation of W
       !
       IF (config(icon)%index_q /= iq) THEN
+        !
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
         CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
+        !
+        ! check if any NaN occured in coulpade
+        IF (debug_sigma) THEN
+          IF (ANY(test_nan(coulomb))) THEN
+            CALL errore(__FILE__, 'Found a NaN in Coulomb after analytic continuation', iq)
+          END IF
+        END IF
+        !
       END IF
       !
       ! determine the prefactor
@@ -397,8 +410,9 @@ CONTAINS
   !! The product is evaluated in real space. Because the Green's function can
   !! be used for several W values, we expect that the Green's function is
   !! already transformed to real space by the calling routine.
-  SUBROUTINE sigma_prod(omega, grid, alpha, green, array)
+  SUBROUTINE sigma_prod(omega, grid, alpha, green, array, debug)
 
+    USE debug_module,      ONLY: debug_type, debug_set, test_nan
     USE fft6_module,       ONLY: invfft6, fwfft6
     USE kinds,             ONLY: dp
     USE sigma_grid_module, ONLY: sigma_grid_type
@@ -420,6 +434,9 @@ CONTAINS
     !! *on output* the self-energy with both indices in reciprocal space
     COMPLEX(dp),   INTENT(INOUT) :: array(:,:)
 
+    !> the debug configuration of the calculation
+    TYPE(debug_type), INTENT(IN) :: debug
+
     !> the number of points in real space
     INTEGER num_r, num_rp
 
@@ -429,6 +446,9 @@ CONTAINS
     !> counter on G vectors
     INTEGER ig
 
+    !> debug the convolution of G and W
+    LOGICAL debug_sigma
+
     CALL start_clock(time_GW_product)
 
     ! determine the helper variables
@@ -436,6 +456,7 @@ CONTAINS
     num_rp = grid%corr_par%dfftt%nnr
     num_g  = grid%corr%ngmt
     num_gp = grid%corr_par%ngmt
+    debug_sigma = debug_set .AND. debug%sigma_corr
 
     !
     ! sanity check of the input
@@ -448,6 +469,8 @@ CONTAINS
       CALL errore(__FILE__, "size of array inconsistent with G-vector FFT definition", 1)
     IF (SIZE(array, 2) /= num_rp) &
       CALL errore(__FILE__, "size of array inconsistent with G'-vector FFT definition", 1)
+    IF (test_nan(alpha)) &
+      CALL errore(__FILE__, "prefactor of the convolution is NaN", 1)
 
     !!
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
@@ -455,6 +478,12 @@ CONTAINS
     ! array contains W(r, r')
     CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
                  grid%corr%nlt, grid%corr_par%nlt, omega)
+    ! check for NaN after FFT
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(array))) THEN
+        CALL errore(__FILE__, "FFT of W resulted in NaN", 1)
+      END IF
+    END IF
 
     !!
     !! 2. We evaluate the product in real space 
@@ -462,6 +491,12 @@ CONTAINS
     !!
     ! array contains Sigma(r, r') / alpha
     array = green * array
+    ! check for NaN after multiplication
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(array))) THEN
+        CALL errore(__FILE__, "G * W produced a NaN", 1)
+      END IF
+    END IF
 
     !!
     !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
@@ -469,6 +504,12 @@ CONTAINS
     !. array contains Sigma(G, G') / alpha
     CALL fwfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
                 grid%corr%nlt, grid%corr_par%nlt, omega)
+    ! check for NaN after the FFT
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(array(:num_g, :num_gp)))) THEN
+        CALL errore(__FILE__, "FFT of Sigma resulted in NaN", 1)
+      END IF
+    END IF
 
     !! 4. We multiply with the prefactor \f$\alpha\f$.
     DO ig = 1, num_gp
@@ -486,10 +527,10 @@ CONTAINS
                                gmapsym, coulomb, sigma, debug)
 
     USE construct_w_module,   ONLY: construct_w
-    USE debug_module,         ONLY: debug_type
+    USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE fft6_module,          ONLY: invfft6
     USE freqbins_module,      ONLY: freqbins_type
-    USE green_module,         ONLY: green_prepare, green_function, green_nonanalytic
+    USE green_module,         ONLY: green_prepare, green_function
     USE kinds,                ONLY: dp
     USE select_solver_module, ONLY: select_solver_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
@@ -527,6 +568,9 @@ CONTAINS
     !> the debug configuration of the calculation
     TYPE(debug_type), INTENT(IN) :: debug
 
+    !> debug correlation part of self energy
+    LOGICAL debug_sigma
+
     !> the number of real space points used for the correlation
     INTEGER num_r_corr, num_rp_corr
 
@@ -551,9 +595,6 @@ CONTAINS
     !> The map from G-vectors at current k to global array.
     INTEGER,     ALLOCATABLE :: map(:)
 
-    !> the occupation of the states
-    REAL(dp),    ALLOCATABLE :: occupation(:)
-
     !> complex value of the chemical potential
     COMPLEX(dp) mu_
 
@@ -576,15 +617,10 @@ CONTAINS
     !> work array; contains either W or \f$\Sigma\f$
     COMPLEX(dp), ALLOCATABLE :: work(:,:)
 
-    !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
-    COMPLEX(dp), ALLOCATABLE :: eval(:)
-
-    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
-    COMPLEX(dp), ALLOCATABLE :: evec(:,:)
-
     !
     ! sanity check of the input
     !
+    debug_sigma = debug_set .AND. debug%sigma_corr
     num_r_corr  = grid%corr%dfftt%nnr
     num_rp_corr = grid%corr_par%dfftt%nnr
     num_g_corr  = grid%corr%ngmt
@@ -616,7 +652,7 @@ CONTAINS
     !! 2. prepare the QE module so that we can evaluate the Green's function
     !!
     ! this will allocate map
-    CALL green_prepare(ikq, num_g_corr, map, num_g, occupation, eval, evec)
+    CALL green_prepare(ikq, num_g_corr, map, num_g)
 
     !!
     !! 3. evaluate the Green's function of the system
@@ -624,16 +660,15 @@ CONTAINS
     ! after this call, we obtained G(G, G', w)
     CALL green_function(grid, config, map, num_g, freq_green, green, debug)
 
-    !!
-    !! 4. we add the nonanalytic part if on the real axis
-    !!
-    IF (.NOT. freq%imag_sigma) THEN
-      CALL green_nonanalytic(grid, map, freq_green, occupation, eval, evec, green)
+    ! check for NaN in Green's function
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(green))) THEN
+        CALL errore(__FILE__, "Green's function contains NaN in reciprocal space", ikq)
+      END IF
     END IF
-    DEALLOCATE(occupation, eval, evec)
 
     !!
-    !! 5. Fourier transform Green's function to real space
+    !! 4. Fourier transform Green's function to real space
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
@@ -641,28 +676,48 @@ CONTAINS
                    grid%corr%nlt, grid%corr_par%nlt, omega)
     END DO ! igreen
 
+    ! check for NaN in Green's function
+    IF (debug_sigma) THEN
+      IF (ANY(test_nan(green))) THEN
+        CALL errore(__FILE__, "Green's function contains NaN in real space", ikq)
+      END IF
+    END IF
+
     !!
-    !! 6. distribute the frequencies of \f$\Sigma\f$ across the image
+    !! 5. distribute the frequencies of \f$\Sigma\f$ across the image
     !!
     DO isigma = 1, freq%num_sigma()
       !
       DO igreen = 1, num_green
         !!
-        !! 7. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
+        !! 6. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
         !!
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
         ! work will be allocated and contain W(G, G', wS - wG)
         CALL construct_w(gmapsym, grid, freq, coulomb, freq_coul, work)
+        !
+        ! check for NaN in screened Coulomb
+        IF (debug_sigma) THEN
+          IF (ANY(test_nan(work))) THEN
+            CALL errore(__FILE__, "screened Coulomb interaction contains NaN", igreen)
+          END IF
+        END IF
         !!
-        !! 8. convolute G and W
+        !! 7. convolute G and W
         !!
         icoul = MOD(igreen - 1, freq%num_coul()) + 1
         alpha_weight = alpha * freq%weight(icoul)
         ! work will contain Sigma(G, G', wS)
-        CALL sigma_prod(omega, grid, alpha_weight, green(:,:,igreen), work)
+        CALL sigma_prod(omega, grid, alpha_weight, green(:,:,igreen), work, debug)
         !
+        ! check for NaN after convolution
+        IF (debug_sigma) THEN
+          IF (ANY(test_nan(work(:num_g_corr,:num_gp_corr)))) THEN
+            CALL errore(__FILE__, "convolution of G and W introduced NaN", igreen)
+          END IF
+        END IF
         !!
-        !! 9. add the result to \f$\Sigma\f$
+        !! 8. add the result to \f$\Sigma\f$
         !!
         sigma(:,:,isigma) = sigma(:,:,isigma) + work(1:num_g_corr, 1:num_gp_corr)
         !

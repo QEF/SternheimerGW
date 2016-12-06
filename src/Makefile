@@ -45,9 +45,11 @@ kind_gw.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\
+norm.o\
 openfilq.o\
 opengwfil.o\
 pade.o\
+pade_robust.o\
 parallel.o\
 pp_output.o\
 prepare_q.o\

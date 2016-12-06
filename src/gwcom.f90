@@ -201,6 +201,7 @@ MODULE control_gw
              prec_shift,&
              godbyneeds,&
              padecont,&
+             paderobust,&
              cohsex,&
              multishift,&
              do_sigma_extra,&

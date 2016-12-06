@@ -20,6 +20,7 @@ bcast_gw_input.o : gwcom.o
 bicgstab.o : ../../Modules/io_global.o
 bicgstab.o : ../../Modules/kind.o
 bicgstab.o : debug.o
+bicgstab.o : norm.o
 check_initial_status.o : ../../Modules/io_files.o
 check_initial_status.o : ../../Modules/mp.o
 check_initial_status.o : ../../Modules/mp_global.o
@@ -40,6 +41,7 @@ construct_w.o : ../../Modules/kind.o
 construct_w.o : freqbins.o
 construct_w.o : godby_needs.o
 construct_w.o : gwcom.o
+construct_w.o : pade_robust.o
 construct_w.o : sigma_grid.o
 construct_w.o : timing.o
 coulomb.o : ../../FFTXlib/fft_interfaces.o
@@ -51,6 +53,7 @@ coulomb.o : ../../Modules/kind.o
 coulomb.o : ../../Modules/noncol.o
 coulomb.o : ../../Modules/recvec.o
 coulomb.o : gwcom.o
+coulomb.o : select_solver.o
 coulomb.o : solve_linter.o
 coulomb_q0G0.o : ../../FFTXlib/fft_interfaces.o
 coulomb_q0G0.o : ../../LR_Modules/lrcom.o
@@ -61,12 +64,14 @@ coulomb_q0G0.o : ../../Modules/kind.o
 coulomb_q0G0.o : ../../Modules/noncol.o
 coulomb_q0G0.o : ../../Modules/recvec.o
 coulomb_q0G0.o : gwcom.o
+coulomb_q0G0.o : select_solver.o
 coulomb_q0G0.o : solve_linter.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
 coulpade.o : godby_needs.o
 coulpade.o : gwcom.o
+coulpade.o : pade_robust.o
 coulpade.o : truncation.o
 deallocate_gwq.o : ../../LR_Modules/lrcom.o
 deallocate_gwq.o : ../../Modules/becmod.o
@@ -82,6 +87,7 @@ do_stern.o : ../../PW/src/pwcom.o
 do_stern.o : gwcom.o
 do_stern.o : parallel.o
 do_stern.o : run_nscf.o
+do_stern.o : select_solver.o
 do_stern.o : timing.o
 dvqpsi_us.o : ../../FFTXlib/fft_interfaces.o
 dvqpsi_us.o : ../../LR_Modules/lrcom.o
@@ -120,7 +126,9 @@ gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
+godby_needs.o : gwcom.o
 gram_schmidt.o : ../../Modules/kind.o
+gram_schmidt.o : norm.o
 green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
 green.o : ../../Modules/mp_world.o
@@ -129,8 +137,8 @@ green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : ../../iotk/src/iotk_module.o
 green.o : debug.o
-green.o : gwcom.o
 green.o : linear_op.o
+green.o : norm.o
 green.o : reorder.o
 green.o : select_solver.o
 green.o : sigma_grid.o
@@ -228,7 +236,9 @@ linear_solver.o : ../../Modules/io_global.o
 linear_solver.o : ../../Modules/kind.o
 linear_solver.o : debug.o
 linear_solver.o : gram_schmidt.o
+linear_solver.o : norm.o
 mix_pot_c.o : ../../Modules/kind.o
+norm.o : ../../Modules/kind.o
 openfilq.o : ../../Modules/control_flags.o
 openfilq.o : ../../Modules/fft_base.o
 openfilq.o : ../../Modules/io_files.o
@@ -245,6 +255,10 @@ opengwfil.o : sigma_grid.o
 opengwfil.o : sigma_io.o
 pade.o : ../../Modules/constants.o
 pade.o : ../../Modules/kind.o
+pade_robust.o : ../../FFTXlib/fft_scalar.o
+pade_robust.o : ../../Modules/constants.o
+pade_robust.o : ../../Modules/kind.o
+pade_robust.o : norm.o
 parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp.o
 parallel.o : ../../Modules/mp_global.o
@@ -415,9 +429,9 @@ solve_linter.o : ../../Modules/uspp.o
 solve_linter.o : ../../Modules/wavefunctions.o
 solve_linter.o : ../../PW/src/buffers.o
 solve_linter.o : ../../PW/src/pwcom.o
-solve_linter.o : bicgstab.o
 solve_linter.o : gwcom.o
 solve_linter.o : linear_op.o
+solve_linter.o : select_solver.o
 solve_linter.o : timing.o
 star_q.o : ../../Modules/io_global.o
 star_q.o : ../../Modules/kind.o

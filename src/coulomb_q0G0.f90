@@ -28,7 +28,7 @@
 !!
 !! @note: this is solver for the special case q + G = 0
 !-----------------------------------------------------------------------
-SUBROUTINE coulomb_q0G0(eps_m) 
+SUBROUTINE coulomb_q0G0(config, eps_m) 
 !-----------------------------------------------------------------------
   USE constants,        ONLY : eps8
   USE control_gw,       ONLY : solve_direct, niter_gw
@@ -42,9 +42,13 @@ SUBROUTINE coulomb_q0G0(eps_m)
   USE noncollin_module, ONLY : nspin_mag
   USE kinds,            ONLY : dp
   USE qpoint,           ONLY : xq
+  USE select_solver_module, ONLY : select_solver_type
   USE solve_module,     ONLY : solve_linter
 
   IMPLICIT NONE
+
+  !> stores the configuration of the linear solver for the screened Coulomb interaction
+  TYPE(select_solver_type), INTENT(IN) :: config
 
   !> the screened coulomb interaction
   COMPLEX(dp), INTENT(OUT) :: eps_m(nfs)
@@ -106,7 +110,7 @@ SUBROUTINE coulomb_q0G0(eps_m)
     CALL invfft('Smooth', dvbare, dffts)
     !
     ! solve for linear response due to this perturbation
-    CALL solve_linter(num_iter, dvbare, fiu(:nfs), drhoscfs)
+    CALL solve_linter(config, num_iter, dvbare, fiu(:nfs), drhoscfs)
     !
     ! back to reciprocal space
     CALL fwfft('Smooth', dvbare, dffts)
