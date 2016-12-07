@@ -30,6 +30,10 @@ Features of the SGW code
 The following SGW features are tested in this suite
 
 * evaluate the dielectric function on the imaginary axis
+* evaluate the dielectric function along the real axis
+* select a specific k-point for the dielectric constant
+* manual selection of solver for W
+* use the direct solver to determine the dielectric constant
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
 * obtain the Green's function on the real axis
@@ -54,6 +58,7 @@ in the second part, we restart and use the paderobust flag.
 The following SGW features are tested by this case
 
 * evaluate the dielectric function on the imaginary axis
+* use the direct solver to determine the dielectric constant
 * full frequency integration using Pade approximation to interpolate
 * obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
@@ -63,6 +68,18 @@ The following SGW features are tested by this case
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
+
+Test case: sgw\_licl
+--------------------
+
+Evaluate the dielectric constant for LiCl using the direct solver. Manually
+select the specialized solver for SGW.
+
+The following SGW features are tested by this case:
+* evaluate the dielectric function along the real axis
+* use the direct solver to determine the dielectric constant
+* select a specific k-point for the dielectric constant
+* manual selection of solver for W
 
 Test case: sgw\_si
 ------------------
@@ -74,6 +91,7 @@ evaluate the self energy for the X point.
 The following SGW features are tested by this case
 
 * evaluate the dielectric function on the imaginary axis
+* use the direct solver to determine the dielectric constant
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
