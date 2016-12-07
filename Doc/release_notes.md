@@ -24,9 +24,15 @@ requirement for the Greens function is distributed across the processes leading
 to a reduced overall memory consumption.
 
 Add the debug module that allows to set debugging options. If the code is
-compiled with the __DEBUG flag it will examine the requested parts in more
+compiled with the \_\_DEBUG flag it will examine the requested parts in more
 detail. The only current option is to check (H - w) G = -delta. The unit
 test can be used to investigate the behavior of the linear problem.
+
+Create the SGW testsuite that tests all major features implemented in SGW.
+The test cases are not converged, but any change made to the code should
+reproduce the results obtained with the test. If an error larger than the
+threshold pops up, the commit should be reviewed with care.
+
 
 Version 0.10.1
 --------------
@@ -35,6 +41,7 @@ Bugfix to make systems without inversion symmetry work. There where some arrays
 that were the complex conjugate of the correct value, which did not matter with
 inversion symmetry but resulted in incorrect results for systems without it.
 > compatible QE version 6.0 revision 13079
+
 
 Version 0.10
 ------------

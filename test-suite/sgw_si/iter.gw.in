@@ -1,0 +1,76 @@
+Screened Coulomb for the full mesh.
+&inputgw
+
+  ! config of the scf run
+  prefix       = 'si',
+  outdir       = './tmp'
+
+  ! control parameters
+  ldisp        = .true.
+  multishift   = .true.
+  double_grid  = .false.
+
+  ! the grid used for the linear response
+  nq1          = 2
+  nq2          = 2
+  nq3          = 2
+
+  ! truncation (used for both correlation and exchange)
+  truncation   = 'on'
+
+  ! configuration for the exchange self-energy
+  do_sigma_exx = .true.
+  ecutsex      = 15.0
+
+  ! configuration for the correlation self energy
+  do_sigma_c   = .true.
+  kpoints      = .true.
+  ecutsco      = 6.0
+
+  ! configuration of the Coulomb solver
+  do_coulomb   = .true.
+  tr2_gw       = 1.0d-9
+  nmix_gw      = 4
+  solve_direct = .false.
+  use_symm     = .true.
+  lrpa         = .true.
+  godbyneeds   = .true.
+  padecont     = .false.
+!priority_coul(1) = 2
+
+  ! configuration of the Green solver
+  tr2_green    = 1.0d-5
+  maxter_green = 180
+
+  ! configuration of W in the convolution
+  do_imag      = .true.
+  wcoulmax     = 200
+  nwcoul       = 35
+  
+  ! configuration for the self-energy (result of the convolution)
+  wsigmamin    = 0.0
+  wsigmamax    = 100.0
+  nwsigma      = 11
+
+  ! configuration for the output
+  do_sigma_matel = .true.
+  nbnd_sig       = 8
+  wsig_wind_min  = -30.0
+  wsig_wind_max  =  30.0
+  nwsigwin       = 601
+
+/
+
+&outputgw
+/
+
+FREQUENCIES
+2
+0.0d0 0.0d0
+0.0d0 16.0d0
+/
+
+K_points
+1
+0.000000000  0.000000000   0.000000000
+/

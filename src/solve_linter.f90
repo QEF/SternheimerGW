@@ -437,7 +437,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
             ! solve -omega
             IF (.NOT.zero_freq .OR. ifreq > 1) THEN
               CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
-                                 et(ibnd, ikk) + omega(iomega:iomega),         &
+                                 -(et(ibnd, ikk) + omega(iomega:iomega)),      &
                                  dpsi(:npwq, ibnd, iomega:iomega), ierr)
               CALL errore(__FILE__, "solver did not converge", ierr)
             END IF

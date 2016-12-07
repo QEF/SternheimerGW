@@ -1,0 +1,107 @@
+Screened Coulomb for the full mesh.
+&inputgw
+
+  ! config of the scf run
+  prefix       = 'diamond',
+  outdir       = './tmp'
+
+  ! control parameters
+  ldisp        = .true.
+  multishift   = .true.
+  double_grid  = .false.
+
+  ! the grid used for the linear response
+  nq1          = 2
+  nq2          = 2
+  nq3          = 2
+
+  ! truncation (used for both correlation and exchange)
+  truncation   = 'on'
+
+  ! configuration for the exchange self-energy
+  do_sigma_exx = .true.
+  ecutsex      = 15.0
+
+  ! configuration for the correlation self energy
+  do_sigma_c   = .true.
+  kpoints      = .true.
+  ecutsco      = 6.0
+
+  ! configuration of the Coulomb solver
+  do_coulomb   = .false.
+  tr2_gw       = 1.0d-4
+  nmix_gw      = 4
+  solve_direct = .true.
+  use_symm     = .true.
+  lrpa         = .true.
+  godbyneeds   = .false.
+  padecont     = .false.
+  paderobust   = .true.
+
+  ! configuration of the Green solver
+  tr2_green    = 1.0d-5
+  maxter_green = 180
+
+  ! configuration of W in the convolution
+  do_imag      = .false.
+  eta          = 0.00735 ! 0.1eV
+  wcoulmax     = 80
+  nwcoul       = 200
+  
+  ! configuration for the self-energy (result of the convolution)
+  wsigmamin    = -45.0
+  wsigmamax    =  15.0
+  nwsigma      = 121
+
+  ! configuration for the output
+  do_sigma_matel = .true.
+  nbnd_sig       = 8
+
+/
+
+&outputgw
+/
+
+FREQUENCIES ! circle around origin
+35
+    5.0000000000000     0.0000000000000
+    4.9196479429932     0.8927844739932
+    4.6811743531987     1.7568741204067
+    4.2922439680093     2.5644963870295
+    3.7653573300181     3.2896936296986
+    3.1174490092937     3.9091574123402
+    2.3693433123650     4.4029776592837
+    1.5450849718747     4.7552825814758
+    0.6711663290883     4.9547488088397
+   -0.2243241517526     4.9949653327066
+   -1.1126046697816     4.8746395609091
+   -1.9651251582696     4.5976388627573
+   -2.7544849072605     4.1728662686065
+   -3.4553132449343     3.6139743191370
+   -4.0450849718747     2.9389262614624
+   -4.5048443395121     2.1694186955878
+   -4.8198143034793     1.3301842278334
+   -4.9798714699762     0.4481965445172
+   -4.9798714699762    -0.4481965445172
+   -4.8198143034793    -1.3301842278334
+   -4.5048443395121    -2.1694186955878
+   -4.0450849718747    -2.9389262614624
+   -3.4553132449343    -3.6139743191370
+   -2.7544849072605    -4.1728662686065
+   -1.9651251582696    -4.5976388627573
+   -1.1126046697816    -4.8746395609091
+   -0.2243241517526    -4.9949653327066
+    0.6711663290883    -4.9547488088397
+    1.5450849718747    -4.7552825814758
+    2.3693433123650    -4.4029776592837
+    3.1174490092937    -3.9091574123402
+    3.7653573300181    -3.2896936296986
+    4.2922439680093    -2.5644963870295
+    4.6811743531987    -1.7568741204067
+    4.9196479429932    -0.8927844739932
+/
+
+K_points
+1
+0.000000000  0.000000000   0.000000000
+/

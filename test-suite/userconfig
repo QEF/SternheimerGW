@@ -1,0 +1,51 @@
+#------------------------------------------------------------------------------
+#
+# This file is part of the Sternheimer-GW code.
+# 
+# Copyright (C) 2010 - 2016 
+# Henry Lambert, Martin Schlipf, and Feliciano Giustino
+#
+# Sternheimer-GW is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Sternheimer-GW is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Sternheimer-GW. If not, see
+# http://www.gnu.org/licenses/gpl.html .
+#
+#------------------------------------------------------------------------------
+
+[SGW]
+exe = ./run-sgw.sh
+extract_program = ./extract-sgw.sh
+input_args = ('*.in', '')
+run_cmd_template = tc.program tc.input tc.output tc.error
+tolerance = ( (1.0e-6, 5.0e-3, 'e1'),
+              (3.0e+0, 5.0e-1, 'n1'),
+              (1.0e-3, 1.0e-5, 'f1'),
+              (1.0e-1, 1.0e-3, 'p1'),
+              (1.0e-2, 1.0e-3, 're_eps'),
+              (1.0e-2, 1.0e-3, 'im_eps'),
+              (1.0e-2, 1.0e-2, 're_sig'),
+              (1.0e-2, 1.0e-2, 'im_sig'),
+              (1.0e-2, 1.0e-2, 'spec'),
+              (2.0e-2, None, 'dft_eval'),
+              (5.0e-2, None, 'gw_eval'),
+              (5.0e-2, None, 'vxc_exp'),
+              (5.0e-2, None, 'sigma_x'),
+              (3.0e-2, None, 'z_factor'),
+            )
+skip_program = grep
+skip_args = 'not present in this version'
+
+[user]
+benchmark = v0.10.1 v0.10
+date_fmt = %d%m%y
+diff = vimdiff
+
