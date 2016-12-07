@@ -34,6 +34,7 @@ The following SGW features are tested in this suite
 * select a specific k-point for the dielectric constant
 * manual selection of solver for W
 * use the direct solver to determine the dielectric constant
+* use the iterative solver to determine the dielectric constant
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
 * obtain the Green's function on the real axis
@@ -87,11 +88,13 @@ Test case: sgw\_si
 Evaluate the GW correction for Si using the direct solver, imaginary frequency
 integration, and a plasmon-pole model for W. Then restart the calculation to
 evaluate the self energy for the X point.
+As a separate calculation, evaluate the GW correction with the iterative solver.
 
 The following SGW features are tested by this case
 
 * evaluate the dielectric function on the imaginary axis
 * use the direct solver to determine the dielectric constant
+* use the iterative solver to determine the dielectric constant
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
