@@ -43,6 +43,29 @@ The following SGW features are tested in this suite
 * convolute G and W on the imaginary axis to obtain the self energy
 * obtain the exchange self energy
 * overcome the divergence of the Coulomb potential with spherical truncation
+* overcome the divergence of the Coulomb potential with 2d truncation
+* overcome the divergence of the Coulomb potential with Wigner-Seitz truncation
+* evaluate the quasi particle eigenvalues using the Z factor
+* obtain the frequency dependent spectral function for all bands
+* restart from previously calculated W
+
+Test case: sgw\_bn
+------------------
+
+Evaluate the GW correction for a film of BN using the direct solver, plasmon
+pole model, and imaginary frequency integration. We test both the 2d and the
+Wigner-Seitz truncation.
+
+The following SGW features are tested by this case
+
+* evaluate the dielectric function on the imaginary axis
+* use the direct solver to determine the dielectric constant
+* Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
+* obtain the Green's function on the imaginary axis
+* use the multishift solver to obtain the Green's function
+* obtain the exchange self energy
+* overcome the divergence of the Coulomb potential with 2d truncation
+* overcome the divergence of the Coulomb potential with Wigner-Seitz truncation
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
