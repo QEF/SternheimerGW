@@ -52,10 +52,10 @@ SUBROUTINE prepare_q0(do_band, do_iq, setup_pw, iq)
      ! ... set the name for the output file
      ! ... set the q point
         xq(1:3)  = x_q(1:3,iq)
-        lgamma = ALL(ABS(xq) < eps6)
-        if (lgamma) xq(1) = 0.01d0
      !In case we want to calulate eps(q) where q is given in the input file:
         if (do_epsil) xq(:) = xk_kpoints(:, iq)
+        lgamma = ALL(ABS(xq) < eps6)
+        if (lgamma) xq(1) = 0.01d0
   ENDIF
   do_band=.true.
   setup_pw=.true.
