@@ -70,6 +70,9 @@ run-custom-test-parallel : pseudo
 create-reference-sgw :
 	env QE_USE_MPI=0 ${TESTCODE_DIR}/bin/testcode.py --category=sgw_all make-benchmarks
 
+create-custom-reference :
+	env QE_USE_MPI=0 ${TESTCODE_DIR}/bin/testcode.py --category=$(testdir) make-benchmarks
+
 compare : compare-sgw
 
 compare-sgw :
