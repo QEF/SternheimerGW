@@ -27,6 +27,9 @@
 !! \f$A\f$ and \f$A + \sigma I\f$ span the same Krylov subspace. Hence, we can
 !! solve the linear equation of all linear problems at the cost of a single one.
 !!
+!! Notice that the variables \f$\theta\f$, \f$\phi\f$, and \f$\xi\f$ are stored
+!! as the inverse of the ones defined in the algorithm to improve the numeric
+!! stability.
 MODULE bicgstab_module
 
   USE kinds, ONLY: dp
@@ -110,17 +113,17 @@ MODULE bicgstab_module
     !> the shift of this system
     COMPLEX(dp) sigma
 
-    !> \f$\phi_{\text{old}}^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) phi_old
+    !> The inverse of \f$\phi_{\text{old}}^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_phi_old
 
-    !> \f$\phi^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) phi
+    !> The inverse of \f$\phi^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_phi
 
-    !> \f$\phi_{\text{new}}^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) phi_new
+    !> The inverse of \f$\phi_{\text{new}}^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_phi_new
 
-    !> \f$\vartheta^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) theta
+    !> The inverse of \f$\vartheta^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_theta
 
     !> \f$\alpha^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) alpha
@@ -153,6 +156,7 @@ CONTAINS
     USE debug_module, ONLY: test_nan
     USE io_global,    ONLY: stdout
 
+    USE norm_module, ONLY: norm
     !> the configuration of the BiCGstab solver
     TYPE(bicgstab_type), INTENT(IN) :: config
 
@@ -447,11 +451,11 @@ CONTAINS
       shift_system(ishift)%xx = 0
 
       ! initialize the variables
-      shift_system(ishift)%phi_old = 1.0
-      shift_system(ishift)%phi     = 1.0
-      shift_system(ishift)%theta   = 1.0
+      shift_system(ishift)%inv_phi_old = 1.0
+      shift_system(ishift)%inv_phi     = 1.0
+      shift_system(ishift)%inv_theta   = 1.0
       ! subtract the shift of the initial system
-      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
+      shift_system(ishift)%sigma       = sigma(ishift + 1) - sigma(1)
 
       ! construct sigma_pow array
       sigma_pow(0) = 1.0
@@ -619,16 +623,19 @@ CONTAINS
         active => shift_system(ishift)
         !
         ! L13: phi_new^ = (1 + alpha sigma) phi^ + alpha beta / alpha_old (phi_old^ - phi^)
-        active%phi_new = (one + seed_system%alpha * active%sigma) * active%phi &
-                       + seed_system%alpha * seed_system%beta / seed_system%alpha_old &
-                       * (active%phi_old - active%phi)
+        ! <=>                                        (1/phi^)
+        ! (1/phi_new^) = ------------------------------------------------------------------------
+        !                (1 + alpha sigma) + alpha beta / alpha_old [(1/phi^) / (1/phi_old^) - 1]
+        active%inv_phi_new = active%inv_phi / (one + seed_system%alpha * active%sigma &
+                           + seed_system%alpha * seed_system%beta / seed_system%alpha_old &
+                           * (active%inv_phi / active%inv_phi_old - one))
         !      beta^ = (phi_old^ / phi^)**2 beta
-        active%beta = (active%phi_old / active%phi)**2 * seed_system%beta
+        active%beta = (active%inv_phi / active%inv_phi_old)**2 * seed_system%beta
         !      alpha^ = (phi^ / phi_new^) alpha
-        active%alpha = (active%phi / active%phi_new) * seed_system%alpha
+        active%alpha = (active%inv_phi_new / active%inv_phi) * seed_system%alpha
         !
         ! evaluate 1 / (theta^ phi^) used in L15 and L17
-        factor = 1.0 / (active%theta * active%phi)
+        factor = active%inv_theta * active%inv_phi
         !
         ! L14: loop over previous steps
         DO ii = 0, jj
@@ -645,9 +652,9 @@ CONTAINS
         ! note - we shifted update of alpha after the loop to allow
         !        for systems with multiple shifts
         ! L18: phi_old^ = phi^
-        active%phi_old = active%phi
+        active%inv_phi_old = active%inv_phi
         !      phi^ = phi_new^
-        active%phi = active%phi_new
+        active%inv_phi = active%inv_phi_new
         !
         ! note: we can use factor here, because phi_old = phi in L18
         ! L19: u_j+1^ = r_j / (theta^ phi_old^)
@@ -683,7 +690,7 @@ CONTAINS
         active => shift_system(ishift)
         !
         ! L26: u_j+1^ = (u_j+1^ - r_j / (theta^ phi^)) / alpha^ - sigma u_j^
-        factor = -1.0 / (active%theta * active%phi)
+        factor = -active%inv_theta * active%inv_phi
         CALL ZAXPY(vec_size, factor, seed_system%rr(:,jj), 1, active%uu(:, jj + 1), 1)
         CALL ZSCAL(vec_size, 1.0 / active%alpha, active%uu(:, jj + 1), 1)
         CALL ZAXPY(vec_size, -active%sigma, active%uu(:,jj), 1, active%uu(:, jj + 1), 1)
@@ -737,8 +744,8 @@ CONTAINS
     !> Temporary storage for prefactors
     COMPLEX(dp) factor
 
-    !> The variable \f$\xi\f$ of Frommer's algorithm.
-    COMPLEX(dp) xi
+    !> The inverse of the variable \f$\xi\f$ of Frommer's algorithm.
+    COMPLEX(dp) inv_xi
 
     !> The variable \f$\psi\f$ of Frommer's algorithm.
     COMPLEX(dp) psi
@@ -848,9 +855,9 @@ CONTAINS
       CALL horner_scheme(seed_system%gamma, active%sigma, active%gamma, psi)
       !
       ! L21: xi = theta^ phi^
-      xi = active%theta * active%phi
+      inv_xi = active%inv_theta * active%inv_phi
       !      theta^ = theta^ psi
-      active%theta = active%theta * psi 
+      active%inv_theta = active%inv_theta / psi 
       !
       ! L22: loop over GMRES iterations
       DO jj = 1, lmax
@@ -878,7 +885,7 @@ CONTAINS
       !
       ! note: the residuum update is done later, outside of the loop
       ! L28: x^ = x^ + gamma_1'^ / xi r_0
-      factor = active%gamma_p(1) / xi
+      factor = active%gamma_p(1) * inv_xi
       CALL ZAXPY(vec_size, factor, seed_system%rr(:,0), 1, active%xx, 1)
       !      u_0^ = u_0^ - gamma_l u_l^
       ! note: the latter equation is incorrect in Frommer's paper
@@ -894,7 +901,7 @@ CONTAINS
                    active%uu(:,0), 1)
         !
         ! L31: x^ = x^ + (gamma_j"^ / xi) r_j
-        factor = active%gamma_pp(jj) / xi
+        factor = active%gamma_pp(jj) * inv_xi
         CALL ZAXPY(vec_size, factor, seed_system%rr(:,jj), 1, active%xx, 1)
         !
       END DO ! j
