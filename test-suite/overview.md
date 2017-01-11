@@ -2,7 +2,7 @@
  
   This file is part of the Sternheimer-GW code.
   
-  Copyright (C) 2010 - 2016 
+  Copyright (C) 2010 - 2017 
   Henry Lambert, Martin Schlipf, and Feliciano Giustino
  
   Sternheimer-GW is free software: you can redistribute it and/or modify
