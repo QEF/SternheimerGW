@@ -490,7 +490,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
         END DO
      END IF
   END IF
-  fiu = freq%solver
 
   ! set the small shift into the complex plane
   IF (do_imag) THEN
@@ -508,7 +507,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   CALL mp_bcast(ios, meta_ionode_id, world_comm)
   CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
-  CALL mp_bcast(fiu, meta_ionode_id, world_comm )
+  CALL mp_bcast(freq%solver, meta_ionode_id, world_comm )
+  fiu = freq%solver
 
  IF (kpoints) then
      num_k_pts = 0
