@@ -62,7 +62,7 @@ CONTAINS
     USE kinds, ONLY: dp
 
 ! gfortran only supports ieee_arithmetic since v5.0
-#if !defined(__GFORTRAN) || (__GNUC__ > 4)
+#if !defined(__GFORTRAN__) || (__GNUC__ > 4)
     USE, INTRINSIC :: ieee_arithmetic, ONLY: isnan => ieee_is_nan
 #endif
 
