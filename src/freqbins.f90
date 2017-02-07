@@ -38,6 +38,9 @@ MODULE freqbins_module
     !> flag indicates whether we integrate on the real or imaginary axis
     LOGICAL imag_sigma
 
+    !> flag indicates whether symmetry for frequencies is used
+    LOGICAL use_symmetry
+
     !> The coarse frequency grid used to determine W.
     COMPLEX(dp), ALLOCATABLE :: solver(:)
 
@@ -241,6 +244,9 @@ CONTAINS
     CLASS(freqbins_type), INTENT(IN) :: this
 
     num_freq = SIZE(this%solver)
+
+!    ! if we use symmetry, we use omega and -omega
+!    IF (this%use_symmetry) num_freq = num_freq * 2
 
   END FUNCTION freqbins_num_freq
 

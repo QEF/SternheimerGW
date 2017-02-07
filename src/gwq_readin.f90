@@ -118,6 +118,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   !> counter on the nontrivial priorities
   INTEGER ipriority
+  !
+  !> use symmetry to extend the frequency mesh
+  LOGICAL freq_symm
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
@@ -169,7 +172,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
-                       wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, &
+                       wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, freq_symm, &
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, paderobust, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
@@ -335,6 +338,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
   use_symm       = .TRUE.
+  freq_symm      = .TRUE.
   w_of_q_start   = 1
   w_of_k_start   = 1
   w_of_k_stop    = -2
@@ -509,6 +513,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
   CALL mp_bcast(freq%solver, meta_ionode_id, world_comm )
   fiu = freq%solver
+
+  ! use symmetry for the frequencies
+  freq%use_symmetry = freq_symm
 
  IF (kpoints) then
      num_k_pts = 0
