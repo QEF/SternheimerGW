@@ -150,11 +150,10 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
      DO ig = 1, num_g_corr
 
        ! set frequency and value used to determine the Pade coefficients
-       z(:num_freq) = freq%solver
        u = scrcoul_g(ig, igp, :)
 
        ! use symmetry to extend the frequency mesh
-       IF (freq%use_symmetry) CALL freq_symm(z, u)
+       CALL freq_symm(freq, z, u)
 
        ! evaluate the coefficients
        CALL pade_coeff(freq%num_freq(), z, u, a)
