@@ -362,6 +362,7 @@ sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : construct_w.o
+sigma.o : coulpade.o
 sigma.o : debug.o
 sigma.o : fft6.o
 sigma.o : freq_symm.o

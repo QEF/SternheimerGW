@@ -20,6 +20,32 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
+!> Provide the routines to evaluate the analytic continuation.
+MODULE coulpade_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+!> Evaluate the analytic continuation of the screened Coulomb interaction. 
+!!
+!! This routine takes the inverse of the dielectric function
+!! \f$\epsilon^{-1}(G, G', \omega)\f$ and multiplies it with the bare Coulomb
+!! potential to obtain the screened Coulomb interaction. Then it evaluates the
+!! coefficients to perform an analytic continuation to the full complex plane
+!! from the given frequency mesh.
+!!
+!! There are a few different methods implemented to evaluate the analytic
+!! continuation
+!! 1. Godby-Needs plasmon-pole model - assumes that the function can be accurately
+!!    represented by a single pole and uses the value of the function at two
+!!    frequencies \f$\omega = 0\f$ and \f$\omega = \omega_{\text{p}}\f$ to determine
+!!    the parameters.
+!! 2. Pade expansion - evaluate Pade coefficients for a continued fraction expansion
+!!    using a given frequency grid; symmetry may be used to extend the frequency grid
+!!    to more points.
+!! 3. robust Pade expansion - evaluate Pade coefficients using a circular frequency
+!!    mesh in the complex plane
 SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
 
   USE cell_base,          ONLY : tpiba
@@ -89,4 +115,6 @@ SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
          CALL errore(__FILE__, "No screening model chosen!", 1)
        END IF
     endif
-end SUBROUTINE coulpade
+END SUBROUTINE coulpade
+
+END MODULE coulpade_module
