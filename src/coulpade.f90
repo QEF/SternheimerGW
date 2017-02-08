@@ -145,15 +145,15 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
     ALLOCATE(u(freq%num_freq()))
     ALLOCATE(a(freq%num_freq()))
 
+    ! use symmetry to extend the frequency mesh
+    CALL freq_symm(freq, z, scrcoul_g)
+
     ! evalute Pade approximation for all G and G'
     DO igp = 1, num_g_corr
      DO ig = 1, num_g_corr
 
        ! set frequency and value used to determine the Pade coefficients
        u = scrcoul_g(ig, igp, :)
-
-       ! use symmetry to extend the frequency mesh
-       CALL freq_symm(freq, z, u)
 
        ! evaluate the coefficients
        CALL pade_coeff(freq%num_freq(), z, u, a)

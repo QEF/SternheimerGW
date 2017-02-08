@@ -32,7 +32,7 @@ CONTAINS
   !!
   !! We assume an array with the following property
   !! \f{equation}{
-  !!   A(\omega) = A^\ast(-\omega)~.
+  !!   A(G, G', \omega) = A^\ast(G, G', -\omega)~.
   !! \f}
   !! Then, we can extend an given input array for which only the first half
   !! of the frequencies was calculated to the full mesh by adding the complex
@@ -50,7 +50,7 @@ CONTAINS
 
     !> *on input*: The first half of the array \f$A\f$ <br>
     !! *on output*: The full array \f$A\f$ (extended by its complex conjugate).
-    COMPLEX(dp), INTENT(INOUT), OPTIONAL    :: array(:)
+    COMPLEX(dp), INTENT(INOUT), OPTIONAL    :: array(:,:,:)
 
     ! mid point in the array
     INTEGER middle
@@ -70,7 +70,7 @@ CONTAINS
     IF (PRESENT(array)) THEN
 
       ! frequency and array should habe same dimension
-      IF (SIZE(freq_out) /= SIZE(array)) THEN
+      IF (SIZE(freq_out) /= SIZE(array, 3)) THEN
         CALL errore(__FILE__, "array and frequency mesh inconsistent", 1)
       END IF
 
@@ -82,7 +82,7 @@ CONTAINS
     middle = SIZE(freq_in%solver)
     freq_out(:middle)     =  freq_in%solver
     freq_out(middle + 1:) = -freq_in%solver
-    IF (PRESENT(array)) array(middle + 1:) = CONJG(array(:middle))
+    IF (PRESENT(array)) array(:, :, middle + 1:) = CONJG(array(:, :, :middle))
 
   END SUBROUTINE freq_symm
 
