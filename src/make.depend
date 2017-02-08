@@ -38,6 +38,7 @@ close_gwq.o : ../../Modules/uspp.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
 construct_w.o : ../../Modules/kind.o
+construct_w.o : freq_symm.o
 construct_w.o : freqbins.o
 construct_w.o : godby_needs.o
 construct_w.o : gwcom.o
@@ -119,6 +120,7 @@ fft6.o : ../../FFTXlib/fft_interfaces.o
 fft6.o : ../../FFTXlib/fft_types.o
 fft6.o : ../../Modules/kind.o
 freq_symm.o : ../../Modules/kind.o
+freq_symm.o : freqbins.o
 freqbins.o : ../../Modules/kind.o
 gauleg_grid.o : ../../Modules/constants.o
 gauleg_grid.o : ../../Modules/kind.o
@@ -129,7 +131,6 @@ gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
-godby_needs.o : gwcom.o
 gram_schmidt.o : ../../Modules/kind.o
 gram_schmidt.o : norm.o
 green.o : ../../Modules/constants.o

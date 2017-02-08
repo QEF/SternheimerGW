@@ -73,4 +73,32 @@ CONTAINS
 
   END SUBROUTINE freq_symm
 
+  !> generate the symmetry extended frequency mesh
+  SUBROUTINE freq_symm_mesh(freq_in, freq_out)
+
+    USE freqbins_module, ONLY: freqbins_type
+    USE kinds,           ONLY: dp
+
+    !> the definition of the input frequency mesh
+    TYPE(freqbins_type), INTENT(IN) :: freq_in
+
+    !> the frequency meshed after symmetry extension
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: freq_out(:)
+
+    ! create frequency mesh
+    ALLOCATE(freq_out(freq_in%num_freq()))
+
+    ! if symmetry is used, we use omega and -omega
+    IF (freq_in%use_symmetry) THEN
+      freq_out(:SIZE(freq_in%solver)) = freq_in%solver
+      freq_out(SIZE(freq_in%solver)+1:) = -freq_in%solver
+
+    ! without symmetry, we copy the input frequency mesh
+    ELSE
+      freq_out = freq_in%solver
+
+    END IF
+
+  END SUBROUTINE freq_symm_mesh
+
 END MODULE freq_symm_module

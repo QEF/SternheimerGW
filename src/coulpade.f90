@@ -40,8 +40,7 @@ CONTAINS
 SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
 
   USE cell_base,          ONLY : tpiba
-  USE control_gw,         ONLY : godbyneeds, padecont, paderobust, modielec, &
-                                 truncation, tr2_gw
+  USE control_gw,         ONLY : godbyneeds, padecont, paderobust, truncation, tr2_gw
   USE freqbins_module,    ONLY : freqbins_type
   USE freq_symm_module,   ONLY : freq_symm
   USE godby_needs_module, ONLY : godby_needs_coeffs
@@ -101,7 +100,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   num_g_corr = SIZE(scrcoul_g, 1)
   IF (SIZE(scrcoul_g, 2) /= num_g_corr) &
     CALL errore(__FILE__, "input array should have same dimension for G and G'", 1)
-  IF (SIZE(scrcoul_g, 3) /= num_freq) &
+  IF (SIZE(scrcoul_g, 3) /= freq%num_freq()) &
     CALL errore(__FILE__, "frequency dimension of Coulomb inconsistent with frequency mesh", 1)
 
   !                 -1
@@ -158,7 +157,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
        IF (freq%use_symmetry) CALL freq_symm(z, u)
 
        ! evaluate the coefficients
-       CALL pade_coeff(num_freq, z, u, a)
+       CALL pade_coeff(freq%num_freq(), z, u, a)
 
        ! store the coefficients in the same array
        scrcoul_g(ig, igp, :) = a

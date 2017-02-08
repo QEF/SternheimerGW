@@ -32,6 +32,7 @@ CONTAINS
   SUBROUTINE construct_w(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
     USE control_gw,         ONLY : godbyneeds, padecont, paderobust
+    USE freq_symm_module,   ONLY : freq_symm_mesh
     USE freqbins_module,    ONLY : freqbins_type
     USE godby_needs_module, ONLY : godby_needs_model
     USE kinds,              ONLY : dp
@@ -70,6 +71,9 @@ CONTAINS
     !> helper array to extract the current coefficients
     COMPLEX(dp), ALLOCATABLE :: coeff(:)
 
+    !> helper array for the frequencies
+    COMPLEX(dp), ALLOCATABLE :: freq(:)
+
     !> complex constant of zero
     COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
 
@@ -85,6 +89,11 @@ CONTAINS
       RETURN
     END IF
     scrcoul = zero
+
+    ! helper array for frequencies in case of symmetry
+    IF (padecont) THEN
+      CALL freq_symm_mesh(freq_in, freq)
+    END IF
 
     !
     ! construct screened Coulomb interaction
@@ -109,7 +118,7 @@ CONTAINS
         IF (padecont) THEN
           !
           ! Pade analytic continuation
-          CALL pade_eval(freq_in%num_freq(), freq_in%solver, coeff, freq_out, scrcoul(ig, igp))
+          CALL pade_eval(freq_in%num_freq(), freq, coeff, freq_out, scrcoul(ig, igp))
 
         ELSE IF (paderobust) THEN
           !
