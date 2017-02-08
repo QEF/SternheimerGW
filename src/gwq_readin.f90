@@ -514,8 +514,13 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CALL mp_bcast(freq%solver, meta_ionode_id, world_comm )
   fiu = freq%solver
 
-  ! use symmetry for the frequencies
-  freq%use_symmetry = freq_symm
+  ! use symmetry for the frequencies (only for Pade approximation)
+  IF (padecont) THEN
+    freq%use_symmetry = freq_symm
+  ELSE
+    ! symmetry not implemented for robust Pade and Godby-Needs
+    freq%use_symmetry = .FALSE.
+  END IF
 
  IF (kpoints) then
      num_k_pts = 0
