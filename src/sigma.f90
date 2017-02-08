@@ -337,7 +337,7 @@ CONTAINS
         ! here, we use symmetry to extract it to the full array again
         IF (freq%use_symmetry) CALL freq_symm(coulomb)
         !
-        CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
+        CALL coulpade(x_q(:,iq), freq, vcut, coulomb)
         !
         ! check if any NaN occured in coulpade
         IF (debug_sigma) THEN

@@ -37,21 +37,12 @@ CONTAINS
 !!
 !! There are a few different methods implemented to evaluate the analytic
 !! continuation
-!! 1. Godby-Needs plasmon-pole model - assumes that the function can be accurately
-!!    represented by a single pole and uses the value of the function at two
-!!    frequencies \f$\omega = 0\f$ and \f$\omega = \omega_{\text{p}}\f$ to determine
-!!    the parameters.
-!! 2. Pade expansion - evaluate Pade coefficients for a continued fraction expansion
-!!    using a given frequency grid; symmetry may be used to extend the frequency grid
-!!    to more points.
-!! 3. robust Pade expansion - evaluate Pade coefficients using a circular frequency
-!!    mesh in the complex plane
-SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
+SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
 
   USE cell_base,          ONLY : tpiba
   USE control_gw,         ONLY : godbyneeds, padecont, paderobust, modielec, &
                                  truncation, tr2_gw
-  USE freq_gw,            ONLY : fiu, nfs
+  USE freqbins_module,    ONLY : freqbins_type
   USE godby_needs_module, ONLY : godby_needs_coeffs
   USE gvect,              ONLY : g
   USE kinds,              ONLY : DP
@@ -60,61 +51,125 @@ SUBROUTINE coulpade(num_g_corr, scrcoul_g, xq_ibk, vcut)
 
   IMPLICIT NONE
 
-  !> the number of G vectors in the correlation grid
-  INTEGER, INTENT(IN) :: num_g_corr
+  !> the current q vector
+  REAL(dp), INTENT(IN) :: xq_ibk(3)
+
+  !> the frequency grid used for the calculation
+  TYPE(freqbins_type), INTENT(IN) :: freq
 
   !> the truncated Coulomb potential
   TYPE(vcut_type), INTENT(IN) :: vcut
 
-  complex(DP) ::  scrcoul_g   (num_g_corr, num_g_corr, nfs)
-  complex(DP) :: z(nfs), u(nfs), a(nfs)
+  !> *on input*: the inverse of the dielectric constant <br>
+  !! *on output*: the coefficients used to evaluate the screened Coulomb
+  !! interaction at an arbitrary frequency
+  COMPLEX(dp), INTENT(INOUT) ::  scrcoul_g(:, :, :)
 
-  real(DP) :: q_G(3)
-  real(DP) :: factor
-  real(DP) :: xq_ibk(3)
+  !> the number of G vectors in the correlation grid
+  INTEGER :: num_g_corr
 
-  integer :: ig, igp
-  integer :: iw
+  !> frequency used for Pade coefficient (will be extended if frequency
+  !! symmetry is used)
+  COMPLEX(dp), ALLOCATABLE :: z(:)
 
-!Rotate G_vectors for FFT.
-   if(.not.modielec) THEN
-       do iw = 1, nfs
-         do ig = 1, num_g_corr
-            q_G = tpiba * (g(:,ig) + xq_ibk)
-            factor = truncate(truncation, vcut, q_G)
-            do igp = 1, num_g_corr
-              scrcoul_g(ig, igp, iw) = scrcoul_g(ig, igp, iw) * factor 
-            end do
-         enddo!ig
-       enddo!nfs
-  endif
-    if(.not.modielec) THEN
-       IF (godbyneeds) THEN
-         !
-         ! fit the screened Coulomb potential to Plasmon pole model
-         CALL godby_needs_coeffs(AIMAG(fiu(2)), scrcoul_g)
-         !
-       else if (padecont) THEN
-         do igp = 1, num_g_corr
-          do ig = 1, num_g_corr
-!Pade input points on the imaginary axis
-             do iw = 1, nfs
-                z(iw) = fiu(iw)
-                u(iw) = scrcoul_g (ig, igp, iw)
-             enddo
-             call pade_coeff ( nfs, z, u, a)
-!Overwrite scrcoul with Pade coefficients to be passed to pade_eval.
-             do iw = 1, nfs 
-                scrcoul_g (ig, igp, iw) = a(iw)
-             enddo
-          enddo !enddo on ig
-       enddo  !enddo on igp
-       ELSEIF (paderobust) THEN
-         CALL pade_coeff_robust(fiu, tr2_gw, scrcoul_g)
-       ELSE 
-         CALL errore(__FILE__, "No screening model chosen!", 1)
-       END IF
-    endif
+  !> value of the screened Coulomb interaction on input mesh
+  COMPLEX(dp), ALLOCATABLE :: u(:)
+
+  !> coefficients of the Pade approximation
+  COMPLEX(dp), ALLOCATABLE :: a(:)
+
+  !> the vector q + G
+  REAL(dp) :: q_G(3)
+
+  !> the strength of the truncated Coulomb potential
+  REAL(dp) :: factor
+
+  !> loop variables for G and G'
+  INTEGER :: ig, igp
+
+  !> total number of frequencies
+  INTEGER :: num_freq
+
+  !> loop variable for the frequency
+  INTEGER :: ifreq
+
+  ! initialize helper variable
+  num_freq = freq%num_freq()
+
+  ! sanity check for the array size
+  num_g_corr = SIZE(scrcoul_g, 1)
+  IF (SIZE(scrcoul_g, 2) /= num_g_corr) &
+    CALL errore(__FILE__, "input array should have same dimension for G and G'", 1)
+  IF (SIZE(scrcoul_g, 3) /= num_freq) &
+    CALL errore(__FILE__, "frequency dimension of Coulomb inconsistent with frequency mesh", 1)
+
+  !                 -1
+  ! evaluate W = eps  V
+  !
+  ! loop over frequencies
+  DO ifreq = 1, num_freq
+
+    ! outer loop over G
+    DO ig = 1, num_g_corr
+
+       ! determine V at q + G'
+       q_G = tpiba * (g(:,ig) + xq_ibk)
+       factor = truncate(truncation, vcut, q_G)
+
+       ! inner loop over G'
+       DO igp = 1, num_g_corr
+         scrcoul_g(ig, igp, ifreq) = scrcoul_g(ig, igp, ifreq) * factor 
+       END DO ! igp
+
+    END DO ! ig
+
+  END DO ! ifreq
+
+  !
+  ! analytic continuation to the complex plane
+  !
+  !! 1. Godby-Needs plasmon-pole model - assumes that the function can be accurately
+  !!    represented by a single pole and uses the value of the function at two
+  !!    frequencies \f$\omega = 0\f$ and \f$\omega = \omega_{\text{p}}\f$ to determine
+  !!    the parameters.
+  IF (godbyneeds) THEN
+    CALL godby_needs_coeffs(AIMAG(freq%solver(2)), scrcoul_g)
+
+  !! 2. Pade expansion - evaluate Pade coefficients for a continued fraction expansion
+  !!    using a given frequency grid; symmetry may be used to extend the frequency grid
+  !!    to more points.
+  ELSE IF (padecont) THEN
+
+    ! allocate helper arrays
+    ALLOCATE(z(num_freq))
+    ALLOCATE(u(num_freq))
+    ALLOCATE(a(num_freq))
+
+    ! evalute Pade approximation for all G and G'
+    DO igp = 1, num_g_corr
+     DO ig = 1, num_g_corr
+
+       ! set frequency and value used to determine the Pade coefficients
+       z = freq%solver
+       u = scrcoul_g(ig, igp, :)
+
+       ! evaluate the coefficients
+       CALL pade_coeff(num_freq, z, u, a)
+
+       ! store the coefficients in the same array
+       scrcoul_g(ig, igp, :) = a
+
+     ENDDO ! ig
+  ENDDO ! igp
+
+  !! 3. robust Pade expansion - evaluate Pade coefficients using a circular frequency
+  !!    mesh in the complex plane
+  ELSEIF (paderobust) THEN
+    CALL pade_coeff_robust(freq%solver, tr2_gw, scrcoul_g)
+  ELSE 
+    CALL errore(__FILE__, "No screening model chosen!", 1)
+  END IF
+
 END SUBROUTINE coulpade
 
 END MODULE coulpade_module
