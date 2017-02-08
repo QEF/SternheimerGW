@@ -145,6 +145,7 @@ CONTAINS
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
+    USE freq_symm_module,     ONLY: freq_symm
     USE freqbins_module,      ONLY: freqbins_type
     USE gvect,                ONLY: ngm
     USE io_files,             ONLY: prefix
@@ -330,6 +331,11 @@ CONTAINS
         !
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
+        !
+        ! the file contains only the symmetry reduce number of frequencies
+        ! here, we use symmetry to extract it to the full array again
+        IF (freq%use_symmetry) CALL freq_symm(coulomb)
+        !
         CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
         !
         ! check if any NaN occured in coulpade

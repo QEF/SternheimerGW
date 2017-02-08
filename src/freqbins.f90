@@ -245,8 +245,8 @@ CONTAINS
 
     num_freq = SIZE(this%solver)
 
-!    ! if we use symmetry, we use omega and -omega
-!    IF (this%use_symmetry) num_freq = num_freq * 2
+    ! if we use symmetry, we use omega and -omega
+    IF (this%use_symmetry) num_freq = num_freq * 2
 
   END FUNCTION freqbins_num_freq
 
