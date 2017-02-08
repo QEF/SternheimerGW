@@ -32,32 +32,44 @@ CONTAINS
   !!
   !! We assume an array with the following property
   !! \f{equation}{
-  !!   A(G, G', \omega) = A^\ast(G, G', -\omega)~.
+  !!   A(\omega) = A^\ast(-\omega)~.
   !! \f}
   !! Then, we can extend an given input array for which only the first half
   !! of the frequencies was calculated to the full mesh by adding the complex
   !! conjugate to the end.
-  SUBROUTINE freq_symm(array)
+  SUBROUTINE freq_symm(freq, array)
 
     USE kinds, ONLY: dp
 
+    !> *on input*: the first half of the frequency array
+    !! *on output*: the full frequency array
+    COMPLEX(dp), INTENT(INOUT) :: freq(:)
+
     !> *on input*: The first half of the array \f$A\f$ <br>
     !! *on output*: The full array \f$A\f$ (extended by its complex conjugate).
-    COMPLEX(dp), INTENT(INOUT) :: array(:,:,:)
+    COMPLEX(dp), INTENT(INOUT) :: array(:)
 
     ! mid point in the array
     INTEGER middle
 
-    ! sanity test - total number of frequencies should be even
-    IF (MOD(SIZE(array, 3), 2) /= 0) THEN
-      CALL errore(__FILE__, "expected an array with even number of frequencies", SIZE(array, 3))
+    !
+    ! sanity test
+    !
+    ! frequency and array should habe same dimension
+    IF (SIZE(freq) /= SIZE(array)) THEN
+      CALL errore(__FILE__, "array and frequency mesh inconsistent", 1)
+    END IF
+    ! total number of frequencies should be even
+    IF (MOD(SIZE(array), 2) /= 0) THEN
+      CALL errore(__FILE__, "expected an array with even number of frequencies", SIZE(array))
     END IF
 
     !
     ! copy first half to second half and complex conjugate
     !
-    middle = SIZE(array, 3) / 2
-    array(:,:,middle + 1:) = CONJG(array(:,:,:middle))
+    middle = SIZE(array) / 2
+    freq(middle + 1:) = -freq(:middle)
+    array(middle + 1:) = CONJG(array(:middle))
 
   END SUBROUTINE freq_symm
 

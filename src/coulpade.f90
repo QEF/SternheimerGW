@@ -43,6 +43,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   USE control_gw,         ONLY : godbyneeds, padecont, paderobust, modielec, &
                                  truncation, tr2_gw
   USE freqbins_module,    ONLY : freqbins_type
+  USE freq_symm_module,   ONLY : freq_symm
   USE godby_needs_module, ONLY : godby_needs_coeffs
   USE gvect,              ONLY : g
   USE kinds,              ONLY : DP
@@ -94,7 +95,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   INTEGER :: ifreq
 
   ! initialize helper variable
-  num_freq = freq%num_freq()
+  num_freq = SIZE(freq%solver)
 
   ! sanity check for the array size
   num_g_corr = SIZE(scrcoul_g, 1)
@@ -118,7 +119,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
 
        ! inner loop over G'
        DO igp = 1, num_g_corr
-         scrcoul_g(ig, igp, ifreq) = scrcoul_g(ig, igp, ifreq) * factor 
+         scrcoul_g(ig, igp, ifreq) = scrcoul_g(ig, igp, ifreq) * factor
        END DO ! igp
 
     END DO ! ig
@@ -141,17 +142,20 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   ELSE IF (padecont) THEN
 
     ! allocate helper arrays
-    ALLOCATE(z(num_freq))
-    ALLOCATE(u(num_freq))
-    ALLOCATE(a(num_freq))
+    ALLOCATE(z(freq%num_freq()))
+    ALLOCATE(u(freq%num_freq()))
+    ALLOCATE(a(freq%num_freq()))
 
     ! evalute Pade approximation for all G and G'
     DO igp = 1, num_g_corr
      DO ig = 1, num_g_corr
 
        ! set frequency and value used to determine the Pade coefficients
-       z = freq%solver
+       z(:num_freq) = freq%solver
        u = scrcoul_g(ig, igp, :)
+
+       ! use symmetry to extend the frequency mesh
+       IF (freq%use_symmetry) CALL freq_symm(z, u)
 
        ! evaluate the coefficients
        CALL pade_coeff(num_freq, z, u, a)
@@ -166,7 +170,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   !!    mesh in the complex plane
   ELSEIF (paderobust) THEN
     CALL pade_coeff_robust(freq%solver, tr2_gw, scrcoul_g)
-  ELSE 
+  ELSE
     CALL errore(__FILE__, "No screening model chosen!", 1)
   END IF
 
