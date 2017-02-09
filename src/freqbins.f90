@@ -41,6 +41,9 @@ MODULE freqbins_module
     !> flag indicates whether symmetry for frequencies is used
     LOGICAL use_symmetry
 
+    !> number of frequencies in the symmetrized mesh
+    INTEGER num_freq_sym
+
     !> The coarse frequency grid used to determine W.
     COMPLEX(dp), ALLOCATABLE :: solver(:)
 
@@ -61,11 +64,12 @@ MODULE freqbins_module
 
   CONTAINS
 
+    PROCEDURE :: init       => freqbins_init
     PROCEDURE :: num_freq   => freqbins_num_freq
     PROCEDURE :: num_coul   => freqbins_num_coul
     PROCEDURE :: num_sigma  => freqbins_num_sigma
     PROCEDURE :: num_window => freqbins_num_window
-    PROCEDURE :: green     => freqbins_green
+    PROCEDURE :: green      => freqbins_green
 
   END TYPE freqbins_type
 
@@ -195,6 +199,9 @@ CONTAINS
     !!
     CALL freqbins_equidist_grid(min_window, max_window, num_window, freq%window)
 
+    ! initialize the type
+    CALL freq%init()
+
     !! References
     !! [1] <a href="http://link.aps.org/doi/10.1103/PhysRevB.74.035101">
     !!     Shishkin, Kresse, Phys. Rev. B, **74**, 035101 (2006)
@@ -243,10 +250,11 @@ CONTAINS
     !> The frequency type of which the number of frequencies are extracted
     CLASS(freqbins_type), INTENT(IN) :: this
 
-    num_freq = SIZE(this%solver)
+    ! the init routine of the type needs to be called before this routine
+    IF (this%num_freq_sym < 0) &
+       CALL errore(__FILE__, "freqbins_type used before it's init routine was called", 1)
 
-    ! if we use symmetry, we use omega and -omega
-    IF (this%use_symmetry) num_freq = num_freq * 2
+    num_freq = this%num_freq_sym
 
   END FUNCTION freqbins_num_freq
 
@@ -360,5 +368,25 @@ CONTAINS
     IF (PRESENT(array)) array(:, :, middle + 1:) = CONJG(array(:, :, :middle))
 
   END SUBROUTINE freqbins_symm
+
+  !> initialize the frequency bins type
+  SUBROUTINE freqbins_init(this)
+
+    USE kinds, ONLY: dp
+
+    !> the frequency bins type which is initialized
+    CLASS(freqbins_type), INTENT(INOUT) :: this
+
+    !> temporary array for the symmetrized mesh
+    COMPLEX(dp), ALLOCATABLE :: freq(:)
+
+    !!
+    !! 1. determines the symmetrized frequency grid (if applicable)
+    !!
+    ! evaluate the size of the symmetrized mesh and store it
+    CALL freqbins_symm(this, freq)
+    this%num_freq_sym = SIZE(freq)
+
+  END SUBROUTINE freqbins_init
 
 END MODULE freqbins_module
