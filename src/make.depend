@@ -38,7 +38,6 @@ close_gwq.o : ../../Modules/uspp.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
 construct_w.o : ../../Modules/kind.o
-construct_w.o : freq_symm.o
 construct_w.o : freqbins.o
 construct_w.o : godby_needs.o
 construct_w.o : gwcom.o
@@ -70,7 +69,6 @@ coulomb_q0G0.o : solve_linter.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
-coulpade.o : freq_symm.o
 coulpade.o : freqbins.o
 coulpade.o : godby_needs.o
 coulpade.o : gwcom.o
@@ -119,8 +117,6 @@ exchange.o : truncation.o
 fft6.o : ../../FFTXlib/fft_interfaces.o
 fft6.o : ../../FFTXlib/fft_types.o
 fft6.o : ../../Modules/kind.o
-freq_symm.o : ../../Modules/kind.o
-freq_symm.o : freqbins.o
 freqbins.o : ../../Modules/kind.o
 gauleg_grid.o : ../../Modules/constants.o
 gauleg_grid.o : ../../Modules/kind.o

@@ -32,8 +32,7 @@ CONTAINS
   SUBROUTINE construct_w(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
     USE control_gw,         ONLY : godbyneeds, padecont, paderobust
-    USE freq_symm_module,   ONLY : freq_symm
-    USE freqbins_module,    ONLY : freqbins_type
+    USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
     USE godby_needs_module, ONLY : godby_needs_model
     USE kinds,              ONLY : dp
     USE pade_module,        ONLY : pade_eval_robust
@@ -92,7 +91,7 @@ CONTAINS
 
     ! helper array for frequencies in case of symmetry
     IF (padecont) THEN
-      CALL freq_symm(freq_in, freq)
+      CALL freqbins_symm(freq_in, freq)
     END IF
 
     !

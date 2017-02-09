@@ -29,7 +29,7 @@ MODULE freqbins_module
 
   PRIVATE
 
-  PUBLIC freqbins_type, freqbins
+  PUBLIC freqbins_type, freqbins, freqbins_symm
 
   !> Contains the information about the frequencies used for the convolution of
   !! G and W to obtain the self-energy \f$\Sigma\f$.
@@ -302,5 +302,62 @@ CONTAINS
     freq_green(num_coul + 1:) = freq_sigma - this%coul - CMPLX(0.0_dp, this%eta, KIND=dp)
 
   END FUNCTION freqbins_green
+
+  !> Expand an array from the symmetry reduced to the full frequency mesh.
+  !!
+  !! We assume an array with the following property
+  !! \f{equation}{
+  !!   A(G, G', \omega) = A^\ast(G, G', -\omega)~.
+  !! \f}
+  !! Then, we can extend an given input array for which only the first half
+  !! of the frequencies was calculated to the full mesh by adding the complex
+  !! conjugate to the end.
+  SUBROUTINE freqbins_symm(freq_in, freq_out, array)
+
+    USE kinds, ONLY: dp
+
+    !> the definition of the input frequency mesh
+    TYPE(freqbins_type), INTENT(IN)         :: freq_in
+
+    !> the full frequency array
+    COMPLEX(dp), INTENT(INOUT), ALLOCATABLE :: freq_out(:)
+
+    !> *on input*: The first half of the array \f$A\f$ <br>
+    !! *on output*: The full array \f$A\f$ (extended by its complex conjugate).
+    COMPLEX(dp), INTENT(INOUT), OPTIONAL    :: array(:,:,:)
+
+    ! mid point in the array
+    INTEGER middle
+
+    ! create frequency mesh
+    IF (.NOT.ALLOCATED(freq_out)) ALLOCATE(freq_out(freq_in%num_freq()))
+
+    ! trivial case - symmetry not used => return same frequency used for solver
+    IF (.NOT. freq_in%use_symmetry) THEN
+      freq_out = freq_in%solver
+      RETURN
+    END IF
+
+    !
+    ! sanity test
+    !
+    IF (PRESENT(array)) THEN
+
+      ! frequency and array should habe same dimension
+      IF (SIZE(freq_out) /= SIZE(array, 3)) THEN
+        CALL errore(__FILE__, "array and frequency mesh inconsistent", 1)
+      END IF
+
+    END IF
+
+    !
+    ! copy first half to second half and complex conjugate
+    !
+    middle = SIZE(freq_in%solver)
+    freq_out(:middle)     =  freq_in%solver
+    freq_out(middle + 1:) = -freq_in%solver
+    IF (PRESENT(array)) array(:, :, middle + 1:) = CONJG(array(:, :, :middle))
+
+  END SUBROUTINE freqbins_symm
 
 END MODULE freqbins_module

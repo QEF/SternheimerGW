@@ -41,8 +41,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
 
   USE cell_base,          ONLY : tpiba
   USE control_gw,         ONLY : godbyneeds, padecont, paderobust, truncation, tr2_gw
-  USE freqbins_module,    ONLY : freqbins_type
-  USE freq_symm_module,   ONLY : freq_symm
+  USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_coeffs
   USE gvect,              ONLY : g
   USE kinds,              ONLY : DP
@@ -146,7 +145,7 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
     ALLOCATE(a(freq%num_freq()))
 
     ! use symmetry to extend the frequency mesh
-    CALL freq_symm(freq, z, scrcoul_g)
+    CALL freqbins_symm(freq, z, scrcoul_g)
 
     ! evalute Pade approximation for all G and G'
     DO igp = 1, num_g_corr

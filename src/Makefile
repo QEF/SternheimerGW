@@ -49,7 +49,6 @@ do_stern.o\
 dvqpsi_us.o\
 exchange.o\
 fft6.o\
-freq_symm.o\
 freqbins.o\
 gauleg_grid.o\
 gmap_sym.o\
