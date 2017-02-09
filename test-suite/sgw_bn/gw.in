@@ -9,7 +9,6 @@ Screened Coulomb for the full mesh.
   ldisp        = .true.
   multishift   = .true.
   double_grid  = .false.
-  freq_symm    = .false.
 
   ! the grid used for the linear response
   nq1          = 5
