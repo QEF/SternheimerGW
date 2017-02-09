@@ -315,7 +315,7 @@ CONTAINS
   !!
   !! We assume an array with the following property
   !! \f{equation}{
-  !!   A(G, G', \omega) = A^\ast(G, G', -\omega)~.
+  !!   A(G, G', \omega) = A(G, G', \omega^\ast)~.
   !! \f}
   !! Then, we can extend an given input array for which only the first half
   !! of the frequencies was calculated to the full mesh by adding the complex
@@ -386,7 +386,7 @@ CONTAINS
     END IF
 
     !
-    ! copy array elements corresponding to nonzero frequency and complex conjugate
+    ! copy array elements corresponding to nonzero frequency
     !
     ifreq_sym = num_freq
     DO ifreq = 1, num_freq
@@ -398,13 +398,8 @@ CONTAINS
         !
         ! duplicate nonzero elements
         ifreq_sym = ifreq_sym + 1
-        freq_out(ifreq_sym) = -freq_in%solver(ifreq)
-        IF (PRESENT(array)) array(:, :, ifreq_sym) = CONJG(array(:, :, ifreq))
-        !
-      ELSE IF (PRESENT(array)) THEN
-        !
-        ! eliminate the imaginary part of the array for omega = 0
-        array(:, :, ifreq) = REAL(array(:, :, ifreq))
+        freq_out(ifreq_sym) = CONJG(freq_in%solver(ifreq))
+        IF (PRESENT(array)) array(:, :, ifreq_sym) = array(:, :, ifreq)
         !
       END IF
       !
