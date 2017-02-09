@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-subroutine bcast_gw_input ( )
+subroutine bcast_gw_input(freq_symm)
   !-----------------------------------------------------------------------
   !
   !     In this routine the first processor sends the GW input to all
@@ -61,6 +61,9 @@ subroutine bcast_gw_input ( )
   USE units_gw,         ONLY : lrgrn, lrcoul
  
   IMPLICIT NONE
+
+  !> use symmetry of frequencies
+  LOGICAL, INTENT(INOUT) :: freq_symm
 
   call mp_bcast (trans, meta_ionode_id, world_comm )
   call mp_bcast (reduce_io, meta_ionode_id, world_comm )
@@ -178,6 +181,7 @@ subroutine bcast_gw_input ( )
   call mp_bcast (nwsigwin, meta_ionode_id, world_comm)
 
   call mp_bcast (use_symm, meta_ionode_id, world_comm)
+  call mp_bcast (freq_symm, meta_ionode_id, world_comm)
   call mp_bcast (w_of_q_start, meta_ionode_id, world_comm)
   call mp_bcast (w_of_k_start, meta_ionode_id, world_comm)
   call mp_bcast (w_of_k_stop, meta_ionode_id, world_comm)

@@ -69,6 +69,7 @@ coulomb_q0G0.o : solve_linter.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
+coulpade.o : freqbins.o
 coulpade.o : godby_needs.o
 coulpade.o : gwcom.o
 coulpade.o : pade_robust.o
@@ -126,7 +127,6 @@ gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
 godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
-godby_needs.o : gwcom.o
 gram_schmidt.o : ../../Modules/kind.o
 gram_schmidt.o : norm.o
 green.o : ../../Modules/constants.o
@@ -361,6 +361,7 @@ sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : construct_w.o
+sigma.o : coulpade.o
 sigma.o : debug.o
 sigma.o : fft6.o
 sigma.o : freqbins.o

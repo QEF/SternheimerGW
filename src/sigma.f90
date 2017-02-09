@@ -142,6 +142,7 @@ CONTAINS
     USE cell_base,            ONLY: omega
     USE constants,            ONLY: tpi
     USE control_gw,           ONLY: output, tmp_dir_coul
+    USE coulpade_module,      ONLY: coulpade
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
@@ -330,7 +331,7 @@ CONTAINS
         !
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-        CALL coulpade(num_g_corr, coulomb, x_q(:,iq), vcut)
+        CALL coulpade(x_q(:,iq), freq, vcut, coulomb)
         !
         ! check if any NaN occured in coulpade
         IF (debug_sigma) THEN

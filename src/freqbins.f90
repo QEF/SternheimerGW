@@ -29,7 +29,7 @@ MODULE freqbins_module
 
   PRIVATE
 
-  PUBLIC freqbins_type, freqbins
+  PUBLIC freqbins_type, freqbins, freqbins_symm
 
   !> Contains the information about the frequencies used for the convolution of
   !! G and W to obtain the self-energy \f$\Sigma\f$.
@@ -37,6 +37,12 @@ MODULE freqbins_module
 
     !> flag indicates whether we integrate on the real or imaginary axis
     LOGICAL imag_sigma
+
+    !> flag indicates whether symmetry for frequencies is used
+    LOGICAL use_symmetry
+
+    !> number of frequencies in the symmetrized mesh
+    INTEGER num_freq_sym
 
     !> The coarse frequency grid used to determine W.
     COMPLEX(dp), ALLOCATABLE :: solver(:)
@@ -58,11 +64,12 @@ MODULE freqbins_module
 
   CONTAINS
 
+    PROCEDURE :: init       => freqbins_init
     PROCEDURE :: num_freq   => freqbins_num_freq
     PROCEDURE :: num_coul   => freqbins_num_coul
     PROCEDURE :: num_sigma  => freqbins_num_sigma
     PROCEDURE :: num_window => freqbins_num_window
-    PROCEDURE :: green     => freqbins_green
+    PROCEDURE :: green      => freqbins_green
 
   END TYPE freqbins_type
 
@@ -192,6 +199,9 @@ CONTAINS
     !!
     CALL freqbins_equidist_grid(min_window, max_window, num_window, freq%window)
 
+    ! initialize the type
+    CALL freq%init()
+
     !! References
     !! [1] <a href="http://link.aps.org/doi/10.1103/PhysRevB.74.035101">
     !!     Shishkin, Kresse, Phys. Rev. B, **74**, 035101 (2006)
@@ -240,7 +250,11 @@ CONTAINS
     !> The frequency type of which the number of frequencies are extracted
     CLASS(freqbins_type), INTENT(IN) :: this
 
-    num_freq = SIZE(this%solver)
+    ! the init routine of the type needs to be called before this routine
+    IF (this%num_freq_sym < 0) &
+       CALL errore(__FILE__, "freqbins_type used before it's init routine was called", 1)
+
+    num_freq = this%num_freq_sym
 
   END FUNCTION freqbins_num_freq
 
@@ -296,5 +310,121 @@ CONTAINS
     freq_green(num_coul + 1:) = freq_sigma - this%coul - CMPLX(0.0_dp, this%eta, KIND=dp)
 
   END FUNCTION freqbins_green
+
+  !> Expand an array from the symmetry reduced to the full frequency mesh.
+  !!
+  !! We assume an array with the following property
+  !! \f{equation}{
+  !!   A(G, G', \omega) = A(G, G', \omega^\ast)~.
+  !! \f}
+  !! Then, we can extend an given input array for which only the first half
+  !! of the frequencies was calculated to the full mesh by adding the complex
+  !! conjugate to the end.
+  SUBROUTINE freqbins_symm(freq_in, freq_out, array)
+
+    USE constants, ONLY: eps14
+    USE kinds,     ONLY: dp
+
+    !> the definition of the input frequency mesh
+    TYPE(freqbins_type), INTENT(IN)       :: freq_in
+
+    !> the full frequency array
+    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: freq_out(:)
+
+    !> *on input*: The first half of the array \f$A\f$ <br>
+    !! *on output*: The full array \f$A\f$ (extended by its complex conjugate).
+    COMPLEX(dp), INTENT(INOUT), OPTIONAL  :: array(:,:,:)
+
+    !> original number of frequencies
+    INTEGER num_freq
+
+    !> number of frequencies that are vanishingly small
+    INTEGER num_zero
+
+    !> new number of frequencies
+    INTEGER num_freq_sym
+
+    !> counter on initial frequency mesh
+    INTEGER ifreq
+
+    !> counter on final frequency mesh
+    INTEGER ifreq_sym
+
+    ! set helper variable
+    num_freq = SIZE(freq_in%solver)
+
+    ! trivial case - symmetry not used => return same frequency used for solver
+    IF (.NOT. freq_in%use_symmetry) THEN
+      ALLOCATE(freq_out(num_freq))
+      freq_out = freq_in%solver
+      RETURN
+    END IF
+
+    !!
+    !! For the symmetrized frequency mesh, we duplicate all nonzero frequencies.
+    !! For the frequency equal to 0, we set the imaginary part of the function
+    !! to 0. We only for at most one frequency that is 0.
+    !!
+    num_zero = COUNT(ABS(freq_in%solver) < eps14)
+    IF (num_zero > 1) &
+      CALL errore(__FILE__, "only a single frequency may be smaller than 1e-14", num_zero)
+
+    ! determine number of frequencies
+    num_freq_sym = 2 * num_freq - num_zero
+    ALLOCATE(freq_out(num_freq_sym))
+
+    !
+    ! sanity test
+    !
+    IF (PRESENT(array)) THEN
+
+      ! frequency and array should habe same dimension
+      IF (SIZE(array, 3) /= num_freq_sym) THEN
+        CALL errore(__FILE__, "array and frequency mesh inconsistent", 1)
+      END IF
+
+    END IF
+
+    !
+    ! copy array elements corresponding to nonzero frequency
+    !
+    ifreq_sym = num_freq
+    DO ifreq = 1, num_freq
+      !
+      ! copy frequency
+      freq_out(ifreq) = freq_in%solver(ifreq)
+      !
+      IF (ABS(freq_out(ifreq)) >= eps14) THEN
+        !
+        ! duplicate nonzero elements
+        ifreq_sym = ifreq_sym + 1
+        freq_out(ifreq_sym) = CONJG(freq_in%solver(ifreq))
+        IF (PRESENT(array)) array(:, :, ifreq_sym) = array(:, :, ifreq)
+        !
+      END IF
+      !
+    END DO ! ifreq
+
+  END SUBROUTINE freqbins_symm
+
+  !> initialize the frequency bins type
+  SUBROUTINE freqbins_init(this)
+
+    USE kinds, ONLY: dp
+
+    !> the frequency bins type which is initialized
+    CLASS(freqbins_type), INTENT(INOUT) :: this
+
+    !> temporary array for the symmetrized mesh
+    COMPLEX(dp), ALLOCATABLE :: freq(:)
+
+    !!
+    !! 1. determines the symmetrized frequency grid (if applicable)
+    !!
+    ! evaluate the size of the symmetrized mesh and store it
+    CALL freqbins_symm(this, freq)
+    this%num_freq_sym = SIZE(freq)
+
+  END SUBROUTINE freqbins_init
 
 END MODULE freqbins_module

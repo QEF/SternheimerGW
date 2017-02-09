@@ -128,7 +128,6 @@ CONTAINS
 
     USE kinds,      ONLY: dp
     USE constants,  ONLY: eps8
-    USE control_gw, ONLY: do_imag
 
     !> the frequency at which we want to determine the Coulomb potential
     COMPLEX(dp), INTENT(IN) :: freq

@@ -9,7 +9,9 @@ Green's function above or below the real axis depending on whether we are above
 or below the Fermi energy. This leads directly includes the nonanalytic part,
 fixes the inconsistencies between real and imaginary frequency integration, and
 improves the convergence of the real frequency integration with respect to the
-number of necessary frequencies.
+number of necessary frequencies. To improve the stability of the frequency
+integration, we use the symmetry of the screened Coulomb interaction to extend
+the number of points used for the Pade continuation.
 
 Add new linear solver that construct a Krylov subspace that is used for all
 frequencies but might be extended if one requires a tighter convergence setting.

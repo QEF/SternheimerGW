@@ -9,7 +9,7 @@ Screened Coulomb for the full mesh.
   ldisp        = .true.
   multishift   = .true.
   double_grid  = .false.
-  freq_symm    = .false.
+  freq_symm    = .true.
 
   ! the grid used for the linear response
   nq1          = 2
@@ -29,7 +29,7 @@ Screened Coulomb for the full mesh.
   ecutsco      = 6.0
 
   ! configuration of the Coulomb solver
-  do_coulomb   = .true.
+  do_coulomb   = .false.
   tr2_gw       = 1.0d-4
   nmix_gw      = 4
   solve_direct = .true.
