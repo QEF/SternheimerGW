@@ -317,26 +317,27 @@ CONTAINS
     USE kinds, ONLY: dp
 
     !> the definition of the input frequency mesh
-    TYPE(freqbins_type), INTENT(IN)         :: freq_in
+    TYPE(freqbins_type), INTENT(IN)       :: freq_in
 
     !> the full frequency array
-    COMPLEX(dp), INTENT(INOUT), ALLOCATABLE :: freq_out(:)
+    COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: freq_out(:)
 
     !> *on input*: The first half of the array \f$A\f$ <br>
     !! *on output*: The full array \f$A\f$ (extended by its complex conjugate).
-    COMPLEX(dp), INTENT(INOUT), OPTIONAL    :: array(:,:,:)
+    COMPLEX(dp), INTENT(INOUT), OPTIONAL  :: array(:,:,:)
 
     ! mid point in the array
     INTEGER middle
 
-    ! create frequency mesh
-    IF (.NOT.ALLOCATED(freq_out)) ALLOCATE(freq_out(freq_in%num_freq()))
-
     ! trivial case - symmetry not used => return same frequency used for solver
     IF (.NOT. freq_in%use_symmetry) THEN
+      ALLOCATE(freq_out(SIZE(freq_in%solver)))
       freq_out = freq_in%solver
       RETURN
     END IF
+
+    ! create frequency mesh
+    ALLOCATE(freq_out(2 * SIZE(freq_in%solver)))
 
     !
     ! sanity test

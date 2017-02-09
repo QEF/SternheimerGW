@@ -140,7 +140,6 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   ELSE IF (padecont) THEN
 
     ! allocate helper arrays
-    ALLOCATE(z(freq%num_freq()))
     ALLOCATE(u(freq%num_freq()))
     ALLOCATE(a(freq%num_freq()))
 
