@@ -424,7 +424,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
    CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
   IF (meta_ionode) tmp_dir = trimcheck (outdir)
 
-  CALL bcast_gw_input ( ) 
+  CALL bcast_gw_input(freq_symm) 
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
 
   !
