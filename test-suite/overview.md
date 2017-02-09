@@ -37,6 +37,7 @@ The following SGW features are tested in this suite
 * use the iterative solver to determine the dielectric constant
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
+* symmetrize the frequency mesh to increase accuracy of Pade approximation
 * obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
@@ -84,6 +85,7 @@ The following SGW features are tested by this case
 * evaluate the dielectric function on the imaginary axis
 * use the direct solver to determine the dielectric constant
 * full frequency integration using Pade approximation to interpolate
+* symmetrize the frequency mesh to increase accuracy of Pade approximation
 * obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
