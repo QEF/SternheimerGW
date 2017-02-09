@@ -322,7 +322,8 @@ CONTAINS
   !! conjugate to the end.
   SUBROUTINE freqbins_symm(freq_in, freq_out, array)
 
-    USE kinds, ONLY: dp
+    USE constants, ONLY: eps14
+    USE kinds,     ONLY: dp
 
     !> the definition of the input frequency mesh
     TYPE(freqbins_type), INTENT(IN)       :: freq_in
@@ -334,18 +335,43 @@ CONTAINS
     !! *on output*: The full array \f$A\f$ (extended by its complex conjugate).
     COMPLEX(dp), INTENT(INOUT), OPTIONAL  :: array(:,:,:)
 
-    ! mid point in the array
-    INTEGER middle
+    !> original number of frequencies
+    INTEGER num_freq
+
+    !> number of frequencies that are vanishingly small
+    INTEGER num_zero
+
+    !> new number of frequencies
+    INTEGER num_freq_sym
+
+    !> counter on initial frequency mesh
+    INTEGER ifreq
+
+    !> counter on final frequency mesh
+    INTEGER ifreq_sym
+
+    ! set helper variable
+    num_freq = SIZE(freq_in%solver)
 
     ! trivial case - symmetry not used => return same frequency used for solver
     IF (.NOT. freq_in%use_symmetry) THEN
-      ALLOCATE(freq_out(SIZE(freq_in%solver)))
+      ALLOCATE(freq_out(num_freq))
       freq_out = freq_in%solver
       RETURN
     END IF
 
-    ! create frequency mesh
-    ALLOCATE(freq_out(2 * SIZE(freq_in%solver)))
+    !!
+    !! For the symmetrized frequency mesh, we duplicate all nonzero frequencies.
+    !! For the frequency equal to 0, we set the imaginary part of the function
+    !! to 0. We only for at most one frequency that is 0.
+    !!
+    num_zero = COUNT(ABS(freq_in%solver) < eps14)
+    IF (num_zero > 1) &
+      CALL errore(__FILE__, "only a single frequency may be smaller than 1e-14", num_zero)
+
+    ! determine number of frequencies
+    num_freq_sym = 2 * num_freq - num_zero
+    ALLOCATE(freq_out(num_freq_sym))
 
     !
     ! sanity test
@@ -353,19 +379,36 @@ CONTAINS
     IF (PRESENT(array)) THEN
 
       ! frequency and array should habe same dimension
-      IF (SIZE(freq_out) /= SIZE(array, 3)) THEN
+      IF (SIZE(array, 3) /= num_freq_sym) THEN
         CALL errore(__FILE__, "array and frequency mesh inconsistent", 1)
       END IF
 
     END IF
 
     !
-    ! copy first half to second half and complex conjugate
+    ! copy array elements corresponding to nonzero frequency and complex conjugate
     !
-    middle = SIZE(freq_in%solver)
-    freq_out(:middle)     =  freq_in%solver
-    freq_out(middle + 1:) = -freq_in%solver
-    IF (PRESENT(array)) array(:, :, middle + 1:) = CONJG(array(:, :, :middle))
+    ifreq_sym = num_freq
+    DO ifreq = 1, num_freq
+      !
+      ! copy frequency
+      freq_out(ifreq) = freq_in%solver(ifreq)
+      !
+      IF (ABS(freq_out(ifreq)) >= eps14) THEN
+        !
+        ! duplicate nonzero elements
+        ifreq_sym = ifreq_sym + 1
+        freq_out(ifreq_sym) = -freq_in%solver(ifreq)
+        IF (PRESENT(array)) array(:, :, ifreq_sym) = CONJG(array(:, :, ifreq))
+        !
+      ELSE IF (PRESENT(array)) THEN
+        !
+        ! eliminate the imaginary part of the array for omega = 0
+        array(:, :, ifreq) = REAL(array(:, :, ifreq))
+        !
+      END IF
+      !
+    END DO ! ifreq
 
   END SUBROUTINE freqbins_symm
 
