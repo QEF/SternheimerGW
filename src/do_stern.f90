@@ -220,6 +220,7 @@ IMPLICIT NONE
 
   END DO ! iq
 
+  IF (meta_ionode) CLOSE(iuncoul)
   WRITE(stdout, '("Finished Calculating Screened Coulomb")')
   IF (ALLOCATED(scrcoul_g)) DEALLOCATE(scrcoul_g)
   DEALLOCATE(eps_m)
