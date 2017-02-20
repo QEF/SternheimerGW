@@ -31,6 +31,7 @@ MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_F
 EXE = gw.x
 
 IFLAGS=
+DFLAGS+=-D__GFORTRAN
 
 GWOBJS = \
 allocate_gwq.o\
@@ -42,6 +43,7 @@ close_gwq.o\
 construct_w.o\
 coulomb.o\
 coulomb_q0G0.o\
+coulomb_vcut.o\
 coulpade.o\
 deallocate_gwq.o\
 debug.o\
