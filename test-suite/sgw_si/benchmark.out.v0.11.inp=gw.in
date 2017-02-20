@@ -1,5 +1,5 @@
 
-     Program SGW v.6.0 starts on  9Dec2016 at 15:27:43 
+     Program SGW v.6.1 starts on 20Feb2017 at 12:34:13 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -10,9 +10,9 @@
 
      Parallel version (MPI), running on     1 processors
 
-     You are using SGW version: 0.10.1
+     You are using SGW version: 0.11
 
-     Git description of commit: v0.10.1-dev-62-gae49b6e
+     Git description of commit: v0.11-rc-2-gb80c93d
 
      This program is part of the open-source Quantum ESPRESSO suite
           Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
@@ -169,7 +169,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -336,7 +336,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -535,7 +535,7 @@
 
      Done epsilon inversion.
      
-     epsilq       :      2.69s CPU      1.88s WALL (       1 calls)
+     epsilq       :      2.62s CPU      1.92s WALL (       1 calls)
 
    Info: using nr1, nr2, nr3 values from input
 
@@ -620,7 +620,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -817,7 +817,7 @@
 
      Done epsilon inversion.
      
-     epsilq       :     11.43s CPU      7.97s WALL (       3 calls)
+     epsilq       :     11.06s CPU      8.08s WALL (       3 calls)
 
    Info: using nr1, nr2, nr3 values from input
 
@@ -902,7 +902,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -1099,7 +1099,7 @@
 
      Done epsilon inversion.
      
-     epsilq       :     15.95s CPU     11.24s WALL (       5 calls)
+     epsilq       :     15.51s CPU     11.33s WALL (       5 calls)
 
    Info: using nr1, nr2, nr3 values from input
 
@@ -1184,7 +1184,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -1381,7 +1381,7 @@
 
      Done epsilon inversion.
      
-     epsilq       :     24.61s CPU     17.43s WALL (       7 calls)
+     epsilq       :     24.15s CPU     17.57s WALL (       7 calls)
 Finished Calculating Screened Coulomb
 
    Info: using nr1, nr2, nr3 values from input
@@ -1456,7 +1456,7 @@ Finished Calculating Screened Coulomb
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       1.06Mb
+     Estimated max dynamical RAM per process >       1.06MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -3403,30 +3403,30 @@ ASpec
 
 Timing of the code:
      setup        :      0.35s CPU      0.24s WALL (       2 calls)
-     coulomb      :     24.61s CPU     17.43s WALL (       1 calls)
-     sigma_c      :     46.26s CPU     33.91s WALL (       1 calls)
-     sigma_x      :      0.51s CPU      0.49s WALL (       1 calls)
+     coulomb      :     24.15s CPU     17.57s WALL (       1 calls)
+     sigma_c      :     46.22s CPU     33.99s WALL (       1 calls)
+     sigma_x      :      0.54s CPU      0.51s WALL (       1 calls)
      sigma_matel  :      0.04s CPU      0.03s WALL (       1 calls)
 
 Needed for screened Coulomb interaction
-     coul_nscf    :      0.91s CPU      0.66s WALL (       5 calls)
-     coul_solver  :     23.35s CPU     16.51s WALL (     107 calls)
+     coul_nscf    :      0.97s CPU      0.67s WALL (       5 calls)
+     coul_solver  :     22.84s CPU     16.65s WALL (     107 calls)
 
 Needed for correlation part of Sigma
-     setup_sigma  :      0.03s CPU      0.03s WALL (       1 calls)
-     construct_w  :      0.76s CPU      0.73s WALL (    6160 calls)
-     green        :     31.95s CPU     17.87s WALL (       8 calls)
-     Sigma = G*W  :     12.96s CPU     14.64s WALL (    6160 calls)
+     setup_sigma  :      0.04s CPU      0.03s WALL (       1 calls)
+     construct_w  :      0.87s CPU      0.74s WALL (    6160 calls)
+     green        :     31.11s CPU     17.45s WALL (       8 calls)
+     Sigma = G*W  :     13.67s CPU     15.11s WALL (    6160 calls)
      Sigma commun :      0.00s CPU      0.00s WALL (       1 calls)
      Sigma IO     :      0.00s CPU      0.00s WALL (       1 calls)
 
 Timing for some important routines
-     linear opera :     25.00s CPU     17.97s WALL (  143152 calls)
+     linear opera :     24.41s CPU     18.09s WALL (  143152 calls)
 
-     SGW          :  1m11.76s CPU     0m52.08s WALL
+     SGW          :  1m11.30s CPU     0m52.33s WALL
 
 
-   This run was terminated on:  15:28:35   9Dec2016            
+   This run was terminated on:  12:35: 6  20Feb2017            
 
 =------------------------------------------------------------------------------=
    JOB DONE.

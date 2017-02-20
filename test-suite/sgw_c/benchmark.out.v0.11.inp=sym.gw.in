@@ -1,5 +1,5 @@
 
-     Program SGW v.6.0 starts on  9Feb2017 at 13:22:13 
+     Program SGW v.6.1 starts on 20Feb2017 at 12:24:55 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -10,9 +10,9 @@
 
      Parallel version (MPI), running on     1 processors
 
-     You are using SGW version: 0.10.1
+     You are using SGW version: 0.11
 
-     Git description of commit: v0.10.1-dev-84-g077ec87
+     Git description of commit: v0.11-rc-2-gb80c93d
 
      This program is part of the open-source Quantum ESPRESSO suite
           Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
@@ -2088,28 +2088,28 @@ ASpec
 
 
 Timing of the code:
-     setup        :      0.29s CPU      0.23s WALL (       2 calls)
-     sigma_c      :      9.26s CPU      7.08s WALL (       1 calls)
-     sigma_x      :      0.04s CPU      0.02s WALL (       1 calls)
-     sigma_matel  :      0.02s CPU      0.01s WALL (       1 calls)
+     setup        :      0.21s CPU      0.18s WALL (       2 calls)
+     sigma_c      :      9.13s CPU      8.04s WALL (       1 calls)
+     sigma_x      :      0.02s CPU      0.02s WALL (       1 calls)
+     sigma_matel  :      0.02s CPU      0.02s WALL (       1 calls)
 
 Needed for screened Coulomb interaction
 
 Needed for correlation part of Sigma
-     setup_sigma  :      0.03s CPU      0.02s WALL (       1 calls)
-     construct_w  :      0.78s CPU      0.78s WALL (    6160 calls)
-     green        :      5.70s CPU      3.21s WALL (       8 calls)
-     Sigma = G*W  :      2.55s CPU      2.86s WALL (    6160 calls)
+     setup_sigma  :      0.05s CPU      0.03s WALL (       1 calls)
+     construct_w  :      0.75s CPU      0.76s WALL (    6160 calls)
+     green        :      5.62s CPU      3.75s WALL (       8 calls)
+     Sigma = G*W  :      2.55s CPU      3.30s WALL (    6160 calls)
      Sigma commun :      0.00s CPU      0.00s WALL (       1 calls)
      Sigma IO     :      0.00s CPU      0.00s WALL (       1 calls)
 
 Timing for some important routines
-     linear opera :      0.84s CPU      0.58s WALL (    8232 calls)
+     linear opera :      0.77s CPU      0.67s WALL (    8232 calls)
 
-     SGW          :     9.60s CPU         7.35s WALL
+     SGW          :     9.37s CPU         8.26s WALL
 
 
-   This run was terminated on:  13:22:20   9Feb2017            
+   This run was terminated on:  12:25: 4  20Feb2017            
 
 =------------------------------------------------------------------------------=
    JOB DONE.
