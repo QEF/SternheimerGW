@@ -17,6 +17,7 @@
      This program is part of the open-source Quantum ESPRESSO suite
           Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
           URL http://www.sternheimer.org.uk
+ Warning: frequency symmetrization not sufficiently tested
 
      Reading data from directory:
      ./tmp/diamond.save
