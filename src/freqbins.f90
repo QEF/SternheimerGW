@@ -315,7 +315,7 @@ CONTAINS
   !!
   !! We assume an array with the following property
   !! \f{equation}{
-  !!   A(G, G', \omega) = A(G, G', \omega^\ast)~.
+  !!   A(G, G', \omega) = A(G, G', -\omega)~.
   !! \f}
   !! Then, we can extend an given input array for which only the first half
   !! of the frequencies was calculated to the full mesh by adding the complex
@@ -362,8 +362,7 @@ CONTAINS
 
     !!
     !! For the symmetrized frequency mesh, we duplicate all nonzero frequencies.
-    !! For the frequency equal to 0, we set the imaginary part of the function
-    !! to 0. We only for at most one frequency that is 0.
+    !! We only for at most one frequency that is 0.
     !!
     num_zero = COUNT(ABS(freq_in%solver) < eps14)
     IF (num_zero > 1) &
@@ -398,7 +397,7 @@ CONTAINS
         !
         ! duplicate nonzero elements
         ifreq_sym = ifreq_sym + 1
-        freq_out(ifreq_sym) = CONJG(freq_in%solver(ifreq))
+        freq_out(ifreq_sym) = -freq_in%solver(ifreq)
         IF (PRESENT(array)) array(:, :, ifreq_sym) = array(:, :, ifreq)
         !
       END IF

@@ -1,5 +1,5 @@
 
-     Program SGW v.6.0 starts on  6Dec2016 at 18:25:46 
+     Program SGW v.6.1 starts on 20Feb2017 at 12:33: 9 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -10,9 +10,9 @@
 
      Parallel version (MPI), running on     1 processors
 
-     You are using SGW version: 0.10.1
+     You are using SGW version: 0.11
 
-     Git description of commit: v0.10.1-dev-55-gbe06f9c
+     Git description of commit: v0.11-rc-2-gb80c93d
 
      This program is part of the open-source Quantum ESPRESSO suite
           Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
@@ -177,7 +177,7 @@
 
      Dense  grid:     4285 G-vectors     FFT dimensions: (  24,  24,  24)
 
-     Estimated max dynamical RAM per process >       1.73Mb
+     Estimated max dynamical RAM per process >       1.73MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/licl.save/charge-density.dat
@@ -402,7 +402,7 @@
 
      Dense  grid:     4285 G-vectors     FFT dimensions: (  24,  24,  24)
 
-     Estimated max dynamical RAM per process >       1.73Mb
+     Estimated max dynamical RAM per process >       1.73MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/licl.save/charge-density.dat
@@ -416,7 +416,7 @@
 
      ethr =  1.25E-10,  avg # of iterations =  7.8
 
-     total cpu time spent up to now is        0.6 secs
+     total cpu time spent up to now is        0.4 secs
 
      End of band structure calculation
 
@@ -1160,7 +1160,7 @@
 
      Done epsilon inversion.
      
-     epsilq       :    112.26s CPU     93.37s WALL (       1 calls)
+     epsilq       :    116.98s CPU     63.49s WALL (       1 calls)
 Finished Calculating Screened Coulomb
 
    Info: using nr1, nr2, nr3 values from input
@@ -1244,7 +1244,7 @@ Finished Calculating Screened Coulomb
 
      Dense  grid:     4285 G-vectors     FFT dimensions: (  24,  24,  24)
 
-     Estimated max dynamical RAM per process >       1.92Mb
+     Estimated max dynamical RAM per process >       1.92MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/licl.save/charge-density.dat
@@ -1258,7 +1258,7 @@ Finished Calculating Screened Coulomb
 
      ethr =  1.25E-10,  avg # of iterations = 10.2
 
-     total cpu time spent up to now is        0.9 secs
+     total cpu time spent up to now is        0.7 secs
 
      End of band structure calculation
 
@@ -1304,22 +1304,22 @@ Finished Calculating Screened Coulomb
 WARNING: You have given a kpoint not in original BZ.This could mean full symmetry is not exploited.
 
 Timing of the code:
-     setup        :      0.56s CPU      0.46s WALL (       2 calls)
-     coulomb      :    112.26s CPU     93.37s WALL (       1 calls)
+     setup        :      0.64s CPU      0.43s WALL (       2 calls)
+     coulomb      :    116.98s CPU     63.49s WALL (       1 calls)
 
 Needed for screened Coulomb interaction
-     coul_nscf    :      0.63s CPU      0.63s WALL (       2 calls)
-     coul_solver  :    110.82s CPU     91.91s WALL (       6 calls)
+     coul_nscf    :      0.69s CPU      0.46s WALL (       2 calls)
+     coul_solver  :    115.43s CPU     62.29s WALL (       6 calls)
 
 Needed for correlation part of Sigma
 
 Timing for some important routines
-     linear opera :      5.45s CPU      5.00s WALL (    9809 calls)
+     linear opera :      5.26s CPU      3.24s WALL (    9809 calls)
 
-     SGW          :  1m52.83s CPU     1m33.83s WALL
+     SGW          :  1m57.62s CPU     1m 3.92s WALL
 
 
-   This run was terminated on:  18:27:19   6Dec2016            
+   This run was terminated on:  12:34:13  20Feb2017            
 
 =------------------------------------------------------------------------------=
    JOB DONE.

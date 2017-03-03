@@ -1,8 +1,8 @@
 Release notes
 =============
 
-on develop
-----------
+Version 0.11
+------------
 
 Reinterpret the real frequency integration. We choose the frequencies for the
 Green's function above or below the real axis depending on whether we are above
@@ -34,7 +34,7 @@ Create the SGW testsuite that tests all major features implemented in SGW.
 The test cases are not converged, but any change made to the code should
 reproduce the results obtained with the test. If an error larger than the
 threshold pops up, the commit should be reviewed with care.
-
+> compatible QE version 6.1 revision 13374
 
 Version 0.10.1
 --------------

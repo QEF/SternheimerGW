@@ -1,5 +1,5 @@
 
-     Program SGW v.6.0 starts on  9Dec2016 at 15:28:36 
+     Program SGW v.6.1 starts on 20Feb2017 at 12:35: 6 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -10,9 +10,9 @@
 
      Parallel version (MPI), running on     1 processors
 
-     You are using SGW version: 0.10.1
+     You are using SGW version: 0.11
 
-     Git description of commit: v0.10.1-dev-62-gae49b6e
+     Git description of commit: v0.11-rc-2-gb80c93d
 
      This program is part of the open-source Quantum ESPRESSO suite
           Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
@@ -158,7 +158,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       1.06Mb
+     Estimated max dynamical RAM per process >       1.06MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -2100,28 +2100,28 @@ ASpec
 
 
 Timing of the code:
-     setup        :      0.30s CPU      0.25s WALL (       2 calls)
-     sigma_c      :     46.21s CPU     33.45s WALL (       1 calls)
-     sigma_x      :      0.50s CPU      0.48s WALL (       1 calls)
-     sigma_matel  :      0.04s CPU      0.02s WALL (       1 calls)
+     setup        :      0.30s CPU      0.26s WALL (       2 calls)
+     sigma_c      :     45.71s CPU     33.42s WALL (       1 calls)
+     sigma_x      :      0.52s CPU      0.49s WALL (       1 calls)
+     sigma_matel  :      0.04s CPU      0.03s WALL (       1 calls)
 
 Needed for screened Coulomb interaction
 
 Needed for correlation part of Sigma
      setup_sigma  :      0.05s CPU      0.03s WALL (       1 calls)
-     construct_w  :      0.72s CPU      0.73s WALL (    6160 calls)
-     green        :     32.55s CPU     17.95s WALL (       8 calls)
-     Sigma = G*W  :     12.37s CPU     14.11s WALL (    6160 calls)
+     construct_w  :      0.73s CPU      0.72s WALL (    6160 calls)
+     green        :     31.69s CPU     17.60s WALL (       8 calls)
+     Sigma = G*W  :     12.70s CPU     14.43s WALL (    6160 calls)
      Sigma commun :      0.00s CPU      0.00s WALL (       1 calls)
      Sigma IO     :      0.00s CPU      0.00s WALL (       1 calls)
 
 Timing for some important routines
-     linear opera :      6.77s CPU      4.48s WALL (   39776 calls)
+     linear opera :      6.56s CPU      4.59s WALL (   39776 calls)
 
-     SGW          :    47.05s CPU        34.20s WALL
+     SGW          :    46.58s CPU        34.20s WALL
 
 
-   This run was terminated on:  15:29:10   9Dec2016            
+   This run was terminated on:  12:35:40  20Feb2017            
 
 =------------------------------------------------------------------------------=
    JOB DONE.

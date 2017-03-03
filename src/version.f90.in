@@ -92,10 +92,10 @@ MODULE sgw_version
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: sgw_version_number = '0.10.1'
+  CHARACTER(*), PARAMETER :: sgw_version_number = '0.11'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: sgw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev13188'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE6.1 rev13374'
   !
 END MODULE sgw_version

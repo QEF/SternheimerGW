@@ -1,5 +1,5 @@
 
-     Program SGW v.6.0 starts on  9Dec2016 at 15:29:10 
+     Program SGW v.6.1 starts on 20Feb2017 at 12:35:41 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -10,9 +10,9 @@
 
      Parallel version (MPI), running on     1 processors
 
-     You are using SGW version: 0.10.1
+     You are using SGW version: 0.11
 
-     Git description of commit: v0.10.1-dev-62-gae49b6e
+     Git description of commit: v0.11-rc-2-gb80c93d
 
      This program is part of the open-source Quantum ESPRESSO suite
           Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
@@ -169,7 +169,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -338,7 +338,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -511,11 +511,11 @@
      ngmpol   59 and ngmunique   11
      iq    1 igstart    1 igstop   11
 
-      iter #    5 total cpu time :     3.6
+      iter #    5 total cpu time :     3.5
      inveps_{GG}(q,w) =      0.59542    -0.00000
      inveps_{GG}(q,w) =      0.76512    -0.00000
 
-      iter #    5 total cpu time :     5.0
+      iter #    5 total cpu time :     4.9
      inveps_{GG}(q,w) =      0.59543    -0.00000
      inveps_{GG}(q,w) =      0.76512    -0.00000
 
@@ -527,34 +527,34 @@
      inveps_{GG}(q,w) =      0.81436     0.00000
      inveps_{GG}(q,w) =      0.88812     0.00000
 
-      iter #    4 total cpu time :     8.8
+      iter #    4 total cpu time :     8.7
      inveps_{GG}(q,w) =      0.81436    -0.00000
      inveps_{GG}(q,w) =      0.88811    -0.00000
 
-      iter #    5 total cpu time :    10.5
+      iter #    5 total cpu time :    10.4
      inveps_{GG}(q,w) =      0.89032     0.00000
      inveps_{GG}(q,w) =      0.92226     0.00000
 
-      iter #    5 total cpu time :    12.2
+      iter #    5 total cpu time :    12.1
      inveps_{GG}(q,w) =      0.89032    -0.00000
      inveps_{GG}(q,w) =      0.92226    -0.00000
 
-      iter #    5 total cpu time :    13.9
+      iter #    5 total cpu time :    13.8
      inveps_{GG}(q,w) =      0.89033     0.00000
      inveps_{GG}(q,w) =      0.92227    -0.00000
 
-      iter #    5 total cpu time :    15.5
+      iter #    5 total cpu time :    15.4
      inveps_{GG}(q,w) =      0.90573    -0.00000
      inveps_{GG}(q,w) =      0.93123    -0.00000
 
-      iter #    5 total cpu time :    17.0
+      iter #    5 total cpu time :    16.9
      inveps_{GG}(q,w) =      0.90573     0.00000
      inveps_{GG}(q,w) =      0.93123    -0.00000
 
      qpoint HAS inversion symmetry
 
      nsym, nsymq   12  12
-     epsilq       :     22.58s CPU     16.96s WALL (       1 calls)
+     epsilq       :     23.10s CPU     16.85s WALL (       1 calls)
 
    Info: using nr1, nr2, nr3 values from input
 
@@ -639,7 +639,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -754,7 +754,7 @@
      ngmpol   59 and ngmunique   38
      iq    2 igstart    1 igstop   38
 
-      iter #    5 total cpu time :    18.4
+      iter #    5 total cpu time :    18.2
      inveps_{GG}(q,w) =      0.34619    -0.00000
      inveps_{GG}(q,w) =      0.64550     0.00000
 
@@ -762,7 +762,7 @@
      inveps_{GG}(q,w) =      0.69502    -0.00000
      inveps_{GG}(q,w) =      0.82236     0.00000
 
-      iter #    6 total cpu time :    21.9
+      iter #    6 total cpu time :    21.8
      inveps_{GG}(q,w) =      0.53103     0.00000
      inveps_{GG}(q,w) =      0.75385     0.00000
 
@@ -770,7 +770,7 @@
      inveps_{GG}(q,w) =      0.53102    -0.00000
      inveps_{GG}(q,w) =      0.75385     0.00000
 
-      iter #    6 total cpu time :    25.4
+      iter #    6 total cpu time :    25.3
      inveps_{GG}(q,w) =      0.78205    -0.00000
      inveps_{GG}(q,w) =      0.86723     0.00000
 
@@ -782,7 +782,7 @@
      inveps_{GG}(q,w) =      0.69502     0.00000
      inveps_{GG}(q,w) =      0.82236     0.00000
 
-      iter #    6 total cpu time :    30.1
+      iter #    6 total cpu time :    30.0
      inveps_{GG}(q,w) =      0.53103     0.00000
      inveps_{GG}(q,w) =      0.75385    -0.00000
 
@@ -806,110 +806,110 @@
      inveps_{GG}(q,w) =      0.83405     0.00000
      inveps_{GG}(q,w) =      0.89722     0.00000
 
-      iter #    5 total cpu time :    41.2
+      iter #    5 total cpu time :    41.3
      inveps_{GG}(q,w) =      0.92022     0.00000
      inveps_{GG}(q,w) =      0.93781     0.00000
 
-      iter #    6 total cpu time :    43.0
+      iter #    6 total cpu time :    43.2
      inveps_{GG}(q,w) =      0.69502     0.00000
      inveps_{GG}(q,w) =      0.82236    -0.00000
 
-      iter #    6 total cpu time :    44.9
+      iter #    6 total cpu time :    45.2
      inveps_{GG}(q,w) =      0.83405     0.00000
      inveps_{GG}(q,w) =      0.89722     0.00000
 
-      iter #    6 total cpu time :    46.7
+      iter #    6 total cpu time :    47.0
      inveps_{GG}(q,w) =      0.69502     0.00000
      inveps_{GG}(q,w) =      0.82236     0.00000
 
-      iter #    5 total cpu time :    48.2
+      iter #    5 total cpu time :    48.6
      inveps_{GG}(q,w) =      0.92022     0.00000
      inveps_{GG}(q,w) =      0.93781     0.00000
 
-      iter #    5 total cpu time :    49.7
+      iter #    5 total cpu time :    50.2
      inveps_{GG}(q,w) =      0.88426    -0.00000
      inveps_{GG}(q,w) =      0.92075    -0.00000
 
-      iter #    5 total cpu time :    51.2
+      iter #    5 total cpu time :    51.7
      inveps_{GG}(q,w) =      0.93991    -0.00000
      inveps_{GG}(q,w) =      0.95073    -0.00000
 
-      iter #    6 total cpu time :    53.1
+      iter #    6 total cpu time :    53.7
      inveps_{GG}(q,w) =      0.83406    -0.00000
      inveps_{GG}(q,w) =      0.89722    -0.00000
 
-      iter #    5 total cpu time :    54.7
+      iter #    5 total cpu time :    55.4
      inveps_{GG}(q,w) =      0.91771    -0.00000
      inveps_{GG}(q,w) =      0.93749    -0.00000
 
-      iter #    5 total cpu time :    56.2
+      iter #    5 total cpu time :    56.9
      inveps_{GG}(q,w) =      0.93991     0.00000
      inveps_{GG}(q,w) =      0.95072     0.00000
 
-      iter #    6 total cpu time :    58.1
+      iter #    6 total cpu time :    58.9
      inveps_{GG}(q,w) =      0.83405    -0.00000
      inveps_{GG}(q,w) =      0.89721    -0.00000
 
-      iter #    6 total cpu time :    60.1
+      iter #    6 total cpu time :    60.9
      inveps_{GG}(q,w) =      0.76749    -0.00000
      inveps_{GG}(q,w) =      0.86591    -0.00000
 
-      iter #    5 total cpu time :    61.6
+      iter #    5 total cpu time :    62.5
      inveps_{GG}(q,w) =      0.95464    -0.00000
      inveps_{GG}(q,w) =      0.96067    -0.00000
 
-      iter #    5 total cpu time :    63.1
+      iter #    5 total cpu time :    64.0
      inveps_{GG}(q,w) =      0.93991    -0.00000
      inveps_{GG}(q,w) =      0.95073    -0.00000
 
-      iter #    6 total cpu time :    65.1
+      iter #    6 total cpu time :    66.0
      inveps_{GG}(q,w) =      0.83405     0.00000
      inveps_{GG}(q,w) =      0.89722     0.00000
 
-      iter #    5 total cpu time :    66.7
+      iter #    5 total cpu time :    67.6
      inveps_{GG}(q,w) =      0.91772     0.00000
      inveps_{GG}(q,w) =      0.93749     0.00000
 
-      iter #    5 total cpu time :    68.2
+      iter #    5 total cpu time :    69.1
      inveps_{GG}(q,w) =      0.95465    -0.00000
      inveps_{GG}(q,w) =      0.96067     0.00000
 
-      iter #    6 total cpu time :    70.2
+      iter #    6 total cpu time :    71.2
      inveps_{GG}(q,w) =      0.76745    -0.00000
      inveps_{GG}(q,w) =      0.86581    -0.00000
 
-      iter #    5 total cpu time :    71.8
+      iter #    5 total cpu time :    72.7
      inveps_{GG}(q,w) =      0.88426     0.00000
      inveps_{GG}(q,w) =      0.92075     0.00000
 
-      iter #    5 total cpu time :    73.3
+      iter #    5 total cpu time :    74.3
      inveps_{GG}(q,w) =      0.94027     0.00000
      inveps_{GG}(q,w) =      0.95082     0.00000
 
-      iter #    5 total cpu time :    74.8
+      iter #    5 total cpu time :    75.8
      inveps_{GG}(q,w) =      0.88426    -0.00000
      inveps_{GG}(q,w) =      0.92076    -0.00000
 
-      iter #    5 total cpu time :    76.3
+      iter #    5 total cpu time :    77.4
      inveps_{GG}(q,w) =      0.88426     0.00000
      inveps_{GG}(q,w) =      0.92075     0.00000
 
-      iter #    5 total cpu time :    77.8
+      iter #    5 total cpu time :    78.9
      inveps_{GG}(q,w) =      0.96486     0.00000
      inveps_{GG}(q,w) =      0.96823     0.00000
 
-      iter #    6 total cpu time :    79.5
+      iter #    6 total cpu time :    80.7
      inveps_{GG}(q,w) =      0.78205    -0.00000
      inveps_{GG}(q,w) =      0.86723     0.00000
 
-      iter #    5 total cpu time :    81.0
+      iter #    5 total cpu time :    82.3
      inveps_{GG}(q,w) =      0.94026     0.00000
      inveps_{GG}(q,w) =      0.95082     0.00000
 
      qpoint does NOT have inversion symmetry
 
      nsym, nsymq   12   2
-     epsilq       :    110.24s CPU     80.97s WALL (       3 calls)
+     epsilq       :    111.92s CPU     82.19s WALL (       3 calls)
 
    Info: using nr1, nr2, nr3 values from input
 
@@ -994,7 +994,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -1145,90 +1145,90 @@
      ngmpol   59 and ngmunique   20
      iq    3 igstart    1 igstop   20
 
-      iter #    5 total cpu time :    82.3
+      iter #    5 total cpu time :    83.5
      inveps_{GG}(q,w) =      0.34627     0.00000
      inveps_{GG}(q,w) =      0.64550    -0.00000
 
-      iter #    6 total cpu time :    84.1
+      iter #    6 total cpu time :    85.4
      inveps_{GG}(q,w) =      0.69502    -0.00000
      inveps_{GG}(q,w) =      0.82236    -0.00000
 
-      iter #    6 total cpu time :    85.8
+      iter #    6 total cpu time :    87.1
      inveps_{GG}(q,w) =      0.53102     0.00000
      inveps_{GG}(q,w) =      0.75385    -0.00000
 
-      iter #    6 total cpu time :    87.4
+      iter #    6 total cpu time :    88.8
      inveps_{GG}(q,w) =      0.78205     0.00000
      inveps_{GG}(q,w) =      0.86723     0.00000
 
-      iter #    5 total cpu time :    88.5
+      iter #    5 total cpu time :    89.9
      inveps_{GG}(q,w) =      0.34627    -0.00000
      inveps_{GG}(q,w) =      0.64550     0.00000
 
-      iter #    6 total cpu time :    90.5
+      iter #    6 total cpu time :    91.9
      inveps_{GG}(q,w) =      0.76749    -0.00000
      inveps_{GG}(q,w) =      0.86591    -0.00000
 
-      iter #    6 total cpu time :    92.2
+      iter #    6 total cpu time :    93.7
      inveps_{GG}(q,w) =      0.53102    -0.00000
      inveps_{GG}(q,w) =      0.75385    -0.00000
 
-      iter #    6 total cpu time :    94.2
+      iter #    6 total cpu time :    95.7
      inveps_{GG}(q,w) =      0.83406    -0.00000
      inveps_{GG}(q,w) =      0.89722    -0.00000
 
-      iter #    5 total cpu time :    95.7
+      iter #    5 total cpu time :    97.3
      inveps_{GG}(q,w) =      0.92022    -0.00000
      inveps_{GG}(q,w) =      0.93781    -0.00000
 
-      iter #    6 total cpu time :    97.5
+      iter #    6 total cpu time :    99.1
      inveps_{GG}(q,w) =      0.69502     0.00000
      inveps_{GG}(q,w) =      0.82236    -0.00000
 
-      iter #    5 total cpu time :    99.1
+      iter #    5 total cpu time :   100.7
      inveps_{GG}(q,w) =      0.93991    -0.00000
      inveps_{GG}(q,w) =      0.95072    -0.00000
 
-      iter #    5 total cpu time :   100.6
+      iter #    5 total cpu time :   102.3
      inveps_{GG}(q,w) =      0.88425    -0.00000
      inveps_{GG}(q,w) =      0.92075    -0.00000
 
-      iter #    5 total cpu time :   102.2
+      iter #    5 total cpu time :   103.9
      inveps_{GG}(q,w) =      0.91772     0.00000
      inveps_{GG}(q,w) =      0.93749    -0.00000
 
-      iter #    6 total cpu time :   104.1
+      iter #    6 total cpu time :   105.9
      inveps_{GG}(q,w) =      0.83406    -0.00000
      inveps_{GG}(q,w) =      0.89722    -0.00000
 
-      iter #    5 total cpu time :   105.6
+      iter #    5 total cpu time :   107.4
      inveps_{GG}(q,w) =      0.95465     0.00000
      inveps_{GG}(q,w) =      0.96067     0.00000
 
-      iter #    6 total cpu time :   107.5
+      iter #    6 total cpu time :   109.5
      inveps_{GG}(q,w) =      0.76749    -0.00000
      inveps_{GG}(q,w) =      0.86591     0.00000
 
-      iter #    5 total cpu time :   109.0
+      iter #    5 total cpu time :   111.1
      inveps_{GG}(q,w) =      0.94027    -0.00000
      inveps_{GG}(q,w) =      0.95082    -0.00000
 
-      iter #    5 total cpu time :   110.5
+      iter #    5 total cpu time :   112.6
      inveps_{GG}(q,w) =      0.88425    -0.00000
      inveps_{GG}(q,w) =      0.92075    -0.00000
 
-      iter #    5 total cpu time :   111.9
+      iter #    5 total cpu time :   114.1
      inveps_{GG}(q,w) =      0.96486    -0.00000
      inveps_{GG}(q,w) =      0.96823    -0.00000
 
-      iter #    6 total cpu time :   113.6
+      iter #    6 total cpu time :   115.9
      inveps_{GG}(q,w) =      0.78205    -0.00000
      inveps_{GG}(q,w) =      0.86723    -0.00000
 
      qpoint does NOT have inversion symmetry
 
      nsym, nsymq   12   6
-     epsilq       :    155.43s CPU    113.52s WALL (       5 calls)
+     epsilq       :    157.10s CPU    115.80s WALL (       5 calls)
 
    Info: using nr1, nr2, nr3 values from input
 
@@ -1313,7 +1313,7 @@
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       0.94Mb
+     Estimated max dynamical RAM per process >       0.94MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -1327,7 +1327,7 @@
 
      ethr =  1.25E-10,  avg # of iterations =  8.8
 
-     total cpu time spent up to now is        0.6 secs
+     total cpu time spent up to now is        0.7 secs
 
      End of band structure calculation
 
@@ -1428,162 +1428,162 @@
      ngmpol   59 and ngmunique   38
      iq    4 igstart    1 igstop   38
 
-      iter #    5 total cpu time :   115.0
+      iter #    5 total cpu time :   117.3
      inveps_{GG}(q,w) =      0.31134    -0.00004
      inveps_{GG}(q,w) =      0.65489     0.00000
 
-      iter #    6 total cpu time :   116.9
+      iter #    6 total cpu time :   119.2
      inveps_{GG}(q,w) =      0.74516     0.00000
      inveps_{GG}(q,w) =      0.85182     0.00000
 
-      iter #    6 total cpu time :   118.6
+      iter #    6 total cpu time :   120.9
      inveps_{GG}(q,w) =      0.46817    -0.00000
      inveps_{GG}(q,w) =      0.71841    -0.00000
 
-      iter #    6 total cpu time :   120.4
+      iter #    6 total cpu time :   122.8
      inveps_{GG}(q,w) =      0.74519    -0.00001
      inveps_{GG}(q,w) =      0.85183    -0.00000
 
-      iter #    6 total cpu time :   122.3
+      iter #    6 total cpu time :   124.7
      inveps_{GG}(q,w) =      0.74516     0.00000
      inveps_{GG}(q,w) =      0.85182     0.00000
 
-      iter #    6 total cpu time :   124.0
+      iter #    6 total cpu time :   126.4
      inveps_{GG}(q,w) =      0.46817     0.00000
      inveps_{GG}(q,w) =      0.71841     0.00000
 
-      iter #    6 total cpu time :   125.7
+      iter #    6 total cpu time :   128.1
      inveps_{GG}(q,w) =      0.46817     0.00000
      inveps_{GG}(q,w) =      0.71841     0.00000
 
-      iter #    6 total cpu time :   127.5
+      iter #    6 total cpu time :   130.0
      inveps_{GG}(q,w) =      0.67172     0.00000
      inveps_{GG}(q,w) =      0.82815    -0.00000
 
-      iter #    6 total cpu time :   129.4
+      iter #    6 total cpu time :   132.0
      inveps_{GG}(q,w) =      0.67172     0.00000
      inveps_{GG}(q,w) =      0.82815     0.00000
 
-      iter #    6 total cpu time :   131.4
+      iter #    6 total cpu time :   134.0
      inveps_{GG}(q,w) =      0.84269     0.00000
      inveps_{GG}(q,w) =      0.90016     0.00000
 
-      iter #    5 total cpu time :   132.7
+      iter #    5 total cpu time :   135.3
      inveps_{GG}(q,w) =      0.31134    -0.00004
      inveps_{GG}(q,w) =      0.65489     0.00000
 
-      iter #    5 total cpu time :   134.2
+      iter #    5 total cpu time :   136.8
      inveps_{GG}(q,w) =      0.83117    -0.00000
      inveps_{GG}(q,w) =      0.90175    -0.00000
 
-      iter #    5 total cpu time :   135.7
+      iter #    5 total cpu time :   138.5
      inveps_{GG}(q,w) =      0.92184    -0.00000
      inveps_{GG}(q,w) =      0.93932    -0.00000
 
-      iter #    5 total cpu time :   137.3
+      iter #    5 total cpu time :   140.1
      inveps_{GG}(q,w) =      0.92184    -0.00000
      inveps_{GG}(q,w) =      0.93932    -0.00000
 
-      iter #    6 total cpu time :   139.1
+      iter #    6 total cpu time :   142.0
      inveps_{GG}(q,w) =      0.67172    -0.00000
      inveps_{GG}(q,w) =      0.82815     0.00000
 
-      iter #    6 total cpu time :   141.1
+      iter #    6 total cpu time :   144.1
      inveps_{GG}(q,w) =      0.67172     0.00000
      inveps_{GG}(q,w) =      0.82815     0.00000
 
-      iter #    5 total cpu time :   142.7
+      iter #    5 total cpu time :   145.7
      inveps_{GG}(q,w) =      0.83116     0.00000
      inveps_{GG}(q,w) =      0.90174     0.00000
 
-      iter #    5 total cpu time :   144.3
+      iter #    5 total cpu time :   147.2
      inveps_{GG}(q,w) =      0.83117     0.00000
      inveps_{GG}(q,w) =      0.90174     0.00001
 
-      iter #    5 total cpu time :   145.9
+      iter #    5 total cpu time :   148.9
      inveps_{GG}(q,w) =      0.93280    -0.00000
      inveps_{GG}(q,w) =      0.94630    -0.00000
 
-      iter #    5 total cpu time :   147.4
+      iter #    5 total cpu time :   150.7
      inveps_{GG}(q,w) =      0.93280    -0.00000
      inveps_{GG}(q,w) =      0.94631    -0.00000
 
-      iter #    5 total cpu time :   149.0
+      iter #    5 total cpu time :   152.4
      inveps_{GG}(q,w) =      0.86198     0.00000
      inveps_{GG}(q,w) =      0.91327     0.00000
 
-      iter #    5 total cpu time :   150.5
+      iter #    5 total cpu time :   154.0
      inveps_{GG}(q,w) =      0.86198    -0.00000
      inveps_{GG}(q,w) =      0.91327    -0.00000
 
-      iter #    5 total cpu time :   152.1
+      iter #    5 total cpu time :   155.8
      inveps_{GG}(q,w) =      0.96031     0.00000
      inveps_{GG}(q,w) =      0.96509     0.00000
 
-      iter #    5 total cpu time :   153.6
+      iter #    5 total cpu time :   157.5
      inveps_{GG}(q,w) =      0.93278     0.00001
      inveps_{GG}(q,w) =      0.94629     0.00000
 
-      iter #    5 total cpu time :   155.1
+      iter #    5 total cpu time :   159.3
      inveps_{GG}(q,w) =      0.86201    -0.00000
      inveps_{GG}(q,w) =      0.91329    -0.00000
 
-      iter #    5 total cpu time :   156.7
+      iter #    5 total cpu time :   160.9
      inveps_{GG}(q,w) =      0.93281     0.00000
      inveps_{GG}(q,w) =      0.94631     0.00000
 
-      iter #    5 total cpu time :   158.2
+      iter #    5 total cpu time :   162.5
      inveps_{GG}(q,w) =      0.86200    -0.00000
      inveps_{GG}(q,w) =      0.91329    -0.00000
 
-      iter #    6 total cpu time :   160.0
+      iter #    6 total cpu time :   164.4
      inveps_{GG}(q,w) =      0.74517    -0.00000
      inveps_{GG}(q,w) =      0.85182    -0.00000
 
-      iter #    5 total cpu time :   161.6
+      iter #    5 total cpu time :   166.0
      inveps_{GG}(q,w) =      0.96032     0.00000
      inveps_{GG}(q,w) =      0.96509     0.00000
 
-      iter #    5 total cpu time :   163.1
+      iter #    5 total cpu time :   167.7
      inveps_{GG}(q,w) =      0.96031     0.00000
      inveps_{GG}(q,w) =      0.96509     0.00000
 
-      iter #    6 total cpu time :   164.9
+      iter #    6 total cpu time :   169.5
      inveps_{GG}(q,w) =      0.74516     0.00000
      inveps_{GG}(q,w) =      0.85182     0.00000
 
-      iter #    6 total cpu time :   166.7
+      iter #    6 total cpu time :   171.4
      inveps_{GG}(q,w) =      0.74519    -0.00001
      inveps_{GG}(q,w) =      0.85183    -0.00000
 
-      iter #    5 total cpu time :   168.2
+      iter #    5 total cpu time :   173.0
      inveps_{GG}(q,w) =      0.95579    -0.00000
      inveps_{GG}(q,w) =      0.96154    -0.00000
 
-      iter #    5 total cpu time :   169.8
+      iter #    5 total cpu time :   174.5
      inveps_{GG}(q,w) =      0.83116    -0.00000
      inveps_{GG}(q,w) =      0.90174    -0.00000
 
-      iter #    5 total cpu time :   171.3
+      iter #    5 total cpu time :   176.1
      inveps_{GG}(q,w) =      0.95581     0.00000
      inveps_{GG}(q,w) =      0.96155     0.00000
 
-      iter #    5 total cpu time :   172.8
+      iter #    5 total cpu time :   177.7
      inveps_{GG}(q,w) =      0.95580     0.00000
      inveps_{GG}(q,w) =      0.96155     0.00000
 
-      iter #    5 total cpu time :   174.3
+      iter #    5 total cpu time :   179.4
      inveps_{GG}(q,w) =      0.83117     0.00000
      inveps_{GG}(q,w) =      0.90174     0.00001
 
-      iter #    5 total cpu time :   175.8
+      iter #    5 total cpu time :   181.0
      inveps_{GG}(q,w) =      0.83116     0.00000
      inveps_{GG}(q,w) =      0.90174     0.00000
 
      qpoint does NOT have inversion symmetry
 
      nsym, nsymq   12   2
-     epsilq       :    242.01s CPU    175.72s WALL (       7 calls)
+     epsilq       :    243.42s CPU    180.90s WALL (       7 calls)
 Finished Calculating Screened Coulomb
 
    Info: using nr1, nr2, nr3 values from input
@@ -1658,7 +1658,7 @@ Finished Calculating Screened Coulomb
 
      Dense  grid:     2277 G-vectors     FFT dimensions: (  20,  20,  20)
 
-     Estimated max dynamical RAM per process >       1.06Mb
+     Estimated max dynamical RAM per process >       1.06MB
 
      The potential is recalculated from file :
      ./tmp/_gw0/si.save/charge-density.dat
@@ -3604,31 +3604,31 @@ ASpec
 
 
 Timing of the code:
-     setup        :      0.33s CPU      0.24s WALL (       2 calls)
-     coulomb      :    242.01s CPU    175.72s WALL (       1 calls)
-     sigma_c      :     47.57s CPU     35.20s WALL (       1 calls)
-     sigma_x      :      0.52s CPU      0.51s WALL (       1 calls)
-     sigma_matel  :      0.04s CPU      0.03s WALL (       1 calls)
+     setup        :      0.35s CPU      0.24s WALL (       2 calls)
+     coulomb      :    243.42s CPU    180.90s WALL (       1 calls)
+     sigma_c      :     46.75s CPU     33.95s WALL (       1 calls)
+     sigma_x      :      0.55s CPU      0.51s WALL (       1 calls)
+     sigma_matel  :      0.04s CPU      0.02s WALL (       1 calls)
 
 Needed for screened Coulomb interaction
-     coul_nscf    :      0.98s CPU      0.67s WALL (       5 calls)
-     coul_solver  :    240.67s CPU    174.80s WALL (     107 calls)
+     coul_nscf    :      0.99s CPU      0.68s WALL (       5 calls)
+     coul_solver  :    242.04s CPU    179.97s WALL (     107 calls)
 
 Needed for correlation part of Sigma
-     setup_sigma  :      0.04s CPU      0.03s WALL (       1 calls)
-     construct_w  :      0.74s CPU      0.73s WALL (    6160 calls)
-     green        :     32.49s CPU     18.07s WALL (       8 calls)
-     Sigma = G*W  :     13.71s CPU     15.71s WALL (    6160 calls)
+     setup_sigma  :      0.05s CPU      0.03s WALL (       1 calls)
+     construct_w  :      0.78s CPU      0.73s WALL (    6160 calls)
+     green        :     32.05s CPU     17.82s WALL (       8 calls)
+     Sigma = G*W  :     13.27s CPU     14.72s WALL (    6160 calls)
      Sigma commun :      0.00s CPU      0.00s WALL (       1 calls)
      Sigma IO     :      0.00s CPU      0.00s WALL (       1 calls)
 
 Timing for some important routines
-     linear opera :    219.44s CPU    161.16s WALL ( 1251336 calls)
+     linear opera :    220.86s CPU    165.27s WALL ( 1251336 calls)
 
-     SGW          :  4m50.48s CPU     3m31.69s WALL
+     SGW          :  4m51.11s CPU     3m35.62s WALL
 
 
-   This run was terminated on:  15:32:42   9Dec2016            
+   This run was terminated on:  12:39:16  20Feb2017            
 
 =------------------------------------------------------------------------------=
    JOB DONE.

@@ -117,6 +117,7 @@ exchange.o : truncation.o
 fft6.o : ../../FFTXlib/fft_interfaces.o
 fft6.o : ../../FFTXlib/fft_types.o
 fft6.o : ../../Modules/kind.o
+freqbins.o : ../../Modules/constants.o
 freqbins.o : ../../Modules/kind.o
 gauleg_grid.o : ../../Modules/constants.o
 gauleg_grid.o : ../../Modules/kind.o
@@ -449,7 +450,7 @@ stop_gw.o : timing.o
 timing.o : ../../Modules/io_global.o
 truncation.o : ../../Modules/cell_base.o
 truncation.o : ../../Modules/constants.o
-truncation.o : ../../Modules/coulomb_vcut.o
+truncation.o : coulomb_vcut.o
 truncation.o : ../../Modules/kind.o
 truncation.o : ../../iotk/src/iotk_module.o
 truncation.o : gwcom.o

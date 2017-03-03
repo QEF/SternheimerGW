@@ -338,7 +338,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
   use_symm       = .TRUE.
-  freq_symm      = .TRUE.
+  freq_symm      = .FALSE.
   w_of_q_start   = 1
   w_of_k_start   = 1
   w_of_k_stop    = -2
@@ -432,6 +432,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   IF (tr2_gw <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_gw ', 1)
   IF (tr2_green <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_green ', 1)
+  IF (freq_symm) WRITE(stdout,*) 'Warning: frequency symmetrization not sufficiently tested'
 
   DO iter = 1, maxter
      IF (alpha_mix (iter) .LT.0.D0.OR.alpha_mix (iter) .GT.1.D0) CALL &
