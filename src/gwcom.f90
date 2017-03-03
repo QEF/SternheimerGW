@@ -4,7 +4,7 @@
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
-! Copyright (C) 2010 - 2016 Quantum ESPRESSO group,
+! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -146,6 +146,9 @@ MODULE control_gw
   ! initial q in the list, last_q in the list
   real(DP) :: tr2_gw, tr2_green
   !
+  ! lmax values for green and w
+  integer lmax_gw, lmax_green
+  !
   real(DP) :: eta
   ! threshold for gw calculation
   REAL (DP) :: alpha_mix(maxter), time_now
@@ -198,6 +201,7 @@ MODULE control_gw
              prec_shift,&
              godbyneeds,&
              padecont,&
+             paderobust,&
              cohsex,&
              multishift,&
              do_sigma_extra,&
@@ -347,12 +351,8 @@ MODULE gwsigma
   USE kinds,       ONLY : DP
   USE cell_base,   ONLY : omega, alat
   USE qpoint,      ONLY : xq, igkq
-  USE fft_custom,  ONLY : fft_cus, set_custom_grid, ggent, gvec_init
 
   SAVE
-
-  TYPE(fft_cus) sigma_x_st   ! Grid for \Sigma^{x} -> real space
-  TYPE(fft_cus) sigma_c_st   ! Grid for real space -> restricted G space
 
   COMPLEX(DP), ALLOCATABLE :: sigma_band_exg(:)
 
@@ -362,7 +362,6 @@ MODULE gwsigma
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
   REAL(DP) :: ecutprec
-  INTEGER :: gexcut
 ! To easily test convergence at the end 
 ! of the calculation.
   REAL(DP)    :: corr_conv
@@ -370,7 +369,7 @@ MODULE gwsigma
 ! Old FFT routines
 ! Real space mesh for description of self-energy.
   REAL(DP)    :: gcutmsig
-  INTEGER     :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn, gcutcorr
+  INTEGER     :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
 END MODULE gwsigma
 
 

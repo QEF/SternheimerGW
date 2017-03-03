@@ -1,6 +1,41 @@
 Release notes
 =============
 
+Version 0.11
+------------
+
+Reinterpret the real frequency integration. We choose the frequencies for the
+Green's function above or below the real axis depending on whether we are above
+or below the Fermi energy. This leads directly includes the nonanalytic part,
+fixes the inconsistencies between real and imaginary frequency integration, and
+improves the convergence of the real frequency integration with respect to the
+number of necessary frequencies. To improve the stability of the frequency
+integration, we use the symmetry of the screened Coulomb interaction to extend
+the number of points used for the Pade continuation.
+
+Add new linear solver that construct a Krylov subspace that is used for all
+frequencies but might be extended if one requires a tighter convergence setting.
+Dynamically change the linear solver if the first choice of the solver does
+not converge. Change the linear solver to return error codes and switch to
+a different solver if nonzero error code is returned.
+
+Add G parallelization to the second index in the convolution of G and W. This
+is more expensive, because the FFT now requires communication, but the only
+solution to calculate large memory systems. In the new approach the memory
+requirement for the Greens function is distributed across the processes leading
+to a reduced overall memory consumption.
+
+Add the debug module that allows to set debugging options. If the code is
+compiled with the \_\_DEBUG flag it will examine the requested parts in more
+detail. The only current option is to check (H - w) G = -delta. The unit
+test can be used to investigate the behavior of the linear problem.
+
+Create the SGW testsuite that tests all major features implemented in SGW.
+The test cases are not converged, but any change made to the code should
+reproduce the results obtained with the test. If an error larger than the
+threshold pops up, the commit should be reviewed with care.
+> compatible QE version 6.1 revision 13374
+
 Version 0.10.1
 --------------
 
@@ -8,6 +43,7 @@ Bugfix to make systems without inversion symmetry work. There where some arrays
 that were the complex conjugate of the correct value, which did not matter with
 inversion symmetry but resulted in incorrect results for systems without it.
 > compatible QE version 6.0 revision 13079
+
 
 Version 0.10
 ------------

@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -121,9 +121,6 @@ CONTAINS
     ! print the time needed to calculate W
     CALL print_clock(time_coulomb)
 
-    ! print the time needed to calculate G
-    CALL print_clock(time_green)
-
     ! print the time needed to calculate Sigma_c
     CALL print_clock(time_sigma_c)
 
@@ -162,6 +159,9 @@ CONTAINS
 
     ! print the time needed to construct W on real frequency mesh
     CALL print_clock(time_construct_w)
+
+    ! print the time needed to calculate G
+    CALL print_clock(time_green)
 
     ! print the time necessary to convolute G and W
     CALL print_clock(time_GW_product)

@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -72,19 +72,33 @@
   do p = 1, N
     if (p.eq.1) then
       do i = 1, N
-         g (p,i) = u(i)
+         g (p,i) = protect(u(i))
       enddo
     else
       do i = p, N
-         tmp1 = g(p-1,p-1)/g(p-1,i)
-         tmp2 = g(p-1,i)/g(p-1,i)
-         g (p,i) = ( tmp1 - tmp2 ) / ( z(i) - z(p-1) )
+         tmp1 = g(p-1,p-1) / g(p-1,i)
+         tmp2 = g(p-1,i)   / g(p-1,i)
+         g(p,i) = protect((tmp1 - tmp2) / (z(i) - z(p-1)))
       enddo
     endif
-    a(p) = g (p,p)
+    a(p) = g(p,p)
     !
   enddo
   !
+  contains
+
+    ! guarantee non-vanishing numbers
+    complex(dp) function protect(x) result (y)
+
+      use constants, only: eps24
+
+      complex(dp), intent(in) :: x
+
+      y = eps24
+      if (abs(x) > eps24) y = x
+
+    end function protect
+
   end subroutine pade_coeff
 
   !-----------------------------------------------------------

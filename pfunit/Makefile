@@ -1,12 +1,38 @@
+#------------------------------------------------------------------------------
+#
+# This file is part of the Sternheimer-GW code.
+# 
+# Copyright (C) 2010 - 2017
+# Henry Lambert, Martin Schlipf, and Feliciano Giustino
+#
+# Sternheimer-GW is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Sternheimer-GW is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Sternheimer-GW. If not, see
+# http://www.gnu.org/licenses/gpl.html .
+#
+#------------------------------------------------------------------------------ 
 .PHONY: clean distclean tests all
 .DEFAULT_GOAL = tests
+DATA = lin_prob.xml
+.INTERMEDIATE: $(DATA)
 
 TOP_DIR := $(shell pwd)
 SRC_DIR = $(TOP_DIR)/../src
+UTIL_DIR = $(TOP_DIR)/lib
+LIB_NAME= libtest.a
 TEST_DIR= $(TOP_DIR)/tests
 ESPRESSO=../..
 
-VPATH = . $(SRC_DIR) $(TEST_DIR)
+VPATH = . $(SRC_DIR) $(UTIL_DIR) $(TEST_DIR)
 
 include $(ESPRESSO)/make.inc
 include $(PFUNIT)/include/base.mk
@@ -15,21 +41,23 @@ ifeq ($(USEMPI),YES)
    MPIF90=mpif90
 endif
 
-SGWOBJS = $(SRC_DIR)/libgw.a
+SGWOBJS = $(UTIL_DIR)/$(LIB_NAME) $(SRC_DIR)/libgw.a
 LRMODS  = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS  = $(ESPRESSO)/PW/src/libpw.a
 QEMODS  = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESSO)/LAXlib/libqela.a
 LIBOBJS = $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 LIBS += $(SGWOBJS) $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS)
+LIBS += $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) ${HDF5_LIB} $(LD_LIBS)
 
 
 EXE = tests$(EXE_EXT)
 
-all: $(EXE)
+all: $(EXE) $(DATA)
 	mpirun -np 4 ./$(EXE)
 
 SUT:
 	make -C $(SRC_DIR)
+	make -C $(UTIL_DIR)
 	make -C $(TEST_DIR) tests
 
 tests: all
@@ -54,8 +82,12 @@ clean: local-E0-clean
 
 local-E0-clean:
 	make -C $(SRC_DIR) clean
+	make -C $(UTIL_DIR) clean
 	make -C $(TEST_DIR) clean
 	rm -f $(EXE) *$(OBJ_EXT)
+
+lin_prob.xml : $(TEST_DIR)/lin_prob.xml.bz2
+	bzcat $< > $@
 
 export FC
 export FPPFLAGS

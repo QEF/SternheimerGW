@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -27,6 +27,9 @@
 !! \f$A\f$ and \f$A + \sigma I\f$ span the same Krylov subspace. Hence, we can
 !! solve the linear equation of all linear problems at the cost of a single one.
 !!
+!! Notice that the variables \f$\theta\f$, \f$\phi\f$, and \f$\xi\f$ are stored
+!! as the inverse of the ones defined in the algorithm to improve the numeric
+!! stability.
 MODULE bicgstab_module
 
   USE kinds, ONLY: dp
@@ -35,7 +38,21 @@ MODULE bicgstab_module
 
   PRIVATE
 
-  PUBLIC bicgstab
+  PUBLIC bicgstab, bicgstab_type
+
+  !> Configuration of the BiCGstab solver
+  TYPE bicgstab_type
+
+    !> the number of MR steps before resetting
+    INTEGER  :: lmax = 4
+
+    !> the convergence threshold
+    REAL(dp) :: threshold = 1e-4_dp
+
+    !> the maximum number of iterations
+    INTEGER  :: max_iter = 10000
+
+  END TYPE bicgstab_type
 
   !> Variables and arrays used for the seed system.
   TYPE seed_system_type
@@ -96,17 +113,17 @@ MODULE bicgstab_module
     !> the shift of this system
     COMPLEX(dp) sigma
 
-    !> \f$\phi_{\text{old}}^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) phi_old
+    !> The inverse of \f$\phi_{\text{old}}^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_phi_old
 
-    !> \f$\phi^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) phi
+    !> The inverse of \f$\phi^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_phi
 
-    !> \f$\phi_{\text{new}}^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) phi_new
+    !> The inverse of \f$\phi_{\text{new}}^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_phi_new
 
-    !> \f$\vartheta^\sigma\f$ of Frommer's algorithm
-    COMPLEX(dp) theta
+    !> The inverse of \f$\vartheta^\sigma\f$ of Frommer's algorithm
+    COMPLEX(dp) inv_theta
 
     !> \f$\alpha^\sigma\f$ of Frommer's algorithm
     COMPLEX(dp) alpha
@@ -134,10 +151,14 @@ CONTAINS
   !!
   !! This subroutine implements the *Algorithm 2* of Frommer's paper.
   !!
-  SUBROUTINE bicgstab(lmax, threshold, AA, bb, sigma, xx)
+  SUBROUTINE bicgstab(config, AA, bb, sigma, xx, ierr)
 
-    !> Dimensionality of the GMRES algorithm.
-    INTEGER,     INTENT(IN) :: lmax
+    USE debug_module, ONLY: test_nan
+    USE io_global,    ONLY: stdout
+
+    USE norm_module, ONLY: norm
+    !> the configuration of the BiCGstab solver
+    TYPE(bicgstab_type), INTENT(IN) :: config
 
     !> Function pointer that applies the linear operator to a vector.
     INTERFACE
@@ -159,11 +180,11 @@ CONTAINS
     !! will be used as seed system. The other ones as shifted systems.
     COMPLEX(dp), INTENT(IN)  :: sigma(:)
 
-    !> Stop when convergence threshold is reached.
-    REAL(dp),    INTENT(IN)  :: threshold
-
     !> On output: the solution of the linear system
     COMPLEX(dp), INTENT(OUT) :: xx(:,:)
+
+    !> error code returned if the solver did not converge
+    INTEGER,     INTENT(OUT) :: ierr
 
     !> Size of the right-hand vector.
     INTEGER vec_size
@@ -173,9 +194,6 @@ CONTAINS
 
     !> Counter for number of iterations.
     INTEGER iter
-
-    !> Maximum number of iterations.
-    INTEGER, PARAMETER :: max_iter = 10000
 
     !> Contains the current best guess for the solution of the linear
     !! system and the corresponding residual in the seed system.
@@ -195,41 +213,43 @@ CONTAINS
       CALL errore(__FILE__, "right-hand side and solution must have same size", 1)
     IF (SIZE(xx, 2) /= SIZE(sigma)) &
       CALL errore(__FILE__, "we need one solution vector per shift for the result", 1)
+    ierr = 0
 
     !
     ! initialization seed system
     !
-    CALL init_seed(lmax, bb, sigma(1), seed_system)
+    CALL init_seed(config%lmax, bb, sigma(1), seed_system)
 
     !
     ! initialization shifted systems
     !
-    CALL init_shift(lmax, vec_size, sigma, shift_system)
+    CALL init_shift(config%lmax, vec_size, sigma, shift_system)
 
     ! loop until solution is found
-    DO iter = 1, max_iter
+    DO iter = 1, config%max_iter
 
       !
       ! perform BiCG part (Algorithm 3)
       !
-      CALL bicg_part(lmax, AA, seed_system, shift_system)
+      CALL bicg_part(config%lmax, AA, seed_system, shift_system)
 
       ! stop loop if result is converged
-      IF (converged(threshold, seed_system%rr(:,0))) EXIT
+      IF (converged(config%threshold, seed_system%rr(:,0))) EXIT
 
       !
       ! perform MR part (Algorithm 4)
       !
-      CALL mr_part(lmax, seed_system, shift_system)
+      CALL mr_part(config%lmax, seed_system, shift_system)
 
       ! stop loop if result is converged
-      IF (converged(threshold, seed_system%rr(:,0))) EXIT
+      IF (converged(config%threshold, seed_system%rr(:,0))) EXIT
 
     END DO ! iter
 
-    IF (iter > max_iter) THEN
-      CALL errore(__FILE__, "BiCGstab algorithm did not converge in given&
-                           & number of iterations", max_iter)
+    IF (iter > config%max_iter) THEN
+      WRITE(stdout, '(a,1x,i0,1x,a)') "WARNING: BiCGstab algorithm did not converge in", &
+                                      config%max_iter, "iterations."
+      ierr = 1
     END IF
 
     !
@@ -239,6 +259,12 @@ CONTAINS
     DO ishift = 2, SIZE(sigma)
       CALL ZCOPY(vec_size, shift_system(ishift - 1)%xx, 1, xx(:,ishift), 1)
     END DO ! ishift
+
+    ! check if output is sane
+    IF (ANY(test_nan(xx))) THEN
+      WRITE(stdout, *) 'WARNING: BiCGstab algorithm resulted in one or more NaN'
+      ierr = 2
+    END IF
 
     !
     ! destroy the allocated array in the types
@@ -251,6 +277,8 @@ CONTAINS
   !> Check if the residual is below the given threshold.
   FUNCTION converged(threshold, residual)
 
+    USE norm_module, ONLY: norm
+
     !> If the norm of the residual drops below this threshold, the system is
     !! considered as converged.
     REAL(dp),    INTENT(IN) :: threshold
@@ -261,21 +289,11 @@ CONTAINS
     !> returns true, if the norm of the residual is smaller than the threshold
     LOGICAL converged
 
-    !> size of the vector
-    INTEGER vec_size
-
     !> norm of the residual
     REAL(dp) norm_residual
 
-    !> BLAS function to evaluate the euclidian norm
-    REAL(dp), EXTERNAL :: DNRM2
-
-    ! determine vector size
-    ! note: factor 2 because we want to evaluate the norm of a complex vector
-    vec_size = 2 * SIZE(residual)
-
     ! check residual of seed system
-    norm_residual = DNRM2(vec_size, residual, 1)
+    norm_residual = norm(residual)
 
     ! if the norm is smaller than the threshold the system is converged
     converged = (norm_residual < threshold)
@@ -433,12 +451,11 @@ CONTAINS
       shift_system(ishift)%xx = 0
 
       ! initialize the variables
-      shift_system(ishift)%phi_old = 1.0
-      shift_system(ishift)%phi     = 1.0
-      shift_system(ishift)%theta   = 1.0
+      shift_system(ishift)%inv_phi_old = 1.0
+      shift_system(ishift)%inv_phi     = 1.0
+      shift_system(ishift)%inv_theta   = 1.0
       ! subtract the shift of the initial system
-!      shift_system(ishift)%sigma   = sigma(ishift + 1) - sigma(1)
-      shift_system(ishift)%sigma   = sigma(1) - sigma(ishift + 1)
+      shift_system(ishift)%sigma       = sigma(ishift + 1) - sigma(1)
 
       ! construct sigma_pow array
       sigma_pow(0) = 1.0
@@ -606,16 +623,19 @@ CONTAINS
         active => shift_system(ishift)
         !
         ! L13: phi_new^ = (1 + alpha sigma) phi^ + alpha beta / alpha_old (phi_old^ - phi^)
-        active%phi_new = (one + seed_system%alpha * active%sigma) * active%phi &
-                       + seed_system%alpha * seed_system%beta / seed_system%alpha_old &
-                       * (active%phi_old - active%phi)
+        ! <=>                                        (1/phi^)
+        ! (1/phi_new^) = ------------------------------------------------------------------------
+        !                (1 + alpha sigma) + alpha beta / alpha_old [(1/phi^) / (1/phi_old^) - 1]
+        active%inv_phi_new = active%inv_phi / (one + seed_system%alpha * active%sigma &
+                           + seed_system%alpha * seed_system%beta / seed_system%alpha_old &
+                           * (active%inv_phi / active%inv_phi_old - one))
         !      beta^ = (phi_old^ / phi^)**2 beta
-        active%beta = (active%phi_old / active%phi)**2 * seed_system%beta
+        active%beta = (active%inv_phi / active%inv_phi_old)**2 * seed_system%beta
         !      alpha^ = (phi^ / phi_new^) alpha
-        active%alpha = (active%phi / active%phi_new) * seed_system%alpha
+        active%alpha = (active%inv_phi_new / active%inv_phi) * seed_system%alpha
         !
         ! evaluate 1 / (theta^ phi^) used in L15 and L17
-        factor = 1.0 / (active%theta * active%phi)
+        factor = active%inv_theta * active%inv_phi
         !
         ! L14: loop over previous steps
         DO ii = 0, jj
@@ -632,9 +652,9 @@ CONTAINS
         ! note - we shifted update of alpha after the loop to allow
         !        for systems with multiple shifts
         ! L18: phi_old^ = phi^
-        active%phi_old = active%phi
+        active%inv_phi_old = active%inv_phi
         !      phi^ = phi_new^
-        active%phi = active%phi_new
+        active%inv_phi = active%inv_phi_new
         !
         ! note: we can use factor here, because phi_old = phi in L18
         ! L19: u_j+1^ = r_j / (theta^ phi_old^)
@@ -670,7 +690,7 @@ CONTAINS
         active => shift_system(ishift)
         !
         ! L26: u_j+1^ = (u_j+1^ - r_j / (theta^ phi^)) / alpha^ - sigma u_j^
-        factor = -1.0 / (active%theta * active%phi)
+        factor = -active%inv_theta * active%inv_phi
         CALL ZAXPY(vec_size, factor, seed_system%rr(:,jj), 1, active%uu(:, jj + 1), 1)
         CALL ZSCAL(vec_size, 1.0 / active%alpha, active%uu(:, jj + 1), 1)
         CALL ZAXPY(vec_size, -active%sigma, active%uu(:,jj), 1, active%uu(:, jj + 1), 1)
@@ -724,8 +744,8 @@ CONTAINS
     !> Temporary storage for prefactors
     COMPLEX(dp) factor
 
-    !> The variable \f$\xi\f$ of Frommer's algorithm.
-    COMPLEX(dp) xi
+    !> The inverse of the variable \f$\xi\f$ of Frommer's algorithm.
+    COMPLEX(dp) inv_xi
 
     !> The variable \f$\psi\f$ of Frommer's algorithm.
     COMPLEX(dp) psi
@@ -835,9 +855,9 @@ CONTAINS
       CALL horner_scheme(seed_system%gamma, active%sigma, active%gamma, psi)
       !
       ! L21: xi = theta^ phi^
-      xi = active%theta * active%phi
+      inv_xi = active%inv_theta * active%inv_phi
       !      theta^ = theta^ psi
-      active%theta = active%theta * psi 
+      active%inv_theta = active%inv_theta / psi 
       !
       ! L22: loop over GMRES iterations
       DO jj = 1, lmax
@@ -865,7 +885,7 @@ CONTAINS
       !
       ! note: the residuum update is done later, outside of the loop
       ! L28: x^ = x^ + gamma_1'^ / xi r_0
-      factor = active%gamma_p(1) / xi
+      factor = active%gamma_p(1) * inv_xi
       CALL ZAXPY(vec_size, factor, seed_system%rr(:,0), 1, active%xx, 1)
       !      u_0^ = u_0^ - gamma_l u_l^
       ! note: the latter equation is incorrect in Frommer's paper
@@ -881,7 +901,7 @@ CONTAINS
                    active%uu(:,0), 1)
         !
         ! L31: x^ = x^ + (gamma_j"^ / xi) r_j
-        factor = active%gamma_pp(jj) / xi
+        factor = active%gamma_pp(jj) * inv_xi
         CALL ZAXPY(vec_size, factor, seed_system%rr(:,jj), 1, active%xx, 1)
         !
       END DO ! j

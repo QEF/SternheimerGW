@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -20,13 +20,12 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE unfold_w(scrcoul_in, scrcoul_out)
+SUBROUTINE unfold_w(num_g_corr, scrcoul_in, scrcoul_out)
 
 USE cell_base,        ONLY : at
 USE control_gw,       ONLY : modielec
 USE freq_gw,          ONLY : nfs
 USE gvect,            ONLY : ngm
-USE gwsigma,          ONLY : sigma_c_st
 USE gwsymm,           ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
 USE io_global,        ONLY : stdout
 USE kinds,            ONLY : DP
@@ -36,18 +35,21 @@ USE symm_base,        ONLY : nsym, s, time_reversal, ftau, invs, &
 
 IMPLICIT NONE
 
+!> the number of G vectors in the correlation grid
+INTEGER,     INTENT(IN)  :: num_g_corr
+
 !> the screened coulomb interaction only symmetrized elements
-COMPLEX(DP), INTENT(IN)  :: scrcoul_in(sigma_c_st%ngmt, nfs, ngmunique)
+COMPLEX(DP), INTENT(IN)  :: scrcoul_in(num_g_corr, nfs, ngmunique)
 
 !> the screened coulomb interaction all elements
-COMPLEX(DP), INTENT(OUT) :: scrcoul_out(sigma_c_st%ngmt, sigma_c_st%ngmt, nfs)
+COMPLEX(DP), INTENT(OUT) :: scrcoul_out(num_g_corr, num_g_corr, nfs)
 
-COMPLEX(DP)  :: scrcoul_tmp(sigma_c_st%ngmt, nfs)
+COMPLEX(DP)  :: scrcoul_tmp(num_g_corr, nfs)
 COMPLEX(DP)  :: phase
 INTEGER      :: ig, igp
 INTEGER      :: isym, iwim
 INTEGER      :: done, ngmdone
-INTEGER      :: ngmdonelist(sigma_c_st%ngmt)
+INTEGER      :: ngmdonelist(num_g_corr)
 INTEGER      :: gmapsym(ngm,48)
 COMPLEX(DP)  :: eigv(ngm,48)
 REAL(DP)     :: xq_loc(3)
@@ -80,7 +82,7 @@ LOGICAL      :: sym(48), minus_q, invsymq
 !
 ! reorder the input to the output array
 !
-  FORALL (ig = 1:ngmunique, igp = 1:sigma_c_st%ngmt, iwim=1:nfs)
+  FORALL (ig = 1:ngmunique, igp = 1:num_g_corr, iwim=1:nfs)
     scrcoul_out(ig_unique(ig), igp, iwim) = CONJG(scrcoul_in(igp, iwim, ig))
   END FORALL
 ! trivial case
@@ -116,7 +118,7 @@ IF(modielec) then
          ENDDO
       ENDDO
 ELSE
-    DO ig = 1, sigma_c_st%ngmt
+    DO ig = 1, num_g_corr
         DO done = 1, ngmdone
            if (ig.eq.ngmdonelist(done)) then
 !               write(6,'("Cycling: unique or already unfolded.")') 
@@ -128,13 +130,13 @@ ELSE
         ngmdonelist(ngmdone) = ig
 !and unfold it with the correct correspondence ig has sym_friend(ig) where R^{-1} ig = ig_unique:
         DO iwim = 1, nfs
-            DO igp = 1, sigma_c_st%ngmt
+            DO igp = 1, num_g_corr
                scrcoul_tmp(igp, iwim) = scrcoul_out(sym_friend(ig), igp, iwim)
             ENDDO
         ENDDO
 !the relationship R between ig and sym_friend(ig) is given by sym_ig.
           DO iwim = 1, nfs
-             DO igp = 1, sigma_c_st%ngmt
+             DO igp = 1, num_g_corr
 !For symmetry operations with fraction translations we need to include:
 !the \tau_{r} part which applies to the original G, G' rotation on R
 !e^{-i2\pi(G - G')\cdot\tau_{R}} = eigv(G)*conjg(eigv(G'))

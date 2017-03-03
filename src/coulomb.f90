@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 !! The dielectric matrix is given by:
 !! eps_{q}^{-1}(G,G',iw) = (\delta_{GG'} + drhoscfs^{scf}_{G,G',iw})
 !-----------------------------------------------------------------------
-SUBROUTINE coulomb(igstart, num_task, scrcoul) 
+SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul) 
 !-----------------------------------------------------------------------
   USE constants,        ONLY : eps8
   USE control_gw,       ONLY : solve_direct, niter_gw
@@ -36,24 +36,30 @@ SUBROUTINE coulomb(igstart, num_task, scrcoul)
   USE freq_gw,          ONLY : fiu, nfs
   USE gvecs,            ONLY : nls
   USE gvect,            ONLY : g
-  USE gwsigma,          ONLY : gcutcorr
   USE gwsymm,           ONLY : ig_unique
   USE io_global,        ONLY : stdout, ionode
   USE noncollin_module, ONLY : nspin_mag
   USE kinds,            ONLY : dp
   USE qpoint,           ONLY : xq
+  USE select_solver_module, ONLY : select_solver_type
   USE solve_module,     ONLY : solve_linter
 
   IMPLICIT NONE
 
+  !> stores the configuration of the linear solver for the screened Coulomb interaction
+  TYPE(select_solver_type), INTENT(IN) :: config
+
   !> first index of the G vector evaluated on this process
   INTEGER, INTENT(IN) :: igstart
+
+  !> number of G vectors on all processes
+  INTEGER, INTENT(IN) :: num_g_corr
 
   !> number of G vector evaluated by this process
   INTEGER, INTENT(IN) :: num_task
 
   !> the screened coulomb interaction
-  COMPLEX(dp), INTENT(OUT) :: scrcoul(gcutcorr, nfs, num_task)
+  COMPLEX(dp), INTENT(OUT) :: scrcoul(num_g_corr, nfs, num_task)
 
   !> actual index inside the array
   INTEGER indx
@@ -119,7 +125,7 @@ SUBROUTINE coulomb(igstart, num_task, scrcoul)
     CALL invfft('Smooth', dvbare, dffts)
     !
     ! solve for linear response due to this perturbation
-    CALL solve_linter(num_iter, dvbare, fiu(:nfs), drhoscfs)
+    CALL solve_linter(config, num_iter, dvbare, fiu(:nfs), drhoscfs)
     !
     ! back to reciprocal space
     CALL fwfft('Smooth', dvbare, dffts)
@@ -131,7 +137,7 @@ SUBROUTINE coulomb(igstart, num_task, scrcoul)
       CALL fwfft ('Dense', drhoscfs(:, 1, iw), dffts)
       !
       ! copy to output array
-      DO igp = 1, gcutcorr
+      DO igp = 1, num_g_corr
         scrcoul(igp, iw, indx) = drhoscfs(nls(igp), 1, iw)
       END DO ! igp
       !

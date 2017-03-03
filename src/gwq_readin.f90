@@ -4,7 +4,7 @@
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
-! Copyright (C) 2010 - 2016 Quantum ESPRESSO group,
+! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE gwq_readin(freq, vcut)
+SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !----------------------------------------------------------------------------
   !
   !    This routine reads the control variables for the program GW.
@@ -31,55 +31,63 @@ SUBROUTINE gwq_readin(freq, vcut)
   !    by the self-consistent program.
   !
   !
-  USE cell_base,         ONLY : at, alat
-  USE constants,         ONLY : RYTOEV, eps12
-  USE control_flags,     ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
-  USE control_gw,        ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
-                                reduce_io, tr2_gw, niter_gw, tr2_green, &
-                                nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
-                                last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
-                                ext_recover, ext_restart, modielec, eta, &
-                                do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
-                                do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                                cohsex, multishift, do_sigma_extra, &
-                                solve_direct, w_green_start, tinvert, coul_multishift,&
-                                trunc_2d, do_epsil, &
-                                do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                                high_io, prec_direct, prec_shift, just_corr,&
-                                double_grid, name_length, output, &
-                                method_truncation => truncation
-  USE disp,              ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
-                                xk_kpoints, kpoints, num_k_pts, & 
-                                w_of_q_start, w_of_k_start, w_of_k_stop
-  USE freq_gw,           ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
-                                wsig_wind_min, wsig_wind_max, nwsigwin
-  USE freqbins_module,   ONLY : freqbins_type
-  USE gwsigma,           ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
-  USE gwsymm,            ONLY : use_symm
-  USE input_parameters,  ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
-  USE io_files,          ONLY : tmp_dir, prefix
-  USE io_global,         ONLY : meta_ionode, meta_ionode_id, stdout
-  USE ions_base,         ONLY : nat, amass
-  USE kinds,             ONLY : DP
-  USE klist,             ONLY : xk, nks, nkstot
-  USE lsda_mod,          ONLY : nspin
-  USE mp,                ONLY : mp_bcast
-  USE mp_global,         ONLY : nproc_pool_file, nproc_image_file
-  USE mp_images,         ONLY : my_image_id, nproc_image
-  USE mp_pools,          ONLY : nproc_pool
-  USE mp_world,          ONLY : world_comm
-  USE output_mod,        ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
-  USE parameters,        ONLY : nsx
-  USE partial,           ONLY : atomo, list, nat_todo, nrapp
-  USE qpoint,            ONLY : nksq, xq
-  USE run_info,          ONLY : title
-  USE save_gw,           ONLY : tmp_dir_save
-  USE start_k,           ONLY : reset_grid
+  USE cell_base,            ONLY : at, alat
+  USE constants,            ONLY : RYTOEV, eps12
+  USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
+  USE control_gw,           ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
+                                   reduce_io, tr2_gw, niter_gw, lmax_gw, tr2_green, lmax_green, &
+                                   nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
+                                   last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
+                                   ext_recover, ext_restart, modielec, eta, &
+                                   do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
+                                   do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
+                                   cohsex, multishift, do_sigma_extra, paderobust, &
+                                   solve_direct, w_green_start, tinvert, coul_multishift,&
+                                   trunc_2d, do_epsil, &
+                                   do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
+                                   high_io, prec_direct, prec_shift, just_corr,&
+                                   double_grid, name_length, output, &
+                                   method_truncation => truncation
+  USE debug_module,         ONLY : debug_type
+  USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
+                                   xk_kpoints, kpoints, num_k_pts, & 
+                                   w_of_q_start, w_of_k_start, w_of_k_stop
+  USE freq_gw,              ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
+                                   wsig_wind_min, wsig_wind_max, nwsigwin
+  USE freqbins_module,      ONLY : freqbins_type
+  USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
+  USE gwsymm,               ONLY : use_symm
+  USE input_parameters,     ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
+  USE io_files,             ONLY : tmp_dir, prefix
+  USE io_global,            ONLY : meta_ionode, meta_ionode_id, stdout
+  USE ions_base,            ONLY : nat, amass
+  USE kinds,                ONLY : DP
+  USE klist,                ONLY : xk, nks, nkstot
+  USE lsda_mod,             ONLY : nspin
+  USE mp,                   ONLY : mp_bcast
+  USE mp_global,            ONLY : nproc_pool_file, nproc_image_file
+  USE mp_images,            ONLY : my_image_id, nproc_image
+  USE mp_pools,             ONLY : nproc_pool
+  USE mp_world,             ONLY : world_comm
+  USE output_mod,           ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
+  USE parameters,           ONLY : nsx
+  USE partial,              ONLY : atomo, list, nat_todo, nrapp
+  USE qpoint,               ONLY : nksq, xq
+  USE run_info,             ONLY : title
+  USE save_gw,              ONLY : tmp_dir_save
+  USE select_solver_module, ONLY : select_solver_type, bicgstab_multi, sgw_linear_solver
+  USE start_k,              ONLY : reset_grid
   USE truncation_module
-  USE wrappers,          ONLY : f_mkdir_safe
+  USE wrappers,             ONLY : f_mkdir_safe
   !
   !
   IMPLICIT NONE
+  !
+  !> We store the configuration for the linear solver for W.
+  TYPE(select_solver_type), INTENT(OUT) :: config_coul
+  !
+  !> We store the configuration for the linear solver for G.
+  TYPE(select_solver_type), INTENT(OUT) :: config_green
   !
   !> We store the frequency for the Coulomb solver in this type.
   TYPE(freqbins_type), INTENT(OUT) :: freq
@@ -87,11 +95,32 @@ SUBROUTINE gwq_readin(freq, vcut)
   !> We store the truncated Coulomb potential in this type.
   TYPE(vcut_type),     INTENT(OUT) :: vcut
   !
+  !> we store the debug information in this type
+  TYPE(debug_type),    INTENT(OUT) :: debug
+  !
   !> size of the Wigner-Seitz cell
   REAL(dp) atws(3,3)
   !
   !> the cutoff used for the truncated potential
   REAL(dp) ecut_vcut
+  !
+  !> constant indicating unset priority
+  INTEGER, PARAMETER :: no_solver = 0
+  !
+  !> the priority of the various solvers for the screened Coulomb interaction
+  INTEGER priority_coul(10)
+  !
+  !> the priority of the various solvers for the Green's function
+  INTEGER priority_green(10)
+  !
+  !> number of nontrivial priorities
+  INTEGER num_priority
+  !
+  !> counter on the nontrivial priorities
+  INTEGER ipriority
+  !
+  !> use symmetry to extend the frequency mesh
+  LOGICAL freq_symm
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
@@ -134,7 +163,7 @@ SUBROUTINE gwq_readin(freq, vcut)
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
 
-  NAMELIST / INPUTGW / tr2_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
+  NAMELIST / INPUTGW / tr2_gw, lmax_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
                        nrapp, max_seconds, reduce_io, &
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
@@ -142,15 +171,15 @@ SUBROUTINE gwq_readin(freq, vcut)
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, do_q0_only, wsigmamin, &
-                       wsigmamax, wcoulmax, nwsigma,&
+                       do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
+                       wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, freq_symm, &
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
-                       padecont, cohsex, multishift, do_sigma_extra,&
+                       padecont, paderobust, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
                        prec_direct, tmp_dir, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
-                       filsigx, filsigc, filcoul
+                       filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
                        file_spec, file_spec_iw, directory, file_sigma
@@ -208,6 +237,14 @@ SUBROUTINE gwq_readin(freq, vcut)
   !
   tr2_gw       = 1.D-4
   tr2_green    = 1.D-3
+  lmax_gw      = 4
+  lmax_green   = 4
+  priority_coul(1)   = bicgstab_multi
+  priority_coul(2)   = sgw_linear_solver
+  priority_coul(3:)  = no_solver
+  priority_green(1)  = bicgstab_multi
+  priority_green(2)  = sgw_linear_solver
+  priority_green(3:) = no_solver
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
   !for bulk systems alpha_mix = 0.7 is standard
@@ -277,6 +314,7 @@ SUBROUTINE gwq_readin(freq, vcut)
   godbyneeds   = .FALSE.
   cohsex       = .FALSE.
   padecont     = .FALSE.
+  paderobust   = .FALSE.
   multishift   = .FALSE.
 !Imaginary component added to linear system should be in Rydberg
   eta            =  0.02
@@ -300,6 +338,7 @@ SUBROUTINE gwq_readin(freq, vcut)
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
   use_symm       = .TRUE.
+  freq_symm      = .FALSE.
   w_of_q_start   = 1
   w_of_k_start   = 1
   w_of_k_stop    = -2
@@ -385,7 +424,7 @@ SUBROUTINE gwq_readin(freq, vcut)
    CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
   IF (meta_ionode) tmp_dir = trimcheck (outdir)
 
-  CALL bcast_gw_input ( ) 
+  CALL bcast_gw_input(freq_symm) 
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
 
   !
@@ -393,6 +432,7 @@ SUBROUTINE gwq_readin(freq, vcut)
   !
   IF (tr2_gw <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_gw ', 1)
   IF (tr2_green <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_green ', 1)
+  IF (freq_symm) WRITE(stdout,*) 'Warning: frequency symmetrization not sufficiently tested'
 
   DO iter = 1, maxter
      IF (alpha_mix (iter) .LT.0.D0.OR.alpha_mix (iter) .GT.1.D0) CALL &
@@ -455,7 +495,6 @@ SUBROUTINE gwq_readin(freq, vcut)
         END DO
      END IF
   END IF
-  fiu = freq%solver
 
   ! set the small shift into the complex plane
   IF (do_imag) THEN
@@ -473,7 +512,16 @@ SUBROUTINE gwq_readin(freq, vcut)
 
   CALL mp_bcast(ios, meta_ionode_id, world_comm)
   CALL errore ('gwq_readin', 'reading FREQUENCIES card', ABS(ios) )
-  CALL mp_bcast(fiu, meta_ionode_id, world_comm )
+  CALL mp_bcast(freq%solver, meta_ionode_id, world_comm )
+  fiu = freq%solver
+
+  ! use symmetry for the frequencies (only for Pade approximation)
+  IF (padecont) THEN
+    freq%use_symmetry = freq_symm
+  ELSE
+    ! symmetry not implemented for robust Pade and Godby-Needs
+    freq%use_symmetry = .FALSE.
+  END IF
 
  IF (kpoints) then
      num_k_pts = 0
@@ -636,6 +684,56 @@ SUBROUTINE gwq_readin(freq, vcut)
     CALL vcut_info(stdout, vcut)
     !
   END IF ! vcut truncation methods
+
+  !
+  ! setup the linear solver
+  !
+  config_coul%max_iter = maxter_coul
+  config_coul%threshold = tr2_gw
+  config_coul%bicg_lmax = lmax_gw
+  config_green%max_iter = maxter_green
+  config_green%threshold = tr2_green
+  config_green%bicg_lmax = lmax_green
+  !
+  ! setup priority for Coulomb solver
+  CALL mp_bcast(priority_coul, meta_ionode_id, world_comm)
+  num_priority = COUNT(priority_coul /= no_solver)
+  !
+  IF (num_priority == 0) THEN
+    CALL errore(__FILE__, "priority for Coulomb solver not specified", 1)
+  END IF
+  !
+  ALLOCATE(config_coul%priority(num_priority))
+  ipriority = 0
+  !
+  DO i = 1, SIZE(priority_coul)
+    !
+    IF (priority_coul(i) /= no_solver) THEN
+      ipriority = ipriority + 1
+      config_coul%priority(ipriority) = priority_coul(i)
+    END IF
+    !
+  END DO ! i
+  !
+  ! setup priority for Green's solver
+  CALL mp_bcast(priority_green, meta_ionode_id, world_comm)
+  num_priority = COUNT(priority_green /= no_solver)
+  !
+  IF (num_priority == 0) THEN
+    CALL errore(__FILE__, "priority for Green solver not specified", 1)
+  END IF
+  !
+  ALLOCATE(config_green%priority(num_priority))
+  ipriority = 0
+  !
+  DO i = 1, SIZE(priority_green)
+    !
+    IF (priority_green(i) /= no_solver) THEN
+      ipriority = ipriority + 1
+      config_green%priority(ipriority) = priority_green(i)
+    END IF
+    !
+  END DO ! i
 
   FLUSH(stdout)
 

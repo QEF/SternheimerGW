@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -24,13 +24,12 @@
 !!
 !! This routine is the driver routine for the solvers. Depending on the choice
 !! in the input file either a direct or an iterative solver is used.
-SUBROUTINE do_stern()
+SUBROUTINE do_stern(config, num_g_corr)
 
   USE constants,        ONLY : eps6
   USE control_gw,       ONLY : do_q0_only, solve_direct, tinvert, do_epsil
   USE disp,             ONLY : nqs, num_k_pts, w_of_q_start, x_q
   USE freq_gw,          ONLY : nfs
-  USE gwsigma,          ONLY : gcutcorr
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
   USE io_global,        ONLY : stdout, meta_ionode
   USE kinds,            ONLY : DP
@@ -40,10 +39,17 @@ SUBROUTINE do_stern()
   USE mp_world,         ONLY : mpime
   USE parallel_module,  ONLY : parallel_task, mp_gatherv
   USE run_nscf_module,  ONLY : run_nscf
+  USE select_solver_module, ONLY : select_solver_type
   USE timing_module,    ONLY : time_coulomb, time_coul_nscf
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
+
+  !> stores the configuration of the linear solver for the screened Coulomb interaction
+  TYPE(select_solver_type), INTENT(IN) :: config
+
+  !> the number of G vectors in the correlation grid
+  INTEGER, INTENT(IN)  :: num_g_corr
 
   !> the number of tasks done on any process
   INTEGER, ALLOCATABLE :: num_task(:)
@@ -86,15 +92,15 @@ IMPLICIT NONE
   is_root = my_image_id == root_id
 
   IF (meta_ionode) THEN
-    ALLOCATE(scrcoul_g(gcutcorr, gcutcorr, nfs))
+    ALLOCATE(scrcoul_g(num_g_corr, num_g_corr, nfs))
   ELSE
     ALLOCATE(scrcoul_g(1,1,1))
   END IF
 
   ! allocate arrays for symmetry routine
-  ALLOCATE(ig_unique(gcutcorr))
-  ALLOCATE(sym_ig(gcutcorr))
-  ALLOCATE(sym_friend(gcutcorr))
+  ALLOCATE(ig_unique(num_g_corr))
+  ALLOCATE(sym_ig(num_g_corr))
+  ALLOCATE(sym_friend(num_g_corr))
   ALLOCATE(eps_m(nfs))
 
   do_iq    = .TRUE.
@@ -136,7 +142,7 @@ IMPLICIT NONE
       CALL stop_clock(time_coul_nscf)
 
       CALL initialize_gw(.TRUE.)
-      CALL coulomb_q0G0(eps_m)
+      CALL coulomb_q0G0(config, eps_m)
       WRITE(stdout,'(5x, "epsM(0) = ", f12.7)') eps_m(1)
       WRITE(stdout,'(5x, "epsM(iwp) = ", f12.7)') eps_m(2)
       CALL clean_pw_gw(.FALSE.)
@@ -160,10 +166,10 @@ IMPLICIT NONE
       WRITE(stdout,'("")')
       WRITE(stdout,'(5x, "SYMMETRIZING COULOMB Perturbations")')
       WRITE(stdout,'("")')
-      CALL stern_symm()
+      CALL stern_symm(num_g_corr)
     ELSE
-      ngmunique = gcutcorr
-      DO ig = 1, gcutcorr
+      ngmunique = num_g_corr
+      DO ig = 1, num_g_corr
          ig_unique(ig) = ig
       END DO
     END IF ! use_symm
@@ -176,10 +182,10 @@ IMPLICIT NONE
     num_task_loc = num_task(my_image_id + 1)
 
     ! allocate array for distributed part of Coulomb on all processes
-    ALLOCATE(scrcoul_loc(gcutcorr, nfs, num_task_loc))
+    ALLOCATE(scrcoul_loc(num_g_corr, nfs, num_task_loc))
 
     ! evaluate screened Coulomb interaction and collect on root
-    CALL coulomb(igstart, num_task_loc, scrcoul_loc)
+    CALL coulomb(config, igstart, num_g_corr, num_task_loc, scrcoul_loc)
     CALL mp_gatherv(inter_image_comm, root_id, num_task, scrcoul_loc, scrcoul_root)
 
     ! Only the root of the image should write to file
@@ -187,7 +193,7 @@ IMPLICIT NONE
 
       ! unfold W from reduced array to full array
       ! also reorder the indices
-      CALL unfold_w(scrcoul_root, scrcoul_g)
+      CALL unfold_w(num_g_corr, scrcoul_root, scrcoul_g)
 
       ! set the special |q + G| = 0 element
       IF (lgamma) scrcoul_g(1,1,:) = eps_m
@@ -195,7 +201,7 @@ IMPLICIT NONE
       ! for the direct solver W = eps^-1
       IF (solve_direct .AND. tinvert) THEN
         WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
-        CALL invert_epsilon(scrcoul_g, lgamma)
+        CALL invert_epsilon(num_g_corr, scrcoul_g, lgamma)
       END IF
 
       ! write to file
@@ -214,6 +220,7 @@ IMPLICIT NONE
 
   END DO ! iq
 
+  IF (meta_ionode) CLOSE(iuncoul)
   WRITE(stdout, '("Finished Calculating Screened Coulomb")')
   IF (ALLOCATED(scrcoul_g)) DEALLOCATE(scrcoul_g)
   DEALLOCATE(eps_m)

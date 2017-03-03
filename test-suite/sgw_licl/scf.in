@@ -1,0 +1,30 @@
+LiCl scf calculation
+&control
+    calculation  = 'scf'
+    prefix       = 'licl'
+    outdir       = './tmp'
+    wf_collect   = .true.
+/
+
+&system
+    ibrav        = 2
+    celldm(1)    = 9.693
+    nat          = 2
+    ntyp         = 2
+    ecutwfc      = 27.0
+    force_symmorphic = .true.
+/
+
+&electrons
+    conv_thr =  1.0d-8
+/
+ATOMIC_SPECIES
+Li    6.941  Li.pz-n-vbc.UPF
+Cl   35.45   Cl.pz-bhs.UPF
+
+ATOMIC_POSITIONS (alat)
+Li  0.00 0.00 0.00
+Cl  0.50 0.50 0.50
+
+K_POINTS AUTOMATIC
+ 2 2 2 0 0 0

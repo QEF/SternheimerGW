@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -20,63 +20,141 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE godby_needs_coeffs(N, z, u, a)
-
-  USE kinds,       ONLY: dp
-  USE constants,   ONLY: eps8
+!> Implements the Godby-Needs Plasmon pole model.
+!!
+!! The plasmon pole is defined as
+!! \f{equation}{
+!!   W_{GG'}(\omega) = \frac{A_{GG'}}{\omega + \tilde \omega_{GG'}} 
+!!                   - \frac{A_{GG'}}{\omega - \tilde \omega_{GG'}}
+!! \f}
+!! Godby and Needs suggested to fit this to the values evaluated at two
+!! frequencies \f$\omega = 0\f$ and \f$\omega = i \omega_{\text{p}}\f$. Then
+!! we can determine the constants
+!! \f{equation}{
+!!   A_{GG'} = \frac12 W_{GG'}(0) \tilde \omega
+!! \f}
+!! and
+!! \f{equation}{
+!!   \tilde\omega_{GG'} = \sqrt{
+!!     \frac{W_{GG'}(\omega_{\text{p}})}{W_{GG'}(0) - W_{GG'}(\omega_{\text{p}})]}
+!!   } \omega_{\text{p}}~.
+!! \f}
+MODULE godby_needs_module
 
   IMPLICIT NONE
 
-  INTEGER     :: N
-  COMPLEX(dp) :: z(N), u(N)
-  COMPLEX(dp) :: a(N)
+CONTAINS
 
-  !> complex constant of 0
-  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+  !> evaluate the Godby-Needs coefficients
+  SUBROUTINE godby_needs_coeffs(omega_p, coulomb)
 
-  !> large complex number
-  COMPLEX(dp), PARAMETER :: large = CMPLX(10.0_dp, 0.0_dp, KIND=dp)
+    USE kinds,     ONLY: dp
+    USE constants, ONLY: eps8
 
-  !! Instead of a higher order pad\'e approximant to the self energy we just calculate two 
-  !! frequency points one at w = 0 and one at w = i\Omega_{p}. and fit it to the plasmon pole
-  !! model: this is the godby_needs plasmon pole.
-  !! The assumed form of the function is:
-  !! \epsilon^{-1}_{\G,\G'}(\q,\omega) = \frac{A_{GG'(q)}}{\omega - \omegatilde + idelta} -
-  !!                                     \frac{A_{GG'(q)}}{\omega + \omegatilde - idelta}
-  a(:) = zero 
-  !! Currently using the same criterion as in SaX
-  !! this essentially checks if the real part of the pole
-  !! is smaller than the imaginary part of the pole and if so
-  !! kills the pole...
-  !! for inclusion of plasmon pole parameters...
-  !! might be more appropriate to think about the conditions some more.
-  !! this essentially says:
-  !! \sqrt(a + ib) = c + id
-  !! a + ib = c**2 - d**2 +2icd
-  !! if a < 0 :: d > c
-  !! so they kill that pole...
-  !! essentially we cast aside any heavily damped oscillations
-  !! (which would not effect the real part of the selfenergy anyway...
-  !! a(1) = \tilde(\omega) a(2) = R
+    !> the Plasmon frequency at which the Coulomb potential is evaluated
+    REAL(dp),    INTENT(IN)    :: omega_p
 
-  IF (ABS(REAL(u(1) - u(2))) < eps8) THEN 
-    ! We zero the weight of the pole and place the pole way out
-    ! on the real axis to avoid numerical instability.
-    ! although this isn't really that far out....
-    a(1) = large
-    a(2) = zero
+    !> *on input* the screened Coulomb potential at \f$\omega = 0\f$ and
+    !! \f$\omega = i \omega_{\text{p}}\f$ <br>
+    !! *on output* the Godby-Needs coefficients used to evaluate the
+    !! screened Coulomb potential at different frequencies
+    COMPLEX(dp), INTENT(INOUT) :: coulomb(:,:,:)
 
-  ELSE IF (REAL(u(2) / (u(1) - u(2))) < 0.0_dp) THEN
-    ! case for wings having been zerod
-    a(1) = large
-    a(2) = zero 
+    !> constant of 1/2
+    REAL(dp),    PARAMETER :: half = 0.5_dp
 
-  ELSE
-    ! \tilde{\omega}:
-    a(1) = z(2) * SQRT(REAL(u(2) / (u(1) - u(2))))
-    !(A_{GG'qq}):
-    a(2) = -u(1) * a(1)**2
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
 
-  END IF
+    !> counter on the G vectors
+    INTEGER ig, igp
 
-END SUBROUTINE godby_needs_coeffs
+    !> set the current element to 0
+    LOGICAL set_zero
+
+    !> complex work variable
+    COMPLEX(dp) work
+
+    !
+    ! sanity check of the input
+    !
+    ! plasmon frequency positive
+    IF (omega_p < 0) CALL errore(__FILE__, "plasmon frequency must be positive", 1)
+    !
+    IF (SIZE(coulomb, 3) /= 2) &
+      CALL errore(__FILE__, "must provide exactly 2 frequencies", 1)
+
+    DO igp = 1, SIZE(coulomb, 2)
+      DO ig = 1, SIZE(coulomb, 1)
+        !
+        ! work = W(0) - W(wp)
+        work = coulomb(ig, igp, 1) - coulomb(ig, igp, 2)
+        set_zero = ABS(REAL(work)) < eps8
+        !
+        IF (.NOT.set_zero) THEN
+          !
+          ! work = W(wp) / (W(0) - W(wp))
+          work = coulomb(ig, igp, 2) / work
+          set_zero = REAL(work) < eps8
+          !
+        END IF
+        !
+        IF (.NOT.set_zero) THEN
+          !         _____________
+          !        /    W(wp)
+          ! w~ =  / ------------   wp
+          !      V  W(0) - W(wp)
+          !
+          coulomb(ig, igp, 2) = SQRT(work) * omega_p
+          !     1
+          ! A = - W(0) w~
+          !     2
+          coulomb(ig, igp, 1) = half * coulomb(ig, igp, 1) * coulomb(ig, igp, 2)
+          !
+        ELSE
+          !
+          coulomb(ig, igp, 1) = zero
+          coulomb(ig, igp, 2) = zero
+          !
+        END IF
+        !
+      END DO ! ig
+    END DO ! igp
+
+  END SUBROUTINE godby_needs_coeffs
+
+  !> construct the screened Coulomb potential
+  FUNCTION godby_needs_model(freq, coeff) RESULT (res)
+
+    USE kinds,      ONLY: dp
+    USE constants,  ONLY: eps8
+
+    !> the frequency at which we want to determine the Coulomb potential
+    COMPLEX(dp), INTENT(IN) :: freq
+
+    !> the strength and position of the pole
+    COMPLEX(dp), INTENT(IN) :: coeff(2)
+
+    !> the Coulomb potential at the given frequency
+    COMPLEX(dp) res
+
+    !> complex constant of 1
+    COMPLEX(dp), PARAMETER :: one = CMPLX(1.0_dp, 0.0_dp, KIND=dp)
+
+    !> complex constant of 0
+    COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND=dp)
+
+    !          A        A
+    ! W(w) = ------ + ------
+    !        w~ + w   w~ - w
+    IF (ABS(coeff(1)) > eps8) THEN
+      !
+      res = coeff(1) * (one / (coeff(2) + freq) + one / (coeff(2) - freq))
+      !
+    ELSE
+      res = zero
+    END IF
+
+  END FUNCTION godby_needs_model
+
+END MODULE godby_needs_module

@@ -1,0 +1,109 @@
+Screened Coulomb for the full mesh.
+&inputgw
+
+  ! config of the scf run
+  prefix       = 'diamond',
+  outdir       = './tmp'
+
+  ! control parameters
+  ldisp        = .true.
+  multishift   = .true.
+  double_grid  = .false.
+  freq_symm    = .false.
+
+  ! the grid used for the linear response
+  nq1          = 2
+  nq2          = 2
+  nq3          = 2
+
+  ! truncation (used for both correlation and exchange)
+  truncation   = 'on'
+
+  ! configuration for the exchange self-energy
+  do_sigma_exx = .true.
+  ecutsex      = 15.0
+
+  ! configuration for the correlation self energy
+  do_sigma_c   = .true.
+  kpoints      = .true.
+  ecutsco      = 6.0
+
+  ! configuration of the Coulomb solver
+  do_coulomb   = .true.
+  tr2_gw       = 1.0d-4
+  nmix_gw      = 4
+  solve_direct = .true.
+  use_symm     = .true.
+  lrpa         = .true.
+  godbyneeds   = .false.
+  padecont     = .true.
+
+  ! configuration of the Green solver
+  tr2_green    = 1.0d-5
+  maxter_green = 180
+
+  ! configuration of W in the convolution
+  do_imag      = .true.
+  wcoulmax     = 200
+  nwcoul       = 35
+  
+  ! configuration for the self-energy (result of the convolution)
+  wsigmamin    = 0.0
+  wsigmamax    = 100.0
+  nwsigma      = 11
+
+  ! configuration for the output
+  do_sigma_matel = .true.
+  nbnd_sig       = 8
+  wsig_wind_min  = -30.0
+  wsig_wind_max  =  30.0
+  nwsigwin       = 601
+
+/
+
+&outputgw
+/
+
+FREQUENCIES
+35
+0.0   0.0
+0.0   0.3
+0.0   0.9
+0.0   1.8
+0.0   3.0
+0.0   4.5
+0.0   6.3
+0.0   8.4
+0.0  10.8
+0.0  13.5
+0.0  16.5
+0.0  19.8
+0.0  23.4
+0.0  27.3
+0.0  31.5
+0.0  36.0
+0.0  40.8
+0.0  45.9
+0.0  51.3
+0.0  57.0
+0.0  63.0
+0.0  69.3
+0.0  75.9
+0.0  82.8
+0.0  90.0
+0.0  97.5
+0.0 105.3
+0.0 113.4
+0.0 121.8
+0.0 130.5
+0.0 139.5
+0.0 148.8
+0.0 158.4
+0.0 168.3
+0.0 178.5
+/
+
+K_points
+1
+0.000000000  0.000000000   0.000000000
+/

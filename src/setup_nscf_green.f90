@@ -4,7 +4,7 @@
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
-! Copyright (C) 2010 - 2016 Quantum ESPRESSO group,
+! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -105,8 +105,8 @@ SUBROUTINE setup_nscf_green(kpt, config)
   !> index of the q point
   INTEGER,  ALLOCATABLE :: index_q(:)
   !
-  !> index of the inverse symmetry operation
-  INTEGER,  ALLOCATABLE :: inv_op(:)
+  !> index of the symmetry operation
+  INTEGER,  ALLOCATABLE :: sym_op(:)
   !
   !> the weight of a certain k - q point
   REAL(dp), ALLOCATABLE :: weight(:)
@@ -137,7 +137,7 @@ SUBROUTINE setup_nscf_green(kpt, config)
   !
   ! allocate temporary arrays (will be copied to config type at the end)
   ALLOCATE(index_q(nqs * nsym))
-  ALLOCATE(inv_op(nqs * nsym))
+  ALLOCATE(sym_op(nqs * nsym))
   ALLOCATE(weight(nqs * nsym))
 
   ! the first k-point is used for Sigma
@@ -166,7 +166,7 @@ SUBROUTINE setup_nscf_green(kpt, config)
       xk(:, nkstot) = kpt - star_xq(:, istar)
       wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp)
       index_q(nkstot) = iq
-      inv_op(nkstot) = invs(isymop)
+      sym_op(nkstot) = isymop
       weight(nkstot) = wq(iq) * REAL(num_symq(istar), KIND=dp) 
       !
     END DO ! istar
@@ -218,7 +218,7 @@ SUBROUTINE setup_nscf_green(kpt, config)
     ! copy data to type
     config(iq)%index_kq = ik
     config(iq)%index_q  = index_q(map(ik))
-    config(iq)%inv_op   = inv_op(map(ik))
+    config(iq)%sym_op   = sym_op(map(ik))
     config(iq)%weight   = weight(map(ik))
     !
     ! set ikqs

@@ -1,0 +1,1326 @@
+
+     Program SGW v.6.1 starts on 20Feb2017 at 12:33: 9 
+
+     This program is part of the open-source Quantum ESPRESSO suite
+     for quantum simulation of materials; please cite
+         "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
+          URL http://www.quantum-espresso.org", 
+     in publications or presentations arising from this work. More details at
+     http://www.quantum-espresso.org/quote
+
+     Parallel version (MPI), running on     1 processors
+
+     You are using SGW version: 0.11
+
+     Git description of commit: v0.11-rc-2-gb80c93d
+
+     This program is part of the open-source Quantum ESPRESSO suite
+          Please also cite H. Lambert and F. Giustino, Phys. Rev. B  88. 075117 (2013);
+          URL http://www.sternheimer.org.uk
+
+     Reading data from directory:
+     ./tmp/licl.save
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     IMPORTANT: XC functional enforced from input :
+     Exchange-correlation      =  SLA  PZ   NOGX NOGC ( 1  1  0  0 0 0)
+     Any further DFT definition will be discarded
+     Please, verify this is what you really want
+
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         349     349    109                 4285     4285     749
+
+
+
+     Coulomb Perturbations for ( 2, 2, 2,)  uniform grid of q-points
+     (   3q-points):
+       N         xq(1)         xq(2)         xq(3) 
+       1   0.000000000   0.000000000   0.000000000
+       2   0.500000000  -0.500000000   0.500000000
+       3   0.000000000  -1.000000000   0.000000000
+
+     Exchange Grid
+     -------------
+     E_cutoff(Ry) G_cutoff(crystal) num G vec
+         5.00          11.90           51
+     nr1t  nr2t  nr3t
+          5     5     5
+     Global Dimensions   Local  Dimensions   Processor Grid
+     .X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.
+       5     5     5       5     5     5       1     1     1
+     Array leading dimensions ( nr1x, nr2x, nr3x )   =      5     5     5
+     Local number of cell to store the grid ( nrxx ) =        125
+     Number of x-y planes for each processors:
+     nr3l =     5
+
+     Correlation Grid
+     ----------------
+     E_cutoff(Ry) G_cutoff(crystal) num G vec
+         6.00          14.28           59
+     nr1t  nr2t  nr3t
+          6     6     6
+     Global Dimensions   Local  Dimensions   Processor Grid
+     .X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.
+       5     5     5       5     5     5       1     1     1
+     Array leading dimensions ( nr1x, nr2x, nr3x )   =      5     5     5
+     Local number of cell to store the grid ( nrxx ) =        125
+     Number of x-y planes for each processors:
+     nr3l =     5
+
+     Memory Usage:
+
+     G(G, G'; w):            0.4 MB
+     G(r, r'; w):            1.8 MB
+     W(G, G'; w):            0.3 MB
+     W(r, r'):               0.0 MB
+     Sigma(G, G'; w):        0.1 MB
+     Sigma(r, r'; w):        0.3 MB
+     V(G, G'):               0.0 MB
+     V(r, r'):               0.0 MB
+
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     qpoint does NOT have inversion symmetry
+
+     nsym, nsymq, nrot   48   1  48
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         349     349    109                 4285     4285     749
+
+
+
+     bravais-lattice index     =            2
+     lattice parameter (alat)  =       9.6930  a.u.
+     unit-cell volume          =     227.6746 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            2
+     number of electrons       =         8.00
+     number of Kohn-Sham states=            4
+     kinetic-energy cutoff     =      27.0000  Ry
+     charge density cutoff     =     108.0000  Ry
+     Exchange-correlation      =  SLA  PZ   NOGX NOGC ( 1  1  0  0 0 0)
+
+     celldm(1)=   9.693000  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  -0.500000   0.000000   0.500000 )  
+               a(2) = (   0.000000   0.500000   0.500000 )  
+               a(3) = (  -0.500000   0.500000   0.000000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = ( -1.000000 -1.000000  1.000000 )  
+               b(2) = (  1.000000  1.000000  1.000000 )  
+               b(3) = ( -1.000000  1.000000 -1.000000 )  
+
+
+     PseudoPot. # 1 for Li read from file:
+     /home/schlipf/code/devel/q-e-private/SGW/test-suite/../..//pseudo/Li.pz-n-vbc.UPF
+     MD5 check sum: d719116e0b162b18483694e0c0b97f98
+     Pseudo is Norm-conserving + core correction, Zval =  1.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  149 points,  1 beta functions with: 
+                l(1) =   0
+
+     PseudoPot. # 2 for Cl read from file:
+     /home/schlipf/code/devel/q-e-private/SGW/test-suite/../..//pseudo/Cl.pz-bhs.UPF
+     MD5 check sum: ad694f41b6fc12d0d2d76f7df26d8e59
+     Pseudo is Norm-conserving, Zval =  7.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  479 points,  2 beta functions with: 
+                l(1) =   0
+                l(2) =   1
+
+     atomic species   valence    mass     pseudopotential
+        Li             1.00     6.94100     Li( 1.00)
+        Cl             7.00    35.45000     Cl( 1.00)
+
+     48 Sym. Ops., with inversion, found
+
+
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Li  tau(   1) = (   0.0000000   0.0000000   0.0000000  )
+         2           Cl  tau(   2) = (   0.5000000   0.5000000   0.5000000  )
+
+     number of k points=    16
+                       cart. coord. in units 2pi/alat
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   0.2500000
+        k(    2) = (   0.0100000   0.0000000   0.0000000), wk =   0.0000000
+        k(    3) = (   0.5000000  -0.5000000   0.5000000), wk =   0.2500000
+        k(    4) = (   0.5100000  -0.5000000   0.5000000), wk =   0.0000000
+        k(    5) = (   0.0000000  -1.0000000   0.0000000), wk =   0.2500000
+        k(    6) = (   0.0100000  -1.0000000   0.0000000), wk =   0.0000000
+        k(    7) = (  -0.5000000   0.5000000   0.5000000), wk =   0.2500000
+        k(    8) = (  -0.4900000   0.5000000   0.5000000), wk =   0.0000000
+        k(    9) = (  -0.5000000  -0.5000000  -0.5000000), wk =   0.2500000
+        k(   10) = (  -0.4900000  -0.5000000  -0.5000000), wk =   0.0000000
+        k(   11) = (   0.5000000   0.5000000  -0.5000000), wk =   0.2500000
+        k(   12) = (   0.5100000   0.5000000  -0.5000000), wk =   0.0000000
+        k(   13) = (  -1.0000000   0.0000000   0.0000000), wk =   0.2500000
+        k(   14) = (  -0.9900000   0.0000000   0.0000000), wk =   0.0000000
+        k(   15) = (   0.0000000   0.0000000  -1.0000000), wk =   0.2500000
+        k(   16) = (   0.0100000   0.0000000  -1.0000000), wk =   0.0000000
+
+     Dense  grid:     4285 G-vectors     FFT dimensions: (  24,  24,  24)
+
+     Estimated max dynamical RAM per process >       1.73MB
+
+     The potential is recalculated from file :
+     ./tmp/_gw0/licl.save/charge-density.dat
+
+     Starting wfc are    8 atomic wfcs
+
+     Calculation of q =    0.0100000   0.0000000   0.0000000
+
+     Band Structure Calculation
+     Davidson diagonalization with overlap
+
+     ethr =  1.25E-10,  avg # of iterations =  7.8
+
+     total cpu time spent up to now is        0.3 secs
+
+     End of band structure calculation
+
+          k = 0.0000 0.0000 0.0000 (   537 PWs)   bands (ev):
+
+   -11.9727   1.4643   1.4643   1.4643
+
+          k = 0.0100 0.0000 0.0000 (   537 PWs)   bands (ev):
+
+   -11.9725   1.4634   1.4640   1.4640
+
+          k = 0.5000-0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k = 0.5100-0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5257   1.1991   1.2001
+
+          k = 0.0000-1.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882
+
+          k = 0.0100-1.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6178   0.2875   0.2882
+
+          k =-0.5000 0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k =-0.4900 0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5257   1.1991   1.2001
+
+          k =-0.5000-0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k =-0.4900-0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5257   1.1991   1.2001
+
+          k = 0.5000 0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k = 0.5100 0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5257   1.1991   1.2001
+
+          k =-1.0000 0.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882
+
+          k =-0.9900 0.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0825  -1.6174   0.2884   0.2884
+
+          k = 0.0000 0.0000-1.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882
+
+          k = 0.0100 0.0000-1.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6178   0.2875   0.2882
+
+     highest occupied level (ev):     1.4643
+
+     Writing output data file licl.save
+        eps_{GG}(q,w) =      5.72012     0.14886
+        eps_{GG}(q,w) =      5.82477     0.16979
+        eps_{GG}(q,w) =      5.94402     0.19387
+        eps_{GG}(q,w) =      6.08010     0.22191
+        eps_{GG}(q,w) =      6.23584     0.25505
+        eps_{GG}(q,w) =      6.41485     0.29481
+        eps_{GG}(q,w) =      6.62183     0.34338
+        eps_{GG}(q,w) =      6.86297     0.40393
+        eps_{GG}(q,w) =      7.14665     0.48125
+        eps_{GG}(q,w) =      7.48443     0.58291
+        eps_{GG}(q,w) =      7.89265     0.72146
+        eps_{GG}(q,w) =      8.39489     0.91912
+        eps_{GG}(q,w) =      9.02532     1.21843
+        eps_{GG}(q,w) =      9.82976     1.70909
+        eps_{GG}(q,w) =     10.83945     2.59900
+        eps_{GG}(q,w) =     11.84885     4.35648
+        eps_{GG}(q,w) =     11.50664     7.14112
+        eps_{GG}(q,w) =      9.75949     8.05906
+        eps_{GG}(q,w) =     10.41448     8.87663
+        eps_{GG}(q,w) =     10.14061    13.50595
+        eps_{GG}(q,w) =      2.47267    17.10247
+        eps_{GG}(q,w) =     -3.46393    11.26569
+        eps_{GG}(q,w) =     -2.84171     6.21372
+        eps_{GG}(q,w) =     -1.02620     3.87068
+        eps_{GG}(q,w) =      0.63348     2.81404
+        eps_{GG}(q,w) =      2.08460     2.36661
+        eps_{GG}(q,w) =      3.44164     2.28672
+        eps_{GG}(q,w) =      4.82584     2.53570
+        eps_{GG}(q,w) =      6.33953     3.24403
+        eps_{GG}(q,w) =      7.92984     4.81488
+        eps_{GG}(q,w) =      8.69446     7.70648
+        eps_{GG}(q,w) =      7.89987    10.33199
+        eps_{GG}(q,w) =      7.08101    13.77081
+        eps_{GG}(q,w) =      2.58222    17.55258
+        eps_{GG}(q,w) =     -4.89780    17.50782
+        eps_{GG}(q,w) =     -9.35294    11.19257
+        eps_{GG}(q,w) =     -8.34326     6.23769
+        eps_{GG}(q,w) =     -6.44519     3.91380
+        eps_{GG}(q,w) =     -4.81900     2.89960
+        eps_{GG}(q,w) =     -3.60849     2.63096
+        eps_{GG}(q,w) =     -3.09051     2.64870
+        eps_{GG}(q,w) =     -2.72381     2.19557
+        eps_{GG}(q,w) =     -1.92102     1.89719
+        eps_{GG}(q,w) =     -1.02169     2.09525
+        eps_{GG}(q,w) =     -0.31414     2.99979
+        eps_{GG}(q,w) =     -0.90003     4.62003
+        eps_{GG}(q,w) =     -3.00471     4.42531
+        eps_{GG}(q,w) =     -3.50454     3.01355
+        eps_{GG}(q,w) =     -3.42667     2.08906
+        eps_{GG}(q,w) =     -3.05231     1.33067
+        eps_{GG}(q,w) =     -2.55849     0.90443
+     epsM(0) =    5.7201203
+     epsM(0) =    0.1488595
+     epsM(iwp) =    5.8247688
+     epsM(iwp) =    0.1697918
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     qpoint does NOT have inversion symmetry
+
+     nsym, nsymq, nrot   48   1  48
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         349     349    109                 4285     4285     749
+
+
+
+     bravais-lattice index     =            2
+     lattice parameter (alat)  =       9.6930  a.u.
+     unit-cell volume          =     227.6746 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            2
+     number of electrons       =         8.00
+     number of Kohn-Sham states=            4
+     kinetic-energy cutoff     =      27.0000  Ry
+     charge density cutoff     =     108.0000  Ry
+     Exchange-correlation      =  SLA  PZ   NOGX NOGC ( 1  1  0  0 0 0)
+
+     celldm(1)=   9.693000  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  -0.500000   0.000000   0.500000 )  
+               a(2) = (   0.000000   0.500000   0.500000 )  
+               a(3) = (  -0.500000   0.500000   0.000000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = ( -1.000000 -1.000000  1.000000 )  
+               b(2) = (  1.000000  1.000000  1.000000 )  
+               b(3) = ( -1.000000  1.000000 -1.000000 )  
+
+
+     PseudoPot. # 1 for Li read from file:
+     /home/schlipf/code/devel/q-e-private/SGW/test-suite/../..//pseudo/Li.pz-n-vbc.UPF
+     MD5 check sum: d719116e0b162b18483694e0c0b97f98
+     Pseudo is Norm-conserving + core correction, Zval =  1.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  149 points,  1 beta functions with: 
+                l(1) =   0
+
+     PseudoPot. # 2 for Cl read from file:
+     /home/schlipf/code/devel/q-e-private/SGW/test-suite/../..//pseudo/Cl.pz-bhs.UPF
+     MD5 check sum: ad694f41b6fc12d0d2d76f7df26d8e59
+     Pseudo is Norm-conserving, Zval =  7.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  479 points,  2 beta functions with: 
+                l(1) =   0
+                l(2) =   1
+
+     atomic species   valence    mass     pseudopotential
+        Li             1.00     6.94100     Li( 1.00)
+        Cl             7.00    35.45000     Cl( 1.00)
+
+     48 Sym. Ops., with inversion, found
+
+
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Li  tau(   1) = (   0.0000000   0.0000000   0.0000000  )
+         2           Cl  tau(   2) = (   0.5000000   0.5000000   0.5000000  )
+
+     number of k points=     8
+                       cart. coord. in units 2pi/alat
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   0.2500000
+        k(    2) = (   0.5000000  -0.5000000   0.5000000), wk =   0.2500000
+        k(    3) = (   0.0000000  -1.0000000   0.0000000), wk =   0.2500000
+        k(    4) = (  -0.5000000   0.5000000   0.5000000), wk =   0.2500000
+        k(    5) = (  -0.5000000  -0.5000000  -0.5000000), wk =   0.2500000
+        k(    6) = (   0.5000000   0.5000000  -0.5000000), wk =   0.2500000
+        k(    7) = (  -1.0000000   0.0000000   0.0000000), wk =   0.2500000
+        k(    8) = (   0.0000000   0.0000000  -1.0000000), wk =   0.2500000
+
+     Dense  grid:     4285 G-vectors     FFT dimensions: (  24,  24,  24)
+
+     Estimated max dynamical RAM per process >       1.73MB
+
+     The potential is recalculated from file :
+     ./tmp/_gw0/licl.save/charge-density.dat
+
+     Starting wfc are    8 atomic wfcs
+
+     Calculation of q =    0.0000000   0.0000000   0.0000000
+
+     Band Structure Calculation
+     Davidson diagonalization with overlap
+
+     ethr =  1.25E-10,  avg # of iterations =  7.8
+
+     total cpu time spent up to now is        0.4 secs
+
+     End of band structure calculation
+
+          k = 0.0000 0.0000 0.0000 (   537 PWs)   bands (ev):
+
+   -11.9727   1.4643   1.4643   1.4643
+
+          k = 0.5000-0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k = 0.0000-1.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882
+
+          k =-0.5000 0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k =-0.5000-0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k = 0.5000 0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001
+
+          k =-1.0000 0.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882
+
+          k = 0.0000 0.0000-1.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882
+
+     highest occupied level (ev):     1.4643
+
+     Writing output data file licl.save
+
+     SYMMETRIZING COULOMB Perturbations
+
+
+     qpoint HAS inversion symmetry
+
+     nsym, nsymq   48  48
+   1   0   0
+   0   1   0
+   0   0   1
+
+   1   0   0
+   0   1   0
+   0   0   1
+
+
+   0   1   0
+   1   0   0
+  -1  -1  -1
+
+   0   1   0
+   1   0   0
+  -1  -1  -1
+
+
+  -1  -1  -1
+   0   0   1
+   0   1   0
+
+  -1  -1  -1
+   0   0   1
+   0   1   0
+
+
+   0   0   1
+  -1  -1  -1
+   1   0   0
+
+   0   0   1
+  -1  -1  -1
+   1   0   0
+
+
+   0  -1   0
+  -1   0   0
+   0   0  -1
+
+   0  -1   0
+  -1   0   0
+   0   0  -1
+
+
+  -1   0   0
+   0  -1   0
+   1   1   1
+
+  -1   0   0
+   0  -1   0
+   1   1   1
+
+
+   0   0  -1
+   1   1   1
+   0  -1   0
+
+   1   1   1
+   0   0  -1
+  -1   0   0
+
+
+   1   1   1
+   0   0  -1
+  -1   0   0
+
+   0   0  -1
+   1   1   1
+   0  -1   0
+
+
+  -1   0   0
+   0   0  -1
+   0  -1   0
+
+  -1   0   0
+   0   0  -1
+   0  -1   0
+
+
+   1   1   1
+   0  -1   0
+   0   0  -1
+
+   1   1   1
+   0  -1   0
+   0   0  -1
+
+
+   0  -1   0
+   1   1   1
+  -1   0   0
+
+   0   0  -1
+  -1   0   0
+   1   1   1
+
+
+   0   0  -1
+  -1   0   0
+   1   1   1
+
+   0  -1   0
+   1   1   1
+  -1   0   0
+
+
+  -1   0   0
+   1   1   1
+   0   0  -1
+
+  -1   0   0
+   1   1   1
+   0   0  -1
+
+
+   0   0  -1
+   0  -1   0
+  -1   0   0
+
+   0   0  -1
+   0  -1   0
+  -1   0   0
+
+
+   0  -1   0
+   0   0  -1
+   1   1   1
+
+   1   1   1
+  -1   0   0
+   0  -1   0
+
+
+   1   1   1
+  -1   0   0
+   0  -1   0
+
+   0  -1   0
+   0   0  -1
+   1   1   1
+
+
+  -1  -1  -1
+   0   1   0
+   1   0   0
+
+   0   0   1
+   0   1   0
+  -1  -1  -1
+
+
+   0   0   1
+   1   0   0
+   0   1   0
+
+   0   1   0
+   0   0   1
+   1   0   0
+
+
+   1   0   0
+   0   0   1
+  -1  -1  -1
+
+   1   0   0
+  -1  -1  -1
+   0   1   0
+
+
+   0   1   0
+  -1  -1  -1
+   0   0   1
+
+  -1  -1  -1
+   1   0   0
+   0   0   1
+
+
+   0   0   1
+   0   1   0
+  -1  -1  -1
+
+  -1  -1  -1
+   0   1   0
+   1   0   0
+
+
+  -1  -1  -1
+   1   0   0
+   0   0   1
+
+   0   1   0
+  -1  -1  -1
+   0   0   1
+
+
+   0   1   0
+   0   0   1
+   1   0   0
+
+   0   0   1
+   1   0   0
+   0   1   0
+
+
+   1   0   0
+  -1  -1  -1
+   0   1   0
+
+   1   0   0
+   0   0   1
+  -1  -1  -1
+
+
+  -1   0   0
+   0  -1   0
+   0   0  -1
+
+  -1   0   0
+   0  -1   0
+   0   0  -1
+
+
+   0  -1   0
+  -1   0   0
+   1   1   1
+
+   0  -1   0
+  -1   0   0
+   1   1   1
+
+
+   1   1   1
+   0   0  -1
+   0  -1   0
+
+   1   1   1
+   0   0  -1
+   0  -1   0
+
+
+   0   0  -1
+   1   1   1
+  -1   0   0
+
+   0   0  -1
+   1   1   1
+  -1   0   0
+
+
+   0   1   0
+   1   0   0
+   0   0   1
+
+   0   1   0
+   1   0   0
+   0   0   1
+
+
+   1   0   0
+   0   1   0
+  -1  -1  -1
+
+   1   0   0
+   0   1   0
+  -1  -1  -1
+
+
+   0   0   1
+  -1  -1  -1
+   0   1   0
+
+  -1  -1  -1
+   0   0   1
+   1   0   0
+
+
+  -1  -1  -1
+   0   0   1
+   1   0   0
+
+   0   0   1
+  -1  -1  -1
+   0   1   0
+
+
+   1   0   0
+   0   0   1
+   0   1   0
+
+   1   0   0
+   0   0   1
+   0   1   0
+
+
+  -1  -1  -1
+   0   1   0
+   0   0   1
+
+  -1  -1  -1
+   0   1   0
+   0   0   1
+
+
+   0   1   0
+  -1  -1  -1
+   1   0   0
+
+   0   0   1
+   1   0   0
+  -1  -1  -1
+
+
+   0   0   1
+   1   0   0
+  -1  -1  -1
+
+   0   1   0
+  -1  -1  -1
+   1   0   0
+
+
+   1   0   0
+  -1  -1  -1
+   0   0   1
+
+   1   0   0
+  -1  -1  -1
+   0   0   1
+
+
+   0   0   1
+   0   1   0
+   1   0   0
+
+   0   0   1
+   0   1   0
+   1   0   0
+
+
+   0   1   0
+   0   0   1
+  -1  -1  -1
+
+  -1  -1  -1
+   1   0   0
+   0   1   0
+
+
+  -1  -1  -1
+   1   0   0
+   0   1   0
+
+   0   1   0
+   0   0   1
+  -1  -1  -1
+
+
+   1   1   1
+   0  -1   0
+  -1   0   0
+
+   0   0  -1
+   0  -1   0
+   1   1   1
+
+
+   0   0  -1
+  -1   0   0
+   0  -1   0
+
+   0  -1   0
+   0   0  -1
+  -1   0   0
+
+
+  -1   0   0
+   0   0  -1
+   1   1   1
+
+  -1   0   0
+   1   1   1
+   0  -1   0
+
+
+   0  -1   0
+   1   1   1
+   0   0  -1
+
+   1   1   1
+  -1   0   0
+   0   0  -1
+
+
+   0   0  -1
+   0  -1   0
+   1   1   1
+
+   1   1   1
+   0  -1   0
+  -1   0   0
+
+
+   1   1   1
+  -1   0   0
+   0   0  -1
+
+   0  -1   0
+   1   1   1
+   0   0  -1
+
+
+   0  -1   0
+   0   0  -1
+  -1   0   0
+
+   0   0  -1
+  -1   0   0
+   0  -1   0
+
+
+  -1   0   0
+   1   1   1
+   0  -1   0
+
+  -1   0   0
+   0   0  -1
+   1   1   1
+
+
+
+     Number of symmops in Small G_q:   48
+     ngmpol   59 and ngmunique    6
+     iq    1 igstart    1 igstop    6
+        eps_{GG}(q,w) =      1.51305     0.00357
+        eps_{GG}(q,w) =      1.51554     0.00392
+        eps_{GG}(q,w) =      1.51827     0.00430
+        eps_{GG}(q,w) =      1.52125     0.00469
+        eps_{GG}(q,w) =      1.52450     0.00511
+        eps_{GG}(q,w) =      1.52804     0.00556
+        eps_{GG}(q,w) =      1.53189     0.00605
+        eps_{GG}(q,w) =      1.53607     0.00657
+        eps_{GG}(q,w) =      1.54061     0.00714
+        eps_{GG}(q,w) =      1.54554     0.00776
+        eps_{GG}(q,w) =      1.55091     0.00845
+        eps_{GG}(q,w) =      1.55674     0.00922
+        eps_{GG}(q,w) =      1.56311     0.01009
+        eps_{GG}(q,w) =      1.57008     0.01110
+        eps_{GG}(q,w) =      1.57772     0.01232
+        eps_{GG}(q,w) =      1.58608     0.01388
+        eps_{GG}(q,w) =      1.59501     0.01587
+        eps_{GG}(q,w) =      1.60462     0.01784
+        eps_{GG}(q,w) =      1.61576     0.02038
+        eps_{GG}(q,w) =      1.62745     0.02466
+        eps_{GG}(q,w) =      1.63740     0.02875
+        eps_{GG}(q,w) =      1.64988     0.02932
+        eps_{GG}(q,w) =      1.66728     0.03099
+        eps_{GG}(q,w) =      1.68784     0.03487
+        eps_{GG}(q,w) =      1.71173     0.04090
+        eps_{GG}(q,w) =      1.73997     0.04966
+        eps_{GG}(q,w) =      1.77413     0.06268
+        eps_{GG}(q,w) =      1.81635     0.08322
+        eps_{GG}(q,w) =      1.86880     0.11866
+        eps_{GG}(q,w) =      1.92781     0.18574
+        eps_{GG}(q,w) =      1.95536     0.30025
+        eps_{GG}(q,w) =      1.92925     0.38595
+        eps_{GG}(q,w) =      1.96035     0.49187
+        eps_{GG}(q,w) =      1.90037     0.74266
+        eps_{GG}(q,w) =      1.51139     0.89777
+        eps_{GG}(q,w) =      1.22898     0.60447
+        eps_{GG}(q,w) =      1.27822     0.35701
+        eps_{GG}(q,w) =      1.39345     0.25809
+        eps_{GG}(q,w) =      1.50330     0.24891
+        eps_{GG}(q,w) =      1.57616     0.32097
+        eps_{GG}(q,w) =      1.52015     0.41516
+        eps_{GG}(q,w) =      1.44496     0.36921
+        eps_{GG}(q,w) =      1.44363     0.32739
+        eps_{GG}(q,w) =      1.46316     0.27553
+        eps_{GG}(q,w) =      1.53623     0.26959
+        eps_{GG}(q,w) =      1.57346     0.34063
+        eps_{GG}(q,w) =      1.54086     0.38932
+        eps_{GG}(q,w) =      1.49994     0.44878
+        eps_{GG}(q,w) =      1.34959     0.42395
+        eps_{GG}(q,w) =      1.32599     0.27080
+        eps_{GG}(q,w) =      1.39784     0.18262
+        eps_{GG}(q,w) =      1.37450     0.00234
+        eps_{GG}(q,w) =      1.37613     0.00258
+        eps_{GG}(q,w) =      1.37793     0.00285
+        eps_{GG}(q,w) =      1.37991     0.00313
+        eps_{GG}(q,w) =      1.38208     0.00344
+        eps_{GG}(q,w) =      1.38447     0.00379
+        eps_{GG}(q,w) =      1.38710     0.00418
+        eps_{GG}(q,w) =      1.39000     0.00462
+        eps_{GG}(q,w) =      1.39320     0.00514
+        eps_{GG}(q,w) =      1.39677     0.00577
+        eps_{GG}(q,w) =      1.40076     0.00655
+        eps_{GG}(q,w) =      1.40528     0.00759
+        eps_{GG}(q,w) =      1.41046     0.00906
+        eps_{GG}(q,w) =      1.41649     0.01138
+        eps_{GG}(q,w) =      1.42341     0.01554
+        eps_{GG}(q,w) =      1.42988     0.02379
+        eps_{GG}(q,w) =      1.42819     0.03627
+        eps_{GG}(q,w) =      1.41802     0.03551
+        eps_{GG}(q,w) =      1.42115     0.02743
+        eps_{GG}(q,w) =      1.42949     0.02660
+        eps_{GG}(q,w) =      1.43373     0.02803
+        eps_{GG}(q,w) =      1.43981     0.02442
+        eps_{GG}(q,w) =      1.45129     0.02239
+        eps_{GG}(q,w) =      1.46486     0.02312
+        eps_{GG}(q,w) =      1.48008     0.02580
+        eps_{GG}(q,w) =      1.49759     0.03034
+        eps_{GG}(q,w) =      1.51838     0.03734
+        eps_{GG}(q,w) =      1.54383     0.04826
+        eps_{GG}(q,w) =      1.57583     0.06627
+        eps_{GG}(q,w) =      1.61600     0.09836
+        eps_{GG}(q,w) =      1.66054     0.15793
+        eps_{GG}(q,w) =      1.69669     0.26147
+        eps_{GG}(q,w) =      1.66436     0.44612
+        eps_{GG}(q,w) =      1.43775     0.57386
+        eps_{GG}(q,w) =      1.19967     0.47664
+        eps_{GG}(q,w) =      1.13806     0.28099
+        eps_{GG}(q,w) =      1.18620     0.16237
+        eps_{GG}(q,w) =      1.24413     0.10735
+        eps_{GG}(q,w) =      1.29409     0.08183
+        eps_{GG}(q,w) =      1.33726     0.07140
+        eps_{GG}(q,w) =      1.37593     0.07009
+        eps_{GG}(q,w) =      1.41493     0.07497
+        eps_{GG}(q,w) =      1.45909     0.09143
+        eps_{GG}(q,w) =      1.50849     0.13101
+        eps_{GG}(q,w) =      1.54845     0.21981
+        eps_{GG}(q,w) =      1.49046     0.36500
+        eps_{GG}(q,w) =      1.31343     0.36912
+        eps_{GG}(q,w) =      1.25489     0.28422
+        eps_{GG}(q,w) =      1.22035     0.21682
+        eps_{GG}(q,w) =      1.23408     0.13588
+        eps_{GG}(q,w) =      1.27674     0.09071
+        eps_{GG}(q,w) =      1.17108     0.00106
+        eps_{GG}(q,w) =      1.17183     0.00119
+        eps_{GG}(q,w) =      1.17266     0.00134
+        eps_{GG}(q,w) =      1.17359     0.00150
+        eps_{GG}(q,w) =      1.17464     0.00169
+        eps_{GG}(q,w) =      1.17582     0.00192
+        eps_{GG}(q,w) =      1.17716     0.00219
+        eps_{GG}(q,w) =      1.17869     0.00251
+        eps_{GG}(q,w) =      1.18044     0.00293
+        eps_{GG}(q,w) =      1.18249     0.00346
+        eps_{GG}(q,w) =      1.18490     0.00420
+        eps_{GG}(q,w) =      1.18780     0.00524
+        eps_{GG}(q,w) =      1.19137     0.00684
+        eps_{GG}(q,w) =      1.19583     0.00953
+        eps_{GG}(q,w) =      1.20129     0.01453
+        eps_{GG}(q,w) =      1.20621     0.02469
+        eps_{GG}(q,w) =      1.20154     0.04049
+        eps_{GG}(q,w) =      1.18697     0.04193
+        eps_{GG}(q,w) =      1.18783     0.03801
+        eps_{GG}(q,w) =      1.18933     0.04930
+        eps_{GG}(q,w) =      1.16761     0.05904
+        eps_{GG}(q,w) =      1.15156     0.03980
+        eps_{GG}(q,w) =      1.15613     0.02365
+        eps_{GG}(q,w) =      1.16445     0.01634
+        eps_{GG}(q,w) =      1.17242     0.01331
+        eps_{GG}(q,w) =      1.17999     0.01244
+        eps_{GG}(q,w) =      1.18765     0.01302
+        eps_{GG}(q,w) =      1.19595     0.01511
+        eps_{GG}(q,w) =      1.20544     0.01947
+        eps_{GG}(q,w) =      1.21603     0.02818
+        eps_{GG}(q,w) =      1.22400     0.04378
+        eps_{GG}(q,w) =      1.22648     0.06055
+        eps_{GG}(q,w) =      1.22966     0.08674
+        eps_{GG}(q,w) =      1.20828     0.12662
+        eps_{GG}(q,w) =      1.14465     0.14077
+        eps_{GG}(q,w) =      1.10413     0.09176
+        eps_{GG}(q,w) =      1.11203     0.05237
+        eps_{GG}(q,w) =      1.12853     0.03480
+        eps_{GG}(q,w) =      1.14352     0.02863
+        eps_{GG}(q,w) =      1.15492     0.03000
+        eps_{GG}(q,w) =      1.15769     0.03378
+        eps_{GG}(q,w) =      1.15974     0.02913
+        eps_{GG}(q,w) =      1.16979     0.02628
+        eps_{GG}(q,w) =      1.18230     0.03072
+        eps_{GG}(q,w) =      1.19267     0.04581
+        eps_{GG}(q,w) =      1.18385     0.07170
+        eps_{GG}(q,w) =      1.15251     0.06919
+        eps_{GG}(q,w) =      1.14800     0.04746
+        eps_{GG}(q,w) =      1.15559     0.03577
+        eps_{GG}(q,w) =      1.16723     0.03071
+        eps_{GG}(q,w) =      1.17937     0.03421
+        eps_{GG}(q,w) =      1.10649     0.00050
+        eps_{GG}(q,w) =      1.10684     0.00056
+        eps_{GG}(q,w) =      1.10723     0.00062
+        eps_{GG}(q,w) =      1.10766     0.00070
+        eps_{GG}(q,w) =      1.10815     0.00079
+        eps_{GG}(q,w) =      1.10870     0.00089
+        eps_{GG}(q,w) =      1.10932     0.00101
+        eps_{GG}(q,w) =      1.11003     0.00116
+        eps_{GG}(q,w) =      1.11084     0.00136
+        eps_{GG}(q,w) =      1.11178     0.00161
+        eps_{GG}(q,w) =      1.11290     0.00195
+        eps_{GG}(q,w) =      1.11425     0.00245
+        eps_{GG}(q,w) =      1.11591     0.00322
+        eps_{GG}(q,w) =      1.11798     0.00453
+        eps_{GG}(q,w) =      1.12051     0.00701
+        eps_{GG}(q,w) =      1.12267     0.01212
+        eps_{GG}(q,w) =      1.11964     0.02004
+        eps_{GG}(q,w) =      1.11123     0.02005
+        eps_{GG}(q,w) =      1.11089     0.01643
+        eps_{GG}(q,w) =      1.11198     0.01925
+        eps_{GG}(q,w) =      1.10487     0.02217
+        eps_{GG}(q,w) =      1.09968     0.01504
+        eps_{GG}(q,w) =      1.10178     0.00915
+        eps_{GG}(q,w) =      1.10517     0.00647
+        eps_{GG}(q,w) =      1.10841     0.00536
+        eps_{GG}(q,w) =      1.11150     0.00505
+        eps_{GG}(q,w) =      1.11463     0.00528
+        eps_{GG}(q,w) =      1.11801     0.00610
+        eps_{GG}(q,w) =      1.12184     0.00779
+        eps_{GG}(q,w) =      1.12606     0.01119
+        eps_{GG}(q,w) =      1.12911     0.01723
+        eps_{GG}(q,w) =      1.12983     0.02331
+        eps_{GG}(q,w) =      1.13135     0.03255
+        eps_{GG}(q,w) =      1.12376     0.04746
+        eps_{GG}(q,w) =      1.10029     0.05161
+        eps_{GG}(q,w) =      1.08702     0.03337
+        eps_{GG}(q,w) =      1.09069     0.01944
+        eps_{GG}(q,w) =      1.09723     0.01326
+        eps_{GG}(q,w) =      1.10324     0.01106
+        eps_{GG}(q,w) =      1.10816     0.01142
+        eps_{GG}(q,w) =      1.11060     0.01282
+        eps_{GG}(q,w) =      1.11276     0.01224
+        eps_{GG}(q,w) =      1.11666     0.01247
+        eps_{GG}(q,w) =      1.12131     0.01412
+        eps_{GG}(q,w) =      1.12627     0.01949
+        eps_{GG}(q,w) =      1.12489     0.02933
+        eps_{GG}(q,w) =      1.11574     0.02980
+        eps_{GG}(q,w) =      1.11580     0.02450
+        eps_{GG}(q,w) =      1.11931     0.02257
+        eps_{GG}(q,w) =      1.12599     0.02359
+        eps_{GG}(q,w) =      1.13222     0.03282
+        eps_{GG}(q,w) =      1.09231     0.00041
+        eps_{GG}(q,w) =      1.09260     0.00046
+        eps_{GG}(q,w) =      1.09292     0.00051
+        eps_{GG}(q,w) =      1.09328     0.00058
+        eps_{GG}(q,w) =      1.09368     0.00065
+        eps_{GG}(q,w) =      1.09414     0.00074
+        eps_{GG}(q,w) =      1.09466     0.00085
+        eps_{GG}(q,w) =      1.09525     0.00098
+        eps_{GG}(q,w) =      1.09593     0.00115
+        eps_{GG}(q,w) =      1.09673     0.00137
+        eps_{GG}(q,w) =      1.09768     0.00167
+        eps_{GG}(q,w) =      1.09884     0.00211
+        eps_{GG}(q,w) =      1.10027     0.00279
+        eps_{GG}(q,w) =      1.10207     0.00395
+        eps_{GG}(q,w) =      1.10428     0.00613
+        eps_{GG}(q,w) =      1.10620     0.01062
+        eps_{GG}(q,w) =      1.10371     0.01760
+        eps_{GG}(q,w) =      1.09665     0.01794
+        eps_{GG}(q,w) =      1.09652     0.01556
+        eps_{GG}(q,w) =      1.09706     0.01948
+        eps_{GG}(q,w) =      1.08847     0.02302
+        eps_{GG}(q,w) =      1.08202     0.01529
+        eps_{GG}(q,w) =      1.08355     0.00879
+        eps_{GG}(q,w) =      1.08645     0.00573
+        eps_{GG}(q,w) =      1.08908     0.00429
+        eps_{GG}(q,w) =      1.09139     0.00361
+        eps_{GG}(q,w) =      1.09351     0.00333
+        eps_{GG}(q,w) =      1.09559     0.00333
+        eps_{GG}(q,w) =      1.09773     0.00359
+        eps_{GG}(q,w) =      1.10007     0.00417
+        eps_{GG}(q,w) =      1.10275     0.00531
+        eps_{GG}(q,w) =      1.10587     0.00756
+        eps_{GG}(q,w) =      1.10901     0.01230
+        eps_{GG}(q,w) =      1.10842     0.02130
+        eps_{GG}(q,w) =      1.09718     0.02653
+        eps_{GG}(q,w) =      1.08992     0.01828
+        eps_{GG}(q,w) =      1.09228     0.01162
+        eps_{GG}(q,w) =      1.09662     0.00925
+        eps_{GG}(q,w) =      1.10097     0.00965
+        eps_{GG}(q,w) =      1.10423     0.01284
+        eps_{GG}(q,w) =      1.10304     0.01681
+        eps_{GG}(q,w) =      1.10141     0.01575
+        eps_{GG}(q,w) =      1.10279     0.01512
+        eps_{GG}(q,w) =      1.10526     0.01470
+        eps_{GG}(q,w) =      1.10960     0.01743
+        eps_{GG}(q,w) =      1.10971     0.02456
+        eps_{GG}(q,w) =      1.10397     0.02580
+        eps_{GG}(q,w) =      1.10384     0.02387
+        eps_{GG}(q,w) =      1.10410     0.02272
+        eps_{GG}(q,w) =      1.10885     0.02145
+        eps_{GG}(q,w) =      1.11563     0.02693
+
+     qpoint HAS inversion symmetry
+
+     nsym, nsymq   48  48
+
+     Done epsilon inversion.
+     
+     epsilq       :    116.98s CPU     63.49s WALL (       1 calls)
+Finished Calculating Screened Coulomb
+
+   Info: using nr1, nr2, nr3 values from input
+
+   Info: using nr1, nr2, nr3 values from input
+
+     G-vector sticks info
+     --------------------
+     sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
+     Sum         349     349    109                 4285     4285     749
+
+
+
+     bravais-lattice index     =            2
+     lattice parameter (alat)  =       9.6930  a.u.
+     unit-cell volume          =     227.6746 (a.u.)^3
+     number of atoms/cell      =            2
+     number of atomic types    =            2
+     number of electrons       =         8.00
+     number of Kohn-Sham states=            8
+     kinetic-energy cutoff     =      27.0000  Ry
+     charge density cutoff     =     108.0000  Ry
+     Exchange-correlation      =  SLA  PZ   NOGX NOGC ( 1  1  0  0 0 0)
+
+     celldm(1)=   9.693000  celldm(2)=   0.000000  celldm(3)=   0.000000
+     celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
+
+     crystal axes: (cart. coord. in units of alat)
+               a(1) = (  -0.500000   0.000000   0.500000 )  
+               a(2) = (   0.000000   0.500000   0.500000 )  
+               a(3) = (  -0.500000   0.500000   0.000000 )  
+
+     reciprocal axes: (cart. coord. in units 2 pi/alat)
+               b(1) = ( -1.000000 -1.000000  1.000000 )  
+               b(2) = (  1.000000  1.000000  1.000000 )  
+               b(3) = ( -1.000000  1.000000 -1.000000 )  
+
+
+     PseudoPot. # 1 for Li read from file:
+     /home/schlipf/code/devel/q-e-private/SGW/test-suite/../..//pseudo/Li.pz-n-vbc.UPF
+     MD5 check sum: d719116e0b162b18483694e0c0b97f98
+     Pseudo is Norm-conserving + core correction, Zval =  1.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  149 points,  1 beta functions with: 
+                l(1) =   0
+
+     PseudoPot. # 2 for Cl read from file:
+     /home/schlipf/code/devel/q-e-private/SGW/test-suite/../..//pseudo/Cl.pz-bhs.UPF
+     MD5 check sum: ad694f41b6fc12d0d2d76f7df26d8e59
+     Pseudo is Norm-conserving, Zval =  7.0
+     Generated by new atomic code, or converted to UPF format
+     Using radial grid of  479 points,  2 beta functions with: 
+                l(1) =   0
+                l(2) =   1
+
+     atomic species   valence    mass     pseudopotential
+        Li             1.00     6.94100     Li( 1.00)
+        Cl             7.00    35.45000     Cl( 1.00)
+
+     48 Sym. Ops., with inversion, found
+
+
+
+   Cartesian axes
+
+     site n.     atom                  positions (alat units)
+         1           Li  tau(   1) = (   0.0000000   0.0000000   0.0000000  )
+         2           Cl  tau(   2) = (   0.5000000   0.5000000   0.5000000  )
+
+     number of k points=     9
+                       cart. coord. in units 2pi/alat
+        k(    1) = (   0.0000000   0.0000000   0.0000000), wk =   0.0000000
+        k(    2) = (   0.0000000   0.0000000   0.0000000), wk =   0.1250000
+        k(    3) = (  -0.5000000   0.5000000  -0.5000000), wk =   0.1250000
+        k(    4) = (   0.5000000  -0.5000000  -0.5000000), wk =   0.1250000
+        k(    5) = (   0.5000000   0.5000000   0.5000000), wk =   0.1250000
+        k(    6) = (  -0.5000000  -0.5000000   0.5000000), wk =   0.1250000
+        k(    7) = (   0.0000000   1.0000000   0.0000000), wk =   0.1250000
+        k(    8) = (   1.0000000   0.0000000   0.0000000), wk =   0.1250000
+        k(    9) = (   0.0000000   0.0000000   1.0000000), wk =   0.1250000
+
+     Dense  grid:     4285 G-vectors     FFT dimensions: (  24,  24,  24)
+
+     Estimated max dynamical RAM per process >       1.92MB
+
+     The potential is recalculated from file :
+     ./tmp/_gw0/licl.save/charge-density.dat
+
+     Starting wfc are    8 atomic wfcs
+
+     Calculation of q =    0.0000000   0.0000000   0.0000000
+
+     Band Structure Calculation
+     Davidson diagonalization with overlap
+
+     ethr =  1.25E-10,  avg # of iterations = 10.2
+
+     total cpu time spent up to now is        0.7 secs
+
+     End of band structure calculation
+
+          k = 0.0000 0.0000 0.0000 (   537 PWs)   bands (ev):
+
+   -11.9727   1.4643   1.4643   1.4643   7.2389  15.3764  15.3764  15.3764
+
+          k = 0.0000 0.0000 0.0000 (   537 PWs)   bands (ev):
+
+   -11.9727   1.4643   1.4643   1.4643   7.2389  15.3764  15.3764  15.3764
+
+          k =-0.5000 0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001   7.6759  10.4868  10.4868  13.9401
+
+          k = 0.5000-0.5000-0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001   7.6759  10.4868  10.4868  13.9401
+
+          k = 0.5000 0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001   7.6759  10.4868  10.4868  13.9401
+
+          k =-0.5000-0.5000 0.5000 (   544 PWs)   bands (ev):
+
+   -11.3555  -1.5261   1.2001   1.2001   7.6759  10.4868  10.4868  13.9401
+
+          k = 0.0000 1.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882   8.8863  13.4344  15.0165  15.0165
+
+          k = 1.0000 0.0000 0.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882   8.8863  13.4344  15.0165  15.0165
+
+          k = 0.0000 0.0000 1.0000 (   524 PWs)   bands (ev):
+
+   -11.0822  -1.6181   0.2882   0.2882   8.8863  13.4344  15.0165  15.0165
+
+     highest occupied, lowest unoccupied level (ev):     1.4643    7.2389
+
+     Writing output data file licl.save
+WARNING: You have given a kpoint not in original BZ.This could mean full symmetry is not exploited.
+
+Timing of the code:
+     setup        :      0.64s CPU      0.43s WALL (       2 calls)
+     coulomb      :    116.98s CPU     63.49s WALL (       1 calls)
+
+Needed for screened Coulomb interaction
+     coul_nscf    :      0.69s CPU      0.46s WALL (       2 calls)
+     coul_solver  :    115.43s CPU     62.29s WALL (       6 calls)
+
+Needed for correlation part of Sigma
+
+Timing for some important routines
+     linear opera :      5.26s CPU      3.24s WALL (    9809 calls)
+
+     SGW          :  1m57.62s CPU     1m 3.92s WALL
+
+
+   This run was terminated on:  12:34:13  20Feb2017            
+
+=------------------------------------------------------------------------------=
+   JOB DONE.
+=------------------------------------------------------------------------------=

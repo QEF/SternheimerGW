@@ -3,7 +3,7 @@
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
-! Copyright (C) 2010 - 2016 Quantum ESPRESSO group,
+! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -52,10 +52,10 @@ SUBROUTINE prepare_q0(do_band, do_iq, setup_pw, iq)
      ! ... set the name for the output file
      ! ... set the q point
         xq(1:3)  = x_q(1:3,iq)
-        lgamma = ALL(ABS(xq) < eps6)
-        if (lgamma) xq(1) = 0.01d0
      !In case we want to calulate eps(q) where q is given in the input file:
         if (do_epsil) xq(:) = xk_kpoints(:, iq)
+        lgamma = ALL(ABS(xq) < eps6)
+        if (lgamma) xq(1) = 0.01d0
   ENDIF
   do_band=.true.
   setup_pw=.true.

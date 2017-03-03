@@ -2,7 +2,7 @@
 !
 ! This file is part of the Sternheimer-GW code.
 ! 
-! Copyright (C) 2010 - 2016 
+! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! Sternheimer-GW is free software: you can redistribute it and/or modify
@@ -301,15 +301,15 @@ CONTAINS
 
   !> Extract the necessary quantities and evaluate the exchange according
   !! to the following algorithm.
-  SUBROUTINE exchange_wrapper(ikpt, vcut)
+  SUBROUTINE exchange_wrapper(ikpt, exch, vcut)
 
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
+    USE fft_custom,         ONLY: fft_cus
     USE gvect,              ONLY: mill
-    USE gwsigma,            ONLY: sigma_x_st
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
     USE klist,              ONLY: xk, wk, igk_k, ngk
@@ -324,6 +324,9 @@ CONTAINS
 
     !> The index of the k-point for which the exchange is evaluated
     INTEGER, INTENT(IN) :: ikpt
+
+    !> the FFT grid for exchange
+    TYPE(fft_cus),   INTENT(IN) :: exch
 
     !> The truncated Coulomb potential
     TYPE(vcut_type), INTENT(IN) :: vcut
@@ -364,7 +367,7 @@ CONTAINS
     CALL start_clock(time_sigma_x)
 
     ! allocate array for self energy and initialize to 0
-    ALLOCATE(sigma(sigma_x_st%ngmt, sigma_x_st%ngmt), STAT=ierr)
+    ALLOCATE(sigma(exch%ngmt, exch%ngmt), STAT=ierr)
     CALL errore(__FILE__, "error allocating array for exchange self energy", ierr)
     sigma = zero
 
@@ -387,13 +390,13 @@ CONTAINS
       !!
       !! 3. construct the map from G and G' to G - G'
       !!
-      CALL exchange_map(at, sigma_x_st, mill, igk_k(:,ikq), map)
+      CALL exchange_map(at, exch, mill, igk_k(:,ikq), map)
       !!
       !! 4. construct the Coulomb potential
       !!
       ! q = k - (k - q)
       qvec = xk_kpoints(:, ikpt) - xk(:, ikq)
-      CALL exchange_coulomb(tpiba, truncation, vcut, sigma_x_st, qvec, coulomb)
+      CALL exchange_coulomb(tpiba, truncation, vcut, exch, qvec, coulomb)
       !!
       !! 5. every process evaluates his contribution to sigma
       !!
