@@ -305,6 +305,7 @@ CONTAINS
 
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
+    USE constants,          ONLY: degspin
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
@@ -402,7 +403,7 @@ CONTAINS
       !!
       DO iband = iband_start, iband_stop
         !
-        CALL exchange_convolution(wk(ikq), coulomb, evq(:,iband), map, sigma)
+        CALL exchange_convolution(wk(ikq) / degspin, coulomb, evq(:,iband), map, sigma)
         !
       END DO ! iband
       !

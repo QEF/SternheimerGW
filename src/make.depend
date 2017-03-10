@@ -101,6 +101,7 @@ dvqpsi_us.o : ../../PW/src/pwcom.o
 dvqpsi_us.o : gwcom.o
 exchange.o : ../../LR_Modules/lrcom.o
 exchange.o : ../../Modules/cell_base.o
+exchange.o : ../../Modules/constants.o
 exchange.o : ../../Modules/fft_custom.o
 exchange.o : ../../Modules/io_global.o
 exchange.o : ../../Modules/kind.o
@@ -336,6 +337,7 @@ setup_nscf.o : ../../PW/src/symm_base.o
 setup_nscf.o : gwcom.o
 setup_nscf_green.o : ../../LR_Modules/lrcom.o
 setup_nscf_green.o : ../../Modules/cell_base.o
+setup_nscf_green.o : ../../Modules/constants.o
 setup_nscf_green.o : ../../Modules/control_flags.o
 setup_nscf_green.o : ../../Modules/ions_base.o
 setup_nscf_green.o : ../../Modules/kind.o

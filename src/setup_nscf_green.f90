@@ -50,6 +50,7 @@ SUBROUTINE setup_nscf_green(kpt, config)
 
   USE basis,              ONLY : natomwfc
   USE cell_base,          ONLY : at, bg
+  USE constants,          ONLY : degspin
   USE control_flags,      ONLY : ethr, isolve, david, &
                                  use_para_diag, max_cg_iter
   USE disp,               ONLY : nqs, x_q, wq
@@ -164,10 +165,10 @@ SUBROUTINE setup_nscf_green(kpt, config)
       ! for G, we need the eigenvalues at k - q
       nkstot = nkstot + 1
       xk(:, nkstot) = kpt - star_xq(:, istar)
-      wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp)
+      wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp) * degspin
       index_q(nkstot) = iq
       sym_op(nkstot) = isymop
-      weight(nkstot) = wq(iq) * REAL(num_symq(istar), KIND=dp) 
+      weight(nkstot) = wq(iq) * REAL(num_symq(istar), KIND=dp)
       !
     END DO ! istar
     ! 
