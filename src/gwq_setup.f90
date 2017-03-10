@@ -65,11 +65,13 @@
   USE constants,          ONLY : eps14
   USE control_flags,      ONLY : noinv
   USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot
+  USE control_lr,         ONLY : alpha_pv
   USE fft_base,           ONLY : dfftp
   USE funct,              ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
   USE gvecs,              ONLY : doublegrid
   USE gvect,              ONLY : ngm
   USE ions_base,          ONLY : ntyp => nsp
+  USE klist,              ONLY : lgauss
   USE lsda_mod,           ONLY : nspin
   USE mp,                 ONLY : mp_max, mp_min
   USE nlcc_gw,            ONLY : drc, nlcc_any
@@ -78,7 +80,6 @@
   USE spin_orb,           ONLY : domag
   USE symm_base,          ONLY : time_reversal, inverse_s
   USE uspp_param,         ONLY : upf
-
 
   implicit none
 
@@ -135,6 +136,7 @@
   ! 6) Computes alpha_pv
   !
   call setup_alpha_pv()
+  IF (lgauss) alpha_pv = 1e-4
   !
   ! 7) set all the variables needed to use the pattern representation
   !

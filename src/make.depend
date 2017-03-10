@@ -205,6 +205,7 @@ gwq_readin.o : gwcom.o
 gwq_readin.o : save_gw_input.o
 gwq_readin.o : select_solver.o
 gwq_readin.o : truncation.o
+gwq_setup.o : ../../LR_Modules/lrcom.o
 gwq_setup.o : ../../Modules/constants.o
 gwq_setup.o : ../../Modules/control_flags.o
 gwq_setup.o : ../../Modules/fft_base.o
@@ -450,7 +451,7 @@ stop_gw.o : timing.o
 timing.o : ../../Modules/io_global.o
 truncation.o : ../../Modules/cell_base.o
 truncation.o : ../../Modules/constants.o
-truncation.o : coulomb_vcut.o
+truncation.o : ../../Modules/coulomb_vcut.o
 truncation.o : ../../Modules/kind.o
 truncation.o : ../../iotk/src/iotk_module.o
 truncation.o : gwcom.o
