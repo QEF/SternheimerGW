@@ -313,13 +313,14 @@ CONTAINS
     USE gvect,              ONLY: mill
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
-    USE klist,              ONLY: xk, wk, igk_k, ngk
+    USE klist,              ONLY: xk, igk_k, ngk
     USE mp_images,          ONLY: inter_image_comm, root_image
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
     USE parallel_module,    ONLY: parallel_task, mp_root_sum
     USE qpoint,             ONLY: nksq, ikqs, npwq
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
+    USE wvfct,              ONLY: wg
     USE timing_module,      ONLY: time_sigma_x
     USE truncation_module,  ONLY: vcut_type
 
@@ -373,12 +374,7 @@ CONTAINS
     sigma = zero
 
     !!
-    !! 1. Distribute the work over the process grid
-    !!
-    CALL parallel_task(inter_image_comm, nbnd_occ(1), iband_start, iband_stop, num_task)
-
-    !!
-    !! 2. Extract the wave function of every q-point
+    !! 1. Extract the wave function of every q-point
     !!
     DO iq = 1, nksq
       !
@@ -387,7 +383,10 @@ CONTAINS
       !
       CALL get_buffer(evq, lrwfc, iuwfc, ikq)
       evq(npwq + 1:, :) = zero
-      !
+      !!
+      !! 2. Distribute the work over the process grid
+      !!
+      CALL parallel_task(inter_image_comm, nbnd_occ(ikq), iband_start, iband_stop, num_task)
       !!
       !! 3. construct the map from G and G' to G - G'
       !!
@@ -403,7 +402,7 @@ CONTAINS
       !!
       DO iband = iband_start, iband_stop
         !
-        CALL exchange_convolution(wk(ikq) / degspin, coulomb, evq(:,iband), map, sigma)
+        CALL exchange_convolution(wg(iband, ikq) / degspin, coulomb, evq(:,iband), map, sigma)
         !
       END DO ! iband
       !
