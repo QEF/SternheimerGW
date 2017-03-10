@@ -80,7 +80,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
   USE uspp,                 ONLY : vkb
   USE uspp_param,           ONLY : nhm
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k
+  USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k, wg
 
   IMPLICIT NONE
 
@@ -364,10 +364,13 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
         !
         config%threshold = thresh
         !
-        DO ibnd = 1, nbnd_occ(ik)
+        DO ibnd = 1, nbnd_occ(ikk)
           CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
                              -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :), ierr)
           CALL errore(__FILE__, "solver did not converge", ierr)
+          ! rescale so that the density is recovered when multiplying with the
+          ! k-point weight
+          dpsi(:npwq, ibnd, :) = dpsi(:npwq, ibnd, :) * wg(ibnd, ikk) / wk(ikk)
         END DO ! ibnd
         !
       ELSE ! general case iter > 1
@@ -426,13 +429,17 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
           !
           ! use the BiCGstab solver
           !
-          DO ibnd = 1, nbnd_occ(ik)
+          DO ibnd = 1, nbnd_occ(ikk)
             !
             ! solve +omega
             CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
                                -(et(ibnd, ikk) + omega(ifreq:ifreq)),        &
                                dpsi(:npwq, ibnd, ifreq:ifreq), ierr)
             CALL errore(__FILE__, "solver did not converge", ierr)
+            ! rescale so that the density is recovered when multiplying with the
+            ! k-point weight
+            dpsi(:npwq, ibnd, ifreq:ifreq) = dpsi(:npwq, ibnd, ifreq:ifreq) &
+                                           * wg(ibnd, ikk) / wk(ikk)
             !
             ! solve -omega
             IF (.NOT.zero_freq .OR. ifreq > 1) THEN
@@ -440,6 +447,10 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
                                  -(et(ibnd, ikk) + omega(iomega:iomega)),      &
                                  dpsi(:npwq, ibnd, iomega:iomega), ierr)
               CALL errore(__FILE__, "solver did not converge", ierr)
+              ! rescale so that the density is recovered when multiplying with the
+              ! k-point weight
+              dpsi(:npwq, ibnd, iomega:iomega) = dpsi(:npwq, ibnd, iomega:iomega) &
+                                               * wg(ibnd, ikk) / wk(ikk)
             END IF
             !
           END DO ! ibnd
