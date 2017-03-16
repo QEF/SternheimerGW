@@ -122,7 +122,7 @@ debug : .debug all
 	-if [ -f .no_debug ]; then rm debug.o .no_debug; fi
 	-touch $@
 
-all : version libgw.a gw.x
+all : version libgw.a $(EXE)
 
 version : 
 	bash update_version
