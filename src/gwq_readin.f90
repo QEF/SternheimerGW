@@ -272,6 +272,12 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   filsigx      = 'sigma_x'
   filsigc      = 'sigma_c'
   filcoul      = 'coulomb'
+  nk1          = 0
+  nk2          = 0
+  nk3          = 0
+  k1           = 0
+  k2           = 0
+  k3           = 0
   nq1          = 0
   nq2          = 0
   nq3          = 0

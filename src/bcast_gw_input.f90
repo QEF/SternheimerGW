@@ -49,7 +49,7 @@ subroutine bcast_gw_input(freq_symm)
   USE gwsigma,          ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv,&
                                exch_conv
   USE gwsymm,           ONLY : use_symm
-  USE input_parameters, ONLY : max_seconds
+  USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
   USE io_files,         ONLY : tmp_dir, prefix
   USE io_global,        ONLY : meta_ionode_id
   USE ions_base,        ONLY : amass
@@ -90,6 +90,12 @@ subroutine bcast_gw_input(freq_symm)
   CALL mp_bcast( iq1, meta_ionode_id, world_comm )
   CALL mp_bcast( iq2, meta_ionode_id, world_comm )
   CALL mp_bcast( iq3, meta_ionode_id, world_comm )
+  CALL mp_bcast( nk1, meta_ionode_id, world_comm )
+  CALL mp_bcast( nk2, meta_ionode_id, world_comm )
+  CALL mp_bcast( nk3, meta_ionode_id, world_comm )
+  CALL mp_bcast(  k1, meta_ionode_id, world_comm )
+  CALL mp_bcast(  k2, meta_ionode_id, world_comm )
+  CALL mp_bcast(  k3, meta_ionode_id, world_comm )
   CALL mp_bcast(lmax_gw, meta_ionode_id, world_comm)
   CALL mp_bcast(lmax_green, meta_ionode_id, world_comm)
 !
