@@ -29,12 +29,16 @@ Features of the SGW code
 
 The following SGW features are tested in this suite
 
+* system with a gap
+* metallic system
 * evaluate the dielectric function on the imaginary axis
 * evaluate the dielectric function along the real axis
 * select a specific k-point for the dielectric constant
 * manual selection of solver for W
 * use the direct solver to determine the dielectric constant
 * use the iterative solver to determine the dielectric constant
+* change the k-point grid compared to the scf calculation
+* adjust the value used for the projection onto the valence band
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
@@ -59,6 +63,7 @@ Wigner-Seitz truncation.
 
 The following SGW features are tested by this case
 
+* system with a gap
 * evaluate the dielectric function on the imaginary axis
 * use the direct solver to determine the dielectric constant
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
@@ -82,6 +87,7 @@ in the second part, we restart and use the paderobust flag.
 
 The following SGW features are tested by this case
 
+* system with a gap
 * evaluate the dielectric function on the imaginary axis
 * use the direct solver to determine the dielectric constant
 * full frequency integration using Pade approximation to interpolate
@@ -95,13 +101,37 @@ The following SGW features are tested by this case
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
 
+Test case: sgw\_li
+------------------
+
+Evaluate the GW correction for Li using the direct solver, imaginary frequency
+integration, and a plasmon-pole model for W.
+
+The following SGW features are tested by this case
+
+* metallic system
+* evaluate the dielectric function on the imaginary axis
+* use the direct solver to determine the dielectric constant
+* change the k-point grid compared to the scf calculation
+* adjust the value used for the projection onto the valence band
+* Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
+* obtain the Green's function on the imaginary axis
+* use the multishift solver to obtain the Green's function
+* convolute G and W on the imaginary axis to obtain the self energy
+* obtain the exchange self energy
+* overcome the divergence of the Coulomb potential with spherical truncation
+* evaluate the quasi particle eigenvalues using the Z factor
+* obtain the frequency dependent spectral function for all bands
+
 Test case: sgw\_licl
 --------------------
 
 Evaluate the dielectric constant for LiCl using the direct solver. Manually
 select the specialized solver for SGW.
 
-The following SGW features are tested by this case:
+The following SGW features are tested by this case
+
+* system with a gap
 * evaluate the dielectric function along the real axis
 * use the direct solver to determine the dielectric constant
 * select a specific k-point for the dielectric constant
@@ -117,6 +147,7 @@ As a separate calculation, evaluate the GW correction with the iterative solver.
 
 The following SGW features are tested by this case
 
+* system with a gap
 * evaluate the dielectric function on the imaginary axis
 * use the direct solver to determine the dielectric constant
 * use the iterative solver to determine the dielectric constant

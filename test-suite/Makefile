@@ -78,6 +78,9 @@ compare : compare-sgw
 compare-sgw :
 	${TESTCODE_DIR}/bin/testcode.py --category=sgw_all  --verbose compare 2>&1 | tee out.SGW.`date +%Y%m%d_%H%M%S`
 
+compare-custom-sgw :
+	${TESTCODE_DIR}/bin/testcode.py --category=$(testdir) --verbose compare 2>&1 | tee out.$(testdir).`date +%Y%m%d_%H%M%S`
+
 clean:
 	@for x in `find sgw_* -name "test*"`; do rm -rf $$x; done
 	@for x in `ls -d sgw_*`; do rm -rf $$x/tmp; rm -f $$x/fort.1000; done
