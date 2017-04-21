@@ -43,7 +43,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
                                    cohsex, multishift, do_sigma_extra, paderobust, &
                                    solve_direct, w_green_start, tinvert, coul_multishift,&
-                                   trunc_2d, do_epsil, &
+                                   trunc_2d, do_epsil, alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
                                    double_grid, name_length, output, &
@@ -165,7 +165,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   NAMELIST / INPUTGW / tr2_gw, lmax_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
-                       nrapp, max_seconds, reduce_io, &
+                       nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, lrpa, lnoloc, start_irr, last_irr, &
@@ -251,6 +251,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !for slab systems more rapid convergence can
   !be obtained with alpha_mix = 0.3.
   alpha_mix(1) = 0.7D0
+  alpha_pv     = -1.0_dp
   niter_gw     = maxter
   nmix_gw      = 3
   nat_todo     = 0

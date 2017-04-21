@@ -64,7 +64,7 @@
 
   USE constants,          ONLY : eps14
   USE control_flags,      ONLY : noinv
-  USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot
+  USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot, alpha_pv
   USE control_lr,         ONLY : alpha_pv
   USE fft_base,           ONLY : dfftp
   USE funct,              ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
@@ -135,8 +135,7 @@
   !
   ! 6) Computes alpha_pv
   !
-  call setup_alpha_pv()
-  IF (lgauss) alpha_pv = 1e-4
+  if (alpha_pv < 0.0) call setup_alpha_pv()
   !
   ! 7) set all the variables needed to use the pattern representation
   !

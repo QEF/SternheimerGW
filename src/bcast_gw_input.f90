@@ -33,7 +33,7 @@ subroutine bcast_gw_input(freq_symm)
   USE control_flags,    ONLY : iverbosity, modenum
   USE control_gw,       ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
                                niter_gw, lnoloc, alpha_mix, tr2_gw, lmax_gw, lrpa, recover, &
-                               ldisp, reduce_io, trans, &
+                               ldisp, reduce_io, trans, alpha_pv, &
                                eta, modielec, do_coulomb, do_sigma_c,& 
                                do_sigma_exx, do_green, do_sigma_matel, tr2_green, lmax_green, &
                                do_q0_only, maxter_coul, maxter_green, godbyneeds, cohsex, padecont,&
@@ -164,6 +164,7 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (do_pade_coul, meta_ionode_id, world_comm)
   call mp_bcast (double_grid, meta_ionode_id, world_comm)
   call mp_bcast (truncation, meta_ionode_id, world_comm)
+  call mp_bcast (alpha_pv, meta_ionode_id, world_comm)
 
 !Frequency grid
   call mp_bcast (wsigmamin, meta_ionode_id, world_comm)
