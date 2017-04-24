@@ -53,13 +53,15 @@ CONTAINS
   SUBROUTINE gw_opening_logo()
 
     USE global_version, ONLY: version_number, svn_revision
-    USE io_global,      ONLY: stdout
+    USE io_global,      ONLY: stdout, ionode
     USE sgw_version,    ONLY: sgw_version_number
 
     ! print the logo
-    WRITE(stdout, '(a)')
-    WRITE(stdout, '(a)') logo
-    WRITE(stdout, '(a)')
+    IF (ionode) THEN
+      WRITE(stdout, '(a)')
+      WRITE(stdout, '(a)') logo
+      WRITE(stdout, '(a)')
+    END IF
 
     ! adjust the version number so that the SternheimerGW version is printed
     version_number = sgw_version_number
