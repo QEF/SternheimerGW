@@ -100,6 +100,12 @@ MODULE timing_module
   !> label for the total time spent to evaluate the linear operator
   CHARACTER(*), PARAMETER :: time_linear_op = 'linear operator'
 
+  !> label for the total time spent calculating forward 6d FFTs
+  CHARACTER(*), PARAMETER :: time_fwfft6 = '6d FFT r->G'
+
+  !> label for the total time spent calculating inverse 6d FFTs
+  CHARACTER(*), PARAMETER :: time_invfft6 = '6d FFT G->r'
+
 CONTAINS
 
   !> Print the measured timing of the SternheimerGW run in a nice format.
@@ -207,6 +213,10 @@ CONTAINS
 
     ! print the time spent to evaluate the linear operator
     CALL print_clock(time_linear_op)
+
+    ! print the time spent in the FFT routines
+    CALL print_clock(time_fwfft6)
+    CALL print_clock(time_invfft6)
 
   END SUBROUTINE timing_print_clock
 

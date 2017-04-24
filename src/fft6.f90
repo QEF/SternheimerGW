@@ -91,6 +91,7 @@ CONTAINS
     USE kinds,          ONLY: dp
     USE fft_interfaces, ONLY: fwfft
     USE fft_types,      ONLY: fft_type_descriptor
+    USE timing_module,  ONLY: time_fwfft6
 
     !> grid type used for the Fourier transform, this is passed to fwfft;
     !! check the definition of fwfft for a list of options
@@ -140,6 +141,8 @@ CONTAINS
 
     !> check for error in allocation
     INTEGER ierr
+
+    CALL start_clock(time_fwfft6)
 
     ! initialize helper variables
     num_g   = SIZE(map)
@@ -207,6 +210,8 @@ CONTAINS
       !!
     END DO ! ig
 
+    CALL stop_clock(time_fwfft6)
+
   END SUBROUTINE fwfft6_diff
 
   !> Transform an input array \f$f(G, G')\f$ from reciprocal to real space
@@ -256,6 +261,7 @@ CONTAINS
     USE kinds,          ONLY: dp
     USE fft_interfaces, ONLY: invfft
     USE fft_types,      ONLY: fft_type_descriptor
+    USE timing_module,  ONLY: time_invfft6
 
     !> grid type used for the Fourier transform, this is passed to invfft;
     !! check the definition of invfft for a list of options
@@ -308,6 +314,8 @@ CONTAINS
 
     !> check for error in allocation
     INTEGER ierr
+
+    CALL start_clock(time_invfft6)
 
     ! initialize helper variables
     num_g   = SIZE(map)
@@ -378,6 +386,8 @@ CONTAINS
       f(:, ir) = CONJG(work)
       !!
     END DO ! ir
+
+    CALL stop_clock(time_invfft6)
 
   END SUBROUTINE invfft6_diff
 
