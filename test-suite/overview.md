@@ -1,33 +1,33 @@
 <!--
  
-  This file is part of the Sternheimer-GW code.
+  This file is part of the SternheimerGW code.
   
   Copyright (C) 2010 - 2017 
   Henry Lambert, Martin Schlipf, and Feliciano Giustino
  
-  Sternheimer-GW is free software: you can redistribute it and/or modify
+  SternheimerGW is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
  
-  Sternheimer-GW is distributed in the hope that it will be useful,
+  SternheimerGW is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
   GNU General Public License for more details.
  
   You should have received a copy of the GNU General Public License
-  along with Sternheimer-GW. If not, see
+  along with SternheimerGW. If not, see
   http://www.gnu.org/licenses/gpl.html .
  
 -->
 
-Test suite for the SGW code
+Test suite for the SternheimerGW code
 ===========================
 
-Features of the SGW code
+Features of the SternheimerGW code
 ------------------------
 
-The following SGW features are tested in this suite
+The following SternheimerGW features are tested in this suite
 
 * system with a gap
 * metallic system
@@ -54,14 +54,14 @@ The following SGW features are tested in this suite
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
 
-Test case: sgw\_bn
+Test case: gw\_bn
 ------------------
 
 Evaluate the GW correction for a film of BN using the direct solver, plasmon
 pole model, and imaginary frequency integration. We test both the 2d and the
 Wigner-Seitz truncation.
 
-The following SGW features are tested by this case
+The following SternheimerGW features are tested by this case
 
 * system with a gap
 * evaluate the dielectric function on the imaginary axis
@@ -76,7 +76,7 @@ The following SGW features are tested by this case
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
 
-Test case: sgw\_c
+Test case: gw\_c
 -----------------
 
 Evaluate the GW correction for C using the direct solver, imaginary frequency
@@ -85,7 +85,7 @@ Then evaluate the GW correction with a full frequency integration along the
 real axis. In the first part, we use the padecont flag to go to the real axis,
 in the second part, we restart and use the paderobust flag.
 
-The following SGW features are tested by this case
+The following SternheimerGW features are tested by this case
 
 * system with a gap
 * evaluate the dielectric function on the imaginary axis
@@ -101,13 +101,13 @@ The following SGW features are tested by this case
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
 
-Test case: sgw\_li
+Test case: gw\_li
 ------------------
 
 Evaluate the GW correction for Li using the direct solver, imaginary frequency
 integration, and a plasmon-pole model for W.
 
-The following SGW features are tested by this case
+The following SternheimerGW features are tested by this case
 
 * metallic system
 * evaluate the dielectric function on the imaginary axis
@@ -123,13 +123,13 @@ The following SGW features are tested by this case
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 
-Test case: sgw\_licl
+Test case: gw\_licl
 --------------------
 
 Evaluate the dielectric constant for LiCl using the direct solver. Manually
-select the specialized solver for SGW.
+select the specialized solver for SternheimerGW.
 
-The following SGW features are tested by this case
+The following SternheimerGW features are tested by this case
 
 * system with a gap
 * evaluate the dielectric function along the real axis
@@ -137,7 +137,7 @@ The following SGW features are tested by this case
 * select a specific k-point for the dielectric constant
 * manual selection of solver for W
 
-Test case: sgw\_si
+Test case: gw\_si
 ------------------
 
 Evaluate the GW correction for Si using the direct solver, imaginary frequency
@@ -145,7 +145,7 @@ integration, and a plasmon-pole model for W. Then restart the calculation to
 evaluate the self energy for the X point.
 As a separate calculation, evaluate the GW correction with the iterative solver.
 
-The following SGW features are tested by this case
+The following SternheimerGW features are tested by this case
 
 * system with a gap
 * evaluate the dielectric function on the imaginary axis

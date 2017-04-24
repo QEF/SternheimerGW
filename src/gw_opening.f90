@@ -53,8 +53,8 @@ CONTAINS
   SUBROUTINE gw_opening_logo()
 
     USE global_version, ONLY: version_number, svn_revision
+    USE gw_version,     ONLY: gw_version_number
     USE io_global,      ONLY: stdout, meta_ionode
-    USE sgw_version,    ONLY: sgw_version_number
 
     ! print the logo
     IF (meta_ionode) THEN
@@ -64,7 +64,7 @@ CONTAINS
     END IF
 
     ! adjust the version number so that the SternheimerGW version is printed
-    version_number = sgw_version_number
+    version_number = gw_version_number
     svn_revision   = 'unknown'
     
   END SUBROUTINE gw_opening_logo
@@ -74,8 +74,8 @@ CONTAINS
   !! Print the version number used and the git revision if known.
   SUBROUTINE gw_opening_message()
 
+    USE gw_version,  ONLY: gw_git_describe
     USE io_global,   ONLY: stdout
-    USE sgw_version, ONLY: sgw_version_number, sgw_git_describe
 
     IMPLICIT NONE
 
@@ -85,7 +85,7 @@ CONTAINS
     WRITE(stdout,'(9x,a)') ' URL http://www.sternheimergw.org"'
     WRITE(stdout,'(a)')
     WRITE(stdout,'(5x,a)') "To increase the reproducibility of your results you can mention the"
-    WRITE(stdout,'(5x,a)') "git description of this version: " // sgw_git_describe
+    WRITE(stdout,'(5x,a)') "git description of this version: " // gw_git_describe
 
   END SUBROUTINE gw_opening_message
 
