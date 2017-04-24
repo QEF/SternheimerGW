@@ -22,7 +22,7 @@
 !------------------------------------------------------------------------------ 
   !                                                                            
   !-----------------------------------------------------------------------
-  SUBROUTINE gmap_sym ( nsym, s, ftau, gmapsym, eigv, invs)
+  SUBROUTINE gmap_sym (num_g_corr, nsym, s, ftau, gmapsym, eigv, invs)
   !-----------------------------------------------------------------------
   !
   !  For every G vector, find S(G) for all the symmetry operations
@@ -52,6 +52,9 @@
   !
   ! input variables
   !
+  !> number of G vectors in correlation grid
+  INTEGER, INTENT(IN) :: num_g_corr
+  !
   integer :: nsym, s(3,3,48), ftau(3,48), invs(48)
   ! the number of symmetries of the crystal
   ! the symmetry matrices
@@ -60,10 +63,10 @@
   ! output variables
   !
   !integer :: gmapsym (ngm, 48)
-  integer :: gmapsym (ngm, nsym)
+  integer :: gmapsym (num_g_corr, nsym)
   ! the map S(G) = gmapsym (G,S) 1...nsym
   !complex(kind=DP) :: eigv (ngm, 48)
-  complex(kind=DP) :: eigv (ngm, nsym)
+  complex(kind=DP) :: eigv (num_g_corr, nsym)
   ! e^{ iGv} for 1...nsym
   !
   ! local variables
@@ -86,7 +89,7 @@
     !
     notfound = 0
     !
-    DO ig = 1, ngm
+    DO ig = 1, num_g_corr
       !
       !  the rotated G-vector
       !

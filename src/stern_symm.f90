@@ -27,7 +27,6 @@ SUBROUTINE stern_symm(num_g_corr)
 !even though I'm pretty sure that's the case...
 
 USE cell_base,     ONLY : at
-USE gvect,         ONLY : ngm
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE io_global,     ONLY : stdout
 USE kinds,         ONLY : DP
@@ -42,9 +41,9 @@ IMPLICIT NONE
 
 INTEGER      :: ig, igp
 INTEGER      :: isym
-INTEGER      :: gmapsym(ngm,48)
+INTEGER      :: gmapsym(num_g_corr,nsym)
 INTEGER      :: nsymq
-COMPLEX(DP)  :: eigv(ngm,48)
+COMPLEX(DP)  :: eigv(num_g_corr,nsym)
 LOGICAL      :: unique_g, invsymq
 LOGICAL      :: minus_q, sym(48)
 
@@ -78,7 +77,7 @@ LOGICAL      :: minus_q, sym(48)
    WRITE(6,*)
    WRITE(6,*)
   enddo
-  CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+  CALL gmap_sym(num_g_corr, nsym, s, ftau, gmapsym, eigv, invs)
 !Find number of unique vectors:
 ngmunique = 1
 ig_unique(1) = 1

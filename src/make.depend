@@ -446,7 +446,6 @@ stern_symm.o : ../../LR_Modules/lrcom.o
 stern_symm.o : ../../Modules/cell_base.o
 stern_symm.o : ../../Modules/io_global.o
 stern_symm.o : ../../Modules/kind.o
-stern_symm.o : ../../Modules/recvec.o
 stern_symm.o : ../../PW/src/symm_base.o
 stern_symm.o : gwcom.o
 stop_gw.o : ../../Modules/environment.o
@@ -463,6 +462,5 @@ unfold_w.o : ../../LR_Modules/lrcom.o
 unfold_w.o : ../../Modules/cell_base.o
 unfold_w.o : ../../Modules/io_global.o
 unfold_w.o : ../../Modules/kind.o
-unfold_w.o : ../../Modules/recvec.o
 unfold_w.o : ../../PW/src/symm_base.o
 unfold_w.o : gwcom.o

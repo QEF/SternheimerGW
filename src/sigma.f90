@@ -270,9 +270,9 @@ CONTAINS
     !
     ! determine symmetry
     !
-    ALLOCATE(gmapsym(ngm, nrot))
-    ALLOCATE(eigv(ngm, nrot))
-    CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+    ALLOCATE(gmapsym(num_g_corr, nrot))
+    ALLOCATE(eigv(num_g_corr, nrot))
+    CALL gmap_sym(num_g_corr, nsym, s, ftau, gmapsym, eigv, invs)
     DEALLOCATE(eigv)
 
     !
@@ -350,7 +350,7 @@ CONTAINS
       !
       CALL sigma_correlation(omega, grid, config_green,                 &
                              mu, alpha, config(icon)%index_kq, freq,    &
-                             gmapsym(:num_g_corr, config(icon)%sym_op), &
+                             gmapsym(:, config(icon)%sym_op), &
                              coulomb, sigma, debug)
       !
     END DO ! icon

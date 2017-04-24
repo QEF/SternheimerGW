@@ -25,7 +25,6 @@ SUBROUTINE unfold_w(num_g_corr, scrcoul_in, scrcoul_out)
 USE cell_base,        ONLY : at
 USE control_gw,       ONLY : modielec
 USE freq_gw,          ONLY : nfs
-USE gvect,            ONLY : ngm
 USE gwsymm,           ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
 USE io_global,        ONLY : stdout
 USE kinds,            ONLY : DP
@@ -50,8 +49,8 @@ INTEGER      :: ig, igp
 INTEGER      :: isym, iwim
 INTEGER      :: done, ngmdone
 INTEGER      :: ngmdonelist(num_g_corr)
-INTEGER      :: gmapsym(ngm,48)
-COMPLEX(DP)  :: eigv(ngm,48)
+INTEGER      :: gmapsym(num_g_corr,nsym)
+COMPLEX(DP)  :: eigv(num_g_corr,nsym)
 REAL(DP)     :: xq_loc(3)
 INTEGER      :: nsymq
 LOGICAL      :: sym(48), minus_q, invsymq
@@ -78,7 +77,7 @@ LOGICAL      :: sym(48), minus_q, invsymq
   ! Since the order of the s matrices is changed we need to recalculate:
   CALL s_axis_to_cart () 
   gmapsym(:,:) = 0
-  CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+  CALL gmap_sym(num_g_corr, nsym, s, ftau, gmapsym, eigv, invs)
 !
 ! reorder the input to the output array
 !
