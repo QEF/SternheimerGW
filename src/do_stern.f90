@@ -40,7 +40,8 @@ SUBROUTINE do_stern(config, num_g_corr)
   USE parallel_module,  ONLY : parallel_task, mp_gatherv
   USE run_nscf_module,  ONLY : run_nscf
   USE select_solver_module, ONLY : select_solver_type
-  USE timing_module,    ONLY : time_coulomb, time_coul_nscf
+  USE timing_module,    ONLY : time_coulomb, time_coul_nscf, time_coul_invert, &
+                               time_coul_io, time_coul_symm, time_coul_unfold
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
@@ -166,7 +167,9 @@ IMPLICIT NONE
       WRITE(stdout,'("")')
       WRITE(stdout,'(5x, "SYMMETRIZING COULOMB Perturbations")')
       WRITE(stdout,'("")')
+      CALL start_clock(time_coul_symm)
       CALL stern_symm(num_g_corr)
+      CALL stop_clock(time_coul_symm)
     ELSE
       ngmunique = num_g_corr
       DO ig = 1, num_g_corr
@@ -193,7 +196,9 @@ IMPLICIT NONE
 
       ! unfold W from reduced array to full array
       ! also reorder the indices
+      CALL start_clock(time_coul_unfold)
       CALL unfold_w(num_g_corr, scrcoul_root, scrcoul_g)
+      CALL stop_clock(time_coul_unfold)
 
       ! set the special |q + G| = 0 element
       IF (lgamma) scrcoul_g(1,1,:) = eps_m
@@ -201,11 +206,15 @@ IMPLICIT NONE
       ! for the direct solver W = eps^-1
       IF (solve_direct .AND. tinvert) THEN
         WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
+        CALL start_clock(time_coul_invert)
         CALL invert_epsilon(num_g_corr, scrcoul_g, lgamma)
+        CALL stop_clock(time_coul_invert)
       END IF
 
       ! write to file
+      CALL start_clock(time_coul_io)
       CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
+      CALL stop_clock(time_coul_io)
     END IF ! root
 
     DEALLOCATE(scrcoul_loc)
@@ -214,9 +223,9 @@ IMPLICIT NONE
 
     CALL mp_barrier(inter_image_comm)
     CALL clean_pw_gw(.FALSE.)
-    IF(do_q0_only) EXIT
     CALL print_clock ('epsilq')
     CALL stop_clock ('epsilq')
+    IF(do_q0_only) EXIT
 
   END DO ! iq
 

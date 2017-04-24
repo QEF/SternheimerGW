@@ -63,6 +63,18 @@ MODULE timing_module
   !> label for the clock measuring the linear solver (W part)
   CHARACTER(*), PARAMETER :: time_coul_solver = 'coul_solver'
 
+  !> label for the clock measuring the matrix inversion (W part)
+  CHARACTER(*), PARAMETER :: time_coul_invert = 'coul_invert'
+
+  !> label for the clock measuring the file I/O (W part)
+  CHARACTER(*), PARAMETER :: time_coul_io = 'coul_io'
+
+  !> label for the clock measuring setting up the symmetry
+  CHARACTER(*), PARAMETER :: time_coul_symm = 'coul_symm'
+
+  !> label for the clock measuring unfolding the matrix
+  CHARACTER(*), PARAMETER :: time_coul_unfold = 'coul_unfold'
+
   !
   ! split Sigma_c into parts
   !
@@ -144,6 +156,18 @@ CONTAINS
 
     ! print the time needed for the linear solver
     CALL print_clock(time_coul_solver)
+
+    ! print the time needed for the matrix inversion
+    CALL print_clock(time_coul_invert)
+
+    ! print the time needed for the file I/O
+    CALL print_clock(time_coul_io)
+
+    ! print the time needed for setting up the symmetry
+    CALL print_clock(time_coul_symm)
+
+    ! print the time needed for unfolding the matrix
+    CALL print_clock(time_coul_unfold)
 
     !
     ! Detailed part of correlation part of Sigma
