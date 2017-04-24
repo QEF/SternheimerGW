@@ -34,6 +34,7 @@ program gw
   USE freq_gw,              ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,      ONLY : freqbins, freqbins_type
+  USE gw_opening,           ONLY : gw_opening_logo, gw_opening_message
   USE gwsigma,              ONLY : nbnd_sig, ecutsco, ecutsex
   USE input_parameters,     ONLY : max_seconds, force_symmorphic
   USE io_files,             ONLY : diropn
@@ -51,7 +52,7 @@ program gw
   IMPLICIT NONE
 
   !> the name of the code
-  CHARACTER(*), PARAMETER :: code = 'SGW'
+  CHARACTER(*), PARAMETER :: code = 'SternheimerGW'
 
   INTEGER             :: ik
   LOGICAL             :: do_band, do_matel
@@ -78,10 +79,11 @@ program gw
   TYPE(debug_type) debug
 
 ! Initialize MPI, clocks, print initial messages
-  call mp_startup ( start_images=.true. )
-  call environment_start ( code )
-  call start_clock(time_setup)
-  call sgw_opening_message () 
+  CALL mp_startup(start_images = .TRUE.)
+  CALL gw_opening_logo()
+  CALL environment_start(code)
+  CALL gw_opening_message() 
+  CALL start_clock(time_setup)
 ! Initialize GW calculation, Read Ground state information.
   
   call gwq_readin(config_coul, config_green, freq, vcut, debug)

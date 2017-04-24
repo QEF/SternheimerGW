@@ -1,0 +1,90 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the Sternheimer-GW code.
+! 
+! Copyright (C) 2010 - 2017
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! Sternheimer-GW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Sternheimer-GW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Sternheimer-GW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+!> routines to print the SternheimerGW logo and an opening message
+!------------------------------------------------------------------------------
+MODULE gw_opening
+
+  IMPLICIT NONE
+
+  CHARACTER(*), PARAMETER :: nl = NEW_LINE('n')
+  CHARACTER(*), PARAMETER :: logo = &
+'            ######## T E R N H E I M E R           http://www.sternheimergw.org/' // nl // &
+'           ###     ###'                                                           // nl // &
+'          ###       ##                  #######        #                      #'  // nl // &
+'          ###                         ##       ###     #          ##          #'  // nl // &
+'           ###                      ##            #     #         ##         #'   // nl // &
+'            #####                  #                     #       #  #       #'    // nl // &
+'   ///         #####      \\\     #                      #       #  #       #'    // nl // &
+'  ///             ####     \\\    #                       #     #    #     #'     // nl // &
+' ///                ###     \\\   #         #########     #     #    #     #'     // nl // &
+'(((                  ###     )))  #                 #      #   #      #   #'      // nl // &
+' \\\    ###          ###    ///    #                #      #   #      #   #'      // nl // &
+'  \\\    ###        ###    ///      #              #        # #        # #'       // nl // &
+'   \\\    ###      ###    ///        #           ##         ###        ###'       // nl // &
+'           ##########                 ###########            #          #'
+
+  PRIVATE
+
+  PUBLIC gw_opening_message, gw_opening_logo
+
+CONTAINS
+
+  !> Print the SternheimerGW logo.
+  SUBROUTINE gw_opening_logo()
+
+    USE global_version, ONLY: version_number, svn_revision
+    USE io_global,      ONLY: stdout
+    USE sgw_version,    ONLY: sgw_version_number
+
+    ! print the logo
+    WRITE(stdout, '(a)')
+    WRITE(stdout, '(a)') logo
+    WRITE(stdout, '(a)')
+
+    ! adjust the version number so that the SternheimerGW version is printed
+    version_number = sgw_version_number
+    svn_revision   = 'unknown'
+    
+  END SUBROUTINE gw_opening_logo
+
+  !> Write the opening message.
+  !!
+  !! Print the version number used and the git revision if known.
+  SUBROUTINE gw_opening_message()
+
+    USE io_global,   ONLY: stdout
+    USE sgw_version, ONLY: sgw_version_number, sgw_git_describe
+
+    IMPLICIT NONE
+
+    WRITE(stdout,'(a)')
+    WRITE(stdout,'(5x,a)') "Please cite SternheimerGW as:"
+    WRITE(stdout,'(9x,a)') '"H. Lambert and F. Giustino, Phys. Rev. B 88. 075117 (2013)'
+    WRITE(stdout,'(9x,a)') ' URL http://www.sternheimergw.org"'
+    WRITE(stdout,'(a)')
+    WRITE(stdout,'(5x,a)') "To increase the reproducibility of your results you can mention the"
+    WRITE(stdout,'(5x,a)') "git description of this version: " // sgw_git_describe
+
+  END SUBROUTINE gw_opening_message
+
+END MODULE gw_opening

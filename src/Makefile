@@ -58,6 +58,7 @@ godby_needs.o\
 gram_schmidt.o\
 green.o\
 gw.o\
+gw_opening.o\
 gw_type.o\
 gwcom.o\
 gwq_init.o\
@@ -87,7 +88,6 @@ save_gw_input.o\
 select_solver.o\
 setup_nscf.o\
 setup_nscf_green.o\
-sgw_opening.o\
 sigma.o\
 sigma_expect.o\
 sigma_grid.o\

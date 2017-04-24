@@ -155,6 +155,7 @@ gw.o : ../../Modules/mp_global.o
 gw.o : debug.o
 gw.o : exchange.o
 gw.o : freqbins.o
+gw.o : gw_opening.o
 gw.o : gwcom.o
 gw.o : pp_output.o
 gw.o : run_nscf.o
@@ -164,6 +165,9 @@ gw.o : sigma_grid.o
 gw.o : sigma_io.o
 gw.o : timing.o
 gw.o : truncation.o
+gw_opening.o : ../../Modules/io_global.o
+gw_opening.o : ../../Modules/version.o
+gw_opening.o : version.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
 gwcom.o : ../../Modules/kind.o
@@ -350,8 +354,6 @@ setup_nscf_green.o : ../../PW/src/pwcom.o
 setup_nscf_green.o : ../../PW/src/symm_base.o
 setup_nscf_green.o : gwcom.o
 setup_nscf_green.o : sigma.o
-sgw_opening.o : ../../Modules/io_global.o
-sgw_opening.o : version.o
 sigma.o : ../../Modules/cell_base.o
 sigma.o : ../../Modules/constants.o
 sigma.o : ../../Modules/io_files.o
