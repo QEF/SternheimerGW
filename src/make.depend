@@ -206,7 +206,6 @@ gwq_readin.o : gwcom.o
 gwq_readin.o : save_gw_input.o
 gwq_readin.o : select_solver.o
 gwq_readin.o : truncation.o
-gwq_setup.o : ../../LR_Modules/lrcom.o
 gwq_setup.o : ../../Modules/constants.o
 gwq_setup.o : ../../Modules/control_flags.o
 gwq_setup.o : ../../Modules/fft_base.o
@@ -411,6 +410,7 @@ sigma_matel.o : ../../PW/src/pwcom.o
 sigma_matel.o : ../../PW/src/scf_mod.o
 sigma_matel.o : freqbins.o
 sigma_matel.o : gwcom.o
+sigma_matel.o : kind_gw.o
 sigma_matel.o : sigma_expect.o
 sigma_matel.o : sigma_grid.o
 sigma_matel.o : timing.o

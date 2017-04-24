@@ -191,6 +191,7 @@ MODULE control_gw
              recover_read=.FALSE., & ! if true the recover data have been read
              all_done, &      ! if .TRUE. all representations have been done
              modielec, & ! if .TRUE. uses a model dielectric function to calculate W.
+             set_alpha_pv, & ! if .TRUE. use automatic method to determine alpha_pv
              do_coulomb, &
              do_sigma_c, &
              do_sigma_exx, &

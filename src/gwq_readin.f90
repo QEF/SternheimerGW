@@ -43,7 +43,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
                                    cohsex, multishift, do_sigma_extra, paderobust, &
                                    solve_direct, w_green_start, tinvert, coul_multishift,&
-                                   trunc_2d, do_epsil, alpha_pv, &
+                                   trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
                                    double_grid, name_length, output, &
@@ -667,6 +667,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ENDIF
   IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
       CALL errore('gwq_readin','nq1, nq2, and nq3 must be greater than 0',1)
+
+  ! if alpha_pv was not set in the input, we determine it automatically
+  set_alpha_pv = (alpha_pv < 0)
 
   !
   ! setup the truncation
