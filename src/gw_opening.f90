@@ -53,11 +53,11 @@ CONTAINS
   SUBROUTINE gw_opening_logo()
 
     USE global_version, ONLY: version_number, svn_revision
-    USE io_global,      ONLY: stdout, ionode
+    USE io_global,      ONLY: stdout, meta_ionode
     USE sgw_version,    ONLY: sgw_version_number
 
     ! print the logo
-    IF (ionode) THEN
+    IF (meta_ionode) THEN
       WRITE(stdout, '(a)')
       WRITE(stdout, '(a)') logo
       WRITE(stdout, '(a)')
