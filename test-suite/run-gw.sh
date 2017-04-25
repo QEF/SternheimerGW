@@ -1,23 +1,23 @@
 #!/bin/bash
 #------------------------------------------------------------------------------
 #
-# This file is part of the Sternheimer-GW code.
+# This file is part of the SternheimerGW code.
 # 
 # Copyright (C) 2010 - 2017 
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
-# Sternheimer-GW is free software: you can redistribute it and/or modify
+# SternheimerGW is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Sternheimer-GW is distributed in the hope that it will be useful,
+# SternheimerGW is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Sternheimer-GW. If not, see
+# along with SternheimerGW. If not, see
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ else
   unset PARA_SUFFIX
 fi
 
-# determine whether we are in a PW or SGW step
+# determine whether we are in a PW or SternheimerGW step
 scf=$(echo $1 | awk '/scf.in/{ print 1 }')
 gw=$(echo $1 | awk '/gw.in/{ print 1 }')
 
@@ -42,8 +42,8 @@ then
   ${PARA_PREFIX} ${ESPRESSO_ROOT}/bin/pw.x ${PARA_SUFFIX} < $1 > $2 2> $3
 elif (( gw == 1 ))
 then
-  echo "Running SGW..."
-  ${PARA_PREFIX} ${ESPRESSO_ROOT}/SGW/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
+  echo "Running SternheimerGW..."
+  ${PARA_PREFIX} ${ESPRESSO_ROOT}/SternheimerGW/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
 else
   echo "Unknown input file" > /dev/stderr
 fi  

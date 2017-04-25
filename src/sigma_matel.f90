@@ -1,22 +1,22 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -40,6 +40,7 @@ SUBROUTINE sigma_matel(ik0, grid, freq)
   USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv, sigma_band_exg
   USE io_files,             ONLY : diropn 
   USE io_global,            ONLY : stdout, meta_ionode
+  USE kinds_gw,             ONLY : i8b
   USE kinds,                ONLY : DP
   USE klist,                ONLY : xk, lgauss
   USE mp,                   ONLY : mp_bcast, mp_barrier, mp_sum
@@ -73,6 +74,9 @@ IMPLICIT NONE
   INTEGER                   :: ng
   INTEGER                   :: sigma_c_ngm, sigma_x_ngm
   LOGICAL                   :: exst, opnd
+
+  !> used to check nonzero file size
+  INTEGER(i8b) file_size
 
   !> energy of the highest occupied state
   REAL(dp) ehomo
@@ -206,8 +210,11 @@ IMPLICIT NONE
     CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
   END IF
 
+  ! check file size is not zero
+  INQUIRE(UNIT = iunsex, SIZE = file_size)
+
   ! evaluate matrix elements for exchange
-  CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
+  IF (file_size /= 0) CALL sigma_expect_file(iunsex,ik0,evc,sigma_x_ngm,igk,sigma_band_x)
   WRITE(1000+mpime,*) 
   WRITE(1000+mpime,'(4x,"sigma_x (eV)")')
   WRITE(1000+mpime,'(8(1x,f7.3))') real(sigma_band_x)*RYTOEV
@@ -241,8 +248,11 @@ IMPLICIT NONE
   WRITE(1000+mpime, '(5x, f6.2, i5)') corr_conv, sigma_c_ngm
   WRITE(1000+mpime, *)
 
+  ! check file size is not zero
+  INQUIRE(UNIT = iunsigma, SIZE = file_size)
+
   ! evaluate expectation value of wave function
-  CALL sigma_expect_file(iunsigma,ik0,evc,sigma_c_ngm,igk,sigma_band_c,nwsigma)
+  IF (file_size /= 0) CALL sigma_expect_file(iunsigma,ik0,evc,sigma_c_ngm,igk,sigma_band_c,nwsigma)
   WRITE (1000+mpime,'("Finished Sigma_c")')
 
   !

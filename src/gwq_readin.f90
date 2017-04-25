@@ -1,24 +1,24 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
 ! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -43,7 +43,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
                                    cohsex, multishift, do_sigma_extra, paderobust, &
                                    solve_direct, w_green_start, tinvert, coul_multishift,&
-                                   trunc_2d, do_epsil, &
+                                   trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
                                    double_grid, name_length, output, &
@@ -165,7 +165,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   NAMELIST / INPUTGW / tr2_gw, lmax_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
                        nat_todo, iverbosity, outdir, epsil,  &
-                       nrapp, max_seconds, reduce_io, &
+                       nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, prefix, fildyn, fildvscf, fildrho,   &
                        ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
                        recover, lrpa, lnoloc, start_irr, last_irr, &
@@ -251,6 +251,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !for slab systems more rapid convergence can
   !be obtained with alpha_mix = 0.3.
   alpha_mix(1) = 0.7D0
+  alpha_pv     = -1.0_dp
   niter_gw     = maxter
   nmix_gw      = 3
   nat_todo     = 0
@@ -272,6 +273,12 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   filsigx      = 'sigma_x'
   filsigc      = 'sigma_c'
   filcoul      = 'coulomb'
+  nk1          = 0
+  nk2          = 0
+  nk3          = 0
+  k1           = 0
+  k2           = 0
+  k3           = 0
   nq1          = 0
   nq2          = 0
   nq3          = 0
@@ -660,6 +667,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ENDIF
   IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
       CALL errore('gwq_readin','nq1, nq2, and nq3 must be greater than 0',1)
+
+  ! if alpha_pv was not set in the input, we determine it automatically
+  set_alpha_pv = (alpha_pv < 0)
 
   !
   ! setup the truncation

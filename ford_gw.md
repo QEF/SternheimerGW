@@ -1,11 +1,9 @@
-project: Sternheimer GW
+project: SternheimerGW
 project_dir: ./src
-project_website: http://www.sternheimer.org.uk/
+project_website: http://www.sternheimergw.org/
 output_dir: ./Doc/ford
-summary: Sternheimer-GW is a code for calculating the dielectric screening and quasiparticle properties in a range of materials.
-author: Martin Schlipf,<br>
-        Henry Lambert, and<br>
-        Feliciano Giustino
+summary: SternheimerGW is a code for calculating the dielectric screening and quasiparticle properties in a range of materials.
+author: Martin Schlipf, Henry Lambert, and Feliciano Giustino
 author_description: The Materials Modelling and Design Group.
 website: http://giustino.materials.ox.ac.uk/index.php
 email: martin.schlipf@materials.ox.ac.uk
@@ -22,4 +20,4 @@ macro: TEST
 license: by-nc-sa
 extra_filetypes: sh #
 
-A short description of SGW.
+A short description of SternheimerGW.

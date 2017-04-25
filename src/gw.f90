@@ -1,28 +1,28 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
 program gw
 !-----------------------------------------------------------------------
-!... This is the main driver of the Sternheimer-GW code.
+!... This is the main driver of the SternheimerGW code.
 !-----------------------------------------------------------------------
   USE check_stop,           ONLY : check_stop_init
   USE control_gw,           ONLY : do_sigma_exx, do_sigma_matel, do_coulomb, &
@@ -34,6 +34,7 @@ program gw
   USE freq_gw,              ONLY : nwsigma, nwsigwin, wsigmamin, wsigmamax, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,      ONLY : freqbins, freqbins_type
+  USE gw_opening,           ONLY : gw_opening_logo, gw_opening_message
   USE gwsigma,              ONLY : nbnd_sig, ecutsco, ecutsex
   USE input_parameters,     ONLY : max_seconds, force_symmorphic
   USE io_files,             ONLY : diropn
@@ -51,7 +52,7 @@ program gw
   IMPLICIT NONE
 
   !> the name of the code
-  CHARACTER(*), PARAMETER :: code = 'SGW'
+  CHARACTER(*), PARAMETER :: code = 'SternheimerGW'
 
   INTEGER             :: ik
   LOGICAL             :: do_band, do_matel
@@ -78,10 +79,11 @@ program gw
   TYPE(debug_type) debug
 
 ! Initialize MPI, clocks, print initial messages
-  call mp_startup ( start_images=.true. )
-  call environment_start ( code )
-  call start_clock(time_setup)
-  call sgw_opening_message () 
+  CALL mp_startup(start_images = .TRUE.)
+  CALL gw_opening_logo()
+  CALL environment_start(code)
+  CALL gw_opening_message() 
+  CALL start_clock(time_setup)
 ! Initialize GW calculation, Read Ground state information.
   
   call gwq_readin(config_coul, config_green, freq, vcut, debug)

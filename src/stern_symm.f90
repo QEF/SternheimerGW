@@ -1,22 +1,22 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -27,7 +27,6 @@ SUBROUTINE stern_symm(num_g_corr)
 !even though I'm pretty sure that's the case...
 
 USE cell_base,     ONLY : at
-USE gvect,         ONLY : ngm
 USE gwsymm,        ONLY : ngmunique, ig_unique, sym_ig, sym_friend
 USE io_global,     ONLY : stdout
 USE kinds,         ONLY : DP
@@ -42,9 +41,9 @@ IMPLICIT NONE
 
 INTEGER      :: ig, igp
 INTEGER      :: isym
-INTEGER      :: gmapsym(ngm,48)
+INTEGER      :: gmapsym(num_g_corr,nsym)
 INTEGER      :: nsymq
-COMPLEX(DP)  :: eigv(ngm,48)
+COMPLEX(DP)  :: eigv(num_g_corr,nsym)
 LOGICAL      :: unique_g, invsymq
 LOGICAL      :: minus_q, sym(48)
 
@@ -78,7 +77,7 @@ LOGICAL      :: minus_q, sym(48)
    WRITE(6,*)
    WRITE(6,*)
   enddo
-  CALL gmap_sym(nsym, s, ftau, gmapsym, eigv, invs)
+  CALL gmap_sym(num_g_corr, nsym, s, ftau, gmapsym, eigv, invs)
 !Find number of unique vectors:
 ngmunique = 1
 ig_unique(1) = 1

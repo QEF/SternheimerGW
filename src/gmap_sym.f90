@@ -1,28 +1,28 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017 Jesse Noffsinger, Brad Malone,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
   !                                                                            
   !-----------------------------------------------------------------------
-  SUBROUTINE gmap_sym ( nsym, s, ftau, gmapsym, eigv, invs)
+  SUBROUTINE gmap_sym (num_g_corr, nsym, s, ftau, gmapsym, eigv, invs)
   !-----------------------------------------------------------------------
   !
   !  For every G vector, find S(G) for all the symmetry operations
@@ -52,6 +52,9 @@
   !
   ! input variables
   !
+  !> number of G vectors in correlation grid
+  INTEGER, INTENT(IN) :: num_g_corr
+  !
   integer :: nsym, s(3,3,48), ftau(3,48), invs(48)
   ! the number of symmetries of the crystal
   ! the symmetry matrices
@@ -60,10 +63,10 @@
   ! output variables
   !
   !integer :: gmapsym (ngm, 48)
-  integer :: gmapsym (ngm, nsym)
+  integer :: gmapsym (num_g_corr, nsym)
   ! the map S(G) = gmapsym (G,S) 1...nsym
   !complex(kind=DP) :: eigv (ngm, 48)
-  complex(kind=DP) :: eigv (ngm, nsym)
+  complex(kind=DP) :: eigv (num_g_corr, nsym)
   ! e^{ iGv} for 1...nsym
   !
   ! local variables
@@ -86,7 +89,7 @@
     !
     notfound = 0
     !
-    DO ig = 1, ngm
+    DO ig = 1, num_g_corr
       !
       !  the rotated G-vector
       !

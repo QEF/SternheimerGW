@@ -1,6 +1,18 @@
 Release notes
 =============
 
+on develop
+----------
+
+Implement metallic systems. For metallic systems the projector on the valence
+band should be converged to 0. In the future a frequency dependent projector
+might be implemented.
+
+From now on the code is referred to as SternheimerGW to differentiate it more
+clearly from QSGW and other GW implementations. To align to this new name, a
+few routines had to be renamed that still used the old handle.
+> compatible QE revision 13471 (note: compile with old XML)
+
 Version 0.11
 ------------
 
@@ -30,10 +42,10 @@ compiled with the \_\_DEBUG flag it will examine the requested parts in more
 detail. The only current option is to check (H - w) G = -delta. The unit
 test can be used to investigate the behavior of the linear problem.
 
-Create the SGW testsuite that tests all major features implemented in SGW.
-The test cases are not converged, but any change made to the code should
-reproduce the results obtained with the test. If an error larger than the
-threshold pops up, the commit should be reviewed with care.
+Create the SternheimerGW testsuite that tests all major features implemented
+in SternheimerGW. The test cases are not converged, but any change made to the
+code should reproduce the results obtained with the test. If an error larger
+than the threshold pops up, the commit should be reviewed with care.
 > compatible QE version 6.1 revision 13374
 
 Version 0.10.1
@@ -88,7 +100,7 @@ Create a new module to write/read Sigma in xml format. The advantage of this
 module is that it contains some metadata that makes processing the self-energy
 much easier. However, the iotk module is significantly slower than the regular
 file I/O so that for performance reasons, we currently keep the old reading
-routines in SGW where the metadata is not needed.
+routines in SternheimerGW where the metadata is not needed.
 This version also contains a few changes to accomodate recent changes in QE.
 The igk is removed from the wave function module, so that we create our own
 igk arrays where needed. In the future, this should be replaced by igk_k.

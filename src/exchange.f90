@@ -1,22 +1,22 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -305,6 +305,7 @@ CONTAINS
 
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
+    USE constants,          ONLY: degspin
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
@@ -312,13 +313,14 @@ CONTAINS
     USE gvect,              ONLY: mill
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
-    USE klist,              ONLY: xk, wk, igk_k, ngk
+    USE klist,              ONLY: xk, igk_k, ngk
     USE mp_images,          ONLY: inter_image_comm, root_image
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
     USE parallel_module,    ONLY: parallel_task, mp_root_sum
     USE qpoint,             ONLY: nksq, ikqs, npwq
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
+    USE wvfct,              ONLY: wg
     USE timing_module,      ONLY: time_sigma_x
     USE truncation_module,  ONLY: vcut_type
 
@@ -372,12 +374,7 @@ CONTAINS
     sigma = zero
 
     !!
-    !! 1. Distribute the work over the process grid
-    !!
-    CALL parallel_task(inter_image_comm, nbnd_occ(1), iband_start, iband_stop, num_task)
-
-    !!
-    !! 2. Extract the wave function of every q-point
+    !! 1. Extract the wave function of every q-point
     !!
     DO iq = 1, nksq
       !
@@ -386,7 +383,10 @@ CONTAINS
       !
       CALL get_buffer(evq, lrwfc, iuwfc, ikq)
       evq(npwq + 1:, :) = zero
-      !
+      !!
+      !! 2. Distribute the work over the process grid
+      !!
+      CALL parallel_task(inter_image_comm, nbnd_occ(ikq), iband_start, iband_stop, num_task)
       !!
       !! 3. construct the map from G and G' to G - G'
       !!
@@ -402,7 +402,7 @@ CONTAINS
       !!
       DO iband = iband_start, iband_stop
         !
-        CALL exchange_convolution(wk(ikq), coulomb, evq(:,iband), map, sigma)
+        CALL exchange_convolution(wg(iband, ikq) / degspin, coulomb, evq(:,iband), map, sigma)
         !
       END DO ! iband
       !

@@ -1,24 +1,24 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
 ! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -33,7 +33,7 @@ subroutine bcast_gw_input(freq_symm)
   USE control_flags,    ONLY : iverbosity, modenum
   USE control_gw,       ONLY : start_irr, last_irr, start_q, last_q, nmix_gw, &
                                niter_gw, lnoloc, alpha_mix, tr2_gw, lmax_gw, lrpa, recover, &
-                               ldisp, reduce_io, trans, &
+                               ldisp, reduce_io, trans, alpha_pv, &
                                eta, modielec, do_coulomb, do_sigma_c,& 
                                do_sigma_exx, do_green, do_sigma_matel, tr2_green, lmax_green, &
                                do_q0_only, maxter_coul, maxter_green, godbyneeds, cohsex, padecont,&
@@ -49,7 +49,7 @@ subroutine bcast_gw_input(freq_symm)
   USE gwsigma,          ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv,&
                                exch_conv
   USE gwsymm,           ONLY : use_symm
-  USE input_parameters, ONLY : max_seconds
+  USE input_parameters, ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3
   USE io_files,         ONLY : tmp_dir, prefix
   USE io_global,        ONLY : meta_ionode_id
   USE ions_base,        ONLY : amass
@@ -90,6 +90,12 @@ subroutine bcast_gw_input(freq_symm)
   CALL mp_bcast( iq1, meta_ionode_id, world_comm )
   CALL mp_bcast( iq2, meta_ionode_id, world_comm )
   CALL mp_bcast( iq3, meta_ionode_id, world_comm )
+  CALL mp_bcast( nk1, meta_ionode_id, world_comm )
+  CALL mp_bcast( nk2, meta_ionode_id, world_comm )
+  CALL mp_bcast( nk3, meta_ionode_id, world_comm )
+  CALL mp_bcast(  k1, meta_ionode_id, world_comm )
+  CALL mp_bcast(  k2, meta_ionode_id, world_comm )
+  CALL mp_bcast(  k3, meta_ionode_id, world_comm )
   CALL mp_bcast(lmax_gw, meta_ionode_id, world_comm)
   CALL mp_bcast(lmax_green, meta_ionode_id, world_comm)
 !
@@ -125,7 +131,7 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (output%pp_spec_iw%filename, meta_ionode_id, world_comm )
   call mp_bcast (output%file_sigma, meta_ionode_id, world_comm )
 
- !SGW cutoffs and control
+ !SternheimerGW cutoffs and control
   call mp_bcast (ecutsex, meta_ionode_id, world_comm)
   call mp_bcast (ecutsco, meta_ionode_id, world_comm)
   call mp_bcast (corr_conv, meta_ionode_id, world_comm)
@@ -158,6 +164,7 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (do_pade_coul, meta_ionode_id, world_comm)
   call mp_bcast (double_grid, meta_ionode_id, world_comm)
   call mp_bcast (truncation, meta_ionode_id, world_comm)
+  call mp_bcast (alpha_pv, meta_ionode_id, world_comm)
 
 !Frequency grid
   call mp_bcast (wsigmamin, meta_ionode_id, world_comm)

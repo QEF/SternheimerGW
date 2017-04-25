@@ -1,26 +1,26 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-!> This module specifies how the timing of different parts of the SGW code
+!> This module specifies how the timing of different parts of the SternheimerGW code
 !! is measured.
 !!
 !! The timing follows the general layout of the code
@@ -63,6 +63,18 @@ MODULE timing_module
   !> label for the clock measuring the linear solver (W part)
   CHARACTER(*), PARAMETER :: time_coul_solver = 'coul_solver'
 
+  !> label for the clock measuring the matrix inversion (W part)
+  CHARACTER(*), PARAMETER :: time_coul_invert = 'coul_invert'
+
+  !> label for the clock measuring the file I/O (W part)
+  CHARACTER(*), PARAMETER :: time_coul_io = 'coul_io'
+
+  !> label for the clock measuring setting up the symmetry
+  CHARACTER(*), PARAMETER :: time_coul_symm = 'coul_symm'
+
+  !> label for the clock measuring unfolding the matrix
+  CHARACTER(*), PARAMETER :: time_coul_unfold = 'coul_unfold'
+
   !
   ! split Sigma_c into parts
   !
@@ -88,9 +100,15 @@ MODULE timing_module
   !> label for the total time spent to evaluate the linear operator
   CHARACTER(*), PARAMETER :: time_linear_op = 'linear operator'
 
+  !> label for the total time spent calculating forward 6d FFTs
+  CHARACTER(*), PARAMETER :: time_fwfft6 = '6d FFT r->G'
+
+  !> label for the total time spent calculating inverse 6d FFTs
+  CHARACTER(*), PARAMETER :: time_invfft6 = '6d FFT G->r'
+
 CONTAINS
 
-  !> Print the measured timing of the SGW run in a nice format.
+  !> Print the measured timing of the SternheimerGW run in a nice format.
   !!
   !! First print a summary of the main parts
   !! -setup
@@ -145,6 +163,18 @@ CONTAINS
     ! print the time needed for the linear solver
     CALL print_clock(time_coul_solver)
 
+    ! print the time needed for the matrix inversion
+    CALL print_clock(time_coul_invert)
+
+    ! print the time needed for the file I/O
+    CALL print_clock(time_coul_io)
+
+    ! print the time needed for setting up the symmetry
+    CALL print_clock(time_coul_symm)
+
+    ! print the time needed for unfolding the matrix
+    CALL print_clock(time_coul_unfold)
+
     !
     ! Detailed part of correlation part of Sigma
     !
@@ -183,6 +213,10 @@ CONTAINS
 
     ! print the time spent to evaluate the linear operator
     CALL print_clock(time_linear_op)
+
+    ! print the time spent in the FFT routines
+    CALL print_clock(time_fwfft6)
+    CALL print_clock(time_invfft6)
 
   END SUBROUTINE timing_print_clock
 

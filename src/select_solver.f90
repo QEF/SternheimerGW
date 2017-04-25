@@ -1,22 +1,22 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -41,7 +41,7 @@ MODULE select_solver_module
   !> use the BiCGstab solver without multishift
   INTEGER,  PARAMETER :: bicgstab_no_multi = 2
 
-  !> use the solver specialized for SGW
+  !> use the solver specialized for SternheimerGW
   INTEGER,  PARAMETER :: sgw_linear_solver = 3
 
   !> configuration of the linear solver
@@ -107,7 +107,7 @@ CONTAINS
     !> configuration of the BiCGstab solver
     TYPE(bicgstab_type) bicgstab_config
 
-    !> configuration for the SGW linear solver
+    !> configuration for the SternheimerGW linear solver
     TYPE(linear_solver_config) sgw_solver_config
 
     !
@@ -147,7 +147,7 @@ CONTAINS
 
       CASE (sgw_linear_solver)
         !
-        ! converge using the SGW linear solver
+        ! converge using the SternheimerGW linear solver
         sgw_solver_config = solver_config(config)
         CALL linear_solver(sgw_solver_config, AA, bb, sigma, xx, ierr)
 
@@ -189,7 +189,7 @@ CONTAINS
     !> the general configuration of all linear solvers
     TYPE(select_solver_type), INTENT(IN) :: config
 
-    !> the particular configuration of the SGW linear solver
+    !> the particular configuration of the SternheimerGW linear solver
     TYPE(linear_solver_config) solver_config
 
     !
