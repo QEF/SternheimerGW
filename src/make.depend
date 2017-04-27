@@ -55,6 +55,7 @@ coulomb.o : ../../Modules/recvec.o
 coulomb.o : gwcom.o
 coulomb.o : select_solver.o
 coulomb.o : solve_linter.o
+coulomb.o : timing.o
 coulomb_q0G0.o : ../../FFTXlib/fft_interfaces.o
 coulomb_q0G0.o : ../../LR_Modules/lrcom.o
 coulomb_q0G0.o : ../../Modules/constants.o
@@ -66,6 +67,7 @@ coulomb_q0G0.o : ../../Modules/recvec.o
 coulomb_q0G0.o : gwcom.o
 coulomb_q0G0.o : select_solver.o
 coulomb_q0G0.o : solve_linter.o
+coulomb_q0G0.o : timing.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
