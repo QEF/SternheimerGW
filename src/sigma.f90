@@ -149,9 +149,9 @@ CONTAINS
     USE freqbins_module,      ONLY: freqbins_type
     USE gvect,                ONLY: ngm
     USE io_files,             ONLY: prefix
-    USE io_global,            ONLY: meta_ionode, ionode_id
+    USE io_global,            ONLY: meta_ionode, ionode_id, stdout
     USE kinds,                ONLY: dp
-    USE klist,                ONLY: lgauss
+    USE klist,                ONLY: xk, lgauss
     USE mp,                   ONLY: mp_bcast
     USE mp_images,            ONLY: inter_image_comm, root_image
     USE mp_pools,             ONLY: inter_pool_comm, root_pool, me_pool
@@ -252,6 +252,9 @@ CONTAINS
     CALL start_clock(time_sigma_c)
     CALL start_clock(time_sigma_setup)
 
+    WRITE(stdout, '(a)')
+    WRITE(stdout, '(5x, a, 3f8.4, a)') 'evaluate self energy for k = (', xk(:, ikpt), ' )'
+
     ! set helper variable
     num_g_corr  = grid%corr%ngmt
     num_gp_corr = grid%corr_par%ngmt
@@ -324,6 +327,8 @@ CONTAINS
     ! sum over all q-points
     !
     DO icon = 1, SIZE(config)
+      !
+      WRITE(stdout, '(5x,a,3f8.4,a)', ADVANCE='NO') 'k + q = (', xk(:,config(icon)%index_kq), ' )'
       !
       ! evaluate the coefficients for the analytic continuation of W
       !
@@ -527,14 +532,17 @@ CONTAINS
   SUBROUTINE sigma_correlation(omega, grid, config, mu, alpha, ikq, freq, &
                                gmapsym, coulomb, sigma, debug)
 
+    USE constants,            ONLY: RYTOEV
     USE construct_w_module,   ONLY: construct_w
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE fft6_module,          ONLY: invfft6
     USE freqbins_module,      ONLY: freqbins_type
     USE green_module,         ONLY: green_prepare, green_function
+    USE io_global,            ONLY: stdout
     USE kinds,                ONLY: dp
     USE select_solver_module, ONLY: select_solver_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
+    USE timing_module,        ONLY: time_sigma_c
 
     !> Volume of the unit cell
     REAL(dp),      INTENT(IN)  :: omega
@@ -564,7 +572,7 @@ CONTAINS
     COMPLEX(dp),   INTENT(IN)  :: coulomb(:,:,:)
 
     !> The self-energy \f$\Sigma\f$ at the specified frequency points
-    COMPLEX(dp),   INTENT(OUT) :: sigma(:,:,:)
+    COMPLEX(dp),   INTENT(INOUT) :: sigma(:,:,:)
 
     !> the debug configuration of the calculation
     TYPE(debug_type), INTENT(IN) :: debug
@@ -618,6 +626,14 @@ CONTAINS
     !> work array; contains either W or \f$\Sigma\f$
     COMPLEX(dp), ALLOCATABLE :: work(:,:)
 
+    !> measure the time since start of the routine
+    REAL(dp) get_clock
+
+    !> time when routine started
+    REAL(dp) start_time
+
+    start_time = get_clock(time_sigma_c)
+
     !
     ! sanity check of the input
     !
@@ -667,6 +683,9 @@ CONTAINS
         CALL errore(__FILE__, "Green's function contains NaN in reciprocal space", ikq)
       END IF
     END IF
+
+    WRITE(stdout,'(2x,a,f9.2,a)', ADVANCE='NO') 'G: ', get_clock(time_sigma_c) - start_time, 's'
+    start_time = get_clock(time_sigma_c)
 
     !!
     !! 4. Fourier transform Green's function to real space
@@ -725,6 +744,9 @@ CONTAINS
       END DO ! igreen
       !
     END DO ! isigma
+
+    WRITE(stdout,'(2x,a,f9.2,a)') 'G*W:', get_clock(time_sigma_c) - start_time, 's'
+    FLUSH(stdout)
 
   END SUBROUTINE sigma_correlation
 
