@@ -26,23 +26,6 @@ MODULE gw_opening
 
   IMPLICIT NONE
 
-  CHARACTER(*), PARAMETER :: nl = NEW_LINE('n')
-  CHARACTER(*), PARAMETER :: logo = &
-'            ######## T E R N H E I M E R           http://www.sternheimergw.org/' // nl // &
-'           ###     ###'                                                           // nl // &
-'          ###       ##                  #######        #                      #'  // nl // &
-'          ###                         ##       ###     #          ##          #'  // nl // &
-'           ###                      ##            #     #         ##         #'   // nl // &
-'            #####                  #                     #       #  #       #'    // nl // &
-'   ///         #####      \\\     #                      #       #  #       #'    // nl // &
-'  ///             ####     \\\    #                       #     #    #     #'     // nl // &
-' ///                ###     \\\   #         #########     #     #    #     #'     // nl // &
-'(((                  ###     )))  #                 #      #   #      #   #'      // nl // &
-' \\\    ###          ###    ///    #                #      #   #      #   #'      // nl // &
-'  \\\    ###        ###    ///      #              #        # #        # #'       // nl // &
-'   \\\    ###      ###    ///        #           ##         ###        ###'       // nl // &
-'           ##########                 ###########            #          #'
-
   PRIVATE
 
   PUBLIC gw_opening_message, gw_opening_logo
@@ -59,7 +42,20 @@ CONTAINS
     ! print the logo
     IF (meta_ionode) THEN
       WRITE(stdout, '(a)')
-      WRITE(stdout, '(a)') logo
+      WRITE(stdout, '(a)') '            ######## T E R N H E I M E R           http://www.sternheimergw.org/'
+      WRITE(stdout, '(a)') '           ###     ###'
+      WRITE(stdout, '(a)') '          ###       ##                  #######        #                      #'
+      WRITE(stdout, '(a)') '          ###                         ##       ###     #          ##          #'
+      WRITE(stdout, '(a)') '           ###                      ##            #     #         ##         #'
+      WRITE(stdout, '(a)') '            #####                  #                     #       #  #       #'
+      WRITE(stdout, '(a)') '   ///         #####      \\\     #                      #       #  #       #'
+      WRITE(stdout, '(a)') '  ///             ####     \\\    #                       #     #    #     #'
+      WRITE(stdout, '(a)') ' ///                ###     \\\   #         #########     #     #    #     #'
+      WRITE(stdout, '(a)') '(((                  ###     )))  #                 #      #   #      #   #'
+      WRITE(stdout, '(a)') ' \\\    ###          ###    ///    #                #      #   #      #   #'
+      WRITE(stdout, '(a)') '  \\\    ###        ###    ///      #              #        # #        # #'
+      WRITE(stdout, '(a)') '   \\\    ###      ###    ///        #           ##         ###        ###'
+      WRITE(stdout, '(a)') '           ##########                 ###########            #          #'
       WRITE(stdout, '(a)')
     END IF
 
