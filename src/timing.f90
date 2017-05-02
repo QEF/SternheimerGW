@@ -42,48 +42,51 @@ MODULE timing_module
   CHARACTER(*), PARAMETER :: time_coulomb = 'coulomb'
 
   !> label for the clock measuring the calculation of G
-  CHARACTER(*), PARAMETER :: time_green = 'green'
+  CHARACTER(*), PARAMETER :: time_green = 'Green'
 
   !> label for the clock measuring the convolution of G and W
-  CHARACTER(*), PARAMETER :: time_sigma_c = 'sigma_c'
+  CHARACTER(*), PARAMETER :: time_sigma_c = 'Sigma_c'
 
   !> label for the clock measuring the exchange part of Sigma
-  CHARACTER(*), PARAMETER :: time_sigma_x = 'sigma_x'
+  CHARACTER(*), PARAMETER :: time_sigma_x = 'Sigma_x'
 
   !> label for the clock measuring the evaluation of the matrix elements
-  CHARACTER(*), PARAMETER :: time_matel = 'sigma_matel'
+  CHARACTER(*), PARAMETER :: time_matel = 'Sigma matel'
 
   !
   ! split screened Coulomb into parts
   !
 
   !> label for the clock measuring the nscf calculation (W part)
-  CHARACTER(*), PARAMETER :: time_coul_nscf = 'coul_nscf'
+  CHARACTER(*), PARAMETER :: time_coul_nscf = 'coul nscf'
 
   !> label for the clock measuring the linear solver (W part)
-  CHARACTER(*), PARAMETER :: time_coul_solver = 'coul_solver'
+  CHARACTER(*), PARAMETER :: time_coul_solver = 'coul solver'
 
   !> label for the clock measuring the matrix inversion (W part)
-  CHARACTER(*), PARAMETER :: time_coul_invert = 'coul_invert'
+  CHARACTER(*), PARAMETER :: time_coul_invert = 'coul invert'
+
+  !> label for the clock measuring the communication (W part)
+  CHARACTER(*), PARAMETER :: time_coul_comm = 'coul communication'
 
   !> label for the clock measuring the file I/O (W part)
-  CHARACTER(*), PARAMETER :: time_coul_io = 'coul_io'
+  CHARACTER(*), PARAMETER :: time_coul_io = 'coul IO'
 
   !> label for the clock measuring setting up the symmetry
-  CHARACTER(*), PARAMETER :: time_coul_symm = 'coul_symm'
+  CHARACTER(*), PARAMETER :: time_coul_symm = 'coul symm'
 
   !> label for the clock measuring unfolding the matrix
-  CHARACTER(*), PARAMETER :: time_coul_unfold = 'coul_unfold'
+  CHARACTER(*), PARAMETER :: time_coul_unfold = 'coul unfold'
 
   !
   ! split Sigma_c into parts
   !
 
   !> label for the clock measuring the time to setup quantities for Sigma
-  CHARACTER(*), PARAMETER :: time_sigma_setup = 'setup_sigma'
+  CHARACTER(*), PARAMETER :: time_sigma_setup = 'setup sigma'
 
   !> label for the clock measuring the time to construct W in real frequency
-  CHARACTER(*), PARAMETER :: time_construct_w = 'construct_w'
+  CHARACTER(*), PARAMETER :: time_construct_w = 'construct W'
 
   !> label for the clock measuring the time to multiply G and W
   CHARACTER(*), PARAMETER :: time_GW_product = 'Sigma = G*W'
@@ -165,6 +168,9 @@ CONTAINS
 
     ! print the time needed for the matrix inversion
     CALL print_clock(time_coul_invert)
+
+    ! print the time needed for the communication
+    CALL print_clock(time_coul_comm)
 
     ! print the time needed for the file I/O
     CALL print_clock(time_coul_io)

@@ -41,7 +41,8 @@ SUBROUTINE do_stern(config, num_g_corr)
   USE run_nscf_module,  ONLY : run_nscf
   USE select_solver_module, ONLY : select_solver_type
   USE timing_module,    ONLY : time_coulomb, time_coul_nscf, time_coul_invert, &
-                               time_coul_io, time_coul_symm, time_coul_unfold
+                               time_coul_io, time_coul_symm, time_coul_unfold, &
+                               time_coul_comm
   USE units_gw,         ONLY : lrcoul, iuncoul
 
 IMPLICIT NONE
@@ -189,7 +190,9 @@ IMPLICIT NONE
 
     ! evaluate screened Coulomb interaction and collect on root
     CALL coulomb(config, igstart, num_g_corr, num_task_loc, scrcoul_loc)
+    CALL start_clock(time_coul_comm)
     CALL mp_gatherv(inter_image_comm, root_id, num_task, scrcoul_loc, scrcoul_root)
+    CALL stop_clock(time_coul_comm)
 
     ! Only the root of the image should write to file
     IF (meta_ionode) THEN
