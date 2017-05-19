@@ -36,7 +36,7 @@ SUBROUTINE check_initial_status()
   !
   USE control_gw,      ONLY : tmp_dir_gw
   USE io_files,        ONLY : tmp_dir
-  USE io_rho_xml,      ONLY : write_rho
+  USE io_rho_xml,      ONLY : write_scf
   USE lsda_mod,        ONLY : nspin
   USE mp,              ONLY : mp_bcast
   USE mp_global,       ONLY : mp_global_end
@@ -56,7 +56,7 @@ SUBROUTINE check_initial_status()
   call q_points()
   !
   ! this is the standard treatment
-  CALL write_rho( rho, nspin )
+  CALL write_scf( rho, nspin )
   !
   RETURN
   END SUBROUTINE check_initial_status

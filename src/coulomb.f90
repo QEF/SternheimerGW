@@ -43,6 +43,7 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
   USE qpoint,           ONLY : xq
   USE select_solver_module, ONLY : select_solver_type
   USE solve_module,     ONLY : solve_linter
+  USE timing_module,    ONLY : time_coulomb
 
   IMPLICIT NONE
 
@@ -85,6 +86,14 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
   !> format used to print eps/inveps for direct/iterative solver
   CHARACTER(LEN=:), ALLOCATABLE :: format_str
 
+  !> determine the time since starting the routine
+  REAL(dp) get_clock
+
+  !> time at the start of the routine
+  REAL(dp) start_time
+
+  start_time = get_clock(time_coulomb)
+
   ! we use the frequency as equivalent of the perturbation in phonon
   ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, nfs))
   IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
@@ -93,10 +102,10 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
   ! determine number of iterations and set format string
   IF (solve_direct) THEN
     num_iter = 1
-    format_str = '(8x,"eps_{GG}(q,w) = ", 2f12.5)'
+    format_str = '(8x,"eps_{GG}(q,w) = ", 2f12.5, f9.2, a)'
   ELSE IF (niter_gw > 1) THEN
     num_iter = niter_gw
-    format_str = '(5x,"inveps_{GG}(q,w) = ", 2f12.5)'
+    format_str = '(5x,"inveps_{GG}(q,w) = ", 2f12.5, f9.2, a)'
   ELSE
     CALL errore(__FILE__, "for iterative solver, we need to use more iterations", 1)
     format_str = '(*)'
@@ -117,8 +126,8 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
     IF (qg2 < eps8) CYCLE
     !
     ! initialize the potential for a single G to 1
-    drhoscfs = zero 
-    dvbare   = zero 
+    drhoscfs = zero
+    dvbare   = zero
     dvbare(nls(ig_unique(ig))) = one
     !
     ! potential in real space
@@ -147,10 +156,15 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
         scrcoul(igp, iw, indx) = scrcoul(igp, iw, indx) + dvbare(nls(igp))
       END IF
       !
-      ! print the diagonal element
+      ! print the diagonal element + timing at the last frequency
       IF (ionode) THEN
         igp = nls(ig_unique(ig))
-        WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp)
+        IF (iw == nfs) THEN
+          WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp), &
+            get_clock(time_coulomb) - start_time, "s"
+        ELSE
+          WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp)
+        END IF
       END IF
       !
     END DO ! iw
