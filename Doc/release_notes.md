@@ -1,8 +1,8 @@
 Release notes
 =============
 
-on develop
-----------
+Version 0.12
+------------
 
 Implement metallic systems. For metallic systems the projector on the valence
 band should be converged to 0. In the future a frequency dependent projector
