@@ -70,7 +70,6 @@
   USE gvecs,              ONLY : doublegrid
   USE gvect,              ONLY : ngm
   USE ions_base,          ONLY : ntyp => nsp
-  USE klist,              ONLY : lgauss
   USE lsda_mod,           ONLY : nspin
   USE mp,                 ONLY : mp_max, mp_min
   USE nlcc_gw,            ONLY : drc, nlcc_any

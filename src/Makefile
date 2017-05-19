@@ -31,7 +31,6 @@ MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_F
 EXE = gw.x
 
 IFLAGS=
-DFLAGS+=-D__GFORTRAN
 
 GWOBJS = \
 allocate_gwq.o\
@@ -110,6 +109,7 @@ QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESS
 LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
+
 
 no_debug : .no_debug all
 .no_debug:
