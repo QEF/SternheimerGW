@@ -465,7 +465,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
         !
         ! if the first frequency is 0, we only average +omega and -omega for all other frequencies
         !
-        vec_size = npwx * npol * nbnd_occ(ikk) * (num_freq - 1)
+        vec_size = npwx * npol * nbnd * (num_freq - 1)
         CALL ZSCAL(vec_size, half, dpsi(:,:,2), 1)
         CALL ZAXPY(vec_size, half, dpsi(:,:,num_freq + 1), 1, dpsi(:,:,2), 1)
         !
@@ -473,7 +473,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
         !
         ! if the first frequency is not 0, we average +omega and -omega for all frequecies
         !
-        vec_size = npwx * npol * nbnd_occ(ikk) * num_freq
+        vec_size = npwx * npol * nbnd * num_freq
         CALL ZSCAL(vec_size, half, dpsi(:,:,1), 1)
         CALL ZAXPY(vec_size, half, dpsi(:,:,num_freq + 1), 1, dpsi(:,:,1), 1)
         !
