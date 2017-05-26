@@ -1,24 +1,24 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
 ! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -80,7 +80,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
   USE uspp,                 ONLY : vkb
   USE uspp_param,           ONLY : nhm
   USE wavefunctions_module, ONLY : evc
-  USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k
+  USE wvfct,                ONLY : nbnd, npw, npwx, et, current_k, wg
 
   IMPLICIT NONE
 
@@ -364,10 +364,13 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
         !
         config%threshold = thresh
         !
-        DO ibnd = 1, nbnd_occ(ik)
+        DO ibnd = 1, nbnd_occ(ikk)
           CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
                              -(et(ibnd, ikk) + omega), dpsi(:npwq, ibnd, :), ierr)
           CALL errore(__FILE__, "solver did not converge", ierr)
+          ! rescale so that the density is recovered when multiplying with the
+          ! k-point weight
+          dpsi(:npwq, ibnd, :) = dpsi(:npwq, ibnd, :) * wg(ibnd, ikk) / wk(ikk)
         END DO ! ibnd
         !
       ELSE ! general case iter > 1
@@ -426,13 +429,17 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
           !
           ! use the BiCGstab solver
           !
-          DO ibnd = 1, nbnd_occ(ik)
+          DO ibnd = 1, nbnd_occ(ikk)
             !
             ! solve +omega
             CALL select_solver(config, coulomb_operator, dvpsi(:npwq, ibnd), &
                                -(et(ibnd, ikk) + omega(ifreq:ifreq)),        &
                                dpsi(:npwq, ibnd, ifreq:ifreq), ierr)
             CALL errore(__FILE__, "solver did not converge", ierr)
+            ! rescale so that the density is recovered when multiplying with the
+            ! k-point weight
+            dpsi(:npwq, ibnd, ifreq:ifreq) = dpsi(:npwq, ibnd, ifreq:ifreq) &
+                                           * wg(ibnd, ikk) / wk(ikk)
             !
             ! solve -omega
             IF (.NOT.zero_freq .OR. ifreq > 1) THEN
@@ -440,6 +447,10 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
                                  -(et(ibnd, ikk) + omega(iomega:iomega)),      &
                                  dpsi(:npwq, ibnd, iomega:iomega), ierr)
               CALL errore(__FILE__, "solver did not converge", ierr)
+              ! rescale so that the density is recovered when multiplying with the
+              ! k-point weight
+              dpsi(:npwq, ibnd, iomega:iomega) = dpsi(:npwq, ibnd, iomega:iomega) &
+                                               * wg(ibnd, ikk) / wk(ikk)
             END IF
             !
           END DO ! ibnd
@@ -454,7 +465,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
         !
         ! if the first frequency is 0, we only average +omega and -omega for all other frequencies
         !
-        vec_size = npwx * npol * nbnd_occ(ikk) * (num_freq - 1)
+        vec_size = npwx * npol * nbnd * (num_freq - 1)
         CALL ZSCAL(vec_size, half, dpsi(:,:,2), 1)
         CALL ZAXPY(vec_size, half, dpsi(:,:,num_freq + 1), 1, dpsi(:,:,2), 1)
         !
@@ -462,7 +473,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
         !
         ! if the first frequency is not 0, we average +omega and -omega for all frequecies
         !
-        vec_size = npwx * npol * nbnd_occ(ikk) * num_freq
+        vec_size = npwx * npol * nbnd * num_freq
         CALL ZSCAL(vec_size, half, dpsi(:,:,1), 1)
         CALL ZAXPY(vec_size, half, dpsi(:,:,num_freq + 1), 1, dpsi(:,:,1), 1)
         !
@@ -590,7 +601,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     !
     ! print number of iterations needed for convergence
     !
-    tcpu = get_clock ('SGW')
+    tcpu = get_clock ('SternheimerGW')
     WRITE(stdout, '(/,5x," iter # ",i4," total cpu time :",f8.1)') iter, tcpu
     !
     ! for the iterative solver the screened Coulomb interaction is delta V

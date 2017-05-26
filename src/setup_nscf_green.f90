@@ -1,24 +1,24 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
 ! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -50,6 +50,7 @@ SUBROUTINE setup_nscf_green(kpt, config)
 
   USE basis,              ONLY : natomwfc
   USE cell_base,          ONLY : at, bg
+  USE constants,          ONLY : degspin
   USE control_flags,      ONLY : ethr, isolve, david, &
                                  use_para_diag, max_cg_iter
   USE disp,               ONLY : nqs, x_q, wq
@@ -164,10 +165,10 @@ SUBROUTINE setup_nscf_green(kpt, config)
       ! for G, we need the eigenvalues at k - q
       nkstot = nkstot + 1
       xk(:, nkstot) = kpt - star_xq(:, istar)
-      wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp)
+      wk(nkstot) = wq(iq) / REAL(num_star, KIND=dp) * degspin
       index_q(nkstot) = iq
       sym_op(nkstot) = isymop
-      weight(nkstot) = wq(iq) * REAL(num_symq(istar), KIND=dp) 
+      weight(nkstot) = wq(iq) * REAL(num_symq(istar), KIND=dp)
       !
     END DO ! istar
     ! 

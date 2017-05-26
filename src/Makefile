@@ -1,22 +1,22 @@
 #------------------------------------------------------------------------------
 #
-# This file is part of the Sternheimer-GW code.
+# This file is part of the SternheimerGW code.
 # 
 # Copyright (C) 2010 - 2017
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
-# Sternheimer-GW is free software: you can redistribute it and/or modify
+# SternheimerGW is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Sternheimer-GW is distributed in the hope that it will be useful,
+# SternheimerGW is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Sternheimer-GW. If not, see
+# along with SternheimerGW. If not, see
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------ 
@@ -31,7 +31,6 @@ MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_F
 EXE = gw.x
 
 IFLAGS=
-DFLAGS+=-D__GFORTRAN
 
 GWOBJS = \
 allocate_gwq.o\
@@ -58,6 +57,7 @@ godby_needs.o\
 gram_schmidt.o\
 green.o\
 gw.o\
+gw_opening.o\
 gw_type.o\
 gwcom.o\
 gwq_init.o\
@@ -87,7 +87,6 @@ save_gw_input.o\
 select_solver.o\
 setup_nscf.o\
 setup_nscf_green.o\
-sgw_opening.o\
 sigma.o\
 sigma_expect.o\
 sigma_grid.o\
@@ -111,6 +110,7 @@ LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
 
+
 no_debug : .no_debug all
 .no_debug:
 	-if [ -f .debug ]; then rm debug.o .debug; fi
@@ -122,7 +122,7 @@ debug : .debug all
 	-if [ -f .no_debug ]; then rm debug.o .no_debug; fi
 	-touch $@
 
-all : version libgw.a gw.x
+all : version libgw.a $(EXE)
 
 version : 
 	bash update_version

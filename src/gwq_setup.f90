@@ -1,24 +1,24 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
 ! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -64,7 +64,7 @@
 
   USE constants,          ONLY : eps14
   USE control_flags,      ONLY : noinv
-  USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot
+  USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot, set_alpha_pv
   USE fft_base,           ONLY : dfftp
   USE funct,              ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
   USE gvecs,              ONLY : doublegrid
@@ -78,7 +78,6 @@
   USE spin_orb,           ONLY : domag
   USE symm_base,          ONLY : time_reversal, inverse_s
   USE uspp_param,         ONLY : upf
-
 
   implicit none
 
@@ -134,7 +133,7 @@
   !
   ! 6) Computes alpha_pv
   !
-  call setup_alpha_pv()
+  if (set_alpha_pv) call setup_alpha_pv()
   !
   ! 7) set all the variables needed to use the pattern representation
   !

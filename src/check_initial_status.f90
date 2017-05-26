@@ -1,24 +1,24 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
 ! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -36,7 +36,7 @@ SUBROUTINE check_initial_status()
   !
   USE control_gw,      ONLY : tmp_dir_gw
   USE io_files,        ONLY : tmp_dir
-  USE io_rho_xml,      ONLY : write_rho
+  USE io_rho_xml,      ONLY : write_scf
   USE lsda_mod,        ONLY : nspin
   USE mp,              ONLY : mp_bcast
   USE mp_global,       ONLY : mp_global_end
@@ -56,7 +56,7 @@ SUBROUTINE check_initial_status()
   call q_points()
   !
   ! this is the standard treatment
-  CALL write_rho( rho, nspin )
+  CALL write_scf( rho, nspin )
   !
   RETURN
   END SUBROUTINE check_initial_status

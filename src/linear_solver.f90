@@ -1,27 +1,27 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
 !> This module provides a specialized linear solver for the problems that occur
-!! in a Sternheimer \f$GW\f$ calculation.
+!! in a SternheimerGW calculation.
 !!
 !! We need a solver capable of solving the linear equation \f$(A + \sigma I) x = b\f$.
 !! Here, A is a linear operator, \f$\sigma\f$ is a shift, x is the solutions of the
@@ -174,7 +174,7 @@ CONTAINS
 
       ! check for convergence
       IF (.NOT.conv) THEN
-        WRITE(stdout, '(a)') "WARNING: SGW linear solver did not converge"
+        WRITE(stdout, '(a)') "WARNING: SternheimerGW linear solver did not converge"
         ierr = 1
         EXIT
       END IF
@@ -184,7 +184,7 @@ CONTAINS
       CALL linear_solver_obtain_result(config, bb, subspace, xx(:, ishift))
 
       IF (ANY(test_nan(xx(:, ishift)))) THEN
-        WRITE(stdout, '(a)') "WARNING: SGW linear solver produced at least one NaN"
+        WRITE(stdout, '(a)') "WARNING: SternheimerGW linear solver produced at least one NaN"
         ierr = 2
         EXIT
       END IF
@@ -374,7 +374,7 @@ CONTAINS
     conv = norm < config%abs_threshold
 
     IF (.NOT.conv .AND. vec_size == num_basis) THEN
-      WRITE(stdout, '(a)') "WARNING: SGW linear solver right-hand side cannot be mapped by complete basis"
+      WRITE(stdout, '(a)') "WARNING: SternheimerGW linear solver right-hand side cannot be mapped by complete basis"
       ierr = 3
     ELSE
       ierr = 0

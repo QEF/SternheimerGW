@@ -1,0 +1,31 @@
+LiCl scf calculation
+&control
+    calculation  = 'scf'
+    prefix       = 'li'
+    outdir       = './tmp'
+    wf_collect   = .true.
+/
+
+&system
+    ibrav        = 3
+    celldm(1)    = 6.6329
+    nat          = 1
+    ntyp         = 1
+    ecutwfc      = 27.0
+    force_symmorphic = .true.
+    occupations  = "smearing"
+    degauss      = 0.01
+/
+
+&electrons
+    conv_thr =  1.0d-8
+/
+ATOMIC_SPECIES
+Li    6.941  Li.pz-n-vbc.UPF
+
+ATOMIC_POSITIONS (alat)
+Li  0.00 0.00 0.00
+
+K_POINTS AUTOMATIC
+12 12 12 0 0 0
+

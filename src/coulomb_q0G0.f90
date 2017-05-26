@@ -1,22 +1,22 @@
 !------------------------------------------------------------------------------
 !
-! This file is part of the Sternheimer-GW code.
+! This file is part of the SternheimerGW code.
 ! 
 ! Copyright (C) 2010 - 2017
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
-! Sternheimer-GW is free software: you can redistribute it and/or modify
+! SternheimerGW is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Sternheimer-GW is distributed in the hope that it will be useful,
+! SternheimerGW is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Sternheimer-GW. If not, see
+! along with SternheimerGW. If not, see
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
@@ -44,6 +44,7 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
   USE qpoint,           ONLY : xq
   USE select_solver_module, ONLY : select_solver_type
   USE solve_module,     ONLY : solve_linter
+  USE timing_module,    ONLY : time_coulomb
 
   IMPLICIT NONE
 
@@ -77,6 +78,14 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
   !> format used to print eps/inveps for direct/iterative solver
   CHARACTER(LEN=:), ALLOCATABLE :: format_str
 
+  !> determine the time since starting the routine
+  REAL(dp) get_clock
+
+  !> time at the start of the routine
+  REAL(dp) start_time
+
+  start_time = get_clock(time_coulomb)
+
   ! we use the frequency as equivalent of the perturbation in phonon
   ALLOCATE (drhoscfs(dfftp%nnr, nspin_mag, nfs))
   IF (nspin_mag /= 1) CALL errore(__FILE__, "magnetic calculation not implemented", 1)
@@ -84,10 +93,10 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
   ! determine number of iterations and set format string
   IF (solve_direct) THEN
     num_iter = 1
-    format_str = '(8x,"eps_{GG}(q,w) = ", 2f12.5)'
+    format_str = '(8x,"eps_{GG}(q,w) = ", 2f12.5, f9.2, a)'
   ELSE IF (niter_gw > 1) THEN
     num_iter = niter_gw
-    format_str = '(5x,"inveps_{GG}(q,w) = ", 2f12.5)'
+    format_str = '(5x,"inveps_{GG}(q,w) = ", 2f12.5, f9.2, a)'
   ELSE
     CALL errore(__FILE__, "for iterative solver, we need to use more iterations", 1)
     format_str = '(*)'
@@ -132,7 +141,12 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
       ! print the diagonal element
       IF (ionode) THEN
         igp = nls(ig)
-        WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp)
+        IF (iw == nfs) THEN
+          WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp), &
+            get_clock(time_coulomb) - start_time, "s"
+        ELSE
+          WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp)
+        END IF
       END IF
       !
     END DO ! iw
