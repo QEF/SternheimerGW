@@ -96,6 +96,6 @@ MODULE gw_version
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: gw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev13521'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev13531'
   !
 END MODULE gw_version

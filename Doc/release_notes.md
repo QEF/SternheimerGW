@@ -13,7 +13,7 @@ clearly from QSGW and other GW implementations. To align to this new name, a
 few routines had to be renamed that still used the old handle.
 
 Print timings during the run of the code.
-> compatible QE revision 13521 (note: compile with old XML)
+> compatible QE revision 13531 (note: compile with old XML)
 
 Version 0.11
 ------------
