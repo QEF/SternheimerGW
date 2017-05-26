@@ -76,12 +76,16 @@ CONTAINS
     IMPLICIT NONE
 
     WRITE(stdout,'(a)')
-    WRITE(stdout,'(5x,a)') "Please cite SternheimerGW as:"
-    WRITE(stdout,'(9x,a)') '"H. Lambert and F. Giustino, Phys. Rev. B 88. 075117 (2013)'
-    WRITE(stdout,'(9x,a)') ' URL http://www.sternheimergw.org"'
+    WRITE(stdout,'(5x,a)') 'Please cite SternheimerGW as:'
+    WRITE(stdout,'(9x,a)') 'M. Schlipf, H. Lambert, N. Zibouche, and F. Giustino, SternheimerGW,'
+    WRITE(stdout,'(9x,a)') 'paper in preparation, URL http://www.sternheimergw.org'
     WRITE(stdout,'(a)')
-    WRITE(stdout,'(5x,a)') "To increase the reproducibility of your results you can mention the"
-    WRITE(stdout,'(5x,a)') "git description of this version: " // gw_git_describe
+    WRITE(stdout,'(5x,a)') 'To increase the reproducibility of your results you can mention the'
+    WRITE(stdout,'(5x,a)') 'git description of this version: ' // gw_git_describe
+    WRITE(stdout,'(a)')
+    WRITE(stdout,'(5x,a)') 'other relevant papers:'
+    WRITE(stdout,'(9x,a)') 'H. Lambert and F. Giustino, Phys. Rev. B 88, 075117 (2013)'
+    WRITE(stdout,'(9x,a)') 'F. Giustino, M. L. Cohen, and S. G. Louie, Phys. Rev. B 81, 115105 (2010)'
 
   END SUBROUTINE gw_opening_message
 
