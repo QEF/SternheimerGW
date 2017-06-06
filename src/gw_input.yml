@@ -1,0 +1,61 @@
+#------------------------------------------------------------------------------
+#
+# This file is part of the SternheimerGW code.
+# 
+# Copyright (C) 2010 - 2017
+# Henry Lambert, Martin Schlipf, and Feliciano Giustino
+#
+# SternheimerGW is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# SternheimerGW is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with SternheimerGW. If not, see
+# http://www.gnu.org/licenses/gpl.html .
+#
+#------------------------------------------------------------------------------ 
+#
+# This file documents the input variables for the SternheimerGW code.
+#
+# The format of this file is 
+# namelist_name:
+#   variable_name:
+#     type: real, logical, character, ...
+#     default: specifies the default value of the variable
+#     description: This should decribe the use of the variable to a user
+#
+#------------------------------------------------------------------------------ 
+input_gw:
+
+  # variables necessary to extract the results of the PW calculation
+
+  prefix:
+    type: character
+    default: 'pwscf'
+    description: 'Use the prefix variable of the PW calculation.'
+
+  outdir:
+    type: character
+    default: './'
+    description: 'Use the outdir variable of the PW calculation.'
+
+  # general configuration of the GW calculation
+
+  qpt_grid:
+    type: real, array(3)
+    default: [0, 0, 0]
+    description: 'The grid used to integrate the screened Coulomb and the exchange
+      contribution to the self energy.'
+
+  # configuration of the screened Coulomb interaction
+
+  do_coul:
+    type: logical
+    default: .TRUE.
+    description: 'Specify whether the screened Coulomb interaction is calculated'
