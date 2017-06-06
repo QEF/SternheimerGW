@@ -58,11 +58,39 @@ gw_input:
 
   # general configuration of the GW calculation
 
+  kpt_grid:
+    type: integer, dimension(3)
+    default: [0, 0, 0]
+    description: The grid used to integrate the density reponse needed for the
+      screened Coulomb interaction. If not set, defaults to the grid used in the
+      scf calculation.
+
   qpt_grid:
     type: integer, dimension(3)
     default: [0, 0, 0]
     description: The grid used to integrate the screened Coulomb and the exchange
       contribution to the self energy.
+
+  truncation:
+    type: character(len=80)
+    default: 'on'
+    description: Specifies which method is used to truncate the Coulomb potential.
+      Possible options are\n
+      * not using any truncation 'none', 'off', 'false', 'no', 'no truncation'\n
+      * using a spherical truncation 'on', 'true', 'yes', 'spherical', 'spherical truncation'\n
+      * using a film geometry truncation (expects film in x-y plane)
+        'film', 'film truncation', '2d', '2d truncation' \n
+      * spherical truncation using the QE coulomb_vcut module 'vcut spherical',
+        'vcut spherical truncation', 'spherical vcut', 'spherical truncation vcut' \n
+      * Wigner-Seitz truncation using the QE coulomb_vcut module 'wigner-seitz', 'wigner-seitz
+        truncation', 'ws', 'ws truncation'
+
+  num_band:
+    type: integer
+    default: 0
+    description: Number of bands for which the GW correction is evaluated. Note that it
+      has to be larger than the number of occupied states so that the Fermi energy can
+      be calculated.
 
   # configuration of the screened Coulomb interaction
 

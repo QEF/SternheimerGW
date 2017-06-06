@@ -137,7 +137,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   REAL(DP) :: amass_input(nsx)
   ! save masses read from input here
   !
-  CHARACTER(LEN=256)         :: outdir
   CHARACTER(LEN=80)          :: card
   CHARACTER(LEN=1), EXTERNAL :: capital
   CHARACTER(LEN=6) :: int_to_char
@@ -168,20 +167,20 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CHARACTER(LEN=trunc_length) :: truncation
 
   NAMELIST / INPUTGW / tr2_gw, lmax_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
-                       nat_todo, iverbosity, outdir, epsil,  &
+                       nat_todo, iverbosity, epsil,  &
                        nrapp, max_seconds, reduce_io, alpha_pv, &
-                       modenum, prefix, fildyn, fildvscf, fildrho,   &
-                       ldisp, nq1, nq2, nq3, iq1, iq2, iq3,   &
+                       modenum, fildyn, fildvscf, fildrho,   &
+                       ldisp, iq1, iq2, iq3,   &
                        recover, lrpa, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, nbnd_sig, eta, kpoints,&
+                       start_q, last_q, nogg, modielec, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
                        wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, freq_symm, &
                        use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, paderobust, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       prec_direct, tmp_dir, prec_shift, just_corr,& 
+                       do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, high_io,&
+                       prec_direct, prec_shift, just_corr,& 
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
                        filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
@@ -193,10 +192,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! nmix_gw      : number of previous iterations used in mixing
   ! nat_todo     : number of atom to be displaced
   ! iverbosity   : verbosity control
-  ! outdir       : directory where input, output, temporary files reside
   ! max_seconds  : maximum cputime for this run
   ! reduce_io    : reduce I/O to the strict minimum
-  ! prefix       : the prefix of files produced by pwscf
   ! fildvscf     : output file containing deltavsc
   ! fildrho      : output file containing deltarho
   ! filsigx      : output file containing exchange part of sigma
@@ -216,6 +213,15 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! broadcast the user input to all CPU
   CALL gw_input_bcast(input)
   title = input%title
+  prefix = input%prefix
+  tmp_dir = trimcheck(input%outdir)
+  nbnd_sig = input%num_band
+  nk1 = input%kpt_grid(1)
+  nk2 = input%kpt_grid(2)
+  nk3 = input%kpt_grid(3)
+  nq1 = input%qpt_grid(1)
+  nq2 = input%qpt_grid(2)
+  nq3 = input%qpt_grid(3)
 
   !
   ! ... set default values for variables in namelist
@@ -249,24 +255,15 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   reduce_io    = .FALSE.
   prec_direct  = .FALSE.
   prec_shift  = .FALSE.
-  CALL get_environment_variable( 'ESPRESSO_TMPDIR', outdir )
-  IF ( TRIM( outdir ) == ' ' ) outdir = './'
-  prefix       = 'pwscf'
   fildyn       = 'matdyn'
   fildrho      = ' '
   fildvscf     = ' '
   filsigx      = 'sigma_x'
   filsigc      = 'sigma_c'
   filcoul      = 'coulomb'
-  nk1          = 0
-  nk2          = 0
-  nk3          = 0
   k1           = 0
   k2           = 0
   k3           = 0
-  nq1          = 0
-  nq2          = 0
-  nq3          = 0
   iq1          = 0
   iq2          = 0
   iq3          = 0
@@ -297,7 +294,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ecutsco      = 5.0
   ecutsex      = 5.0
   ecutprec     = 15.0
-  nbnd_sig     = 8
   nwcoul       = 35
   nwsigma      = 11
   nwsigwin     = 801
@@ -414,7 +410,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !HL TEST PARA FINE
 30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
    CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
-  IF (meta_ionode) tmp_dir = trimcheck (outdir)
 
   CALL bcast_gw_input(freq_symm) 
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
