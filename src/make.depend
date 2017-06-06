@@ -213,6 +213,7 @@ gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
 gwq_readin.o : debug.o
 gwq_readin.o : freqbins.o
+gwq_readin.o : gw_input.o
 gwq_readin.o : gwcom.o
 gwq_readin.o : save_gw_input.o
 gwq_readin.o : select_solver.o

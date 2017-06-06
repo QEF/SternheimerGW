@@ -55,6 +55,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE freq_gw,              ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,      ONLY : freqbins_type
+  USE gw_input_module,      ONLY : gw_input_type, gw_input_read, gw_input_bcast
   USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,               ONLY : use_symm
   USE input_parameters,     ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
@@ -97,6 +98,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   !> we store the debug information in this type
   TYPE(debug_type),    INTENT(OUT) :: debug
+  !
+  !> user input from file
+  TYPE(gw_input_type) :: input
   !
   !> size of the Wigner-Seitz cell
   REAL(dp) atws(3,3)
@@ -205,33 +209,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! last_irr     : 
   ! nogg         : if .true. lgamma_gamma tricks are not used
 
+  ! read the user input and store it in the input type
   IF (meta_ionode) THEN
+    CALL gw_input_read(input)
+  END IF
+  ! broadcast the user input to all CPU
+  CALL gw_input_bcast(input)
+  title = input%title
 
-  !
-  ! flib/inpfile.f90!
-  ! Reads in from standar input (5)
-  ! 
-     CALL input_from_file ( )
-  !
-  ! ... Read the first line of the input file
-  !
-     READ( 5, '(A)', IOSTAT = ios ) title
-  !   WRITE(6,*) nsx, maxter
-  !
-  ENDIF
-  !
-  CALL mp_bcast(ios, meta_ionode_id, world_comm )
-  CALL errore( 'gwq_readin', 'reading title ', ABS( ios ) )
-  CALL mp_bcast(title, meta_ionode_id, world_comm  )
-  !
-  ! Rewind the input if the title is actually the beginning of inputgw namelist
-  IF( imatches("&inputgw", title)) THEN
-    WRITE(*, '(6x,a)') "Title line not specified: using 'default'."
-    title='default'
-    IF (meta_ionode) REWIND(5, iostat=ios)
-    CALL mp_bcast(ios, meta_ionode_id, world_comm  )
-    CALL errore('gwq_readin', 'Title line missing from input.', abs(ios))
-  ENDIF
   !
   ! ... set default values for variables in namelist
   !

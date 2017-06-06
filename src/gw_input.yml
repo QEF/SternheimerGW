@@ -36,6 +36,14 @@
 #------------------------------------------------------------------------------ 
 gw_input:
 
+  # a title describing the calculation
+
+  title:
+    type: character(len=256)
+    default: 'SternheimerGW'
+    description: The title allows to print a small description what this calculation
+      does and is reprinted to the output.
+
   # variables necessary to extract the results of the PW calculation
 
   prefix:
