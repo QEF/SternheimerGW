@@ -153,6 +153,26 @@ cont_line == 1 {
   cont_line = 0
 }
 
+# print input parameters for subroutine
+function print_interface(name) {
+  printf "  SUBROUTINE "name"("
+  for (nml = 1; nml <= num_namelist; nml++) {
+    if (nml > 1) printf ", "
+    printf namelist[nml]"_t"
+  }
+  print ")"
+}
+ 
+# print the namelist type
+function print_type(intent) {
+  for (nml = 1; nml <= num_namelist; nml++) {
+    print ""
+    print "    !> contains the user input in namelist", namelist[nml]
+    print "    TYPE("namelist[nml]"_type), INTENT("intent") :: "namelist[nml]"_t"
+  }
+  print ""
+}
+
 # generate the reading routine
 END {
 
@@ -205,23 +225,14 @@ END {
   print ""
   print "  !> read the user input from the input file"
   # return one element per input namelist
-  printf "  SUBROUTINE gw_input_read("
-  for (nml = 1; nml <= num_namelist; nml++) {
-    if (nml > 1) printf ", "
-    printf namelist[nml]"_t"
-  }
-  print ")"
+  print_interface("gw_input_read")
   print ""
   print "    USE io_global, ONLY: stdin"
   # definition of the return types
-  for (nml = 1; nml <= num_namelist; nml++) {
-    print ""
-    print "    !> store the user input in namelist", namelist[nml], "in this type."
-    print "    TYPE("namelist[nml]"_type), INTENT(OUT) :: "namelist[nml]"_t"
-  }
+  print_type("OUT")
   # private types that are used to read the input
   for (nml = 1; nml <= num_namelist; nml++) {
-    print ""
+    if (nml > 1) print ""
     print "    !"
     print "    !  variables used for namelist", namelist[nml]
     for (var = 1; var <= num_variable[nml]; var++) {
@@ -282,6 +293,25 @@ END {
     print ""
   }
   print "  END SUBROUTINE gw_input_read"
+  print ""
+  print "  !> broadcast input to all CPU"
+  print_interface("gw_input_bcast")
+  print ""
+  print "    USE io_global, ONLY : meta_ionode_id"
+  print "    USE mp,        ONLY : mp_bcast"
+  print "    USE mp_world,  ONLY : world_comm"
+  print_type("INOUT")
+  print "    !"
+  print "    ! broadcast all variables"
+  print "    !"
+  for (nml = 1; nml <= num_namelist; nml++) {
+    print "    ! namelist", namelist[nml]
+    for (var = 1; var <= num_variable[nml]; var++) {
+      print "    CALL mp_bcast("namelist[nml]"_t%"variable[nml, var]", meta_ionode_id, world_comm)"
+    }
+    print ""
+  }
+  print "  END SUBROUTINE gw_input_bcast"
   print ""
   print "END MODULE gw_input_module"
 }

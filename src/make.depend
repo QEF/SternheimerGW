@@ -170,6 +170,8 @@ gw.o : timing.o
 gw.o : truncation.o
 gw_input.o : ../../Modules/io_global.o
 gw_input.o : ../../Modules/kind.o
+gw_input.o : ../../Modules/mp.o
+gw_input.o : ../../Modules/mp_world.o
 gw_opening.o : ../../Modules/io_global.o
 gw_opening.o : ../../Modules/version.o
 gw_opening.o : version.o
