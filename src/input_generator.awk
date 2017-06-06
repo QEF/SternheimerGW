@@ -271,6 +271,16 @@ END {
     print "    CALL errore(__FILE__, \"error reading namelist", namelist[nml],"\", ierr)"
     print ""
   }
+  print "    !"
+  print "    ! copy the namelist variables to the output type"
+  print "    !"
+  for (nml = 1; nml <= num_namelist; nml++) {
+    print "    ! namelist", namelist[nml]
+    for (var = 1; var <= num_variable[nml]; var++) {
+      print "   ", namelist[nml]"_t%"variable[nml, var], "=", variable[nml, var]
+    }
+    print ""
+  }
   print "  END SUBROUTINE gw_input_read"
   print ""
   print "END MODULE gw_input_module"
