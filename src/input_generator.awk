@@ -187,10 +187,9 @@ END {
   print "  USE kinds, ONLY: DP"
   print ""
   print "  IMPLICIT NONE"
-  print ""
   # generate one type per input namelist
   for (nml = 1; nml <= num_namelist; nml++) {
-    if (nml > 1) print ""
+    print ""
     print "  !> contains all data read from", namelist[nml]
     print "  TYPE", namelist[nml]"_type"
     for (var = 1; var <= num_variable[nml]; var++) {
@@ -212,12 +211,39 @@ END {
     printf namelist[nml]"_t"
   }
   print ")"
-  print ""
   # definition of the return types
   for (nml = 1; nml <= num_namelist; nml++) {
-    if (nml > 1) print ""
+    print ""
     print "    !> store the user input in namelist", namelist[nml], "in this type."
     print "    TYPE("namelist[nml]"_type), INTENT(OUT) :: "namelist[nml]"_t"
+  }
+  # private types that are used to read the input
+  for (nml = 1; nml <= num_namelist; nml++) {
+    print ""
+    print "    !"
+    print "    !  variables used for namelist", namelist[nml]
+    for (var = 1; var <= num_variable[nml]; var++) {
+      print "    !"
+      print "    !>", description[nml, var]
+      print "   ", toupper(type[nml, var]), "::", variable[nml, var]
+    }
+  }
+  for (nml = 1; nml <= num_namelist; nml++) {
+    # skip empty namelist
+    if (num_variable[nml] == 0) continue
+    print ""
+    print "    NAMELIST /"toupper(namelist[nml])"/ &"
+    old_string = ""
+    for (var = 1; var < num_variable[nml]; var++) {
+      string = old_string variable[nml, var]", "
+      if (length(string) > 80) {
+        print "     ", old_string"&"
+        old_string = variable[nml, var]", "
+      } else {
+        old_string = string
+      }
+    }
+    print "     ", old_string variable[nml, var]
   }
   print ""
   print "  END SUBROUTINE gw_input_read"
