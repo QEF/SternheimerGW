@@ -168,6 +168,7 @@ gw.o : sigma_grid.o
 gw.o : sigma_io.o
 gw.o : timing.o
 gw.o : truncation.o
+gw_input.o : ../../Modules/io_global.o
 gw_input.o : ../../Modules/kind.o
 gw_opening.o : ../../Modules/io_global.o
 gw_opening.o : ../../Modules/version.o

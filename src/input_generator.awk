@@ -211,6 +211,8 @@ END {
     printf namelist[nml]"_t"
   }
   print ")"
+  print ""
+  print "    USE io_global, ONLY: stdin"
   # definition of the return types
   for (nml = 1; nml <= num_namelist; nml++) {
     print ""
@@ -228,6 +230,11 @@ END {
       print "   ", toupper(type[nml, var]), "::", variable[nml, var]
     }
   }
+  print "    !> error flag returned by reading the namelist"
+  print "    INTEGER :: ierr"
+  print ""
+  print "    !> line that contained erroneous data"
+  print "    CHARACTER(LEN=256) :: line"
   for (nml = 1; nml <= num_namelist; nml++) {
     # skip empty namelist
     if (num_variable[nml] == 0) continue
@@ -246,6 +253,28 @@ END {
     print "     ", old_string variable[nml, var]
   }
   print ""
+  print "    !"
+  print "    ! set the default values"
+  print "    !"
+  for (nml = 1; nml <= num_namelist; nml++) {
+    print "    ! namelist", namelist[nml]
+    for (var = 1; var <= num_variable[nml]; var++) {
+      print "   ", variable[nml, var], "=", default[nml, var]
+    }
+  }
+  print ""
+  print "    !"
+  print "    ! read the namelist from stdin"
+  print "    !"
+  for (nml = 1; nml <= num_namelist; nml++) {
+    print "    READ(stdin, NML="namelist[nml]", IOSTAT=ierr)"
+    print "    IF (ierr /= 0) THEN"
+    print "      BACKSPACE(stdin)"
+    print "      READ(stdin, FMT='(a)') line"
+    print "      CALL errore(__FILE__, \"error reading", namelist[nml], "at\" // TRIM(line), 1)"
+    print "    END IF"
+    print ""
+  }
   print "  END SUBROUTINE gw_input_read"
   print ""
   print "END MODULE gw_input_module"
