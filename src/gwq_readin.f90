@@ -166,22 +166,22 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
 
-  NAMELIST / INPUTGW / tr2_gw, lmax_gw, amass, alpha_mix, niter_gw, nmix_gw,  &
+  NAMELIST / INPUTGW / lmax_gw, amass, alpha_mix, niter_gw,  &
                        nat_todo, iverbosity, epsil,  &
                        nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, fildyn, fildvscf, fildrho,   &
                        ldisp, iq1, iq2, iq3,   &
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, eta, kpoints,&
-                       ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_coulomb, do_sigma_c, do_sigma_exx, do_green,& 
+                       ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_sigma_c, do_sigma_exx, do_green,& 
                        do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
-                       wsigmamax, wcoulmax, nwsigma, priority_coul, priority_green, freq_symm, &
-                       use_symm, maxter_green, maxter_coul, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
+                       wsigmamax, nwsigma, priority_coul, priority_green, freq_symm, &
+                       maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
                        padecont, paderobust, cohsex, multishift, do_sigma_extra,&
-                       solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
+                       w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
-                       nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
+                       double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
                        filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
@@ -189,7 +189,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
-  ! nmix_gw      : number of previous iterations used in mixing
   ! nat_todo     : number of atom to be displaced
   ! iverbosity   : verbosity control
   ! max_seconds  : maximum cputime for this run
@@ -222,11 +221,34 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   nq1 = input%qpt_grid(1)
   nq2 = input%qpt_grid(2)
   nq3 = input%qpt_grid(3)
+  do_coulomb = input%do_coul
+  tr2_gw = input%thres_coul
+  maxter_coul = input%max_iter_coul
+  nmix_gw = input%nmix_coul
+  use_symm = input%use_symm_coul
+  solve_direct = (input%solve_coul == 'direct')
+  IF (.NOT.solve_direct) THEN
+    IF (input%solve_coul /= 'iter' .AND. input%solve_coul /= 'iterative') THEN
+      CALL errore(__FILE__, 'unknown solver method for coulomb', 1)
+    END IF
+  END IF
+  wcoulmax = input%max_freq_coul
+  nwcoul = input%num_freq_coul
+  godbyneeds   = .FALSE.
+  padecont     = .FALSE.
+  paderobust   = .FALSE.
+  IF (input%model_coul == 'gn' .OR. input%model_coul == 'pp' .OR. &
+      input%model_coul == 'godby-needs') THEN
+    godbyneeds = .TRUE.
+  ELSE IF (input%model_coul == 'pade') THEN
+    padecont = .TRUE.
+  ELSE IF (input%model_coul == 'pade robust') THEN
+    paderobust = .TRUE.
+  END IF
 
   !
   ! ... set default values for variables in namelist
   !
-  tr2_gw       = 1.D-4
   tr2_green    = 1.D-3
   lmax_gw      = 4
   lmax_green   = 4
@@ -244,7 +266,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   alpha_mix(1) = 0.7D0
   alpha_pv     = -1.0_dp
   niter_gw     = maxter
-  nmix_gw      = 3
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -274,8 +295,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   start_q      = 1
   last_q       =-1000
   ldisp        =.FALSE.
-  lrpa         =.FALSE.
-  maxter_coul  = 160
+  lrpa         =.TRUE.
   maxter_green = 220
   w_green_start = 1
 
@@ -294,38 +314,30 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ecutsco      = 5.0
   ecutsex      = 5.0
   ecutprec     = 15.0
-  nwcoul       = 35
   nwsigma      = 11
   nwsigwin     = 801
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
-  godbyneeds   = .FALSE.
-  cohsex       = .FALSE.
-  padecont     = .FALSE.
-  paderobust   = .FALSE.
   multishift   = .FALSE.
+  cohsex       = .FALSE.
 !Imaginary component added to linear system should be in Rydberg
   eta            =  0.02
   kpoints        = .FALSE.
-  do_coulomb     = .FALSE.
   do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
-  solve_direct   = .FALSE.
   tinvert        = .TRUE.
 !Frequency variables
   wsigmamin      = 0.0d0
   wsigmamax      = 20.0d0
-  wcoulmax       = 80.0d0   
   wsig_wind_min   = -50.0
   wsig_wind_max   =  30.0
 
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
-  use_symm       = .TRUE.
   freq_symm      = .FALSE.
   w_of_q_start   = 1
   w_of_k_start   = 1

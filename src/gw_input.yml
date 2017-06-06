@@ -98,3 +98,54 @@ gw_input:
     type: logical
     default: .TRUE.
     description: Specify whether the screened Coulomb interaction is calculated
+
+  solve_coul:
+    type: character(len=256)
+    default: 'direct'
+    description: Specify which method is used to solve for the screened Coulomb interaction\n
+      * 'direct' determine the dielectric function and invert\n
+      * 'iter' or 'iterative' to determine the inverse of the dielectric function iteratively
+        which requires no matrix inversion and hence less memory
+
+  nmix_coul:
+    type: integer
+    default: 4
+    description: Number of potentials that are mixed in the iterative solver.
+
+  use_symm_coul:
+    type: logical
+    default: .TRUE.
+    description: Use the small group of q to reduce the amount of G vectors for which the
+      linear response is calculated.
+
+  thres_coul:
+    type: real(dp)
+    default: 1e-4_dp
+    description: The threshold to which the linear solver is converged. For the iterative solver
+      smaller values are necessary (~1e-8).
+
+  max_iter_coul:
+    type: integer
+    default: 1000
+    description: The maximum number of iterations a linear solver will try before aborting.
+
+  model_coul:
+    type: character(len=256)
+    default: 'pade'
+    description: Model used to perform the analytic continuation from the coarse mesh, on which
+      the linear solver works, onto the dense mesh, where the integration is performed.
+      Possible choices\n
+        * 'gn', 'pp', or 'godby-needs', Godby-Needs plasmon pole model\n
+        * 'pade', Pade approximation\n
+        * 'pade robust', robust method to determine Pade approximant, requires the initial
+          frequency mesh to be on a circle
+
+  max_freq_coul:
+    type: real(dp)
+    default: 100.0_dp
+    description: Upper boundary of the frequency integration grid when convoluting G and W.
+
+  num_freq_coul:
+    type: integer
+    default: 50
+    description: Number of frequency points in the integration grid when convoluting G and W.
