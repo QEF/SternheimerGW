@@ -185,22 +185,33 @@ END {
   print ""
   print "  IMPLICIT NONE"
   print ""
-  print "  PRIVATE"
-  print "  PUBLIC gw_input_type, gw_input"
-  print ""
-  print "  !> contains all data read from input"
-  print "  TYPE gw_input_type"
-  print "  END TYPE gw_input_type"
+  # generate one type per input namelist
+  for (nml = 1; nml <= num_namelist; nml++) {
+    if (nml > 1) print ""
+    print "  !> contains all data read from", namelist[nml]
+    print "  TYPE", namelist[nml]"_type"
+    print "  END TYPE", namelist[nml]"_type"
+  }
   print ""
   print "CONTAINS"
   print ""
   print "  !> read the user input from the input file"
-  print "  SUBROUTINE gw_input(user_input)"
+  # return one element per input namelist
+  printf "  SUBROUTINE gw_input_read("
+  for (nml = 1; nml <= num_namelist; nml++) {
+    if (nml > 1) printf ", "
+    printf namelist[nml]"_t"
+  }
+  print ")"
   print ""
-  print "    !> store the user input in this type"
-  print "    TYPE(gw_input_type), INTENT(OUT) :: user_input"
+  # definition of the return types
+  for (nml = 1; nml <= num_namelist; nml++) {
+    if (nml > 1) print ""
+    print "    !> store the user input in namelist", namelist[nml], "in this type."
+    print "    TYPE("namelist[nml]"_type), INTENT(OUT) :: "namelist[nml]"_t"
+  }
   print ""
-  print "  END SUBROUTINE gw_input"
+  print "  END SUBROUTINE gw_input_read"
   print ""
   print "END MODULE gw_input_module"
 #  for (nml = 1; nml <= num_namelist; nml++) {

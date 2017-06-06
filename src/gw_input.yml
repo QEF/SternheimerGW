@@ -31,7 +31,7 @@
 #     description: This should decribe the use of the variable to a user
 #
 #------------------------------------------------------------------------------ 
-input_gw:
+gw_input:
 
   # variables necessary to extract the results of the PW calculation
 
