@@ -51,7 +51,7 @@ gw_input:
   # general configuration of the GW calculation
 
   qpt_grid:
-    type: real(dp), dimension(3)
+    type: integer, dimension(3)
     default: [0, 0, 0]
     description: The grid used to integrate the screened Coulomb and the exchange
       contribution to the self energy.
