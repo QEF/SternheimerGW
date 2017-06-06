@@ -116,6 +116,7 @@ skip == 0 && spec_active && cont_line == 0 {
   # determine which element we deal with
   split($0, array, ":")
   gsub(/^[ \t]/, "", array[1])
+  gsub(/^[ \t]/, "", array[2])
   element = tolower(array[1])
 
   if (element == "type") {
@@ -183,6 +184,8 @@ END {
   print "!> Automatically generated input reader for SternheimerGW"
   print "MODULE gw_input_module"
   print ""
+  print "  USE kinds, ONLY: DP"
+  print ""
   print "  IMPLICIT NONE"
   print ""
   # generate one type per input namelist
@@ -190,6 +193,12 @@ END {
     if (nml > 1) print ""
     print "  !> contains all data read from", namelist[nml]
     print "  TYPE", namelist[nml]"_type"
+    for (var = 1; var <= num_variable[nml]; var++) {
+      print ""
+      print "    !>", description[nml, var]
+      print "   ", toupper(type[nml, var]), "::", variable[nml, var]
+    }
+    print ""
     print "  END TYPE", namelist[nml]"_type"
   }
   print ""
@@ -214,13 +223,4 @@ END {
   print "  END SUBROUTINE gw_input_read"
   print ""
   print "END MODULE gw_input_module"
-#  for (nml = 1; nml <= num_namelist; nml++) {
-#    print namelist[nml]
-#    for (var = 1; var <= num_variable[nml]; var++) {
-#       print " ", variable[nml,var]
-#       print "   ", type[nml,var]
-#       print "   ", default[nml,var]
-#       print "   ", description[nml,var]
-#    }
-#  }
 }

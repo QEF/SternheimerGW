@@ -30,32 +30,35 @@
 #     default: specifies the default value of the variable
 #     description: This should decribe the use of the variable to a user
 #
+# You must NOT use the same name for a variable (even if they are in different
+# namelists)
+#
 #------------------------------------------------------------------------------ 
 gw_input:
 
   # variables necessary to extract the results of the PW calculation
 
   prefix:
-    type: character
+    type: character(len=256)
     default: 'pwscf'
-    description: 'Use the prefix variable of the PW calculation.'
+    description: Use the prefix variable of the PW calculation.
 
   outdir:
-    type: character
+    type: character(len=256)
     default: './'
-    description: 'Use the outdir variable of the PW calculation.'
+    description: Use the outdir variable of the PW calculation.
 
   # general configuration of the GW calculation
 
   qpt_grid:
-    type: real, array(3)
+    type: real(dp), dimension(3)
     default: [0, 0, 0]
-    description: 'The grid used to integrate the screened Coulomb and the exchange
-      contribution to the self energy.'
+    description: The grid used to integrate the screened Coulomb and the exchange
+      contribution to the self energy.
 
   # configuration of the screened Coulomb interaction
 
   do_coul:
     type: logical
     default: .TRUE.
-    description: 'Specify whether the screened Coulomb interaction is calculated'
+    description: Specify whether the screened Coulomb interaction is calculated
