@@ -128,9 +128,7 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (cohsex, meta_ionode_id, world_comm)
   call mp_bcast (eta, meta_ionode_id, world_comm)
   call mp_bcast (kpoints, meta_ionode_id, world_comm)
-  call mp_bcast (do_sigma_exx, meta_ionode_id, world_comm)
   call mp_bcast (do_green, meta_ionode_id, world_comm)
-  call mp_bcast (do_sigma_matel, meta_ionode_id, world_comm)
   call mp_bcast (do_q0_only, meta_ionode_id, world_comm)
   call mp_bcast (do_sigma_extra, meta_ionode_id, world_comm)
   call mp_bcast (tinvert,meta_ionode_id, world_comm)
@@ -144,8 +142,6 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (alpha_pv, meta_ionode_id, world_comm)
 
 !Frequency grid
-  call mp_bcast (wsig_wind_min, meta_ionode_id, world_comm)
-  call mp_bcast (wsig_wind_max, meta_ionode_id, world_comm)
   call mp_bcast (just_corr,    meta_ionode_id, world_comm)
 
 !units information
@@ -157,9 +153,7 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (high_io, meta_ionode_id, world_comm)
   call mp_bcast (prec_direct, meta_ionode_id, world_comm)
   call mp_bcast (prec_shift, meta_ionode_id, world_comm)
-  call mp_bcast (nwsigwin, meta_ionode_id, world_comm)
 
-  call mp_bcast (use_symm, meta_ionode_id, world_comm)
   call mp_bcast (freq_symm, meta_ionode_id, world_comm)
   call mp_bcast (w_of_q_start, meta_ionode_id, world_comm)
   call mp_bcast (w_of_k_start, meta_ionode_id, world_comm)

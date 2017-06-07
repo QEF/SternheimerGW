@@ -199,7 +199,7 @@ gw_input:
     description: The parameter lmax controls the number of BiCG steps in the BiCGstab solver
       before doing an MR step. It has no effect for other solvers.
 
-  # configuration of the correlation self-energy
+  # configuration of the correlation self energy
 
   do_corr:
     type: logical
@@ -209,25 +209,62 @@ gw_input:
   ecut_corr:
     type: real(dp)
     default: 15.0_dp
-    description: Energy cutoff used to evaluate the correlation self-energy. Important
+    description: Energy cutoff used to evaluate the correlation self energy. Important
       convergence parameter with very significant impact on computation time.
 
   min_freq_corr:
     type: real(dp)
     default: 0.0_dp
-    description: Lower frequency boundary (in eV) for the correlation self-energy. Set to 0
+    description: Lower frequency boundary (in eV) for the correlation self energy. Set to 0
       when using imaginary axis integration or the minimum relevant frequency for integration
       along the real axis.
 
   max_freq_corr:
     type: real(dp)
     default: 100.0_dp
-    description: Upper frequency boundary (in eV) for the correlation self-energy. Convergence
+    description: Upper frequency boundary (in eV) for the correlation self energy. Convergence
       parameter when using imaginary axis integration or the maximum relevant frequency for
       integration along the real axis.
 
   num_freq_corr:
     type: integer
     default: 11
-    description: Number of frequency points for the correlation self-energy. Convergence parameter
+    description: Number of frequency points for the correlation self energy. Convergence parameter
       when using imaginary axis integration.
+
+  # configuration of the exchange self energy
+
+  do_exch:
+    type: logical
+    default: .TRUE.
+    description: Determines whether the exchange self energy is evaluated.
+
+  ecut_exch:
+    type: real(dp)
+    default: 20.0_dp
+    description: Energy cutoff used to evaluate the exchange self energy.
+
+  # configuration of the output of the matrix elements
+
+  do_matrix_el:
+    type: logical
+    default: .TRUE.
+    description: Determines whether the matrix elements of the self energy are calculated.
+
+  min_freq_wind:
+    type: real(dp)
+    default: -50.0_dp
+    description: Lower frequency boundary for window in which the matrix elements of the
+      self energy are evaluated (for imaginary frequency integration only).
+
+  max_freq_wind:
+    type: real(dp)
+    default: 30.0_dp
+    description: Upper frequency boundary for window in which the matrix elements of the
+      self energy are evaluated (for imaginary frequency integration only).
+
+  num_freq_wind:
+    type: integer
+    default: 801
+    description: Number of frequency points in window in which the matrix elements of the
+      self energy are evaluated (for imaginary frequency integration only).

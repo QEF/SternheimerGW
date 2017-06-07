@@ -173,14 +173,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        ldisp, iq1, iq2, iq3,   &
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, eta, kpoints,&
-                       ecutsex, corr_conv, exch_conv, ecutprec, do_sigma_exx, do_green,& 
-                       do_sigma_matel, do_q0_only, freq_symm, &
+                       corr_conv, exch_conv, ecutprec, do_green,& 
+                       do_q0_only, freq_symm, &
                        maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
                        cohsex, multishift, do_sigma_extra,&
                        w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
-                       double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
+                       double_grid, & 
                        filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
@@ -256,6 +256,13 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wsigmamin = input%min_freq_corr
   wsigmamax = input%max_freq_corr
   nwsigma = input%num_freq_corr
+  do_sigma_exx = input%do_exch
+  ecutsex = input%ecut_exch
+  do_sigma_matel = input%do_matrix_el
+  wsig_wind_min = input%min_freq_wind
+  wsig_wind_max = input%max_freq_wind
+  nwsigwin = input%num_freq_wind
+  lrpa         =.TRUE.
 
   !
   ! ... set default values for variables in namelist
@@ -297,7 +304,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   start_q      = 1
   last_q       =-1000
   ldisp        =.FALSE.
-  lrpa         =.TRUE.
   w_green_start = 1
 
   coul_multishift = .FALSE.
@@ -311,9 +317,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Sigma cutoff, correlation cutoff, exchange cutoff
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
-  ecutsex      = 5.0
   ecutprec     = 15.0
-  nwsigwin     = 801
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   multishift   = .FALSE.
@@ -321,15 +325,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Imaginary component added to linear system should be in Rydberg
   eta            =  0.02
   kpoints        = .FALSE.
-  do_sigma_exx   = .FALSE.
   do_green       = .FALSE.
-  do_sigma_matel = .FALSE.
   do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
   tinvert        = .TRUE.
-!Frequency variables
-  wsig_wind_min   = -50.0
-  wsig_wind_max   =  30.0
 
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
