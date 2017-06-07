@@ -50,7 +50,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    method_truncation => truncation
   USE debug_module,         ONLY : debug_type
   USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
-                                   xk_kpoints, kpoints, num_k_pts, & 
+                                   xk_kpoints, num_k_pts, & 
                                    w_of_q_start, w_of_k_start, w_of_k_stop
   USE freq_gw,              ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
@@ -170,17 +170,16 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        nat_todo, iverbosity, epsil,  &
                        nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, fildyn, fildvscf, fildrho,   &
-                       ldisp, iq1, iq2, iq3,   &
-                       recover, lrpa, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, eta, kpoints,&
+                       iq1, iq2, iq3,   &
+                       recover, lnoloc, start_irr, last_irr, &
+                       start_q, last_q, nogg, modielec, eta, &
                        corr_conv, exch_conv, ecutprec, do_green,& 
                        do_q0_only, freq_symm, &
                        maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
-                       cohsex, multishift, do_sigma_extra,&
-                       w_green_start, tinvert, coul_multishift, trunc_2d,&
+                       cohsex, do_sigma_extra,&
+                       w_green_start, tinvert, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
-                       double_grid, & 
                        filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
@@ -262,7 +261,11 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wsig_wind_min = input%min_freq_wind
   wsig_wind_max = input%max_freq_wind
   nwsigwin = input%num_freq_wind
-  lrpa         =.TRUE.
+
+  ! set Quantum ESPRESSO module variables
+  lrpa        = .TRUE.
+  ldisp       = .TRUE.
+  double_grid = .FALSE.
 
   !
   ! ... set default values for variables in namelist
@@ -303,16 +306,13 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   last_irr     =-1000
   start_q      = 1
   last_q       =-1000
-  ldisp        =.FALSE.
   w_green_start = 1
 
-  coul_multishift = .FALSE.
   trunc_2d        = .FALSE.
   do_epsil        = .FALSE.
   do_diag_g       = .FALSE.
   do_diag_w       = .FALSE.
   do_pade_coul    = .FALSE.
-  double_grid     = .TRUE.
   high_io    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
 !this is in case we want to define different cutoffs for 
@@ -320,11 +320,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ecutprec     = 15.0
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
-  multishift   = .FALSE.
   cohsex       = .FALSE.
 !Imaginary component added to linear system should be in Rydberg
   eta            =  0.02
-  kpoints        = .FALSE.
   do_green       = .FALSE.
   do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
@@ -515,39 +513,34 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
     freq%use_symmetry = .FALSE.
   END IF
 
- IF (kpoints) then
-     num_k_pts = 0
-     IF (meta_ionode) THEN
-        READ (5, *, iostat = ios) card
-        READ (5, *, iostat = ios) card
-        IF ( TRIM(card)=='K_POINTS'.OR. &
-             TRIM(card)=='k_points'.OR. &
-             TRIM(card)=='K_points') THEN
-           READ (5, *, iostat = ios) num_k_pts
-        ENDIF
-     ENDIF
-     CALL mp_bcast(ios, meta_ionode_id, world_comm )
-     CALL errore ('pwq_readin', 'reading number of kpoints', ABS(ios) )
-     CALL mp_bcast(num_k_pts, meta_ionode_id, world_comm )
-     if (num_k_pts > 2000) call errore('phq_readin','Too many k-points',1) 
-     if (num_k_pts < 1) call errore('phq_readin','Too few kpoints',1) 
-     IF (meta_ionode) THEN
-        IF ( TRIM(card)=='K_POINTS'.OR. &
-             TRIM(card)=='k_points'.OR. &
-             TRIM(card)=='K_points') THEN
-           DO i = 1, num_k_pts
-              !should be in units of 2pi/a0 cartesian co-ordinates
-              READ (5, *, iostat = ios) xk_kpoints(1,i),& 
-                         xk_kpoints(2,i), xk_kpoints(3,i)
-           END DO
-        END IF
+  num_k_pts = 0
+  IF (meta_ionode) THEN
+     READ(5, *, IOSTAT = ios) card
+     READ(5, *, IOSTAT = ios) card
+     IF (TRIM(card) == 'K_POINTS' .OR. &
+         TRIM(card) == 'k_points' .OR. &
+         TRIM(card) == 'K_points') THEN
+       READ(5, *, IOSTAT = ios) num_k_pts
      END IF
-     CALL mp_bcast(ios, meta_ionode_id, world_comm)
-     CALL errore ('gwq_readin', 'reading KPOINTS card', ABS(ios) )
-     CALL mp_bcast(xk_kpoints, meta_ionode_id, world_comm)
- ELSE
-     num_k_pts = 1
- ENDIF
+  END IF
+  CALL mp_bcast(ios, meta_ionode_id, world_comm)
+  CALL errore(__FILE__, 'reading number of kpoints', ABS(ios))
+  CALL mp_bcast(num_k_pts, meta_ionode_id, world_comm)
+  IF (num_k_pts > 2000) CALL errore(__FILE__,'Too many k-points', 1)
+  IF (num_k_pts < 1) CALL errore(__FILE__,'Too few kpoints', 1)
+  IF (meta_ionode) THEN
+    IF (TRIM(card) == 'K_POINTS' .OR. &
+        TRIM(card) == 'k_points' .OR. &
+        TRIM(card) == 'K_points') THEN
+      DO i = 1, num_k_pts
+        !should be in units of 2pi/a0 cartesian co-ordinates
+        READ(5, *, IOSTAT = ios) xk_kpoints(:,i)
+      END DO
+    END IF
+  END IF
+  CALL mp_bcast(ios, meta_ionode_id, world_comm)
+  CALL errore(__FILE__, 'reading KPOINTS card', ABS(ios))
+  CALL mp_bcast(xk_kpoints, meta_ionode_id, world_comm)
 
  if (w_of_k_stop==-2) then
     w_of_k_stop = num_k_pts
