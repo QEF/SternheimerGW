@@ -75,13 +75,13 @@ gw_input:
     type: character(len=80)
     default: 'on'
     description: Specifies which method is used to truncate the Coulomb potential.
-      Possible options are\n
-      * not using any truncation 'none', 'off', 'false', 'no', 'no truncation'\n
-      * using a spherical truncation 'on', 'true', 'yes', 'spherical', 'spherical truncation'\n
+      Possible options are
+      * not using any truncation 'none', 'off', 'false', 'no', 'no truncation'
+      * using a spherical truncation 'on', 'true', 'yes', 'spherical', 'spherical truncation'
       * using a film geometry truncation (expects film in x-y plane)
-        'film', 'film truncation', '2d', '2d truncation' \n
+        'film', 'film truncation', '2d', '2d truncation'
       * spherical truncation using the QE coulomb_vcut module 'vcut spherical',
-        'vcut spherical truncation', 'spherical vcut', 'spherical truncation vcut' \n
+        'vcut spherical truncation', 'spherical vcut', 'spherical truncation vcut'
       * Wigner-Seitz truncation using the QE coulomb_vcut module 'wigner-seitz', 'wigner-seitz
         truncation', 'ws', 'ws truncation'
 
@@ -102,8 +102,8 @@ gw_input:
   solve_coul:
     type: character(len=256)
     default: 'direct'
-    description: Specify which method is used to solve for the screened Coulomb interaction\n
-      * 'direct' determine the dielectric function and invert\n
+    description: Specify which method is used to solve for the screened Coulomb interaction
+      * 'direct' determine the dielectric function and invert
       * 'iter' or 'iterative' to determine the inverse of the dielectric function iteratively
         which requires no matrix inversion and hence less memory
 
@@ -118,6 +118,15 @@ gw_input:
     description: Use the small group of q to reduce the amount of G vectors for which the
       linear response is calculated.
 
+  priority_coul:
+    type: integer, dimension(10)
+    default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]
+    description: Order in which the linear solvers are tried for the Coulomb interaction
+      * 1 - BiCGstab(l) with multishift
+      * 2 - BiCGstab(l) without multishift
+      * 3 - linear solver developed for SternheimerGW
+      * 0 - no linear solver
+
   thres_coul:
     type: real(dp)
     default: 1e-4_dp
@@ -129,14 +138,20 @@ gw_input:
     default: 1000
     description: The maximum number of iterations a linear solver will try before aborting.
 
+  lmax_coul:
+    type: integer
+    default: 4
+    description: The parameter lmax controls the number of BiCG steps in the BiCGstab solver
+      before doing an MR step. It has no effect for other solvers.
+
   model_coul:
     type: character(len=256)
     default: 'pade'
     description: Model used to perform the analytic continuation from the coarse mesh, on which
       the linear solver works, onto the dense mesh, where the integration is performed.
-      Possible choices\n
-        * 'gn', 'pp', or 'godby-needs', Godby-Needs plasmon pole model\n
-        * 'pade', Pade approximation\n
+      Possible choices
+        * 'gn', 'pp', or 'godby-needs', Godby-Needs plasmon pole model
+        * 'pade', Pade approximation
         * 'pade robust', robust method to determine Pade approximant, requires the initial
           frequency mesh to be on a circle
 
@@ -149,3 +164,31 @@ gw_input:
     type: integer
     default: 50
     description: Number of frequency points in the integration grid when convoluting G and W.
+
+  # configuration of the Green's function
+
+  priority_green:
+    type: integer, dimension(10)
+    default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]
+    description: Order in which the linear solvers are tried for the Green's function
+      * 1 - BiCGstab with multishift
+      * 2 - BiCGstab without multishift
+      * 3 - linear solver developed for SternheimerGW
+      * 0 - no linear solver
+
+  thres_green:
+    type: real(dp)
+    default: 1e-4_dp
+    description: The threshold to which the linear solver for the Green's function is converged.
+
+  max_iter_green:
+    type: integer
+    default: 1000
+    description: The maximum number of iterations a linear solver will try before aborting.
+
+  lmax_green:
+    type: integer
+    default: 4
+    description: The parameter lmax controls the number of BiCG steps in the BiCGstab solver
+      before doing an MR step. It has no effect for other solvers.
+

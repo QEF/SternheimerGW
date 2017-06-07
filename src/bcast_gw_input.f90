@@ -90,12 +90,9 @@ subroutine bcast_gw_input(freq_symm)
   CALL mp_bcast(  k1, meta_ionode_id, world_comm )
   CALL mp_bcast(  k2, meta_ionode_id, world_comm )
   CALL mp_bcast(  k3, meta_ionode_id, world_comm )
-  CALL mp_bcast(lmax_gw, meta_ionode_id, world_comm)
-  CALL mp_bcast(lmax_green, meta_ionode_id, world_comm)
 !
 ! real*8
 !
-  call mp_bcast (tr2_green, meta_ionode_id, world_comm )
   call mp_bcast (amass, meta_ionode_id, world_comm )
   call mp_bcast (alpha_mix, meta_ionode_id, world_comm )
   call mp_bcast (max_seconds, meta_ionode_id, world_comm )
@@ -175,7 +172,6 @@ subroutine bcast_gw_input(freq_symm)
   call mp_bcast (w_of_k_start, meta_ionode_id, world_comm)
   call mp_bcast (w_of_k_stop, meta_ionode_id, world_comm)
   call mp_bcast (w_green_start, meta_ionode_id, world_comm)
-  call mp_bcast (maxter_green, meta_ionode_id, world_comm)
   call mp_bcast (newgrid, meta_ionode_id, world_comm)
 #endif
   return

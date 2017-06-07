@@ -166,7 +166,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
 
-  NAMELIST / INPUTGW / lmax_gw, amass, alpha_mix, niter_gw,  &
+  NAMELIST / INPUTGW / amass, alpha_mix, niter_gw,  &
                        nat_todo, iverbosity, epsil,  &
                        nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, fildyn, fildvscf, fildrho,   &
@@ -174,10 +174,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, eta, kpoints,&
                        ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, tr2_green, lmax_green, do_q0_only, wsigmamin, &
-                       wsigmamax, nwsigma, priority_coul, priority_green, freq_symm, &
-                       maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, godbyneeds,& 
-                       padecont, paderobust, cohsex, multishift, do_sigma_extra,&
+                       do_sigma_matel, do_q0_only, wsigmamin, &
+                       wsigmamax, nwsigma, freq_symm, &
+                       maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
+                       cohsex, multishift, do_sigma_extra,&
                        w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
@@ -224,6 +224,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   do_coulomb = input%do_coul
   tr2_gw = input%thres_coul
   maxter_coul = input%max_iter_coul
+  priority_coul = input%priority_coul
+  lmax_gw = input%lmax_coul
   nmix_gw = input%nmix_coul
   use_symm = input%use_symm_coul
   solve_direct = (input%solve_coul == 'direct')
@@ -245,19 +247,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ELSE IF (input%model_coul == 'pade robust') THEN
     paderobust = .TRUE.
   END IF
+  tr2_green = input%thres_green
+  maxter_green = input%max_iter_green
+  priority_green = input%priority_green
+  lmax_green = input%lmax_green
 
   !
   ! ... set default values for variables in namelist
   !
-  tr2_green    = 1.D-3
-  lmax_gw      = 4
-  lmax_green   = 4
-  priority_coul(1)   = bicgstab_multi
-  priority_coul(2)   = sgw_linear_solver
-  priority_coul(3:)  = no_solver
-  priority_green(1)  = bicgstab_multi
-  priority_green(2)  = sgw_linear_solver
-  priority_green(3:) = no_solver
   amass(:)     = 0.D0
   alpha_mix(:) = 0.D0
   !for bulk systems alpha_mix = 0.7 is standard
@@ -296,7 +293,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   last_q       =-1000
   ldisp        =.FALSE.
   lrpa         =.TRUE.
-  maxter_green = 220
   w_green_start = 1
 
   coul_multishift = .FALSE.
@@ -698,7 +694,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   config_green%bicg_lmax = lmax_green
   !
   ! setup priority for Coulomb solver
-  CALL mp_bcast(priority_coul, meta_ionode_id, world_comm)
   num_priority = COUNT(priority_coul /= no_solver)
   !
   IF (num_priority == 0) THEN
@@ -718,7 +713,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   END DO ! i
   !
   ! setup priority for Green's solver
-  CALL mp_bcast(priority_green, meta_ionode_id, world_comm)
   num_priority = COUNT(priority_green /= no_solver)
   !
   IF (num_priority == 0) THEN
