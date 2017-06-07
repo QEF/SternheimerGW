@@ -173,13 +173,12 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        ldisp, iq1, iq2, iq3,   &
                        recover, lrpa, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, eta, kpoints,&
-                       ecutsco, ecutsex, corr_conv, exch_conv, ecutprec, do_sigma_c, do_sigma_exx, do_green,& 
-                       do_sigma_matel, do_q0_only, wsigmamin, &
-                       wsigmamax, nwsigma, freq_symm, &
+                       ecutsex, corr_conv, exch_conv, ecutprec, do_sigma_exx, do_green,& 
+                       do_sigma_matel, do_q0_only, freq_symm, &
                        maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
                        cohsex, multishift, do_sigma_extra,&
                        w_green_start, tinvert, coul_multishift, trunc_2d,&
-                       do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, high_io,&
+                       do_epsil, do_diag_g, do_diag_w, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
                        double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
                        filsigx, filsigc, filcoul, debug
@@ -215,6 +214,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   prefix = input%prefix
   tmp_dir = trimcheck(input%outdir)
   nbnd_sig = input%num_band
+  do_imag = input%int_imag_freq
   nk1 = input%kpt_grid(1)
   nk2 = input%kpt_grid(2)
   nk3 = input%kpt_grid(3)
@@ -251,6 +251,11 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   maxter_green = input%max_iter_green
   priority_green = input%priority_green
   lmax_green = input%lmax_green
+  do_sigma_c = input%do_corr
+  ecutsco = input%ecut_corr
+  wsigmamin = input%min_freq_corr
+  wsigmamax = input%max_freq_corr
+  nwsigma = input%num_freq_corr
 
   !
   ! ... set default values for variables in namelist
@@ -300,17 +305,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   do_epsil        = .FALSE.
   do_diag_g       = .FALSE.
   do_diag_w       = .FALSE.
-  do_imag         = .FALSE.
   do_pade_coul    = .FALSE.
   double_grid     = .TRUE.
   high_io    = .TRUE.
 !Sigma cutoff, correlation cutoff, exchange cutoff
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
-  ecutsco      = 5.0
   ecutsex      = 5.0
   ecutprec     = 15.0
-  nwsigma      = 11
   nwsigwin     = 801
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
@@ -319,7 +321,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Imaginary component added to linear system should be in Rydberg
   eta            =  0.02
   kpoints        = .FALSE.
-  do_sigma_c     = .FALSE.
   do_sigma_exx   = .FALSE.
   do_green       = .FALSE.
   do_sigma_matel = .FALSE.
@@ -327,8 +328,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   do_q0_only     = .FALSE.
   tinvert        = .TRUE.
 !Frequency variables
-  wsigmamin      = 0.0d0
-  wsigmamax      = 20.0d0
   wsig_wind_min   = -50.0
   wsig_wind_max   =  30.0
 
@@ -347,30 +346,29 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   IF (meta_ionode) THEN
     READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
+  END IF
 
-    ! interpret the truncation scheme
-    SELECT CASE (truncation)
-    CASE (NO_TRUNCATION_1, NO_TRUNCATION_2, NO_TRUNCATION_3, NO_TRUNCATION_4, NO_TRUNCATION_5)
-      method_truncation = NO_TRUNCATION
+  ! interpret the truncation scheme
+  SELECT CASE (truncation)
+  CASE (NO_TRUNCATION_1, NO_TRUNCATION_2, NO_TRUNCATION_3, NO_TRUNCATION_4, NO_TRUNCATION_5)
+    method_truncation = NO_TRUNCATION
 
-    CASE (SPHERICAL_TRUNCATION_1, SPHERICAL_TRUNCATION_2, SPHERICAL_TRUNCATION_3, &
-          SPHERICAL_TRUNCATION_4, SPHERICAL_TRUNCATION_5)
-      method_truncation = SPHERICAL_TRUNCATION
+  CASE (SPHERICAL_TRUNCATION_1, SPHERICAL_TRUNCATION_2, SPHERICAL_TRUNCATION_3, &
+        SPHERICAL_TRUNCATION_4, SPHERICAL_TRUNCATION_5)
+    method_truncation = SPHERICAL_TRUNCATION
 
-    CASE (FILM_TRUNCATION_1, FILM_TRUNCATION_2, FILM_TRUNCATION_3, FILM_TRUNCATION_4)
-      method_truncation = FILM_TRUNCATION
+  CASE (FILM_TRUNCATION_1, FILM_TRUNCATION_2, FILM_TRUNCATION_3, FILM_TRUNCATION_4)
+    method_truncation = FILM_TRUNCATION
 
-    CASE (VCUT_SPHERICAL_TRUNCATION_1, VCUT_SPHERICAL_TRUNCATION_2, &
-          VCUT_SPHERICAL_TRUNCATION_3, VCUT_SPHERICAL_TRUNCATION_4)
-      method_truncation = VCUT_SPHERICAL_TRUNCATION
+  CASE (VCUT_SPHERICAL_TRUNCATION_1, VCUT_SPHERICAL_TRUNCATION_2, &
+        VCUT_SPHERICAL_TRUNCATION_3, VCUT_SPHERICAL_TRUNCATION_4)
+    method_truncation = VCUT_SPHERICAL_TRUNCATION
 
-    CASE (VCUT_WIGNER_SEITZ_TRUNCATION_1, VCUT_WIGNER_SEITZ_TRUNCATION_2, &
-          VCUT_WIGNER_SEITZ_TRUNCATION_3, VCUT_WIGNER_SEITZ_TRUNCATION_4)
-      method_truncation = VCUT_WIGNER_SEITZ_TRUNCATION
+  CASE (VCUT_WIGNER_SEITZ_TRUNCATION_1, VCUT_WIGNER_SEITZ_TRUNCATION_2, &
+        VCUT_WIGNER_SEITZ_TRUNCATION_3, VCUT_WIGNER_SEITZ_TRUNCATION_4)
+    method_truncation = VCUT_WIGNER_SEITZ_TRUNCATION
 
-    END SELECT ! truncation
-
-  END IF ! meta_ionode
+  END SELECT ! truncation
 
   ! convert frequencies to Ry
   wsigmamin = wsigmamin / RYTOEV
