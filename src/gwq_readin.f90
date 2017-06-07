@@ -374,14 +374,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
     END SELECT ! truncation
 
-    ! convert frequencies to Ry
-    wsigmamin = wsigmamin / RYTOEV
-    wsigmamax = wsigmamax / RYTOEV
-    wcoulmax  = wcoulmax  / RYTOEV
-    wsig_wind_max = wsig_wind_max / RYTOEV
-    wsig_wind_min = wsig_wind_min / RYTOEV
-
   END IF ! meta_ionode
+
+  ! convert frequencies to Ry
+  wsigmamin = wsigmamin / RYTOEV
+  wsigmamax = wsigmamax / RYTOEV
+  wcoulmax  = wcoulmax  / RYTOEV
+  wsig_wind_max = wsig_wind_max / RYTOEV
+  wsig_wind_min = wsig_wind_min / RYTOEV
 
   ! set defaults for output
   directory       = ''
