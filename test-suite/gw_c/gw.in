@@ -14,8 +14,10 @@
   ! number of bands for which the GW correction is calculated
   num_band       = 8
 
+  ! complex frequency part for the self-energy
+  eta            = 0.27211383252262950
+
   ! configuration of the Coulomb solver
-  do_coul        = .false.
   thres_coul     = 1.0d-4
   max_iter_coul  = 200
 

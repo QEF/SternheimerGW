@@ -485,12 +485,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
     !
     ! if we are already in the complex plane, we don't need to shift
     freq%eta = 0.0_dp
+    eta = input%eta / RYTOEV
     !
   ELSE
     !
     ! if we are on the real axis, we shift by a small amount into the
     ! complex plane for a numerically stable treatment of the poles
     freq%eta = input%eta / RYTOEV
+    eta = input%eta / RYTOEV
     !
   END IF
 
