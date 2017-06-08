@@ -92,12 +92,18 @@ gw_input:
       has to be larger than the number of occupied states so that the Fermi energy can
       be calculated.
 
-  int_imag_freq:
+  int_imag_axis:
     type: logical
     default: .TRUE.
     description: This flag determines whether G and W are convoluted along the imaginary
       or the real frequency axis.
 
+  eta:
+    type: real(dp)
+    default: 0.1_dp
+    description: Small imaginary component used to shift the real frequencies into the
+      complex plane (in eV).
+ 
   # configuration of the screened Coulomb interaction
 
   do_coul:
@@ -160,6 +166,12 @@ gw_input:
         * 'pade', Pade approximation
         * 'pade robust', robust method to determine Pade approximant, requires the initial
           frequency mesh to be on a circle
+
+  freq_symm_coul:
+    type: logical
+    default: .FALSE.
+    description: Use W(w) = W(-w) symmetry to improve the accuracy of the Pade approximation.
+      Only works if model_coul is 'pade'.
 
   max_freq_coul:
     type: real(dp)

@@ -122,9 +122,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   !> counter on the nontrivial priorities
   INTEGER ipriority
-  !
-  !> use symmetry to extend the frequency mesh
-  LOGICAL freq_symm
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
@@ -172,9 +169,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        modenum, fildyn, fildvscf, fildrho,   &
                        iq1, iq2, iq3,   &
                        recover, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, eta, &
+                       start_q, last_q, nogg, modielec, &
                        corr_conv, exch_conv, ecutprec, do_green,& 
-                       do_q0_only, freq_symm, &
+                       do_q0_only, &
                        maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
                        cohsex, do_sigma_extra,&
                        w_green_start, tinvert, trunc_2d,&
@@ -213,7 +210,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   prefix = input%prefix
   tmp_dir = trimcheck(input%outdir)
   nbnd_sig = input%num_band
-  do_imag = input%int_imag_freq
+  do_imag = input%int_imag_axis
   nk1 = input%kpt_grid(1)
   nk2 = input%kpt_grid(2)
   nk3 = input%kpt_grid(3)
@@ -322,7 +319,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   modielec     = .FALSE.
   cohsex       = .FALSE.
 !Imaginary component added to linear system should be in Rydberg
-  eta            =  0.02
   do_green       = .FALSE.
   do_sigma_extra = .FALSE.
   do_q0_only     = .FALSE.
@@ -330,7 +326,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
-  freq_symm      = .FALSE.
   w_of_q_start   = 1
   w_of_k_start   = 1
   w_of_k_stop    = -2
@@ -414,7 +409,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
    CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
 
-  CALL bcast_gw_input(freq_symm) 
+  CALL bcast_gw_input()
   CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
 
   !
@@ -422,7 +417,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   IF (tr2_gw <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_gw ', 1)
   IF (tr2_green <= 0.D0) CALL errore (' gwq_readin', ' Wrong tr2_green ', 1)
-  IF (freq_symm) WRITE(stdout,*) 'Warning: frequency symmetrization not sufficiently tested'
 
   DO iter = 1, maxter
      IF (alpha_mix (iter) .LT.0.D0.OR.alpha_mix (iter) .GT.1.D0) CALL &
@@ -496,7 +490,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
     !
     ! if we are on the real axis, we shift by a small amount into the
     ! complex plane for a numerically stable treatment of the poles
-    freq%eta = eta
+    freq%eta = input%eta / RYTOEV
     !
   END IF
 
@@ -507,7 +501,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   ! use symmetry for the frequencies (only for Pade approximation)
   IF (padecont) THEN
-    freq%use_symmetry = freq_symm
+    freq%use_symmetry = input%freq_symm_coul
   ELSE
     ! symmetry not implemented for robust Pade and Godby-Needs
     freq%use_symmetry = .FALSE.

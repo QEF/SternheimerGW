@@ -1,64 +1,49 @@
-Screened Coulomb for the full mesh.
-&inputgw
+&gw_input
+  title = 'SternheimerGW calculation for diamond.'
 
   ! config of the scf run
-  prefix       = 'diamond',
-  outdir       = './tmp'
-
-  ! control parameters
-  ldisp        = .true.
-  multishift   = .true.
-  double_grid  = .false.
-  freq_symm    = .false.
+  prefix         = 'diamond',
+  outdir         = './tmp'
 
   ! the grid used for the linear response
-  nq1          = 2
-  nq2          = 2
-  nq3          = 2
+  qpt_grid       = 2, 2, 2
 
   ! truncation (used for both correlation and exchange)
-  truncation   = 'on'
+  truncation     = 'on'
 
-  ! configuration for the exchange self-energy
-  do_sigma_exx = .true.
-  ecutsex      = 15.0
-
-  ! configuration for the correlation self energy
-  do_sigma_c   = .true.
-  kpoints      = .true.
-  ecutsco      = 6.0
+  ! number of bands for which the GW correction is calculated
+  num_band       = 8
 
   ! configuration of the Coulomb solver
-  do_coulomb   = .true.
-  tr2_gw       = 1.0d-4
-  nmix_gw      = 4
-  solve_direct = .true.
-  use_symm     = .true.
-  lrpa         = .true.
-  godbyneeds   = .false.
-  padecont     = .true.
-
-  ! configuration of the Green solver
-  tr2_green    = 1.0d-5
-  maxter_green = 180
+  do_coul        = .false.
+  thres_coul     = 1.0d-4
+  max_iter_coul  = 200
 
   ! configuration of W in the convolution
-  do_imag      = .true.
-  wcoulmax     = 200
-  nwcoul       = 35
-  
-  ! configuration for the self-energy (result of the convolution)
-  wsigmamin    = 0.0
-  wsigmamax    = 100.0
-  nwsigma      = 11
+  model_coul     = 'pade'
+  max_freq_coul  = 200
+  num_freq_coul  = 35
+
+  ! configuration of the Green solver
+  thres_green    = 1.0d-5
+  max_iter_green = 180
+
+  ! configuration for the correlation self energy
+  ecut_corr      = 6.0
+  min_freq_corr  = 0.0
+  max_freq_corr  = 100.0
+  num_freq_corr  = 11
+
+  ! configuration for the exchange self energy
+  ecut_exch      = 15.0
 
   ! configuration for the output
-  do_sigma_matel = .true.
-  nbnd_sig       = 8
-  wsig_wind_min  = -30.0
-  wsig_wind_max  =  30.0
-  nwsigwin       = 601
+  min_freq_wind  = -30.0
+  max_freq_wind  =  30.0
+  num_freq_wind  = 601
 
+/
+&inputgw
 /
 
 &outputgw

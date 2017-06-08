@@ -1,62 +1,47 @@
-Screened Coulomb for the full mesh.
-&inputgw
+&gw_input
+  title = 'SternheimerGW calculation for diamond.'
 
   ! config of the scf run
-  prefix       = 'diamond',
-  outdir       = './tmp'
-
-  ! control parameters
-  ldisp        = .true.
-  multishift   = .true.
-  double_grid  = .false.
-  freq_symm    = .false.
+  prefix         = 'diamond',
+  outdir         = './tmp'
 
   ! the grid used for the linear response
-  nq1          = 2
-  nq2          = 2
-  nq3          = 2
+  qpt_grid       = 2, 2, 2
 
   ! truncation (used for both correlation and exchange)
-  truncation   = 'on'
+  truncation     = 'on'
 
-  ! configuration for the exchange self-energy
-  do_sigma_exx = .true.
-  ecutsex      = 15.0
+  ! number of bands for which the GW correction is calculated
+  num_band       = 8
 
-  ! configuration for the correlation self energy
-  do_sigma_c   = .true.
-  kpoints      = .true.
-  ecutsco      = 6.0
+  ! integrate along the real axis
+  int_imag_axis  = .false.
 
   ! configuration of the Coulomb solver
-  do_coulomb   = .true.
-  tr2_gw       = 1.0d-4
-  nmix_gw      = 4
-  solve_direct = .true.
-  use_symm     = .true.
-  lrpa         = .true.
-  godbyneeds   = .false.
-  padecont     = .true.
-
-  ! configuration of the Green solver
-  tr2_green    = 1.0d-5
-  maxter_green = 180
+  thres_coul     = 1.0d-4
+  max_iter_coul  = 200
 
   ! configuration of W in the convolution
-  do_imag      = .false.
-  eta          = 0.00735 ! 0.1eV
-  wcoulmax     = 80
-  nwcoul       = 200
-  
-  ! configuration for the self-energy (result of the convolution)
-  wsigmamin    = -45.0
-  wsigmamax    =  15.0
-  nwsigma      = 121
+  model_coul     = 'pade'
+  max_freq_coul  = 80
+  num_freq_coul  = 200
 
-  ! configuration for the output
-  do_sigma_matel = .true.
-  nbnd_sig       = 8
+  ! configuration of the Green solver
+  thres_green    = 1.0d-5
+  max_iter_green = 180
+  eta            = 0.10000183568728154837
 
+  ! configuration for the correlation self energy
+  ecut_corr      = 6.0
+  min_freq_corr  = -45.0
+  max_freq_corr  =  15.0
+  num_freq_corr  = 121
+
+  ! configuration for the exchange self energy
+  ecut_exch      = 15.0
+
+/
+&inputgw
 /
 
 &outputgw
