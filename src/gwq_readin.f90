@@ -223,6 +223,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   maxter_coul = input%max_iter_coul
   priority_coul = input%priority_coul
   lmax_gw = input%lmax_coul
+  alpha_pv = input%shift_proj
   nmix_gw = input%nmix_coul
   use_symm = input%use_symm_coul
   solve_direct = (input%solve_coul == 'direct')
@@ -274,7 +275,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !for slab systems more rapid convergence can
   !be obtained with alpha_mix = 0.3.
   alpha_mix(1) = 0.7D0
-  alpha_pv     = -1.0_dp
   niter_gw     = maxter
   nat_todo     = 0
   modenum      = 0

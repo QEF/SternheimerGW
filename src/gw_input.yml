@@ -136,6 +136,13 @@ gw_input:
     description: Use the small group of q to reduce the amount of G vectors for which the
       linear response is calculated.
 
+  shift_proj:
+    type: real(dp)
+    default: -1.0_dp
+    description: Shift of the projector used in the linear response equation. If negative
+      will be determined automatically (only for semiconductors). For metals set to a
+      small value (1e-5) and converge towards 0 until the dielectric response doesn't change.
+
   priority_coul:
     type: integer, dimension(10)
     default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]

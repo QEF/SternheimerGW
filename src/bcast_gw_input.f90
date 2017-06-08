@@ -129,7 +129,6 @@ subroutine bcast_gw_input()
   call mp_bcast (do_diag_g, meta_ionode_id, world_comm)
   call mp_bcast (do_pade_coul, meta_ionode_id, world_comm)
   call mp_bcast (double_grid, meta_ionode_id, world_comm)
-  call mp_bcast (alpha_pv, meta_ionode_id, world_comm)
 
 !Frequency grid
   call mp_bcast (just_corr,    meta_ionode_id, world_comm)
