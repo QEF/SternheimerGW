@@ -50,12 +50,15 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   current_iq = iq
   !
   IF ( ldisp ) THEN
-     ! ... set the name for the output file
-     ! ... set the q point
-        xq(1:3)  = x_q(1:3,iq)
-     !In case we want to calulate eps(q) where q is given in the input file:
-        if (do_epsil) xq(:) = xk_kpoints(:, iq)
-        lgamma = ALL(ABS(xq) < eps6)
+    ! ... set the name for the output file
+    ! ... set the q point
+    !In case we want to calulate eps(q) where q is given in the input file:
+    IF (do_epsil) THEN
+      xq(:) = xk_kpoints(:, iq)
+    ELSE
+      xq(:) = x_q(:,iq)
+    END IF
+    lgamma = ALL(ABS(xq) < eps6)
   ENDIF
   do_band=.true.
   setup_pw=.true.

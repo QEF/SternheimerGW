@@ -1,38 +1,18 @@
-Screened Coulomb along real axis.
-&inputgw
+&gw_input
+  title = 'Screened Coulomb interaction along the real axis.'
 
   ! config of the scf run
-  prefix       = 'licl',
-  outdir       = './tmp'
-
-  ! control parameters
-  ldisp        = .true.
-  multishift   = .true.
-  double_grid  = .false.
-  do_epsil     = .true.
-
-  ! the grid used for the linear response
-  nq1          = 2
-  nq2          = 2
-  nq3          = 2
-
-  ! configuration for the exchange self-energy
-  do_sigma_exx = .false.
-
-  ! configuration for the correlation self energy
-  do_sigma_c   = .false.
-  kpoints      = .true.
-  ecutsco      = 6.0
+  prefix         = 'licl',
+  outdir         = './tmp'
 
   ! configuration of the Coulomb solver
-  do_coulomb   = .true.
-  tr2_gw       = 1.0d-4
-  nmix_gw      = 4
-  solve_direct = .true.
-  use_symm     = .true.
-  lrpa         = .true.
+  do_epsil       = .true.
+  thres_coul     = 1.0d-4
+  ecut_corr      = 6.0 ! correlation cutoff used for W
   priority_coul(1) = 3
 
+/
+&inputgw
 /
 
 &outputgw

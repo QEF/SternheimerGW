@@ -175,7 +175,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
                        cohsex, do_sigma_extra,&
                        w_green_start, tinvert, trunc_2d,&
-                       do_epsil, do_diag_g, do_diag_w, do_pade_coul, high_io,&
+                       do_diag_g, do_diag_w, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
                        filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
@@ -217,7 +217,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   nq1 = input%qpt_grid(1)
   nq2 = input%qpt_grid(2)
   nq3 = input%qpt_grid(3)
-  do_coulomb = input%do_coul
+  do_coulomb = input%do_epsil .OR. input%do_coul
+  do_epsil = input%do_epsil
   tr2_gw = input%thres_coul
   maxter_coul = input%max_iter_coul
   priority_coul = input%priority_coul
@@ -247,14 +248,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   maxter_green = input%max_iter_green
   priority_green = input%priority_green
   lmax_green = input%lmax_green
-  do_sigma_c = input%do_corr
+  do_sigma_c = .NOT.input%do_epsil .AND. input%do_corr
   ecutsco = input%ecut_corr
   wsigmamin = input%min_freq_corr
   wsigmamax = input%max_freq_corr
   nwsigma = input%num_freq_corr
-  do_sigma_exx = input%do_exch
+  do_sigma_exx = .NOT.input%do_epsil .AND. input%do_exch
   ecutsex = input%ecut_exch
-  do_sigma_matel = input%do_matrix_el
+  do_sigma_matel = .NOT.input%do_epsil .AND. input%do_matrix_el
   wsig_wind_min = input%min_freq_wind
   wsig_wind_max = input%max_freq_wind
   nwsigwin = input%num_freq_wind
@@ -306,7 +307,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   w_green_start = 1
 
   trunc_2d        = .FALSE.
-  do_epsil        = .FALSE.
   do_diag_g       = .FALSE.
   do_diag_w       = .FALSE.
   do_pade_coul    = .FALSE.
@@ -436,17 +436,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
        &' incompatible flags', 1)
   IF (modenum < 0) CALL errore ('gwq_readin', ' Wrong modenum ', 1)
   !
-  !
-  IF (meta_ionode) THEN
-    ios = 0 
-     IF (.NOT. ldisp) &
-        READ (5, *, iostat = ios) (xq (ipol), ipol = 1, 3)
-  END IF
-
-  CALL mp_bcast(ios, meta_ionode_id, world_comm )
-  CALL errore ('gwq_readin', 'reading xq', ABS (ios) )
-  CALL mp_bcast(xq, meta_ionode_id, world_comm  )
-
 
 ! HL here we can just use this to readin the list of frequencies that we want to calculate
 ! Stored in array  fiu(:), of size nfs.
@@ -538,15 +527,17 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CALL errore(__FILE__, 'reading KPOINTS card', ABS(ios))
   CALL mp_bcast(xk_kpoints, meta_ionode_id, world_comm)
 
- if (w_of_k_stop==-2) then
+ IF (.NOT.do_epsil .AND. w_of_k_stop == -2) THEN
     w_of_k_stop = num_k_pts
- endif
+ END IF
 
- if (w_of_k_stop.lt.w_of_k_start) then
-     CALL errore ('gwq_readin', 'w_of_k_stop less than w_of_k_start', ABS(ios) )
- else if ((w_of_k_stop.lt.1) .or. (w_of_k_start.lt.1)) then
-     CALL errore ('gwq_readin', 'w_of_k_stop or w_of_k_start cannot be less than 1', ABS(ios) )
- endif
+ ! sanity check on k-point window
+ IF (w_of_k_stop < w_of_k_start) THEN
+   IF (.NOT.do_epsil) CALL errore (__FILE__, 'w_of_k_stop less than w_of_k_start', 1)
+ END IF
+ IF (w_of_k_start < 1 .OR. w_of_k_stop > num_k_pts) THEN
+   CALL errore(__FILE__, 'w_of_k_start or w_of_k_stop out of bounds [1:number k-points]', 1)
+ END IF
    
 
   !   Here we finished the reading of the input file.
@@ -639,8 +630,11 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
      CALL errore ('gwq_readin', 'reading list', ABS (ios) )
      CALL mp_bcast(list, meta_ionode_id, world_comm )
   ENDIF
-  IF (ldisp .AND. (nq1 .LE. 0 .OR. nq2 .LE. 0 .OR. nq3 .LE. 0)) &
-      CALL errore('gwq_readin','nq1, nq2, and nq3 must be greater than 0',1)
+  IF (.NOT.do_epsil) THEN
+    IF (nq1 <= 0) CALL errore(__FILE__,'1st component of qpt_grid must be positive', 1)
+    IF (nq2 <= 0) CALL errore(__FILE__,'2nd component of qpt_grid must be positive', 1)
+    IF (nq3 <= 0) CALL errore(__FILE__,'3rd component of qpt_grid must be positive', 1)
+  END IF
 
   ! if alpha_pv was not set in the input, we determine it automatically
   set_alpha_pv = (alpha_pv < 0)

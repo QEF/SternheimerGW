@@ -111,6 +111,12 @@ gw_input:
     default: .TRUE.
     description: Specify whether the screened Coulomb interaction is calculated
 
+  do_epsil:
+    type: logical
+    default: .FALSE.
+    description: Evaluate only the dielectric function. Note that this will overwrite the
+      settings of do_coul, do_corr, do_exch, and do_matrix_el.
+
   solve_coul:
     type: character(len=256)
     default: 'direct'

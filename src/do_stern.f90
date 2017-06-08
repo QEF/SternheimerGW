@@ -28,7 +28,7 @@ SUBROUTINE do_stern(config, num_g_corr)
 
   USE constants,        ONLY : eps6
   USE control_gw,       ONLY : do_q0_only, solve_direct, tinvert, do_epsil
-  USE disp,             ONLY : nqs, num_k_pts, w_of_q_start, x_q
+  USE disp,             ONLY : nqs, num_k_pts, w_of_q_start, x_q, xk_kpoints
   USE freq_gw,          ONLY : nfs
   USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
   USE io_global,        ONLY : stdout, meta_ionode
@@ -130,7 +130,11 @@ IMPLICIT NONE
     ! shift the vector by a small delta q so that the solver has a
     ! nonvanishing solution
     ! the gamma point is evaluated at the root process
-    lgamma = ALL(ABS(x_q(:,iq)) < eps6)
+    IF (.NOT.do_epsil) THEN
+      lgamma = ALL(ABS(x_q(:,iq)) < eps6)
+    ELSE
+      lgamma = ALL(ABS(xk_kpoints(:,iq)) < eps6)
+    END IF
     IF (lgamma .AND. is_root) THEN
 
       ! create and initialize array for dielectric constant at q + G = 0
