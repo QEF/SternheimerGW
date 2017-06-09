@@ -109,7 +109,7 @@ gw_input:
   do_coul:
     type: logical
     default: .TRUE.
-    description: Specify whether the screened Coulomb interaction is calculated
+    description: Specify whether the screened Coulomb interaction is calculated.
 
   do_epsil:
     type: logical
@@ -125,7 +125,12 @@ gw_input:
       * 'iter' or 'iterative' to determine the inverse of the dielectric function iteratively
         which requires no matrix inversion and hence less memory
 
-  nmix_coul:
+  num_iter_coul:
+    type: integer
+    default: 1000
+    description: Number of iterations for the iterative solver.
+
+  num_mix_coul:
     type: integer
     default: 4
     description: Number of potentials that are mixed in the iterative solver.
@@ -293,3 +298,32 @@ gw_input:
     default: 801
     description: Number of frequency points in window in which the matrix elements of the
       self energy are evaluated (for imaginary frequency integration only).
+
+  # useful helper variables
+
+  first_qpt:
+    type: integer
+    default: 1
+    description: This can be used to restart a calculation where not all of the q points
+      finished. It determines for which q point the screened Coulomb interaction is evaluated.
+
+  only_one_qpt:
+    type: logical
+    default: .FALSE.
+    description: This can be used for convergence testing or debugging purposes. It will
+      abort the calculation after the screened Coulomb interaction for a single q point is
+      evaluated.
+
+  first_kpt:
+    type: integer
+    default: 1
+    description: This can be used to limit the k points for which the correlation self
+      energy is evaluated. This determines the lower limit, use last_kpt for the upper limit.
+
+  last_kpt:
+    type: integer
+    default: -2
+    description: This can be used to limit the k points for which the correlation self
+      energy is evaluated. This determines the upper limit, use last_kpt for the lower limit.
+      If set to -2 (default), all k points are calculated.
+

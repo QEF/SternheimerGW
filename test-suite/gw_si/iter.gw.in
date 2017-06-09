@@ -21,7 +21,8 @@
   solve_coul     = 'iter'
   thres_coul     = 1.0d-9
   max_iter_coul  = 200
-  nmix_coul      = 4
+  num_iter_coul  = 400
+  num_mix_coul   = 4
 
   ! configuration of W in the convolution
   model_coul     = 'godby-needs'

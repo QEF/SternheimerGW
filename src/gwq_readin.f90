@@ -163,7 +163,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
 
-  NAMELIST / INPUTGW / amass, alpha_mix, niter_gw,  &
+  NAMELIST / INPUTGW / amass, alpha_mix, &
                        nat_todo, iverbosity, epsil,  &
                        nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, fildyn, fildvscf, fildrho,   &
@@ -171,8 +171,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        recover, lnoloc, start_irr, last_irr, &
                        start_q, last_q, nogg, modielec, &
                        corr_conv, exch_conv, ecutprec, do_green,& 
-                       do_q0_only, &
-                       maxter_green, w_of_q_start, w_of_k_start, w_of_k_stop, &
                        cohsex, do_sigma_extra,&
                        w_green_start, tinvert, trunc_2d,&
                        do_diag_g, do_diag_w, do_pade_coul, high_io,&
@@ -224,7 +222,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   priority_coul = input%priority_coul
   lmax_gw = input%lmax_coul
   alpha_pv = input%shift_proj
-  nmix_gw = input%nmix_coul
+  niter_gw = input%num_iter_coul
+  nmix_gw = input%num_mix_coul
   use_symm = input%use_symm_coul
   solve_direct = (input%solve_coul == 'direct')
   IF (.NOT.solve_direct) THEN
@@ -261,6 +260,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wsig_wind_max = input%max_freq_wind
   nwsigwin = input%num_freq_wind
   truncation = input%truncation
+  do_q0_only = input%only_one_qpt
+  w_of_q_start = input%first_qpt
+  w_of_k_start = input%first_kpt
+  w_of_k_stop = input%last_kpt
 
   ! set Quantum ESPRESSO module variables
   lrpa        = .TRUE.
@@ -276,7 +279,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !for slab systems more rapid convergence can
   !be obtained with alpha_mix = 0.3.
   alpha_mix(1) = 0.7D0
-  niter_gw     = maxter
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
@@ -322,14 +324,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Imaginary component added to linear system should be in Rydberg
   do_green       = .FALSE.
   do_sigma_extra = .FALSE.
-  do_q0_only     = .FALSE.
   tinvert        = .TRUE.
 
 !Symmetry Default:yes!, which q, point to start on.
 !can be used in conjunction with do_q0_only.
-  w_of_q_start   = 1
-  w_of_k_start   = 1
-  w_of_k_stop    = -2
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
