@@ -260,6 +260,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wsig_wind_min = input%min_freq_wind
   wsig_wind_max = input%max_freq_wind
   nwsigwin = input%num_freq_wind
+  truncation = input%truncation
 
   ! set Quantum ESPRESSO module variables
   lrpa        = .TRUE.
@@ -332,9 +333,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   w_green_start  = 1 
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
-
-  ! use the default truncation scheme
-  truncation = 'on'
 
   IF (meta_ionode) THEN
     READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
