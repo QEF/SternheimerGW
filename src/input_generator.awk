@@ -115,8 +115,8 @@ skip == 0 && spec_active && cont_line == 0 {
 
   # determine which element we deal with
   split($0, array, ":")
-  gsub(/^[ \t]/, "", array[1])
-  gsub(/^[ \t]/, "", array[2])
+  sub(/^[ \t]*/, "", array[1])
+  sub(/^[ \t]*/, "", array[2])
   element = tolower(array[1])
 
   if (element == "type") {
@@ -124,7 +124,7 @@ skip == 0 && spec_active && cont_line == 0 {
     type[num_namelist,num_var] = array[2]
   } else if (element == "default") {
     active = k_default
-    default[num_namelist,num_var] = array[2]
+    default_[num_namelist,num_var] = array[2]
   } else if (element == "description") {
     active = k_description
     description[num_namelist,num_var] = array[2]
@@ -139,13 +139,13 @@ skip == 0 && spec_active && cont_line == 0 {
 cont_line == 1 {
 
   # trim whitespace
-  gsub(/^[ \t]/, "", $0)
+  sub(/^[ \t]*/, "", $0)
 
   # add content of line to active element
   if (active == k_type) {
     type[num_namelist,num_var] = type[num_namelist,num_var]" "$0
   } else if (active == k_default) {
-    default[num_namelist,num_var] = default[num_namelist,num_var]" "$0
+    default_[num_namelist,num_var] = default_[num_namelist,num_var]" "$0
   } else if (active == k_description) {
     description[num_namelist,num_var] = description[num_namelist,num_var]" "$0
   }
@@ -270,7 +270,7 @@ END {
   for (nml = 1; nml <= num_namelist; nml++) {
     print "    ! namelist", namelist[nml]
     for (var = 1; var <= num_variable[nml]; var++) {
-      print "   ", variable[nml, var], "=", default[nml, var]
+      print "   ", variable[nml, var], "=", default_[nml, var]
     }
   }
   print ""
