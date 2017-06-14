@@ -175,7 +175,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        w_green_start, tinvert, trunc_2d,&
                        do_diag_g, do_diag_w, do_pade_coul, high_io,&
                        prec_direct, prec_shift, just_corr,& 
-                       filsigx, filsigc, filcoul, debug
+                       filsigx, filsigc, filcoul
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
                        file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
                        file_spec, file_spec_iw, directory, file_sigma
@@ -268,6 +268,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ELSE
     iverbosity = 1
   END IF
+  debug = input%debug
 
   ! set Quantum ESPRESSO module variables
   lrpa        = .TRUE.

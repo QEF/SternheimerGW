@@ -332,3 +332,8 @@ gw_input:
     default: 'low'
     description: Verbosity of the output in the NSCF calculation. Set to either 'low'
       (default) or 'high'.
+
+  debug:
+    type: type(debug_type)
+    description: Allows to activate debugging for various parts of the code. Note that the
+      code must be compiled with 'make debug' to enable debugging.

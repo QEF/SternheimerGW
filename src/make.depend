@@ -80,6 +80,7 @@ deallocate_gwq.o : ../../LR_Modules/lrcom.o
 deallocate_gwq.o : ../../Modules/becmod.o
 deallocate_gwq.o : gwcom.o
 debug.o : ../../Modules/kind.o
+debug.o : ../../Modules/mp.o
 do_stern.o : ../../Modules/constants.o
 do_stern.o : ../../Modules/io_global.o
 do_stern.o : ../../Modules/kind.o
@@ -172,6 +173,7 @@ gw_input.o : ../../Modules/io_global.o
 gw_input.o : ../../Modules/kind.o
 gw_input.o : ../../Modules/mp.o
 gw_input.o : ../../Modules/mp_world.o
+gw_input.o : debug.o
 gw_opening.o : ../../Modules/io_global.o
 gw_opening.o : ../../Modules/version.o
 gw_opening.o : version.o

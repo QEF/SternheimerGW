@@ -52,11 +52,12 @@ skip == 0 && /:/ {
     namelist[num_namelist] = array[1]
     # initialize variable count
     num_variable[num_namelist] = 0 
+    var_active = 0
+    spec_active = 0
   }
-
   # if the whitespace increased, we go to a subelement
   # namelist -> variable -> specification
-  if (whitespace > last_whitespace) {
+  else if (whitespace > last_whitespace) {
      if (var_active == 0 && spec_active == 0) {
        # namelist -> variable
        var_active = 1
@@ -69,10 +70,9 @@ skip == 0 && /:/ {
        exit 1
      }
   }
-
   # if whitespace decreased, we go back to parent element
   # specification -> variable -> namelist
-  if (whitespace < last_whitespace) {
+  else if (whitespace < last_whitespace) {
     if (var_active == 0 && spec_active == 1) {
        # specification -> variable
        var_active = 1
@@ -205,6 +205,14 @@ END {
   print "MODULE gw_input_module"
   print ""
   print "  USE kinds, ONLY: DP"
+  # for any private type, load the private bcast routine
+  for (nml = 1; nml <= num_namelist; nml++) {
+    for (var = 1; var <= num_variable[nml]; var++) {
+      if (index(toupper(type[nml, var]), "TYPE") != 0) {
+        print "  USE", variable[nml, var]"_module, ONLY: "variable[nml, var]"_type"
+      }
+    }
+  }
   print ""
   print "  IMPLICIT NONE"
   # generate one type per input namelist
@@ -270,7 +278,9 @@ END {
   for (nml = 1; nml <= num_namelist; nml++) {
     print "    ! namelist", namelist[nml]
     for (var = 1; var <= num_variable[nml]; var++) {
-      print "   ", variable[nml, var], "=", default_[nml, var]
+      if (default_[nml, var] != "") {
+        print "   ", variable[nml, var], "=", default_[nml, var]
+      }
     }
   }
   print ""
@@ -300,6 +310,14 @@ END {
   print "    USE io_global, ONLY : meta_ionode_id"
   print "    USE mp,        ONLY : mp_bcast"
   print "    USE mp_world,  ONLY : world_comm"
+  # for any private type, load the private bcast routine
+  for (nml = 1; nml <= num_namelist; nml++) {
+    for (var = 1; var <= num_variable[nml]; var++) {
+      if (index(toupper(type[nml, var]), "TYPE") != 0) {
+        print "    USE", variable[nml, var]"_module, ONLY : mp_bcast_"variable[nml, var]
+      }
+    }
+  }
   print_type("INOUT")
   print "    !"
   print "    ! broadcast all variables"
@@ -307,7 +325,13 @@ END {
   for (nml = 1; nml <= num_namelist; nml++) {
     print "    ! namelist", namelist[nml]
     for (var = 1; var <= num_variable[nml]; var++) {
-      print "    CALL mp_bcast("namelist[nml]"_t%"variable[nml, var]", meta_ionode_id, world_comm)"
+      # for default types use mp_bcast
+      if (index(toupper(type[nml, var]), "TYPE") == 0) {
+        print "    CALL mp_bcast("namelist[nml]"_t%"variable[nml, var]", meta_ionode_id, world_comm)"
+      # for user defined type use seperate bcast routine
+      } else {
+        print "    CALL mp_bcast_"variable[nml, var]"("namelist[nml]"_t%"variable[nml, var]", meta_ionode_id, world_comm)"
+      }
     }
     print ""
   }
