@@ -164,7 +164,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CHARACTER(LEN=trunc_length) :: truncation
 
   NAMELIST / INPUTGW / amass, alpha_mix, &
-                       nat_todo, iverbosity, epsil,  &
+                       nat_todo, epsil,  &
                        nrapp, max_seconds, reduce_io, alpha_pv, &
                        modenum, fildyn, fildvscf, fildrho,   &
                        iq1, iq2, iq3,   &
@@ -183,7 +183,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
   ! nat_todo     : number of atom to be displaced
-  ! iverbosity   : verbosity control
   ! max_seconds  : maximum cputime for this run
   ! reduce_io    : reduce I/O to the strict minimum
   ! fildvscf     : output file containing deltavsc
@@ -264,6 +263,11 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   w_of_q_start = input%first_qpt
   w_of_k_start = input%first_kpt
   w_of_k_stop = input%last_kpt
+  IF (input%verbosity == 'low') THEN
+    iverbosity = 0
+  ELSE
+    iverbosity = 1
+  END IF
 
   ! set Quantum ESPRESSO module variables
   lrpa        = .TRUE.
@@ -282,7 +286,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   nat_todo     = 0
   modenum      = 0
   nrapp        = 0
-  iverbosity   = 0
   lnoloc       = .FALSE.
   epsil        = .FALSE.
   max_seconds  =  1.E+7_DP

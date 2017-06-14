@@ -327,3 +327,8 @@ gw_input:
       energy is evaluated. This determines the upper limit, use last_kpt for the lower limit.
       If set to -2 (default), all k points are calculated.
 
+  verbosity:
+    type: character(len=80)
+    default: 'low'
+    description: Verbosity of the output in the NSCF calculation. Set to either 'low'
+      (default) or 'high'.
