@@ -12,6 +12,10 @@
   priority_coul(1) = 3
 
 /
+
+&gw_output
+/
+
 &inputgw
 /
 

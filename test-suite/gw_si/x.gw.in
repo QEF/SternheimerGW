@@ -46,6 +46,10 @@
   num_freq_wind  = 601
 
 /
+
+&gw_output
+/
+
 &inputgw
 /
 

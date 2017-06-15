@@ -45,6 +45,10 @@
   num_freq_wind  = 801
 
 /
+
+&gw_output
+/
+
 &inputgw
 /
 

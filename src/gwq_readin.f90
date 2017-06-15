@@ -46,7 +46,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
-                                   double_grid, name_length, output, &
+                                   double_grid, name_length, output_t => output, &
                                    method_truncation => truncation
   USE debug_module,         ONLY : debug_type
   USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
@@ -55,7 +55,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE freq_gw,              ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,      ONLY : freqbins_type
-  USE gw_input_module,      ONLY : gw_input_type, gw_input_read, gw_input_bcast
+  USE gw_input_module,      ONLY : gw_input_type, gw_output_type, gw_input_read, gw_input_bcast
   USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
   USE gwsymm,               ONLY : use_symm
   USE input_parameters,     ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
@@ -101,6 +101,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   !> user input from file
   TYPE(gw_input_type) :: input
+  !
+  !> user specification for filenames
+  TYPE(gw_output_type) :: output
   !
   !> size of the Wigner-Seitz cell
   REAL(dp) atws(3,3)
@@ -174,11 +177,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        cohsex, do_sigma_extra,&
                        w_green_start, tinvert, trunc_2d,&
                        do_diag_g, do_diag_w, do_pade_coul, high_io,&
-                       prec_direct, prec_shift, just_corr,& 
-                       filsigx, filsigc, filcoul
-  NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
-                       file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
-                       file_spec, file_spec_iw, directory, file_sigma
+                       prec_direct, prec_shift, just_corr
+  NAMELIST / OUTPUTGW / file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
+                       file_spec, file_spec_iw
 
   ! alpha_mix    : the mixing parameter
   ! niter_gw     : maximum number of iterations
@@ -187,9 +188,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! reduce_io    : reduce I/O to the strict minimum
   ! fildvscf     : output file containing deltavsc
   ! fildrho      : output file containing deltarho
-  ! filsigx      : output file containing exchange part of sigma
-  ! filsigc      : output file containing correlation part of sigma
-  ! filcoul      : output file containing screened coulomb
   ! eth_rps      : threshold for calculation of  Pc R |psi> (Raman)
   ! eth_ns       : threshold for non-scf wavefunction calculation (Raman)
   ! recover      : recover=.true. to restart from an interrupted run
@@ -199,10 +197,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   ! read the user input and store it in the input type
   IF (meta_ionode) THEN
-    CALL gw_input_read(input)
+    CALL gw_input_read(input, output)
   END IF
   ! broadcast the user input to all CPU
-  CALL gw_input_bcast(input)
+  CALL gw_input_bcast(input, output)
   title = input%title
   prefix = input%prefix
   tmp_dir = trimcheck(input%outdir)
@@ -296,9 +294,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   fildyn       = 'matdyn'
   fildrho      = ' '
   fildvscf     = ' '
-  filsigx      = 'sigma_x'
-  filsigc      = 'sigma_c'
-  filcoul      = 'coulomb'
   k1           = 0
   k2           = 0
   k3           = 0
@@ -370,37 +365,33 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wsig_wind_min = wsig_wind_min / RYTOEV
 
   ! set defaults for output
-  directory       = ''
-  file_dft        = ''
-  file_gw         = ''
-  file_vxc        = ''
-  file_exchange   = ''
-  file_renorm     = ''
   file_re_corr    = ''
   file_re_corr_iw = ''
   file_im_corr    = ''
   file_im_corr_iw = ''
   file_spec       = ''
   file_spec_iw    = ''
-  file_sigma      = 'sigma.xml'
 
   ! read the output from file
   IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
   
   ! copy read data to output type
-  output%directory              = directory
-  output%pp_dft%filename        = file_dft 
-  output%pp_gw%filename         = file_gw
-  output%pp_vxc%filename        = file_vxc
-  output%pp_exchange%filename   = file_exchange
-  output%pp_renorm%filename     = file_renorm
-  output%pp_re_corr%filename    = file_re_corr
-  output%pp_re_corr_iw%filename = file_re_corr_iw
-  output%pp_im_corr%filename    = file_im_corr
-  output%pp_im_corr_iw%filename = file_im_corr_iw
-  output%pp_spec%filename       = file_spec
-  output%pp_spec_iw%filename    = file_spec_iw
-  output%file_sigma             = file_sigma
+  filsigx                         = output%file_exch
+  filsigc                         = output%file_corr
+  filcoul                         = output%file_coul
+  output_t%directory              = output%directory
+  output_t%pp_dft%filename        = output%file_dft 
+  output_t%pp_gw%filename         = output%file_gw
+  output_t%pp_vxc%filename        = output%file_vxc
+  output_t%pp_exchange%filename   = output%file_hf
+  output_t%pp_renorm%filename     = output%file_renorm
+  output_t%pp_re_corr%filename    = file_re_corr
+  output_t%pp_re_corr_iw%filename = file_re_corr_iw
+  output_t%pp_im_corr%filename    = file_im_corr
+  output_t%pp_im_corr_iw%filename = file_im_corr_iw
+  output_t%pp_spec%filename       = file_spec
+  output_t%pp_spec_iw%filename    = file_spec_iw
+  output_t%file_sigma             = output%file_sigma
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
@@ -552,19 +543,19 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   tmp_dir_coul= TRIM (tmp_dir) //'_gw0'//'/'
 
   ! set output directory if not defined
-  IF (output%directory == '') THEN
-    output%directory = trimcheck(tmp_dir_gw)
+  IF (output_t%directory == '') THEN
+    output_t%directory = trimcheck(tmp_dir_gw)
   ELSE
-    output%directory = trimcheck(output%directory)
+    output_t%directory = trimcheck(output%directory)
   END IF
-  output%prefix = prefix
+  output_t%prefix = prefix
 
   ! create directory (if it doesn't exist)
-  ierr = f_mkdir_safe(output%directory)
+  ierr = f_mkdir_safe(output_t%directory)
   IF (ierr > 0) CALL errore(__FILE__, "error when opening/creating directory for output", ierr)
 
   ! augment sigma file with output directory
-  output%file_sigma = TRIM(output%directory) // output%file_sigma
+  output_t%file_sigma = TRIM(output_t%directory) // output_t%file_sigma
 
   CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
   ext_restart=.FALSE.

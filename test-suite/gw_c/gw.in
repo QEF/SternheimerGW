@@ -45,6 +45,13 @@
   num_freq_wind  = 601
 
 /
+
+&gw_output
+  directory = 'test_out'
+  file_dft  = 'band_dft'
+  file_gw   = 'band_gw'
+/
+
 &inputgw
 /
 

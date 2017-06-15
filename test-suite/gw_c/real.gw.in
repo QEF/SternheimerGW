@@ -41,6 +41,10 @@
   ecut_exch      = 15.0
 
 /
+
+&gw_output
+/
+
 &inputgw
 /
 
