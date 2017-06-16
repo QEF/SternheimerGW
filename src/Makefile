@@ -34,7 +34,6 @@ IFLAGS=
 
 GWOBJS = \
 allocate_gwq.o\
-bcast_gw_input.o\
 bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
@@ -111,7 +110,6 @@ QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESS
 LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
-
 
 no_debug : .no_debug all
 .no_debug:

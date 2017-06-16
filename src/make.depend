@@ -79,8 +79,10 @@ do_stern.o : ../../Modules/mp.o
 do_stern.o : ../../Modules/mp_images.o
 do_stern.o : ../../Modules/mp_world.o
 do_stern.o : ../../PW/src/pwcom.o
+do_stern.o : freqbins.o
 do_stern.o : gwcom.o
 do_stern.o : parallel.o
+do_stern.o : plot_coulomb.o
 do_stern.o : run_nscf.o
 do_stern.o : select_solver.o
 do_stern.o : timing.o
@@ -367,7 +369,6 @@ sigma.o : ../../Modules/kind.o
 sigma.o : ../../Modules/mp.o
 sigma.o : ../../Modules/mp_images.o
 sigma.o : ../../Modules/mp_pools.o
-sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : construct_w.o

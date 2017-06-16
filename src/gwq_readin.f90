@@ -34,19 +34,19 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE cell_base,            ONLY : at, alat
   USE constants,            ONLY : RYTOEV, eps12
   USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
-  USE control_gw,           ONLY : maxter, alpha_mix, lgamma, lgamma_gamma, epsil, &
+  USE control_gw,           ONLY : maxter, alpha_mix, lgamma, &
                                    reduce_io, tr2_gw, niter_gw, lmax_gw, tr2_green, lmax_green, &
-                                   nmix_gw, ldisp, recover, lrpa, lnoloc, start_irr, &
+                                   nmix_gw, ldisp, recover, lrpa, start_irr, &
                                    last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
                                    ext_recover, ext_restart, modielec, eta, &
                                    do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
                                    do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                                   cohsex, multishift, do_sigma_extra, paderobust, &
-                                   solve_direct, w_green_start, tinvert, coul_multishift,&
+                                   cohsex, do_sigma_extra, paderobust, &
+                                   solve_direct, w_green_start, tinvert, &
                                    trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
-                                   double_grid, name_length, output_t => output, plot_coul, &
+                                   double_grid, output_t => output, plot_coul, &
                                    method_truncation => truncation
   USE debug_module,         ONLY : debug_type
   USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
@@ -56,15 +56,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    wsig_wind_min, wsig_wind_max, nwsigwin
   USE freqbins_module,      ONLY : freqbins_type
   USE gw_input_module,      ONLY : gw_input_type, gw_output_type, gw_input_read, gw_input_bcast
-  USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, ecutprec, corr_conv, exch_conv
+  USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, corr_conv
   USE gwsymm,               ONLY : use_symm
   USE input_parameters,     ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
   USE io_files,             ONLY : tmp_dir, prefix
   USE io_global,            ONLY : meta_ionode, meta_ionode_id, stdout
   USE ions_base,            ONLY : nat, amass
   USE kinds,                ONLY : DP
-  USE klist,                ONLY : xk, nks, nkstot
-  USE lsda_mod,             ONLY : nspin
+  USE klist,                ONLY : nks
   USE mp,                   ONLY : mp_bcast
   USE mp_global,            ONLY : nproc_pool_file, nproc_image_file
   USE mp_images,            ONLY : my_image_id, nproc_image
@@ -73,10 +72,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE output_mod,           ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
   USE parameters,           ONLY : nsx
   USE partial,              ONLY : atomo, list, nat_todo, nrapp
-  USE qpoint,               ONLY : nksq, xq
+  USE qpoint,               ONLY : nksq
   USE run_info,             ONLY : title
   USE save_gw,              ONLY : tmp_dir_save
-  USE select_solver_module, ONLY : select_solver_type, bicgstab_multi, sgw_linear_solver
+  USE select_solver_module, ONLY : select_solver_type
   USE start_k,              ONLY : reset_grid
   USE truncation_module
   USE wrappers,             ONLY : f_mkdir_safe
@@ -128,7 +127,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
-  INTEGER :: ios, ipol, iter, na, ierr
+  INTEGER :: ios, iter, na, ierr
   ! integer variable for I/O control
   ! counter on polarizations
   ! counter on iterations
@@ -147,20 +146,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   LOGICAL :: exst, parallelfs
   REAL(DP)           :: ar, ai
   !
-  ! output configuration
-  CHARACTER(LEN=name_length) directory
-  CHARACTER(LEN=name_length) file_dft
-  CHARACTER(LEN=name_length) file_gw
-  CHARACTER(LEN=name_length) file_vxc
-  CHARACTER(LEN=name_length) file_exchange
-  CHARACTER(LEN=name_length) file_renorm
-  CHARACTER(LEN=name_length) file_re_corr
-  CHARACTER(LEN=name_length) file_re_corr_iw
-  CHARACTER(LEN=name_length) file_im_corr
-  CHARACTER(LEN=name_length) file_im_corr_iw
-  CHARACTER(LEN=name_length) file_spec
-  CHARACTER(LEN=name_length) file_spec_iw
-  CHARACTER(LEN=name_length) file_sigma
 
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
@@ -279,7 +264,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 !Sigma cutoff, correlation cutoff, exchange cutoff
 !this is in case we want to define different cutoffs for 
 !W and G. G cannot exceed sigma.
-  ecutprec     = 15.0
 !Should have a catch if no model for screening is chosen...
   modielec     = .FALSE.
   cohsex       = .FALSE.
