@@ -83,6 +83,8 @@ CONTAINS
     ! allocate arrays to contain Pade coefficients
     ALLOCATE(coeff(freq%num_freq()))
 
+    WRITE(stdout, '(5x,a)') 'Plotting Pade approximant'
+
     ! evalute Pade approximation for all G and G'
     DO igp = 1, num_g_corr
       DO ig = 1, num_g_corr
@@ -107,7 +109,10 @@ CONTAINS
         
       END DO ! ig
     END DO ! igp
-    
+
+    WRITE(stdout, '(5x,a)') 'End of Pade approximant'
+    WRITE(stdout, '(a)')
+
   END SUBROUTINE plot_coulomb
 
 END MODULE plot_coulomb_module

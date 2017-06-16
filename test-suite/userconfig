@@ -45,7 +45,7 @@ skip_program = grep
 skip_args = 'not present in this version'
 
 [user]
-benchmark = v0.12 v0.11
+benchmark = v0.13 v0.12 v0.11
 date_fmt = %d%m%y
 diff = vimdiff
 

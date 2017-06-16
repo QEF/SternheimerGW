@@ -53,6 +53,7 @@ The following SternheimerGW features are tested in this suite
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
+* plotting the result of the Pade approximation
 
 Test case: gw\_bn
 ------------------
@@ -100,6 +101,7 @@ The following SternheimerGW features are tested by this case
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
+* plotting the result of the Pade approximation
 
 Test case: gw\_li
 ------------------
