@@ -68,7 +68,6 @@
   USE fft_base,           ONLY : dfftp
   USE funct,              ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
   USE gvecs,              ONLY : doublegrid
-  USE gvect,              ONLY : ngm
   USE ions_base,          ONLY : ntyp => nsp
   USE lsda_mod,           ONLY : nspin
   USE mp,                 ONLY : mp_max, mp_min

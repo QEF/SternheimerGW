@@ -34,7 +34,6 @@ subroutine allocate_gwq
   USE fft_base,              ONLY : dfftp, dffts
   USE gvect,                 ONLY : ngm
   USE ions_base,             ONLY : nat, ntyp => nsp
-  USE klist,                 ONLY : nkstot
   USE lrus,                  ONLY : becp1
   USE noncollin_module,      ONLY : npol, nspin_mag
   USE qpoint,                ONLY : nksq, eigqts, igkq

@@ -33,22 +33,17 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   USE cell_base,            ONLY : at, alat
   USE constants,            ONLY : RYTOEV, eps12
-  USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
-  USE control_gw,           ONLY : maxter, alpha_mix, lgamma, &
-                                   reduce_io, tr2_gw, niter_gw, lmax_gw, tr2_green, lmax_green, &
-                                   nmix_gw, ldisp, lrpa, tmp_dir_gw, tmp_dir_coul, &
-                                   eta, &
-                                   do_coulomb, do_sigma_c, do_sigma_exx, do_sigma_matel, &
-                                   do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                                   paderobust, &
-                                   solve_direct, &
-                                   do_epsil, alpha_pv, set_alpha_pv, &
-                                   do_imag, newgrid,&
-                                   double_grid, output_t => output, plot_coul, &
-                                   method_truncation => truncation
+  USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, twfcollect
+  USE control_gw,           ONLY : maxter, alpha_mix, lgamma, reduce_io, tr2_gw, niter_gw, &
+                                   lmax_gw, tr2_green, lmax_green, nmix_gw, ldisp, lrpa, &
+                                   tmp_dir_gw, tmp_dir_coul, eta, do_coulomb, do_sigma_c, &
+                                   do_sigma_exx, do_sigma_matel, do_q0_only, maxter_green, &
+                                   maxter_coul, godbyneeds, padecont, paderobust, &
+                                   solve_direct, do_epsil, alpha_pv, set_alpha_pv, &
+                                   do_imag, newgrid, double_grid, output_t => output, &
+                                   plot_coul, method_truncation => truncation
   USE debug_module,         ONLY : debug_type
-  USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
-                                   xk_kpoints, num_k_pts, & 
+  USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, num_k_pts, & 
                                    w_of_q_start, w_of_k_start, w_of_k_stop
   USE freq_gw,              ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
@@ -59,7 +54,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE input_parameters,     ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
   USE io_files,             ONLY : tmp_dir, prefix
   USE io_global,            ONLY : meta_ionode, meta_ionode_id, stdout
-  USE ions_base,            ONLY : nat, amass
   USE kinds,                ONLY : DP
   USE klist,                ONLY : nks
   USE mp,                   ONLY : mp_bcast
@@ -68,7 +62,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE mp_pools,             ONLY : nproc_pool
   USE mp_world,             ONLY : world_comm
   USE output_mod,           ONLY : filsigx, filsigc, filcoul
-  USE parameters,           ONLY : nsx
   USE qpoint,               ONLY : nksq
   USE run_info,             ONLY : title
   USE save_gw,              ONLY : tmp_dir_save
@@ -124,22 +117,15 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
-  INTEGER :: ios, iter, na, ierr
+  INTEGER :: ios, iter, ierr
   ! integer variable for I/O control
   ! counter on polarizations
   ! counter on iterations
-  ! counter on atoms
-  ! counter on types
-  REAL(DP) :: amass_input(nsx)
-  ! save masses read from input here
   !
   CHARACTER(LEN=80)          :: card
   CHARACTER(LEN=1), EXTERNAL :: capital
   CHARACTER(LEN=6) :: int_to_char
   INTEGER                    :: i
-  INTEGER, EXTERNAL  :: atomic_number
-  REAL(DP), EXTERNAL :: atom_weight
-  LOGICAL, EXTERNAL  :: imatches
   LOGICAL :: exst, parallelfs
   REAL(DP)           :: ar, ai
   !
@@ -313,7 +299,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
        &' Wrong  iverbosity ', 1)
   IF (max_seconds.LT.0.1D0) CALL errore ('gwq_readin', ' Wrong max_seconds', 1)
 
-  IF (modenum < 0) CALL errore ('gwq_readin', ' Wrong modenum ', 1)
   IF (plot_coul .AND. .NOT.padecont) &
     CALL errore(__FILE__, 'plotting of Coulomb only for Pade continuation', 1)
   !
@@ -425,8 +410,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !   Now allocate space for pwscf variables, read and check them.
   !   amass will also be read from file:
   !   save its content in auxiliary variables
-  !
-  amass_input(:)= amass(:)
   !
   tmp_dir_save=tmp_dir
   tmp_dir_gw= TRIM (tmp_dir) //'_gw'//trim(int_to_char(my_image_id))//'/'

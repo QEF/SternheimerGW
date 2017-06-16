@@ -30,12 +30,10 @@ SUBROUTINE openfilq()
   USE buffers,          ONLY : open_buffer
   USE control_flags,    ONLY : io_level
   USE control_gw,       ONLY : tmp_dir_gw, lgamma, do_coulomb
-  USE fft_base,         ONLY : dfftp
   USE io_files,         ONLY : tmp_dir, diropn, seqopn, prefix
-  USE noncollin_module, ONLY : npol, nspin_mag
+  USE noncollin_module, ONLY : npol
   USE save_gw,          ONLY : tmp_dir_save
   USE units_gw,         ONLY : iuwfc, lrwfc, iubar, lrbar
-  USE uspp,             ONLY : okvan
   USE wvfct,            ONLY : nbnd, npwx
   !
   IMPLICIT NONE

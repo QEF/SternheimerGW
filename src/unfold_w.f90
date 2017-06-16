@@ -45,7 +45,7 @@ COMPLEX(DP), INTENT(OUT) :: scrcoul_out(num_g_corr, num_g_corr, nfs)
 COMPLEX(DP)  :: scrcoul_tmp(num_g_corr, nfs)
 COMPLEX(DP)  :: phase
 INTEGER      :: ig, igp
-INTEGER      :: isym, iwim
+INTEGER      :: iwim
 INTEGER      :: done, ngmdone
 INTEGER      :: ngmdonelist(num_g_corr)
 INTEGER      :: gmapsym(num_g_corr,nsym)

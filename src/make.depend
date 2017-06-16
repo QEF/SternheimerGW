@@ -190,14 +190,12 @@ gwq_readin.o : ../../Modules/control_flags.o
 gwq_readin.o : ../../Modules/input_parameters.o
 gwq_readin.o : ../../Modules/io_files.o
 gwq_readin.o : ../../Modules/io_global.o
-gwq_readin.o : ../../Modules/ions_base.o
 gwq_readin.o : ../../Modules/kind.o
 gwq_readin.o : ../../Modules/mp.o
 gwq_readin.o : ../../Modules/mp_global.o
 gwq_readin.o : ../../Modules/mp_images.o
 gwq_readin.o : ../../Modules/mp_pools.o
 gwq_readin.o : ../../Modules/mp_world.o
-gwq_readin.o : ../../Modules/parameters.o
 gwq_readin.o : ../../Modules/run_info.o
 gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/pwcom.o
@@ -245,10 +243,8 @@ linear_solver.o : norm.o
 mix_pot_c.o : ../../Modules/kind.o
 norm.o : ../../Modules/kind.o
 openfilq.o : ../../Modules/control_flags.o
-openfilq.o : ../../Modules/fft_base.o
 openfilq.o : ../../Modules/io_files.o
 openfilq.o : ../../Modules/noncol.o
-openfilq.o : ../../Modules/uspp.o
 openfilq.o : ../../PW/src/buffers.o
 openfilq.o : ../../PW/src/pwcom.o
 openfilq.o : gwcom.o
