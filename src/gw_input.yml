@@ -202,6 +202,13 @@ gw_input:
     default: 50
     description: Number of frequency points in the integration grid when convoluting G and W.
 
+  plot_coul:
+    type: logical
+    default: .FALSE.
+    description: Plot the screened Coulomb interaction along the real or imaginary frequency
+      axis with the grid set by max_freq_coul and num_freq_coul. Note that you should reduce
+      the correlation cutoff or the q-point grid otherwise you will write a lot of data.
+      
   # configuration of the Green's function
 
   priority_green:

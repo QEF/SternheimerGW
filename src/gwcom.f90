@@ -223,7 +223,8 @@ MODULE control_gw
              loqua   = .FALSE.,&
              high_io, &  
              just_corr,&
-             double_grid
+             double_grid,&
+             plot_coul = .FALSE. ! plot the Coulomb potential
 
    TYPE(output_type) output
 

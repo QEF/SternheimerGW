@@ -40,6 +40,8 @@ tolerance = ( (1.0e-6, 5.0e-3, 'e1'),
               (5.0e-2, None, 'vxc_exp'),
               (5.0e-2, None, 'sigma_x'),
               (3.0e-2, None, 'z_factor'),
+              (1.0e-2, 1.0e-3, 're_coul'),
+              (1.0e-2, 1.0e-3, 'im_coul'),
             )
 skip_program = grep
 skip_args = 'not present in this version'

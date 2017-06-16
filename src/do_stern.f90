@@ -24,31 +24,36 @@
 !!
 !! This routine is the driver routine for the solvers. Depending on the choice
 !! in the input file either a direct or an iterative solver is used.
-SUBROUTINE do_stern(config, num_g_corr)
+SUBROUTINE do_stern(config, freq, num_g_corr)
 
-  USE constants,        ONLY : eps6
-  USE control_gw,       ONLY : do_q0_only, solve_direct, tinvert, do_epsil
-  USE disp,             ONLY : nqs, num_k_pts, w_of_q_start, x_q, xk_kpoints
-  USE freq_gw,          ONLY : nfs
-  USE gwsymm,           ONLY : ngmunique, ig_unique, use_symm, sym_friend, sym_ig
-  USE io_global,        ONLY : stdout, meta_ionode
-  USE kinds,            ONLY : DP
-  USE klist,            ONLY : lgauss
-  USE mp,               ONLY : mp_sum, mp_barrier
-  USE mp_images,        ONLY : inter_image_comm, my_image_id
-  USE mp_world,         ONLY : mpime
-  USE parallel_module,  ONLY : parallel_task, mp_gatherv
-  USE run_nscf_module,  ONLY : run_nscf
-  USE select_solver_module, ONLY : select_solver_type
-  USE timing_module,    ONLY : time_coulomb, time_coul_nscf, time_coul_invert, &
-                               time_coul_io, time_coul_symm, time_coul_unfold, &
-                               time_coul_comm
-  USE units_gw,         ONLY : lrcoul, iuncoul
+  USE constants,            ONLY: eps6
+  USE control_gw,           ONLY: do_q0_only, solve_direct, tinvert, do_epsil, plot_coul
+  USE disp,                 ONLY: nqs, num_k_pts, w_of_q_start, x_q, xk_kpoints
+  USE freq_gw,              ONLY: nfs
+  USE freqbins_module,      ONLY: freqbins_type
+  USE gwsymm,               ONLY: ngmunique, ig_unique, use_symm, sym_friend, sym_ig
+  USE io_global,            ONLY: stdout, meta_ionode
+  USE kinds,                ONLY: dp
+  USE klist,                ONLY: lgauss
+  USE mp,                   ONLY: mp_sum, mp_barrier
+  USE mp_images,            ONLY: inter_image_comm, my_image_id
+  USE mp_world,             ONLY: mpime
+  USE parallel_module,      ONLY: parallel_task, mp_gatherv
+  USE plot_coulomb_module,  ONLY: plot_coulomb
+  USE run_nscf_module,      ONLY: run_nscf
+  USE select_solver_module, ONLY: select_solver_type
+  USE timing_module,        ONLY: time_coulomb, time_coul_nscf, time_coul_invert, &
+                                  time_coul_io, time_coul_symm, time_coul_unfold, &
+                                  time_coul_comm
+  USE units_gw,             ONLY: lrcoul, iuncoul
 
 IMPLICIT NONE
 
   !> stores the configuration of the linear solver for the screened Coulomb interaction
   TYPE(select_solver_type), INTENT(IN) :: config
+
+  !> the definition of the frequency grid
+  TYPE(freqbins_type), INTENT(IN) :: freq
 
   !> the number of G vectors in the correlation grid
   INTEGER, INTENT(IN)  :: num_g_corr
@@ -222,6 +227,9 @@ IMPLICIT NONE
       CALL start_clock(time_coul_io)
       CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
       CALL stop_clock(time_coul_io)
+
+      IF (plot_coul) CALL plot_coulomb(freq, scrcoul_g)
+
     END IF ! root
 
     DEALLOCATE(scrcoul_loc)

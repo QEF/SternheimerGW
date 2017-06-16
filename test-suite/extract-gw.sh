@@ -192,6 +192,49 @@ then
     echo "$z_factor"
   fi
 
+  # print the screened coulomb of the plotting function
+
+  line_begin_plot=$(grep -n 'Plotting Pade approximant' $fname | awk -F":" '{ print $1 }')
+  line_end_plot=$(grep -n 'End of Pade approximant' $fname | awk -F":" '{ print $1 }')
+
+  # loop over elements
+  i=0
+  for line in $line_begin_plot
+  do
+    # add new line character after first element
+    if (( i > 0 ))
+    then
+      re_coul="$re_coul\n"
+      im_coul="$im_coul\n"
+    fi
+
+    (( i++ ))
+
+    # determine number of frequencies
+    num_line=$(echo $line_end_plot | awk "{ split(\$0, arr); print arr[$i] - $line - 2 }")
+
+    # determine end point of data
+    last_line=$(echo "$line + $num_line" | bc -l)
+
+    # extract plotted Coulomb potential
+    data=$(head -$last_line $fname | tail -$num_line)
+    re_coul="$re_coul"$(echo "$data" | awk 'NF == 4 { print $3 }')
+    im_coul="$im_coul"$(echo "$data" | awk 'NF == 4 { print $4 }')
+
+  done
+
+  # print the elements if present
+  if [[ $re_coul != "" ]]
+  then
+    echo "re_coul"
+    echo -e "$re_coul"
+  fi
+  if [[ $re_coul != "" ]]
+  then
+    echo "im_coul"
+    echo -e "$im_coul"
+  fi
+
 else
   echo "Unknown input file" > /dev/stderr
 

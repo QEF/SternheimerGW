@@ -46,7 +46,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
-                                   double_grid, name_length, output_t => output, &
+                                   double_grid, name_length, output_t => output, plot_coul, &
                                    method_truncation => truncation
   USE debug_module,         ONLY : debug_type
   USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
@@ -200,6 +200,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   END IF
   wcoulmax = input%max_freq_coul
   nwcoul = input%num_freq_coul
+  plot_coul = input%plot_coul
   godbyneeds   = .FALSE.
   padecont     = .FALSE.
   paderobust   = .FALSE.
@@ -367,6 +368,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   IF (nat_todo.NE.0.AND.nrapp.NE.0) CALL errore ('gwq_readin', &
        &' incompatible flags', 1)
   IF (modenum < 0) CALL errore ('gwq_readin', ' Wrong modenum ', 1)
+  IF (plot_coul .AND. .NOT.padecont) &
+    CALL errore(__FILE__, 'plotting of Coulomb only for Pade continuation', 1)
   !
 
 ! HL here we can just use this to readin the list of frequencies that we want to calculate

@@ -270,6 +270,10 @@ parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp.o
 parallel.o : ../../Modules/mp_global.o
 parallel.o : ../../Modules/parallel_include.o
+plot_coulomb.o : ../../Modules/constants.o
+plot_coulomb.o : ../../Modules/io_global.o
+plot_coulomb.o : ../../Modules/kind.o
+plot_coulomb.o : freqbins.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o
