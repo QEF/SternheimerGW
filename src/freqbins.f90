@@ -173,7 +173,7 @@ CONTAINS
       ALLOCATE(freq%coul(num_coul))
       ALLOCATE(freq%weight(num_coul))
       !
-      freq%coul = CMPLX(grid, 0.0_dp, KIND = dp)
+      freq%coul = CMPLX(grid, freq%eta, KIND = dp)
       ! first point has half the weight because we will use it twice
       freq%weight = 2.0 * max_coul / REAL(2 * num_coul - 1, KIND = dp)
       freq%weight(1) = 0.5 * freq%weight(1)
@@ -306,8 +306,8 @@ CONTAINS
     num_coul = this%num_coul()
 
     ALLOCATE(freq_green(2 * num_coul))
-    freq_green(:num_coul) = freq_sigma + this%coul + CMPLX(0.0_dp, this%eta, KIND=dp)
-    freq_green(num_coul + 1:) = freq_sigma - this%coul - CMPLX(0.0_dp, this%eta, KIND=dp)
+    freq_green(:num_coul) = freq_sigma + this%coul
+    freq_green(num_coul + 1:) = freq_sigma - this%coul
 
   END FUNCTION freqbins_green
 
