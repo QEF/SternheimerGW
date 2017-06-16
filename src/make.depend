@@ -8,15 +8,6 @@ allocate_gwq.o : ../../Modules/uspp.o
 allocate_gwq.o : ../../Modules/wavefunctions.o
 allocate_gwq.o : ../../PW/src/pwcom.o
 allocate_gwq.o : gwcom.o
-bcast_gw_input.o : ../../Modules/control_flags.o
-bcast_gw_input.o : ../../Modules/input_parameters.o
-bcast_gw_input.o : ../../Modules/io_files.o
-bcast_gw_input.o : ../../Modules/io_global.o
-bcast_gw_input.o : ../../Modules/ions_base.o
-bcast_gw_input.o : ../../Modules/mp.o
-bcast_gw_input.o : ../../Modules/mp_world.o
-bcast_gw_input.o : ../../Modules/run_info.o
-bcast_gw_input.o : gwcom.o
 bicgstab.o : ../../Modules/io_global.o
 bicgstab.o : ../../Modules/kind.o
 bicgstab.o : debug.o

@@ -141,7 +141,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CHARACTER(LEN=1), EXTERNAL :: capital
   CHARACTER(LEN=6) :: int_to_char
   INTEGER                    :: i
-  LOGICAL                    :: nogg
   INTEGER, EXTERNAL  :: atomic_number
   REAL(DP), EXTERNAL :: atom_weight
   LOGICAL, EXTERNAL  :: imatches
@@ -165,35 +164,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   ! truncation method
   CHARACTER(LEN=trunc_length) :: truncation
-
-  NAMELIST / INPUTGW / amass, alpha_mix, &
-                       nat_todo, epsil,  &
-                       nrapp, max_seconds, reduce_io, alpha_pv, &
-                       modenum, fildyn, fildvscf, fildrho,   &
-                       iq1, iq2, iq3,   &
-                       recover, lnoloc, start_irr, last_irr, &
-                       start_q, last_q, nogg, modielec, &
-                       corr_conv, exch_conv, ecutprec, do_green,& 
-                       cohsex, do_sigma_extra,&
-                       w_green_start, tinvert, trunc_2d,&
-                       do_diag_g, do_diag_w, do_pade_coul, high_io,&
-                       prec_direct, prec_shift, just_corr
-  NAMELIST / OUTPUTGW / file_re_corr, file_re_corr_iw, file_im_corr, file_im_corr_iw, &
-                       file_spec, file_spec_iw
-
-  ! alpha_mix    : the mixing parameter
-  ! niter_gw     : maximum number of iterations
-  ! nat_todo     : number of atom to be displaced
-  ! max_seconds  : maximum cputime for this run
-  ! reduce_io    : reduce I/O to the strict minimum
-  ! fildvscf     : output file containing deltavsc
-  ! fildrho      : output file containing deltarho
-  ! eth_rps      : threshold for calculation of  Pc R |psi> (Raman)
-  ! eth_ns       : threshold for non-scf wavefunction calculation (Raman)
-  ! recover      : recover=.true. to restart from an interrupted run
-  ! start_irr    : does the irred. representation from start_irr to last_irr
-  ! last_irr     : 
-  ! nogg         : if .true. lgamma_gamma tricks are not used
 
   ! read the user input and store it in the input type
   IF (meta_ionode) THEN
@@ -272,22 +242,15 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   lrpa        = .TRUE.
   ldisp       = .TRUE.
   double_grid = .FALSE.
+  max_seconds =  1.E+7_DP
 
-  !
-  ! ... set default values for variables in namelist
-  !
-  amass(:)     = 0.D0
-  alpha_mix(:) = 0.D0
+  ! set defaults currently for variables currently not in use
+
   !for bulk systems alpha_mix = 0.7 is standard
   !for slab systems more rapid convergence can
   !be obtained with alpha_mix = 0.3.
+  alpha_mix(:) = 0.D0
   alpha_mix(1) = 0.7D0
-  nat_todo     = 0
-  modenum      = 0
-  nrapp        = 0
-  lnoloc       = .FALSE.
-  epsil        = .FALSE.
-  max_seconds  =  1.E+7_DP
   reduce_io    = .FALSE.
   prec_direct  = .FALSE.
   prec_shift  = .FALSE.
@@ -300,7 +263,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   iq1          = 0
   iq2          = 0
   iq3          = 0
-  nogg         = .FALSE.
   recover      = .FALSE.
   start_irr    = 0
   last_irr     =-1000
@@ -331,10 +293,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 ! ...  reading the namelist inputgw
   just_corr = .FALSE.
 
-  IF (meta_ionode) THEN
-    READ( 5, INPUTGW, ERR=30, IOSTAT = ios )
-  END IF
-
   ! interpret the truncation scheme
   SELECT CASE (truncation)
   CASE (NO_TRUNCATION_1, NO_TRUNCATION_2, NO_TRUNCATION_3, NO_TRUNCATION_4, NO_TRUNCATION_5)
@@ -364,17 +322,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wsig_wind_max = wsig_wind_max / RYTOEV
   wsig_wind_min = wsig_wind_min / RYTOEV
 
-  ! set defaults for output
-  file_re_corr    = ''
-  file_re_corr_iw = ''
-  file_im_corr    = ''
-  file_im_corr_iw = ''
-  file_spec       = ''
-  file_spec_iw    = ''
-
-  ! read the output from file
-  IF (meta_ionode) READ(5, OUTPUTGW, ERR=30, IOSTAT = ios)
-  
   ! copy read data to output type
   filsigx                         = output%file_exch
   filsigc                         = output%file_corr
@@ -385,23 +332,17 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   output_t%pp_vxc%filename        = output%file_vxc
   output_t%pp_exchange%filename   = output%file_hf
   output_t%pp_renorm%filename     = output%file_renorm
-  output_t%pp_re_corr%filename    = file_re_corr
-  output_t%pp_re_corr_iw%filename = file_re_corr_iw
-  output_t%pp_im_corr%filename    = file_im_corr
-  output_t%pp_im_corr_iw%filename = file_im_corr_iw
-  output_t%pp_spec%filename       = file_spec
-  output_t%pp_spec_iw%filename    = file_spec_iw
+  output_t%pp_re_corr%filename    = ''
+  output_t%pp_re_corr_iw%filename = ''
+  output_t%pp_im_corr%filename    = ''
+  output_t%pp_im_corr_iw%filename = ''
+  output_t%pp_spec%filename       = ''
+  output_t%pp_spec_iw%filename    = ''
   output_t%file_sigma             = output%file_sigma
 
 ! if corr_conv not set in input file default to the full
 ! correlation cutoff.
   if(ABS(corr_conv) < eps12) corr_conv = ecutsco
-!HL TEST PARA FINE
-30 CALL mp_bcast(ios, meta_ionode_id, world_comm )
-   CALL errore( 'gwq_readin', 'reading namelist', ABS( ios ) )
-
-  CALL bcast_gw_input()
-  CALL mp_bcast(nogg, meta_ionode_id, world_comm  )
 
   !
   ! ... Check all namelist variables
@@ -586,18 +527,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   lkpoint_dir=.FALSE.
   restart = recover
   !
-  lgamma_gamma=.FALSE.
   IF (.NOT.ldisp) THEN
-     IF (nkstot==1.OR.(nkstot==2.AND.nspin==2)) THEN
-        lgamma_gamma=(lgamma.AND.(ABS(xk(1,1))<1.D-12) &
-                            .AND.(ABS(xk(2,1))<1.D-12) &
-                            .AND.(ABS(xk(3,1))<1.D-12) )
-     ENDIF
-     IF (nogg) lgamma_gamma=.FALSE.
-     IF ((nat_todo /= 0 .or. nrapp /= 0 ) .and. lgamma_gamma) CALL errore( &
-        'gwq_readin', 'gamma_gamma tricks with nat_todo or nrapp &
-       & not available. Use nogg=.true.', 1)
-     !
      IF (lgamma) THEN
         nksq = nks
      ELSE

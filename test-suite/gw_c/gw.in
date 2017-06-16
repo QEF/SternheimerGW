@@ -52,12 +52,6 @@
   file_gw   = 'band_gw'
 /
 
-&inputgw
-/
-
-&outputgw
-/
-
 FREQUENCIES
 35
 0.0   0.0

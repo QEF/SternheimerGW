@@ -16,12 +16,6 @@
 &gw_output
 /
 
-&inputgw
-/
-
-&outputgw
-/
-
 FREQUENCIES
 51
    2.5   0.3

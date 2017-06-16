@@ -46,12 +46,6 @@
 &gw_output
 /
 
-&inputgw
-/
-
-&outputgw
-/
-
 FREQUENCIES ! circle around origin
 35
     5.0000000000000     0.0000000000000
