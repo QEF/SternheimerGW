@@ -27,7 +27,7 @@
 SUBROUTINE do_stern(config, freq, num_g_corr)
 
   USE constants,            ONLY: eps6
-  USE control_gw,           ONLY: do_q0_only, solve_direct, tinvert, do_epsil, plot_coul
+  USE control_gw,           ONLY: do_q0_only, solve_direct, do_epsil, plot_coul
   USE disp,                 ONLY: nqs, num_k_pts, w_of_q_start, x_q, xk_kpoints
   USE freq_gw,              ONLY: nfs
   USE freqbins_module,      ONLY: freqbins_type
@@ -216,7 +216,7 @@ IMPLICIT NONE
       IF (lgamma) scrcoul_g(1,1,:) = eps_m
 
       ! for the direct solver W = eps^-1
-      IF (solve_direct .AND. tinvert) THEN
+      IF (solve_direct) THEN
         WRITE(1000+mpime, '("UNFOLDING, INVERTING, WRITING W")')
         CALL start_clock(time_coul_invert)
         CALL invert_epsilon(num_g_corr, scrcoul_g, lgamma)

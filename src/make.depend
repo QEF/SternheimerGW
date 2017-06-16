@@ -22,10 +22,7 @@ check_initial_status.o : ../../PW/src/scf_mod.o
 check_initial_status.o : gwcom.o
 clean_pw_gw.o : ../../LR_Modules/lrcom.o
 clean_pw_gw.o : ../../Modules/control_flags.o
-clean_pw_gw.o : gwcom.o
 close_gwq.o : ../../Modules/control_flags.o
-close_gwq.o : ../../Modules/io_global.o
-close_gwq.o : ../../Modules/uspp.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
 construct_w.o : ../../Modules/kind.o
@@ -173,7 +170,6 @@ gw_opening.o : version.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
 gwcom.o : ../../Modules/kind.o
-gwcom.o : ../../Modules/parameters.o
 gwcom.o : gw_type.o
 gwq_init.o : ../../LR_Modules/lrcom.o
 gwq_init.o : ../../Modules/becmod.o
@@ -324,7 +320,6 @@ run_nscf.o : setup_nscf_green.o
 run_nscf.o : sigma.o
 save_gw_input.o : ../../Modules/io_files.o
 save_gw_input.o : ../../Modules/kind.o
-save_gw_input.o : gwcom.o
 select_solver.o : ../../Modules/io_global.o
 select_solver.o : ../../Modules/kind.o
 select_solver.o : bicgstab.o

@@ -23,7 +23,6 @@
 SUBROUTINE unfold_w(num_g_corr, scrcoul_in, scrcoul_out)
 
 USE cell_base,        ONLY : at
-USE control_gw,       ONLY : modielec
 USE freq_gw,          ONLY : nfs
 USE gwsymm,           ONLY : ig_unique, ngmunique, use_symm, sym_ig, sym_friend
 USE io_global,        ONLY : stdout
@@ -100,23 +99,6 @@ LOGICAL      :: sym(48), minus_q, invsymq
      ngmdone = ngmdone + 1
      ngmdonelist(ngmdone) = ig_unique(ig)
   enddo
-IF(modielec) then
-!only diagonal needs unfolding:
-      DO ig = 1, ngmunique
-         DO done = 1, ngmdone
-            if (ig.eq.ngmdonelist(done)) then
-!               write(6,'("Cycling: unique or already unfolded.")')
-                CYCLE
-            endif
-         ENDDO
-         DO iwim = 1, nfs
-            DO isym = 1, nsymq
-               scrcoul_out(gmapsym(ig_unique(ig),invs(isym)), gmapsym(ig_unique(ig),invs(isym)),iwim) = &
-                 scrcoul_out(ig_unique(ig), ig_unique(ig), iwim)
-            ENDDO
-         ENDDO
-      ENDDO
-ELSE
     DO ig = 1, num_g_corr
         DO done = 1, ngmdone
            if (ig.eq.ngmdonelist(done)) then
@@ -145,6 +127,5 @@ ELSE
          ENDDO
 128 CONTINUE
     ENDDO
-ENDIF
 
 END SUBROUTINE unfold_w

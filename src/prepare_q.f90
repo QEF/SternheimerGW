@@ -30,13 +30,12 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   !  doing the band calculation. 
   !  In particular if ldisp=true it sets:
   !  xq : the q point for the q calculation
-  !  current_iq : the current q point
   !  do_iq : if .true. q point has to be calculated
   !  setup_pw : if .true. the pw_setup has to be run
   !  do_band : if .true. the bands need to be calculated before phonon
   
   USE constants,       ONLY : eps6
-  USE control_gw,      ONLY : ldisp, lgamma, current_iq, do_epsil
+  USE control_gw,      ONLY : ldisp, lgamma, do_epsil
   USE disp,            ONLY : x_q, xk_kpoints
   USE qpoint,          ONLY : xq
   !
@@ -46,8 +45,6 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   LOGICAL, INTENT(OUT) :: do_band, do_iq, setup_pw
   CHARACTER (LEN=6), EXTERNAL :: int_to_char
   !
-  !
-  current_iq = iq
   !
   IF ( ldisp ) THEN
     ! ... set the name for the output file

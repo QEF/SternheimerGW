@@ -39,8 +39,6 @@ MODULE save_gw
   !
   PUBLIC :: restore_gw_input_variables, clean_input_variables
   !
-  INTEGER, PRIVATE :: nat_todo_save, nrapp_save
-  INTEGER, ALLOCATABLE, PRIVATE :: list_save(:), atomo_save(:) 
   CHARACTER(LEN=256), PUBLIC :: tmp_dir_save
   !
   !
@@ -50,14 +48,9 @@ MODULE save_gw
       !------------------------------------------------------------------------
       !
       USE io_files,   ONLY : tmp_dir
-      USE partial,    ONLY : nat_todo, nrapp
       !
       IMPLICIT NONE
       !
-      nat_todo=nat_todo_save
-      nrapp=nrapp_save
-!      list=list_save
-!      atomo=atomo_save
       tmp_dir=tmp_dir_save
 
       RETURN

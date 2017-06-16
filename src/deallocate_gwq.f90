@@ -29,12 +29,10 @@ subroutine deallocate_gwq
 !
   USE becmod,                ONLY: bec_type, becp, deallocate_bec_type
   USE control_gw,            ONLY: lgamma, nbnd_occ
-  USE eqv_gw,                ONLY: dmuxc, vlocq, dpsi, dvpsi, evq, eprectot, &
+  USE eqv_gw,                ONLY: dmuxc, vlocq, dpsi, dvpsi, evq, &
                                    dpsim, dpsip, dvbare
   USE lrus,                  ONLY: becp1
-  USE nlcc_gw,               ONLY: drc
   USE qpoint,                ONLY: eigqts, igkq, ikks, ikqs
-  USE units_gw,              ONLY: this_dvkb3_is_on_file, this_pcxpsi_is_on_file
 
   IMPLICIT NONE
   INTEGER :: ik
@@ -53,7 +51,6 @@ subroutine deallocate_gwq
   if(allocated(dpsi)) deallocate ( dpsi)    
   if(allocated(vlocq)) deallocate (vlocq)
   if(allocated(dmuxc)) deallocate (dmuxc)
-  if(allocated(eprectot)) deallocate (eprectot)
   if(allocated(ikks)) deallocate (ikks)
   if(allocated(ikqs)) deallocate (ikqs)
   if(allocated(eigqts)) deallocate (eigqts)
@@ -61,9 +58,6 @@ subroutine deallocate_gwq
   if(allocated(dpsim)) deallocate(dpsim)
   if(allocated(dpsip)) deallocate(dpsip)
   if(allocated(dvbare)) deallocate(dvbare)
-  if(allocated(drc)) deallocate(drc)
-  if(allocated(this_dvkb3_is_on_file)) deallocate (this_dvkb3_is_on_file)    
-  if(allocated(this_pcxpsi_is_on_file)) deallocate (this_pcxpsi_is_on_file)
 
   if(allocated(becp1))  then
      do ik=1,size(becp1)

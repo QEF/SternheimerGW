@@ -36,16 +36,14 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, modenum, twfcollect
   USE control_gw,           ONLY : maxter, alpha_mix, lgamma, &
                                    reduce_io, tr2_gw, niter_gw, lmax_gw, tr2_green, lmax_green, &
-                                   nmix_gw, ldisp, recover, lrpa, start_irr, &
-                                   last_irr, start_q, last_q, tmp_dir_gw, tmp_dir_coul, &
-                                   ext_recover, ext_restart, modielec, eta, &
-                                   do_coulomb, do_sigma_c, do_sigma_exx, do_green, do_sigma_matel, &
+                                   nmix_gw, ldisp, lrpa, tmp_dir_gw, tmp_dir_coul, &
+                                   eta, &
+                                   do_coulomb, do_sigma_c, do_sigma_exx, do_sigma_matel, &
                                    do_q0_only, maxter_green, maxter_coul, godbyneeds, padecont,&
-                                   cohsex, do_sigma_extra, paderobust, &
-                                   solve_direct, w_green_start, tinvert, &
-                                   trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
-                                   do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
-                                   high_io, prec_direct, prec_shift, just_corr,&
+                                   paderobust, &
+                                   solve_direct, &
+                                   do_epsil, alpha_pv, set_alpha_pv, &
+                                   do_imag, newgrid,&
                                    double_grid, output_t => output, plot_coul, &
                                    method_truncation => truncation
   USE debug_module,         ONLY : debug_type
@@ -69,9 +67,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE mp_images,            ONLY : my_image_id, nproc_image
   USE mp_pools,             ONLY : nproc_pool
   USE mp_world,             ONLY : world_comm
-  USE output_mod,           ONLY : fildyn, fildvscf, fildrho, filsigx, filsigc, filcoul
+  USE output_mod,           ONLY : filsigx, filsigc, filcoul
   USE parameters,           ONLY : nsx
-  USE partial,              ONLY : atomo, list, nat_todo, nrapp
   USE qpoint,               ONLY : nksq
   USE run_info,             ONLY : title
   USE save_gw,              ONLY : tmp_dir_save
@@ -229,6 +226,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ldisp       = .TRUE.
   double_grid = .FALSE.
   max_seconds =  1.E+7_DP
+  restart     = .FALSE.
 
   ! set defaults currently for variables currently not in use
 
@@ -238,45 +236,12 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   alpha_mix(:) = 0.D0
   alpha_mix(1) = 0.7D0
   reduce_io    = .FALSE.
-  prec_direct  = .FALSE.
-  prec_shift  = .FALSE.
-  fildyn       = 'matdyn'
-  fildrho      = ' '
-  fildvscf     = ' '
   k1           = 0
   k2           = 0
   k3           = 0
   iq1          = 0
   iq2          = 0
   iq3          = 0
-  recover      = .FALSE.
-  start_irr    = 0
-  last_irr     =-1000
-  start_q      = 1
-  last_q       =-1000
-  w_green_start = 1
-
-  trunc_2d        = .FALSE.
-  do_diag_g       = .FALSE.
-  do_diag_w       = .FALSE.
-  do_pade_coul    = .FALSE.
-  high_io    = .TRUE.
-!Sigma cutoff, correlation cutoff, exchange cutoff
-!this is in case we want to define different cutoffs for 
-!W and G. G cannot exceed sigma.
-!Should have a catch if no model for screening is chosen...
-  modielec     = .FALSE.
-  cohsex       = .FALSE.
-!Imaginary component added to linear system should be in Rydberg
-  do_green       = .FALSE.
-  do_sigma_extra = .FALSE.
-  tinvert        = .TRUE.
-
-!Symmetry Default:yes!, which q, point to start on.
-!can be used in conjunction with do_q0_only.
-  w_green_start  = 1 
-! ...  reading the namelist inputgw
-  just_corr = .FALSE.
 
   ! interpret the truncation scheme
   SELECT CASE (truncation)
@@ -346,11 +311,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   IF (iverbosity.NE.0.AND.iverbosity.NE.1) CALL errore ('gwq_readin', &
        &' Wrong  iverbosity ', 1)
-  IF (fildyn.EQ.' ') CALL errore ('gwq_readin', ' Wrong fildyn ', 1)
   IF (max_seconds.LT.0.1D0) CALL errore ('gwq_readin', ' Wrong max_seconds', 1)
 
-  IF (nat_todo.NE.0.AND.nrapp.NE.0) CALL errore ('gwq_readin', &
-       &' incompatible flags', 1)
   IF (modenum < 0) CALL errore ('gwq_readin', ' Wrong modenum ', 1)
   IF (plot_coul .AND. .NOT.padecont) &
     CALL errore(__FILE__, 'plotting of Coulomb only for Pade continuation', 1)
@@ -486,9 +448,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   output_t%file_sigma = TRIM(output_t%directory) // output_t%file_sigma
 
   CALL check_tempdir ( tmp_dir_gw, exst, parallelfs )
-  ext_restart=.FALSE.
-  ext_recover=.FALSE.
-  recover=.false.
 
   CALL read_file ( )
   force_symmorphic = .true.
@@ -512,7 +471,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   ! for k point
   !
   lkpoint_dir=.FALSE.
-  restart = recover
   !
   IF (.NOT.ldisp) THEN
      IF (lgamma) THEN
@@ -520,23 +478,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
      ELSE
         nksq = nks / 2
      ENDIF
-  ENDIF
-  IF (nat_todo.NE.0) THEN
-     IF (meta_ionode) &
-     READ (5, *, iostat = ios) (atomo (na), na = 1, &
-          nat_todo)
-     CALL mp_bcast(ios, meta_ionode_id, world_comm )
-     CALL errore ('gwq_readin', 'reading atoms', ABS (ios) )
-     CALL mp_bcast(atomo, meta_ionode_id, world_comm )
-  ENDIF
-  IF (nrapp.LT.0.OR.nrapp.GT.3 * nat) CALL errore ('gwq_readin', &
-       'nrapp is wrong', 1)
-  IF (nrapp.NE.0) THEN
-     IF (meta_ionode) &
-     READ (5, *, iostat = ios) (list (na), na = 1, nrapp)
-     CALL mp_bcast(ios, meta_ionode_id, world_comm )
-     CALL errore ('gwq_readin', 'reading list', ABS (ios) )
-     CALL mp_bcast(list, meta_ionode_id, world_comm )
   ENDIF
   IF (.NOT.do_epsil) THEN
     IF (nq1 <= 0) CALL errore(__FILE__,'1st component of qpt_grid must be positive', 1)
