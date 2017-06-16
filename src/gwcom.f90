@@ -44,33 +44,8 @@ MODULE eqv_gw
   ! dpsim change of wavefunction for negative frequency
 
   COMPLEX (DP), ALLOCATABLE :: dvbare(:)
-
-  REAL (DP), ALLOCATABLE :: eprectot(:,:) ! needed for preconditioning
   !
 END MODULE eqv_gw
-!
-!
-MODULE efield_mod
-  USE kinds, ONLY :  DP
-  !
-  ! ... the variables for the electric field perturbation
-  !  
-  SAVE
-  !
-  REAL (DP) :: epsilon (3,3)
-  REAL (DP), ALLOCATABLE :: &
-       zstareu(:,:,:),       &! 3, 3, nat),
-       zstarue(:,:,:)         ! 3, nat, 3)
-  ! the dielectric constant
-  ! the effective charges Z(E,Us) (E=scf,Us=bare)
-  ! the effective charges Z(Us,E) (Us=scf,E=bare)
-  COMPLEX (DP), ALLOCATABLE :: &
-       zstareu0(:,:),        &! 3, 3 * nat),
-       zstarue0(:,:),        &! 3 * nat, 3)
-       zstarue0_rec(:,:)      ! 3 * nat, 3)
-  ! the effective charges
-  !
-END MODULE efield_mod
 !
 !
 MODULE nlcc_gw
@@ -80,57 +55,16 @@ MODULE nlcc_gw
   !
   SAVE
   !
-  COMPLEX (DP), ALLOCATABLE, TARGET :: drc(:,:) ! ngm, ntyp)
-  ! contain the rhoc (without structure fac) for all atomic types
   LOGICAL :: nlcc_any
   ! .T. if any atom-type has nlcc
   !
 END MODULE nlcc_gw
 !
 !
-MODULE partial
-  USE kinds, ONLY :  DP
-  !
-  ! ... the variables needed for partial computation of dynamical matrix
-  !
-  SAVE
-  !  
-  INTEGER, ALLOCATABLE :: &
-       comp_irr(:),           &! 3 * nat ),
-       done_irr(:),           &! 3 * nat), &
-       list(:),               &! 3 * nat),
-       atomo(:)                ! nat)
-  ! if 1 this representation has to be computed
-  ! if 1 this representation has been done
-  ! a list of representations (optionally read in input)
-  ! list of the atoms that moves
-  INTEGER :: nat_todo, nrapp
-  ! number of atoms to compute
-  ! The representation to do
-  LOGICAL :: all_comp
-  ! if .TRUE. all representation have been computed
-  !
-END MODULE partial
-!
-MODULE gamma_gamma
-  INTEGER, ALLOCATABLE :: &
-           has_equivalent(:),  &  ! 0 if the atom has to be calculated
-           with_symmetry(:),   &  ! calculated by symmetry
-           n_equiv_atoms(:),   &  ! number of equivalent atoms
-           equiv_atoms(:,:)       ! which atoms are equivalent
-
-  INTEGER :: n_diff_sites,    &   ! Number of different sites
-             nasr                 ! atom calculated with asr
-                                  !
-  LOGICAL :: asr                  ! if true apply the asr
-
-END MODULE gamma_gamma
-!
 MODULE control_gw
   USE kinds, ONLY :  DP
-  USE parameters, ONLY: npk
   USE control_lr
-  USE gw_type_mod, ONLY : output_type, name_length
+  USE gw_type_mod, ONLY : output_type
   !
   ! ... the variables controlling the GW run
   !
@@ -138,91 +72,49 @@ MODULE control_gw
   !
   INTEGER, PARAMETER :: maxter = 1000
   ! maximum number of iterations
-  INTEGER :: niter_gw, nmix_gw, &
-             start_irr, last_irr, current_iq, start_q, last_q
+  INTEGER :: niter_gw, nmix_gw
   ! maximum number of iterations (read from input)
   ! mixing type
-  ! occupated bands in metals
-  ! starting representation
-  ! initial representation
-  ! last representation of this run
-  ! current q point
-  ! initial q in the list, last_q in the list
-  real(DP) :: tr2_gw, tr2_green
   !
+  REAL(DP) :: tr2_gw, tr2_green
+  ! threshold for G and W
+  !
+  INTEGER lmax_gw, lmax_green
   ! lmax values for green and w
-  integer lmax_gw, lmax_green
   !
-  real(DP) :: eta
-  ! threshold for gw calculation
-  REAL (DP) :: alpha_mix(maxter), time_now
+  REAL(DP) :: eta
+  ! small imaginary component
+  !
+  REAL(DP) :: alpha_mix(maxter)
   ! the mixing parameter
-  ! CPU time up to now
-  ! the alpha value for shifting the bands
-  CHARACTER(LEN=10)  :: where_rec='no_recover'! where the gw run recovered
-  CHARACTER(LEN=256) :: flmixdpot, tmp_dir_gw, tmp_dir_coul
-  INTEGER :: rec_code, &   ! code for recover
-             rec_code_read=-1000 ! code for recover. Not changed during the run
-
-  INTEGER :: truncation ! method used to truncate in reciprocal space
-
-  INTEGER :: maxter_coul, maxter_green, w_green_start
-
-  LOGICAL :: lgamma_gamma,&! if .TRUE. this is a q=0 computation with k=0 only 
-             convt,       &! if .TRUE. the GW has converged
-             epsil,       &! if .TRUE. computes dielec. const and eff. charges
-             done_epsil=.FALSE.,  &! .TRUE. when diel. constant is available
-             trans,       &! if .TRUE. computes GW
-             elgw,        &! if .TRUE. computes electron-gw interaction coeffs
-             zue,         &! if .TRUE. computes eff. charges as induced polarization
-             done_zue=.FALSE., &! .TRUE. when the eff. charges are available
-             zeu,         &! if .TRUE. computes eff. charges as induced forces
-             done_zeu=.FALSE., &! .TRUE. when the eff. charges are available
-             recover,     &! if .TRUE. the run restarts
-             ext_restart, &! if .TRUE. there is a restart file
-             ext_recover, &! if .TRUE. there is a recover file
-             lnoloc,      &! if .TRUE. calculates the dielectric constant
-                           ! neglecting local field effects
-             search_sym,  &! if .TRUE. search the mode symmetry
+  !
+  CHARACTER(LEN=256) :: tmp_dir_gw, tmp_dir_coul
+  ! output directory
+  !
+  INTEGER :: truncation
+  ! method used to truncate in reciprocal space
+  !
+  INTEGER :: maxter_coul, maxter_green
+  ! maximum iteration for G and W
+  !
+  LOGICAL :: convt,       &! if .TRUE. the GW has converged
              lnscf,       &! if .TRUE. the run makes first a nscf calculation
              ldisp,       &! if .TRUE. the run calculates full GW dispersion
              reduce_io,   &! if .TRUE. reduces needed I/O
-             done_bands,  &! if .TRUE. the bands have been calculated
-             bands_computed=.FALSE., & ! if .TRUE. the bands were computed 
-                                       ! in this run
-             nogg,        &! if .TRUE. gamma_gamma tricks are disabled
-             u_from_file=.FALSE.,  & ! if true the u are on file
-             recover_read=.FALSE., & ! if true the recover data have been read
-             all_done, &      ! if .TRUE. all representations have been done
-             modielec, & ! if .TRUE. uses a model dielectric function to calculate W.
              set_alpha_pv, & ! if .TRUE. use automatic method to determine alpha_pv
              do_coulomb, &
              do_sigma_c, &
              do_sigma_exx, &
-             do_green, &
              do_sigma_matel,&
              do_q0_only,&
-             prec_direct,&
-             prec_shift,&
              godbyneeds,&
              padecont,&
              paderobust,&
-             cohsex,&
-             multishift,&
-             do_sigma_extra,&
              solve_direct,&
-             tinvert,&
              coul_multishift,&
-             trunc_2d,&
-             do_diag_w,&
-             do_diag_g,&
              do_epsil,& !in case you want to set xq point
              do_imag,&    !from input file for epsilon
-             do_pade_coul,&
              newgrid = .FALSE.,&
-             loqua   = .FALSE.,&
-             high_io, &  
-             just_corr,&
              double_grid,&
              plot_coul = .FALSE. ! plot the Coulomb potential
 
@@ -260,33 +152,12 @@ MODULE units_gw
   SAVE
   !
   INTEGER :: &
-       iuwfc, lrwfc, iuvkb, iubar, lrbar, iuebar, lrebar, iudwf, iupsir, &
-       lrdwf, iudrhous, lrdrhous, iudyn, iupdyn, iunrec, iudvscf, iudrho, &
-       lrdrho, iucom, lrcom, iudvkb3, lrdvkb3, iuncoul, iungreen, iunsigma, &
-       iudwfm, iudwfp, lrgrn, lrcoul, lrsigma, iuwfcna, iunsex, lrsex, &
-       lrresid, lralphabeta, iunresid, iunalphabeta, iunsigext, lrsigext
+       iuwfc, lrwfc,      & ! wave functions
+       iubar, lrbar,      & ! DV_{bare}
+       iuncoul, lrcoul,   & ! screened Coulomb interaction
+       iunsigma, lrsigma, & ! correlation self energy
+       iunsex, lrsex        ! exchange self energy
 
-  ! iunit with the wavefunctions
-  ! the length of wavefunction record
-  ! unit with vkb
-  ! unit with the part DV_{bare}
-  ! length of the DV_{bare}
-  ! unit with D psi
-  ! unit with evc in real space
-  ! length of D psi record
-  ! the unit with the products
-  ! the length of the products
-  ! the unit for the dynamical matrix
-  ! the unit for the partial dynamical matrix
-  ! the unit with the recover data
-  ! the unit where the delta Vscf is written
-  ! the unit where the delta rho is written
-  ! the length of the deltarho files
-  ! the unit of the bare commutator in US case
-  ! the length  of the bare commutator in US case
-  ! the screened coulomb potential
-  logical, ALLOCATABLE :: this_dvkb3_is_on_file(:), &
-                          this_pcxpsi_is_on_file(:,:)
 END MODULE units_gw
 !
 !
@@ -296,10 +167,10 @@ MODULE output_mod
   !
   SAVE
   !
-  CHARACTER (LEN=256) :: fildyn, fildvscf, fildrho, filsigc, filsigx, filcoul
-  ! output file for the dynamical matrix
-  ! output file for deltavscf
-  ! output file for deltarho
+  CHARACTER (LEN=256) :: filsigc, filsigx, filcoul
+  ! output file for correlation self energy
+  ! output file for exchange self energy
+  ! output file for screened Coulomb interaction
   !
 END MODULE output_mod
 !
@@ -321,35 +192,14 @@ MODULE disp
     ! number of q points to be calculated 
    REAL (DP), ALLOCATABLE :: x_q(:,:)
     ! coordinates of the q points
-   INTEGER, ALLOCATABLE :: done_iq(:)
-    ! if 1 this q point has been already calculated
-   INTEGER, ALLOCATABLE :: comp_iq(:)
-    ! if 1 this q point has to be calculated
-   INTEGER, ALLOCATABLE :: rep_iq(:)
-    ! number of irreducible representation per q point
-   INTEGER, ALLOCATABLE :: done_rep_iq(:,:)
-    ! which representation have been already done in each q
-   INTEGER, ALLOCATABLE :: nsymq_iq(:)
-    ! dimension of the small group of q
-   INTEGER, ALLOCATABLE :: comp_irr_iq(:,:)
-    ! for each q, comp_irr. Used for image parallelization 
-   INTEGER, ALLOCATABLE :: npert_iq(:,:)
-    ! for each q, the number of perturbation of each irr
    REAL(DP) , ALLOCATABLE :: wq(:)
-
-  !HL Variables required for shuffling the k/q grid. 
-   INTEGER, ALLOCATABLE :: gmap(:,:)
-   REAL(DP) :: g0vec(3,27)
-   REAL(DP), ALLOCATABLE :: eval_occ(:,:) ! array of eigenvalues after folding.
-
- ! kpoints: default false.
- ! if true specifies the k-points we want to look 
- ! at in the brillouin zone specified by user in punch card.  
-   LOGICAL  :: kpoints 
-   REAL(DP) :: xk_kpoints(3, 2000)
+    ! weight of the q points
    INTEGER  :: num_k_pts
+    ! number of k-points to be calculated
+   REAL(DP) :: xk_kpoints(3, 2000)
+    ! coordinates of the k points 
    INTEGER  :: w_of_q_start, w_of_k_start, w_of_k_stop
-  
+    ! impose restriction on interval of k and/or q points
 
 END MODULE disp
 
@@ -360,22 +210,16 @@ MODULE gwsigma
 
   SAVE
 
-  COMPLEX(DP), ALLOCATABLE :: sigma_band_exg(:)
-
-! HL self energy is a huge quantity!
   INTEGER  :: nbnd_sig
-! Cutoff for the sigma + exchange/correlation.
+   ! bands for which expectation value is evaluated
+
   REAL(DP) :: ecutsex
   REAL(DP) :: ecutsco
-  REAL(DP) :: ecutprec
-! To easily test convergence at the end 
-! of the calculation.
+   ! Cutoff for the sigma + exchange/correlation.
   REAL(DP)    :: corr_conv
   REAL(DP)    :: exch_conv
-! Old FFT routines
-! Real space mesh for description of self-energy.
-  REAL(DP)    :: gcutmsig
-  INTEGER     :: ngmsig, ngmsco, ngmsex, ngmpol, ngmgrn
+   ! test convergence of calculation
+
 END MODULE gwsigma
 
 
@@ -391,13 +235,10 @@ END MODULE gwsymm
 MODULE gwcom
   USE qpoint
   USE eqv_gw
-  USE efield_mod
   USE nlcc_gw
-  USE partial
   USE control_gw
   USE freq_gw
   USE units_gw
   USE output_mod
-  USE gamma_gamma
   USE disp 
 END MODULE gwcom

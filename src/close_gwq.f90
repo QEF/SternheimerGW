@@ -22,7 +22,7 @@
 ! http://www.gnu.org/licenses/gpl.html .
 !
 !------------------------------------------------------------------------------ 
-SUBROUTINE close_gwq( flag )
+SUBROUTINE close_gwq(flag)
   !----------------------------------------------------------------------------
   !
   ! ... Close all files.
@@ -32,58 +32,22 @@ SUBROUTINE close_gwq( flag )
   USE buffers,         ONLY : close_buffer
   USE control_flags,   ONLY : twfcollect
   USE control_gw,      ONLY : do_coulomb
-  USE io_global,       ONLY : ionode
-  USE output_mod,      ONLY : fildrho, fildvscf
-  USE units_gw,        ONLY : iuwfc, iudwf, iudwfp, iudwfm, iubar, iudrhous, iudrho, &
-                              iudvscf
-  USE uspp,            ONLY : okvan
+  USE units_gw,        ONLY : iuwfc, iubar
 
-  !
   IMPLICIT NONE
-  !
-  LOGICAL :: flag
-  LOGICAL :: opnd
-  !
-  !
-  IF ( twfcollect ) THEN
-     !
-     CALL close_buffer(iuwfc,'delete')
-     !
+
+  LOGICAL, INTENT(IN) :: flag
+
+  IF (twfcollect) THEN
+    CALL close_buffer(iuwfc, 'delete')
   ELSE
-     !
-     CALL close_buffer(iuwfc,'keep')
-     !
+    CALL close_buffer(iuwfc, 'keep')
   END IF
-  IF (flag) THEN
-    IF (do_coulomb) THEN
-     CALL close_buffer(iudwf,  'keep')
-     CALL close_buffer(iudwfp, 'keep')
-     CALL close_buffer(iudwfm, 'keep')
-     CALL close_buffer(iubar,  'keep')
-    ENDIF
-    CONTINUE
+
+  IF (flag .AND. do_coulomb) THEN
+    CALL close_buffer(iubar, 'keep')
   ELSE
-     CALL close_buffer(iudwf,  'keep')
-     CALL close_buffer(iudwfp, 'keep')
-     CALL close_buffer(iudwfm, 'keep')
-     CALL close_buffer(iubar,  'keep')
-     !
-     IF ( okvan ) CALL close_buffer(iudrhous,'keep')
-     !
-  ENDIF
-  !
-  IF ( ionode .AND. fildrho /= ' ') THEN
-     INQUIRE( UNIT=iudrho, OPENED=opnd ) 
-     IF (opnd) CLOSE( UNIT = iudrho, STATUS = 'KEEP' )
-  ENDIF
-  !
-  !
-  IF ( fildvscf /= ' ' ) THEN
-     INQUIRE( UNIT=iudvscf, OPENED=opnd ) 
-     IF (opnd) CLOSE( UNIT = iudvscf, STATUS = 'KEEP' )
-  ENDIF
-  !
-  !
-  RETURN
-  !
+    CALL close_buffer(iubar, 'keep')
+  END IF
+
 END SUBROUTINE close_gwq

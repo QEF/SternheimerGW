@@ -31,15 +31,12 @@ SUBROUTINE clean_pw_gw(flag)
   ! a new q.
   !
   USE control_flags,   ONLY : twfcollect
-  USE control_gw,      ONLY : done_bands
   USE lr_symm_base,    ONLY : nsymq
   !
   IMPLICIT NONE
   !
   LOGICAL :: flag
   !
-  done_bands=.FALSE.
-
   twfcollect=.FALSE. 
 
   CALL clean_pw( .FALSE. )

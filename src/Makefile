@@ -34,7 +34,6 @@ IFLAGS=
 
 GWOBJS = \
 allocate_gwq.o\
-bcast_gw_input.o\
 bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
@@ -57,6 +56,7 @@ godby_needs.o\
 gram_schmidt.o\
 green.o\
 gw.o\
+gw_input.o\
 gw_opening.o\
 gw_type.o\
 gwcom.o\
@@ -111,7 +111,6 @@ LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
 
-
 no_debug : .no_debug all
 .no_debug:
 	-if [ -f .debug ]; then rm debug.o .debug; fi
@@ -129,6 +128,9 @@ version :
 	bash update_version
 
 version.f90 : version
+
+gw_input.f90 : gw_input.yml input_generator.awk
+	awk -f input_generator.awk $< > $@
 
 $(EXE) : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ $< libgw.a \

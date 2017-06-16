@@ -64,15 +64,14 @@
 
   USE constants,          ONLY : eps14
   USE control_flags,      ONLY : noinv
-  USE control_gw,         ONLY : niter_gw, alpha_mix, flmixdpot, set_alpha_pv
+  USE control_gw,         ONLY : niter_gw, alpha_mix, set_alpha_pv
   USE fft_base,           ONLY : dfftp
   USE funct,              ONLY : dmxc, dmxc_spin, dmxc_nc, dft_is_gradient, get_icorr
   USE gvecs,              ONLY : doublegrid
-  USE gvect,              ONLY : ngm
   USE ions_base,          ONLY : ntyp => nsp
   USE lsda_mod,           ONLY : nspin
   USE mp,                 ONLY : mp_max, mp_min
-  USE nlcc_gw,            ONLY : drc, nlcc_any
+  USE nlcc_gw,            ONLY : nlcc_any
   USE noncollin_module,   ONLY : noncolin
   USE scf,                ONLY : v, vrs, vltot, kedtau
   USE spin_orb,           ONLY : domag
@@ -95,7 +94,6 @@
   ! 2) Set non linear core correction variables.
   !
   nlcc_any = ANY ( upf(1:ntyp)%nlcc )
-  if (nlcc_any) allocate (drc( ngm, ntyp))    
   !
   !  3) If necessary calculate the local magnetization. This information is
   !      needed in find_sym
@@ -145,9 +143,6 @@
   do it = 2, niter_gw
      if (alpha_mix (it) < eps14) alpha_mix (it) = alpha_mix (it - 1)
   enddo
-
-  flmixdpot = 'mixd'
-
 
   CALL stop_clock ('gwq_setup')
   RETURN

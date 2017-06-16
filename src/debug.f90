@@ -91,4 +91,24 @@ CONTAINS
 
   END FUNCTION test_nan_complex
 
+  !> broadcast the debug type
+  SUBROUTINE mp_bcast_debug(debug, source, comm)
+
+    USE mp, ONLY: mp_bcast
+
+    !> debug type to be communicated
+    TYPE(debug_type), INTENT(INOUT) :: debug
+
+    !> index of process containing the filled type
+    INTEGER, INTENT(IN) :: source
+
+    !> communicator across which the type is distributed
+    INTEGER, INTENT(IN) :: comm
+
+    CALL mp_bcast(debug%solver_green, source, comm)
+    CALL mp_bcast(debug%sigma_corr,   source, comm)
+    CALL mp_bcast(debug%note,         source, comm)
+
+  END SUBROUTINE mp_bcast_debug
+
 END MODULE debug_module

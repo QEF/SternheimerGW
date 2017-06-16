@@ -29,13 +29,12 @@ SUBROUTINE prepare_q0(do_band, do_iq, setup_pw, iq)
   !  doing the band calculation. 
   !  In particular if ldisp=true it sets:
   !  xq : the q point for the q calculation
-  !  current_iq : the current q point
   !  do_iq : if .true. q point has to be calculated
   !  setup_pw : if .true. the pw_setup has to be run
   !  do_band : if .true. the bands need to be calculated before phonon
   
   USE constants,       ONLY : eps6
-  USE control_gw,      ONLY : ldisp, lgamma, current_iq, do_epsil
+  USE control_gw,      ONLY : ldisp, lgamma, do_epsil
   USE disp,            ONLY : x_q, xk_kpoints
   USE qpoint,          ONLY : xq
   !
@@ -46,16 +45,17 @@ SUBROUTINE prepare_q0(do_band, do_iq, setup_pw, iq)
   CHARACTER (LEN=6), EXTERNAL :: int_to_char
   !
   !
-  current_iq = iq
-  !
   IF ( ldisp ) THEN
-     ! ... set the name for the output file
-     ! ... set the q point
-        xq(1:3)  = x_q(1:3,iq)
-     !In case we want to calulate eps(q) where q is given in the input file:
-        if (do_epsil) xq(:) = xk_kpoints(:, iq)
-        lgamma = ALL(ABS(xq) < eps6)
-        if (lgamma) xq(1) = 0.01d0
+    ! ... set the name for the output file
+    ! ... set the q point
+    !In case we want to calulate eps(q) where q is given in the input file:
+    IF (do_epsil) THEN
+      xq(:) = xk_kpoints(:, iq)
+    ELSE
+      xq(:) = x_q(:,iq)
+    END IF
+    lgamma = ALL(ABS(xq) < eps6)
+    IF (lgamma) xq(1) = 0.01d0
   ENDIF
   do_band=.true.
   setup_pw=.true.
