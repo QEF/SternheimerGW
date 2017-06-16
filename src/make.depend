@@ -168,6 +168,11 @@ gw.o : sigma_grid.o
 gw.o : sigma_io.o
 gw.o : timing.o
 gw.o : truncation.o
+gw_input.o : ../../Modules/io_global.o
+gw_input.o : ../../Modules/kind.o
+gw_input.o : ../../Modules/mp.o
+gw_input.o : ../../Modules/mp_world.o
+gw_input.o : debug.o
 gw_opening.o : ../../Modules/io_global.o
 gw_opening.o : ../../Modules/version.o
 gw_opening.o : version.o
@@ -272,6 +277,10 @@ parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp.o
 parallel.o : ../../Modules/mp_global.o
 parallel.o : ../../Modules/parallel_include.o
+plot_coulomb.o : ../../Modules/constants.o
+plot_coulomb.o : ../../Modules/io_global.o
+plot_coulomb.o : ../../Modules/kind.o
+plot_coulomb.o : freqbins.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o

@@ -97,7 +97,7 @@ program gw
   call opengwfil(grid)
   call stop_clock(time_setup)
 ! Calculation W
-  if(do_coulomb) call do_stern(config_coul, grid%corr%ngmt)
+  if(do_coulomb) call do_stern(config_coul, freq, grid%corr%ngmt)
   ik = 1
   do_band  = .TRUE.
   do_matel = .TRUE.

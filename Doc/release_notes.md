@@ -1,6 +1,12 @@
 Release notes
 =============
 
+on develop
+----------
+
+Implement the possiblity to plot W on the real axis using the Pade
+approximation.
+
 Version 0.12
 ------------
 

@@ -75,6 +75,7 @@ opengwfil.o\
 pade.o\
 pade_robust.o\
 parallel.o\
+plot_coulomb.o\
 pp_output.o\
 prepare_q.o\
 prepare_q0.o\

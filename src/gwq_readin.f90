@@ -46,7 +46,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    trunc_2d, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_diag_g, do_diag_w, do_imag, do_pade_coul, newgrid,&
                                    high_io, prec_direct, prec_shift, just_corr,&
-                                   double_grid, name_length, output, &
+                                   double_grid, name_length, output, plot_coul, &
                                    method_truncation => truncation
   USE debug_module,         ONLY : debug_type
   USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, &
@@ -177,7 +177,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                        padecont, paderobust, cohsex, multishift, do_sigma_extra,&
                        solve_direct, w_green_start, tinvert, coul_multishift, trunc_2d,&
                        do_epsil, do_diag_g, do_diag_w, do_imag, do_pade_coul, nk1, nk2, nk3, high_io,&
-                       prec_direct, tmp_dir, prec_shift, just_corr,& 
+                       prec_direct, tmp_dir, prec_shift, just_corr, plot_coul, &
                        nwcoul, double_grid, wsig_wind_min, wsig_wind_max, nwsigwin, truncation, &
                        filsigx, filsigc, filcoul, debug
   NAMELIST / OUTPUTGW / file_dft, file_gw, file_vxc, file_exchange, file_renorm, &
@@ -458,6 +458,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   IF (nat_todo.NE.0.AND.nrapp.NE.0) CALL errore ('gwq_readin', &
        &' incompatible flags', 1)
   IF (modenum < 0) CALL errore ('gwq_readin', ' Wrong modenum ', 1)
+  IF (plot_coul .AND. .NOT.padecont) &
+    CALL errore(__FILE__, 'plotting of Coulomb only for Pade continuation', 1)
   !
   !
   IF (meta_ionode) THEN
