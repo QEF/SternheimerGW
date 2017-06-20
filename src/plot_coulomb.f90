@@ -26,11 +26,34 @@ MODULE plot_coulomb_module
 
   IMPLICIT NONE
 
+  PRIVATE
+  PUBLIC plot_coulomb
+
 CONTAINS
 
-  !> Plot the screened Coulomb interaction along the real frequency axis for a
-  !! given frequency mesh.
+  !> Main driver for plotting routines that calls the appropriate actual
+  !! plotting routine
   SUBROUTINE plot_coulomb(freq, coulomb)
+
+    USE control_gw,         ONLY: padecont
+    USE freqbins_module,    ONLY: freqbins_type
+    USE kinds,              ONLY: dp
+
+    !> the frequency grid used for the calculation
+    TYPE(freqbins_type), INTENT(IN) :: freq
+
+    !> the screened coulomb interaction for this frequency
+    COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
+
+    IF (padecont) THEN
+      CALL plot_coulomb_pade(freq, coulomb)
+    END IF
+
+  END SUBROUTINE plot_coulomb
+
+  !> Plot the screened Coulomb interaction along the real frequency axis for a
+  !! given frequency mesh using the Pade approximation.
+  SUBROUTINE plot_coulomb_pade(freq, coulomb)
 
     USE constants,          ONLY: RYTOEV
     USE freqbins_module,    ONLY: freqbins_type, freqbins_symm
@@ -113,6 +136,6 @@ CONTAINS
     WRITE(stdout, '(5x,a)') 'End of Pade approximant'
     WRITE(stdout, '(a)')
 
-  END SUBROUTINE plot_coulomb
+  END SUBROUTINE plot_coulomb_pade
 
 END MODULE plot_coulomb_module
