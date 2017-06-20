@@ -672,7 +672,7 @@
 
      Done epsilon inversion.
      
-     Plotting Pade approximant
+     Plotting Pade approximation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000184      -0.94679559     0.00000090
           0.40201005     0.10000184      -0.94697052    -0.00008628
@@ -875,7 +875,7 @@
          79.59798995     0.10000184       0.29943110    -0.00187328
          80.00000000     0.10000184       0.29519009    -0.00183839
 
-     End of Pade approximant
+     End of Pade approximation
 
      epsilq       :      0.62s CPU      0.41s WALL (       1 calls)
 
@@ -1153,7 +1153,7 @@
 
      Done epsilon inversion.
      
-     Plotting Pade approximant
+     Plotting Pade approximation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000184      -0.06854256    -0.00532748
           0.40201005     0.10000184       0.11654076     0.13164811
@@ -1356,7 +1356,7 @@
          79.59798995     0.10000184      -0.62020378     0.00000047
          80.00000000     0.10000184      -0.62020259     0.00000046
 
-     End of Pade approximant
+     End of Pade approximation
 
      epsilq       :      1.49s CPU      0.96s WALL (       3 calls)
 
@@ -1616,7 +1616,7 @@
 
      Done epsilon inversion.
      
-     Plotting Pade approximant
+     Plotting Pade approximation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000184      -0.05759828     0.00124164
           0.40201005     0.10000184       0.12033762     0.16118476
@@ -1819,7 +1819,7 @@
          79.59798995     0.10000184      -0.61693472     0.00000052
          80.00000000     0.10000184      -0.61693311     0.00000051
 
-     End of Pade approximant
+     End of Pade approximation
 
      epsilq       :      2.40s CPU      1.51s WALL (       5 calls)
 Finished Calculating Screened Coulomb
