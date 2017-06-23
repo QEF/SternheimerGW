@@ -199,7 +199,7 @@ CONTAINS
           omega_out = freq%coul(ifreq)
 
           WRITE(stdout, '(5x,2f15.8,2x,2f15.8)') omega_out * RYTOEV, &
-            godby_needs_model(omega_out, coulomb(ig, igp, :))
+            godby_needs_model(omega_out, coulomb_(ig, igp, :))
 
         END DO ! ifreq
 
