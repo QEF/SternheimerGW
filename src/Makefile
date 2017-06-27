@@ -132,6 +132,17 @@ version.f90 : version
 gw_input.f90 : gw_input.yml input_generator.awk
 	awk -f input_generator.awk $< > $@
 
+tiddler: gw_input.yml input_generator.awk check-wiki
+	awk -f input_generator.awk -v tiddler=1 -v path=$(WIKI)/tiddlers $<
+
+check-wiki:
+ifndef WIKI
+	$(error WIKI must be set to the path to the wiki.)
+endif
+ifeq ("$(wildcard $(WIKI)/tiddlers)", "")
+	$(error directory $(WIKI)/tiddlers does not exist)
+endif
+
 $(EXE) : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ $< libgw.a \
 		 $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)

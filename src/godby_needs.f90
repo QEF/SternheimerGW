@@ -31,12 +31,12 @@
 !! frequencies \f$\omega = 0\f$ and \f$\omega = i \omega_{\text{p}}\f$. Then
 !! we can determine the constants
 !! \f{equation}{
-!!   A_{GG'} = \frac12 W_{GG'}(0) \tilde \omega
+!!   A_{GG'} = \frac12 W_{GG'}(0) \tilde \omega_{GG'}
 !! \f}
 !! and
 !! \f{equation}{
 !!   \tilde\omega_{GG'} = \sqrt{
-!!     \frac{W_{GG'}(\omega_{\text{p}})}{W_{GG'}(0) - W_{GG'}(\omega_{\text{p}})]}
+!!     \frac{W_{GG'}(\omega_{\text{p}})}{W_{GG'}(0) - W_{GG'}(\omega_{\text{p}})}
 !!   } \omega_{\text{p}}~.
 !! \f}
 MODULE godby_needs_module

@@ -194,8 +194,8 @@ then
 
   # print the screened coulomb of the plotting function
 
-  line_begin_plot=$(grep -n 'Plotting Pade approximant' $fname | awk -F":" '{ print $1 }')
-  line_end_plot=$(grep -n 'End of Pade approximant' $fname | awk -F":" '{ print $1 }')
+  line_begin_plot=$(grep -n 'Plotting.*approximation' $fname | awk -F":" '{ print $1 }')
+  line_end_plot=$(grep -n 'End of.*approximation' $fname | awk -F":" '{ print $1 }')
 
   # loop over elements
   i=0

@@ -9,7 +9,7 @@ generation from the documentation of the user variables in a YAML
 file. Cleanup of unused variables.
 
 Implement the possiblity to plot W on the real axis using the Pade
-approximation.
+or plasmon-pole approximation.
 
 > compatible QE revision 13574 (note: compile with old XML)
 

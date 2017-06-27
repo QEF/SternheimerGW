@@ -26,11 +26,36 @@ MODULE plot_coulomb_module
 
   IMPLICIT NONE
 
+  PRIVATE
+  PUBLIC plot_coulomb
+
 CONTAINS
 
-  !> Plot the screened Coulomb interaction along the real frequency axis for a
-  !! given frequency mesh.
+  !> Main driver for plotting routines that calls the appropriate actual
+  !! plotting routine
   SUBROUTINE plot_coulomb(freq, coulomb)
+
+    USE control_gw,         ONLY: padecont, godbyneeds
+    USE freqbins_module,    ONLY: freqbins_type
+    USE kinds,              ONLY: dp
+
+    !> the frequency grid used for the calculation
+    TYPE(freqbins_type), INTENT(IN) :: freq
+
+    !> the screened coulomb interaction for this frequency
+    COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
+
+    IF (godbyneeds) THEN
+      CALL plot_coulomb_godbyneeds(freq, coulomb)
+    ELSE IF (padecont) THEN
+      CALL plot_coulomb_pade(freq, coulomb)
+    END IF
+
+  END SUBROUTINE plot_coulomb
+
+  !> Plot the screened Coulomb interaction along the real frequency axis for a
+  !! given frequency mesh using the Pade approximation.
+  SUBROUTINE plot_coulomb_pade(freq, coulomb)
 
     USE constants,          ONLY: RYTOEV
     USE freqbins_module,    ONLY: freqbins_type, freqbins_symm
@@ -83,7 +108,7 @@ CONTAINS
     ! allocate arrays to contain Pade coefficients
     ALLOCATE(coeff(freq%num_freq()))
 
-    WRITE(stdout, '(5x,a)') 'Plotting Pade approximant'
+    WRITE(stdout, '(5x,a)') 'Plotting Pade approximation'
 
     ! evalute Pade approximation for all G and G'
     DO igp = 1, num_g_corr
@@ -110,9 +135,82 @@ CONTAINS
       END DO ! ig
     END DO ! igp
 
-    WRITE(stdout, '(5x,a)') 'End of Pade approximant'
+    WRITE(stdout, '(5x,a)') 'End of Pade approximation'
     WRITE(stdout, '(a)')
 
-  END SUBROUTINE plot_coulomb
+  END SUBROUTINE plot_coulomb_pade
+
+  !> Plot the screened Coulomb interaction along the real frequency axis for a
+  !! given frequency mesh using the Godby-Needs plasmon-pole model.
+  SUBROUTINE plot_coulomb_godbyneeds(freq, coulomb)
+
+    USE constants,          ONLY: RYTOEV
+    USE freqbins_module,    ONLY: freqbins_type, freqbins_symm
+    USE godby_needs_module, ONLY: godby_needs_coeffs, godby_needs_model
+    USE io_global,          ONLY: stdout
+    USE kinds,              ONLY: dp
+
+    !> the frequency grid used for the calculation
+    TYPE(freqbins_type), INTENT(IN) :: freq
+
+    !> the screened coulomb interaction for this frequency
+    COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
+
+    !> number of G vectors in correlation grid
+    INTEGER num_g_corr
+
+    !> counter on the G vectors
+    INTEGER ig, igp
+
+    !> the frequency at which the Pade approximation is evaluated
+    COMPLEX(dp) :: omega_out
+
+    !> counter on the frequencies
+    INTEGER ifreq
+
+    !> copy of the coulomb array
+    COMPLEX(dp), ALLOCATABLE :: coulomb_(:,:,:)
+
+    num_g_corr = SIZE(coulomb, 1)
+    IF (SIZE(coulomb, 2) /= num_g_corr) &
+      CALL errore(__FILE__, "coulomb matrix should be square for each frequency", 1)
+    IF (SIZE(coulomb, 3) > 2) &
+      CALL errore(__FILE__, "coulomb matrix should have two frequencies for PP model", 1)
+
+    ! copy coulomb to array
+    ALLOCATE(coulomb_(num_g_corr, num_g_corr, 2))
+    coulomb_ = coulomb
+
+    ! calculate Godby-Needs coefficients (in-place replacement)
+    CALL godby_needs_coeffs(AIMAG(freq%solver(2)), coulomb_) 
+
+    WRITE(stdout, '(5x,a)') 'Plotting Godby-Needs approximation'
+
+    ! evalute Pade approximation for all G and G'
+    DO igp = 1, num_g_corr
+      DO ig = 1, num_g_corr
+
+        ! plot the frequency dependent Coulomb interaction
+        WRITE(stdout, '(17x,a,18x,a,i6,a,i6,a)') 'omega', 'W(', ig, ', ', igp, ', omega)'
+
+        DO ifreq = 1, freq%num_coul()
+
+          ! evaluate Godby-Needs approximation
+          omega_out = freq%coul(ifreq)
+
+          WRITE(stdout, '(5x,2f15.8,2x,2f15.8)') omega_out * RYTOEV, &
+            godby_needs_model(omega_out, coulomb_(ig, igp, :))
+
+        END DO ! ifreq
+
+        WRITE(stdout, '(a)')
+        
+      END DO ! ig
+    END DO ! igp
+
+    WRITE(stdout, '(5x,a)') 'End of Godby-Needs approximaton'
+    WRITE(stdout, '(a)')
+
+  END SUBROUTINE plot_coulomb_godbyneeds
 
 END MODULE plot_coulomb_module
