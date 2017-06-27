@@ -29,3 +29,24 @@ features of the SternheimerGW software. In general, these examples are tuned
 to compromise between runtime and accuracy. If you want to perform similar
 calculations for a publication, you would need to increase the numerical 
 cutoff parameters.
+
+All these examples have a common structure, they contain the input files
+scf.in, which is required to run the DFT calculation, and gw.in, which is
+used to run the SternheimerGW calculation. In addition, they contain the
+required pseudopotentials and reference output files (scf.ref and gw.ref).
+When you are in the source directory of a particular example, type
+~~~~
+../../../bin/pw.x < scf.in > scf.out
+../../bin/gw.x < gw.in > gw.out
+~~~~
+to run the example. Note that this assumes the default installation, where
+SternheimerGW is a subdirectory of the main Quantum ESPRESSO directory.
+
+Example 1: Silicon
+------------------
+
+The aim of this calculation is to calculate the electronic band structure of
+silicon along the Gamma-X direction. In this example, we use full-frequency
+integration along the imaginary axis and a 4 x 4 x 4 grid for both k-point
+and q-points. The energy cutoffs for exchange and correlation are 15 and 6 Ry,
+respectively.
