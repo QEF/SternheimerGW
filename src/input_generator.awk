@@ -30,11 +30,11 @@ BEGIN {
   k_type = 1
   k_default = 2
   k_description = 3
-  # check if default should be generated
+  # check if input should be generated
   if (tiddler == 1) {
-    default = 0
+    gen_input = 0
   } else {
-    default = 1
+    gen_input = 1
   }
 }
 # check for comment or empty lines
@@ -182,7 +182,7 @@ function print_type(intent) {
 # generate the reading routine
 END {
 
-  if (default == 1) {
+  if (gen_input == 1) {
     print "!------------------------------------------------------------------------------"
     print "!"
     print "! This file is part of the SternheimerGW code."
