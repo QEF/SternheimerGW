@@ -1,0 +1,31 @@
+<!--
+ 
+  This file is part of the SternheimerGW code.
+  
+  Copyright (C) 2010 - 2017 
+  Henry Lambert, Martin Schlipf, and Feliciano Giustino
+ 
+  SternheimerGW is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+ 
+  SternheimerGW is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+ 
+  You should have received a copy of the GNU General Public License
+  along with SternheimerGW. If not, see
+  http://www.gnu.org/licenses/gpl.html .
+ 
+-->
+
+SternheimerGW examples
+======================
+
+In this directory, we show a few examplary calculations that demonstrate
+features of the SternheimerGW software. In general, these examples are tuned
+to compromise between runtime and accuracy. If you want to perform similar
+calculations for a publication, you would need to increase the numerical 
+cutoff parameters.
