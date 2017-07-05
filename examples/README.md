@@ -24,7 +24,7 @@
 SternheimerGW examples
 ======================
 
-In this directory, we show a few examplary calculations that demonstrate
+In this directory, we show a few exemplary calculations that demonstrate
 features of the SternheimerGW software. In general, these examples are tuned
 to compromise between runtime and accuracy. If you want to perform similar
 calculations for a publication, you would need to increase the numerical 
