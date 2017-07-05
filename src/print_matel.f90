@@ -130,7 +130,7 @@ logical                   ::   single_line
   xkcryst(:) = xk(:, ikq)
   call cryst_to_cart(1, xkcryst, at, -1)
   if(single_line) then
-     write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))')  et(1:8, ikq)*RYTOEV
+     write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))')  et(1:nbnd_sig, ikq)*RYTOEV
   else
      !write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))', advance='no')  et(1:8, ikq)*RYTOEV
      write(stdout,'(/4x,"LDA eigenval (eV)", 8(1x,f7.2))')  et(1:8, ikq)*RYTOEV
@@ -147,7 +147,7 @@ logical                   ::   single_line
   write(stdout,'(/4x,"GWKpoint cryst:", 3(1x,f8.4))') xkcryst(:)
 
   if(single_line) then
-     write(stdout, '(4x,"GW qp energy (eV)",8(1x,f7.2))')  et_qp(1:8)*RYTOEV
+     write(stdout, '(4x,"GW qp energy (eV)",8(1x,f7.2))')  et_qp(1:nbnd_sig)*RYTOEV
   else
      !write(stdout, '(4x,"GW qp energy (eV)",8(1x,f7.2))', advance='no')  et_qp(1:8)*RYTOEV
      write(stdout, '(/4x,"GW qp energy (eV)",8(1x,f7.2))')  et_qp(1:8)*RYTOEV
@@ -162,7 +162,7 @@ logical                   ::   single_line
   endif
 
   if(single_line) then
-     write(stdout,'(4x,"Vxc expt val (eV)",8(1x,f7.2))')  vxc_diag(1:8)*RYTOEV
+     write(stdout,'(4x,"Vxc expt val (eV)",8(1x,f7.2))')  vxc_diag(1:nbnd_sig)*RYTOEV
   else
      !write(stdout,'(4x,"Vxc expt val (eV)",8(1x,f7.2))', advance='no')  vxc_diag(1:8)*RYTOEV
      write(stdout,'(/4x,"Vxc expt val (eV)",8(1x,f7.2))')  vxc_diag(1:8)*RYTOEV
@@ -177,7 +177,7 @@ logical                   ::   single_line
   endif
 
   if(single_line) then
-     write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))')  sigma_ex_diag(1:8)*RYTOEV
+     write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))')  sigma_ex_diag(1:nbnd_sig)*RYTOEV
   else
      !write(stdout,'(4x,"Sigma_ex val (eV)",8(1x,f7.2))', advance='no')  sigma_ex_diag(1:8)*RYTOEV
      write(stdout,'(/4x,"Sigma_ex val (eV)",8(1x,f7.2))')  sigma_ex_diag(1:8)*RYTOEV
@@ -192,7 +192,7 @@ logical                   ::   single_line
   endif
 
   if(single_line) then
-     write(stdout,'(4x,"QP renorm",8x, 8(1x,f7.2))')  z(1:8)
+     write(stdout,'(4x,"QP renorm",8x, 8(1x,f7.2))')  z(1:nbnd_sig)
   else
      !write(stdout,'(4x,"QP renorm",8x, 8(1x,f7.2))', advance='no')  z(1:8)
      write(stdout,'(/4x,"QP renorm",8x, 8(1x,f7.2))')  z(1:8)
@@ -210,7 +210,7 @@ logical                   ::   single_line
   write(stdout,'("REsigma")')
   do iw = 1, nwsigma
     if(single_line) then
-       write(stdout,'(9f14.7)') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,8)
+       write(stdout,'(9f14.7)') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
     else
        write(stdout,'(9f14.7)', advance='no') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,8)
     endif
@@ -227,7 +227,7 @@ logical                   ::   single_line
   write(stdout,'("IMsigma")')
   do iw = 1, nwsigma
      if(single_line) then
-        write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,8)
+        write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,nbnd_sig)
      else
         write(stdout,'(9f15.8)', advance='no') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,8)
      endif
@@ -243,7 +243,7 @@ logical                   ::   single_line
   write(stdout,'("ASpec")')
   do iw = 1, nwsigma
      if(single_line) then
-        write(stdout,'(9f15.8)') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV, ibnd=1,8)
+        write(stdout,'(9f15.8)') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV,ibnd=1,nbnd_sig)
      else
         write(stdout,'(9f15.8)',advance='no') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV, ibnd=1,8)
      endif
