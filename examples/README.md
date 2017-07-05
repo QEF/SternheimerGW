@@ -47,6 +47,14 @@ Example 1: Silicon
 
 The aim of this calculation is to calculate the electronic band structure of
 silicon along the Gamma-X direction. In this example, we use full-frequency
-integration along the imaginary axis and a 4 x 4 x 4 grid for both k-point
-and q-points. The energy cutoffs for exchange and correlation are 15 and 6 Ry,
+integration along the imaginary axis and a 4 x 4 x 4 grid for both k point
+and q points. The energy cutoffs for exchange and correlation are 15 and 6 Ry,
 respectively.
+
+Example 2: Li
+-------------
+
+The aim of this calculation is to calculate the spectral function of lithium
+at the Gamma point. In this example, we use full-frequency integration along
+the imaginary axis and a 4 x 4 x 4 grid for both k points and q points. The
+energy cutoffs for exchange and correlation are 20 and 8 Ry, respectively.
