@@ -58,3 +58,13 @@ The aim of this calculation is to calculate the spectral function of lithium
 at the Gamma point. In this example, we use full-frequency integration along
 the imaginary axis and a 6 x 6 x 6 grid for both k points and q points. The
 energy cutoffs for exchange and correlation are 20 and 8 Ry, respectively.
+
+Example 3: ? film
+-----------------
+TODO
+
+Example 4: LiCl
+---------------
+
+The aim of this calculation is to obtain the dielectric function on the real
+frequency axis with a 6 x 6 x 6 k point mesh at the Gamma q point.
