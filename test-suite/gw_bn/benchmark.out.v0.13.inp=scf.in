@@ -1,5 +1,5 @@
 
-     Program PWSCF v.6.1 starts on  9Jun2017 at 10:14: 0 
+     Program PWSCF v.6.1 starts on 28Jul2017 at 11:31:19 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -96,7 +96,7 @@
 
      Dense  grid:     7349 G-vectors     FFT dimensions: (  18,  18,  60)
 
-     Estimated max dynamical RAM per process >       4.99MB
+     Estimated max dynamical RAM per process >       5.45 MB
 
      Initial potential from superposition of free atoms
      Check: negative starting charge=   -0.006795
@@ -108,7 +108,7 @@
 
      total cpu time spent up to now is        0.2 secs
 
-     per-process dynamical memory:     7.5 Mb
+     per-process dynamical memory:     7.4 Mb
 
      Self-consistent Calculation
 
@@ -120,9 +120,9 @@
 
      total cpu time spent up to now is        0.3 secs
 
-     total energy              =     -24.90182980 Ry
-     Harris-Foulkes estimate   =     -24.95815334 Ry
-     estimated scf accuracy    <       0.14437183 Ry
+     total energy              =     -24.90183757 Ry
+     Harris-Foulkes estimate   =     -24.95816094 Ry
+     estimated scf accuracy    <       0.14437243 Ry
 
      iteration #  2     ecut=    30.00 Ry     beta= 0.70
      Davidson diagonalization with overlap
@@ -132,9 +132,9 @@
 
      total cpu time spent up to now is        0.3 secs
 
-     total energy              =     -24.91696273 Ry
-     Harris-Foulkes estimate   =     -24.91894375 Ry
-     estimated scf accuracy    <       0.00807982 Ry
+     total energy              =     -24.91697075 Ry
+     Harris-Foulkes estimate   =     -24.91895180 Ry
+     estimated scf accuracy    <       0.00807995 Ry
 
      iteration #  3     ecut=    30.00 Ry     beta= 0.70
      Davidson diagonalization with overlap
@@ -144,8 +144,8 @@
 
      total cpu time spent up to now is        0.4 secs
 
-     total energy              =     -24.91804912 Ry
-     Harris-Foulkes estimate   =     -24.91828588 Ry
+     total energy              =     -24.91805716 Ry
+     Harris-Foulkes estimate   =     -24.91829390 Ry
      estimated scf accuracy    <       0.00087897 Ry
 
      iteration #  4     ecut=    30.00 Ry     beta= 0.70
@@ -154,8 +154,8 @@
 
      total cpu time spent up to now is        0.4 secs
 
-     total energy              =     -24.91820534 Ry
-     Harris-Foulkes estimate   =     -24.91820773 Ry
+     total energy              =     -24.91821337 Ry
+     Harris-Foulkes estimate   =     -24.91821577 Ry
      estimated scf accuracy    <       0.00002712 Ry
 
      iteration #  5     ecut=    30.00 Ry     beta= 0.70
@@ -164,8 +164,8 @@
 
      total cpu time spent up to now is        0.5 secs
 
-     total energy              =     -24.91821150 Ry
-     Harris-Foulkes estimate   =     -24.91821654 Ry
+     total energy              =     -24.91821954 Ry
+     Harris-Foulkes estimate   =     -24.91822457 Ry
      estimated scf accuracy    <       0.00000901 Ry
 
      iteration #  6     ecut=    30.00 Ry     beta= 0.70
@@ -174,8 +174,8 @@
 
      total cpu time spent up to now is        0.5 secs
 
-     total energy              =     -24.91821314 Ry
-     Harris-Foulkes estimate   =     -24.91821314 Ry
+     total energy              =     -24.91822117 Ry
+     Harris-Foulkes estimate   =     -24.91822117 Ry
      estimated scf accuracy    <       0.00000005 Ry
 
      iteration #  7     ecut=    30.00 Ry     beta= 0.70
@@ -196,7 +196,7 @@
 
           k = 0.0000 0.4619 0.0000 (   929 PWs)   bands (ev):
 
-   -17.2821 -10.0266  -5.6682  -3.4263
+   -17.2821 -10.0266  -5.6682  -3.4264
 
           k = 0.2000 0.3464 0.0000 (   926 PWs)   bands (ev):
 
@@ -204,67 +204,67 @@
 
           k = 0.2000 0.5774 0.0000 (   924 PWs)   bands (ev):
 
-   -16.4430 -10.4048  -7.7743  -2.0506
+   -16.4430 -10.4049  -7.7743  -2.0506
 
      highest occupied level (ev):    -2.0506
 
-!    total energy              =     -24.91821318 Ry
-     Harris-Foulkes estimate   =     -24.91821319 Ry
+!    total energy              =     -24.91822121 Ry
+     Harris-Foulkes estimate   =     -24.91822122 Ry
      estimated scf accuracy    <          8.3E-09 Ry
 
      The total energy is the sum of the following terms:
 
-     one-electron contribution =     -76.42047529 Ry
-     hartree contribution      =      40.25864714 Ry
-     xc contribution           =      -7.22776919 Ry
+     one-electron contribution =     -76.42047879 Ry
+     hartree contribution      =      40.25865183 Ry
+     xc contribution           =      -7.22777840 Ry
      ewald contribution        =      18.47138415 Ry
 
      convergence has been achieved in   7 iterations
 
      Writing output data file bn.save
 
-     init_run     :      0.22s CPU      0.18s WALL (       1 calls)
-     electrons    :      0.55s CPU      0.39s WALL (       1 calls)
+     init_run     :      0.24s CPU      0.19s WALL (       1 calls)
+     electrons    :      0.51s CPU      0.38s WALL (       1 calls)
 
      Called by init_run:
-     wfcinit      :      0.04s CPU      0.03s WALL (       1 calls)
+     wfcinit      :      0.03s CPU      0.03s WALL (       1 calls)
      potinit      :      0.05s CPU      0.05s WALL (       1 calls)
 
      Called by electrons:
-     c_bands      :      0.37s CPU      0.25s WALL (       7 calls)
-     sum_band     :      0.06s CPU      0.05s WALL (       7 calls)
-     v_of_rho     :      0.12s CPU      0.09s WALL (       8 calls)
+     c_bands      :      0.35s CPU      0.25s WALL (       7 calls)
+     sum_band     :      0.05s CPU      0.05s WALL (       7 calls)
+     v_of_rho     :      0.12s CPU      0.08s WALL (       8 calls)
      mix_rho      :      0.01s CPU      0.01s WALL (       7 calls)
 
      Called by c_bands:
      init_us_2    :      0.00s CPU      0.00s WALL (      75 calls)
-     cegterg      :      0.37s CPU      0.24s WALL (      35 calls)
+     cegterg      :      0.34s CPU      0.25s WALL (      35 calls)
 
      Called by sum_band:
 
      Called by *egterg:
-     h_psi        :      0.36s CPU      0.24s WALL (     122 calls)
+     h_psi        :      0.34s CPU      0.24s WALL (     122 calls)
      g_psi        :      0.00s CPU      0.00s WALL (      82 calls)
      cdiaghg      :      0.01s CPU      0.01s WALL (     117 calls)
 
      Called by h_psi:
-     h_psi:pot    :      0.36s CPU      0.24s WALL (     122 calls)
+     h_psi:pot    :      0.34s CPU      0.24s WALL (     122 calls)
      h_psi:calbec :      0.00s CPU      0.00s WALL (     122 calls)
-     vloc_psi     :      0.36s CPU      0.24s WALL (     122 calls)
+     vloc_psi     :      0.33s CPU      0.24s WALL (     122 calls)
      add_vuspsi   :      0.00s CPU      0.00s WALL (     122 calls)
 
      General routines
      calbec       :      0.00s CPU      0.00s WALL (     122 calls)
-     fft          :      0.05s CPU      0.03s WALL (      87 calls)
-     fftw         :      0.36s CPU      0.25s WALL (    1042 calls)
+     fft          :      0.04s CPU      0.03s WALL (      87 calls)
+     fftw         :      0.34s CPU      0.25s WALL (    1042 calls)
 
      Parallel routines
      fft_scatter  :      0.02s CPU      0.02s WALL (    1129 calls)
 
-     PWSCF        :     0.84s CPU         0.64s WALL
+     PWSCF        :     0.82s CPU         0.63s WALL
 
 
-   This run was terminated on:  10:14: 0   9Jun2017            
+   This run was terminated on:  11:31:19  28Jul2017            
 
 =------------------------------------------------------------------------------=
    JOB DONE.
