@@ -59,9 +59,13 @@ at the Gamma point. In this example, we use full-frequency integration along
 the imaginary axis and a 6 x 6 x 6 grid for both k points and q points. The
 energy cutoffs for exchange and correlation are 20 and 8 Ry, respectively.
 
-Example 3: ? film
+Example 3: BN film
 -----------------
-TODO
+
+The aim of this calculation is to calculate the quasi-particle corrections for
+a BN film at the Gamma point. In this example, we use a Godby-Needs plasmon-pole
+model along the imaginary axis and a 8 x 8 x 1 grid for k and q points. The
+energy cutoffs for exchange and correlation are 20 and 5 Ry, respectively.
 
 Example 4: LiCl
 ---------------
