@@ -133,7 +133,7 @@ LOGICAL                   ::   single_line
   write(stdout,'("REsigma")')
   do iw = 1, nwsigma
     if(single_line) then
-       write(stdout,'(9f14.7)') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,8)
+       write(stdout,'(9f14.7)') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,nbnd_sig)
     else
        write(stdout,'(9f14.7)', advance='no') wsigma(iw), (RYTOEV*resig_diag (iw,ibnd), ibnd=1,8)
     endif
@@ -150,7 +150,7 @@ LOGICAL                   ::   single_line
   write(stdout,'("IMsigma")')
   do iw = 1, nwsigma
      if(single_line) then
-        write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,8)
+        write(stdout,'(9f15.8)') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,nbnd_sig)
      else
         write(stdout,'(9f15.8)', advance='no') wsigma(iw), (RYTOEV*imsig_diag (iw,ibnd), ibnd=1,8)
      endif
@@ -166,7 +166,7 @@ LOGICAL                   ::   single_line
   write(stdout,'("ASpec")')
   do iw = 1, nwsigma
      if(single_line) then
-        write(stdout,'(9f15.8)') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV, ibnd=1,8)
+        write(stdout,'(9f15.8)') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV,ibnd=1,nbnd_sig)
      else
         write(stdout,'(9f15.8)',advance='no') wsigma(iw), (a_diag (iw,ibnd)/RYTOEV, ibnd=1,8)
      endif

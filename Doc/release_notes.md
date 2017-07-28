@@ -11,6 +11,9 @@ file. Cleanup of unused variables.
 Implement the possiblity to plot W on the real axis using the Pade
 or plasmon-pole approximation.
 
+New examples for new input format: silicon, lithium, BN film, and
+LiCl (dielectric constant).
+
 > compatible QE revision 13574 (note: compile with old XML)
 
 Version 0.12

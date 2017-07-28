@@ -1,3 +1,7 @@
+*.o
+*.mod
+*.x
+*.a
 obsolete
 version.f90
 version.f90.tmp

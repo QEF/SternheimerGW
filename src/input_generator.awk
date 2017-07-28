@@ -36,6 +36,20 @@ BEGIN {
   } else {
     gen_input = 1
   }
+  # character identifying a list
+  list_char = "-"
+}
+function line_cont(first_field) {
+  if (gen_input == 1) {
+    return "\n    !!"
+  }
+  if (tiddler == 1) {
+    if (first_field == list_char) {
+      return "\n"
+    } else {
+      return ""
+    }
+  }
 }
 # check for comment or empty lines
 /^[ \t]*#/ || NF == 0 { skip = 1 }
@@ -144,6 +158,12 @@ skip == 0 && spec_active && cont_line == 0 {
 # continuation line
 cont_line == 1 {
 
+  # list start with a -
+  list = ($1 == list_char)
+
+  # at the start of a list print a new line
+  new_list = (list && !prev_list)
+
   # trim whitespace
   sub(/^[ \t]*/, "", $0)
 
@@ -153,10 +173,16 @@ cont_line == 1 {
   } else if (active == k_default) {
     default_[num_namelist,num_var] = default_[num_namelist,num_var]" "$0
   } else if (active == k_description) {
-    description[num_namelist,num_var] = description[num_namelist,num_var]" "$0
+    if (new_list) description[num_namelist,num_var] = description[num_namelist,num_var]line_cont(list_char)
+    # tiddlywiki uses different list character
+    current_line = $0
+    if (list && tiddler == 1) sub(list_char, "*", current_line)
+    description[num_namelist,num_var] = description[num_namelist,num_var]line_cont($1)" "current_line
   }
 
   cont_line = 0
+  prev_list = list
+
 }
 
 # print input parameters for subroutine

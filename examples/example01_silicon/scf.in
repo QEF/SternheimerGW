@@ -1,0 +1,31 @@
+si scf input card with monkhorst pack automesh
+&control
+    calculation  = 'scf'
+    prefix       = 'si'
+    outdir       = './tmp'
+    pseudo_dir   = '.'
+    wf_collect   = .true. 
+/
+
+&system
+    ibrav        = 2
+    celldm(1)    = 10.26
+    nat          = 2
+    ntyp         = 1
+    ecutwfc      = 16.0
+    force_symmorphic = .true.
+/
+
+&electrons
+    conv_thr =  1.0d-8
+/
+
+ATOMIC_SPECIES
+ Si  28.086  Si.pz-vbc.UPF
+
+ATOMIC_POSITIONS
+ Si  0.0  0.0  0.0
+ Si  0.25 0.25 0.25
+
+K_POINTS (automatic)
+ 8 8 8 0 0 0

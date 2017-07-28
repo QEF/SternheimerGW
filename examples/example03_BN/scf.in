@@ -1,0 +1,35 @@
+BN 2d film
+&control
+    calculation = 'scf'
+    prefix      = 'bn'
+    outdir      = './tmp'
+    pseudo_dir  = '.'
+    wf_collect  = .true.
+/
+&system
+    ibrav       = 0
+    nat         = 2
+    ntyp        = 2
+    ecutwfc     = 30
+    force_symmorphic = .true.
+/
+
+&electrons
+    conv_thr = 1.0d-8
+/
+
+ATOMIC_SPECIES
+ B 10.811   B.pbe-hgh.UPF 
+ N 14.0067  N.pbe-hgh.UPF
+
+CELL_PARAMETERS {angstrom}
+ 2.512428 0.000000 0.000000
+-1.256214 2.175827 0.000000
+ 0.000000 0.000000 9.0
+
+ATOMIC_POSITIONS crystal
+B 0.333333 0.666667 0.0000000
+N 0.666667 0.333333 0.0000000
+
+K_POINTS (automatic)
+15 15 1 0 0 0

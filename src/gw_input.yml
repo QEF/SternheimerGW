@@ -76,13 +76,13 @@ gw_input:
     default: 'on'
     description: Specifies which method is used to truncate the Coulomb potential.
       Possible options are
-      * not using any truncation 'none', 'off', 'false', 'no', 'no truncation'
-      * using a spherical truncation 'on', 'true', 'yes', 'spherical', 'spherical truncation'
-      * using a film geometry truncation (expects film in x-y plane)
+      - not using any truncation 'none', 'off', 'false', 'no', 'no truncation'
+      - using a spherical truncation 'on', 'true', 'yes', 'spherical', 'spherical truncation'
+      - using a film geometry truncation (expects film in x-y plane)
         'film', 'film truncation', '2d', '2d truncation'
-      * spherical truncation using the QE coulomb_vcut module 'vcut spherical',
+      - spherical truncation using the QE coulomb_vcut module 'vcut spherical',
         'vcut spherical truncation', 'spherical vcut', 'spherical truncation vcut'
-      * Wigner-Seitz truncation using the QE coulomb_vcut module 'wigner-seitz', 'wigner-seitz
+      - Wigner-Seitz truncation using the QE coulomb_vcut module 'wigner-seitz', 'wigner-seitz
         truncation', 'ws', 'ws truncation'
 
   num_band:
@@ -121,8 +121,8 @@ gw_input:
     type: character(len=256)
     default: 'direct'
     description: Specify which method is used to solve for the screened Coulomb interaction
-      * 'direct' determine the dielectric function and invert
-      * 'iter' or 'iterative' to determine the inverse of the dielectric function iteratively
+      - 'direct' determine the dielectric function and invert
+      - 'iter' or 'iterative' to determine the inverse of the dielectric function iteratively
         which requires no matrix inversion and hence less memory
 
   num_iter_coul:
@@ -152,10 +152,10 @@ gw_input:
     type: integer, dimension(10)
     default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]
     description: Order in which the linear solvers are tried for the Coulomb interaction
-      * 1 - BiCGstab(l) with multishift
-      * 2 - BiCGstab(l) without multishift
-      * 3 - linear solver developed for SternheimerGW
-      * 0 - no linear solver
+      - 1 - BiCGstab(l) with multishift
+      - 2 - BiCGstab(l) without multishift
+      - 3 - linear solver developed for SternheimerGW
+      - 0 - no linear solver
 
   thres_coul:
     type: real(dp)
@@ -180,9 +180,9 @@ gw_input:
     description: Model used to perform the analytic continuation from the coarse mesh, on which
       the linear solver works, onto the dense mesh, where the integration is performed.
       Possible choices
-        * 'gn', 'pp', or 'godby-needs', Godby-Needs plasmon pole model
-        * 'pade', Pade approximation
-        * 'pade robust', robust method to determine Pade approximant, requires the initial
+        - 'gn', 'pp', or 'godby-needs', Godby-Needs plasmon pole model
+        - 'pade', Pade approximation
+        - 'pade robust', robust method to determine Pade approximant, requires the initial
           frequency mesh to be on a circle
 
   freq_symm_coul:
@@ -215,10 +215,10 @@ gw_input:
     type: integer, dimension(10)
     default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]
     description: Order in which the linear solvers are tried for the Green's function
-      * 1 - BiCGstab with multishift
-      * 2 - BiCGstab without multishift
-      * 3 - linear solver developed for SternheimerGW
-      * 0 - no linear solver
+      - 1 - BiCGstab with multishift
+      - 2 - BiCGstab without multishift
+      - 3 - linear solver developed for SternheimerGW
+      - 0 - no linear solver
 
   thres_green:
     type: real(dp)
