@@ -1,12 +1,3 @@
---------------------------------------------------------------------------
-WARNING: There is at least non-excluded one OpenFabrics device found,
-but there are no active ports detected (or Open MPI was unable to use
-them).  This is most certainly not what you wanted.  Check your
-cables, subnet manager configuration, etc.  The openib BTL will be
-ignored for this job.
-
-  Local host: compute-0-2
---------------------------------------------------------------------------
 
             ######## T E R N H E I M E R           http://www.sternheimergw.org/
            ###     ###
