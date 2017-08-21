@@ -187,9 +187,10 @@ gw_input:
 
   freq_symm_coul:
     type: logical
-    default: .FALSE.
+    default: .TRUE.
     description: Use W(w) = W(-w) symmetry to improve the accuracy of the Pade approximation.
-      Only works if model_coul is 'pade'.
+      Only works if model_coul is 'pade' where it is used by default. Note that switching of
+      symmetry should only be used for testing purposes.
 
   max_freq_coul:
     type: real(dp)

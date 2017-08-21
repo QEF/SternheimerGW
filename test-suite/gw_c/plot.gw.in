@@ -27,7 +27,7 @@
   num_freq_coul  = 200
   plot_coul      = .true.
   ecut_corr      = 1.0
-  eta            = 0.10000183568728154837
+  eta            = 0.1
 
   do_corr        = .false.
   do_exch        = .false.
