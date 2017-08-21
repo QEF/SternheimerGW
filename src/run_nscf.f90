@@ -40,7 +40,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
   USE control_flags,     ONLY: io_level, conv_ions, twfcollect, restart
   USE control_gw,        ONLY: reduce_io, tmp_dir_gw, lgamma
   USE disp,              ONLY: xk_kpoints, nqs
-  USE fft_base,          ONLY: dtgs, dffts, dfftp
+  USE fft_base,          ONLY: dffts, dfftp
   USE fft_types,         ONLY: fft_type_allocate
   USE gvect,             ONLY: gcutm
   USE gvecs,             ONLY: gcutms
@@ -122,12 +122,6 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
   !
   CALL close_files(.true.)
-  !
-  !  PWscf has run with task groups if available, but in the phonon 
-  !  they are not used, apart in particular points, where they are
-  !  activated.
-  !
-  IF (ntask_groups > 1) dtgs%have_task_groups=.FALSE.
   !
   CALL stop_clock( 'PWSCF' )
   !
