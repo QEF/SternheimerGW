@@ -25,10 +25,6 @@
 !
 !... Common variables for the GW program
 !  
-#if !defined __OLDXML
-#error "SternheimerGW not compatible with new XML format yet - reconfigure with --enable-xml=no"
-#endif
-!
 MODULE eqv_gw
   USE kinds, ONLY :  DP
   USE eqv
