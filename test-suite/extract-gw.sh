@@ -68,18 +68,13 @@ then
   #
   # extract quantities from SternheimerGW
   #
-  # real and imaginary part of the dielectric function
-  re_eps=$(grep 'eps_{GG}(q,w)' $fname | awk '{ print $3 }')
-  im_eps=$(grep 'eps_{GG}(q,w)' $fname | awk '{ print $4 }')
-  if [[ $re_eps != "" ]]
+  # absolute value of the dielectric function
+  # this avoids zeros of the real or the imaginary part
+  eps=$(grep 'eps_{GG}(q,w)' $fname | awk '{ print sqrt($3^2 + $4^2) }')
+  if [[ $eps != "" ]]
   then
-    echo "re_eps"
-    echo "$re_eps"
-  fi
-  if [[ $im_eps != "" ]]
-  then
-    echo "im_eps"
-    echo "$im_eps"
+    echo "eps"
+    echo "$eps"
   fi
 
   # find the line number with the Re and Im part of Sigma and the spectral function
@@ -109,15 +104,15 @@ then
     last_im_sig=$(echo $line_im_sig | awk "{ split(\$0, arr); print arr[$i] + $num_line }")
     last_spec=$(echo $line_spec | awk "{ split(\$0, arr); print arr[$i] + $num_line }")
 
-    # extract real part of sigma
-    data=$(head -$last_re_sig $fname | tail -$num_line)
-    freq="$freq"$(echo "$data" | awk '{ print $1 }')
-    re_sig="$re_sig"$(echo "$data" | awk '{ for ( i = 2; i <= NF; i++ ) { print $i } }')
-
-    # extract imag part of sigma
-    data=$(head -$last_im_sig $fname | tail -$num_line)
-    freq="$freq"$(echo "$data" | awk '{ print $1 }')
-    im_sig="$im_sig"$(echo "$data" | awk '{ for ( i = 2; i <= NF; i++ ) { print $i } }')
+#    # extract real part of sigma
+#    data=$(head -$last_re_sig $fname | tail -$num_line)
+#    freq="$freq"$(echo "$data" | awk '{ print $1 }')
+#    re_sig="$re_sig"$(echo "$data" | awk '{ for ( i = 2; i <= NF; i++ ) { print $i } }')
+#
+#    # extract imag part of sigma
+#    data=$(head -$last_im_sig $fname | tail -$num_line)
+#    freq="$freq"$(echo "$data" | awk '{ print $1 }')
+#    im_sig="$im_sig"$(echo "$data" | awk '{ for ( i = 2; i <= NF; i++ ) { print $i } }')
 
     # extract spectral function
     data=$(head -$last_spec $fname | tail -$num_line)
@@ -126,16 +121,6 @@ then
   done
 
   # print the elements if present
-  if [[ $re_sig != "" ]]
-  then
-    echo "re_sig"
-    echo -e "$re_sig"
-  fi
-  if [[ $im_sig != "" ]]
-  then
-    echo "im_sig"
-    echo -e "$im_sig"
-  fi
   if [[ $spec != "" ]]
   then
     echo "spec"
@@ -204,8 +189,7 @@ then
     # add new line character after first element
     if (( i > 0 ))
     then
-      re_coul="$re_coul\n"
-      im_coul="$im_coul\n"
+      coul="$coul\n"
     fi
 
     (( i++ ))
@@ -218,21 +202,15 @@ then
 
     # extract plotted Coulomb potential
     data=$(head -$last_line $fname | tail -$num_line)
-    re_coul="$re_coul"$(echo "$data" | awk 'NF == 4 { print $3 }')
-    im_coul="$im_coul"$(echo "$data" | awk 'NF == 4 { print $4 }')
+    coul="$coul"$(echo "$data" | awk 'NF == 4 { print sqrt($3^2 + $4^2) }')
 
   done
 
   # print the elements if present
-  if [[ $re_coul != "" ]]
+  if [[ $coul != "" ]]
   then
-    echo "re_coul"
-    echo -e "$re_coul"
-  fi
-  if [[ $re_coul != "" ]]
-  then
-    echo "im_coul"
-    echo -e "$im_coul"
+    echo "coul"
+    echo -e "$coul"
   fi
 
 else
