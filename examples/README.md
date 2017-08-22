@@ -42,8 +42,8 @@ When you are in the source directory of a particular example, type
 to run the example. Note that this assumes the default installation, where
 SternheimerGW is a subdirectory of the main Quantum ESPRESSO directory.
 
-Example 1: Silicon
-------------------
+Example 1: Si
+-------------
 
 The aim of this calculation is to calculate the electronic band structure of
 silicon along the Gamma-X direction. In this example, we use full-frequency
