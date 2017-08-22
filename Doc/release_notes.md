@@ -14,7 +14,9 @@ or plasmon-pole approximation.
 New examples for new input format: silicon, lithium, BN film, and
 LiCl (dielectric constant).
 
-> compatible QE revision 13670 (note: compile with old XML)
+Adopt new XML scheme and FFT layout from PW. Update test-suite.
+
+> compatible QE revision 13753
 
 Version 0.12
 ------------
