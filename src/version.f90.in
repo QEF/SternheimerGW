@@ -93,10 +93,10 @@ MODULE gw_version
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: gw_version_number = '0.12'
+  CHARACTER(*), PARAMETER :: gw_version_number = '0.13'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: gw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev13633'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE 6.2-beta rev13814'
   !
 END MODULE gw_version
