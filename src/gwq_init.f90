@@ -35,7 +35,6 @@ SUBROUTINE gwq_init(coulomb)
   USE buffers,              ONLY : get_buffer
   USE constants,            ONLY : eps8, tpi
   USE control_gw,           ONLY : lgamma
-  USE eqv_gw,               ONLY : eprectot
   USE io_global,            ONLY : stdout
   USE ions_base,            ONLY : nat, tau
   USE kinds,                ONLY : DP
@@ -91,7 +90,6 @@ SUBROUTINE gwq_init(coulomb)
   nbase = nks * my_pool_id
   IF ( ( my_pool_id + 1 ) > rest ) nbase = nbase + rest * kunit
 
-  eprectot(:,:) = 0.0d0
   DO ik = 1, nksq
      !
      IF (coulomb) THEN

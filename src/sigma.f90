@@ -147,7 +147,6 @@ CONTAINS
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
     USE freqbins_module,      ONLY: freqbins_type
-    USE gvect,                ONLY: ngm
     USE io_files,             ONLY: prefix
     USE io_global,            ONLY: meta_ionode, ionode_id, stdout
     USE kinds,                ONLY: dp
@@ -532,7 +531,6 @@ CONTAINS
   SUBROUTINE sigma_correlation(omega, grid, config, mu, alpha, ikq, freq, &
                                gmapsym, coulomb, sigma, debug)
 
-    USE constants,            ONLY: RYTOEV
     USE construct_w_module,   ONLY: construct_w
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE fft6_module,          ONLY: invfft6

@@ -30,12 +30,10 @@ subroutine allocate_gwq
   !
   USE becmod,                ONLY : bec_type, becp, allocate_bec_type
   USE control_gw,            ONLY : lgamma
-  USE eqv_gw,                ONLY : evq, vlocq, dmuxc, dvpsi, &
-                                    dvbare, eprectot
+  USE eqv_gw,                ONLY : evq, vlocq, dmuxc, dvpsi, dvbare
   USE fft_base,              ONLY : dfftp, dffts
   USE gvect,                 ONLY : ngm
   USE ions_base,             ONLY : nat, ntyp => nsp
-  USE klist,                 ONLY : nkstot
   USE lrus,                  ONLY : becp1
   USE noncollin_module,      ONLY : npol, nspin_mag
   USE qpoint,                ONLY : nksq, eigqts, igkq
@@ -63,7 +61,6 @@ subroutine allocate_gwq
 
   allocate (dvpsi ( npwx*npol , nbnd))    
   allocate (vlocq ( ngm , ntyp))    
-  allocate (eprectot ( nbnd, nkstot) )
   allocate (eigqts ( nat))
   allocate (dmuxc (dfftp%nnr , nspin_mag , nspin_mag))    
   allocate (dvbare(dffts%nnr))    

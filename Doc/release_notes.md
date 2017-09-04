@@ -1,6 +1,23 @@
 Release notes
 =============
 
+Version 0.13
+------------
+
+New input reader with more consistent variable names and automatic
+generation from the documentation of the user variables in a YAML
+file. Cleanup of unused variables.
+
+Implement the possiblity to plot W on the real axis using the Pade
+or plasmon-pole approximation.
+
+New examples for new input format: silicon, lithium, BN film, and
+LiCl (dielectric constant).
+
+Adopt new XML scheme and FFT layout from PW. Update test-suite.
+
+> compatible QE version 6.2-beta revision 13814
+
 Version 0.12
 ------------
 

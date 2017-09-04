@@ -37,7 +37,7 @@ SUBROUTINE sigma_matel(ik0, grid, freq)
   USE gvecs,                ONLY : nls
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
-  USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv, sigma_band_exg
+  USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv
   USE io_files,             ONLY : diropn 
   USE io_global,            ONLY : stdout, meta_ionode
   USE kinds_gw,             ONLY : i8b
@@ -272,7 +272,6 @@ IMPLICIT NONE
     ! print sigma on real axis
     CALL print_matel(ikq, vxc(1,1), sigma_band_x(1,1,1), sigma_band_c(1,1,1), REAL(freq%sigma) + mu, nwsigma)
   END IF
-  IF (allocated(sigma_band_exg)) DEALLOCATE(sigma_band_exg)
 
   CALL stop_clock(time_matel)
 

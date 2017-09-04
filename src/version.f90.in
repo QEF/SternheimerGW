@@ -47,9 +47,10 @@
 !!   version increasing the third digit.
 !! - Use tags to identify releases and add the compatible QE release. Example:
 !!   If version 1.15 of SternheimerGW is released with QE version 6.2 use the tag
-!!   v1.15+QE6.2. Do only use this form of the tag if the version corresponds
+!!   v1.15_QE6.2. Do only use this form of the tag if the version corresponds
 !!   excactly to the unmodified version of QE; otherwise use simply the
-!!   v1.15 tag.
+!!   v1.15 tag. Note that we use '_' instead of '+', because Github replaces
+!!   '+' with '-' in the filename. Then the download script of QE does not work.
 !! - For versions between commits the git-describe functionality is used to
 !!   determine the version number.
 !!
@@ -92,10 +93,10 @@ MODULE gw_version
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: gw_version_number = '0.12'
+  CHARACTER(*), PARAMETER :: gw_version_number = '0.13'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: gw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'rev13531'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE 6.2-beta rev13814'
   !
 END MODULE gw_version

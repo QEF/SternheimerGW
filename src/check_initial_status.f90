@@ -34,7 +34,7 @@ SUBROUTINE check_initial_status()
   ! fiu : which frequencies 
   ! The flags that control which tensors to calculate
   !
-  USE control_gw,      ONLY : tmp_dir_gw
+  USE control_gw,      ONLY : tmp_dir_gw, do_epsil
   USE io_files,        ONLY : tmp_dir
   USE io_rho_xml,      ONLY : write_scf
   USE lsda_mod,        ONLY : nspin
@@ -53,7 +53,7 @@ SUBROUTINE check_initial_status()
   ! If this not a recover run, we generate the q mesh. Otherwise at this
   ! point the code has read the q mesh from the files contained in 
   ! prefix.phsave
-  call q_points()
+  IF (.NOT.do_epsil) CALL q_points()
   !
   ! this is the standard treatment
   CALL write_scf( rho, nspin )

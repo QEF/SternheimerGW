@@ -26,15 +26,16 @@ ESPRESSO=../..
 include $(ESPRESSO)/make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src $(MOD_FLAG)$(ESPRESSO)/Modules $(MOD_FLAG)$(ESPRESSO)/LAXlib \
-          $(MOD_FLAG)$(ESPRESSO)/FFTXlib $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG) $(ESPRESSO)/LR_Modules $(MOD_FLAG).
+MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src   $(MOD_FLAG)$(ESPRESSO)/UtilXlib \
+          $(MOD_FLAG)$(ESPRESSO)/Modules    $(MOD_FLAG)$(ESPRESSO)/LAXlib \
+          $(MOD_FLAG)$(ESPRESSO)/FFTXlib    $(MOD_FLAG)$(ESPRESSO)/PW/src \
+          $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG).
 EXE = gw.x
 
 IFLAGS=
 
 GWOBJS = \
 allocate_gwq.o\
-bcast_gw_input.o\
 bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
@@ -57,6 +58,7 @@ godby_needs.o\
 gram_schmidt.o\
 green.o\
 gw.o\
+gw_input.o\
 gw_opening.o\
 gw_type.o\
 gwcom.o\
@@ -75,6 +77,7 @@ opengwfil.o\
 pade.o\
 pade_robust.o\
 parallel.o\
+plot_coulomb.o\
 pp_output.o\
 prepare_q.o\
 prepare_q0.o\
@@ -105,11 +108,12 @@ version.o
 
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
-QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESSO)/LAXlib/libqela.a
+QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a \
+         $(ESPRESSO)/KS_Solvers/Davidson/libdavid.a $(ESPRESSO)/KS_Solvers/CG/libcg.a \
+         $(ESPRESSO)/LAXlib/libqela.a $(ESPRESSO)/UtilXlib/libutil.a
 LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
-
 
 no_debug : .no_debug all
 .no_debug:
@@ -128,6 +132,20 @@ version :
 	bash update_version
 
 version.f90 : version
+
+gw_input.f90 : gw_input.yml input_generator.awk
+	awk -f input_generator.awk $< > $@
+
+tiddler: gw_input.yml input_generator.awk check-wiki
+	awk -f input_generator.awk -v tiddler=1 -v path=$(WIKI)/tiddlers $<
+
+check-wiki:
+ifndef WIKI
+	$(error WIKI must be set to the path to the wiki.)
+endif
+ifeq ("$(wildcard $(WIKI)/tiddlers)", "")
+	$(error directory $(WIKI)/tiddlers does not exist)
+endif
 
 $(EXE) : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
 	$(LD) $(LDFLAGS) -o $@ $< libgw.a \

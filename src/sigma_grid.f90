@@ -119,6 +119,7 @@ CONTAINS
     USE cell_base,  ONLY: at, bg
     USE fft_custom, ONLY: fft_cus
     USE fft_types,  ONLY: fft_type_init
+    USE mp_bands,   ONLY: nyfft
     USE stick_base, ONLY: sticks_map
 
     !> The communicator over which we parallelize
@@ -133,13 +134,13 @@ CONTAINS
     !> the sticks map created by fft type init
     TYPE(sticks_map) smap
  
-#if defined(__MPI)
+#if defined(__MPI) && ! defined(__USE_3D_FFT)
     LOGICAL, PARAMETER :: lpara = .TRUE.
 #else
     LOGICAL, PARAMETER :: lpara = .FALSE.
 #endif
 
-    CALL fft_type_init(fft_cust%dfftt, smap, "rho", gamma_only, lpara, comm, at, bg, fft_cust%gcutmt)
+    CALL fft_type_init(fft_cust%dfftt, smap, "rho", gamma_only, lpara, comm, at, bg, fft_cust%gcutmt, nyfft=nyfft)
 
   END SUBROUTINE wrapper_fft_type_init
   
@@ -185,15 +186,15 @@ CONTAINS
     WRITE(stdout,'(5x,a)') 'Global Dimensions   Local  Dimensions   Processor Grid'
     WRITE(stdout,'(5x,a)') '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.'
     WRITE(stdout,'(2x,3(1x,i5),2x,3(1x,i5),2x,3(1x,i5))') &
-      dfft%nr1, dfft%nr2, dfft%nr3, dfft%nr1, dfft%nr2, dfft%npl, 1, 1, dfft%nproc
+      dfft%nr1, dfft%nr2, dfft%nr3, dfft%nr1, dfft%my_nr2p, dfft%my_nr3p, 1, dfft%nproc2, dfft%nproc3
     WRITE(stdout,'(5x,a,3(1x,i5))') 'Array leading dimensions ( nr1x, nr2x, nr3x )   = ', &
       dfft%nr1x, dfft%nr2x, dfft%nr3x
     WRITE(stdout,'(5x,a,1x,i9)') 'Local number of cell to store the grid ( nrxx ) = ', &
       dfft%nnr
-    WRITE(stdout,'(5x,a)') 'Number of x-y planes for each processors:'
+    WRITE(stdout,'(5x,a)') 'size of the "Z" section of each processor'
     ! print local part for 10 processors at once
-    DO iproc = 1, dfft%nproc, 10
-      WRITE(stdout,'(5x,a,10i5)') 'nr3l = ', dfft%npp(iproc : MIN(dfft%nproc, iproc + 10))
+    DO iproc = 1, dfft%nproc3, 10
+      WRITE(stdout,'(5x,a,10i5)') 'nr3p = ', dfft%nr3p(iproc : MIN(dfft%nproc3, iproc + 10))
     END DO ! iproc
     !
   END SUBROUTINE sigma_grid_info

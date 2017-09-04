@@ -43,7 +43,7 @@ then
 elif (( gw == 1 ))
 then
   echo "Running SternheimerGW..."
-  ${PARA_PREFIX} ${ESPRESSO_ROOT}/SternheimerGW/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
+  ${PARA_PREFIX} ${SternheimerGW_ROOT}/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
 else
   echo "Unknown input file" > /dev/stderr
 fi  

@@ -1,0 +1,83 @@
+&gw_input
+  title = 'SternheimerGW calculation for Li metal.'
+
+  ! config of the scf run
+  prefix         = 'li',
+  outdir         = './tmp'
+
+  ! the grid used for the linear response
+  kpt_grid       = 6, 6, 6
+  qpt_grid       = 6, 6, 6
+
+  ! number of bands for which the GW correction is calculated
+  num_band       = 4
+
+  ! configuration of the Coulomb solver
+  shift_proj     = 1e-7
+
+  ! configuration of W in the convolution
+  max_freq_coul  = 200
+  num_freq_coul  = 51
+
+  ! configuration for the correlation self energy
+  ecut_corr      = 8.0
+  max_freq_corr  = 150.0
+  num_freq_corr  = 16
+
+  ! configuration for the exchange self energy
+  ecut_exch      = 20.0
+
+  ! configuration for the output
+  eta            = 0.1
+  min_freq_wind  = -30.0
+  max_freq_wind  =  30.0
+  num_freq_wind  = 601
+
+/
+
+&gw_output
+/
+
+FREQUENCIES
+35
+  0.0    0.0
+  0.0    0.3
+  0.0    0.9
+  0.0    1.8
+  0.0    3.0
+  0.0    4.5
+  0.0    6.3
+  0.0    8.4
+  0.0   10.8
+  0.0   13.5
+  0.0   16.5
+  0.0   19.8
+  0.0   23.4
+  0.0   27.3
+  0.0   31.5
+  0.0   36.0
+  0.0   40.8
+  0.0   45.9
+  0.0   51.3
+  0.0   57.0
+  0.0   63.0
+  0.0   69.3
+  0.0   75.9
+  0.0   82.8
+  0.0   90.0
+  0.0   97.5
+  0.0  105.3
+  0.0  113.4
+  0.0  121.8
+  0.0  130.5
+  0.0  139.5
+  0.0  148.8
+  0.0  158.4
+  0.0  168.3
+  0.0  178.5
+/
+
+K_points
+1
+  0.0  0.0  0.0
+/

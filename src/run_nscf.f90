@@ -38,9 +38,9 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
   USE cell_base,         ONLY: at, bg
   USE check_stop,        ONLY: check_stop_now
   USE control_flags,     ONLY: io_level, conv_ions, twfcollect, restart
-  USE control_gw,        ONLY: reduce_io, tmp_dir_gw, ext_restart, bands_computed, lgamma
+  USE control_gw,        ONLY: reduce_io, tmp_dir_gw, lgamma
   USE disp,              ONLY: xk_kpoints, nqs
-  USE fft_base,          ONLY: dtgs, dffts, dfftp
+  USE fft_base,          ONLY: dffts, dfftp
   USE fft_types,         ONLY: fft_type_allocate
   USE gvect,             ONLY: gcutm
   USE gvecs,             ONLY: gcutms
@@ -83,10 +83,10 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
   tmp_dir=tmp_dir_gw
  !
  !...Setting the values for the nscf run
-  startingconfig    = 'input'
-  starting_pot      = 'file'
-  starting_wfc      = 'atomic'
-  restart = ext_restart
+  startingconfig = 'input'
+  starting_pot   = 'file'
+  starting_wfc   = 'atomic'
+  restart        = .FALSE.
   conv_ions=.true.
 ! Generate all eigenvectors in IBZ_{k} for Green's function or IBZ_{q} otherwise.
   if(do_matel) nbnd = nbnd_sig
@@ -120,17 +120,8 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
 
   CALL seqopn( 4, 'restart', 'UNFORMATTED', exst )
   CLOSE( UNIT = 4, STATUS = 'DELETE' )
-  ext_restart=.FALSE.
   !
   CALL close_files(.true.)
-  !
-  bands_computed=.TRUE.
-  !
-  !  PWscf has run with task groups if available, but in the phonon 
-  !  they are not used, apart in particular points, where they are
-  !  activated.
-  !
-  IF (ntask_groups > 1) dtgs%have_task_groups=.FALSE.
   !
   CALL stop_clock( 'PWSCF' )
   !

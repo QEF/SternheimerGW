@@ -1,109 +1,111 @@
-Screened Coulomb for the full mesh.
-&inputgw
+&gw_input
+  title = 'SternheimerGW calculation for diamond.'
 
   ! config of the scf run
-  prefix       = 'diamond',
-  outdir       = './tmp'
-
-  ! control parameters
-  ldisp        = .true.
-  multishift   = .true.
-  double_grid  = .false.
-  freq_symm    = .true.
+  prefix         = 'diamond',
+  outdir         = './tmp'
 
   ! the grid used for the linear response
-  nq1          = 2
-  nq2          = 2
-  nq3          = 2
+  qpt_grid       = 2, 2, 2
 
   ! truncation (used for both correlation and exchange)
-  truncation   = 'on'
+  truncation     = 'on'
 
-  ! configuration for the exchange self-energy
-  do_sigma_exx = .true.
-  ecutsex      = 15.0
+  ! number of bands for which the GW correction is calculated
+  num_band       = 8
 
-  ! configuration for the correlation self energy
-  do_sigma_c   = .true.
-  kpoints      = .true.
-  ecutsco      = 6.0
+  ! complex frequency part for the self-energy
+  eta            = 0.1
 
   ! configuration of the Coulomb solver
-  do_coulomb   = .false.
-  tr2_gw       = 1.0d-4
-  nmix_gw      = 4
-  solve_direct = .true.
-  use_symm     = .true.
-  lrpa         = .true.
-  godbyneeds   = .false.
-  padecont     = .true.
-
-  ! configuration of the Green solver
-  tr2_green    = 1.0d-5
-  maxter_green = 180
+  thres_coul     = 1.0d-4
+  max_iter_coul  = 200
 
   ! configuration of W in the convolution
-  do_imag      = .true.
-  wcoulmax     = 200
-  nwcoul       = 35
-  
-  ! configuration for the self-energy (result of the convolution)
-  wsigmamin    = 0.0
-  wsigmamax    = 100.0
-  nwsigma      = 11
+  model_coul     = 'pade'
+  freq_symm_coul = .false.
+  max_freq_coul  = 200
+  num_freq_coul  = 35
+
+  ! configuration of the Green solver
+  thres_green    = 1.0d-5
+  max_iter_green = 180
+
+  ! configuration for the correlation self energy
+  ecut_corr      = 6.0
+  min_freq_corr  = 0.0
+  max_freq_corr  = 100.0
+  num_freq_corr  = 11
+
+  ! configuration for the exchange self energy
+  ecut_exch      = 15.0
 
   ! configuration for the output
-  do_sigma_matel = .true.
-  nbnd_sig       = 8
-  wsig_wind_min  = -30.0
-  wsig_wind_max  =  30.0
-  nwsigwin       = 601
+  min_freq_wind  = -30.0
+  max_freq_wind  =  30.0
+  num_freq_wind  = 601
 
 /
 
-&outputgw
+&gw_output
 /
 
 FREQUENCIES
-35
-0.0   0.0
-0.0   0.3
-0.0   0.9
-0.0   1.8
-0.0   3.0
-0.0   4.5
-0.0   6.3
-0.0   8.4
-0.0  10.8
-0.0  13.5
-0.0  16.5
-0.0  19.8
-0.0  23.4
-0.0  27.3
-0.0  31.5
-0.0  36.0
-0.0  40.8
-0.0  45.9
-0.0  51.3
-0.0  57.0
-0.0  63.0
-0.0  69.3
-0.0  75.9
-0.0  82.8
-0.0  90.0
-0.0  97.5
-0.0 105.3
-0.0 113.4
-0.0 121.8
-0.0 130.5
-0.0 139.5
-0.0 148.8
-0.0 158.4
-0.0 168.3
-0.0 178.5
+51
+   0.0     0.0
+   0.0     0.5
+   0.0    -0.5
+   0.0     1.5
+   0.0    -1.5
+   0.0     3.0
+   0.0    -3.0
+   0.0     5.0
+   0.0    -5.0
+   0.0     7.5
+   0.0    -7.5
+   0.0    10.5
+   0.0   -10.5
+   0.0    14.0
+   0.0   -14.0
+   0.0    18.0
+   0.0   -18.0
+   0.0    22.5
+   0.0   -22.5
+   0.0    27.5
+   0.0   -27.5
+   0.0    33.0
+   0.0   -33.0
+   0.0    39.0
+   0.0   -39.0
+   0.0    45.5
+   0.0   -45.5
+   0.0    52.5
+   0.0   -52.5
+   0.0    60.0
+   0.0   -60.0
+   0.0    68.0
+   0.0   -68.0
+   0.0    76.5
+   0.0   -76.5
+   0.0    85.5
+   0.0   -85.5
+   0.0    95.0
+   0.0   -95.0
+   0.0   105.0
+   0.0  -105.0
+   0.0   115.5
+   0.0  -115.5
+   0.0   126.5
+   0.0  -126.5
+   0.0   138.0
+   0.0  -138.0
+   0.0   150.0
+   0.0  -150.0
+   0.0   162.5
+   0.0  -162.5
 /
 
 K_points
 1
-0.000000000  0.000000000   0.000000000
+0.0 0.0 0.0
 /
