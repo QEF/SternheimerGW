@@ -1,8 +1,8 @@
 Release notes
 =============
 
-on develop
-----------
+Version 0.13
+------------
 
 New input reader with more consistent variable names and automatic
 generation from the documentation of the user variables in a YAML
@@ -16,7 +16,7 @@ LiCl (dielectric constant).
 
 Adopt new XML scheme and FFT layout from PW. Update test-suite.
 
-> compatible QE revision 13753
+> compatible QE version 6.2-beta revision 13814
 
 Version 0.12
 ------------
