@@ -1,6 +1,15 @@
 Release notes
 =============
 
+on develop
+----------
+
+New analytic continuation scheme: AAA approximation which expands a given
+set of points onto a barycentric representation. Add test case for this new
+feature.
+
+> compatible QE revision 13847
+
 Version 0.13
 ------------
 
