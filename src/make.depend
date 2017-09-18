@@ -12,6 +12,7 @@ allocate_gwq.o : ../../Modules/wavefunctions.o
 allocate_gwq.o : ../../PW/src/pwcom.o
 allocate_gwq.o : gwcom.o
 analytic.o : ../../Modules/kind.o
+analytic.o : aaa.o
 analytic.o : freqbins.o
 analytic.o : godby_needs.o
 analytic.o : gwcom.o

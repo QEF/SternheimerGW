@@ -35,7 +35,7 @@ CONTAINS
 !! Reimplement the AAA algorithm in Fortran. Because the original code uses
 !! uppercase and lowercase letters for some variables (not differentiated in
 !! Fortran), we use a *u* and *l* suffix to distinguish between them.
-FUNCTION AAA(zu, fu, tol, mmax) RESULT (coeff)
+FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
 
   USE kinds,         ONLY: dp
   USE lapack_module, ONLY: svd
@@ -224,6 +224,6 @@ FUNCTION AAA(zu, fu, tol, mmax) RESULT (coeff)
   coeff(:, 2) = fl(:num_point)
   coeff(:, 3) = weight(:num_point)
 
-END FUNCTION AAA
+END FUNCTION aaa_coeff
 
 END MODULE aaa_module
