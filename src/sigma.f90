@@ -533,7 +533,7 @@ CONTAINS
   SUBROUTINE sigma_correlation(omega, grid, config, mu, alpha, ikq, freq, &
                                gmapsym, coulomb, sigma, debug)
 
-    USE construct_w_module,   ONLY: construct_w
+    USE analytic_module,      ONLY: analytic_eval
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE fft6_module,          ONLY: invfft6
     USE freqbins_module,      ONLY: freqbins_type
@@ -714,7 +714,7 @@ CONTAINS
         !!
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
         ! work will be allocated and contain W(G, G', wS - wG)
-        CALL construct_w(gmapsym, grid, freq, coulomb, freq_coul, work)
+        CALL analytic_eval(gmapsym, grid, freq, coulomb, freq_coul, work)
         !
         ! check for NaN in screened Coulomb
         IF (debug_sigma) THEN

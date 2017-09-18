@@ -144,4 +144,119 @@ SUBROUTINE analytic_coeff(model_coul, thres, freq, scrcoul_g)
 
 END SUBROUTINE analytic_coeff
 
+!> Construct the screened Coulomb interaction for an arbitrary frequency.
+SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
+
+  USE control_gw,         ONLY : model_coul 
+  USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
+  USE godby_needs_module, ONLY : godby_needs_model
+  USE kinds,              ONLY : dp
+  USE pade_module,        ONLY : pade_eval_robust
+  USE sigma_grid_module,  ONLY : sigma_grid_type
+  USE timing_module,      ONLY : time_construct_w
+
+  !> The symmetry map from the irreducible point to the current one
+  INTEGER,                  INTENT(IN)  :: gmapsym(:)
+
+  !> the FFT grids on which the screened Coulomb interaction is evaluated
+  TYPE(sigma_grid_type),    INTENT(IN)  :: grid
+
+  !> the frequency grid on which W was evaluated
+  TYPE(freqbins_type),      INTENT(IN)  :: freq_in
+
+  !> the coefficients of the screened Coulomb potential used for the analytic continuation
+  COMPLEX(dp),              INTENT(IN)  :: scrcoul_coeff(:,:,:)
+
+  !> the frequency for which the screened Coulomb potential is evaluated
+  COMPLEX(dp),              INTENT(IN)  :: freq_out
+
+  !> The screened Coulomb interaction symmetry transformed and parallelized over images.
+  !! The array is appropriately sized to do a FFT on the output.
+  COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: scrcoul(:,:)
+
+  !> Counter on the G and G' vector
+  INTEGER ig, igp
+
+  !> corresponding point to G' in global G list
+  INTEGER igp_g
+
+  !> allocation error flag
+  INTEGER ierr
+
+  !> helper array to extract the current coefficients
+  COMPLEX(dp), ALLOCATABLE :: coeff(:)
+
+  !> helper array for the frequencies
+  COMPLEX(dp), ALLOCATABLE :: freq(:)
+
+  !> complex constant of zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  CALL start_clock(time_construct_w)
+
+  !
+  ! create and initialize output array
+  ! allocate space so that we can perform an in-place FFT on the array
+  !
+  ALLOCATE(scrcoul(grid%corr%dfftt%nnr, grid%corr_par%dfftt%nnr), STAT = ierr)
+  IF (ierr /= 0) THEN
+    CALL errore(__FILE__, "allocation of screened Coulomb potential failed", 1)
+    RETURN
+  END IF
+  scrcoul = zero
+
+  ! helper array for frequencies in case of symmetry
+  IF (model_coul == pade_approx) THEN
+    CALL freqbins_symm(freq_in, freq)
+  END IF
+
+  !
+  ! construct screened Coulomb interaction
+  !
+  !! The screened Coulomb interaction is interpolated with either Pade or
+  !! Godby-Needs analytic continuation. We only evaluate W at the irreducible
+  !! mesh, but any other point may be obtained by
+  !! \f{equation}{
+  !!   W_{S q}(G, G') = W_{q}(S^{-1} G, S^{-1} G')~.
+  !! \f}
+  ALLOCATE(coeff(freq_in%num_freq()))
+  DO igp = 1, grid%corr_par%ngmt
+    !
+    ! get the global corresponding index
+    igp_g = grid%corr_par%ig_l2gt(igp)
+
+    DO ig = 1, grid%corr%ngmt
+
+      ! symmetry transformation of the coefficients
+      coeff = scrcoul_coeff(gmapsym(ig), gmapsym(igp_g), :)
+
+      SELECT CASE (model_coul)
+
+      CASE (pade_approx)
+        !
+        ! Pade analytic continuation
+        CALL pade_eval(freq_in%num_freq(), freq, coeff, freq_out, scrcoul(ig, igp))
+
+      CASE (pade_robust)
+        !
+        ! robust Pade analytic continuation
+        CALL pade_eval_robust(coeff, freq_out, scrcoul(ig, igp))
+
+      CASE (godby_needs)
+        !
+        ! Godby-Needs Pole model
+        scrcoul(ig, igp) = godby_needs_model(freq_out, coeff)
+
+      CASE DEFAULT
+        CALL errore(__FILE__, "No screening model chosen!", 1)
+
+      END SELECT
+
+    END DO ! ig
+  END DO ! igp
+
+  CALL stop_clock(time_construct_w)
+
+END SUBROUTINE analytic_eval
+
 END MODULE analytic_module

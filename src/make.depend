@@ -14,7 +14,10 @@ allocate_gwq.o : gwcom.o
 analytic.o : ../../Modules/kind.o
 analytic.o : freqbins.o
 analytic.o : godby_needs.o
+analytic.o : gwcom.o
 analytic.o : pade_robust.o
+analytic.o : sigma_grid.o
+analytic.o : timing.o
 bicgstab.o : ../../Modules/io_global.o
 bicgstab.o : ../../Modules/kind.o
 bicgstab.o : debug.o
@@ -32,14 +35,6 @@ clean_pw_gw.o : ../../Modules/control_flags.o
 close_gwq.o : ../../Modules/control_flags.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
-construct_w.o : ../../Modules/kind.o
-construct_w.o : analytic.o
-construct_w.o : freqbins.o
-construct_w.o : godby_needs.o
-construct_w.o : gwcom.o
-construct_w.o : pade_robust.o
-construct_w.o : sigma_grid.o
-construct_w.o : timing.o
 coulomb.o : ../../FFTXlib/fft_interfaces.o
 coulomb.o : ../../LR_Modules/lrcom.o
 coulomb.o : ../../Modules/constants.o
@@ -374,7 +369,6 @@ sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : ../../UtilXlib/mp.o
 sigma.o : analytic.o
-sigma.o : construct_w.o
 sigma.o : coulpade.o
 sigma.o : debug.o
 sigma.o : fft6.o

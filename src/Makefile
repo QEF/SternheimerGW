@@ -42,7 +42,6 @@ bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
 close_gwq.o\
-construct_w.o\
 coulomb.o\
 coulomb_q0G0.o\
 coulomb_vcut.o\
