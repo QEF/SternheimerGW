@@ -29,6 +29,7 @@ close_gwq.o : ../../Modules/control_flags.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
 construct_w.o : ../../Modules/kind.o
+construct_w.o : analytic.o
 construct_w.o : freqbins.o
 construct_w.o : godby_needs.o
 construct_w.o : gwcom.o
@@ -62,6 +63,7 @@ coulomb_q0G0.o : timing.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
+coulpade.o : analytic.o
 coulpade.o : freqbins.o
 coulpade.o : godby_needs.o
 coulpade.o : gwcom.o
@@ -203,6 +205,7 @@ gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
 gwq_readin.o : ../../UtilXlib/mp.o
+gwq_readin.o : analytic.o
 gwq_readin.o : debug.o
 gwq_readin.o : freqbins.o
 gwq_readin.o : gw_input.o
@@ -272,6 +275,7 @@ parallel.o : ../../UtilXlib/parallel_include.o
 plot_coulomb.o : ../../Modules/constants.o
 plot_coulomb.o : ../../Modules/io_global.o
 plot_coulomb.o : ../../Modules/kind.o
+plot_coulomb.o : analytic.o
 plot_coulomb.o : freqbins.o
 plot_coulomb.o : godby_needs.o
 plot_coulomb.o : gwcom.o

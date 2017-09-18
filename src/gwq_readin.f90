@@ -31,6 +31,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !    by the self-consistent program.
   !
   !
+  USE analytic_module,      ONLY : aaa_approx, godby_needs, pade_approx, pade_robust
   USE cell_base,            ONLY : at, alat
   USE constants,            ONLY : RYTOEV, eps12
   USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, twfcollect
@@ -38,7 +39,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    lmax_gw, tr2_green, lmax_green, nmix_gw, ldisp, lrpa, &
                                    tmp_dir_gw, tmp_dir_coul, eta, do_coulomb, do_sigma_c, &
                                    do_sigma_exx, do_sigma_matel, do_q0_only, maxter_green, &
-                                   maxter_coul, godbyneeds, padecont, paderobust, &
+                                   maxter_coul, model_coul, & 
                                    solve_direct, do_epsil, alpha_pv, set_alpha_pv, &
                                    do_imag, newgrid, double_grid, output_t => output, &
                                    plot_coul, method_truncation => truncation
@@ -114,6 +115,9 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !
   !> counter on the nontrivial priorities
   INTEGER ipriority
+  !
+  !> function to convert to lower case
+  CHARACTER(LEN=1), EXTERNAL :: lowercase
 
   CHARACTER(LEN=256), EXTERNAL :: trimcheck
   !
@@ -169,17 +173,22 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   wcoulmax = input%max_freq_coul
   nwcoul = input%num_freq_coul
   plot_coul = input%plot_coul
-  godbyneeds   = .FALSE.
-  padecont     = .FALSE.
-  paderobust   = .FALSE.
-  IF (input%model_coul == 'gn' .OR. input%model_coul == 'pp' .OR. &
-      input%model_coul == 'godby-needs') THEN
-    godbyneeds = .TRUE.
-  ELSE IF (input%model_coul == 'pade') THEN
-    padecont = .TRUE.
-  ELSE IF (input%model_coul == 'pade robust') THEN
-    paderobust = .TRUE.
-  END IF
+  ! disregard case of input
+  DO i = 1, LEN_TRIM(input%model_coul)
+    input%model_coul(i:i) = lowercase(input%model_coul(i:i))
+  END DO
+  SELECT CASE (TRIM(input%model_coul))
+  CASE ('gn', 'pp', 'godby-needs')
+    model_coul = godby_needs
+  CASE ('pade')
+    model_coul = pade_approx
+  CASE ('pade robust')
+    model_coul = pade_robust
+  CASE ('aaa')
+    model_coul = aaa_approx
+  CASE DEFAULT
+    CALL errore(__FILE__, 'unknown screening model' // TRIM(input%model_coul), 1)
+  END SELECT ! input%model_coul
   tr2_green = input%thres_green
   maxter_green = input%max_iter_green
   priority_green = input%priority_green
@@ -299,7 +308,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
        &' Wrong  iverbosity ', 1)
   IF (max_seconds.LT.0.1D0) CALL errore ('gwq_readin', ' Wrong max_seconds', 1)
 
-  IF (plot_coul .AND. .NOT.(padecont .OR. godbyneeds)) &
+  IF (plot_coul .AND. .NOT.(model_coul == pade_approx .OR. model_coul == godby_needs)) &
     CALL errore(__FILE__, 'plotting of Coulomb only for Pade and Godby-Needs', 1)
   !
 
@@ -356,8 +365,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   CALL mp_bcast(freq%solver, meta_ionode_id, world_comm )
   fiu = freq%solver
 
-  ! use symmetry for the frequencies (only for Pade approximation)
-  IF (padecont) THEN
+  ! use symmetry for the frequencies (only for Pade or AAA approximation)
+  IF (model_coul == pade_approx .OR. model_coul == aaa_approx) THEN
     freq%use_symmetry = input%freq_symm_coul
   ELSE
     ! symmetry not implemented for robust Pade and Godby-Needs

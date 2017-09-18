@@ -31,7 +31,8 @@ CONTAINS
   !> Construct the screened Coulomb interaction for an arbitrary frequency.
   SUBROUTINE construct_w(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
-    USE control_gw,         ONLY : godbyneeds, padecont, paderobust
+    USE analytic_module,    ONLY : aaa_approx, godby_needs, pade_approx, pade_robust
+    USE control_gw,         ONLY : model_coul 
     USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
     USE godby_needs_module, ONLY : godby_needs_model
     USE kinds,              ONLY : dp
@@ -90,7 +91,7 @@ CONTAINS
     scrcoul = zero
 
     ! helper array for frequencies in case of symmetry
-    IF (padecont) THEN
+    IF (model_coul == pade_approx) THEN
       CALL freqbins_symm(freq_in, freq)
     END IF
 
@@ -114,25 +115,27 @@ CONTAINS
         ! symmetry transformation of the coefficients
         coeff = scrcoul_coeff(gmapsym(ig), gmapsym(igp_g), :)
 
-        IF (padecont) THEN
+        SELECT CASE (model_coul)
+
+        CASE (pade_approx)
           !
           ! Pade analytic continuation
           CALL pade_eval(freq_in%num_freq(), freq, coeff, freq_out, scrcoul(ig, igp))
 
-        ELSE IF (paderobust) THEN
+        CASE (pade_robust)
           !
           ! robust Pade analytic continuation
           CALL pade_eval_robust(coeff, freq_out, scrcoul(ig, igp))
 
-        ELSE IF (godbyneeds) THEN
+        CASE (godby_needs)
           !
           ! Godby-Needs Pole model
           scrcoul(ig, igp) = godby_needs_model(freq_out, coeff)
 
-        ELSE
+        CASE DEFAULT
           CALL errore(__FILE__, "No screening model chosen!", 1)
 
-        END IF
+        END SELECT
 
       END DO ! ig
     END DO ! igp

@@ -36,6 +36,7 @@ IFLAGS=
 
 GWOBJS = \
 aaa.o\
+analytic.o\
 allocate_gwq.o\
 bicgstab.o\
 check_initial_status.o\

@@ -90,6 +90,9 @@ MODULE control_gw
   INTEGER :: truncation
   ! method used to truncate in reciprocal space
   !
+  INTEGER :: model_coul
+  ! screening model used in the calculation
+  !
   INTEGER :: maxter_coul, maxter_green
   ! maximum iteration for G and W
   !
@@ -103,9 +106,6 @@ MODULE control_gw
              do_sigma_exx, &
              do_sigma_matel,&
              do_q0_only,&
-             godbyneeds,&
-             padecont,&
-             paderobust,&
              solve_direct,&
              coul_multishift,&
              do_epsil,& !in case you want to set xq point

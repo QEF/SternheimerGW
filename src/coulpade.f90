@@ -39,8 +39,9 @@ CONTAINS
 !! continuation
 SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
 
+  USE analytic_module,    ONLY : aaa_approx, godby_needs, pade_approx, pade_robust
   USE cell_base,          ONLY : tpiba
-  USE control_gw,         ONLY : godbyneeds, padecont, paderobust, truncation, tr2_gw
+  USE control_gw,         ONLY : model_coul, truncation, tr2_gw
   USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_coeffs
   USE gvect,              ONLY : g
@@ -127,17 +128,19 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
   !
   ! analytic continuation to the complex plane
   !
+  SELECT CASE (model_coul)
+
   !! 1. Godby-Needs plasmon-pole model - assumes that the function can be accurately
   !!    represented by a single pole and uses the value of the function at two
   !!    frequencies \f$\omega = 0\f$ and \f$\omega = \omega_{\text{p}}\f$ to determine
   !!    the parameters.
-  IF (godbyneeds) THEN
+  CASE (godby_needs)
     CALL godby_needs_coeffs(AIMAG(freq%solver(2)), scrcoul_g)
 
   !! 2. Pade expansion - evaluate Pade coefficients for a continued fraction expansion
   !!    using a given frequency grid; symmetry may be used to extend the frequency grid
   !!    to more points.
-  ELSE IF (padecont) THEN
+  CASE (pade_approx) 
 
     ! allocate helper arrays
     ALLOCATE(u(freq%num_freq()))
@@ -164,11 +167,11 @@ SUBROUTINE coulpade(xq_ibk, freq, vcut, scrcoul_g)
 
   !! 3. robust Pade expansion - evaluate Pade coefficients using a circular frequency
   !!    mesh in the complex plane
-  ELSEIF (paderobust) THEN
+  CASE (pade_robust) 
     CALL pade_coeff_robust(freq%solver, tr2_gw, scrcoul_g)
-  ELSE
+  CASE DEFAULT
     CALL errore(__FILE__, "No screening model chosen!", 1)
-  END IF
+  END SELECT
 
 END SUBROUTINE coulpade
 
