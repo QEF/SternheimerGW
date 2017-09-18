@@ -139,9 +139,10 @@ CONTAINS
   !! from the global modules to evaluate the self energy.
   SUBROUTINE sigma_wrapper(ikpt, grid, config_green, freq, vcut, config, debug)
 
+    USE analytic_module,      ONLY: analytic_coeff
     USE cell_base,            ONLY: omega
     USE constants,            ONLY: tpi
-    USE control_gw,           ONLY: output, tmp_dir_coul
+    USE control_gw,           ONLY: output, tmp_dir_coul, model_coul, tr2_gw
     USE coulpade_module,      ONLY: coulpade
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
@@ -335,7 +336,8 @@ CONTAINS
         !
         iq = config(icon)%index_q
         CALL davcio(coulomb, lrcoul, iuncoul, iq, -1)
-        CALL coulpade(x_q(:,iq), freq, vcut, coulomb)
+        CALL coulpade(x_q(:,iq), vcut, coulomb)
+        CALL analytic_coeff(model_coul, tr2_gw, freq, coulomb)
         !
         ! check if any NaN occured in coulpade
         IF (debug_sigma) THEN

@@ -43,4 +43,105 @@ MODULE analytic_module
 
 CONTAINS
 
+!> Wrapper routine to evaluate the analytic continuation using different methods.
+SUBROUTINE analytic_coeff(model_coul, thres, freq, scrcoul_g)
+
+  USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
+  USE godby_needs_module, ONLY : godby_needs_coeffs
+  USE kinds,              ONLY : dp
+  USE pade_module,        ONLY : pade_coeff_robust
+
+  !> The selected screening model.
+  INTEGER, INTENT(IN)  :: model_coul
+
+  !> The threshold determining the accuracy of the calculation.
+  REAL(dp), INTENT(IN) :: thres
+
+  !> The frequency grid used for the calculation.
+  TYPE(freqbins_type), INTENT(IN) :: freq
+
+  !> *on input*: the screened Coulomb interaction on the frequency grid<br>
+  !! *on output*: the coefficients used to evaluate the screened Coulomb
+  !! interaction at an arbitrary frequency
+  COMPLEX(dp), INTENT(INOUT) :: scrcoul_g(:,:,:)
+
+  !> frequency used for Pade coefficient (will be extended if frequency
+  !! symmetry is used)
+  COMPLEX(dp), ALLOCATABLE :: z(:)
+
+  !> value of the screened Coulomb interaction on input mesh
+  COMPLEX(dp), ALLOCATABLE :: u(:)
+
+  !> coefficients of the Pade approximation
+  COMPLEX(dp), ALLOCATABLE :: a(:)
+
+  !> the number of G vectors in the correlation grid
+  INTEGER :: num_g_corr
+
+  !> loop variables for G and G'
+  INTEGER :: ig, igp
+
+  !> total number of frequencies
+  INTEGER :: num_freq
+
+  ! initialize helper variable
+  num_freq = SIZE(freq%solver)
+  num_g_corr = SIZE(scrcoul_g, 1)
+
+  ! sanity check for the array size
+  IF (SIZE(scrcoul_g, 2) /= num_g_corr) &
+    CALL errore(__FILE__, "input array should have same dimension for G and G'", 1)
+  IF (SIZE(scrcoul_g, 3) /= freq%num_freq()) &
+    CALL errore(__FILE__, "frequency dimension of Coulomb inconsistent with frequency mesh", 1)
+
+  !
+  ! analytic continuation to the complex plane
+  !
+  SELECT CASE (model_coul)
+
+  !! 1. Godby-Needs plasmon-pole model - assumes that the function can be accurately
+  !!    represented by a single pole and uses the value of the function at two
+  !!    frequencies \f$\omega = 0\f$ and \f$\omega = \omega_{\text{p}}\f$ to determine
+  !!    the parameters.
+  CASE (godby_needs)
+    CALL godby_needs_coeffs(AIMAG(freq%solver(2)), scrcoul_g)
+
+  !! 2. Pade expansion - evaluate Pade coefficients for a continued fraction expansion
+  !!    using a given frequency grid; symmetry may be used to extend the frequency grid
+  !!    to more points.
+  CASE (pade_approx) 
+
+    ! allocate helper arrays
+    ALLOCATE(u(freq%num_freq()))
+    ALLOCATE(a(freq%num_freq()))
+
+    ! use symmetry to extend the frequency mesh
+    CALL freqbins_symm(freq, z, scrcoul_g)
+
+    ! evalute Pade approximation for all G and G'
+    DO igp = 1, num_g_corr
+     DO ig = 1, num_g_corr
+
+       ! set frequency and value used to determine the Pade coefficients
+       u = scrcoul_g(ig, igp, :)
+
+       ! evaluate the coefficients
+       CALL pade_coeff(freq%num_freq(), z, u, a)
+
+       ! store the coefficients in the same array
+       scrcoul_g(ig, igp, :) = a
+
+     ENDDO ! ig
+  ENDDO ! igp
+
+  !! 3. robust Pade expansion - evaluate Pade coefficients using a circular frequency
+  !!    mesh in the complex plane
+  CASE (pade_robust) 
+    CALL pade_coeff_robust(freq%solver, thres, scrcoul_g)
+  CASE DEFAULT
+    CALL errore(__FILE__, "No screening model chosen!", 1)
+  END SELECT
+
+END SUBROUTINE analytic_coeff
+
 END MODULE analytic_module

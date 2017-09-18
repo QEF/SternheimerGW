@@ -49,7 +49,7 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
   USE io_files,          ONLY: tmp_dir, wfc_dir, seqopn, iunwfc
   USE io_global,         ONLY: stdout
   USE klist,             ONLY: nks, nkstot
-  USE mp_bands,          ONLY: ntask_groups, intra_bgrp_comm
+  USE mp_bands,          ONLY: intra_bgrp_comm
   USE qpoint,            ONLY: xq
   USE setup_nscf_module, ONLY: setup_nscf_green
   USE sigma_module,      ONLY: sigma_config_type
