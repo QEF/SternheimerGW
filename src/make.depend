@@ -1,4 +1,6 @@
 aaa.o : ../../Modules/kind.o
+aaa.o : lapack.o
+aaa.o : norm.o
 allocate_gwq.o : ../../LR_Modules/lrcom.o
 allocate_gwq.o : ../../Modules/becmod.o
 allocate_gwq.o : ../../Modules/fft_base.o

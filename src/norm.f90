@@ -106,5 +106,4 @@ CONTAINS
 
   END FUNCTION norm_complex
 
-  
 END MODULE norm_module
