@@ -1,3 +1,4 @@
+aaa.o : ../../Modules/constants.o
 aaa.o : ../../Modules/kind.o
 aaa.o : lapack.o
 aaa.o : norm.o

@@ -196,6 +196,7 @@ END SUBROUTINE analytic_coeff
 !> Construct the screened Coulomb interaction for an arbitrary frequency.
 SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
+  USE aaa_module,         ONLY : aaa_eval
   USE control_gw,         ONLY : model_coul 
   USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_model
@@ -232,8 +233,14 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !> allocation error flag
   INTEGER ierr
 
+  !> maximum number of points for AAA approximation
+  INTEGER mmax
+
   !> helper array to extract the current coefficients
   COMPLEX(dp), ALLOCATABLE :: coeff(:)
+
+  !> helper array for AAA approximation
+  COMPLEX(dp), ALLOCATABLE :: aaa(:,:)
 
   !> helper array for the frequencies
   COMPLEX(dp), ALLOCATABLE :: freq(:)
@@ -269,6 +276,13 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !!   W_{S q}(G, G') = W_{q}(S^{-1} G, S^{-1} G')~.
   !! \f}
   ALLOCATE(coeff(freq_in%num_freq()))
+
+  ! allocate helper array for AAA approximation
+  IF (model_coul == aaa_approx) THEN
+    mmax = SIZE(coeff) / 3
+    ALLOCATE(aaa(mmax, 3))
+  END IF
+
   DO igp = 1, grid%corr_par%ngmt
     !
     ! get the global corresponding index
@@ -295,6 +309,12 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
         !
         ! Godby-Needs Pole model
         scrcoul(ig, igp) = godby_needs_model(freq_out, coeff)
+
+      CASE (aaa_approx)
+        !
+        ! AAA approximation
+        aaa = RESHAPE(coeff(:SIZE(aaa)), [mmax, 3])
+        scrcoul(ig, igp) = aaa_eval(aaa, freq_out)
 
       CASE DEFAULT
         CALL errore(__FILE__, "No screening model chosen!", 1)

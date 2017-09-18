@@ -145,7 +145,7 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
   IF (SIZE(fu) /= num_point) THEN
     CALL errore(__FILE__, "size of sample points and function values inconsistent", 1)
   END IF
-  IF (thres < 0.0) THEN
+  IF (thres < 0.0_dp) THEN
     CALL errore(__FILE__, "negative tolerance not allowed", 1)
   END IF
   IF (mmax_ <= 0) THEN
@@ -170,7 +170,7 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
   !
   rational = SUM(fu) / num_point
   !
-  cauchy = 0.0
+  cauchy = 0.0_dp
 
   !
   ! main loop
@@ -225,5 +225,72 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
   coeff(:, 3) = weight(:num_point)
 
 END FUNCTION aaa_coeff
+
+!> Evaluate the AAA approximation at a certain frequency.
+!!
+!! \f{equation}{
+!!   r(z) = \sum_i \frac{w_i f_i}{z - z_i} \middle/ \frac{w_i}{z - z_i}
+!! \f}
+FUNCTION aaa_eval(coeff, freq) RESULT (res)
+
+  USE constants, ONLY: eps12
+  USE kinds,     ONLY: dp
+
+  !> coefficients array - first dimension \f$z_i\f$, second dimension \f$f_i\f$,
+  !!                      and third dimension \f$w_i\f$
+  COMPLEX(dp), INTENT(IN) :: coeff(:, :)
+
+  !> frequency at which the AAA approximation is evaluated
+  COMPLEX(dp), INTENT(IN) :: freq
+
+  !> value of the AAA approximation at the given frequency
+  COMPLEX(dp) res
+
+  !> loop variable
+  INTEGER ii
+
+  !> accumulate numerator
+  COMPLEX(dp) num
+
+  !> accumalate denominator
+  COMPLEX(dp) den
+
+  !> common term w_i / (z - z_i) in numerator and denominator
+  COMPLEX(dp) frac
+
+  ! initialize numerator and denominator
+  num = 0.0_dp
+  den = 0.0_dp
+
+  ! sanity check - at least one frequency and three coefficients per frequency
+  IF (SIZE(coeff, 1) == 0) &
+    CALL errore(__FILE__, "at least one frequency required", 1)
+  IF (SIZE(coeff, 2) /= 3) &
+    CALL errore(__FILE__, "three coefficients (z_i, f_i, w_i) expected", 1)
+
+  ! loop over coefficients
+  DO ii = 1, SIZE(coeff, 1)
+
+    ! skip points with 0 weight
+    IF (ABS(coeff(ii, 3)) <= eps12) CONTINUE
+
+    ! check for trivial case
+    IF (ABS(coeff(ii, 1) - freq) <= eps12) THEN
+      res = coeff(ii, 2)
+      RETURN
+    END IF
+
+    ! evaluate common fraction w_i / (z - z_i)
+    frac = coeff(ii, 3) / (freq - coeff(ii, 1))
+
+    ! accumulate sums
+    num = num + coeff(ii, 2) * frac
+    den = den + frac
+
+  END DO ! ii
+
+  res = num / den
+
+END FUNCTION aaa_eval
 
 END MODULE aaa_module
