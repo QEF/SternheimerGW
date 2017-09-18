@@ -1,3 +1,4 @@
+aaa.o : ../../Modules/kind.o
 allocate_gwq.o : ../../LR_Modules/lrcom.o
 allocate_gwq.o : ../../Modules/becmod.o
 allocate_gwq.o : ../../Modules/fft_base.o
@@ -226,6 +227,7 @@ initialize_gw.o : ../../PW/src/pwcom.o
 initialize_gw.o : gwcom.o
 invert_epsilon.o : ../../Modules/kind.o
 invert_epsilon.o : gwcom.o
+lapack.o : ../../Modules/kind.o
 linear_op.o : ../../LR_Modules/lrcom.o
 linear_op.o : ../../Modules/becmod.o
 linear_op.o : ../../Modules/constants.o
@@ -259,6 +261,7 @@ pade.o : ../../Modules/kind.o
 pade_robust.o : ../../FFTXlib/fft_scalar.o
 pade_robust.o : ../../Modules/constants.o
 pade_robust.o : ../../Modules/kind.o
+pade_robust.o : lapack.o
 pade_robust.o : norm.o
 parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp_global.o

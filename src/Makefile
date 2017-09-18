@@ -69,6 +69,7 @@ gwq_setup.o\
 initialize_gw.o\
 invert_epsilon.o\
 kind_gw.o\
+lapack.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\
