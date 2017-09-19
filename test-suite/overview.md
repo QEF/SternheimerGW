@@ -40,6 +40,7 @@ The following SternheimerGW features are tested in this suite
 * change the k-point grid compared to the scf calculation
 * adjust the value used for the projection onto the valence band
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
+* AAA approximation to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
 * obtain the Green's function on the real axis
@@ -93,6 +94,7 @@ The following SternheimerGW features are tested by this case
 * evaluate the dielectric function on the imaginary axis
 * use the direct solver to determine the dielectric constant
 * full frequency integration using Pade approximation to interpolate
+* AAA approximation to obtain a denser grid on the imaginary axis
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
 * obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis

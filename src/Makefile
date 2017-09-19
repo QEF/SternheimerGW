@@ -35,12 +35,13 @@ EXE = gw.x
 IFLAGS=
 
 GWOBJS = \
+aaa.o\
+analytic.o\
 allocate_gwq.o\
 bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
 close_gwq.o\
-construct_w.o\
 coulomb.o\
 coulomb_q0G0.o\
 coulomb_vcut.o\
@@ -68,6 +69,7 @@ gwq_setup.o\
 initialize_gw.o\
 invert_epsilon.o\
 kind_gw.o\
+lapack.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\

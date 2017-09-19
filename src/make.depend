@@ -1,3 +1,7 @@
+aaa.o : ../../Modules/constants.o
+aaa.o : ../../Modules/kind.o
+aaa.o : lapack.o
+aaa.o : norm.o
 allocate_gwq.o : ../../LR_Modules/lrcom.o
 allocate_gwq.o : ../../Modules/becmod.o
 allocate_gwq.o : ../../Modules/fft_base.o
@@ -8,6 +12,14 @@ allocate_gwq.o : ../../Modules/uspp.o
 allocate_gwq.o : ../../Modules/wavefunctions.o
 allocate_gwq.o : ../../PW/src/pwcom.o
 allocate_gwq.o : gwcom.o
+analytic.o : ../../Modules/kind.o
+analytic.o : aaa.o
+analytic.o : freqbins.o
+analytic.o : godby_needs.o
+analytic.o : gwcom.o
+analytic.o : pade_robust.o
+analytic.o : sigma_grid.o
+analytic.o : timing.o
 bicgstab.o : ../../Modules/io_global.o
 bicgstab.o : ../../Modules/kind.o
 bicgstab.o : debug.o
@@ -25,13 +37,6 @@ clean_pw_gw.o : ../../Modules/control_flags.o
 close_gwq.o : ../../Modules/control_flags.o
 close_gwq.o : ../../PW/src/buffers.o
 close_gwq.o : gwcom.o
-construct_w.o : ../../Modules/kind.o
-construct_w.o : freqbins.o
-construct_w.o : godby_needs.o
-construct_w.o : gwcom.o
-construct_w.o : pade_robust.o
-construct_w.o : sigma_grid.o
-construct_w.o : timing.o
 coulomb.o : ../../FFTXlib/fft_interfaces.o
 coulomb.o : ../../LR_Modules/lrcom.o
 coulomb.o : ../../Modules/constants.o
@@ -59,10 +64,7 @@ coulomb_q0G0.o : timing.o
 coulpade.o : ../../Modules/cell_base.o
 coulpade.o : ../../Modules/kind.o
 coulpade.o : ../../Modules/recvec.o
-coulpade.o : freqbins.o
-coulpade.o : godby_needs.o
 coulpade.o : gwcom.o
-coulpade.o : pade_robust.o
 coulpade.o : truncation.o
 deallocate_gwq.o : ../../LR_Modules/lrcom.o
 deallocate_gwq.o : ../../Modules/becmod.o
@@ -200,6 +202,7 @@ gwq_readin.o : ../../Modules/wrappers.o
 gwq_readin.o : ../../PW/src/pwcom.o
 gwq_readin.o : ../../PW/src/start_k.o
 gwq_readin.o : ../../UtilXlib/mp.o
+gwq_readin.o : analytic.o
 gwq_readin.o : debug.o
 gwq_readin.o : freqbins.o
 gwq_readin.o : gw_input.o
@@ -226,6 +229,7 @@ initialize_gw.o : ../../PW/src/pwcom.o
 initialize_gw.o : gwcom.o
 invert_epsilon.o : ../../Modules/kind.o
 invert_epsilon.o : gwcom.o
+lapack.o : ../../Modules/kind.o
 linear_op.o : ../../LR_Modules/lrcom.o
 linear_op.o : ../../Modules/becmod.o
 linear_op.o : ../../Modules/constants.o
@@ -259,6 +263,7 @@ pade.o : ../../Modules/kind.o
 pade_robust.o : ../../FFTXlib/fft_scalar.o
 pade_robust.o : ../../Modules/constants.o
 pade_robust.o : ../../Modules/kind.o
+pade_robust.o : lapack.o
 pade_robust.o : norm.o
 parallel.o : ../../Modules/kind.o
 parallel.o : ../../Modules/mp_global.o
@@ -267,6 +272,7 @@ parallel.o : ../../UtilXlib/parallel_include.o
 plot_coulomb.o : ../../Modules/constants.o
 plot_coulomb.o : ../../Modules/io_global.o
 plot_coulomb.o : ../../Modules/kind.o
+plot_coulomb.o : analytic.o
 plot_coulomb.o : freqbins.o
 plot_coulomb.o : godby_needs.o
 plot_coulomb.o : gwcom.o
@@ -364,7 +370,7 @@ sigma.o : ../../Modules/mp_pools.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : ../../UtilXlib/mp.o
-sigma.o : construct_w.o
+sigma.o : analytic.o
 sigma.o : coulpade.o
 sigma.o : debug.o
 sigma.o : fft6.o
