@@ -27,9 +27,18 @@ MODULE freqbins_module
 
   IMPLICIT NONE
 
+  !> do not use symmetry
+  INTEGER, PARAMETER :: no_symmetry = 0
+
+  !> double the number of frequency points by using \f$W(\omega) = W(-\omega)\f$
+  INTEGER, PARAMETER :: even_symmetry = 1
+
+  !> fit a function of \f$\omega^2\f$ so that W is even by construction
+  INTEGER, PARAMETER :: square_symmetry = 2
+
   PRIVATE
 
-  PUBLIC freqbins_type, freqbins, freqbins_symm
+  PUBLIC freqbins_type, freqbins, freqbins_symm, no_symmetry
 
   !> Contains the information about the frequencies used for the convolution of
   !! G and W to obtain the self-energy \f$\Sigma\f$.
@@ -38,8 +47,8 @@ MODULE freqbins_module
     !> flag indicates whether we integrate on the real or imaginary axis
     LOGICAL imag_sigma
 
-    !> flag indicates whether symmetry for frequencies is used
-    LOGICAL use_symmetry
+    !> indicates what symmetrization is used for frequencies of screened Coulomb
+    INTEGER freq_symm_coul
 
     !> number of frequencies in the symmetrized mesh
     INTEGER num_freq_sym
@@ -70,6 +79,7 @@ MODULE freqbins_module
     PROCEDURE :: num_sigma  => freqbins_num_sigma
     PROCEDURE :: num_window => freqbins_num_window
     PROCEDURE :: green      => freqbins_green
+    PROCEDURE :: symmetrize => freqbins_symmetrize
 
   END TYPE freqbins_type
 
@@ -354,12 +364,20 @@ CONTAINS
     num_freq = SIZE(freq_in%solver)
 
     ! trivial case - symmetry not used => return same frequency used for solver
-    IF (.NOT. freq_in%use_symmetry) THEN
+    IF (freq_in%freq_symm_coul == no_symmetry) THEN
       ALLOCATE(freq_out(num_freq))
       freq_out = freq_in%solver
       RETURN
     END IF
 
+    ! fit to w^2 so that even symmetry is fulfilled by construction
+    IF (freq_in%freq_symm_coul == square_symmetry) THEN
+      ALLOCATE(freq_out(num_freq))
+      freq_out = freq_in%solver**2
+      RETURN
+    END IF
+
+    ! else -> even_symmetry
     !!
     !! For the symmetrized frequency mesh, we duplicate all nonzero frequencies.
     !! We only for at most one frequency that is 0.
@@ -425,5 +443,34 @@ CONTAINS
     this%num_freq_sym = SIZE(freq)
 
   END SUBROUTINE freqbins_init
+
+  !> symmetrize the frequency
+  !!
+  !! if no symmetry or even symmetry is used, return the input frequency
+  !! if square symmetry is used, return the input frequency squared
+  FUNCTION freqbins_symmetrize(this, freq) RESULT (res)
+
+    USE kinds, ONLY: dp
+
+    !> the frequency bins type defining the symmetry
+    CLASS(freqbins_type), INTENT(IN) :: this
+
+    !> the frequency to be symmetrized
+    COMPLEX(dp), INTENT(IN) :: freq
+
+    !> resulting symmetrized frequency
+    COMPLEX(dp) :: res
+
+    ! for square symmetry square the frequency
+    IF (this%freq_symm_coul == square_symmetry) THEN
+      res = freq**2
+
+    ! otherwise return input frequency
+    ELSE
+      res = freq
+
+    END IF
+
+  END FUNCTION freqbins_symmetrize
 
 END MODULE freqbins_module

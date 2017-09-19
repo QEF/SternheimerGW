@@ -48,7 +48,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
                                    w_of_q_start, w_of_k_start, w_of_k_stop
   USE freq_gw,              ONLY : fiu, nfs, wsigmamin, wsigmamax, nwsigma, wcoulmax, nwcoul, &
                                    wsig_wind_min, wsig_wind_max, nwsigwin
-  USE freqbins_module,      ONLY : freqbins_type
+  USE freqbins_module,      ONLY : freqbins_type, no_symmetry
   USE gw_input_module,      ONLY : gw_input_type, gw_output_type, gw_input_read, gw_input_bcast
   USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, corr_conv
   USE gwsymm,               ONLY : use_symm
@@ -367,10 +367,10 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
 
   ! use symmetry for the frequencies (only for Pade or AAA approximation)
   IF (model_coul == pade_approx .OR. model_coul == aaa_approx) THEN
-    freq%use_symmetry = input%freq_symm_coul
+    freq%freq_symm_coul = input%freq_symm_coul
   ELSE
     ! symmetry not implemented for robust Pade and Godby-Needs
-    freq%use_symmetry = .FALSE.
+    freq%freq_symm_coul = no_symmetry
   END IF
 
   num_k_pts = 0

@@ -245,6 +245,9 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !> helper array for the frequencies
   COMPLEX(dp), ALLOCATABLE :: freq(:)
 
+  !> symmetrized version of output frequency
+  COMPLEX(dp) freq_sym
+
   !> complex constant of zero
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
 
@@ -265,6 +268,9 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   IF (model_coul == pade_approx) THEN
     CALL freqbins_symm(freq_in, freq)
   END IF
+
+  ! symmetrize output frequency
+  freq_sym = freq_in%symmetrize(freq_out)
 
   !
   ! construct screened Coulomb interaction
@@ -298,23 +304,23 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
       CASE (pade_approx)
         !
         ! Pade analytic continuation
-        CALL pade_eval(freq_in%num_freq(), freq, coeff, freq_out, scrcoul(ig, igp))
+        CALL pade_eval(freq_in%num_freq(), freq, coeff, freq_sym, scrcoul(ig, igp))
 
       CASE (pade_robust)
         !
         ! robust Pade analytic continuation
-        CALL pade_eval_robust(coeff, freq_out, scrcoul(ig, igp))
+        CALL pade_eval_robust(coeff, freq_sym, scrcoul(ig, igp))
 
       CASE (godby_needs)
         !
         ! Godby-Needs Pole model
-        scrcoul(ig, igp) = godby_needs_model(freq_out, coeff)
+        scrcoul(ig, igp) = godby_needs_model(freq_sym, coeff)
 
       CASE (aaa_approx)
         !
         ! AAA approximation
         aaa = RESHAPE(coeff(:SIZE(aaa)), [mmax, 3])
-        scrcoul(ig, igp) = aaa_eval(aaa, freq_out)
+        scrcoul(ig, igp) = aaa_eval(aaa, freq_sym)
 
       CASE DEFAULT
         CALL errore(__FILE__, "No screening model chosen!", 1)

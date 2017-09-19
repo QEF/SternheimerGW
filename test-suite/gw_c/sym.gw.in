@@ -23,7 +23,7 @@
 
   ! configuration of W in the convolution
   model_coul     = 'pade'
-  freq_symm_coul = .false.
+  freq_symm_coul = 0 
   max_freq_coul  = 200
   num_freq_coul  = 35
 
