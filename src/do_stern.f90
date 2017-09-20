@@ -24,10 +24,11 @@
 !!
 !! This routine is the driver routine for the solvers. Depending on the choice
 !! in the input file either a direct or an iterative solver is used.
-SUBROUTINE do_stern(config, freq, num_g_corr)
+SUBROUTINE do_stern(config, grid, freq)
 
   USE constants,            ONLY: eps6
-  USE control_gw,           ONLY: do_q0_only, solve_direct, do_epsil, plot_coul
+  USE control_gw,           ONLY: do_q0_only, solve_direct, do_epsil, plot_coul, &
+                                  model_coul, tr2_gw
   USE disp,                 ONLY: nqs, num_k_pts, w_of_q_start, x_q, xk_kpoints
   USE freq_gw,              ONLY: nfs
   USE freqbins_module,      ONLY: freqbins_type
@@ -42,6 +43,7 @@ SUBROUTINE do_stern(config, freq, num_g_corr)
   USE plot_coulomb_module,  ONLY: plot_coulomb
   USE run_nscf_module,      ONLY: run_nscf
   USE select_solver_module, ONLY: select_solver_type
+  USE sigma_grid_module,    ONLY: sigma_grid_type
   USE timing_module,        ONLY: time_coulomb, time_coul_nscf, time_coul_invert, &
                                   time_coul_io, time_coul_symm, time_coul_unfold, &
                                   time_coul_comm
@@ -52,11 +54,14 @@ IMPLICIT NONE
   !> stores the configuration of the linear solver for the screened Coulomb interaction
   TYPE(select_solver_type), INTENT(IN) :: config
 
+  !> the FFT grid used to represent correlation and exchange
+  TYPE(sigma_grid_type),    INTENT(IN) :: grid
+
   !> the definition of the frequency grid
-  TYPE(freqbins_type), INTENT(IN) :: freq
+  TYPE(freqbins_type),      INTENT(IN) :: freq
 
   !> the number of G vectors in the correlation grid
-  INTEGER, INTENT(IN)  :: num_g_corr
+  INTEGER :: num_g_corr
 
   !> the number of tasks done on any process
   INTEGER, ALLOCATABLE :: num_task(:)
@@ -94,6 +99,9 @@ IMPLICIT NONE
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0, 0.0, KIND=dp)
 
   CALL start_clock(time_coulomb)
+
+  ! set helper variable
+  num_g_corr = grid%corr%ngmt
 
   ! some tasks are only done by the root process
   is_root = my_image_id == root_id
@@ -228,7 +236,7 @@ IMPLICIT NONE
       CALL davcio(scrcoul_g, lrcoul, iuncoul, iq, +1, ios)
       CALL stop_clock(time_coul_io)
 
-      IF (plot_coul) CALL plot_coulomb(freq, scrcoul_g)
+      IF (plot_coul) CALL plot_coulomb(model_coul, tr2_gw, grid, freq, scrcoul_g)
 
     END IF ! root
 

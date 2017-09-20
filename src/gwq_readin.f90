@@ -308,10 +308,6 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
        &' Wrong  iverbosity ', 1)
   IF (max_seconds.LT.0.1D0) CALL errore ('gwq_readin', ' Wrong max_seconds', 1)
 
-  IF (plot_coul .AND. .NOT.(model_coul == pade_approx .OR. model_coul == godby_needs)) &
-    CALL errore(__FILE__, 'plotting of Coulomb only for Pade and Godby-Needs', 1)
-  !
-
 ! HL here we can just use this to readin the list of frequencies that we want to calculate
 ! Stored in array  fiu(:), of size nfs.
 ! reads the frequencies ( just if fpol = .true. )
