@@ -28,6 +28,9 @@ MODULE aaa_module
 
   IMPLICIT NONE
 
+  PRIVATE
+  PUBLIC aaa_coeff, aaa_eval
+
 CONTAINS
 
 !> The *core* AAA algorithm presented in Figure 4.1.
@@ -185,7 +188,7 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
     fl(mm) = fu(jj)
     !
     ! update index vector
-    index_vector = PACK(index_vector, index_vector /= jj)
+    CALL remove_element(jj, index_vector)
     !
     ! next column of Cauchy matrix
     where (zu /= zu(jj))
@@ -292,5 +295,54 @@ FUNCTION aaa_eval(coeff, freq) RESULT (res)
   res = num / den
 
 END FUNCTION aaa_eval
+
+!> helper function to remove a certain element from an array
+SUBROUTINE remove_element(element, array)
+
+  !> value removed from the array
+  INTEGER, INTENT(IN) :: element
+
+  !> *on input* array with all elements <br>
+  !! *on output* array with selected elements removed
+  INTEGER, INTENT(INOUT), ALLOCATABLE :: array(:)
+
+  !> mask indicating which elements to remove
+  LOGICAL, ALLOCATABLE :: mask(:)
+
+  !> number of elements after removal
+  INTEGER num_elem
+
+  !> temporary array to copy the data
+  INTEGER, ALLOCATABLE :: copy_array(:)
+
+  ! trivial case - array empty or not allocated
+  IF (.NOT.ALLOCATED(array)) THEN
+    ALLOCATE(array(0))
+    RETURN
+  END IF
+  IF (SIZE(array) == 0) THEN
+    RETURN
+  END IF
+
+  ! find matching elements
+  ALLOCATE(mask(SIZE(array)))
+  mask = (array /= element)
+  num_elem = COUNT(mask)
+
+  ! trivial case - no matching elements
+  IF (num_elem == SIZE(array)) THEN
+    RETURN
+  END IF
+
+  ! create smaller array
+  ALLOCATE(copy_array(num_elem))
+
+  ! remove elements from array
+  copy_array = PACK(array, mask)
+
+  ! move allocation to output array
+  CALL MOVE_ALLOC(copy_array, array)
+
+END SUBROUTINE remove_element
 
 END MODULE aaa_module
