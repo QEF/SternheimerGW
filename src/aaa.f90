@@ -38,8 +38,9 @@ CONTAINS
 !! Reimplement the AAA algorithm in Fortran. Because the original code uses
 !! uppercase and lowercase letters for some variables (not differentiated in
 !! Fortran), we use a *u* and *l* suffix to distinguish between them.
-FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
+SUBROUTINE aaa_coeff(zu, fu, coeff, tol, mmax)
 
+  USE debug_module,  ONLY: test_nan
   USE kinds,         ONLY: dp
   USE lapack_module, ONLY: svd
   USE norm_module,   ONLY: norm
@@ -50,12 +51,6 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
   !> A vector of data values at these points.
   COMPLEX(dp), INTENT(IN) :: fu(:)
 
-  !> Relative tolerance, set to 1e-13 if omitted.
-  REAL(dp), INTENT(IN), OPTIONAL :: tol
-
-  !> Maximum degree of the polynomials, set to 100 if omitted.
-  INTEGER,  INTENT(IN), OPTIONAL :: mmax
-
   !> The coefficients of the barycentric representation. The resulting array
   !! will have three components (in this order): The position \f$z_i\f$, the
   !! value at the position \f$f_i\f$, and the weight of the position \f$w_i\f$.
@@ -63,7 +58,13 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
   !! \f{equation}{
   !!   r(z) = \sum_i \frac{w_i f_i}{z - z_i} \middle/ \sum_i \frac{w_i}{z - z_i}
   !! \f}
-  COMPLEX(dp), ALLOCATABLE :: coeff(:,:)
+  COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: coeff(:,:)
+
+  !> Relative tolerance, set to 1e-13 if omitted.
+  REAL(dp), INTENT(IN), OPTIONAL :: tol
+
+  !> Maximum degree of the polynomials, set to 100 if omitted.
+  INTEGER,  INTENT(IN), OPTIONAL :: mmax
 
   !> Absolute tolerance used (input tolerance or default times function vector).
   REAL(dp) thres
@@ -227,7 +228,9 @@ FUNCTION aaa_coeff(zu, fu, tol, mmax) RESULT (coeff)
   coeff(:, 2) = fl(:num_point)
   coeff(:, 3) = weight(:num_point)
 
-END FUNCTION aaa_coeff
+  CALL errore(__FILE__, "in AAA approximation some coefficients are NaN", COUNT(test_nan(coeff)))
+
+END SUBROUTINE aaa_coeff
 
 !> Evaluate the AAA approximation at a certain frequency.
 !!
