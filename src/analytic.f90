@@ -173,7 +173,7 @@ SUBROUTINE analytic_coeff(model_coul, thres, freq, scrcoul_g)
         u = scrcoul_g(ig, igp, :)
 
         ! evaluate the coefficients
-        aaa = aaa_coeff(z, u, tol = thres, mmax = mmax)
+        CALL aaa_coeff(z, u, aaa, tol = thres, mmax = mmax)
 
         ! determine number of polynomials generated
         mm = SIZE(aaa, 1)

@@ -1,5 +1,6 @@
 aaa.o : ../../Modules/constants.o
 aaa.o : ../../Modules/kind.o
+aaa.o : debug.o
 aaa.o : lapack.o
 aaa.o : norm.o
 allocate_gwq.o : ../../LR_Modules/lrcom.o
