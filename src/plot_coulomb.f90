@@ -35,7 +35,8 @@ CONTAINS
   !! plotting routine
   SUBROUTINE plot_coulomb(freq, coulomb)
 
-    USE control_gw,         ONLY: padecont, godbyneeds
+    USE analytic_module,    ONLY: godby_needs, pade_approx
+    USE control_gw,         ONLY: model_coul
     USE freqbins_module,    ONLY: freqbins_type
     USE kinds,              ONLY: dp
 
@@ -45,11 +46,12 @@ CONTAINS
     !> the screened coulomb interaction for this frequency
     COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
 
-    IF (godbyneeds) THEN
+    SELECT CASE (model_coul)
+    CASE (godby_needs)
       CALL plot_coulomb_godbyneeds(freq, coulomb)
-    ELSE IF (padecont) THEN
+    CASE (pade_approx)
       CALL plot_coulomb_pade(freq, coulomb)
-    END IF
+    END SELECT
 
   END SUBROUTINE plot_coulomb
 

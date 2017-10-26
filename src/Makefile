@@ -29,18 +29,20 @@ include $(ESPRESSO)/make.inc
 MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src   $(MOD_FLAG)$(ESPRESSO)/UtilXlib \
           $(MOD_FLAG)$(ESPRESSO)/Modules    $(MOD_FLAG)$(ESPRESSO)/LAXlib \
           $(MOD_FLAG)$(ESPRESSO)/FFTXlib    $(MOD_FLAG)$(ESPRESSO)/PW/src \
-          $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG).
+          $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG)$(ESPRESSO)/dft-d3 \
+          $(MOD_FLAG).
 EXE = gw.x
 
 IFLAGS=
 
 GWOBJS = \
+aaa.o\
+analytic.o\
 allocate_gwq.o\
 bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
 close_gwq.o\
-construct_w.o\
 coulomb.o\
 coulomb_q0G0.o\
 coulomb_vcut.o\
@@ -68,6 +70,7 @@ gwq_setup.o\
 initialize_gw.o\
 invert_epsilon.o\
 kind_gw.o\
+lapack.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\
@@ -108,9 +111,10 @@ version.o
 
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
-QEMODS = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a \
+QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \
          $(ESPRESSO)/KS_Solvers/Davidson/libdavid.a $(ESPRESSO)/KS_Solvers/CG/libcg.a \
-         $(ESPRESSO)/LAXlib/libqela.a $(ESPRESSO)/UtilXlib/libutil.a
+         $(ESPRESSO)/LAXlib/libqela.a               $(ESPRESSO)/UtilXlib/libutil.a \
+         $(ESPRESSO)/dft-d3/libdftd3qe.a
 LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 TLDEPS= bindir mods libs pw-lib lr-lib
