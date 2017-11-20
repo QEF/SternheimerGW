@@ -3,3 +3,5 @@ fort.1000
 tmp
 *.out
 *~
+*.dat
+prelim*
