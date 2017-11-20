@@ -18,25 +18,25 @@
   int_imag_axis  = .false.
 
   ! configuration of the Coulomb solver
-  do_coul        = .false.
   thres_coul     = 1.0d-4
   max_iter_coul  = 200
 
   ! configuration of W in the convolution
   model_coul     = 'pade robust'
   max_freq_coul  = 80
-  num_freq_coul  = 200
+  num_freq_coul  = 400
 
   ! configuration of the Green solver
   thres_green    = 1.0d-5
   max_iter_green = 180
+  priority_green = 3
   eta            = 0.1
 
   ! configuration for the correlation self energy
   ecut_corr      = 6.0
-  min_freq_corr  = -45.0
-  max_freq_corr  =  15.0
-  num_freq_corr  = 121
+  min_freq_corr  = -5.0
+  max_freq_corr  = 0.0
+  num_freq_corr  = 51
 
   ! configuration for the exchange self energy
   ecut_exch      = 15.0

@@ -85,6 +85,7 @@ do_stern.o : parallel.o
 do_stern.o : plot_coulomb.o
 do_stern.o : run_nscf.o
 do_stern.o : select_solver.o
+do_stern.o : sigma_grid.o
 do_stern.o : timing.o
 dvqpsi_us.o : ../../FFTXlib/fft_interfaces.o
 dvqpsi_us.o : ../../LR_Modules/lrcom.o
@@ -275,8 +276,7 @@ plot_coulomb.o : ../../Modules/io_global.o
 plot_coulomb.o : ../../Modules/kind.o
 plot_coulomb.o : analytic.o
 plot_coulomb.o : freqbins.o
-plot_coulomb.o : godby_needs.o
-plot_coulomb.o : gwcom.o
+plot_coulomb.o : sigma_grid.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o

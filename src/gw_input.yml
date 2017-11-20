@@ -187,11 +187,16 @@ gw_input:
 	- 'aaa' adaptive Antoulas-Anderson method for calcuting a rational approximant
 
   freq_symm_coul:
-    type: logical
-    default: .TRUE.
-    description: Use W(w) = W(-w) symmetry to improve the accuracy of the Pade approximation.
-      Only works if model_coul is 'pade' where it is used by default. Note that switching of
-      symmetry should only be used for testing purposes.
+    type: integer
+    default: 1
+    description: Select which method is used to enforce the W(w) = W(-w) symmetry to improve
+      the accuracy of the Pade approximation. Only works if model_coul is 'pade' or 'aaa'
+      where by default the number of points are doubles. Note that switching off symmetry
+      should only be used for testing purposes.
+      Possible choices
+        - 0 do not use symmetry
+        - 1 for every frequency w /= 0 also add W(-w) with the same value
+        - 2 fit W(w^2) instead of W(w)
 
   max_freq_coul:
     type: real(dp)

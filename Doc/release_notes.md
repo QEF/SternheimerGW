@@ -1,6 +1,15 @@
 Release notes
 =============
 
+on develop
+------------
+
+Further improvement to real frequency integration. Symmetrize enforcing
+that +w and -w are the same. Fix bug where frequencies are in the wrong
+quadrant.
+
+> compatible QE version 6.2 revision 13949
+
 Version 0.14
 ------------
 

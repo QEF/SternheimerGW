@@ -31,188 +31,115 @@ MODULE plot_coulomb_module
 
 CONTAINS
 
-  !> Main driver for plotting routines that calls the appropriate actual
-  !! plotting routine
-  SUBROUTINE plot_coulomb(freq, coulomb)
+  !> Plot the screened Coulomb interaction for a given frequency grid.
+  !!
+  !! Note that this routines uses the same routines to perform the analytic
+  !! continuation than the code will use later on. In this way the plotted
+  !! function provide an actual test of the values that you will obtain later.
+  SUBROUTINE plot_coulomb(model_coul, thres, grid, freq, coulomb)
 
-    USE analytic_module,    ONLY: godby_needs, pade_approx
-    USE control_gw,         ONLY: model_coul
+    USE analytic_module,    ONLY: analytic_coeff, analytic_eval
+    USE constants,          ONLY: RYTOEV
     USE freqbins_module,    ONLY: freqbins_type
+    USE io_global,          ONLY: stdout
     USE kinds,              ONLY: dp
+    USE sigma_grid_module,  ONLY: sigma_grid_type
+
+    !> the screening model used for the analytic continuation
+    INTEGER,               INTENT(IN) :: model_coul
+
+    !> the threshold used for some of the screening models
+    REAL(dp),              INTENT(IN) :: thres
+
+    !> the FFT grids on which the screened Coulomb interaction is evaluated
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> the frequency grid used for the calculation
-    TYPE(freqbins_type), INTENT(IN) :: freq
+    TYPE(freqbins_type),   INTENT(IN) :: freq
 
-    !> the screened coulomb interaction for this frequency
-    COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
+    !> the screened coulomb interaction for these frequencies
+    COMPLEX(dp),           INTENT(IN) :: coulomb(:,:,:)
 
-    SELECT CASE (model_coul)
-    CASE (godby_needs)
-      CALL plot_coulomb_godbyneeds(freq, coulomb)
-    CASE (pade_approx)
-      CALL plot_coulomb_pade(freq, coulomb)
-    END SELECT
+    !> copy of the screened coulomb interaction
+    COMPLEX(dp), ALLOCATABLE :: scrcoul_in(:,:,:)
 
+    !> result of the analytic continuation
+    COMPLEX(dp), ALLOCATABLE :: scrcoul_out(:,:,:)
+
+    !> work array
+    COMPLEX(dp), ALLOCATABLE :: work(:,:)
+
+    !> symmetry map between G order (we use the identity)
+    INTEGER, ALLOCATABLE :: gmapsym(:)
+
+    !> number of G vectors
+    INTEGER num_g
+
+    !> loop variables for G vectors
+    INTEGER ig, igp
+
+    !> loop variable for frequencies
+    INTEGER ifreq
+
+    !
+    ! sanity test of the input
+    !
+    num_g = SIZE(coulomb, 1)
+    IF (SIZE(coulomb, 2) /= num_g) &
+      CALL errore(__FILE__, "coulomb must be square matrix", 1)
+    IF (grid%corr%ngmt /= num_g) &
+      CALL errore(__FILE__, "FFT grid and coulomb matrix inconsistent", 1)
+    IF (grid%corr%ngmt /= grid%corr_par%ngmt) &
+      CALL errore(__FILE__, "image parallelism not implemented for plotting", 1)
+
+    !
+    ! evaluate coefficients for analytic continuation
+    !
+    ! create a copy of coulomb
+    ALLOCATE(scrcoul_in(num_g, num_g, freq%num_freq()))
+    scrcoul_in(:, :, 1:SIZE(coulomb, 3)) = coulomb
+
+    ! evaluate coefficients for screening model
+    CALL analytic_coeff(model_coul, thres, freq, scrcoul_in)
+
+    !
+    ! perform analytic continuation to the desired output mesh
+    !
+    ! create array for the results
+    ALLOCATE(scrcoul_out(num_g, num_g, freq%num_coul()))
+
+    ! create symmetry map
+    ALLOCATE(gmapsym(num_g))
+    gmapsym = [(ig, ig = 1, num_g)]
+
+    ! perform analytic continuation
+    DO ifreq = 1, freq%num_coul()
+      CALL analytic_eval(gmapsym, grid, freq, scrcoul_in, freq%coul(ifreq), work)
+      scrcoul_out(:,:,ifreq) = work
+    END DO ! ifreq
+
+    !
+    ! print the results
+    !
+    WRITE(stdout, '(5x,a)') 'Plotting analytic continuation'
+
+    ! loop over all elements of matrix
+    DO igp = 1, num_g
+      DO ig = 1, num_g
+
+        ! plot the frequency dependent Coulomb interaction
+        WRITE(stdout, '(17x,a,18x,a,i6,a,i6,a)') 'omega', 'W(', ig, ', ', igp, ', omega)'
+        DO ifreq = 1, freq%num_coul()
+          WRITE(stdout, '(5x,2f15.8,2x,2f15.8)') freq%coul(ifreq) * RYTOEV, scrcoul_out(ig, igp, ifreq)
+        END DO ! ifreq
+        WRITE(stdout, '(a)')
+
+      END DO ! ig
+    END DO ! igp
+
+    WRITE(stdout, '(5x,a)') 'End of analytic continuation'
+    WRITE(stdout, '(a)')
+    
   END SUBROUTINE plot_coulomb
-
-  !> Plot the screened Coulomb interaction along the real frequency axis for a
-  !! given frequency mesh using the Pade approximation.
-  SUBROUTINE plot_coulomb_pade(freq, coulomb)
-
-    USE constants,          ONLY: RYTOEV
-    USE freqbins_module,    ONLY: freqbins_type, freqbins_symm
-    USE io_global,          ONLY: stdout
-    USE kinds,              ONLY: dp
-
-    !> the frequency grid used for the calculation
-    TYPE(freqbins_type), INTENT(IN) :: freq
-
-    !> the screened coulomb interaction for this frequency
-    COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
-
-    !> number of G vectors in correlation grid
-    INTEGER num_g_corr
-
-    !> counter on the G vectors
-    INTEGER ig, igp
-
-    !> the frequency grid used
-    COMPLEX(dp), ALLOCATABLE :: omega_in(:)
-
-    !> the frequency at which the Pade approximation is evaluated
-    COMPLEX(dp) :: omega_out
-
-    !> counter on the frequencies
-    INTEGER ifreq
-
-    !> Pade coefficients
-    COMPLEX(dp), ALLOCATABLE :: coeff(:)
-
-    !> symmetrized version of the coulomb array
-    COMPLEX(dp), ALLOCATABLE :: coulomb_sym(:,:,:)
-
-    !> Pade approximant to coulomb at a specific frequency
-    COMPLEX(dp) pade
-
-    num_g_corr = SIZE(coulomb, 1)
-    IF (SIZE(coulomb, 2) /= num_g_corr) &
-      CALL errore(__FILE__, "coulomb matrix should be square for each frequency", 1)
-    IF (SIZE(coulomb, 3) > freq%num_freq()) &
-      CALL errore(__FILE__, "coulomb matrix has more frequencies than frequency type", 1)
-
-    ! copy coulomb to array for symmetrization
-    ALLOCATE(coulomb_sym(num_g_corr, num_g_corr, freq%num_freq()))
-    coulomb_sym(:,:,:SIZE(coulomb, 3)) = coulomb
-
-    ! use symmetry to extend the frequency mesh
-    CALL freqbins_symm(freq, omega_in, coulomb_sym)
-
-    ! allocate arrays to contain Pade coefficients
-    ALLOCATE(coeff(freq%num_freq()))
-
-    WRITE(stdout, '(5x,a)') 'Plotting Pade approximation'
-
-    ! evalute Pade approximation for all G and G'
-    DO igp = 1, num_g_corr
-      DO ig = 1, num_g_corr
-
-        ! evaluate the coefficients
-        CALL pade_coeff(freq%num_freq(), omega_in, coulomb_sym(ig, igp, :), coeff)
- 
-        ! plot the frequency dependent Coulomb interaction
-        WRITE(stdout, '(17x,a,18x,a,i6,a,i6,a)') 'omega', 'W(', ig, ', ', igp, ', omega)'
-
-        DO ifreq = 1, freq%num_coul()
-
-          ! evaluate Pade approximation
-          omega_out = freq%coul(ifreq)
-          CALL pade_eval(freq%num_freq(), omega_in, coeff, omega_out, pade)
-
-          WRITE(stdout, '(5x,2f15.8,2x,2f15.8)') omega_out * RYTOEV, pade
-
-        END DO ! ifreq
-
-        WRITE(stdout, '(a)')
-        
-      END DO ! ig
-    END DO ! igp
-
-    WRITE(stdout, '(5x,a)') 'End of Pade approximation'
-    WRITE(stdout, '(a)')
-
-  END SUBROUTINE plot_coulomb_pade
-
-  !> Plot the screened Coulomb interaction along the real frequency axis for a
-  !! given frequency mesh using the Godby-Needs plasmon-pole model.
-  SUBROUTINE plot_coulomb_godbyneeds(freq, coulomb)
-
-    USE constants,          ONLY: RYTOEV
-    USE freqbins_module,    ONLY: freqbins_type, freqbins_symm
-    USE godby_needs_module, ONLY: godby_needs_coeffs, godby_needs_model
-    USE io_global,          ONLY: stdout
-    USE kinds,              ONLY: dp
-
-    !> the frequency grid used for the calculation
-    TYPE(freqbins_type), INTENT(IN) :: freq
-
-    !> the screened coulomb interaction for this frequency
-    COMPLEX(dp),         INTENT(IN) :: coulomb(:,:,:)
-
-    !> number of G vectors in correlation grid
-    INTEGER num_g_corr
-
-    !> counter on the G vectors
-    INTEGER ig, igp
-
-    !> the frequency at which the Pade approximation is evaluated
-    COMPLEX(dp) :: omega_out
-
-    !> counter on the frequencies
-    INTEGER ifreq
-
-    !> copy of the coulomb array
-    COMPLEX(dp), ALLOCATABLE :: coulomb_(:,:,:)
-
-    num_g_corr = SIZE(coulomb, 1)
-    IF (SIZE(coulomb, 2) /= num_g_corr) &
-      CALL errore(__FILE__, "coulomb matrix should be square for each frequency", 1)
-    IF (SIZE(coulomb, 3) > 2) &
-      CALL errore(__FILE__, "coulomb matrix should have two frequencies for PP model", 1)
-
-    ! copy coulomb to array
-    ALLOCATE(coulomb_(num_g_corr, num_g_corr, 2))
-    coulomb_ = coulomb
-
-    ! calculate Godby-Needs coefficients (in-place replacement)
-    CALL godby_needs_coeffs(AIMAG(freq%solver(2)), coulomb_) 
-
-    WRITE(stdout, '(5x,a)') 'Plotting Godby-Needs approximation'
-
-    ! evalute Pade approximation for all G and G'
-    DO igp = 1, num_g_corr
-      DO ig = 1, num_g_corr
-
-        ! plot the frequency dependent Coulomb interaction
-        WRITE(stdout, '(17x,a,18x,a,i6,a,i6,a)') 'omega', 'W(', ig, ', ', igp, ', omega)'
-
-        DO ifreq = 1, freq%num_coul()
-
-          ! evaluate Godby-Needs approximation
-          omega_out = freq%coul(ifreq)
-
-          WRITE(stdout, '(5x,2f15.8,2x,2f15.8)') omega_out * RYTOEV, &
-            godby_needs_model(omega_out, coulomb_(ig, igp, :))
-
-        END DO ! ifreq
-
-        WRITE(stdout, '(a)')
-        
-      END DO ! ig
-    END DO ! igp
-
-    WRITE(stdout, '(5x,a)') 'End of Godby-Needs approximaton'
-    WRITE(stdout, '(a)')
-
-  END SUBROUTINE plot_coulomb_godbyneeds
 
 END MODULE plot_coulomb_module

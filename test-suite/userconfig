@@ -37,13 +37,13 @@ tolerance = ( (1.0e-6, 5.0e-3, 'e1'),
               (5.0e-2, None, 'vxc_exp'),
               (5.0e-2, None, 'sigma_x'),
               (3.0e-2, None, 'z_factor'),
-              (1.0e-2, 1.0e-3, 'coul'),
+              (5.0e-2, 1.0e-3, 'coul'),
             )
 skip_program = grep
 skip_args = 'not present in this version'
 
 [user]
-benchmark = v0.14 v0.13 v0.12 v0.11
+benchmark = v0.15 v0.14 v0.13 v0.12 v0.11
 date_fmt = %d%m%y
 diff = vimdiff
 
