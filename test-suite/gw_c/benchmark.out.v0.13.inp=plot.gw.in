@@ -678,7 +678,7 @@
 
      Done epsilon inversion.
      
-     Plotting Pade approximation
+     Plotting analytic continuation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000000      -0.94679648    -0.00000105
           0.40201005     0.10000000      -0.94697142    -0.00008824
@@ -881,7 +881,7 @@
          79.59798995     0.10000000       0.27490708    -0.00060670
          80.00000000     0.10000000       0.27081163    -0.00059784
 
-     End of Pade approximation
+     End of analytic continuation
 
      epsilq       :      0.41s CPU      0.42s WALL (       1 calls)
 
@@ -1162,7 +1162,7 @@
 
      Done epsilon inversion.
      
-     Plotting Pade approximation
+     Plotting analytic continuation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000000      -0.03130888     0.00192871
           0.40201005     0.10000000       0.19146765     0.24851943
@@ -1365,7 +1365,7 @@
          79.59798995     0.10000000      -0.62020378     0.00000045
          80.00000000     0.10000000      -0.62020259     0.00000045
 
-     End of Pade approximation
+     End of analytic continuation
 
      epsilq       :      0.85s CPU      0.89s WALL (       3 calls)
 
