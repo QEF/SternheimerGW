@@ -44,7 +44,10 @@ endif
 SGWOBJS = $(UTIL_DIR)/$(LIB_NAME) $(SRC_DIR)/libgw.a
 LRMODS  = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS  = $(ESPRESSO)/PW/src/libpw.a
-QEMODS  = $(ESPRESSO)/Modules/libqemod.a $(ESPRESSO)/FFTXlib/libqefft.a $(ESPRESSO)/LAXlib/libqela.a
+QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \
+         $(ESPRESSO)/KS_Solvers/Davidson/libdavid.a $(ESPRESSO)/KS_Solvers/CG/libcg.a \
+         $(ESPRESSO)/LAXlib/libqela.a               $(ESPRESSO)/UtilXlib/libutil.a \
+         $(ESPRESSO)/dft-d3/libdftd3qe.a
 LIBOBJS = $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 LIBS += $(SGWOBJS) $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS)
 LIBS += $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) ${HDF5_LIB} $(LD_LIBS)

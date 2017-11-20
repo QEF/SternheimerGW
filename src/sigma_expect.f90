@@ -62,6 +62,8 @@ CONTAINS
     INTEGER, OPTIONAL, INTENT(IN)  :: ndim
 
     INTEGER ndim_loc
+    INTEGER iloc
+    INTEGER irec_loc
 
     INTEGER,     ALLOCATABLE :: map(:)
     COMPLEX(dp), ALLOCATABLE :: wavef_ordered(:,:), sigma(:,:,:)
@@ -85,7 +87,10 @@ CONTAINS
     ALLOCATE( sigma(ngm,ngm,ndim_loc) )
 
     ! read from file (factor 2 for complex)
-    CALL davcio( sigma, 2*ngm*ngm*ndim_loc, iunit, irec, -1 )
+    DO iloc = 1, ndim_loc
+      irec_loc = (irec - 1) * ndim_loc + iloc
+      CALL davcio( sigma(:,:,iloc), 2*ngm*ngm, iunit, irec_loc, -1 )
+    END DO ! iloc
 
     !
     ! reorder wave function

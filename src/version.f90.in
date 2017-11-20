@@ -27,7 +27,7 @@
 !! A detailed description can be found here http://semver.org/ .
 !!
 !! In addition, we make use of a 
-!! <a href="http://nvie.com/posts/a-successful-git-branching-model/> Gitflow</a>
+!! <a href="http://nvie.com/posts/a-successful-git-branching-model"> Gitflow</a>
 !! <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow">
 !! Workflow</a>.
 !!
@@ -93,10 +93,10 @@ MODULE gw_version
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: gw_version_number = '0.13'
+  CHARACTER(*), PARAMETER :: gw_version_number = '0.14'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: gw_git_describe = 'unknown'
   !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE 6.2-beta rev13814'
+  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE 6.2 rev13949'
   !
 END MODULE gw_version

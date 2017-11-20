@@ -237,6 +237,9 @@ CONTAINS
     !> name of file in which the Coulomb interaction is store
     CHARACTER(:), ALLOCATABLE :: filename
 
+    !> record in which the result are written
+    INTEGER irec
+
     !> counter on the frequencies
     INTEGER ifreq
 
@@ -402,7 +405,11 @@ CONTAINS
     CALL start_clock(time_sigma_io)
     IF (meta_ionode .AND. ALLOCATED(sigma_root)) THEN
       !
-      CALL davcio(sigma_root, lrsigma, iunsigma, ikpt, 1)
+      DO ifreq = 1, freq%num_sigma()
+        irec = (ikpt - 1) * freq%num_sigma() + ifreq
+        CALL davcio(sigma_root(:,:,ifreq), lrsigma, iunsigma, irec, 1)
+      END DO ! ifreq
+      !
       CALL sigma_io_write_c(output%unit_sigma, ikpt, sigma_root)
       !
     END IF ! ionode

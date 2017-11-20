@@ -58,7 +58,7 @@ IMPLICIT  NONE
   END IF
 
   ! file for \Sigma^{c}(\G,\G';\omega)
-  lrsigma = 2 * num_g_corr * num_g_corr * nwsigma
+  lrsigma = 2 * num_g_corr * num_g_corr
   IF (meta_ionode) THEN
     iunsigma = find_free_unit()
     CALL diropn(iunsigma, filsigc, lrsigma, exst)
