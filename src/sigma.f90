@@ -713,6 +713,9 @@ CONTAINS
         !! 6. construct W for the frequency \f$\omega^{\Sigma} - \omega^{\text{green}}\f$.
         !!
         freq_coul = freq_sigma(isigma) - freq_green(igreen)
+        ! ensure frequency is in the correct quadrant
+        IF (REAL(freq_coul) * AIMAG(freq_coul) < 0.0_dp) freq_coul = CONJG(freq_coul)
+        !
         ! work will be allocated and contain W(G, G', wS - wG)
         CALL analytic_eval(gmapsym, grid, freq, coulomb, freq_coul, work)
         !
