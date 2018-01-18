@@ -57,7 +57,7 @@ CONTAINS
   SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut_cust, fft_cust)
 
     USE kinds,      ONLY: dp
-    USE fft_custom, ONLY: fft_cus, ggent, gvec_init
+    USE fft_custom, ONLY: fft_cus, ggent
 
     !> communicator over which the routines are parallelized
     INTEGER,  INTENT(IN) :: comm
@@ -93,16 +93,11 @@ CONTAINS
     CALL wrapper_fft_type_init(comm, gamma_only, fft_cust)
 
     !!
-    !! 5. initialize the number of G vectors and allocate arrays
+    !! 6. generate the FFT grid
     !!
     num_g = fft_cust%dfftt%ngl(fft_cust%dfftt%mype + 1)
     IF (gamma_only) num_g = (num_g + 1) / 2
-    CALL gvec_init(fft_cust, num_g, comm)
-
-    !!
-    !! 6. generate the FFT grid
-    !!
-    CALL ggent(fft_cust)
+    CALL ggent(num_g, comm, fft_cust)
     fft_cust%initialized = .TRUE.
 
   END SUBROUTINE sigma_grid_create
