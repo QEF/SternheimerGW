@@ -57,7 +57,7 @@ CONTAINS
   SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut_cust, fft_cust)
 
     USE kinds,      ONLY: dp
-    USE fft_custom, ONLY: fft_cus, ggent, set_custom_grid, gvec_init
+    USE fft_custom, ONLY: fft_cus, ggent, gvec_init
 
     !> communicator over which the routines are parallelized
     INTEGER,  INTENT(IN) :: comm
@@ -86,11 +86,6 @@ CONTAINS
     !! 2. converts the energy cutoff to a cutoff for the G vectors
     !!
     fft_cust%gcutmt = fft_cust%ecutt / tpiba2
-
-    !!
-    !! 3. set the custom grid
-    !!
-    CALL set_custom_grid(fft_cust)
 
     !!
     !! 4. initialize the fft type

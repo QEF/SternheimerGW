@@ -43,7 +43,6 @@
   !----------------------------------------------------------------------
 
   USE fft_base,      ONLY : dfftp
-  USE fft_custom,    ONLY : set_custom_grid, ggent, gvec_init
   USE gvect,         ONLY : mill, ngm
   USE kinds,         ONLY : DP
   USE mp_world,      ONLY : mpime

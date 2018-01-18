@@ -31,7 +31,6 @@ SUBROUTINE sigma_matel(ik0, grid, freq)
   USE ener,                 ONLY : ef
   USE fft_base,             ONLY : dffts, dfftp
   USE fft_interfaces,       ONLY : invfft, fwfft
-  USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
   USE freq_gw,              ONLY : nwsigma, nwsigwin
   USE freqbins_module,      ONLY : freqbins_type
   USE gvect,                ONLY : ngm, g, gl, igtongl
