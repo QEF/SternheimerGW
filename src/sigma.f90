@@ -491,7 +491,7 @@ CONTAINS
     !!
     ! array contains W(r, r')
     CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
-                 grid%corr%nlt, grid%corr_par%nlt, omega)
+                 grid%corr%dfftt%nl, grid%corr_par%dfftt%nl, omega)
     ! check for NaN after FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array))) THEN
@@ -517,7 +517,7 @@ CONTAINS
     !!
     !. array contains Sigma(G, G') / alpha
     CALL fwfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
-                grid%corr%nlt, grid%corr_par%nlt, omega)
+                grid%corr%dfftt%nl, grid%corr_par%dfftt%nl, omega)
     ! check for NaN after the FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array(:num_g, :num_gp)))) THEN
@@ -700,7 +700,7 @@ CONTAINS
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
       CALL invfft6('Custom', green(:,:,igreen), grid%corr%dfftt, grid%corr_par%dfftt, &
-                   grid%corr%nlt, grid%corr_par%nlt, omega)
+                   grid%corr%dfftt%nl, grid%corr_par%dfftt%nl, omega)
     END DO ! igreen
 
     ! check for NaN in Green's function
