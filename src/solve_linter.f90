@@ -64,7 +64,6 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
   USE fft_base,             ONLY : dfftp, dffts
   USE fft_interfaces,       ONLY : invfft, fwfft
   USE gvecs,                ONLY : doublegrid
-  USE gvect,                ONLY : nl
   USE io_global,            ONLY : stdout
   USE ions_base,            ONLY : nat
   USE kinds,                ONLY : DP
@@ -544,7 +543,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
       IF (meandvb < eps10) THEN 
         DO is = 1, nspin_mag
           CALL fwfft('Dense', dvscfout(:, is, ifreq), dfftp)
-          dvscfout(nl(1), current_spin, ifreq) = zero
+          dvscfout(dfftp%nl(1), current_spin, ifreq) = zero
           CALL invfft('Dense', dvscfout(:, is, ifreq), dfftp)
         END DO ! is
       END IF

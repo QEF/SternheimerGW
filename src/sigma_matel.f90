@@ -34,7 +34,6 @@ SUBROUTINE sigma_matel(ik0, grid, freq)
   USE fft_custom,           ONLY : fft_cus, set_custom_grid, ggent, gvec_init
   USE freq_gw,              ONLY : nwsigma, nwsigwin
   USE freqbins_module,      ONLY : freqbins_type
-  USE gvecs,                ONLY : nls
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
   USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv
@@ -160,7 +159,7 @@ IMPLICIT NONE
     psic = 0
     DO ig = 1, npwq
       ! map G-vectors according to smooth igk
-      psic ( nls (igk(ig)) ) = evc(ig, jbnd)
+      psic(dffts%nl(igk(ig))) = evc(ig, jbnd)
     END DO
 
     ! FFT wave function to real space
@@ -176,7 +175,7 @@ IMPLICIT NONE
 
     ! reorder back to original order
     DO ig = 1, npwq
-      vpsi(ig) = psic(nls(igk(ig)))
+      vpsi(ig) = psic(dffts%nl(igk(ig)))
     END DO
  
     ! multiply with left wave function 

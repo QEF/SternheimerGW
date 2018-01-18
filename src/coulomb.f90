@@ -34,7 +34,6 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
   USE fft_base,         ONLY : dfftp, dffts
   USE fft_interfaces,   ONLY : invfft, fwfft
   USE freq_gw,          ONLY : fiu, nfs
-  USE gvecs,            ONLY : nls
   USE gvect,            ONLY : g
   USE gwsymm,           ONLY : ig_unique
   USE io_global,        ONLY : stdout, ionode
@@ -128,7 +127,7 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
     ! initialize the potential for a single G to 1
     drhoscfs = zero
     dvbare   = zero
-    dvbare(nls(ig_unique(ig))) = one
+    dvbare(dffts%nl(ig_unique(ig))) = one
     !
     ! potential in real space
     CALL invfft('Smooth', dvbare, dffts)
@@ -147,18 +146,18 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
       !
       ! copy to output array
       DO igp = 1, num_g_corr
-        scrcoul(igp, iw, indx) = drhoscfs(nls(igp), 1, iw)
+        scrcoul(igp, iw, indx) = drhoscfs(dffts%nl(igp), 1, iw)
       END DO ! igp
       !
       ! for the direct solver at bare potential in diagonal
       IF (solve_direct) THEN
         igp = ig_unique(ig)
-        scrcoul(igp, iw, indx) = scrcoul(igp, iw, indx) + dvbare(nls(igp))
+        scrcoul(igp, iw, indx) = scrcoul(igp, iw, indx) + dvbare(dffts%nl(igp))
       END IF
       !
       ! print the diagonal element + timing at the last frequency
       IF (ionode) THEN
-        igp = nls(ig_unique(ig))
+        igp = dffts%nl(ig_unique(ig))
         IF (iw == nfs) THEN
           WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp), &
             get_clock(time_coulomb) - start_time, "s"

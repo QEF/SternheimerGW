@@ -36,7 +36,6 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
   USE fft_base,         ONLY : dfftp, dffts
   USE fft_interfaces,   ONLY : invfft, fwfft
   USE freq_gw,          ONLY : fiu, nfs
-  USE gvecs,            ONLY : nls
   USE gvect,            ONLY : g
   USE io_global,        ONLY : stdout, ionode
   USE noncollin_module, ONLY : nspin_mag
@@ -113,7 +112,7 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
     ! initialize the potential for a single G to 1
     drhoscfs = zero
     dvbare   = zero
-    dvbare(nls(ig)) = one
+    dvbare(dffts%nl(ig)) = one
     !
     ! potential in real space
     CALL invfft('Smooth', dvbare, dffts)
@@ -131,16 +130,16 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
       CALL fwfft ('Dense', drhoscfs(:, 1, iw), dffts)
       !
       ! copy to output array
-      eps_m(iw) = drhoscfs(nls(ig), 1, iw)
+      eps_m(iw) = drhoscfs(dffts%nl(ig), 1, iw)
       !
       ! for the direct solver at bare potential in diagonal
       IF (solve_direct) THEN
-        eps_m(iw) = eps_m(iw) + dvbare(nls(ig))
+        eps_m(iw) = eps_m(iw) + dvbare(dffts%nl(ig))
       END IF
       !
       ! print the diagonal element
       IF (ionode) THEN
-        igp = nls(ig)
+        igp = dffts%nl(ig)
         IF (iw == nfs) THEN
           WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp), &
             get_clock(time_coulomb) - start_time, "s"
