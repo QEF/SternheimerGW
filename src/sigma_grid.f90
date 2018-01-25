@@ -266,11 +266,6 @@ CONTAINS
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr, grid%corr_fft)
     IF (ionode) CALL sigma_grid_info(grid%corr, grid%corr_fft, 'Correlation')
-
-    ! temporary copy until removal is complete
-    grid%exch%dfftt = grid%exch_fft
-    grid%corr%dfftt = grid%corr_fft
-
     !
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
