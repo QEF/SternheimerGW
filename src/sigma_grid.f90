@@ -32,6 +32,7 @@
 MODULE sigma_grid_module
 
   USE fft_custom, ONLY: fft_cus
+  USE fft_types,  ONLY: fft_type_descriptor
 
   IMPLICIT NONE
 
@@ -42,22 +43,25 @@ MODULE sigma_grid_module
 
     !> grid used for exchange
     TYPE(fft_cus) exch
+    TYPE(fft_type_descriptor) exch_fft
 
     !> grid used for correlation
     TYPE(fft_cus) corr
+    TYPE(fft_type_descriptor) corr_fft
 
     !> grid used for correlation (parallelized over images)
     TYPE(fft_cus) corr_par
+    TYPE(fft_type_descriptor) corr_par_fft
 
   END TYPE
 
 CONTAINS
 
   !> Create a Fourier transform grid with a different energy cutoff.
-  SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut_cust, fft_cust)
+  SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut_cust, fft_cust, dfft)
 
     USE kinds,      ONLY: dp
-    USE fft_custom, ONLY: fft_cus, ggent
+    USE fft_custom, ONLY: ggent
 
     !> communicator over which the routines are parallelized
     INTEGER,  INTENT(IN) :: comm
@@ -73,6 +77,9 @@ CONTAINS
 
     !> The custom FFT type initialized by this routine
     TYPE(fft_cus), INTENT(OUT) :: fft_cust
+
+    !> The FFT type created
+    TYPE(fft_type_descriptor), INTENT(OUT) :: dfft
 
     !> number of g vectors on this process
     INTEGER num_g
@@ -97,7 +104,7 @@ CONTAINS
     !!
     num_g = fft_cust%dfftt%ngl(fft_cust%dfftt%mype + 1)
     IF (gamma_only) num_g = (num_g + 1) / 2
-    CALL ggent(num_g, comm, fft_cust)
+    CALL ggent(num_g, comm, dfft, fft_cust)
     fft_cust%initialized = .TRUE.
 
   END SUBROUTINE sigma_grid_create
@@ -135,10 +142,8 @@ CONTAINS
   END SUBROUTINE wrapper_fft_type_init
   
   !> Print info on local and global dimensions for real space grids
-  SUBROUTINE sigma_grid_info(fft_cust, label)
+  SUBROUTINE sigma_grid_info(fft_cust, dfft, label)
   
-    USE fft_custom, ONLY: fft_cus
-    USE fft_types,  ONLY: fft_type_descriptor
     USE io_global,  ONLY: stdout
   
     IMPLICIT NONE
@@ -146,6 +151,9 @@ CONTAINS
     !> The type we want to print info about.
     TYPE(fft_cus), INTENT(IN) :: fft_cust
   
+    !> The FFT grid used
+    TYPE(fft_type_descriptor), INTENT(IN) :: dfft
+
     !> The label of the type.
     CHARACTER(*), INTENT(IN)  :: label
   
@@ -158,10 +166,6 @@ CONTAINS
     !> counter on the number of processes
     INTEGER iproc
   
-    !> abbreviation for fft_cust%dfftt
-    TYPE(fft_type_descriptor) dfft
-
-    dfft = fft_cust%dfftt
     !
     ! add 1 for the space between label and description
     len_label = LEN_TRIM(label) + LEN_TRIM(descr) + 1
@@ -253,22 +257,23 @@ CONTAINS
     !
     ! Generate the exchange grid
     !
-    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch)
-    IF (ionode) CALL sigma_grid_info(grid%exch, 'Exchange')
+    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch, grid%exch_fft)
+    IF (ionode) CALL sigma_grid_info(grid%exch, grid%exch%dfftt, 'Exchange')
   
     !
     ! Generate the correlation grid
     !
-    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr)
-    IF (ionode) CALL sigma_grid_info(grid%corr, 'Correlation')
+    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr, grid%corr_fft)
+    IF (ionode) CALL sigma_grid_info(grid%corr, grid%corr%dfftt, 'Correlation')
     !
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
       grid%corr_par = grid%corr
     ELSE
       ! create a grid parallelized over images
-      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par)
-      IF (ionode) CALL sigma_grid_info(grid%corr_par, 'Correlation (images)')
+      CALL errore("image parallelization broken because ig_l2gt", 1)
+      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par, grid%corr_par_fft)
+      IF (ionode) CALL sigma_grid_info(grid%corr_par, grid%corr_par%dfftt, 'Correlation (images)')
     END IF
 
     !
