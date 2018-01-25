@@ -170,11 +170,12 @@ CONTAINS
     ! sanity test of the input
     IF (SIZE(map) < num_g_corr) &
       CALL errore(__FILE__, "not enough G vectors for all points in FFT mesh", 1)
-    IF (ANY(grid%corr_par%ig_l2gt > SIZE(map))) &
-      CALL errore(__FILE__, "some elements of parallelized mesh out of bounds", 1)
+! TODO fix image parallelization
+!    IF (ANY(grid%corr_par%ig_l2gt > SIZE(map))) &
+!      CALL errore(__FILE__, "some elements of parallelized mesh out of bounds", 1)
 
     ! allocate array for the calculation of the Green's function
-    ALLOCATE(green(grid%corr%dfftt%nnr, grid%corr_par%dfftt%nnr, num_freq), STAT=ierr)
+    ALLOCATE(green(grid%corr_fft%nnr, grid%corr_par_fft%nnr, num_freq), STAT=ierr)
     CALL errore(__FILE__, "could not allocate array for Green's function", ierr)
     green = zero
 
@@ -190,7 +191,8 @@ CONTAINS
     DO igp = 1, num_gp_corr
 
       ! determine map in global array
-      ig = map(grid%corr_par%ig_l2gt(igp))
+      ! TODO fix image parallelization
+      ig = map(igp) !map(grid%corr_par%ig_l2gt(igp))
 
       ! set right-hand side
       bb = zero
@@ -328,11 +330,12 @@ CONTAINS
         lorentzian = AIMAG(freq(ifreq)) / (pi * ABS(freq_eps)**2)
 
         ! loop over G and G'
+        ! TODO fix image parallelization
         DO igpmt = 1, grid%corr_par%ngmt
-          igp = grid%corr_par%ig_l2gt(igpmt)
+          igp = igpmt !grid%corr_par%ig_l2gt(igpmt)
 
           DO igmt = 1, grid%corr%ngmt
-            ig = grid%corr%ig_l2gt(igmt)
+            ig = igmt !grid%corr%ig_l2gt(igmt)
 
             ! add nonanalytic part to Green's function
             ! 2 pi i f_n u_n*(G) u_n(G') delta

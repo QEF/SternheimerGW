@@ -257,7 +257,7 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   ! create and initialize output array
   ! allocate space so that we can perform an in-place FFT on the array
   !
-  ALLOCATE(scrcoul(grid%corr%dfftt%nnr, grid%corr_par%dfftt%nnr), STAT = ierr)
+  ALLOCATE(scrcoul(grid%corr_fft%nnr, grid%corr_par_fft%nnr), STAT = ierr)
   IF (ierr /= 0) THEN
     CALL errore(__FILE__, "allocation of screened Coulomb potential failed", 1)
     RETURN
@@ -292,7 +292,8 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   DO igp = 1, grid%corr_par%ngmt
     !
     ! get the global corresponding index
-    igp_g = grid%corr_par%ig_l2gt(igp)
+    ! TODO fix image parallelization
+    igp_g = igp !grid%corr_par%ig_l2gt(igp)
 
     DO ig = 1, grid%corr%ngmt
 
