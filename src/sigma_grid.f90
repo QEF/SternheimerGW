@@ -97,12 +97,12 @@ CONTAINS
     !!
     !! 4. initialize the fft type
     !!
-    CALL wrapper_fft_type_init(comm, gamma_only, fft_cust)
+    CALL wrapper_fft_type_init(comm, gamma_only, fft_cust%gcutmt, dfft)
 
     !!
     !! 6. generate the FFT grid
     !!
-    num_g = fft_cust%dfftt%ngl(fft_cust%dfftt%mype + 1)
+    num_g = dfft%ngl(dfft%mype + 1)
     IF (gamma_only) num_g = (num_g + 1) / 2
     CALL ggent(num_g, comm, dfft, fft_cust)
     fft_cust%initialized = .TRUE.
@@ -111,11 +111,11 @@ CONTAINS
 
   !> This routine provides a wrapper to interface the fft_type_init routine with
   !! the necessary quantities extracted from QE's global modules.
-  SUBROUTINE wrapper_fft_type_init(comm, gamma_only, fft_cust)
+  SUBROUTINE wrapper_fft_type_init(comm, gamma_only, gcut, dfft)
 
     USE cell_base,  ONLY: at, bg
-    USE fft_custom, ONLY: fft_cus
     USE fft_types,  ONLY: fft_type_init
+    USE kinds,      ONLY: dp
     USE mp_bands,   ONLY: nyfft
     USE stick_base, ONLY: sticks_map
 
@@ -125,8 +125,11 @@ CONTAINS
     !> Special case for \f$\Gamma\f$-only calculation
     LOGICAL,       INTENT(IN)    :: gamma_only
 
+    !> the cutoff length for the G vectors
+    REAL(dp),      INTENT(IN)    :: gcut
+
     !> The custom FFT type initialized by this routine
-    TYPE(fft_cus), INTENT(INOUT) :: fft_cust
+    TYPE(fft_type_descriptor), INTENT(INOUT) :: dfft
 
     !> the sticks map created by fft type init
     TYPE(sticks_map) smap
@@ -137,7 +140,7 @@ CONTAINS
     LOGICAL, PARAMETER :: lpara = .FALSE.
 #endif
 
-    CALL fft_type_init(fft_cust%dfftt, smap, "rho", gamma_only, lpara, comm, at, bg, fft_cust%gcutmt, nyfft=nyfft)
+    CALL fft_type_init(dfft, smap, "rho", gamma_only, lpara, comm, at, bg, gcut, nyfft=nyfft)
 
   END SUBROUTINE wrapper_fft_type_init
   
@@ -175,8 +178,6 @@ CONTAINS
     WRITE(stdout,'(5x,a)') REPEAT('-', len_label)
     WRITE(stdout,'(5x,a)') 'E_cutoff(Ry) G_cutoff(crystal) num G vec'
     WRITE(stdout,'(5x,f8.2,7x,f8.2,7x,i6)') fft_cust%ecutt, fft_cust%gcutmt, fft_cust%ngmt
-    WRITE(stdout,'(5x,a)') 'nr1t  nr2t  nr3t'
-    WRITE(stdout,'(5x,3(1x,i5))') fft_cust%nr1t, fft_cust%nr2t, fft_cust%nr3t
     WRITE(stdout,'(5x,a)') 'Global Dimensions   Local  Dimensions   Processor Grid'
     WRITE(stdout,'(5x,a)') '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.'
     WRITE(stdout,'(2x,3(1x,i5),2x,3(1x,i5),2x,3(1x,i5))') &
@@ -258,13 +259,18 @@ CONTAINS
     ! Generate the exchange grid
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch, grid%exch_fft)
-    IF (ionode) CALL sigma_grid_info(grid%exch, grid%exch%dfftt, 'Exchange')
+    IF (ionode) CALL sigma_grid_info(grid%exch, grid%exch_fft, 'Exchange')
   
     !
     ! Generate the correlation grid
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr, grid%corr_fft)
-    IF (ionode) CALL sigma_grid_info(grid%corr, grid%corr%dfftt, 'Correlation')
+    IF (ionode) CALL sigma_grid_info(grid%corr, grid%corr_fft, 'Correlation')
+
+    ! temporary copy until removal is complete
+    grid%exch%dfftt = grid%exch_fft
+    grid%corr%dfftt = grid%corr_fft
+
     !
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
@@ -273,7 +279,7 @@ CONTAINS
       ! create a grid parallelized over images
       CALL errore("image parallelization broken because ig_l2gt", 1)
       CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par, grid%corr_par_fft)
-      IF (ionode) CALL sigma_grid_info(grid%corr_par, grid%corr_par%dfftt, 'Correlation (images)')
+      IF (ionode) CALL sigma_grid_info(grid%corr_par, grid%corr_par_fft, 'Correlation (images)')
     END IF
 
     !
@@ -282,9 +288,9 @@ CONTAINS
     num_g_x  = REAL(grid%exch%ngmt, KIND=dp)
     num_g_c  = REAL(grid%corr%ngmt, KIND=dp)
     num_g_ci = REAL(grid%corr_par%ngmt, KIND=dp)
-    num_r_x  = REAL(grid%exch%dfftt%nnr, KIND=dp)
-    num_r_c  = REAL(grid%corr%dfftt%nnr, KIND=dp)
-    num_r_ci = REAL(grid%corr_par%dfftt%nnr, KIND=dp)
+    num_r_x  = REAL(grid%exch_fft%nnr, KIND=dp)
+    num_r_c  = REAL(grid%corr_fft%nnr, KIND=dp)
+    num_r_ci = REAL(grid%corr_par_fft%nnr, KIND=dp)
     !
     ! evaluate product of grid size
     num_g_c_pr = num_g_c * num_g_ci
