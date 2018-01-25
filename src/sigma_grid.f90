@@ -275,6 +275,7 @@ CONTAINS
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
       grid%corr_par = grid%corr
+      grid%corr_par_fft = grid%corr_fft
     ELSE
       ! create a grid parallelized over images
       CALL errore("image parallelization broken because ig_l2gt", 1)

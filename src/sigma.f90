@@ -388,7 +388,9 @@ CONTAINS
       sigma_root = zero
       !
       DO ifreq = 1, freq%num_sigma()
-        sigma_root(:, grid%corr_par%ig_l2gt, ifreq) = sigma(:,:,ifreq)
+        ! TODO fix image parallelization
+        !sigma_root(:, grid%corr_par%ig_l2gt, ifreq) = sigma(:,:,ifreq)
+        sigma_root(:, :, ifreq) = sigma(:,:,ifreq)
       END DO
       !
       CALL mp_root_sum(inter_image_comm, root_image, sigma_root)
@@ -466,8 +468,8 @@ CONTAINS
     CALL start_clock(time_GW_product)
 
     ! determine the helper variables
-    num_r  = grid%corr%dfftt%nnr
-    num_rp = grid%corr_par%dfftt%nnr
+    num_r  = grid%corr_fft%nnr
+    num_rp = grid%corr_par_fft%nnr
     num_g  = grid%corr%ngmt
     num_gp = grid%corr_par%ngmt
     debug_sigma = debug_set .AND. debug%sigma_corr
@@ -490,7 +492,7 @@ CONTAINS
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
     !!
     ! array contains W(r, r')
-    CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, omega)
+    CALL invfft6('Custom', array, grid%corr_fft, grid%corr_par_fft, omega)
     ! check for NaN after FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array))) THEN
@@ -515,7 +517,7 @@ CONTAINS
     !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
     !!
     !. array contains Sigma(G, G') / alpha
-    CALL fwfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, omega)
+    CALL fwfft6('Custom', array, grid%corr_fft, grid%corr_par_fft, omega)
     ! check for NaN after the FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array(:num_g, :num_gp)))) THEN
@@ -643,8 +645,8 @@ CONTAINS
     ! sanity check of the input
     !
     debug_sigma = debug_set .AND. debug%sigma_corr
-    num_r_corr  = grid%corr%dfftt%nnr
-    num_rp_corr = grid%corr_par%dfftt%nnr
+    num_r_corr  = grid%corr_fft%nnr
+    num_rp_corr = grid%corr_par_fft%nnr
     num_g_corr  = grid%corr%ngmt
     num_gp_corr = grid%corr_par%ngmt
     IF (SIZE(coulomb, 1) /= num_g_corr) &
@@ -689,6 +691,7 @@ CONTAINS
       END IF
     END IF
 
+
     WRITE(stdout,'(2x,a,f9.2,a)', ADVANCE='NO') 'G: ', get_clock(time_sigma_c) - start_time, 's'
     start_time = get_clock(time_sigma_c)
 
@@ -697,8 +700,9 @@ CONTAINS
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
-      CALL invfft6('Custom', green(:,:,igreen), grid%corr%dfftt, grid%corr_par%dfftt, omega)
+      CALL invfft6('Custom', green(:,:,igreen), grid%corr_fft, grid%corr_par_fft, omega)
     END DO ! igreen
+
 
     ! check for NaN in Green's function
     IF (debug_sigma) THEN
