@@ -389,11 +389,12 @@ sigma_grid.o : ../../FFTXlib/fft_types.o
 sigma_grid.o : ../../FFTXlib/stick_base.o
 sigma_grid.o : ../../Modules/cell_base.o
 sigma_grid.o : ../../Modules/control_flags.o
-sigma_grid.o : ../../Modules/fft_custom.o
 sigma_grid.o : ../../Modules/io_global.o
 sigma_grid.o : ../../Modules/kind.o
 sigma_grid.o : ../../Modules/mp_bands.o
 sigma_grid.o : ../../Modules/mp_images.o
+sigma_grid.o : ../../Modules/recvec.o
+sigma_grid.o : ../../Modules/recvec_subs.o
 sigma_grid.o : freqbins.o
 sigma_io.o : ../../Modules/kind.o
 sigma_io.o : ../../iotk/src/iotk_module.o
