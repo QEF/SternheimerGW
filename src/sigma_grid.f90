@@ -115,7 +115,8 @@ CONTAINS
   !> Print info on local and global dimensions for real space grids
   SUBROUTINE sigma_grid_info(ecut, dfft, label)
   
-    USE io_global,  ONLY: stdout
+    USE fft_helper_subroutines, ONLY: fft_dist_info
+    USE io_global,              ONLY: stdout
   
     IMPLICIT NONE
   
@@ -142,23 +143,11 @@ CONTAINS
     len_label = LEN_TRIM(label) + LEN_TRIM(descr) + 1
     !
     WRITE(stdout,*)
-    WRITE(stdout,'(5x,a,1x,a)') TRIM(label), TRIM(descr)
-    WRITE(stdout,'(5x,a)') REPEAT('-', len_label)
-    WRITE(stdout,'(5x,a)') 'E_cutoff(Ry) num G vec'
-    WRITE(stdout,'(5x,f8.2,7x,i6)') ecut, dfft%ngm
-    WRITE(stdout,'(5x,a)') 'Global Dimensions   Local  Dimensions   Processor Grid'
-    WRITE(stdout,'(5x,a)') '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.'
-    WRITE(stdout,'(2x,3(1x,i5),2x,3(1x,i5),2x,3(1x,i5))') &
-      dfft%nr1, dfft%nr2, dfft%nr3, dfft%nr1, dfft%my_nr2p, dfft%my_nr3p, 1, dfft%nproc2, dfft%nproc3
-    WRITE(stdout,'(5x,a,3(1x,i5))') 'Array leading dimensions ( nr1x, nr2x, nr3x )   = ', &
-      dfft%nr1x, dfft%nr2x, dfft%nr3x
-    WRITE(stdout,'(5x,a,1x,i9)') 'Local number of cell to store the grid ( nrxx ) = ', &
-      dfft%nnr
-    WRITE(stdout,'(5x,a)') 'size of the "Z" section of each processor'
-    ! print local part for 10 processors at once
-    DO iproc = 1, dfft%nproc3, 10
-      WRITE(stdout,'(5x,a,10i5)') 'nr3p = ', dfft%nr3p(iproc : MIN(dfft%nproc3, iproc + 10))
-    END DO ! iproc
+    WRITE(stdout,'(3x,a,1x,a)') TRIM(label), TRIM(descr)
+    WRITE(stdout,'(3x,a)') REPEAT('-', len_label)
+    WRITE(stdout,'(3x,a)') 'E_cutoff(Ry) num G vec'
+    WRITE(stdout,'(3x,f8.2,7x,i6)') ecut, dfft%ngm
+    CALL fft_dist_info(dfft, stdout)
     !
   END SUBROUTINE sigma_grid_info
 
