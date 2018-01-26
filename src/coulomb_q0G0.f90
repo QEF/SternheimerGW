@@ -115,19 +115,19 @@ SUBROUTINE coulomb_q0G0(config, eps_m)
     dvbare(dffts%nl(ig)) = one
     !
     ! potential in real space
-    CALL invfft('Smooth', dvbare, dffts)
+    CALL invfft('Rho', dvbare, dffts)
     !
     ! solve for linear response due to this perturbation
     CALL solve_linter(config, num_iter, dvbare, fiu(:nfs), drhoscfs)
     !
     ! back to reciprocal space
-    CALL fwfft('Smooth', dvbare, dffts)
+    CALL fwfft('Rho', dvbare, dffts)
     !
     ! loop over frequencies
     DO iw = 1, nfs
       !
       ! evaluate response in reciprocal space
-      CALL fwfft ('Dense', drhoscfs(:, 1, iw), dffts)
+      CALL fwfft ('Rho', drhoscfs(:, 1, iw), dffts)
       !
       ! copy to output array
       eps_m(iw) = drhoscfs(dffts%nl(ig), 1, iw)

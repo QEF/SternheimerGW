@@ -255,12 +255,14 @@ CONTAINS
     ! Generate the exchange grid
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch, grid%exch_fft)
+    grid%exch_fft%rho_clock_label = 'fft_exch'
     IF (ionode) CALL sigma_grid_info(ecut_x, grid%exch_fft, 'Exchange')
   
     !
     ! Generate the correlation grid
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr, grid%corr_fft)
+    grid%corr_fft%rho_clock_label = 'fft_corr'
     IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_fft, 'Correlation')
     !
     IF (nimage == 1) THEN
@@ -271,6 +273,7 @@ CONTAINS
       ! create a grid parallelized over images
       CALL errore("image parallelization broken because ig_l2gt", 1)
       CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par, grid%corr_par_fft)
+      grid%corr_par_fft%rho_clock_label = 'fft_corr_par'
       IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_par_fft, 'Correlation (images)')
     END IF
 

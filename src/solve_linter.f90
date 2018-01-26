@@ -542,9 +542,9 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
       !
       IF (meandvb < eps10) THEN 
         DO is = 1, nspin_mag
-          CALL fwfft('Dense', dvscfout(:, is, ifreq), dfftp)
+          CALL fwfft('Rho', dvscfout(:, is, ifreq), dfftp)
           dvscfout(dfftp%nl(1), current_spin, ifreq) = zero
-          CALL invfft('Dense', dvscfout(:, is, ifreq), dfftp)
+          CALL invfft('Rho', dvscfout(:, is, ifreq), dfftp)
         END DO ! is
       END IF
       !

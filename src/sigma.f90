@@ -492,7 +492,7 @@ CONTAINS
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
     !!
     ! array contains W(r, r')
-    CALL invfft6('Custom', array, grid%corr_fft, grid%corr_par_fft, omega)
+    CALL invfft6('Rho', array, grid%corr_fft, grid%corr_par_fft, omega)
     ! check for NaN after FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array))) THEN
@@ -517,7 +517,7 @@ CONTAINS
     !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
     !!
     !. array contains Sigma(G, G') / alpha
-    CALL fwfft6('Custom', array, grid%corr_fft, grid%corr_par_fft, omega)
+    CALL fwfft6('Rho', array, grid%corr_fft, grid%corr_par_fft, omega)
     ! check for NaN after the FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array(:num_g, :num_gp)))) THEN
@@ -700,7 +700,7 @@ CONTAINS
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
-      CALL invfft6('Custom', green(:,:,igreen), grid%corr_fft, grid%corr_par_fft, omega)
+      CALL invfft6('Rho', green(:,:,igreen), grid%corr_fft, grid%corr_par_fft, omega)
     END DO ! igreen
 
 

@@ -112,12 +112,12 @@ subroutine dvqpsi_us (dvbarein, ik, addnlcc)
         !  This wavefunction is transformed into real space
         !
         !call cft3s (aux2, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, + 2)
-        CALL invfft('Smooth', aux2, dffts)
+        CALL invfft('Rho', aux2, dffts)
         do ir = 1, dffts%nnr
            aux2 (ir) = aux2 (ir) * aux1 (ir)
         enddo
         !call cft3s (aux2, nr1s, nr2s, nr3s, nrx1s, nrx2s, nrx3s, - 2)
-        CALL fwfft('Smooth', aux2, dffts)
+        CALL fwfft('Rho', aux2, dffts)
 
         if (ip==1) then
            do ig = 1, npwq
