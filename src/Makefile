@@ -26,11 +26,9 @@ ESPRESSO=../..
 include $(ESPRESSO)/make.inc
 
 # location of needed modules and included files (if any)
-MODFLAGS= $(MOD_FLAG)$(ESPRESSO)/iotk/src   $(MOD_FLAG)$(ESPRESSO)/UtilXlib \
-          $(MOD_FLAG)$(ESPRESSO)/Modules    $(MOD_FLAG)$(ESPRESSO)/LAXlib \
-          $(MOD_FLAG)$(ESPRESSO)/FFTXlib    $(MOD_FLAG)$(ESPRESSO)/PW/src \
-          $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG)$(ESPRESSO)/dft-d3 \
-          $(MOD_FLAG).
+MODFLAGS= $(BASEMOD_FLAGS) \
+          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
+          $(MOD_FLAG)$(ESPRESSO)/dft-d3 $(MOD_FLAG).
 EXE = gw.x
 
 IFLAGS=
