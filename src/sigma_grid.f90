@@ -31,7 +31,7 @@
 !!
 MODULE sigma_grid_module
 
-  USE fft_custom, ONLY: fft_cus
+  USE kinds,      ONLY: dp
   USE fft_types,  ONLY: fft_type_descriptor
 
   IMPLICIT NONE
@@ -42,15 +42,15 @@ MODULE sigma_grid_module
   TYPE sigma_grid_type
 
     !> grid used for exchange
-    TYPE(fft_cus) exch
     TYPE(fft_type_descriptor) exch_fft
 
+    !> the G vectors in the exchange grid
+    REAL(dp), POINTER :: exch_gvec(:,:)
+
     !> grid used for correlation
-    TYPE(fft_cus) corr
     TYPE(fft_type_descriptor) corr_fft
 
     !> grid used for correlation (parallelized over images)
-    TYPE(fft_cus) corr_par
     TYPE(fft_type_descriptor) corr_par_fft
 
   END TYPE
@@ -58,9 +58,8 @@ MODULE sigma_grid_module
 CONTAINS
 
   !> Create a Fourier transform grid with a different energy cutoff.
-  SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut, fft_cust, dfft)
+  SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut, dfft, gt)
 
-    USE kinds,      ONLY: dp
     USE fft_custom, ONLY: ggent
 
     !> communicator over which the routines are parallelized
@@ -75,17 +74,21 @@ CONTAINS
     !> The energy cutoff used for the custom type.
     REAL(dp), INTENT(IN) :: ecut
 
-    !> The custom FFT type initialized by this routine
-    TYPE(fft_cus), INTENT(OUT) :: fft_cust
-
     !> The FFT type created
     TYPE(fft_type_descriptor), INTENT(OUT) :: dfft
+
+    !> The G vectors in the generated grid
+    REAL(dp), INTENT(OUT), POINTER :: gt(:,:)
 
     !> cutoff of the G vectors
     REAL(dp) gcut
 
     !> number of g vectors on this process
     INTEGER num_g
+
+    ! temporary variables
+    REAL(dp), POINTER :: ggt(:)
+    INTEGER npwt, gstart_t
 
     !!
     !! 2. converts the energy cutoff to a cutoff for the G vectors
@@ -100,7 +103,7 @@ CONTAINS
     !!
     !! 6. generate the FFT grid
     !!
-    CALL ggent(comm, dfft, gcut, gcut, num_g, fft_cust)
+    CALL ggent(dfft, gcut, gcut, num_g, gt, ggt, gstart_t, npwt)
 
   END SUBROUTINE sigma_grid_create
 
@@ -110,7 +113,6 @@ CONTAINS
 
     USE cell_base,  ONLY: at, bg
     USE fft_types,  ONLY: fft_type_init
-    USE kinds,      ONLY: dp
     USE mp_bands,   ONLY: nyfft
     USE stick_base, ONLY: sticks_map
 
@@ -143,7 +145,6 @@ CONTAINS
   SUBROUTINE sigma_grid_info(ecut, dfft, label)
   
     USE io_global,  ONLY: stdout
-    USE kinds,      ONLY: dp
   
     IMPLICIT NONE
   
@@ -203,7 +204,6 @@ CONTAINS
     USE control_flags,    ONLY : gamma_only
     USE freqbins_module,  ONLY : freqbins_type
     USE io_global,        ONLY : stdout, ionode
-    USE kinds,            ONLY : dp
     USE mp_bands,         ONLY : intra_bgrp_comm
     USE mp_images,        ONLY : inter_image_comm, nimage
     ! 
@@ -247,6 +247,9 @@ CONTAINS
     !> number of frequencies used for the self energy integration
     INTEGER num_sigma
 
+    ! dummy variable
+    REAL(dp), POINTER :: gt(:,:)
+
     num_freq  = freq%num_freq()
     num_green = 2 * freq%num_coul()
     num_sigma = freq%num_sigma()
@@ -254,25 +257,24 @@ CONTAINS
     !
     ! Generate the exchange grid
     !
-    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch, grid%exch_fft)
+    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch_fft, grid%exch_gvec)
     grid%exch_fft%rho_clock_label = 'fft_exch'
     IF (ionode) CALL sigma_grid_info(ecut_x, grid%exch_fft, 'Exchange')
   
     !
     ! Generate the correlation grid
     !
-    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr, grid%corr_fft)
+    CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr_fft, gt)
     grid%corr_fft%rho_clock_label = 'fft_corr'
     IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_fft, 'Correlation')
     !
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
-      grid%corr_par = grid%corr
       grid%corr_par_fft = grid%corr_fft
     ELSE
       ! create a grid parallelized over images
       CALL errore("image parallelization broken because ig_l2gt", 1)
-      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par, grid%corr_par_fft)
+      CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par_fft, gt)
       grid%corr_par_fft%rho_clock_label = 'fft_corr_par'
       IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_par_fft, 'Correlation (images)')
     END IF

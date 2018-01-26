@@ -99,7 +99,6 @@ dvqpsi_us.o : gwcom.o
 exchange.o : ../../LR_Modules/lrcom.o
 exchange.o : ../../Modules/cell_base.o
 exchange.o : ../../Modules/constants.o
-exchange.o : ../../Modules/fft_custom.o
 exchange.o : ../../Modules/io_global.o
 exchange.o : ../../Modules/kind.o
 exchange.o : ../../Modules/mp_images.o
@@ -109,6 +108,7 @@ exchange.o : ../../PW/src/buffers.o
 exchange.o : ../../PW/src/pwcom.o
 exchange.o : gwcom.o
 exchange.o : parallel.o
+exchange.o : sigma_grid.o
 exchange.o : sigma_io.o
 exchange.o : timing.o
 exchange.o : truncation.o
@@ -121,7 +121,6 @@ freqbins.o : ../../Modules/kind.o
 gauleg_grid.o : ../../Modules/constants.o
 gauleg_grid.o : ../../Modules/kind.o
 gmap_sym.o : ../../Modules/fft_base.o
-gmap_sym.o : ../../Modules/fft_custom.o
 gmap_sym.o : ../../Modules/kind.o
 gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
@@ -403,7 +402,6 @@ sigma_matel.o : ../../LR_Modules/lrcom.o
 sigma_matel.o : ../../Modules/cell_base.o
 sigma_matel.o : ../../Modules/constants.o
 sigma_matel.o : ../../Modules/fft_base.o
-sigma_matel.o : ../../Modules/fft_custom.o
 sigma_matel.o : ../../Modules/gvecw.o
 sigma_matel.o : ../../Modules/io_files.o
 sigma_matel.o : ../../Modules/io_global.o
