@@ -500,7 +500,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     IF (doublegrid) THEN
       DO ifreq = 1, num_freq
         DO is = 1, nspin_mag
-          CALL cinterpolate(drhoscfh(1, is, ifreq), drhoscf(1, is, ifreq), 1)
+          CALL fft_interpolate_complex(dffts, drhoscf(1, is, ifreq), dfftp, drhoscfh(1, is, ifreq))
         END DO ! is
       END DO ! ifreq
     ELSE
@@ -572,7 +572,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     IF (doublegrid) THEN
       DO ifreq = 1, num_freq
         DO is = 1, nspin_mag
-          CALL cinterpolate(dvscfin(1, is, ifreq), dvscfins(1, is, ifreq), -1)
+          CALL fft_interpolate_complex(dfftp, dvscfin(1, is, ifreq), dffts, dvscfins(1, is, ifreq))
         END DO ! is
       END DO ! ifreq
     END IF
