@@ -62,7 +62,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
-  USE fft_interfaces,       ONLY : invfft, fwfft
+  USE fft_interfaces,       ONLY : invfft, fwfft, fft_interpolate
   USE gvecs,                ONLY : doublegrid
   USE io_global,            ONLY : stdout
   USE ions_base,            ONLY : nat
@@ -500,7 +500,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     IF (doublegrid) THEN
       DO ifreq = 1, num_freq
         DO is = 1, nspin_mag
-          CALL fft_interpolate_complex(dffts, drhoscf(1, is, ifreq), dfftp, drhoscfh(1, is, ifreq))
+          CALL fft_interpolate(dffts, drhoscf(:, is, ifreq), dfftp, drhoscfh(:, is, ifreq))
         END DO ! is
       END DO ! ifreq
     ELSE
@@ -572,7 +572,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     IF (doublegrid) THEN
       DO ifreq = 1, num_freq
         DO is = 1, nspin_mag
-          CALL fft_interpolate_complex(dfftp, dvscfin(1, is, ifreq), dffts, dvscfins(1, is, ifreq))
+          CALL fft_interpolate(dfftp, dvscfin(:, is, ifreq), dffts, dvscfins(:, is, ifreq))
         END DO ! is
       END DO ! ifreq
     END IF
