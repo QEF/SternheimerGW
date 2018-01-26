@@ -35,7 +35,7 @@ SUBROUTINE sigma_matel(ik0, grid, freq)
   USE freqbins_module,      ONLY : freqbins_type
   USE gvect,                ONLY : ngm, g, gl, igtongl
   USE gvecw,                ONLY : ecutwfc
-  USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv
+  USE gwsigma,              ONLY : nbnd_sig, corr_conv, exch_conv, ecutsco, ecutsex
   USE io_files,             ONLY : diropn 
   USE io_global,            ONLY : stdout, meta_ionode
   USE kinds_gw,             ONLY : i8b
@@ -197,15 +197,15 @@ IMPLICIT NONE
   IF (.NOT. opnd) CALL diropn( iunsex, filsigx, lrsex, exst )
 
   ! sanity check
-  IF (ABS(exch_conv - grid%exch%ecutt) < eps14 .OR. &
+  IF (ABS(exch_conv - ecutsex) < eps14 .OR. &
       ABS(exch_conv) < eps14) THEN
     sigma_x_ngm = grid%exch_fft%ngm
-  ELSE IF((exch_conv < grid%exch%ecutt) .AND. (exch_conv > 0.0)) THEN
+  ELSE IF((exch_conv < ecutsex) .AND. (exch_conv > 0.0)) THEN
     DO ng = 1, ngm
        IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
     END DO
   ELSE
-    CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecut_sco", 1)
+    CALL errore("sigma_matel", "Exch Conv must be greater than zero and less than ecutsex", 1)
   END IF
 
   ! check file size is not zero
@@ -231,14 +231,14 @@ IMPLICIT NONE
 
   ! For convergence tests corr_conv can be set at input lower than ecutsco.
   ! This allows you to calculate the correlation energy at lower energy cutoffs
-  IF (ABS(corr_conv - grid%corr%ecutt) < eps14) THEN
+  IF (ABS(corr_conv - ecutsco) < eps14) THEN
     sigma_c_ngm = grid%corr_fft%ngm
-  ELSE IF(corr_conv < grid%corr%ecutt .AND. corr_conv > 0.0) THEN
+  ELSE IF(corr_conv < ecutsco .AND. corr_conv > 0.0) THEN
     DO ng = 1, ngm
       IF (gl( igtongl (ng) ) <= (corr_conv/tpiba2)) sigma_c_ngm = ng
     END DO
   ELSE
-    CALL errore("sigma_matel", "Corr Conv must be greater than zero and less than ecut_sco", 1)
+    CALL errore("sigma_matel", "Corr Conv must be greater than zero and less than ecutsco", 1)
   END IF
 
   WRITE(1000+mpime, *)

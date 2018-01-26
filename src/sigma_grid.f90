@@ -58,7 +58,7 @@ MODULE sigma_grid_module
 CONTAINS
 
   !> Create a Fourier transform grid with a different energy cutoff.
-  SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut_cust, fft_cust, dfft)
+  SUBROUTINE sigma_grid_create(comm, gamma_only, tpiba2, ecut, fft_cust, dfft)
 
     USE kinds,      ONLY: dp
     USE fft_custom, ONLY: ggent
@@ -73,7 +73,7 @@ CONTAINS
     REAL(dp), INTENT(IN) :: tpiba2
 
     !> The energy cutoff used for the custom type.
-    REAL(dp), INTENT(IN) :: ecut_cust
+    REAL(dp), INTENT(IN) :: ecut
 
     !> The custom FFT type initialized by this routine
     TYPE(fft_cus), INTENT(OUT) :: fft_cust
@@ -88,14 +88,9 @@ CONTAINS
     INTEGER num_g
 
     !!
-    !! 1. set the energy cutoff of this type
-    !!
-    fft_cust%ecutt = ecut_cust
-
-    !!
     !! 2. converts the energy cutoff to a cutoff for the G vectors
     !!
-    gcut = fft_cust%ecutt / tpiba2
+    gcut = ecut / tpiba2
 
     !!
     !! 4. initialize the fft type
@@ -106,7 +101,6 @@ CONTAINS
     !! 6. generate the FFT grid
     !!
     CALL ggent(comm, dfft, gcut, gcut, num_g, fft_cust)
-    fft_cust%initialized = .TRUE.
 
   END SUBROUTINE sigma_grid_create
 
@@ -146,14 +140,15 @@ CONTAINS
   END SUBROUTINE wrapper_fft_type_init
   
   !> Print info on local and global dimensions for real space grids
-  SUBROUTINE sigma_grid_info(fft_cust, dfft, label)
+  SUBROUTINE sigma_grid_info(ecut, dfft, label)
   
     USE io_global,  ONLY: stdout
+    USE kinds,      ONLY: dp
   
     IMPLICIT NONE
   
-    !> The type we want to print info about.
-    TYPE(fft_cus), INTENT(IN) :: fft_cust
+    !> The energy cutoff of the FFT grid
+    REAL(dp), INTENT(IN) :: ecut 
   
     !> The FFT grid used
     TYPE(fft_type_descriptor), INTENT(IN) :: dfft
@@ -178,7 +173,7 @@ CONTAINS
     WRITE(stdout,'(5x,a,1x,a)') TRIM(label), TRIM(descr)
     WRITE(stdout,'(5x,a)') REPEAT('-', len_label)
     WRITE(stdout,'(5x,a)') 'E_cutoff(Ry) num G vec'
-    WRITE(stdout,'(5x,f8.2,7x,i6)') fft_cust%ecutt, dfft%ngm
+    WRITE(stdout,'(5x,f8.2,7x,i6)') ecut, dfft%ngm
     WRITE(stdout,'(5x,a)') 'Global Dimensions   Local  Dimensions   Processor Grid'
     WRITE(stdout,'(5x,a)') '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.'
     WRITE(stdout,'(2x,3(1x,i5),2x,3(1x,i5),2x,3(1x,i5))') &
@@ -260,13 +255,13 @@ CONTAINS
     ! Generate the exchange grid
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_x, grid%exch, grid%exch_fft)
-    IF (ionode) CALL sigma_grid_info(grid%exch, grid%exch_fft, 'Exchange')
+    IF (ionode) CALL sigma_grid_info(ecut_x, grid%exch_fft, 'Exchange')
   
     !
     ! Generate the correlation grid
     !
     CALL sigma_grid_create(intra_bgrp_comm, gamma_only, tpiba2, ecut_c, grid%corr, grid%corr_fft)
-    IF (ionode) CALL sigma_grid_info(grid%corr, grid%corr_fft, 'Correlation')
+    IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_fft, 'Correlation')
     !
     IF (nimage == 1) THEN
       ! reuse the same grid if only 1 image is used
@@ -276,7 +271,7 @@ CONTAINS
       ! create a grid parallelized over images
       CALL errore("image parallelization broken because ig_l2gt", 1)
       CALL sigma_grid_create(inter_image_comm, gamma_only, tpiba2, ecut_c, grid%corr_par, grid%corr_par_fft)
-      IF (ionode) CALL sigma_grid_info(grid%corr_par, grid%corr_par_fft, 'Correlation (images)')
+      IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_par_fft, 'Correlation (images)')
     END IF
 
     !
