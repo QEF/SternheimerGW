@@ -81,6 +81,9 @@ CONTAINS
     !> The FFT type created
     TYPE(fft_type_descriptor), INTENT(OUT) :: dfft
 
+    !> cutoff of the G vectors
+    REAL(dp) gcut
+
     !> number of g vectors on this process
     INTEGER num_g
 
@@ -92,17 +95,17 @@ CONTAINS
     !!
     !! 2. converts the energy cutoff to a cutoff for the G vectors
     !!
-    fft_cust%gcutmt = fft_cust%ecutt / tpiba2
+    gcut = fft_cust%ecutt / tpiba2
 
     !!
     !! 4. initialize the fft type
     !!
-    CALL wrapper_fft_type_init(comm, gamma_only, fft_cust%gcutmt, dfft)
+    CALL wrapper_fft_type_init(comm, gamma_only, gcut, dfft)
 
     !!
     !! 6. generate the FFT grid
     !!
-    CALL ggent(comm, dfft, num_g, fft_cust)
+    CALL ggent(comm, dfft, gcut, gcut, num_g, fft_cust)
     fft_cust%initialized = .TRUE.
 
   END SUBROUTINE sigma_grid_create
@@ -174,8 +177,8 @@ CONTAINS
     WRITE(stdout,*)
     WRITE(stdout,'(5x,a,1x,a)') TRIM(label), TRIM(descr)
     WRITE(stdout,'(5x,a)') REPEAT('-', len_label)
-    WRITE(stdout,'(5x,a)') 'E_cutoff(Ry) G_cutoff(crystal) num G vec'
-    WRITE(stdout,'(5x,f8.2,7x,f8.2,7x,i6)') fft_cust%ecutt, fft_cust%gcutmt, dfft%ngm
+    WRITE(stdout,'(5x,a)') 'E_cutoff(Ry) num G vec'
+    WRITE(stdout,'(5x,f8.2,7x,i6)') fft_cust%ecutt, dfft%ngm
     WRITE(stdout,'(5x,a)') 'Global Dimensions   Local  Dimensions   Processor Grid'
     WRITE(stdout,'(5x,a)') '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.'
     WRITE(stdout,'(2x,3(1x,i5),2x,3(1x,i5),2x,3(1x,i5))') &
