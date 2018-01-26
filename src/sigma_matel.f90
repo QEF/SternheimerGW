@@ -199,7 +199,7 @@ IMPLICIT NONE
   ! sanity check
   IF (ABS(exch_conv - grid%exch%ecutt) < eps14 .OR. &
       ABS(exch_conv) < eps14) THEN
-    sigma_x_ngm = grid%exch%ngmt
+    sigma_x_ngm = grid%exch_fft%ngm
   ELSE IF((exch_conv < grid%exch%ecutt) .AND. (exch_conv > 0.0)) THEN
     DO ng = 1, ngm
        IF ( gl( igtongl (ng) ) <= (exch_conv/tpiba2)) sigma_x_ngm = ng
@@ -232,7 +232,7 @@ IMPLICIT NONE
   ! For convergence tests corr_conv can be set at input lower than ecutsco.
   ! This allows you to calculate the correlation energy at lower energy cutoffs
   IF (ABS(corr_conv - grid%corr%ecutt) < eps14) THEN
-    sigma_c_ngm = grid%corr%ngmt
+    sigma_c_ngm = grid%corr_fft%ngm
   ELSE IF(corr_conv < grid%corr%ecutt .AND. corr_conv > 0.0) THEN
     DO ng = 1, ngm
       IF (gl( igtongl (ng) ) <= (corr_conv/tpiba2)) sigma_c_ngm = ng

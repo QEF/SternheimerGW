@@ -289,13 +289,13 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
     ALLOCATE(aaa(mmax, 3))
   END IF
 
-  DO igp = 1, grid%corr_par%ngmt
+  DO igp = 1, grid%corr_par_fft%ngm
     !
     ! get the global corresponding index
     ! TODO fix image parallelization
     igp_g = igp !grid%corr_par%ig_l2gt(igp)
 
-    DO ig = 1, grid%corr%ngmt
+    DO ig = 1, grid%corr_fft%ngm
 
       ! symmetry transformation of the coefficients
       coeff = scrcoul_coeff(gmapsym(ig), gmapsym(igp_g), :)

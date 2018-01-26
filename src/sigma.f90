@@ -259,8 +259,8 @@ CONTAINS
     WRITE(stdout, '(5x, a, 3f8.4, a)') 'evaluate self energy for k = (', xk(:, ikpt), ' )'
 
     ! set helper variable
-    num_g_corr  = grid%corr%ngmt
-    num_gp_corr = grid%corr_par%ngmt
+    num_g_corr  = grid%corr_fft%ngm
+    num_gp_corr = grid%corr_par_fft%ngm
     debug_sigma = debug_set .AND. debug%sigma_corr
 
     !
@@ -470,8 +470,8 @@ CONTAINS
     ! determine the helper variables
     num_r  = grid%corr_fft%nnr
     num_rp = grid%corr_par_fft%nnr
-    num_g  = grid%corr%ngmt
-    num_gp = grid%corr_par%ngmt
+    num_g  = grid%corr_fft%ngm
+    num_gp = grid%corr_par_fft%ngm
     debug_sigma = debug_set .AND. debug%sigma_corr
 
     !
@@ -647,8 +647,8 @@ CONTAINS
     debug_sigma = debug_set .AND. debug%sigma_corr
     num_r_corr  = grid%corr_fft%nnr
     num_rp_corr = grid%corr_par_fft%nnr
-    num_g_corr  = grid%corr%ngmt
-    num_gp_corr = grid%corr_par%ngmt
+    num_g_corr  = grid%corr_fft%ngm
+    num_gp_corr = grid%corr_par_fft%ngm
     IF (SIZE(coulomb, 1) /= num_g_corr) &
       CALL errore(__FILE__, "screened Coulomb and G-vector FFT type inconsistent", 1)
     IF (SIZE(coulomb, 2) /= num_g_corr) &

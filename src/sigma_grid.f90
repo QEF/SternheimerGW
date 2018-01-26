@@ -177,7 +177,7 @@ CONTAINS
     WRITE(stdout,'(5x,a,1x,a)') TRIM(label), TRIM(descr)
     WRITE(stdout,'(5x,a)') REPEAT('-', len_label)
     WRITE(stdout,'(5x,a)') 'E_cutoff(Ry) G_cutoff(crystal) num G vec'
-    WRITE(stdout,'(5x,f8.2,7x,f8.2,7x,i6)') fft_cust%ecutt, fft_cust%gcutmt, fft_cust%ngmt
+    WRITE(stdout,'(5x,f8.2,7x,f8.2,7x,i6)') fft_cust%ecutt, fft_cust%gcutmt, dfft%ngm
     WRITE(stdout,'(5x,a)') 'Global Dimensions   Local  Dimensions   Processor Grid'
     WRITE(stdout,'(5x,a)') '.X.   .Y.   .Z.     .X.   .Y.   .Z.     .X.   .Y.   .Z.'
     WRITE(stdout,'(2x,3(1x,i5),2x,3(1x,i5),2x,3(1x,i5))') &
@@ -281,9 +281,9 @@ CONTAINS
     !
     ! Print info about array size
     !
-    num_g_x  = REAL(grid%exch%ngmt, KIND=dp)
-    num_g_c  = REAL(grid%corr%ngmt, KIND=dp)
-    num_g_ci = REAL(grid%corr_par%ngmt, KIND=dp)
+    num_g_x  = REAL(grid%exch_fft%ngm, KIND=dp)
+    num_g_c  = REAL(grid%corr_fft%ngm, KIND=dp)
+    num_g_ci = REAL(grid%corr_par_fft%ngm, KIND=dp)
     num_r_x  = REAL(grid%exch_fft%nnr, KIND=dp)
     num_r_c  = REAL(grid%corr_fft%nnr, KIND=dp)
     num_r_ci = REAL(grid%corr_par_fft%nnr, KIND=dp)

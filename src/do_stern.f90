@@ -101,7 +101,7 @@ IMPLICIT NONE
   CALL start_clock(time_coulomb)
 
   ! set helper variable
-  num_g_corr = grid%corr%ngmt
+  num_g_corr = grid%corr_fft%ngm
 
   ! some tasks are only done by the root process
   is_root = my_image_id == root_id

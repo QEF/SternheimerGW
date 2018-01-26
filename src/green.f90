@@ -163,8 +163,8 @@ CONTAINS
     CALL start_clock(time_green)
 
     ! determine helper variables
-    num_g_corr  = grid%corr%ngmt
-    num_gp_corr = grid%corr_par%ngmt
+    num_g_corr  = grid%corr_fft%ngm
+    num_gp_corr = grid%corr_par_fft%ngm
     num_freq    = SIZE(omega)
 
     ! sanity test of the input
@@ -310,9 +310,9 @@ CONTAINS
       CALL errore(__FILE__, "size of occupation and eigenvalue array inconsistent", 1)
     IF (SIZE(evec, 2) /= num_band) &
       CALL errore(__FILE__, "size of eigenvalue and eigenvector inconsistent", 1)
-    IF (SIZE(green, 1) < grid%corr%ngmt) &
+    IF (SIZE(green, 1) < grid%corr_fft%ngm) &
       CALL errore(__FILE__, "1st dimension of Green's function to small", 1)
-    IF (SIZE(green, 2) < grid%corr_par%ngmt) &
+    IF (SIZE(green, 2) < grid%corr_par_fft%ngm) &
       CALL errore(__FILE__, "2nd dimension of Green's function to small", 1)
     IF (SIZE(green, 3) /= num_freq) &
       CALL errore(__FILE__, "3rd dimension of Green's function should be number of frequencies", 1)
@@ -331,10 +331,10 @@ CONTAINS
 
         ! loop over G and G'
         ! TODO fix image parallelization
-        DO igpmt = 1, grid%corr_par%ngmt
+        DO igpmt = 1, grid%corr_par_fft%ngm
           igp = igpmt !grid%corr_par%ig_l2gt(igpmt)
 
-          DO igmt = 1, grid%corr%ngmt
+          DO igmt = 1, grid%corr_fft%ngm
             ig = igmt !grid%corr%ig_l2gt(igmt)
 
             ! add nonanalytic part to Green's function

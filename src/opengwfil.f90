@@ -47,8 +47,8 @@ IMPLICIT  NONE
   INTEGER num_g_corr
 
   ! initialize helper variables
-  num_g_exch = grid%exch%ngmt
-  num_g_corr = grid%corr%ngmt
+  num_g_exch = grid%exch_fft%ngm
+  num_g_corr = grid%corr_fft%ngm
 
   ! open file for coulomb 
   iuncoul = 28

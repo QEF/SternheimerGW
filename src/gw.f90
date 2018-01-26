@@ -110,7 +110,7 @@ program gw
          call stop_clock(time_setup)
          if (do_sigma_c) call sigma_wrapper(ik, grid, config_green, freq, vcut, config, debug)
 ! Calculation of EXCHANGE energy \Sigma^{x}_{k}= \sum_{q}G_{k}{v_{k-S^{-1}q}}:
-         if (do_sigma_exx) call exchange_wrapper(ik, grid%exch, vcut)
+         if (do_sigma_exx) call exchange_wrapper(ik, grid%exch, grid%exch_fft, vcut)
 ! Calculation of Matrix Elements <n\k| V^{xc}, \Sigma^{x}, \Sigma^{c}(iw) |n\k>:
          if (do_sigma_matel) then
            if (meta_ionode .AND. ik == w_of_k_start) then         
