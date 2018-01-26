@@ -102,9 +102,7 @@ CONTAINS
     !!
     !! 6. generate the FFT grid
     !!
-    num_g = dfft%ngl(dfft%mype + 1)
-    IF (gamma_only) num_g = (num_g + 1) / 2
-    CALL ggent(num_g, comm, dfft, fft_cust)
+    CALL ggent(comm, dfft, num_g, fft_cust)
     fft_cust%initialized = .TRUE.
 
   END SUBROUTINE sigma_grid_create
