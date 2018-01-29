@@ -198,8 +198,10 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
 
   USE aaa_module,         ONLY : aaa_eval
   USE control_gw,         ONLY : model_coul 
+  USE fft6_module,        ONLY : fft_map_generate
   USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_model
+  USE gvect,              ONLY : mill
   USE kinds,              ONLY : dp
   USE pade_module,        ONLY : pade_eval_robust
   USE sigma_grid_module,  ONLY : sigma_grid_type
@@ -251,6 +253,9 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !> complex constant of zero
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
 
+  !> the map from local to global G grid
+  INTEGER, ALLOCATABLE :: fft_map(:)
+
   CALL start_clock(time_construct_w)
 
   !
@@ -287,13 +292,17 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   IF (model_coul == aaa_approx) THEN
     mmax = SIZE(coeff) / 3
     ALLOCATE(aaa(mmax, 3))
+
   END IF
+
+  ! create pointer from local to global grid
+  CALL fft_map_generate(grid%corr_par_fft, mill, fft_map)
 
   DO igp = 1, grid%corr_par_fft%ngm
     !
     ! get the global corresponding index
     ! TODO fix image parallelization
-    igp_g = igp !grid%corr_par%ig_l2gt(igp)
+    igp_g = fft_map(igp)
 
     DO ig = 1, grid%corr_fft%ngm
 

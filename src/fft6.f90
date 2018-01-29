@@ -344,4 +344,34 @@ CONTAINS
 
   END SUBROUTINE invfft6_diff
 
+  !> generate mapping from local to global G indices
+  SUBROUTINE fft_map_generate(dfft, gvec, fft_map)
+
+    USE fft_types, ONLY: fft_type_descriptor, fft_stick_index
+
+    !> the FFT for which the mapping is generated
+    TYPE(fft_type_descriptor), INTENT(IN) :: dfft
+
+    !> the G vectors in crystal coordinates
+    INTEGER, INTENT(IN) :: gvec(:,:)
+
+    !> the resulting FFT map
+    INTEGER, ALLOCATABLE :: fft_map(:)
+
+    !> local and global index on G vectors
+    INTEGER local, globl
+
+    ALLOCATE(fft_map(dfft%ngm))
+
+    globl = 0
+    DO local = 1, dfft%ngm
+      DO
+        globl = globl + 1
+        IF (fft_stick_index(dfft, gvec(1,globl), gvec(2,globl)) /= 0) EXIT
+      END DO
+      fft_map(local) = globl
+    END DO
+
+  END SUBROUTINE fft_map_generate
+
 END MODULE fft6_module

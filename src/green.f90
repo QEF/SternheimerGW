@@ -25,7 +25,7 @@ MODULE green_module
 
   IMPLICIT NONE
 
-  PUBLIC green_function, green_prepare, green_nonanalytic
+  PUBLIC green_function, green_prepare
   PRIVATE
 
 CONTAINS
@@ -105,6 +105,8 @@ CONTAINS
   SUBROUTINE green_function(grid, config, map, num_g, omega, green, debug)
 
     USE debug_module,         ONLY: debug_type, debug_set
+    USE fft6_module,          ONLY: fft_map_generate
+    USE gvect,                ONLY: mill
     USE kinds,                ONLY: dp
     USE select_solver_module, ONLY: select_solver, select_solver_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
@@ -151,6 +153,9 @@ CONTAINS
     !> loop variable for G and G' loop
     INTEGER ig, igp
 
+    !> the map from local to global G vector
+    INTEGER, ALLOCATABLE :: fft_map(:)
+
     !> check error in array allocation
     INTEGER ierr
 
@@ -166,13 +171,13 @@ CONTAINS
     num_g_corr  = grid%corr_fft%ngm
     num_gp_corr = grid%corr_par_fft%ngm
     num_freq    = SIZE(omega)
+    CALL fft_map_generate(grid%corr_par_fft, mill, fft_map)
 
     ! sanity test of the input
     IF (SIZE(map) < num_g_corr) &
       CALL errore(__FILE__, "not enough G vectors for all points in FFT mesh", 1)
-! TODO fix image parallelization
-!    IF (ANY(grid%corr_par%ig_l2gt > SIZE(map))) &
-!      CALL errore(__FILE__, "some elements of parallelized mesh out of bounds", 1)
+    IF (ANY(fft_map > SIZE(map))) &
+      CALL errore(__FILE__, "some elements of parallelized mesh out of bounds", 1)
 
     ! allocate array for the calculation of the Green's function
     ALLOCATE(green(grid%corr_fft%nnr, grid%corr_par_fft%nnr, num_freq), STAT=ierr)
@@ -191,8 +196,7 @@ CONTAINS
     DO igp = 1, num_gp_corr
 
       ! determine map in global array
-      ! TODO fix image parallelization
-      ig = map(igp) !map(grid%corr_par%ig_l2gt(igp))
+      ig = map(fft_map(igp))
 
       ! set right-hand side
       bb = zero
@@ -219,139 +223,6 @@ CONTAINS
     CALL stop_clock(time_green)
 
   END SUBROUTINE green_function
-
-  !> Add the nonanalytic part of the Green's function.
-  !!
-  !! For real space frequency integration, we split a nonanalytic part of the
-  !! Green's function so that the resulting analytic part has no poles above
-  !! the real axis. The nonanalytic part is given as
-  !! \f{equation}{
-  !!   G_{\text{N}}(G, G', \omega) = 2 \pi i \sum_{n} f_n
-  !!   \delta(\omega - \epsilon_{n}) u_{n}^\ast(G) u_{n}(G')
-  !! \f}
-  !! where the \f$u_{n}(G)\f$ are the eigenvectors. Note that the sum runs over
-  !! the occupied states only, which is controlled by the occupation factor
-  !! \f$f_n\f$.
-  !! We approximate the \f$\delta\f$ function by a Cauchy-Lorentz distribution
-  !! \f{equation}{
-  !!   \delta(\omega) \approx \frac{\eta}{\pi(\omega^2 + \eta^2)}
-  !! \f}
-  SUBROUTINE green_nonanalytic(grid, map, freq, occupation, eval, evec, green)
-
-    USE constants,         ONLY: pi, tpi
-    USE kinds,             ONLY: dp
-    USE sigma_grid_module, ONLY: sigma_grid_type
-    USE timing_module,     ONLY: time_green
-
-    !> The FFT grids used to evaluate the self energy
-    TYPE(sigma_grid_type), INTENT(IN) :: grid
-
-    !> The reverse list from global G vector order to current k-point.
-    !! Generate this by a call to create_map in reorder.
-    !! @note this should be reduced to the correlation cutoff
-    INTEGER,     INTENT(IN)    :: map(:)
-
-    !> The frequency points for which the Green's function is evaluated.
-    !! @note This is a complex \f$\omega + i \eta\f$
-    COMPLEX(dp), INTENT(IN)    :: freq(:)
-
-    !> Occupation \f$f_n\f$ of a certain state.
-    REAL(dp),    INTENT(IN)    :: occupation(:)
-
-    !> The eigenvalues \f$\epsilon\f$ for the occupied bands.
-    COMPLEX(dp), INTENT(IN)    :: eval(:)
-
-    !> The eigenvectors \f$u_{\text v}(G)\f$ of the occupied bands.
-    COMPLEX(dp), INTENT(IN)    :: evec(:,:)
-
-    !> The Green's function - note that the nonanalytic part is added to
-    !! whatever is already found in the array.
-    COMPLEX(dp), INTENT(INOUT) :: green(:,:,:)
-
-    !> the number of occupied bands
-    INTEGER num_band
-
-    !> the number of G vectors at the k-point
-    INTEGER num_g
-
-    !> the number of frequency points
-    INTEGER num_freq
-
-    !> loop variable for summation over valence bands
-    INTEGER iband
-
-    !> loop variable for frequencies
-    INTEGER ifreq
-
-    !> loop over G and G' in local array
-    INTEGER igmt, igpmt
-
-    !> pointer to G and G' in global array
-    INTEGER ig, igp
-
-    !> the value of \f$\omega - \epsilon_{\text{v}} + \imag \eta\f$
-    COMPLEX(dp) freq_eps
-
-    !> the value of the Lorentzian distribution
-    REAL(dp) lorentzian
-
-    !> 2 pi i
-    COMPLEX(dp), PARAMETER :: c2PiI = CMPLX(0.0_dp, tpi, KIND=dp)
-
-    CALL start_clock(time_green)
-
-    ! initialize helper variables
-    num_band = SIZE(eval)
-    num_freq = SIZE(freq)
-    num_g    = SIZE(evec, 1)
-
-    ! sanity check of the input
-    IF (SIZE(occupation) /= num_band) &
-      CALL errore(__FILE__, "size of occupation and eigenvalue array inconsistent", 1)
-    IF (SIZE(evec, 2) /= num_band) &
-      CALL errore(__FILE__, "size of eigenvalue and eigenvector inconsistent", 1)
-    IF (SIZE(green, 1) < grid%corr_fft%ngm) &
-      CALL errore(__FILE__, "1st dimension of Green's function to small", 1)
-    IF (SIZE(green, 2) < grid%corr_par_fft%ngm) &
-      CALL errore(__FILE__, "2nd dimension of Green's function to small", 1)
-    IF (SIZE(green, 3) /= num_freq) &
-      CALL errore(__FILE__, "3rd dimension of Green's function should be number of frequencies", 1)
-
-    ! loop over frequencies
-    DO ifreq = 1, num_freq
-
-      ! loop over bands
-      DO iband = 1, num_band
-
-        ! determine omega - epsilon + imag eta
-        freq_eps = freq(ifreq) - eval(iband)
-
-        ! determine the value of the Lorentzian
-        lorentzian = AIMAG(freq(ifreq)) / (pi * ABS(freq_eps)**2)
-
-        ! loop over G and G'
-        ! TODO fix image parallelization
-        DO igpmt = 1, grid%corr_par_fft%ngm
-          igp = igpmt !grid%corr_par%ig_l2gt(igpmt)
-
-          DO igmt = 1, grid%corr_fft%ngm
-            ig = igmt !grid%corr%ig_l2gt(igmt)
-
-            ! add nonanalytic part to Green's function
-            ! 2 pi i f_n u_n*(G) u_n(G') delta
-            green(igmt, igpmt, ifreq) = green(igmt, igpmt, ifreq) + c2PiI * occupation(iband) &
-              * CONJG(evec(map(ig), iband)) * evec(map(igp), iband) * lorentzian
-
-          END DO ! ig
-        END DO ! igp
-
-      END DO ! iband
-
-    END DO ! ifreq
-
-    CALL stop_clock(time_green)
-
-  END SUBROUTINE green_nonanalytic
 
   !> Wrapper for the linear operator call.
   !!

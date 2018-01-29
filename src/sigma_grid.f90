@@ -62,7 +62,8 @@ CONTAINS
 
     USE cell_base,      ONLY: tpiba2, at, bg
     USE control_flags,  ONLY: gamma_only
-    USE fft_types,      ONLY: fft_type_init
+    USE fft_types,      ONLY: fft_type_init, fft_stick_index
+    USE fft6_module,    ONLY: fft_map_generate
     USE gvect,          ONLY: g, gg, mill
     USE mp_bands,       ONLY: nyfft
     USE recvec_subs,    ONLY: ggens
@@ -95,6 +96,9 @@ CONTAINS
     LOGICAL, PARAMETER :: lpara = .FALSE.
 #endif
 
+    !> map from local to global G vectors
+    INTEGER, ALLOCATABLE :: fft_map(:)
+
     !!
     !! 1. converts the energy cutoff to a cutoff for the G vectors
     !!
@@ -106,9 +110,14 @@ CONTAINS
     CALL fft_type_init(dfft, smap, "rho", gamma_only, lpara, comm, at, bg, gcut, nyfft=nyfft)
 
     !!
-    !! 3. generate the FFT grid
+    !! 3. generate the map from local to global grid
     !!
-    CALL ggens(dfft, gamma_only, at, g, gg, mill, gcut, num_g, gvec)
+    CALL fft_map_generate(dfft, mill, fft_map)
+
+    !!
+    !! 4. generate grid for FFT
+    !!
+    CALL ggens(dfft, gamma_only, at, g(:,fft_map), gg(fft_map), mill(:,fft_map), gcut, num_g, gvec)
 
   END SUBROUTINE sigma_grid_create
 
@@ -134,9 +143,6 @@ CONTAINS
   
     !> The length of the label
     INTEGER len_label
-  
-    !> counter on the number of processes
-    INTEGER iproc
   
     !
     ! add 1 for the space between label and description
@@ -228,7 +234,6 @@ CONTAINS
       grid%corr_par_fft = grid%corr_fft
     ELSE
       ! create a grid parallelized over images
-      CALL errore("image parallelization broken because ig_l2gt", 1)
       CALL sigma_grid_create(inter_image_comm, ecut_c, grid%corr_par_fft)
       grid%corr_par_fft%rho_clock_label = 'fft_corr_par'
       IF (ionode) CALL sigma_grid_info(ecut_c, grid%corr_par_fft, 'Correlation (images)')

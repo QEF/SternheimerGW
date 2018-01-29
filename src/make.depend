@@ -14,7 +14,9 @@ allocate_gwq.o : ../../Modules/wavefunctions.o
 allocate_gwq.o : ../../PW/src/pwcom.o
 allocate_gwq.o : gwcom.o
 analytic.o : ../../Modules/kind.o
+analytic.o : ../../Modules/recvec.o
 analytic.o : aaa.o
+analytic.o : fft6.o
 analytic.o : freqbins.o
 analytic.o : godby_needs.o
 analytic.o : gwcom.o
@@ -128,14 +130,15 @@ godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
 gram_schmidt.o : ../../Modules/kind.o
 gram_schmidt.o : norm.o
-green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
 green.o : ../../Modules/mp_world.o
+green.o : ../../Modules/recvec.o
 green.o : ../../Modules/uspp.o
 green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : ../../iotk/src/iotk_module.o
 green.o : debug.o
+green.o : fft6.o
 green.o : linear_op.o
 green.o : norm.o
 green.o : reorder.o
@@ -367,6 +370,7 @@ sigma.o : ../../Modules/io_global.o
 sigma.o : ../../Modules/kind.o
 sigma.o : ../../Modules/mp_images.o
 sigma.o : ../../Modules/mp_pools.o
+sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : ../../UtilXlib/mp.o
@@ -385,6 +389,7 @@ sigma.o : timing.o
 sigma.o : truncation.o
 sigma_expect.o : ../../Modules/kind.o
 sigma_expect.o : reorder.o
+sigma_grid.o : ../../FFTXlib/fft_helper_subroutines.o
 sigma_grid.o : ../../FFTXlib/fft_types.o
 sigma_grid.o : ../../FFTXlib/stick_base.o
 sigma_grid.o : ../../Modules/cell_base.o
@@ -395,6 +400,7 @@ sigma_grid.o : ../../Modules/mp_bands.o
 sigma_grid.o : ../../Modules/mp_images.o
 sigma_grid.o : ../../Modules/recvec.o
 sigma_grid.o : ../../Modules/recvec_subs.o
+sigma_grid.o : fft6.o
 sigma_grid.o : freqbins.o
 sigma_io.o : ../../Modules/kind.o
 sigma_io.o : ../../iotk/src/iotk_module.o

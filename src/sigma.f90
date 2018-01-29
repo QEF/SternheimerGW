@@ -147,7 +147,9 @@ CONTAINS
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
+    USE fft6_module,          ONLY: fft_map_generate
     USE freqbins_module,      ONLY: freqbins_type
+    USE gvect,                ONLY: mill
     USE io_files,             ONLY: prefix
     USE io_global,            ONLY: meta_ionode, ionode_id, stdout
     USE kinds,                ONLY: dp
@@ -222,6 +224,9 @@ CONTAINS
     !> the chemical potential of the system
     REAL(dp) mu
 
+    !> the map from local to global G vectors
+    INTEGER, ALLOCATABLE :: fft_map(:)
+
     !> the screened Coulomb interaction
     COMPLEX(dp), ALLOCATABLE :: coulomb(:,:,:)
 
@@ -262,6 +267,7 @@ CONTAINS
     num_g_corr  = grid%corr_fft%ngm
     num_gp_corr = grid%corr_par_fft%ngm
     debug_sigma = debug_set .AND. debug%sigma_corr
+    CALL fft_map_generate(grid%corr_par_fft, mill, fft_map)
 
     !
     ! set the prefactor depending on whether we integrate along the real or
@@ -388,9 +394,7 @@ CONTAINS
       sigma_root = zero
       !
       DO ifreq = 1, freq%num_sigma()
-        ! TODO fix image parallelization
-        !sigma_root(:, grid%corr_par%ig_l2gt, ifreq) = sigma(:,:,ifreq)
-        sigma_root(:, :, ifreq) = sigma(:,:,ifreq)
+        sigma_root(:, fft_map, ifreq) = sigma(:,:,ifreq)
       END DO
       !
       CALL mp_root_sum(inter_image_comm, root_image, sigma_root)
