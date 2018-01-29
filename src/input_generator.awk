@@ -2,7 +2,7 @@
 #
 # This file is part of the SternheimerGW code.
 # 
-# Copyright (C) 2010 - 2017
+# Copyright (C) 2010 - 2018
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -213,7 +213,7 @@ END {
     print "!"
     print "! This file is part of the SternheimerGW code."
     print "!"
-    print "! Copyright (C) 2010 - 2017"
+    print "! Copyright (C) 2010 - 2018"
     print "! Henry Lambert, Martin Schlipf, and Feliciano Giustino"
     print "!"
     print "! SternheimerGW is free software: you can redistribute it and/or modify"

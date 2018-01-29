@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017 Jesse Noffsinger, Brad Malone,
+! Copyright (C) 2010 - 2018 Jesse Noffsinger, Brad Malone,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
