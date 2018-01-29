@@ -44,8 +44,6 @@
   max_freq_wind  =  30.0
   num_freq_wind  = 601
 
-do_coul = .false.
-
 /
 
 &gw_output
