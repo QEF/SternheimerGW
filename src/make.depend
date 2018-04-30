@@ -14,7 +14,9 @@ allocate_gwq.o : ../../Modules/wavefunctions.o
 allocate_gwq.o : ../../PW/src/pwcom.o
 allocate_gwq.o : gwcom.o
 analytic.o : ../../Modules/kind.o
+analytic.o : ../../Modules/recvec.o
 analytic.o : aaa.o
+analytic.o : fft6.o
 analytic.o : freqbins.o
 analytic.o : godby_needs.o
 analytic.o : gwcom.o
@@ -99,7 +101,6 @@ dvqpsi_us.o : gwcom.o
 exchange.o : ../../LR_Modules/lrcom.o
 exchange.o : ../../Modules/cell_base.o
 exchange.o : ../../Modules/constants.o
-exchange.o : ../../Modules/fft_custom.o
 exchange.o : ../../Modules/io_global.o
 exchange.o : ../../Modules/kind.o
 exchange.o : ../../Modules/mp_images.o
@@ -109,6 +110,7 @@ exchange.o : ../../PW/src/buffers.o
 exchange.o : ../../PW/src/pwcom.o
 exchange.o : gwcom.o
 exchange.o : parallel.o
+exchange.o : sigma_grid.o
 exchange.o : sigma_io.o
 exchange.o : timing.o
 exchange.o : truncation.o
@@ -121,7 +123,6 @@ freqbins.o : ../../Modules/kind.o
 gauleg_grid.o : ../../Modules/constants.o
 gauleg_grid.o : ../../Modules/kind.o
 gmap_sym.o : ../../Modules/fft_base.o
-gmap_sym.o : ../../Modules/fft_custom.o
 gmap_sym.o : ../../Modules/kind.o
 gmap_sym.o : ../../Modules/mp_world.o
 gmap_sym.o : ../../Modules/recvec.o
@@ -129,14 +130,15 @@ godby_needs.o : ../../Modules/constants.o
 godby_needs.o : ../../Modules/kind.o
 gram_schmidt.o : ../../Modules/kind.o
 gram_schmidt.o : norm.o
-green.o : ../../Modules/constants.o
 green.o : ../../Modules/kind.o
 green.o : ../../Modules/mp_world.o
+green.o : ../../Modules/recvec.o
 green.o : ../../Modules/uspp.o
 green.o : ../../PW/src/buffers.o
 green.o : ../../PW/src/pwcom.o
 green.o : ../../iotk/src/iotk_module.o
 green.o : debug.o
+green.o : fft6.o
 green.o : linear_op.o
 green.o : norm.o
 green.o : reorder.o
@@ -368,6 +370,7 @@ sigma.o : ../../Modules/io_global.o
 sigma.o : ../../Modules/kind.o
 sigma.o : ../../Modules/mp_images.o
 sigma.o : ../../Modules/mp_pools.o
+sigma.o : ../../Modules/recvec.o
 sigma.o : ../../PW/src/pwcom.o
 sigma.o : ../../PW/src/symm_base.o
 sigma.o : ../../UtilXlib/mp.o
@@ -386,15 +389,18 @@ sigma.o : timing.o
 sigma.o : truncation.o
 sigma_expect.o : ../../Modules/kind.o
 sigma_expect.o : reorder.o
+sigma_grid.o : ../../FFTXlib/fft_helper_subroutines.o
 sigma_grid.o : ../../FFTXlib/fft_types.o
 sigma_grid.o : ../../FFTXlib/stick_base.o
 sigma_grid.o : ../../Modules/cell_base.o
 sigma_grid.o : ../../Modules/control_flags.o
-sigma_grid.o : ../../Modules/fft_custom.o
 sigma_grid.o : ../../Modules/io_global.o
 sigma_grid.o : ../../Modules/kind.o
 sigma_grid.o : ../../Modules/mp_bands.o
 sigma_grid.o : ../../Modules/mp_images.o
+sigma_grid.o : ../../Modules/recvec.o
+sigma_grid.o : ../../Modules/recvec_subs.o
+sigma_grid.o : fft6.o
 sigma_grid.o : freqbins.o
 sigma_io.o : ../../Modules/kind.o
 sigma_io.o : ../../iotk/src/iotk_module.o
@@ -403,7 +409,6 @@ sigma_matel.o : ../../LR_Modules/lrcom.o
 sigma_matel.o : ../../Modules/cell_base.o
 sigma_matel.o : ../../Modules/constants.o
 sigma_matel.o : ../../Modules/fft_base.o
-sigma_matel.o : ../../Modules/fft_custom.o
 sigma_matel.o : ../../Modules/gvecw.o
 sigma_matel.o : ../../Modules/io_files.o
 sigma_matel.o : ../../Modules/io_global.o

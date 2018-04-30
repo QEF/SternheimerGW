@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -150,16 +150,16 @@ CONTAINS
   END SUBROUTINE exchange_convolution
 
   !> Construct a map from G and G' to G - G'.
-  SUBROUTINE exchange_map(unit_cell, exchange_grid, mill, index_g, map)
+  SUBROUTINE exchange_map(unit_cell, grid, mill, index_g, map)
 
-    USE fft_custom, ONLY: fft_cus
-    USE kinds,      ONLY: dp
+    USE kinds,             ONLY: dp
+    USE sigma_grid_module, ONLY: sigma_grid_type
 
     !> The unit cell of the crystal
     REAL(dp),             INTENT(IN)  :: unit_cell(3,3)
 
     !> The grid used to calculate the exchange
-    TYPE(fft_cus),        INTENT(IN)  :: exchange_grid
+    TYPE(sigma_grid_type),INTENT(IN)  :: grid
 
     !> The global list of G vectors
     INTEGER,              INTENT(IN)  :: mill(:,:)
@@ -194,11 +194,11 @@ CONTAINS
     !
     ! transform the grid to crystal coordinates
     !
-    ALLOCATE(gvec_r(3, exchange_grid%ngmt))
-    gvec_r = exchange_grid%gt
-    CALL cryst_to_cart(exchange_grid%ngmt, gvec_r, unit_cell, to_crystal)
+    ALLOCATE(gvec_r(3, grid%exch_fft%ngm))
+    gvec_r = grid%exch_gvec
+    CALL cryst_to_cart(grid%exch_fft%ngm, gvec_r, unit_cell, to_crystal)
     !
-    ALLOCATE(gvec_i(3, exchange_grid%ngmt))
+    ALLOCATE(gvec_i(3, grid%exch_fft%ngm))
     gvec_i = NINT(gvec_r)
     DEALLOCATE(gvec_r)
 
@@ -229,12 +229,12 @@ CONTAINS
     END DO ! ig
     !
     ! now create the output map
-    ALLOCATE(map(exchange_grid%ngmt, exchange_grid%ngmt))
+    ALLOCATE(map(grid%exch_fft%ngm, grid%exch_fft%ngm))
     map = out_of_bound
     !
-    DO igp = 1, exchange_grid%ngmt
+    DO igp = 1, grid%exch_fft%ngm
       !
-      DO ig = 1, exchange_grid%ngmt
+      DO ig = 1, grid%exch_fft%ngm
         !
         ! evaluate vector G - G' and test if it is within array boundaries
         delta_g = gvec_i(:,ig) - gvec_i(:,igp)
@@ -250,10 +250,10 @@ CONTAINS
   END SUBROUTINE exchange_map
 
   !> Evaluate the Coulomb potential for all vectors within the exchange grid.
-  SUBROUTINE exchange_coulomb(tpiba, method, vcut, exchange_grid, qvec, coulomb)
+  SUBROUTINE exchange_coulomb(tpiba, method, vcut, grid, qvec, coulomb)
 
-    USE fft_custom,          ONLY: fft_cus
     USE kinds,               ONLY: dp
+    USE sigma_grid_module,   ONLY: sigma_grid_type
     USE truncation_module,   ONLY: truncate, vcut_type
 
     !> \f$2 \pi / a\f$ where \f$a\f$ is the first dimension of the lattice
@@ -266,7 +266,7 @@ CONTAINS
     TYPE(vcut_type), INTENT(IN) :: vcut
 
     !> The grid used to calculate the exchange
-    TYPE(fft_cus), INTENT(IN) :: exchange_grid
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> The q-point at which the Coulomb potential is evaluated
     REAL(dp), INTENT(IN) :: qvec(3)
@@ -283,14 +283,14 @@ CONTAINS
     !
     ! allocate arrays of the appropriate size
     !
-    ALLOCATE(coulomb(exchange_grid%ngmt))
+    ALLOCATE(coulomb(grid%exch_fft%ngm))
 
     !
     ! generate the Coulomb potential for all q + G
     !
-    DO ig = 1, exchange_grid%ngmt
+    DO ig = 1, grid%exch_fft%ngm
       !
-      q_G = (qvec + exchange_grid%gt(:,ig)) * tpiba
+      q_G = (qvec + grid%exch_gvec(:,ig)) * tpiba
       !
       ! evaluate the truncated coulomb potential
       coulomb(ig) = truncate(method, vcut, q_G)
@@ -301,7 +301,7 @@ CONTAINS
 
   !> Extract the necessary quantities and evaluate the exchange according
   !! to the following algorithm.
-  SUBROUTINE exchange_wrapper(ikpt, exch, vcut)
+  SUBROUTINE exchange_wrapper(ikpt, grid, vcut)
 
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
@@ -309,7 +309,6 @@ CONTAINS
     USE control_gw,         ONLY: output, nbnd_occ, truncation
     USE disp,               ONLY: xk_kpoints
     USE eqv_gw,             ONLY: evq
-    USE fft_custom,         ONLY: fft_cus
     USE gvect,              ONLY: mill
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
@@ -318,6 +317,7 @@ CONTAINS
     USE mp_pools,           ONLY: inter_pool_comm, root_pool
     USE parallel_module,    ONLY: parallel_task, mp_root_sum
     USE qpoint,             ONLY: nksq, ikqs, npwq
+    USE sigma_grid_module,  ONLY: sigma_grid_type
     USE sigma_io_module,    ONLY: sigma_io_write_x
     USE units_gw,           ONLY: iunsex, lrsex, iuwfc, lrwfc
     USE wvfct,              ONLY: wg
@@ -328,7 +328,7 @@ CONTAINS
     INTEGER, INTENT(IN) :: ikpt
 
     !> the FFT grid for exchange
-    TYPE(fft_cus),   INTENT(IN) :: exch
+    TYPE(sigma_grid_type), INTENT(IN) :: grid
 
     !> The truncated Coulomb potential
     TYPE(vcut_type), INTENT(IN) :: vcut
@@ -369,7 +369,7 @@ CONTAINS
     CALL start_clock(time_sigma_x)
 
     ! allocate array for self energy and initialize to 0
-    ALLOCATE(sigma(exch%ngmt, exch%ngmt), STAT=ierr)
+    ALLOCATE(sigma(grid%exch_fft%ngm, grid%exch_fft%ngm), STAT=ierr)
     CALL errore(__FILE__, "error allocating array for exchange self energy", ierr)
     sigma = zero
 
@@ -390,13 +390,13 @@ CONTAINS
       !!
       !! 3. construct the map from G and G' to G - G'
       !!
-      CALL exchange_map(at, exch, mill, igk_k(:,ikq), map)
+      CALL exchange_map(at, grid, mill, igk_k(:,ikq), map)
       !!
       !! 4. construct the Coulomb potential
       !!
       ! q = k - (k - q)
       qvec = xk_kpoints(:, ikpt) - xk(:, ikq)
-      CALL exchange_coulomb(tpiba, truncation, vcut, exch, qvec, coulomb)
+      CALL exchange_coulomb(tpiba, truncation, vcut, grid, qvec, coulomb)
       !!
       !! 5. every process evaluates his contribution to sigma
       !!

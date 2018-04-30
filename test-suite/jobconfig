@@ -2,7 +2,7 @@
 #
 # This file is part of the SternheimerGW code.
 # 
-# Copyright (C) 2010 - 2017 
+# Copyright (C) 2010 - 2018 
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -27,8 +27,8 @@ inputs_args = ('scf.in', ''), ('gw.in', ''), ('ws.gw.in', '')
 
 [gw_c/]
 program = SternheimerGW
-inputs_args = ('scf.in', ''), ('gw.in', ''), ('aaa.gw.in', ''), ('real.gw.in'), \
-              ('sym.gw.in', ''), ('robust.gw.in', ''), ('plot.gw.in', '')
+inputs_args = ('scf.in', ''), ('gw.in', ''), ('aaa.gw.in', ''), \
+              ('sym.gw.in', ''), ('plot.gw.in', '')
 
 [gw_li/]
 program = SternheimerGW

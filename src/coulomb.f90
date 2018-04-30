@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -34,7 +34,6 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
   USE fft_base,         ONLY : dfftp, dffts
   USE fft_interfaces,   ONLY : invfft, fwfft
   USE freq_gw,          ONLY : fiu, nfs
-  USE gvecs,            ONLY : nls
   USE gvect,            ONLY : g
   USE gwsymm,           ONLY : ig_unique
   USE io_global,        ONLY : stdout, ionode
@@ -128,37 +127,37 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
     ! initialize the potential for a single G to 1
     drhoscfs = zero
     dvbare   = zero
-    dvbare(nls(ig_unique(ig))) = one
+    dvbare(dffts%nl(ig_unique(ig))) = one
     !
     ! potential in real space
-    CALL invfft('Smooth', dvbare, dffts)
+    CALL invfft('Rho', dvbare, dffts)
     !
     ! solve for linear response due to this perturbation
     CALL solve_linter(config, num_iter, dvbare, fiu(:nfs), drhoscfs)
     !
     ! back to reciprocal space
-    CALL fwfft('Smooth', dvbare, dffts)
+    CALL fwfft('Rho', dvbare, dffts)
     !
     ! loop over frequencies
     DO iw = 1, nfs
       !
       ! evaluate response in reciprocal space
-      CALL fwfft ('Dense', drhoscfs(:, 1, iw), dffts)
+      CALL fwfft ('Rho', drhoscfs(:, 1, iw), dffts)
       !
       ! copy to output array
       DO igp = 1, num_g_corr
-        scrcoul(igp, iw, indx) = drhoscfs(nls(igp), 1, iw)
+        scrcoul(igp, iw, indx) = drhoscfs(dffts%nl(igp), 1, iw)
       END DO ! igp
       !
       ! for the direct solver at bare potential in diagonal
       IF (solve_direct) THEN
         igp = ig_unique(ig)
-        scrcoul(igp, iw, indx) = scrcoul(igp, iw, indx) + dvbare(nls(igp))
+        scrcoul(igp, iw, indx) = scrcoul(igp, iw, indx) + dvbare(dffts%nl(igp))
       END IF
       !
       ! print the diagonal element + timing at the last frequency
       IF (ionode) THEN
-        igp = nls(ig_unique(ig))
+        igp = dffts%nl(ig_unique(ig))
         IF (iw == nfs) THEN
           WRITE(stdout, format_str) drhoscfs(igp, 1, iw) + dvbare(igp), &
             get_clock(time_coulomb) - start_time, "s"

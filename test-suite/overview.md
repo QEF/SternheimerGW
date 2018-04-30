@@ -2,7 +2,7 @@
  
   This file is part of the SternheimerGW code.
   
-  Copyright (C) 2010 - 2017 
+  Copyright (C) 2010 - 2018 
   Henry Lambert, Martin Schlipf, and Feliciano Giustino
  
   SternheimerGW is free software: you can redistribute it and/or modify
@@ -43,7 +43,6 @@ The following SternheimerGW features are tested in this suite
 * AAA approximation to obtain a denser grid on the imaginary axis
 * full frequency integration using Pade approximation to interpolate
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
-* obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain the self energy
@@ -84,9 +83,6 @@ Test case: gw\_c
 
 Evaluate the GW correction for C using the direct solver, imaginary frequency
 integration, and full frequency integration for W.
-Then evaluate the GW correction with a full frequency integration along the
-real axis. In the first part, we use the padecont flag to go to the real axis,
-in the second part, we restart and use the paderobust flag.
 
 The following SternheimerGW features are tested by this case
 
@@ -96,7 +92,6 @@ The following SternheimerGW features are tested by this case
 * full frequency integration using Pade approximation to interpolate
 * AAA approximation to obtain a denser grid on the imaginary axis
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
-* obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain self energy

@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017 
+! Copyright (C) 2010 - 2018 
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -96,7 +96,7 @@ MODULE gw_version
   CHARACTER(*), PARAMETER :: gw_version_number = '0.14'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: gw_git_describe = 'unknown'
-  !> Revision number of compatible QE version
-  CHARACTER(*), PARAMETER :: compatible_QE_revision = 'QE 6.2 rev13949'
+  !> Git commit of QE compatible with the commit of SternheimerGW
+  CHARACTER(*), PARAMETER :: compatible_QE_commit = '402f86a'
   !
 END MODULE gw_version

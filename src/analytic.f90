@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -198,8 +198,10 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
 
   USE aaa_module,         ONLY : aaa_eval
   USE control_gw,         ONLY : model_coul 
+  USE fft6_module,        ONLY : fft_map_generate
   USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_model
+  USE gvect,              ONLY : mill
   USE kinds,              ONLY : dp
   USE pade_module,        ONLY : pade_eval_robust
   USE sigma_grid_module,  ONLY : sigma_grid_type
@@ -251,13 +253,16 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !> complex constant of zero
   COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
 
+  !> the map from local to global G grid
+  INTEGER, ALLOCATABLE :: fft_map(:)
+
   CALL start_clock(time_construct_w)
 
   !
   ! create and initialize output array
   ! allocate space so that we can perform an in-place FFT on the array
   !
-  ALLOCATE(scrcoul(grid%corr%dfftt%nnr, grid%corr_par%dfftt%nnr), STAT = ierr)
+  ALLOCATE(scrcoul(grid%corr_fft%nnr, grid%corr_par_fft%nnr), STAT = ierr)
   IF (ierr /= 0) THEN
     CALL errore(__FILE__, "allocation of screened Coulomb potential failed", 1)
     RETURN
@@ -287,14 +292,19 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   IF (model_coul == aaa_approx) THEN
     mmax = SIZE(coeff) / 3
     ALLOCATE(aaa(mmax, 3))
+
   END IF
 
-  DO igp = 1, grid%corr_par%ngmt
+  ! create pointer from local to global grid
+  CALL fft_map_generate(grid%corr_par_fft, mill, fft_map)
+
+  DO igp = 1, grid%corr_par_fft%ngm
     !
     ! get the global corresponding index
-    igp_g = grid%corr_par%ig_l2gt(igp)
+    ! TODO fix image parallelization
+    igp_g = fft_map(igp)
 
-    DO ig = 1, grid%corr%ngmt
+    DO ig = 1, grid%corr_fft%ngm
 
       ! symmetry transformation of the coefficients
       coeff = scrcoul_coeff(gmapsym(ig), gmapsym(igp_g), :)

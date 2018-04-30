@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -48,7 +48,7 @@ CONTAINS
   !! \f$f(G, G')\f$.
   !!
   !! This calls internally the fftw6_diff routine.
-  SUBROUTINE fwfft6_same(grid_type, f, dfft, map, omega)
+  SUBROUTINE fwfft6_same(grid_type, f, dfft, omega)
 
     USE kinds,          ONLY: dp
     USE fft_interfaces, ONLY: fwfft
@@ -67,16 +67,11 @@ CONTAINS
     !! @note the code does not check explicitly if dfft and grid_type are compatible
     TYPE(fft_type_descriptor), INTENT(IN) :: dfft
 
-    !> Because usually a sphere of G-vectors is used, not all points on the FFT
-    !! grid are set. This map points from index of the G-points inside the
-    !! sphere onto their index in the full G-mesh (used for G and G').
-    INTEGER,      INTENT(IN)    :: map(:)
-
     !> volume of the unit cell
     REAL(dp),     INTENT(IN)    :: omega
 
     ! do the FFT via the routine which allows for different arguments
-    CALL fwfft6_diff(grid_type, f, dfft, dfft, map, map, omega)
+    CALL fwfft6_diff(grid_type, f, dfft, dfft, omega)
 
   END SUBROUTINE fwfft6_same
 
@@ -86,7 +81,7 @@ CONTAINS
   !! This routine allows to have different FFT grids for the coordinates.
   !!
   !! This is done in the following steps:
-  SUBROUTINE fwfft6_diff(grid_type, f, dfft, dfft_p, map, map_p, omega)
+  SUBROUTINE fwfft6_diff(grid_type, f, dfft, dfft_p, omega)
 
     USE kinds,          ONLY: dp
     USE fft_interfaces, ONLY: fwfft
@@ -110,16 +105,6 @@ CONTAINS
     !! executed, must be consistent with grid_type (used for r'/G' FFT)
     !! @note the code does not check explicitly if dfft and grid_type are compatible
     TYPE(fft_type_descriptor), INTENT(IN) :: dfft_p
-
-    !> Because usually a sphere of G-vectors is used, not all points on the FFT
-    !! grid are set. This map points from index of the G-points inside the
-    !! sphere onto their index in the full G-mesh (used for G).
-    INTEGER,      INTENT(IN)    :: map(:)
-
-    !> Because usually a sphere of G-vectors is used, not all points on the FFT
-    !! grid are set. This map points from index of the G-points inside the
-    !! sphere onto their index in the full G-mesh (used for G').
-    INTEGER,      INTENT(IN)    :: map_p(:)
 
     !> volume of the unit cell
     REAL(dp),     INTENT(IN)    :: omega
@@ -145,19 +130,11 @@ CONTAINS
     CALL start_clock(time_fwfft6)
 
     ! initialize helper variables
-    num_g   = SIZE(map)
-    num_g_p = SIZE(map_p)
+    num_g   = SIZE(dfft%nl)
+    num_g_p = SIZE(dfft_p%nl)
     num_r   = dfft%nnr
     num_r_p = dfft_p%nnr
 
-    !
-    ! sanity test of the input
-    !
-    ! reduced mesh must be within full mesh
-    IF (ANY(map > num_r)) &
-      CALL errore(__FILE__, "some G vector are outside the mesh of the Fourier transform", 1)
-    IF (ANY(map_p > num_r_p)) &
-      CALL errore(__FILE__, "some G' vector are outside the mesh of the Fourier transform", 1)
     !
     ! check that f has size compatible with dfft
     IF (SIZE(f, 1) /= num_r) &
@@ -183,7 +160,7 @@ CONTAINS
       !!
       !! 3. we extract the G vectors inside of the sphere \f$f(G, r') = w^\ast(G)\f$
       !!
-      f(:num_g, ir) = CONJG(work(map))
+      f(:num_g, ir) = CONJG(work(dfft%nl))
       !!
     END DO ! ir
 
@@ -206,7 +183,7 @@ CONTAINS
       !!
       !! 6. extract the G vectors within the sphere \f$f(G, G') = w(G')\f$
       !!
-      f(ig, :num_g_p) = work(map_p) * omega
+      f(ig, :num_g_p) = work(dfft_p%nl) * omega
       !!
     END DO ! ig
 
@@ -218,7 +195,7 @@ CONTAINS
   !! \f$f(r, r')\f$.
   !!
   !! This call internally the invfft6_diff routine.
-  SUBROUTINE invfft6_same(grid_type, f, dfft, map, omega)
+  SUBROUTINE invfft6_same(grid_type, f, dfft, omega)
 
     USE kinds,          ONLY: dp
     USE fft_interfaces, ONLY: invfft
@@ -237,16 +214,11 @@ CONTAINS
     !! @note the code does not check explicitly if dfft and grid_type are compatible
     TYPE(fft_type_descriptor), INTENT(IN) :: dfft
 
-    !> Because usually a sphere of G-vectors is used, not all points on the FFT
-    !! grid are set. This map points from index of the G-points inside the
-    !! sphere onto their index in the full G-mesh.
-    INTEGER,      INTENT(IN)    :: map(:)
-
     !> volume of the unit cell
     REAL(dp),     INTENT(IN)    :: omega
 
     ! do the FFT via the routine which allows for different arguments
-    CALL invfft6_diff(grid_type, f, dfft, dfft, map, map, omega)
+    CALL invfft6_diff(grid_type, f, dfft, dfft, omega)
     
   END SUBROUTINE invfft6_same
 
@@ -256,7 +228,7 @@ CONTAINS
   !! This routine allows to have different FFT grids for the coordinates.
   !!
   !! This is done in the following steps:
-  SUBROUTINE invfft6_diff(grid_type, f, dfft, dfft_p, map, map_p, omega)
+  SUBROUTINE invfft6_diff(grid_type, f, dfft, dfft_p, omega)
 
     USE kinds,          ONLY: dp
     USE fft_interfaces, ONLY: invfft
@@ -280,16 +252,6 @@ CONTAINS
     !! executed, must be consistent with grid_type (used for the r'/G' FFT)
     !! @note the code does not check explicitly if dfft and grid_type are compatible
     TYPE(fft_type_descriptor), INTENT(IN) :: dfft_p
-
-    !> Because usually a sphere of G-vectors is used, not all points on the FFT
-    !! grid are set. This map points from index of the G-points inside the
-    !! sphere onto their index in the full G-mesh. (used for the G mesh)
-    INTEGER,      INTENT(IN)    :: map(:)
-
-    !> Because usually a sphere of G-vectors is used, not all points on the FFT
-    !! grid are set. This map points from index of the G-points inside the
-    !! sphere onto their index in the full G-mesh. (used for the G' mesh)
-    INTEGER,      INTENT(IN)    :: map_p(:)
 
     !> volume of the unit cell
     REAL(dp),     INTENT(IN)    :: omega
@@ -318,20 +280,11 @@ CONTAINS
     CALL start_clock(time_invfft6)
 
     ! initialize helper variables
-    num_g   = SIZE(map)
-    num_g_p = SIZE(map_p)
+    num_g   = SIZE(dfft%nl)
+    num_g_p = SIZE(dfft_p%nl)
     num_r   = dfft%nnr
     num_r_p = dfft_p%nnr
 
-    !
-    ! sanity test of the input
-    !
-    ! reduced mesh must be within full mesh
-    IF (ANY(map > num_r)) &
-      CALL errore(__FILE__, "some G vector are outside the mesh of the Fourier transform", 1)
-    IF (ANY(map_p > num_r_p)) &
-      CALL errore(__FILE__, "some G' vector are outside the mesh of the Fourier transform", 1)
-    !
     ! check that f has size compatible with dfft
     IF (SIZE(f, 1) /= num_r) &
       CALL errore(__FILE__, "size of array not compatible with 1st Fourier transform", 1)
@@ -350,7 +303,7 @@ CONTAINS
       !!
       ! note - we initialize work, because map only contains a subset of all entries
       work = zero
-      work(map_p) = f(ig, :num_g_p) / omega
+      work(dfft_p%nl) = f(ig, :num_g_p) / omega
       !!
       !! 2. we transform the work array \f$w(G') \rightarrow w(r')\f$
       !!
@@ -375,7 +328,7 @@ CONTAINS
       !!
       ! note - we initialize work, because map only contains a subset of all entries
       work = zero
-      work(map) = CONJG(f(:num_g, ir))
+      work(dfft%nl) = CONJG(f(:num_g, ir))
       !!
       !! 5. we transform the work array \f$w(G) \rightarrow w(r')\f$
       !!
@@ -390,5 +343,35 @@ CONTAINS
     CALL stop_clock(time_invfft6)
 
   END SUBROUTINE invfft6_diff
+
+  !> generate mapping from local to global G indices
+  SUBROUTINE fft_map_generate(dfft, gvec, fft_map)
+
+    USE fft_types, ONLY: fft_type_descriptor, fft_stick_index
+
+    !> the FFT for which the mapping is generated
+    TYPE(fft_type_descriptor), INTENT(IN) :: dfft
+
+    !> the G vectors in crystal coordinates
+    INTEGER, INTENT(IN) :: gvec(:,:)
+
+    !> the resulting FFT map
+    INTEGER, ALLOCATABLE :: fft_map(:)
+
+    !> local and global index on G vectors
+    INTEGER local, globl
+
+    ALLOCATE(fft_map(dfft%ngm))
+
+    globl = 0
+    DO local = 1, dfft%ngm
+      DO
+        globl = globl + 1
+        IF (fft_stick_index(dfft, gvec(1,globl), gvec(2,globl)) /= 0) EXIT
+      END DO
+      fft_map(local) = globl
+    END DO
+
+  END SUBROUTINE fft_map_generate
 
 END MODULE fft6_module

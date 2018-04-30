@@ -4,7 +4,7 @@
 ! Parts of this file have been taken from the chebfun code.
 ! See http://www.chebfun.org/ for Chebfun information.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! The University of Oxford and The Chebfun Developers,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !

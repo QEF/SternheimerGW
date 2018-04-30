@@ -4,7 +4,7 @@
 ! Parts of this file are taken from the Quantum ESPRESSO software
 ! P. Giannozzi, et al, J. Phys.: Condens. Matter, 21, 395502 (2009)
 !
-! Copyright (C) 2010 - 2017 Quantum ESPRESSO group,
+! Copyright (C) 2010 - 2018 Quantum ESPRESSO group,
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -62,9 +62,8 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
-  USE fft_interfaces,       ONLY : invfft, fwfft
+  USE fft_interfaces,       ONLY : invfft, fwfft, fft_interpolate
   USE gvecs,                ONLY : doublegrid
-  USE gvect,                ONLY : nl
   USE io_global,            ONLY : stdout
   USE ions_base,            ONLY : nat
   USE kinds,                ONLY : DP
@@ -501,7 +500,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     IF (doublegrid) THEN
       DO ifreq = 1, num_freq
         DO is = 1, nspin_mag
-          CALL cinterpolate(drhoscfh(1, is, ifreq), drhoscf(1, is, ifreq), 1)
+          CALL fft_interpolate(dffts, drhoscf(:, is, ifreq), dfftp, drhoscfh(:, is, ifreq))
         END DO ! is
       END DO ! ifreq
     ELSE
@@ -543,9 +542,9 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
       !
       IF (meandvb < eps10) THEN 
         DO is = 1, nspin_mag
-          CALL fwfft('Dense', dvscfout(:, is, ifreq), dfftp)
-          dvscfout(nl(1), current_spin, ifreq) = zero
-          CALL invfft('Dense', dvscfout(:, is, ifreq), dfftp)
+          CALL fwfft('Rho', dvscfout(:, is, ifreq), dfftp)
+          dvscfout(dfftp%nl(1), current_spin, ifreq) = zero
+          CALL invfft('Rho', dvscfout(:, is, ifreq), dfftp)
         END DO ! is
       END IF
       !
@@ -573,7 +572,7 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
     IF (doublegrid) THEN
       DO ifreq = 1, num_freq
         DO is = 1, nspin_mag
-          CALL cinterpolate(dvscfin(1, is, ifreq), dvscfins(1, is, ifreq), -1)
+          CALL fft_interpolate(dfftp, dvscfin(:, is, ifreq), dffts, dvscfins(:, is, ifreq))
         END DO ! is
       END DO ! ifreq
     END IF

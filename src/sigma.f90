@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -147,7 +147,9 @@ CONTAINS
     USE debug_module,         ONLY: debug_type, debug_set, test_nan
     USE disp,                 ONLY: x_q
     USE ener,                 ONLY: ef
+    USE fft6_module,          ONLY: fft_map_generate
     USE freqbins_module,      ONLY: freqbins_type
+    USE gvect,                ONLY: mill
     USE io_files,             ONLY: prefix
     USE io_global,            ONLY: meta_ionode, ionode_id, stdout
     USE kinds,                ONLY: dp
@@ -222,6 +224,9 @@ CONTAINS
     !> the chemical potential of the system
     REAL(dp) mu
 
+    !> the map from local to global G vectors
+    INTEGER, ALLOCATABLE :: fft_map(:)
+
     !> the screened Coulomb interaction
     COMPLEX(dp), ALLOCATABLE :: coulomb(:,:,:)
 
@@ -259,9 +264,10 @@ CONTAINS
     WRITE(stdout, '(5x, a, 3f8.4, a)') 'evaluate self energy for k = (', xk(:, ikpt), ' )'
 
     ! set helper variable
-    num_g_corr  = grid%corr%ngmt
-    num_gp_corr = grid%corr_par%ngmt
+    num_g_corr  = grid%corr_fft%ngm
+    num_gp_corr = grid%corr_par_fft%ngm
     debug_sigma = debug_set .AND. debug%sigma_corr
+    CALL fft_map_generate(grid%corr_par_fft, mill, fft_map)
 
     !
     ! set the prefactor depending on whether we integrate along the real or
@@ -388,7 +394,7 @@ CONTAINS
       sigma_root = zero
       !
       DO ifreq = 1, freq%num_sigma()
-        sigma_root(:, grid%corr_par%ig_l2gt, ifreq) = sigma(:,:,ifreq)
+        sigma_root(:, fft_map, ifreq) = sigma(:,:,ifreq)
       END DO
       !
       CALL mp_root_sum(inter_image_comm, root_image, sigma_root)
@@ -466,10 +472,10 @@ CONTAINS
     CALL start_clock(time_GW_product)
 
     ! determine the helper variables
-    num_r  = grid%corr%dfftt%nnr
-    num_rp = grid%corr_par%dfftt%nnr
-    num_g  = grid%corr%ngmt
-    num_gp = grid%corr_par%ngmt
+    num_r  = grid%corr_fft%nnr
+    num_rp = grid%corr_par_fft%nnr
+    num_g  = grid%corr_fft%ngm
+    num_gp = grid%corr_par_fft%ngm
     debug_sigma = debug_set .AND. debug%sigma_corr
 
     !
@@ -490,8 +496,7 @@ CONTAINS
     !! 1. We Fourier transform \f$W(G, G')\f$ to real space.
     !!
     ! array contains W(r, r')
-    CALL invfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
-                 grid%corr%nlt, grid%corr_par%nlt, omega)
+    CALL invfft6('Rho', array, grid%corr_fft, grid%corr_par_fft, omega)
     ! check for NaN after FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array))) THEN
@@ -516,8 +521,7 @@ CONTAINS
     !! 3. The resulting is transformed back to reciprocal space \f$\Sigma(G, G')\f$.
     !!
     !. array contains Sigma(G, G') / alpha
-    CALL fwfft6('Custom', array, grid%corr%dfftt, grid%corr_par%dfftt, &
-                grid%corr%nlt, grid%corr_par%nlt, omega)
+    CALL fwfft6('Rho', array, grid%corr_fft, grid%corr_par_fft, omega)
     ! check for NaN after the FFT
     IF (debug_sigma) THEN
       IF (ANY(test_nan(array(:num_g, :num_gp)))) THEN
@@ -645,10 +649,10 @@ CONTAINS
     ! sanity check of the input
     !
     debug_sigma = debug_set .AND. debug%sigma_corr
-    num_r_corr  = grid%corr%dfftt%nnr
-    num_rp_corr = grid%corr_par%dfftt%nnr
-    num_g_corr  = grid%corr%ngmt
-    num_gp_corr = grid%corr_par%ngmt
+    num_r_corr  = grid%corr_fft%nnr
+    num_rp_corr = grid%corr_par_fft%nnr
+    num_g_corr  = grid%corr_fft%ngm
+    num_gp_corr = grid%corr_par_fft%ngm
     IF (SIZE(coulomb, 1) /= num_g_corr) &
       CALL errore(__FILE__, "screened Coulomb and G-vector FFT type inconsistent", 1)
     IF (SIZE(coulomb, 2) /= num_g_corr) &
@@ -691,6 +695,7 @@ CONTAINS
       END IF
     END IF
 
+
     WRITE(stdout,'(2x,a,f9.2,a)', ADVANCE='NO') 'G: ', get_clock(time_sigma_c) - start_time, 's'
     start_time = get_clock(time_sigma_c)
 
@@ -699,9 +704,9 @@ CONTAINS
     !!
     ! the result is G(r, r', w)
     DO igreen = 1, num_green
-      CALL invfft6('Custom', green(:,:,igreen), grid%corr%dfftt, grid%corr_par%dfftt, &
-                   grid%corr%nlt, grid%corr_par%nlt, omega)
+      CALL invfft6('Rho', green(:,:,igreen), grid%corr_fft, grid%corr_par_fft, omega)
     END DO ! igreen
+
 
     ! check for NaN in Green's function
     IF (debug_sigma) THEN

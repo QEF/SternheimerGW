@@ -2,7 +2,7 @@
 !
 ! This file is part of the SternheimerGW code.
 ! 
-! Copyright (C) 2010 - 2017
+! Copyright (C) 2010 - 2018
 ! Henry Lambert, Martin Schlipf, and Feliciano Giustino
 !
 ! SternheimerGW is free software: you can redistribute it and/or modify
@@ -87,9 +87,9 @@ CONTAINS
     num_g = SIZE(coulomb, 1)
     IF (SIZE(coulomb, 2) /= num_g) &
       CALL errore(__FILE__, "coulomb must be square matrix", 1)
-    IF (grid%corr%ngmt /= num_g) &
+    IF (grid%corr_fft%ngm /= num_g) &
       CALL errore(__FILE__, "FFT grid and coulomb matrix inconsistent", 1)
-    IF (grid%corr%ngmt /= grid%corr_par%ngmt) &
+    IF (grid%corr_fft%ngm /= grid%corr_par_fft%ngm) &
       CALL errore(__FILE__, "image parallelism not implemented for plotting", 1)
 
     !
