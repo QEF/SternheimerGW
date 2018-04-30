@@ -53,7 +53,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE gwsigma,              ONLY : nbnd_sig, ecutsex, ecutsco, corr_conv
   USE gwsymm,               ONLY : use_symm
   USE input_parameters,     ONLY : max_seconds, nk1, nk2, nk3, k1, k2, k3, force_symmorphic
-  USE io_files,             ONLY : tmp_dir, prefix
+  USE io_files,             ONLY : tmp_dir, prefix, check_tempdir
   USE io_global,            ONLY : meta_ionode, meta_ionode_id, stdout
   USE kinds,                ONLY : DP
   USE klist,                ONLY : nks

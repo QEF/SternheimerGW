@@ -41,7 +41,6 @@ SUBROUTINE check_initial_status()
   USE mp,              ONLY : mp_bcast
   USE mp_global,       ONLY : mp_global_end
   USE scf,             ONLY : rho
-  USE xml_io_base,     ONLY : create_directory
   !
   !
   IMPLICIT NONE

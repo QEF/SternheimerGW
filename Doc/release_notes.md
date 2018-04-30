@@ -5,12 +5,13 @@ on develop
 ------------
 
 Update FFT type to recent change in Quantum Espresso.
+Adjust to renaming of commits in Quantum Espresso.
 
 Further improvement to real frequency integration. Symmetrize enforcing
 that +w and -w are the same. Fix bug where frequencies are in the wrong
 quadrant.
 
-> compatible QE commit 1217692 
+> compatible QE commit dbc89a8 
 
 Version 0.14
 ------------
