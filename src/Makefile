@@ -39,7 +39,6 @@ allocate_gwq.o\
 bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
-close_gwq.o\
 coulomb.o\
 coulomb_q0G0.o\
 coulomb_vcut.o\
@@ -61,10 +60,7 @@ invert_epsilon.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\
-openfilq.o\
-opengwfil.o\
 plot_coulomb.o\
-pp_output.o\
 prepare_q.o\
 prepare_q0.o\
 print_matel.o\
@@ -72,13 +68,11 @@ print_matel_im.o\
 q_points.o\
 reorder.o\
 run_nscf.o\
-save_gw_input.o\
 select_solver.o\
 setup_nscf.o\
 setup_nscf_green.o\
 sigma.o\
 sigma_expect.o\
-sigma_io.o\
 sigma_matel.o\
 sigma_pade.o\
 solve_linter.o\
