@@ -26,9 +26,9 @@ include $(ESPRESSO)/make.inc
 
 SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
-LIB = libparallel.a
+LIB = libanalytic.a
 
-MODFLAGS = $(BASEMOD_FLAGS)
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD)
 
 all: lib mod
 
@@ -38,7 +38,7 @@ mod: $(OBJ)
 	for file in $$(ls *.mod); do \
 	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
 	done
- 
+
 $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@

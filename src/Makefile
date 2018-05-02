@@ -29,13 +29,12 @@ include $(ESPRESSO)/make.inc
 MODFLAGS= $(BASEMOD_FLAGS) \
           $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
           $(MOD_FLAG)$(ESPRESSO)/dft-d3 \
-          $(MOD_FLAG)../data/module $(MOD_FLAG).
+          $(MOD_FLAG)../util/src $(MOD_FLAG)../data/module $(MOD_FLAG)../algo/module $(MOD_FLAG).
 EXE = gw.x
 
 IFLAGS=
 
 GWOBJS = \
-aaa.o\
 analytic.o\
 allocate_gwq.o\
 bicgstab.o\
@@ -47,14 +46,12 @@ coulomb_q0G0.o\
 coulomb_vcut.o\
 coulpade.o\
 deallocate_gwq.o\
-debug.o\
 do_stern.o\
 dvqpsi_us.o\
 exchange.o\
 freqbins.o\
 gauleg_grid.o\
 gmap_sym.o\
-godby_needs.o\
 green.o\
 gw.o\
 gw_input.o\
@@ -72,8 +69,6 @@ linear_solver.o\
 mix_pot_c.o\
 openfilq.o\
 opengwfil.o\
-pade.o\
-pade_robust.o\
 plot_coulomb.o\
 pp_output.o\
 prepare_q.o\
@@ -101,7 +96,7 @@ truncation.o\
 unfold_w.o\
 version.o
 
-GWLIBS = ../data/libdata.a
+GWLIBS = ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \

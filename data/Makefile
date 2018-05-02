@@ -21,7 +21,7 @@
 #
 #------------------------------------------------------------------------------
 
-include ../espresso
+include ../module
 include $(ESPRESSO)/make.inc
 
 DEPEND = algebra fft parallel timing

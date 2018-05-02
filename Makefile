@@ -20,7 +20,7 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: espresso 
+all: module 
 	make -C util
 	make -C data
 	make -C algo
@@ -41,7 +41,9 @@ clean:
 	make -C phys clean
 	make -C user clean
 
-espresso:
+module: Makefile
 	echo "ESPRESSO=$(CURDIR)/.." > $@
+	echo "UTIL_MOD=$(CURDIR)/util/src" >> $@
+	echo "DATA_MOD=$(CURDIR)/data/module" >> $@
 
 .PHONY: all test clean

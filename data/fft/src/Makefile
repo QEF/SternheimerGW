@@ -21,14 +21,14 @@
 #
 #------------------------------------------------------------------------------
 
-include ../../../espresso
+include ../../../module
 include $(ESPRESSO)/make.inc
 
 SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
 LIB = libfft.a
 
-MODFLAGS = $(BASEMOD_FLAGS) -I../../timing/src
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)-I../../timing/src
 
 all: lib mod
 
