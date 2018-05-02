@@ -56,7 +56,6 @@ freqbins.o\
 gauleg_grid.o\
 gmap_sym.o\
 godby_needs.o\
-gram_schmidt.o\
 green.o\
 gw.o\
 gw_input.o\
@@ -69,11 +68,9 @@ gwq_setup.o\
 initialize_gw.o\
 invert_epsilon.o\
 kind_gw.o\
-lapack.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\
-norm.o\
 openfilq.o\
 opengwfil.o\
 pade.o\
