@@ -51,7 +51,6 @@ debug.o\
 do_stern.o\
 dvqpsi_us.o\
 exchange.o\
-fft6.o\
 freqbins.o\
 gauleg_grid.o\
 gmap_sym.o\

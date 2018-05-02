@@ -21,32 +21,31 @@
 #
 #------------------------------------------------------------------------------
 
-include ../espresso
+include ../../../espresso
 include $(ESPRESSO)/make.inc
 
-DEPEND = algebra fft parallel
-DEPEND_LIB = $(foreach file, $(DEPEND), $(file)/src/lib$(file).a)
-LIB = libdata.a
+SRC = $(wildcard *.f90)
+OBJ = $(SRC:.f90=.o)
+LIB = libfft.a
 
-all: depend $(LIB)
+MODFLAGS = $(BASEMOD_FLAGS) -I../../timing/src
 
-$(LIB): $(DEPEND_LIB)
-	rm -f $@
-	$(AR) -rcT $@ $(DEPEND_LIB)
+all: lib mod
 
-depend:
-	for file in $(DEPEND); do \
-	  make -C $$file; \
+lib: $(LIB)
+
+mod: $(OBJ)
+	for file in $$(ls *.mod); do \
+	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
 	done
-
-test:
-	for file in $(DEPEND); do \
-	  make -C $$file test; \
-	done
+ 
+$(LIB) : $(OBJ)
+	$(AR) $(ARFLAGS) $@ $?
+	$(RANLIB) $@
 
 clean:
-	for file in $(DEPEND); do \
-	  make -C $$file clean; \
-	done
+	-rm *.o *.mod $(LIB)
 
-.PHONY: all depend test clean
+.PHONY: all lib mod
+
+-include make.depend
