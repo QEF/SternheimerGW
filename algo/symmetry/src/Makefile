@@ -28,7 +28,7 @@ SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
 LIB = libsymmetry.a
 
-MODFLAGS = $(BASEMOD_FLAGS)
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG)$(UTIL_MOD)
 
 all: lib mod
 

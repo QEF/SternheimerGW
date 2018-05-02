@@ -46,7 +46,6 @@ deallocate_gwq.o\
 do_stern.o\
 dvqpsi_us.o\
 exchange.o\
-gmap_sym.o\
 green.o\
 gw.o\
 gw_input.o\
@@ -69,10 +68,8 @@ sigma_expect.o\
 sigma_matel.o\
 sigma_pade.o\
 solve_linter.o\
-stern_symm.o\
 stop_gw.o\
 truncation.o\
-unfold_w.o\
 version.o
 
 GWLIBS = ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
