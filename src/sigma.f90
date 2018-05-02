@@ -114,24 +114,7 @@ MODULE sigma_module
 
   PRIVATE
 
-  PUBLIC sigma_wrapper, sigma_config_type
-
-  !> This type contains the information necessary to evaluate the self-energy.
-  TYPE sigma_config_type
-
-    !> The index of the q point at which the Coulomb potential is evaluated.
-    INTEGER index_q
- 
-    !> The index of the k - q point at which the Green's function is evaluated.
-    INTEGER index_kq
-
-    !> The symmetry operation to go from q to star(q).
-    INTEGER sym_op
-
-    !> weight of the active point
-    REAL(dp) weight
-
-  END TYPE sigma_config_type
+  PUBLIC sigma_wrapper
 
 CONTAINS
 
@@ -160,6 +143,7 @@ CONTAINS
     USE output_mod,           ONLY: filcoul
     USE parallel_module,      ONLY: mp_root_sum
     USE select_solver_module, ONLY: select_solver_type
+    USE setup_nscf_module,    ONLY: sigma_config_type
     USE sigma_grid_module,    ONLY: sigma_grid_type
     USE sigma_io_module,      ONLY: sigma_io_write_c
     USE symm_base,            ONLY: nsym, s, invs, ftau, nrot

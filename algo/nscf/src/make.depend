@@ -1,0 +1,2 @@
+run_nscf.o: setup_nscf.o
+run_nscf.o: setup_nscf_green.o

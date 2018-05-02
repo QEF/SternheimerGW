@@ -43,9 +43,10 @@ program gw
   USE pp_output_mod,        ONLY : pp_output_open_all
   USE run_nscf_module,      ONLY : run_nscf
   USE select_solver_module, ONLY : select_solver_type
+  USE setup_nscf_module,    ONLY : sigma_config_type
   USE sigma_grid_module,    ONLY : sigma_grid, sigma_grid_type
   USE sigma_io_module,      ONLY : sigma_io_close_write
-  USE sigma_module,         ONLY : sigma_wrapper, sigma_config_type
+  USE sigma_module,         ONLY : sigma_wrapper
   USE timing_module,        ONLY : time_setup
   USE truncation_module,    ONLY : vcut_type
 

@@ -64,15 +64,11 @@ print_matel.o\
 print_matel_im.o\
 q_points.o\
 reorder.o\
-run_nscf.o\
-setup_nscf.o\
-setup_nscf_green.o\
 sigma.o\
 sigma_expect.o\
 sigma_matel.o\
 sigma_pade.o\
 solve_linter.o\
-star_q.o\
 stern_symm.o\
 stop_gw.o\
 truncation.o\

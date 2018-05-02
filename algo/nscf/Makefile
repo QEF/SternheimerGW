@@ -20,33 +20,14 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-
-include ../module
-include $(ESPRESSO)/make.inc
-
-DEPEND = analytic grid io linear_solver nscf symmetry
-DEPEND_LIB = $(foreach file, $(DEPEND), $(file)/src/lib$(file).a)
-LIB = libalgo.a
-
-all: depend $(LIB)
-
-$(LIB): $(DEPEND_LIB)
-	rm -f $@
-	$(AR) -rcT $@ $(DEPEND_LIB)
-
-depend:
-	for file in $(DEPEND); do \
-	  make -C $$file; \
-	done
+all:
+	make -C src
 
 test:
-	for file in $(DEPEND); do \
-	  make -C $$file test; \
-	done
+	make -C test
 
 clean:
-	for file in $(DEPEND); do \
-	  make -C $$file clean; \
-	done
+	make -C src clean
+	make -C test clean
 
-.PHONY: all depend test clean
+.PHONY: all test clean

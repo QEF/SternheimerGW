@@ -24,6 +24,25 @@
 !------------------------------------------------------------------------------ 
 MODULE setup_nscf_module
 
+  USE kinds, ONLY : dp
+
+  !> This type contains the information necessary to evaluate the self-energy.
+  TYPE sigma_config_type
+
+    !> The index of the q point at which the Coulomb potential is evaluated.
+    INTEGER index_q
+
+    !> The index of the k - q point at which the Green's function is evaluated.
+    INTEGER index_kq
+
+    !> The symmetry operation to go from q to star(q).
+    INTEGER sym_op
+
+    !> weight of the active point
+    REAL(dp) weight
+
+  END TYPE sigma_config_type
+
 CONTAINS
 
 !> This routine initializes the global modules for the nscf run.
@@ -55,14 +74,12 @@ SUBROUTINE setup_nscf_green(kpt, config)
                                  use_para_diag, max_cg_iter
   USE disp,               ONLY : nqs, x_q, wq
   USE ions_base,          ONLY : nat, ityp
-  USE kinds,              ONLY : dp
   USE klist,              ONLY : xk, wk, nks, nkstot, qnorm, nelec
   USE mp,                 ONLY : mp_sum
   USE mp_pools,           ONLY : kunit
   USE noncollin_module,   ONLY : noncolin
   USE parameters,         ONLY : npk
   USE qpoint,             ONLY : nksq, ikks, ikqs
-  USE sigma_module,       ONLY : sigma_config_type
   USE symm_base,          ONLY : s, nsym, invs
   USE uspp_param,         ONLY : n_atom_wfc
   USE wvfct,              ONLY : nbnd, nbndx
