@@ -49,8 +49,6 @@ deallocate_gwq.o\
 do_stern.o\
 dvqpsi_us.o\
 exchange.o\
-freqbins.o\
-gauleg_grid.o\
 gmap_sym.o\
 green.o\
 gw.o\
@@ -84,7 +82,6 @@ setup_nscf.o\
 setup_nscf_green.o\
 sigma.o\
 sigma_expect.o\
-sigma_grid.o\
 sigma_io.o\
 sigma_matel.o\
 sigma_pade.o\
