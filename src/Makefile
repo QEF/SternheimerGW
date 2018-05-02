@@ -36,7 +36,6 @@ IFLAGS=
 
 GWOBJS = \
 allocate_gwq.o\
-bicgstab.o\
 check_initial_status.o\
 clean_pw_gw.o\
 coulomb.o\
@@ -57,8 +56,6 @@ gwq_readin.o\
 gwq_setup.o\
 initialize_gw.o\
 invert_epsilon.o\
-linear_op.o\
-linear_solver.o\
 mix_pot_c.o\
 plot_coulomb.o\
 prepare_q.o\
@@ -68,7 +65,6 @@ print_matel_im.o\
 q_points.o\
 reorder.o\
 run_nscf.o\
-select_solver.o\
 setup_nscf.o\
 setup_nscf_green.o\
 sigma.o\
