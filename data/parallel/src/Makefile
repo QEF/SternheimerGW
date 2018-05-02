@@ -21,11 +21,14 @@
 #
 #------------------------------------------------------------------------------
 
-include ../../../make.inc
+include ../../../espresso
+include $(ESPRESSO)/make.inc
 
 SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
 LIB = libparallel.a
+
+MODFLAGS = $(BASEMOD_FLAGS)
 
 all: lib mod
 

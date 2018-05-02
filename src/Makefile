@@ -28,7 +28,8 @@ include $(ESPRESSO)/make.inc
 # location of needed modules and included files (if any)
 MODFLAGS= $(BASEMOD_FLAGS) \
           $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
-          $(MOD_FLAG)$(ESPRESSO)/dft-d3 $(MOD_FLAG).
+          $(MOD_FLAG)$(ESPRESSO)/dft-d3 \
+          $(MOD_FLAG)../data/module $(MOD_FLAG).
 EXE = gw.x
 
 IFLAGS=
@@ -77,7 +78,6 @@ openfilq.o\
 opengwfil.o\
 pade.o\
 pade_robust.o\
-parallel.o\
 plot_coulomb.o\
 pp_output.o\
 prepare_q.o\
@@ -107,6 +107,7 @@ truncation.o\
 unfold_w.o\
 version.o
 
+GWLIBS = ../data/libdata.a
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \
@@ -149,8 +150,8 @@ ifeq ("$(wildcard $(WIKI)/tiddlers)", "")
 	$(error directory $(WIKI)/tiddlers does not exist)
 endif
 
-$(EXE) : gw.o libgw.a $(PWOBJS) $(LRMODS) $(LIBOBJS)
-	$(LD) $(LDFLAGS) -o $@ $< libgw.a \
+$(EXE) : gw.o libgw.a $(GWLIBS) $(PWOBJS) $(LRMODS) $(LIBOBJS)
+	$(LD) $(LDFLAGS) -o $@ $< libgw.a $(GWLIBS) \
 		 $(LRMODS) $(PWOBJS) $(QEMODS) $(LIBOBJS) $(LIBS)
 	- ( mkdir -p ../bin ; ln -fs ../src/$(EXE) ../bin/$(EXE) )
 

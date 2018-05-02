@@ -21,7 +21,8 @@
 #
 #------------------------------------------------------------------------------
 
-include ../make.inc
+include ../espresso
+include $(ESPRESSO)/make.inc
 
 DEPEND = parallel
 DEPEND_LIB = $(foreach file, $(DEPEND), $(file)/src/lib$(file).a)

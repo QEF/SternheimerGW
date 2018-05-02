@@ -20,7 +20,7 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: make.inc
+all: espresso 
 	make -C util
 	make -C data
 	make -C algo
@@ -41,7 +41,7 @@ clean:
 	make -C phys clean
 	make -C user clean
 
-make.inc:
-	ln -s ../make.inc
+espresso:
+	echo "ESPRESSO=$(CURDIR)/.." > $@
 
 .PHONY: all test clean
