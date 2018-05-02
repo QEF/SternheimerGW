@@ -54,14 +54,11 @@ green.o\
 gw.o\
 gw_input.o\
 gw_opening.o\
-gw_type.o\
-gwcom.o\
 gwq_init.o\
 gwq_readin.o\
 gwq_setup.o\
 initialize_gw.o\
 invert_epsilon.o\
-kind_gw.o\
 linear_op.o\
 linear_solver.o\
 mix_pot_c.o\

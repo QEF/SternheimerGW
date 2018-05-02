@@ -21,14 +21,14 @@
 #
 #------------------------------------------------------------------------------
 
-include ../../espresso
+include ../../module
 include $(ESPRESSO)/make.inc
 
 SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
 LIB = libutil.a
 
-MODFLAGS = $(BASEMOD_FLAGS)
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/LR_Modules
 
 no_debug : .no_debug all
 .no_debug:

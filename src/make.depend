@@ -174,7 +174,6 @@ gw_opening.o : version.o
 gwcom.o : ../../LR_Modules/lrcom.o
 gwcom.o : ../../Modules/cell_base.o
 gwcom.o : ../../Modules/kind.o
-gwcom.o : gw_type.o
 gwq_init.o : ../../LR_Modules/lrcom.o
 gwq_init.o : ../../Modules/becmod.o
 gwq_init.o : ../../Modules/constants.o
@@ -280,7 +279,6 @@ plot_coulomb.o : sigma_grid.o
 pp_output.o : ../../Modules/io_files.o
 pp_output.o : ../../Modules/kind.o
 pp_output.o : ../../iotk/src/iotk_module.o
-pp_output.o : gw_type.o
 prepare_q.o : ../../LR_Modules/lrcom.o
 prepare_q.o : ../../Modules/constants.o
 prepare_q.o : gwcom.o
@@ -421,7 +419,6 @@ sigma_matel.o : ../../PW/src/scf_mod.o
 sigma_matel.o : ../../UtilXlib/mp.o
 sigma_matel.o : freqbins.o
 sigma_matel.o : gwcom.o
-sigma_matel.o : kind_gw.o
 sigma_matel.o : sigma_expect.o
 sigma_matel.o : sigma_grid.o
 sigma_matel.o : timing.o
