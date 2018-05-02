@@ -143,7 +143,6 @@ green.o : norm.o
 green.o : reorder.o
 green.o : select_solver.o
 green.o : sigma_grid.o
-green.o : sleep.o
 green.o : timing.o
 gw.o : ../../Modules/check_stop.o
 gw.o : ../../Modules/environment.o

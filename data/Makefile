@@ -24,7 +24,7 @@
 include ../espresso
 include $(ESPRESSO)/make.inc
 
-DEPEND = algebra fft parallel
+DEPEND = algebra fft parallel timing
 DEPEND_LIB = $(foreach file, $(DEPEND), $(file)/src/lib$(file).a)
 LIB = libdata.a
 
