@@ -20,28 +20,14 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: make.inc
-	make -C util
-	make -C data
-	make -C algo
-	make -C phys
-	make -C user 
+all:
+	make -C src
 
 test:
-	make -C util test
-	make -C data test
-	make -C algo test
-	make -C phys test
-	make -C user test 
+	make -C test
 
 clean:
-	make -C util clean
-	make -C data clean
-	make -C algo clean
-	make -C phys clean
-	make -C user clean
-
-make.inc:
-	ln -s ../make.inc
+	make -C src clean
+	make -C test clean
 
 .PHONY: all test clean

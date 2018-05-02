@@ -20,28 +20,29 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: make.inc
-	make -C util
-	make -C data
-	make -C algo
-	make -C phys
-	make -C user 
 
-test:
-	make -C util test
-	make -C data test
-	make -C algo test
-	make -C phys test
-	make -C user test 
+include ../../../make.inc
+
+SRC = $(wildcard *.f90)
+OBJ = $(SRC:.f90=.o)
+LIB = libparallel.a
+
+all: lib mod
+
+lib: $(LIB)
+
+mod: $(OBJ)
+	for file in $$(ls *.mod); do \
+	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
+	done
+ 
+$(LIB) : $(OBJ)
+	$(AR) $(ARFLAGS) $@ $?
+	$(RANLIB) $@
 
 clean:
-	make -C util clean
-	make -C data clean
-	make -C algo clean
-	make -C phys clean
-	make -C user clean
+	-rm *.o *.mod $(LIB)
 
-make.inc:
-	ln -s ../make.inc
+.PHONY: all lib mod
 
-.PHONY: all test clean
+-include make.depend
