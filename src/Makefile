@@ -35,7 +35,6 @@ EXE = gw.x
 IFLAGS=
 
 GWOBJS = \
-analytic.o\
 allocate_gwq.o\
 bicgstab.o\
 check_initial_status.o\

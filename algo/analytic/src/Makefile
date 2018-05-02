@@ -28,7 +28,7 @@ SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
 LIB = libanalytic.a
 
-MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD)
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD) $(MOD_FLAG)../../grid/src
 
 all: lib mod
 
