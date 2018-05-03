@@ -55,7 +55,6 @@ prepare_q.o\
 prepare_q0.o\
 print_matel.o\
 print_matel_im.o\
-reorder.o\
 sigma.o\
 sigma_expect.o\
 sigma_matel.o\
