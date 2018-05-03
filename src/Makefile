@@ -29,7 +29,8 @@ include $(ESPRESSO)/make.inc
 MODFLAGS= $(BASEMOD_FLAGS) \
           $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
           $(MOD_FLAG)$(ESPRESSO)/dft-d3 \
-          $(MOD_FLAG)../util/src $(MOD_FLAG)../data/module $(MOD_FLAG)../algo/module $(MOD_FLAG).
+          $(MOD_FLAG)../util/src $(MOD_FLAG)../data/module $(MOD_FLAG)../algo/module \
+          $(MOD_FLAG)../phys/module $(MOD_FLAG).
 EXE = gw.x
 
 IFLAGS=
@@ -40,7 +41,6 @@ coulomb_q0G0.o\
 coulpade.o\
 do_stern.o\
 dvqpsi_us.o\
-exchange.o\
 green.o\
 gw.o\
 gw_input.o\
@@ -60,7 +60,7 @@ sigma_pade.o\
 solve_linter.o\
 version.o
 
-GWLIBS = ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
+GWLIBS = ../phys/libphys.a ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \
