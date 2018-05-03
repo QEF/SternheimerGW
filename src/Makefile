@@ -40,7 +40,6 @@ check_initial_status.o\
 clean_pw_gw.o\
 coulomb.o\
 coulomb_q0G0.o\
-coulomb_vcut.o\
 coulpade.o\
 deallocate_gwq.o\
 do_stern.o\
@@ -69,7 +68,6 @@ sigma_matel.o\
 sigma_pade.o\
 solve_linter.o\
 stop_gw.o\
-truncation.o\
 version.o
 
 GWLIBS = ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
