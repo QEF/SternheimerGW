@@ -45,5 +45,7 @@ module: Makefile
 	echo "ESPRESSO=$(CURDIR)/.." > $@
 	echo "UTIL_MOD=$(CURDIR)/util/src" >> $@
 	echo "DATA_MOD=$(CURDIR)/data/module" >> $@
+	echo "ALGO_MOD=$(CURDIR)/algo/module" >> $@
+	echo "PHYS_MOD=$(CURDIR)/phys/module" >> $@
 
 .PHONY: all test clean

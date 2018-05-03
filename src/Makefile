@@ -38,7 +38,6 @@ IFLAGS=
 GWOBJS = \
 coulomb.o\
 coulomb_q0G0.o\
-coulpade.o\
 do_stern.o\
 dvqpsi_us.o\
 green.o\
