@@ -1,0 +1,2 @@
+gw.o: gw_opening.o
+gw_opening.o: version.o

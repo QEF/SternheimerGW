@@ -22,32 +22,22 @@
 #------------------------------------------------------------------------------ 
 # Makefile for GW. 
 
-ESPRESSO=../..
+include ../../module
 include $(ESPRESSO)/make.inc
 
-# location of needed modules and included files (if any)
-MODFLAGS= $(BASEMOD_FLAGS) \
-          $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
-          $(MOD_FLAG)$(ESPRESSO)/dft-d3 \
-          $(MOD_FLAG)../util/src $(MOD_FLAG)../data/module $(MOD_FLAG)../algo/module \
-          $(MOD_FLAG)../phys/module $(MOD_FLAG).
-EXE = gw.x
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
+  $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD) $(MOD_FLAG)$(ALGO_MOD) $(MOD_FLAG)$(PHYS_MOD)
 
-IFLAGS=
+EXE = gw.x
 
 GWOBJS = \
 gw.o\
 gw_input.o\
 gw_opening.o\
 gwq_readin.o\
-print_matel.o\
-print_matel_im.o\
-sigma_expect.o\
-sigma_matel.o\
-sigma_pade.o\
 version.o
 
-GWLIBS = ../phys/libphys.a ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
+GWLIBS = ../../phys/libphys.a ../../algo/libalgo.a ../../data/libdata.a ../../util/src/libutil.a
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \
@@ -55,19 +45,6 @@ QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft
          $(ESPRESSO)/LAXlib/libqela.a               $(ESPRESSO)/UtilXlib/libutil.a \
          $(ESPRESSO)/dft-d3/libdftd3qe.a
 LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
-
-TLDEPS= bindir mods libs pw-lib lr-lib
-
-no_debug : .no_debug all
-.no_debug:
-	-if [ -f .debug ]; then rm debug.o .debug; fi
-	-touch $@
-
-debug : DFLAGS += -D__DEBUG
-debug : .debug all
-.debug:
-	-if [ -f .no_debug ]; then rm debug.o .no_debug; fi
-	-touch $@
 
 all : version libgw.a $(EXE)
 
@@ -102,7 +79,6 @@ libgw.a : $(GWOBJS)
 clean :
 	- rm *.x *.o *.a *.mod
 
-.PHONY: all version clean debug no_debug
+.PHONY: all version clean
 
-# DO NOT DELETE
-include make.depend
+-include make.depend

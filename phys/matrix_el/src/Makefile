@@ -20,32 +20,32 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: module 
-	make -C util
-	make -C data
-	make -C algo
-	make -C phys
-	make -C main
 
-test:
-	make -C util test
-	make -C data test
-	make -C algo test
-	make -C phys test
-	make -C main test
+include ../../../module
+include $(ESPRESSO)/make.inc
+
+SRC = $(wildcard *.f90)
+OBJ = $(SRC:.f90=.o)
+LIB = libmatrix_el.a
+
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD) $(MOD_FLAG)$(ALGO_MOD)
+
+all: lib mod
+
+lib: $(LIB)
+
+mod: $(OBJ)
+	for file in $$(ls *.mod); do \
+	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
+	done
+
+$(LIB) : $(OBJ)
+	$(AR) $(ARFLAGS) $@ $?
+	$(RANLIB) $@
 
 clean:
-	make -C util clean
-	make -C data clean
-	make -C algo clean
-	make -C phys clean
-	make -C main clean
+	-rm *.o *.mod $(LIB)
 
-module: Makefile
-	echo "ESPRESSO=$(CURDIR)/.." > $@
-	echo "UTIL_MOD=$(CURDIR)/util/src" >> $@
-	echo "DATA_MOD=$(CURDIR)/data/module" >> $@
-	echo "ALGO_MOD=$(CURDIR)/algo/module" >> $@
-	echo "PHYS_MOD=$(CURDIR)/phys/module" >> $@
+.PHONY: all lib mod
 
-.PHONY: all test clean
+-include make.depend

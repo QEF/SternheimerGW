@@ -24,7 +24,7 @@
 include ../module
 include $(ESPRESSO)/make.inc
 
-DEPEND = corr coul exch green postproc
+DEPEND = corr coul exch green matrix_el postproc
 DEPEND_LIB = $(foreach file, $(DEPEND), $(file)/src/lib$(file).a)
 LIB = libphys.a
 
