@@ -40,7 +40,6 @@ coulomb.o\
 coulomb_q0G0.o\
 do_stern.o\
 dvqpsi_us.o\
-green.o\
 gw.o\
 gw_input.o\
 gw_opening.o\
@@ -52,7 +51,6 @@ prepare_q.o\
 prepare_q0.o\
 print_matel.o\
 print_matel_im.o\
-sigma.o\
 sigma_expect.o\
 sigma_matel.o\
 sigma_pade.o\
