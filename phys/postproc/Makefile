@@ -20,32 +20,14 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
+all:
+	make -C src
 
-include ../../../module
-include $(ESPRESSO)/make.inc
-
-SRC = $(wildcard *.f90)
-OBJ = $(SRC:.f90=.o)
-LIB = libcoul.a
-
-MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/PW/src  $(MOD_FLAG)$(ESPRESSO)/LR_Modules $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD) $(MOD_FLAG)$(ALGO_MOD) $(MOD_FLAG)../../postproc/src
-
-all: lib mod
-
-lib: $(LIB)
-
-mod: $(OBJ)
-	for file in $$(ls *.mod); do \
-	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
-	done
-
-$(LIB) : $(OBJ)
-	$(AR) $(ARFLAGS) $@ $?
-	$(RANLIB) $@
+test:
+	make -C test
 
 clean:
-	-rm *.o *.mod $(LIB)
+	make -C src clean
+	make -C test clean
 
-.PHONY: all lib mod
-
--include make.depend
+.PHONY: all test clean

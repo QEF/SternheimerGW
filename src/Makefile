@@ -36,25 +36,15 @@ EXE = gw.x
 IFLAGS=
 
 GWOBJS = \
-coulomb.o\
-coulomb_q0G0.o\
-do_stern.o\
-dvqpsi_us.o\
 gw.o\
 gw_input.o\
 gw_opening.o\
 gwq_readin.o\
-invert_epsilon.o\
-mix_pot_c.o\
-plot_coulomb.o\
-prepare_q.o\
-prepare_q0.o\
 print_matel.o\
 print_matel_im.o\
 sigma_expect.o\
 sigma_matel.o\
 sigma_pade.o\
-solve_linter.o\
 version.o
 
 GWLIBS = ../phys/libphys.a ../algo/libalgo.a ../data/libdata.a ../util/src/libutil.a
