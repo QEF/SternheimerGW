@@ -35,8 +35,6 @@ EXE = gw.x
 IFLAGS=
 
 GWOBJS = \
-allocate_gwq.o\
-check_initial_status.o\
 clean_pw_gw.o\
 coulomb.o\
 coulomb_q0G0.o\
@@ -49,10 +47,7 @@ green.o\
 gw.o\
 gw_input.o\
 gw_opening.o\
-gwq_init.o\
 gwq_readin.o\
-gwq_setup.o\
-initialize_gw.o\
 invert_epsilon.o\
 mix_pot_c.o\
 plot_coulomb.o\
@@ -60,7 +55,6 @@ prepare_q.o\
 prepare_q0.o\
 print_matel.o\
 print_matel_im.o\
-q_points.o\
 reorder.o\
 sigma.o\
 sigma_expect.o\
