@@ -93,7 +93,7 @@ def generate_root_string(struct, key):
 
 def generate_depend_string(struct):
   result = ''
-  for key in struct:
+  for key in module.sort_dict_by_order(struct):
     result += ' ' + key
   return result
 

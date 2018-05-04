@@ -125,3 +125,9 @@ for key in structure:
     structure[key][order] = 0
   else:
     add_order_to_dict(structure[key])
+
+def sort_dict_by_order(struct):
+  result = []
+  for (key, value) in sorted(struct.iteritems(), key=lambda(key, value): value[order]):
+    result.append(key)
+  return result
