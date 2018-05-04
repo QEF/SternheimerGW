@@ -21,6 +21,7 @@
 #
 #------------------------------------------------------------------------------
 depend = "depend"
+order = "order"
 structure = {
 "util": {
   depend: ["base", "lrmods"],
@@ -95,3 +96,32 @@ structure = {
   },
 },
 }
+
+def add_order_to_dict(struct):
+  init_order_to_zero(struct)
+  repeat_until_order_is_stable(struct)
+
+def init_order_to_zero(struct):
+  for key in struct:
+    struct[key][order] = 0
+
+def repeat_until_order_is_stable(struct):
+  for it in range(len(struct)):
+    update_order_of_all_element(struct)
+
+def update_order_of_all_element(struct):
+  for key in struct:
+    struct[key][order] = get_order_depend_element(key, struct) + 1
+
+def get_order_depend_element(key, struct):
+  result = 0
+  for dep in struct[key][depend]:
+    if dep in struct:
+      result = max(result, struct[dep][order])
+  return result
+
+for key in structure:
+  if depend in structure[key]:
+    structure[key][order] = 0
+  else:
+    add_order_to_dict(structure[key])
