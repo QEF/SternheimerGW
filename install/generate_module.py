@@ -20,32 +20,30 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
+import os
+import module 
 
-include ../../../module
-include $(ESPRESSO)/make.inc
+os.chdir('..')
 
-SRC = $(wildcard *.f90)
-OBJ = $(SRC:.f90=.o)
-LIB = libparallel.a
+def goto_directory_of_module_to_get_string(struct):
+  string = ''
+  for key in struct:
+    os.chdir(key)
+    string += generate_module_string(struct[key], key)
+    os.chdir('..')
+  return string
 
-MODFLAGS = $(BASEMOD_FLAGS)
+def generate_module_string(struct, key):
+  string = key.upper() + '_MOD=' + os.getcwd() 
+  if module.depend in struct:
+    string += '/src\n' 
+  else:
+    string += '/module\n'
+    string += goto_directory_of_module_to_get_string(struct)
+  return string 
 
-all: lib mod
-
-lib: $(LIB)
-
-mod: $(OBJ)
-	for file in $$(ls *.mod); do \
-	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
-	done
- 
-$(LIB) : $(OBJ)
-	$(AR) $(ARFLAGS) $@ $?
-	$(RANLIB) $@
-
-clean:
-	-rm *.o *.mod $(LIB)
-
-.PHONY: all lib mod
-
--include make.depend
+string = 'ESPRESSO=' + os.getcwd() + '/..\n'
+string += goto_directory_of_module_to_get_string(module.structure)
+module_file = open('module', 'w')
+module_file.write(string)
+module_file.close()

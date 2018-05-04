@@ -20,12 +20,15 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: module 
+all: install
 	make -C util
 	make -C data
 	make -C algo
 	make -C phys
 	make -C main
+
+install:
+	make -C install
 
 test:
 	make -C util test
@@ -35,17 +38,11 @@ test:
 	make -C main test
 
 clean:
+	make -C install clean
 	make -C util clean
 	make -C data clean
 	make -C algo clean
 	make -C phys clean
 	make -C main clean
 
-module: Makefile
-	echo "ESPRESSO=$(CURDIR)/.." > $@
-	echo "UTIL_MOD=$(CURDIR)/util/src" >> $@
-	echo "DATA_MOD=$(CURDIR)/data/module" >> $@
-	echo "ALGO_MOD=$(CURDIR)/algo/module" >> $@
-	echo "PHYS_MOD=$(CURDIR)/phys/module" >> $@
-
-.PHONY: all test clean
+.PHONY: all install test clean

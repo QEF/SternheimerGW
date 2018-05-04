@@ -68,7 +68,7 @@ structure = {
     depend: ["base", "pw", "lrmods", "util"],
   },
   "teardown": {
-    depend: ["base", "pw", "lrmods", "util"],
+    depend: ["base", "pw", "lrmods", "util", "data"],
   },
   "truncation": {
     depend: ["base", "util"],

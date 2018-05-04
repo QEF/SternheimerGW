@@ -28,7 +28,7 @@ SRC = $(wildcard *.f90)
 OBJ = $(SRC:.f90=.o)
 LIB = lib@LIB@.a
 
-MODFLAGS =@MOD@ 
+MODFLAGS =@MOD@
 
 all: lib mod
 

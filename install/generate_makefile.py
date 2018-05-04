@@ -47,12 +47,12 @@ def create_makefile(depend_array, key, layer):
   if layer > 1: create_makefile_src(depend_array, key)
 
 def create_makefile_main():
-  makefile = open('Makefile~', 'w') 
+  makefile = open('Makefile', 'w') 
   makefile.write(main_makefile)
   makefile.close()
 
 def create_makefile_src(depend_array, key):
-  makefile = open('src/Makefile~', 'w')
+  makefile = open('src/Makefile', 'w')
   src_string = generate_src_string(depend_array, key)
   makefile.write(src_string)
   makefile.close()
@@ -80,7 +80,7 @@ def mod_string(dep):
     return '$(MOD_FLAG)$(' + dep.upper() + '_MOD)'
 
 def create_makefile_root(struct, key):
-  makefile = open('Makefile~', 'w')
+  makefile = open('Makefile', 'w')
   root_string = generate_root_string(struct, key)
   makefile.write(root_string)
   makefile.close()

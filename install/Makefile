@@ -20,32 +20,17 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
+all: .make .module
 
-include ../../../module
-include $(ESPRESSO)/make.inc
+.make: generate_makefile.py module.py Makefile root_makefile src_makefile main_makefile 
+	python $< 
+	touch $@
 
-SRC = $(wildcard *.f90)
-OBJ = $(SRC:.f90=.o)
-LIB = libalgebra.a
-
-MODFLAGS = $(BASEMOD_FLAGS)
-
-all: lib mod
-
-lib: $(LIB)
-
-mod: $(OBJ)
-	for file in $$(ls *.mod); do \
-	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
-	done
- 
-$(LIB) : $(OBJ)
-	$(AR) $(ARFLAGS) $@ $?
-	$(RANLIB) $@
+.module: generate_module.py module.py Makefile
+	python $<
+	touch $@
 
 clean:
-	-rm *.o *.mod $(LIB)
+	rm .make .module
 
-.PHONY: all lib mod
-
--include make.depend
+.PHONY: all clean
