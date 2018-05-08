@@ -54,4 +54,4 @@ clean:
 	  make -C $$file clean; \
 	done
 
-.PHONY: all depend test clean
+.PHONY: all module depend test clean

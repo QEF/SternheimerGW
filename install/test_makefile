@@ -20,17 +20,41 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: .make .module
 
-.make: generate_makefile.py module.py Makefile root_makefile src_makefile main_makefile test_makefile
-	python $< 
-	touch $@
+.PHONY: all lib
+.DEFAULT_GOAL = all
 
-.module: generate_module.py module.py Makefile
-	python $<
-	touch $@
+include ../../../module
+include ../../../library
+include $(ESPRESSO)/make.inc
+include $(PFUNIT)/include/base.mk
 
-clean:
-	rm .make .module
+FFLAGS += -I$(PFUNIT)/mod
+MODFLAGS = -I../src@MOD@
+LIBS +=@LINK@
 
-.PHONY: all clean
+ifeq ($(USEMPI),YES)
+   MPIF90 = mpif90
+   FPPFLAGS += -DUSE_MPI
+endif
+
+EXE = tests$(EXE_EXT)
+SRC = $(wildcard *.pf)
+OBJ = $(SRC:.pf=$(OBJ_EXT))
+
+LIB = ../src/lib@LIB@.a
+
+all: lib $(EXE)
+	mpirun -np 4 ./$(EXE)
+
+$(EXE): testSuites.inc $(OBJ) $(LIB)
+	$(MPIF90) -o $@ -I. $(FFLAGS) $(FPPFLAGS) $(PFUNIT)/include/driver.F90 $(OBJ) -L$(PFUNIT)/lib -lpfunit $(LIB) $(LIBS)
+
+%$(OBJ_EXT): %.F90
+	$(MPIF90) -c $(FFLAGS) $(MODFLAGS) $<
+
+%.F90: %.pf
+	$(PFUNIT)/bin/pFUnitParser.py $<  $@
+
+lib:
+	make -C ../src lib

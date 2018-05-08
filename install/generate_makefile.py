@@ -26,6 +26,7 @@ import module
 main_makefile = open('main_makefile', 'r').read()
 root_makefile = open('root_makefile', 'r').read()
 src_makefile = open('src_makefile', 'r').read()
+test_makefile = open('test_makefile', 'r').read()
 
 os.chdir('..')
 
@@ -44,7 +45,9 @@ def create_makefile_or_recurse(struct, key, layer):
 
 def create_makefile(depend_array, key, layer):
   create_makefile_main()
-  if layer > 1: create_makefile_src(depend_array, key)
+  if layer > 1:
+    create_makefile_src(depend_array, key)
+    create_makefile_test_if_possible(depend_array, key)
 
 def create_makefile_main():
   makefile = open('Makefile', 'w') 
@@ -78,6 +81,39 @@ def mod_string(dep):
     return '$(MOD_FLAG)$(ESPRESSO)/LR_Modules'
   else:
     return '$(MOD_FLAG)$(' + dep.upper() + '_MOD)'
+
+def create_makefile_test_if_possible(depend_array, key):
+  if os.path.isdir('test'):
+    create_makefile_test(depend_array, key)
+
+def create_makefile_test(depend_array, key):
+  makefile = open('test/Makefile', 'w')
+  test_string = generate_test_string(depend_array, key)
+  makefile.write(test_string)
+  makefile.close()
+
+def generate_test_string(depend_array, key):
+  result = test_makefile
+  result = result.replace('@LIB@', key)
+  result = result.replace('@MOD@', generate_mod_string(depend_array))
+  result = result.replace('@LINK@', generate_link_string(depend_array))
+  return result
+
+def generate_link_string(depend_array):
+  result = ''
+  for dep in depend_array:
+    result += ' ' + link_string(dep)
+  return result
+
+def link_string(dep):
+  if dep == 'base':
+    return '$(BASELIB)'
+  elif dep == 'pw':
+    return '$(ESPRESSO)/PW/src/libpw.a'
+  elif dep == 'lrmods':
+    return '$(ESPRESSO)/LR_Modules/liblrmod.a'
+  else:
+    return ''
 
 def create_makefile_root(struct, key):
   makefile = open('Makefile', 'w')
