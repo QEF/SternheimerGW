@@ -24,28 +24,33 @@
 include ../module
 include $(ESPRESSO)/make.inc
 
-DEPEND =@DEP@
-DEPEND_LIB = $(foreach file, $(DEPEND), $(file)/src/lib$(file).a)
+MODULE =@MOD@
+MODULE_LIB = $(foreach file, $(MODULE), $(file)/src/lib$(file).a)
 LIB = lib@LIB@.a
 
-all: depend $(LIB)
+all: module $(LIB)
 
-$(LIB): $(DEPEND_LIB)
+$(LIB): $(MODULE_LIB)
 	rm -f $@
-	$(AR) -rcT $@ $(DEPEND_LIB)
+	$(AR) -rcT $@ $(MODULE_LIB)
 
-depend:
-	for file in $(DEPEND); do \
+module:
+	for file in $(MODULE); do \
 	  make -C $$file; \
 	done
 
+depend:
+	for file in $(MODULE); do \
+	  make -C $$file depend; \
+	done
+
 test:
-	for file in $(DEPEND); do \
+	for file in $(MODULE); do \
 	  make -C $$file test; \
 	done
 
 clean:
-	for file in $(DEPEND); do \
+	for file in $(MODULE); do \
 	  make -C $$file clean; \
 	done
 

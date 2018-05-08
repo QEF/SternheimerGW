@@ -87,7 +87,7 @@ def create_makefile_root(struct, key):
 
 def generate_root_string(struct, key):
   result = root_makefile
-  result = result.replace('@DEP@', generate_depend_string(struct))
+  result = result.replace('@MOD@', generate_depend_string(struct))
   result = result.replace('@LIB@', key)
   return result
 

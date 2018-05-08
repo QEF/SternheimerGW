@@ -48,6 +48,13 @@ LIBOBJS	= $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a
 
 all : version libgw.a $(EXE)
 
+depend: tmp.depend
+	awk '!/@/' $< > make.depend
+
+tmp.depend: $(SRC)
+	$(ESPRESSO)/install/moduledep.sh > $@
+	$(ESPRESSO)/install/includedep.sh >> $@
+
 version : 
 	bash update_version
 
@@ -80,5 +87,6 @@ clean :
 	- rm *.x *.o *.a *.mod
 
 .PHONY: all version clean
+.INTERMEDIATE: tmp.depend
 
 -include make.depend

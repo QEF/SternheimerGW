@@ -47,9 +47,17 @@ $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
 
+depend: tmp.depend
+	awk '!/@/' $< > make.depend
+
+tmp.depend: $(SRC)
+	$(ESPRESSO)/install/moduledep.sh > $@
+	$(ESPRESSO)/install/includedep.sh >> $@
+
 clean:
 	-rm *.o *.mod $(LIB)
 
-.PHONY: all debug no_debug clean
+.PHONY: all debug no_debug clean depend
+.INTERMEDIATE: tmp.depend
 
 -include make.depend

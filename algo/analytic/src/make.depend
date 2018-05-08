@@ -1,0 +1,3 @@
+analytic.o : aaa.o
+analytic.o : godby_needs.o
+analytic.o : pade_robust.o

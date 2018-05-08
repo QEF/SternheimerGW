@@ -23,6 +23,9 @@
 all:
 	make -C src
 
+depend:
+	make -C src depend
+
 test:
 	make -C test
 
@@ -30,4 +33,4 @@ clean:
 	make -C src clean
 	make -C test clean
 
-.PHONY: all test clean
+.PHONY: all test clean depend

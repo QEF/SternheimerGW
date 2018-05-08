@@ -1,1 +1,2 @@
-coulomb.o: solve_linter.o
+coulomb.o : solve_linter.o
+coulomb_q0G0.o : solve_linter.o

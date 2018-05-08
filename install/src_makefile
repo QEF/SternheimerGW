@@ -39,6 +39,13 @@ mod: $(OBJ)
 	  ln -f -s $(CURDIR)/$$file -t ../../module/; \
 	done
 
+depend: tmp.depend
+	awk '!/@/' $< > make.depend
+
+tmp.depend: $(SRC)
+	$(ESPRESSO)/install/moduledep.sh > $@
+	$(ESPRESSO)/install/includedep.sh >> $@
+
 $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
@@ -46,6 +53,7 @@ $(LIB) : $(OBJ)
 clean:
 	-rm *.o *.mod $(LIB)
 
-.PHONY: all lib mod
+.PHONY: all lib mod depend
+.INTERMEDIATE: tmp.depend
 
 -include make.depend

@@ -1,1 +1,1 @@
-sigma_grid.o: freqbins.o
+sigma_grid.o : freqbins.o

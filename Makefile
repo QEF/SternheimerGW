@@ -30,6 +30,13 @@ all: install
 install:
 	make -C install
 
+depend: install
+	make -C util depend
+	make -C data depend
+	make -C algo depend
+	make -C phys depend
+	make -C main depend
+
 test:
 	make -C util test
 	make -C data test
