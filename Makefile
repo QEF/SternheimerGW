@@ -37,14 +37,14 @@ depend: install
 	make -C phys depend
 	make -C main depend
 
-test:
+test: install
 	make -C util test
 	make -C data test
 	make -C algo test
 	make -C phys test
 	make -C main test
 
-clean:
+clean: install
 	make -C install clean
 	make -C util clean
 	make -C data clean

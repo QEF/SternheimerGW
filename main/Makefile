@@ -27,7 +27,7 @@ depend:
 	make -C src depend
 
 test:
-	make -C test
+	if [-d $@]; then make -C $@; fi
 
 clean:
 	make -C src clean
