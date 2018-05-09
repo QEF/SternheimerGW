@@ -31,7 +31,7 @@ include $(PFUNIT)/include/base.mk
 
 FFLAGS += -I$(PFUNIT)/mod
 MODFLAGS = -I../src@MOD@
-LIBS +=@LINK@
+LIB = ../src/lib@LIB@.a @LINK@
 
 ifeq ($(USEMPI),YES)
    MPIF90 = mpif90
@@ -41,8 +41,6 @@ endif
 EXE = tests$(EXE_EXT)
 SRC = $(wildcard *.pf)
 OBJ = $(SRC:.pf=$(OBJ_EXT))
-
-LIB = ../src/lib@LIB@.a
 
 all: lib $(EXE)
 	mpirun -np 4 ./$(EXE)

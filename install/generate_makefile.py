@@ -62,7 +62,7 @@ def create_makefile_src(depend_array, key):
 
 def generate_src_string(depend_array, key):
   result = src_makefile
-  result = result.replace('@LIB@', key)
+  result = result.replace('@LIB@', key.lower())
   result = result.replace('@MOD@', generate_mod_string(depend_array))
   return result
 
@@ -94,7 +94,7 @@ def create_makefile_test(depend_array, key):
 
 def generate_test_string(depend_array, key):
   result = test_makefile
-  result = result.replace('@LIB@', key)
+  result = result.replace('@LIB@', key.lower())
   result = result.replace('@MOD@', generate_mod_string(depend_array))
   result = result.replace('@LINK@', generate_link_string(depend_array))
   return result
@@ -102,18 +102,18 @@ def generate_test_string(depend_array, key):
 def generate_link_string(depend_array):
   result = ''
   for dep in depend_array:
-    result += ' ' + link_string(dep)
+    result = link_string(dep) + ' ' + result
   return result
 
 def link_string(dep):
   if dep == 'base':
-    return '$(BASELIB)'
+    return '$(BASE_LIB)'
   elif dep == 'pw':
-    return '$(ESPRESSO)/PW/src/libpw.a'
+    return '$(PW_LIB)'
   elif dep == 'lrmods':
-    return '$(ESPRESSO)/LR_Modules/liblrmod.a'
+    return '$(LR_LIB)'
   else:
-    return ''
+    return '$(' + dep.upper() + '_LIB)'
 
 def create_makefile_root(struct, key):
   makefile = open('Makefile', 'w')

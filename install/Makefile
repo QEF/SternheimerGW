@@ -20,7 +20,7 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: .make .module
+all: .make .module .library
 
 .make: generate_makefile.py module.py Makefile root_makefile src_makefile main_makefile test_makefile
 	python $< 
@@ -30,7 +30,11 @@ all: .make .module
 	python $<
 	touch $@
 
+.library: generate_library.py module.py Makefile
+	python $<
+	touch $@
+
 clean:
-	rm .make .module
+	rm -f .make .module .library
 
 .PHONY: all clean

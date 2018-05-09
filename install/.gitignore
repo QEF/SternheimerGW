@@ -1,3 +1,4 @@
 .make
 .module
+.library
 *.pyc
