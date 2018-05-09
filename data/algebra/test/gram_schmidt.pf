@@ -23,17 +23,14 @@
 !
 ! test if the linear solver works
 !
-@test(npes=[1])
-SUBROUTINE test_gram_schmidt(this)
+@test
+SUBROUTINE test_gram_schmidt
 
   USE gram_schmidt_module, ONLY: gram_schmidt
   USE kinds,               ONLY: dp
   USE pfunit_mod
-  USE test_log_module
 
   IMPLICIT NONE
-
-  CLASS(MpiTestMethod) :: this
 
   INTEGER, PARAMETER :: problem_size = 300, half_size = problem_size / 2
 
@@ -56,8 +53,6 @@ SUBROUTINE test_gram_schmidt(this)
 
   ! complex constants of 1 and 0
   COMPLEX(dp), PARAMETER :: one = 1.0_dp, zero = 0.0_dp
-
-  CALL test_log_start(__FILE__, __LINE__, "Test if the Gram Schmidt orthonormalization")
 
   !
   ! assemble random array
@@ -92,7 +87,6 @@ SUBROUTINE test_gram_schmidt(this)
       !
     END DO ! jj
   END DO ! ii
-  WRITE(test_log, *) 'passed testing the initial orthonormalization'
 
   !
   ! second test - extend the orthonormal basis with the other half of the vectors
@@ -120,7 +114,6 @@ SUBROUTINE test_gram_schmidt(this)
       !
     END DO ! jj
   END DO ! ii
-  WRITE(test_log, *) 'passed testing the extension of the basis'
 
   !
   ! assemble new random arrays
@@ -153,6 +146,5 @@ SUBROUTINE test_gram_schmidt(this)
       @assertEqual(AIMAG(reference(ii,jj)), AIMAG(basis(ii,jj)), 1e-10_dp)
     END DO
   END DO
-  WRITE(test_log, *) 'passed testing if A v = b is fulfilled after orthonormalization'
 
 END SUBROUTINE test_gram_schmidt

@@ -31,6 +31,6 @@ test:
 
 clean:
 	make -C src clean
-	-make -C test clean
+	if [ -d test ]; then make -C test clean; fi
 
 .PHONY: all test clean depend

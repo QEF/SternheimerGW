@@ -27,10 +27,10 @@ depend:
 	make -C src depend
 
 test:
-	if [-d $@]; then make -C $@; fi
+	if [ -d $@ ]; then make -C $@; fi
 
 clean:
 	make -C src clean
-	make -C test clean
+	if [ -d test ]; then make -C test clean; fi
 
 .PHONY: all test clean depend
