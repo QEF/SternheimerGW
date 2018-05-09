@@ -1,9 +1,8 @@
-#!/bin/bash
 #------------------------------------------------------------------------------
 #
 # This file is part of the SternheimerGW code.
-# 
-# Copyright (C) 2010 - 2018 
+#
+# Copyright (C) 2010 - 2018
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -22,28 +21,43 @@
 #
 #------------------------------------------------------------------------------
 
-bash ../ENVIRONMENT
+include ../../module
+include $(ESPRESSO)/make.inc
 
-if [[ $QE_USE_MPI == 1 ]]; then
-  export PARA_PREFIX="mpirun -np ${TESTCODE_NPROCS}"
-  export PARA_SUFFIX="-npool ${TESTCODE_NPROCS}"
-else
-  unset PARA_PREFIX
-  unset PARA_SUFFIX
-fi
+SRC = $(wildcard *.f90)
+OBJ = $(SRC:.f90=.o)
+LIB = libutil.a
 
-# determine whether we are in a PW or SternheimerGW step
-scf=$(echo $1 | awk '/scf.in/{ print 1 }')
-gw=$(echo $1 | awk '/gw.in/{ print 1 }')
+MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/LR_Modules
 
-if (( scf == 1 ))
-then
-  echo "Running PW..."
-  ${PARA_PREFIX} ${ESPRESSO_ROOT}/bin/pw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-elif (( gw == 1 ))
-then
-  echo "Running SternheimerGW..."
-  ${PARA_PREFIX} ${SternheimerGW_ROOT}/main/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-else
-  echo "Unknown input file" > /dev/stderr
-fi  
+no_debug : .no_debug all
+.no_debug:
+	-if [ -f .debug ]; then rm -f debug.o .debug; fi
+	-touch $@
+
+debug : DFLAGS += -D__DEBUG
+debug : .debug all
+.debug:
+	-if [ -f .no_debug ]; then rm -f debug.o .no_debug; fi
+	-touch $@
+
+all: $(LIB) 
+
+$(LIB) : $(OBJ)
+	$(AR) $(ARFLAGS) $@ $?
+	$(RANLIB) $@
+
+depend: tmp.depend
+	awk '!/@/' $< > make.depend
+
+tmp.depend: $(SRC)
+	$(ESPRESSO)/install/moduledep.sh > $@
+	$(ESPRESSO)/install/includedep.sh >> $@
+
+clean:
+	-rm *.o *.mod $(LIB)
+
+.PHONY: all debug no_debug clean depend
+.INTERMEDIATE: tmp.depend
+
+-include make.depend

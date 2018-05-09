@@ -1,9 +1,8 @@
-#!/bin/bash
 #------------------------------------------------------------------------------
 #
 # This file is part of the SternheimerGW code.
-# 
-# Copyright (C) 2010 - 2018 
+#
+# Copyright (C) 2010 - 2018
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -21,29 +20,30 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
+import os
+import module 
 
-bash ../ENVIRONMENT
+os.chdir('..')
 
-if [[ $QE_USE_MPI == 1 ]]; then
-  export PARA_PREFIX="mpirun -np ${TESTCODE_NPROCS}"
-  export PARA_SUFFIX="-npool ${TESTCODE_NPROCS}"
-else
-  unset PARA_PREFIX
-  unset PARA_SUFFIX
-fi
+def goto_directory_of_module_to_get_string(struct):
+  string = ''
+  for key in struct:
+    os.chdir(key)
+    string += generate_module_string(struct[key], key)
+    os.chdir('..')
+  return string
 
-# determine whether we are in a PW or SternheimerGW step
-scf=$(echo $1 | awk '/scf.in/{ print 1 }')
-gw=$(echo $1 | awk '/gw.in/{ print 1 }')
+def generate_module_string(struct, key):
+  string = key.upper() + '_MOD=' + os.getcwd() 
+  if module.depend in struct:
+    string += '/src\n' 
+  else:
+    string += '/module\n'
+    string += goto_directory_of_module_to_get_string(struct)
+  return string 
 
-if (( scf == 1 ))
-then
-  echo "Running PW..."
-  ${PARA_PREFIX} ${ESPRESSO_ROOT}/bin/pw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-elif (( gw == 1 ))
-then
-  echo "Running SternheimerGW..."
-  ${PARA_PREFIX} ${SternheimerGW_ROOT}/main/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-else
-  echo "Unknown input file" > /dev/stderr
-fi  
+string = 'ESPRESSO=' + os.getcwd() + '/..\n'
+string += goto_directory_of_module_to_get_string(module.structure)
+module_file = open('module', 'w')
+module_file.write(string)
+module_file.close()

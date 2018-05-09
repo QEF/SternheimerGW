@@ -1,9 +1,8 @@
-#!/bin/bash
 #------------------------------------------------------------------------------
 #
 # This file is part of the SternheimerGW code.
-# 
-# Copyright (C) 2010 - 2018 
+#
+# Copyright (C) 2010 - 2018
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -22,28 +21,37 @@
 #
 #------------------------------------------------------------------------------
 
-bash ../ENVIRONMENT
+include ../module
+include $(ESPRESSO)/make.inc
 
-if [[ $QE_USE_MPI == 1 ]]; then
-  export PARA_PREFIX="mpirun -np ${TESTCODE_NPROCS}"
-  export PARA_SUFFIX="-npool ${TESTCODE_NPROCS}"
-else
-  unset PARA_PREFIX
-  unset PARA_SUFFIX
-fi
+MODULE =@MOD@
+MODULE_LIB = $(foreach file, $(MODULE), $(file)/src/lib$(file).a)
+LIB = lib@LIB@.a
 
-# determine whether we are in a PW or SternheimerGW step
-scf=$(echo $1 | awk '/scf.in/{ print 1 }')
-gw=$(echo $1 | awk '/gw.in/{ print 1 }')
+all: module $(LIB)
 
-if (( scf == 1 ))
-then
-  echo "Running PW..."
-  ${PARA_PREFIX} ${ESPRESSO_ROOT}/bin/pw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-elif (( gw == 1 ))
-then
-  echo "Running SternheimerGW..."
-  ${PARA_PREFIX} ${SternheimerGW_ROOT}/main/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-else
-  echo "Unknown input file" > /dev/stderr
-fi  
+$(LIB): $(MODULE_LIB)
+	rm -f $@
+	$(AR) -rcT $@ $(MODULE_LIB)
+
+module:
+	for file in $(MODULE); do \
+	  make -C $$file; \
+	done
+
+depend:
+	for file in $(MODULE); do \
+	  make -C $$file depend; \
+	done
+
+test:
+	for file in $(MODULE); do \
+	  make -C $$file test; \
+	done
+
+clean:
+	for file in $(MODULE); do \
+	  make -C $$file clean; \
+	done
+
+.PHONY: all module depend test clean

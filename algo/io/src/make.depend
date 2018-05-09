@@ -1,0 +1,2 @@
+openfilq.o : save_gw_input.o
+opengwfil.o : sigma_io.o

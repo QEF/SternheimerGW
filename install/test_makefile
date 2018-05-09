@@ -1,9 +1,8 @@
-#!/bin/bash
 #------------------------------------------------------------------------------
 #
 # This file is part of the SternheimerGW code.
-# 
-# Copyright (C) 2010 - 2018 
+#
+# Copyright (C) 2010 - 2018
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -22,28 +21,39 @@
 #
 #------------------------------------------------------------------------------
 
-bash ../ENVIRONMENT
+.PHONY: all lib
+.DEFAULT_GOAL = all
 
-if [[ $QE_USE_MPI == 1 ]]; then
-  export PARA_PREFIX="mpirun -np ${TESTCODE_NPROCS}"
-  export PARA_SUFFIX="-npool ${TESTCODE_NPROCS}"
-else
-  unset PARA_PREFIX
-  unset PARA_SUFFIX
-fi
+include ../../../module
+include ../../../library
+include $(ESPRESSO)/make.inc
+include $(PFUNIT)/include/base.mk
+-include make.ext
 
-# determine whether we are in a PW or SternheimerGW step
-scf=$(echo $1 | awk '/scf.in/{ print 1 }')
-gw=$(echo $1 | awk '/gw.in/{ print 1 }')
+FFLAGS += -I$(PFUNIT)/mod
+MODFLAGS = -I../src@MOD@
+LIB = ../src/lib@LIB@.a @LINK@
 
-if (( scf == 1 ))
-then
-  echo "Running PW..."
-  ${PARA_PREFIX} ${ESPRESSO_ROOT}/bin/pw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-elif (( gw == 1 ))
-then
-  echo "Running SternheimerGW..."
-  ${PARA_PREFIX} ${SternheimerGW_ROOT}/main/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
-else
-  echo "Unknown input file" > /dev/stderr
-fi  
+ifeq ($(USEMPI),YES)
+   MPIF90 = mpif90
+   FPPFLAGS += -DUSE_MPI
+endif
+
+EXE = tests$(EXE_EXT)
+SRC = $(wildcard *.pf)
+OBJ = $(SRC:.pf=$(OBJ_EXT))
+
+all: lib $(EXE) $(EXTERN)
+	mpirun -np 4 ./$(EXE)
+
+$(EXE): testSuites.inc $(OBJ) $(LIB)
+	$(MPIF90) -o $@ -I. $(FFLAGS) $(FPPFLAGS) $(PFUNIT)/include/driver.F90 $(OBJ) -L$(PFUNIT)/lib -lpfunit $(LIB) $(LIBS)
+
+%$(OBJ_EXT): %.F90
+	$(MPIF90) -c $(FFLAGS) $(MODFLAGS) $<
+
+%.F90: %.pf
+	$(PFUNIT)/bin/pFUnitParser.py $<  $@
+
+lib:
+	make -C ../src lib

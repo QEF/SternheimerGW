@@ -1,0 +1,3 @@
+gw.o : gw_opening.o
+gw_opening.o : version.o
+gwq_readin.o : gw_input.o
