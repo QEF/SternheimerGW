@@ -20,40 +20,7 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-
-.PHONY: all lib
-.DEFAULT_GOAL = all
-
-include ../../../module
-include ../../../library
-include $(ESPRESSO)/make.inc
-include $(PFUNIT)/include/base.mk
--include make.ext
-
-FFLAGS += -I$(PFUNIT)/mod
-MODFLAGS = -I../src@MOD@
-LIB = ../src/lib@LIB@.a @LINK@
-
-ifeq ($(USEMPI),YES)
-   MPIF90 = mpif90
-   FPPFLAGS += -DUSE_MPI
-endif
-
-EXE = tests$(EXE_EXT)
-SRC = $(wildcard *.pf)
-OBJ = $(SRC:.pf=$(OBJ_EXT))
-
-all: lib $(EXE) $(EXTERN)
-	mpirun -np 4 ./$(EXE)
-
-$(EXE): testSuites.inc $(OBJ) $(LIB)
-	$(MPIF90) -o $@ -I. $(FFLAGS) $(FPPFLAGS) $(PFUNIT)/include/driver.F90 $(OBJ) -L$(PFUNIT)/lib -lpfunit $(LIB) $(LIBS)
-
-%$(OBJ_EXT): %.F90
-	$(MPIF90) -c $(FFLAGS) $(MODFLAGS) $<
-
-%.F90: %.pf
-	$(PFUNIT)/bin/pFUnitParser.py $<  $@
-
-lib:
-	make -C ../src lib
+EXTERN = lin_prob.xml
+.INTERMEDIATE: $(EXTERN)
+$(EXTERN) : $(EXTERN).bz2
+	bzcat $< > $@

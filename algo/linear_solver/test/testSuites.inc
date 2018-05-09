@@ -1,0 +1,1 @@
+ADD_TEST_SUITE(test_linear_solver_module_suite)
