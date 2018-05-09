@@ -20,38 +20,16 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-all: install
-	make -C util
-	make -C data
-	make -C algo
-	make -C phys
-	make -C main
+include ../module
 
-install:
-	make -C install
-	make -C vendor
+all: .analytic
 
-depend: install
-	make -C util depend
-	make -C data depend
-	make -C algo depend
-	make -C phys depend
-	make -C main depend
+.analytic:
+	ln -f -s -t analytic $(ESPRESSO)/make.inc
+	make -C analytic/src
+	touch $@
 
-test: install
-	make -C util test
-	make -C data test
-	make -C algo test
-	make -C phys test
-	make -C main test
+clean:
+	make -C analytic/src clean ; rm .analytic
 
-clean: install
-	make -C install clean
-	make -C vendor clean
-	make -C util clean
-	make -C data clean
-	make -C algo clean
-	make -C phys clean
-	make -C main clean
-
-.PHONY: all install test clean
+.PHONY: all clean
