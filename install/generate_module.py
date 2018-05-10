@@ -43,6 +43,7 @@ def generate_module_string(struct, key):
   return string 
 
 string = 'ESPRESSO=' + os.getcwd() + '/..\n'
+string += 'VENDOR_MOD=' + os.getcwd() + '/vendor/module\n'
 string += goto_directory_of_module_to_get_string(module.structure)
 module_file = open('module', 'w')
 module_file.write(string)
