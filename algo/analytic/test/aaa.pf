@@ -22,6 +22,8 @@
 !------------------------------------------------------------------------------ 
 MODULE test_aaa_module
 
+  IMPLICIT NONE
+
 CONTAINS
 
   @test
@@ -74,5 +76,72 @@ CONTAINS
     END FUNCTION scaled_tangent
 
   END SUBROUTINE compare_aaa_method
+
+  @test
+  SUBROUTINE compare_aaa_eval
+
+    USE aaa_module,            ONLY: aaa_eval
+    USE analytic_aaa_module,   ONLY: aaa_evaluate, aaa_approx
+    USE analytic_array_module, ONLY: allocate_copy_from_to
+    USE constants,             ONLY: eps12
+    USE kinds,                 ONLY: dp
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: freq = 0.0_dp
+    COMPLEX(dp), PARAMETER :: imag = CMPLX(0.0_dp, 1.0_dp, KIND=dp)
+    COMPLEX(dp), PARAMETER :: pos(15) = [0.220495952383846_dp, 0.330743928575769_dp, &
+      0.463041500006076_dp, 1.212727738111152_dp, 2.006513166692996_dp, 5.578547595311298_dp, &
+      10.936599238238751_dp, 13.119509166838823_dp, -0.132297571430307_dp, -0.463041500006076_dp, &
+      -1.212727738111152_dp, -2.998744952420302_dp, -3.770480785763762_dp, -8.334747000109370_dp, &
+      -13.119509166838823_dp] * imag
+    COMPLEX(dp), PARAMETER :: val(15) = [CMPLX(-0.402764017677553_dp, -0.402748671788035_dp, KIND=dp), &
+      CMPLX(-0.417103615471092_dp, -0.417089698655976_dp, KIND=dp), &
+      CMPLX(-0.433686621763334_dp, -0.433678928339726_dp, KIND=dp), &
+      CMPLX(-0.473012540604732_dp, -0.473011355261944_dp, KIND=dp), &
+      CMPLX(-0.447607614954524_dp, -0.447601352633176_dp, KIND=dp), &
+      CMPLX(-0.230840714036159_dp, -0.230839695440291_dp, KIND=dp), &
+      CMPLX(-0.096655498664097_dp, -0.096654957982197_dp, KIND=dp), &
+      CMPLX(-0.072951148254604_dp, -0.072950706152450_dp, KIND=dp), &
+      CMPLX(-0.393158369538861_dp, -0.393144498049094_dp, KIND=dp), &
+      CMPLX(-0.433686621763334_dp, -0.433678928339726_dp, KIND=dp), &
+      CMPLX(-0.473012540604732_dp, -0.473011355261944_dp, KIND=dp), &
+      CMPLX(-0.382034348739372_dp, -0.382030364843074_dp, KIND=dp), &
+      CMPLX(-0.329305105095939_dp, -0.329303803449003_dp, KIND=dp), &
+      CMPLX(-0.142226528827612_dp, -0.142225828615646_dp, KIND=dp), &
+      CMPLX(-0.072951148254604_dp, -0.072950706152450_dp, KIND=dp)]
+    COMPLEX(dp), PARAMETER :: ww(15) = [CMPLX( 0.270908347539058_dp, -0.000000000000000_dp, KIND=dp), &
+      CMPLX(-0.489356804049974_dp,  0.000573093953417_dp, KIND=dp), &
+      CMPLX( 0.280095778522787_dp,  0.000293890439071_dp, KIND=dp), &
+      CMPLX(-0.083526447067538_dp, -0.005105185916827_dp, KIND=dp), &
+      CMPLX( 0.072872635939875_dp,  0.008770687794057_dp, KIND=dp), &
+      CMPLX(-0.104953200868325_dp, -0.021331619924455_dp, KIND=dp), &
+      CMPLX( 0.509154016825718_dp,  0.106675430734255_dp, KIND=dp), &
+      CMPLX(-0.471618540716069_dp, -0.098274171836973_dp, KIND=dp), &
+      CMPLX(-0.044169742586767_dp, -0.000284336653740_dp, KIND=dp), &
+      CMPLX( 0.027355502220793_dp,  0.000131799892971_dp, KIND=dp), &
+      CMPLX(-0.020117399129650_dp, -0.001250828241736_dp, KIND=dp), &
+      CMPLX( 0.106685083329723_dp,  0.026200318789236_dp, KIND=dp), &
+      CMPLX(-0.143777128305905_dp, -0.038161520301341_dp, KIND=dp), &
+      CMPLX( 0.151519815094611_dp,  0.038731621238780_dp, KIND=dp), &
+      CMPLX(-0.138852380288901_dp, -0.032932494826361_dp, KIND=dp)]
+
+    TYPE(aaa_approx) aaa_vendor
+    COMPLEX(dp), ALLOCATABLE :: aaa_coeff(:,:), res_vendor(:)
+    COMPLEX(dp) res_coeff
+
+    CALL allocate_copy_from_to(pos, aaa_vendor%position)
+    CALL allocate_copy_from_to(val, aaa_vendor%value)
+    CALL allocate_copy_from_to(ww, aaa_vendor%weight)
+
+    ALLOCATE(aaa_coeff(SIZE(pos), 3))
+    aaa_coeff(:,1) = pos
+    aaa_coeff(:,2) = val
+    aaa_coeff(:,3) = ww
+
+    CALL aaa_evaluate(aaa_vendor, [freq], res_vendor)
+    res_coeff = aaa_eval(aaa_coeff, freq)
+    @assertEqual(res_vendor(1), res_coeff, eps12)
+
+  END SUBROUTINE compare_aaa_eval
 
 END MODULE test_aaa_module
