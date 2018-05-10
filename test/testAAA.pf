@@ -1,0 +1,635 @@
+! This Source Code Form is subject to the terms of the Mozilla Public
+! License, v. 2.0. If a copy of the MPL was not distributed with this
+! file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE testAAA_module
+
+  USE constant_module, ONLY: dp
+
+  IMPLICIT NONE
+
+  TYPE realistic_example
+    REAL(dp) threshold
+    COMPLEX(dp), ALLOCATABLE :: zz(:), ff(:)
+    INTEGER, ALLOCATABLE :: selection(:)
+    COMPLEX(dp), ALLOCATABLE :: ref_weight(:)
+    COMPLEX(dp), ALLOCATABLE :: ref_pole(:)
+    COMPLEX(dp), ALLOCATABLE :: ref_residual(:)
+  END TYPE realistic_example
+
+CONTAINS
+
+  @test
+  SUBROUTINE test_generate_realistic_example
+    !
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, no_error, no_restriction
+    USE constant_module, ONLY: eps6, eps14
+    USE pFUnit_mod
+    !
+    TYPE(realistic_example) example
+    TYPE(aaa_approx) analytic_cont
+    INTEGER info
+    COMPLEX(dp) phase
+    !
+    example = make_realistic_example()
+    CALL aaa_generate(example%threshold, no_restriction, example%zz, example%ff, analytic_cont, info)
+    @assertEqual(no_error, info)
+    @assertEqual(example%zz(example%selection), analytic_cont%position, eps14)
+    @assertEqual(example%ff(example%selection), analytic_cont%value, eps14)
+    phase = analytic_cont%weight(1) / example%ref_weight(1)
+    @assertEqual(example%ref_weight * phase, analytic_cont%weight, eps6)
+    !
+  END SUBROUTINE test_generate_realistic_example
+
+  @test
+  SUBROUTINE test_pole_residual_realistic_example
+    !
+    USE aaa_module,      ONLY: aaa_approx, aaa_pole_residual, pole_residual, no_error
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: eps6
+    USE sort_module,     ONLY: insertion_sort
+    USE pFUnit_mod
+    !
+    TYPE(realistic_example) example
+    TYPE(aaa_approx) analytic_cont
+    TYPE(pole_residual) pole_res
+    INTEGER info
+    REAL(dp), ALLOCATABLE :: sort(:)
+    INTEGER, ALLOCATABLE :: map(:)
+    !
+    example = make_realistic_example()
+    CALL allocate_copy_from_to(example%zz(example%selection), analytic_cont%position)
+    CALL allocate_copy_from_to(example%ff(example%selection), analytic_cont%value)
+    CALL allocate_copy_from_to(example%ref_weight, analytic_cont%weight)
+    !
+    CALL aaa_pole_residual(analytic_cont, pole_res, info)
+    @assertEqual(no_error, info)
+    !
+    ALLOCATE(sort(SIZE(pole_res%pole)))
+    sort = 1.0 / ABS(pole_res%pole)
+    CALL insertion_sort(sort, map)
+    @assertEqual(example%ref_pole, pole_res%pole(map), eps6)
+    @assertEqual(example%ref_residual, pole_res%residual(map), eps6)
+    !
+  END SUBROUTINE test_pole_residual_realistic_example
+
+  ! example from GW calculation
+  TYPE(realistic_example) FUNCTION make_realistic_example() RESULT(example)
+    !
+    USE constant_module, ONLY: imag, eps10
+    !
+    INTEGER, PARAMETER :: num_point = 35
+    INTEGER, PARAMETER :: num_support = 14
+    !
+    example%threshold = eps10
+    ALLOCATE(example%zz(num_point), example%ff(num_point))
+    example%zz = imag * [0.000000000000000_dp, 0.022049595238385_dp, 0.066148785715154_dp, &
+      0.132297571430307_dp, 0.220495952383846_dp, 0.330743928575769_dp, 0.463041500006076_dp, &
+      0.617388666674768_dp, 0.793785428581845_dp, 0.992231785727306_dp, 1.212727738111152_dp, &
+      1.455273285733382_dp, 1.719868428593997_dp, 2.006513166692996_dp, 2.315207500030380_dp, &
+      2.645951428606149_dp, 2.998744952420302_dp, 3.373588071472840_dp, 3.770480785763762_dp, &
+      4.189423095293069_dp, 4.630415000060760_dp, 5.093456500066837_dp, 5.578547595311298_dp, &
+      6.085688285794142_dp, 6.614878571515373_dp, 7.166118452474987_dp, 7.739407928672986_dp, &
+      8.334747000109370_dp, 8.952135666784137_dp, 9.591573928697290_dp, 10.253061785848827_dp, &
+      10.936599238238751_dp, 11.642186285867057_dp, 12.369822928733747_dp, 13.119509166838823_dp]
+    example%ff = [CMPLX(-0.946810467902942_dp, -0.000000166810202_dp, KIND=dp), &
+      CMPLX(-0.946713158579804_dp, -0.000000124164402_dp, KIND=dp), CMPLX(-0.945940057385989_dp,  0.000000203566456_dp, KIND=dp),&
+      CMPLX(-0.943397246808788_dp,  0.000001149250966_dp, KIND=dp), CMPLX(-0.937720077990065_dp,  0.000002619009281_dp, KIND=dp),&
+      CMPLX(-0.927681669698545_dp,  0.000003586212155_dp, KIND=dp), CMPLX(-0.912385396807743_dp,  0.000002762592752_dp, KIND=dp),&
+      CMPLX(-0.891055938193061_dp,  0.000002051753838_dp, KIND=dp), CMPLX(-0.862885738114761_dp,  0.000008333504312_dp, KIND=dp),&
+      CMPLX(-0.827306036293902_dp,  0.000004590673232_dp, KIND=dp), CMPLX(-0.784322693337280_dp,  0.000000816765894_dp, KIND=dp),&
+      CMPLX(-0.734690279993806_dp, -0.000002074564973_dp, KIND=dp), CMPLX(-0.679866985492527_dp, -0.000003937895245_dp, KIND=dp),&
+      CMPLX(-0.621785157521040_dp, -0.000004649656642_dp, KIND=dp), CMPLX(-0.562546417527591_dp, -0.000004319842713_dp, KIND=dp),&
+      CMPLX(-0.504131102436742_dp, -0.000003322868478_dp, KIND=dp), CMPLX(-0.448185094720206_dp, -0.000002123375619_dp, KIND=dp),&
+      CMPLX(-0.395910417845432_dp, -0.000001079807444_dp, KIND=dp), CMPLX(-0.348051664441263_dp, -0.000000357344820_dp, KIND=dp),&
+      CMPLX(-0.304949744939132_dp,  0.000000044742462_dp, KIND=dp), CMPLX(-0.266629632305113_dp,  0.000000212780746_dp, KIND=dp),&
+      CMPLX(-0.232894874856524_dp,  0.000000245644980_dp, KIND=dp), CMPLX(-0.203411892971476_dp,  0.000000216906042_dp, KIND=dp),&
+      CMPLX(-0.177776512824456_dp,  0.000000168728156_dp, KIND=dp), CMPLX(-0.155561684769580_dp,  0.000000120742075_dp, KIND=dp),&
+      CMPLX(-0.136348798763193_dp,  0.000000080370210_dp, KIND=dp), CMPLX(-0.119746262233120_dp,  0.000000049472890_dp, KIND=dp),&
+      CMPLX(-0.105398980483803_dp,  0.000000027561434_dp, KIND=dp), CMPLX(-0.092991783127970_dp,  0.000000013177767_dp, KIND=dp),&
+      CMPLX(-0.082249097664911_dp,  0.000000004546435_dp, KIND=dp), CMPLX(-0.072932491366126_dp, -0.000000000052215_dp, KIND=dp),&
+      CMPLX(-0.064837160005967_dp, -0.000000002068582_dp, KIND=dp), CMPLX(-0.057788043301042_dp, -0.000000002597456_dp, KIND=dp),&
+      CMPLX(-0.051635970546758_dp, -0.000000002385282_dp, KIND=dp), CMPLX(-0.046254057034345_dp, -0.000000001890450_dp, KIND=dp)]
+    ALLOCATE(example%selection(num_support), example%ref_weight(num_support))
+    example%selection = [1, 2, 5, 8, 10, 11, 13, 14, 16, 19, 23, 26, 32, 35]
+    example%ref_weight = [CMPLX( 0.0394954985009626_dp, +0.00000000000000_dp, KIND=dp), &
+      CMPLX(-0.0470297687675193_dp, -5.91024019906264e-05_dp, KIND=dp), &
+      CMPLX(0.0111010943828025_dp, 0.000383395474282687_dp, KIND=dp), &
+      CMPLX(-0.00344605469875736_dp, -0.00330538214240577_dp, KIND=dp), &
+      CMPLX(-0.0165635120521155_dp, 0.0152264084776644_dp, KIND=dp), & 
+      CMPLX(0.0350338166856894_dp, -0.0121231888224660_dp, KIND=dp), &
+      CMPLX(-0.179076574314307_dp, -0.0333139881317769_dp, KIND=dp), &
+      CMPLX(0.324815080260139_dp, 0.0510928451087794_dp, KIND=dp), &
+      CMPLX(-0.304624424352074_dp, -0.0195145581600922_dp, KIND=dp), & 
+      CMPLX(0.282781047446681_dp, 0.000664145578070739_dp, KIND=dp), &
+      CMPLX(-0.423430930577600_dp, -0.0190678822326064_dp, KIND=dp), &
+      CMPLX(0.467920475059351_dp, 0.0513880675806567_dp, KIND=dp), &
+      CMPLX(-0.444545519619562_dp, -0.0923581540719813_dp, KIND=dp), & 
+      CMPLX(0.261600110355685_dp, 0.0627104789769834_dp, KIND=dp)]
+    example%ref_pole = [CMPLX(-5.81519880197380_dp, -2.71300877266363_dp, KIND=dp), &
+      CMPLX(-3.66810332655941_dp, 3.79264125573097_dp, KIND=dp), &
+      CMPLX(3.69644352381013_dp, 2.96701670974463_dp, KIND=dp), &
+      CMPLX(2.87918298501449_dp, -2.45558211213933_dp, KIND=dp), &
+      CMPLX(-3.04789466454500_dp, -0.203425866542215_dp, KIND=dp), &
+      CMPLX(3.01838976268446_dp, -0.190099980935114_dp, KIND=dp), &
+      CMPLX(1.90886739126701_dp, -0.228777937304378_dp, KIND=dp), &
+      CMPLX(-1.78996968698038_dp, -0.294900029752514_dp, KIND=dp), &
+      CMPLX(0.649330385192645_dp, 1.23538538870743_dp, KIND=dp), &
+      CMPLX(-0.303163237108937_dp, 1.24377296753573_dp, KIND=dp), &
+      CMPLX(-0.130382941219150_dp, 0.682049457909817_dp, KIND=dp), &
+      CMPLX(-0.515034646466357_dp, -0.000357932573041284_dp, KIND=dp), &
+      CMPLX(0.514035461026687_dp, -0.000583739329003428_dp, KIND=dp)]
+    example%ref_residual = [CMPLX(-0.00772789023947204_dp, 0.0283144218608361_dp, KIND=dp), &
+      CMPLX(-9.38695980807502e-06_dp, -1.06984482093780e-05_dp, KIND=dp), &
+      CMPLX(1.82201518237431e-05_dp, 3.80140493853979e-05_dp, KIND=dp), &
+      CMPLX(-0.0162267349091446_dp, 0.129800612494982_dp, KIND=dp), &
+      CMPLX(-1.33604763256712_dp, 0.0617787230518969_dp, KIND=dp), &
+      CMPLX(1.30993923427562_dp, -0.0353622985508462_dp, KIND=dp), &
+      CMPLX(0.0913478318191160_dp, -0.0810593275177954_dp, KIND=dp), &
+      CMPLX(-0.0415850065176934_dp, -0.100889506547409_dp, KIND=dp), &
+      CMPLX(2.68991336864026e-07_dp, 6.08984139351310e-07_dp, KIND=dp), &
+      CMPLX(-2.09187975078281e-08_dp, -3.33341082508938e-08_dp, KIND=dp), &
+      CMPLX(-1.21509434782921e-06_dp, 3.03949807371660e-08_dp, KIND=dp), &
+      CMPLX(-0.00547995969384646_dp, -2.87090023742365e-05_dp, KIND=dp), &
+      CMPLX(0.00540364695976998_dp, -3.49717458856742e-05_dp, KIND=dp)]
+    !
+  END FUNCTION make_realistic_example
+
+  @test
+  SUBROUTINE test_constant_function
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, no_error, no_restriction
+    USE constant_module, ONLY: dp, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: zz(1) = 1.0_dp
+    COMPLEX(dp), PARAMETER :: ff(1) = 2.0_dp
+
+    TYPE(aaa_approx) analytic_cont
+
+    INTEGER info
+
+    CALL aaa_generate(eps14, no_restriction, zz, ff, analytic_cont, info)
+    @assertEqual(no_error, info)
+    @assertEqual(SIZE(zz), SIZE(analytic_cont%position))
+    @assertEqual(SIZE(zz), SIZE(analytic_cont%value))
+    @assertEqual(SIZE(zz), SIZE(analytic_cont%weight))
+    @assertEqual(zz, analytic_cont%position, eps14)
+    @assertEqual(ff, analytic_cont%value, eps14)
+    @assertEqual(1.0_dp, ABS(analytic_cont%weight), eps14)
+
+  END SUBROUTINE test_constant_function
+
+  @test
+  SUBROUTINE test_rational_function
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, aaa_evaluate, no_error, no_restriction
+    USE constant_module, ONLY: dp, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: zz(2) = [1.0_dp, 2.0_dp]
+    COMPLEX(dp), ALLOCATABLE :: ff_ref(:), ff_test(:)
+
+    TYPE(aaa_approx) analytic_cont
+    INTEGER info
+
+    ALLOCATE(ff_ref(SIZE(zz)))
+    ff_ref = rational_function(zz)
+
+    CALL aaa_generate(eps14, no_restriction, zz, ff_ref, analytic_cont, info)
+    @assertEqual(no_error, info)
+    @assertEqual(SIZE(zz), SIZE(analytic_cont%position))
+    @assertEqual(SIZE(zz), SIZE(analytic_cont%value))
+    @assertEqual(SIZE(zz), SIZE(analytic_cont%weight))
+
+    CALL aaa_evaluate(analytic_cont, zz, ff_test)
+    @assertEqual(SIZE(ff_ref), SIZE(ff_test))
+    @assertEqual(ff_ref, ff_test, eps14)
+
+  CONTAINS
+
+    ELEMENTAL COMPLEX(dp) FUNCTION rational_function(zz) RESULT (ff)
+
+      COMPLEX(dp), INTENT(IN) :: zz
+
+      ff = 6.0_dp / (zz + 1.0_dp)
+
+    END FUNCTION rational_function
+
+  END SUBROUTINE test_rational_function
+
+  @test
+  SUBROUTINE test_tangent
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, no_error, no_restriction
+    USE constant_module, ONLY: dp, imag, eps10, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: zz(11) = [-2.0_dp, -1.62_dp, -1.24_dp, -0.86_dp, -0.48_dp, &
+      -0.1_dp, 0.28_dp, 0.66_dp, 1.04_dp, 1.42_dp, 1.8_dp] * imag
+
+    COMPLEX(dp), ALLOCATABLE :: ff(:)
+
+    COMPLEX(dp), PARAMETER :: pos_ref(6) = [-2.0_dp, -1.62_dp, -0.1_dp, 0.66_dp, 1.04_dp, 1.8_dp] * imag
+    COMPLEX(dp), PARAMETER :: val_ref(6) = [-0.996272076220750_dp, -0.987751794593964_dp, &
+      -0.155800329221619_dp, 0.776591731340287_dp, 0.926576537839819_dp, 0.993023541875534_dp] * imag
+    COMPLEX(dp), PARAMETER :: weight_ref(6) = [0.254743755442661_dp, -0.308676614582065_dp, &
+      0.169139595289907_dp, -0.581224944817519_dp, 0.660333182924730_dp, -0.193271350770512_dp]
+
+    COMPLEX(dp) phase
+
+    TYPE(aaa_approx) analytic_cont
+
+    INTEGER info
+
+    ALLOCATE(ff(SIZE(zz)))
+    ff = scaled_tangent(zz)
+
+    CALL aaa_generate(eps14, no_restriction, zz, ff, analytic_cont, info)
+    @assertEqual(no_error, info)
+    @assertEqual(SIZE(pos_ref), SIZE(analytic_cont%position))
+    @assertEqual(pos_ref, analytic_cont%position, eps14)
+    @assertEqual(val_ref, analytic_cont%value, eps14)
+
+    phase = analytic_cont%weight(1) / weight_ref(1)
+    @assertEqual(phase * weight_ref, analytic_cont%weight, eps10)
+
+  CONTAINS
+
+    ! tan(pi/2 * z) - poles at (2k + 1)
+    ELEMENTAL COMPLEX(dp) FUNCTION scaled_tangent(zz) RESULT(ff)
+
+      USE constant_module, ONLY: half_pi
+
+      COMPLEX(dp), INTENT(IN) :: zz
+
+      ff = TAN(half_pi * zz)
+
+    END FUNCTION scaled_tangent
+
+  END SUBROUTINE test_tangent
+
+  @test
+  SUBROUTINE test_evaluate_tangent
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_evaluate
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp, imag, eps12
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: pos(6) = [-2.0_dp, -1.62_dp, -0.1_dp, 0.66_dp, 1.04_dp, 1.8_dp] * imag
+    COMPLEX(dp), PARAMETER :: val(6) = [-0.996272076220750_dp, -0.987751794593964_dp, &
+      -0.155800329221619_dp, 0.776591731340287_dp, 0.926576537839819_dp, 0.993023541875534_dp] * imag
+    COMPLEX(dp), PARAMETER :: weight(6) = [0.254743755442661_dp, -0.308676614582065_dp, &
+      0.169139595289907_dp, -0.581224944817519_dp, 0.660333182924730_dp, -0.193271350770512_dp]
+    TYPE(aaa_approx) analytic_cont
+
+    COMPLEX(dp), PARAMETER :: zz(11) = [-2.0_dp, -1.6_dp, -1.2_dp, -0.8_dp, -0.4_dp, 0.0_dp, &
+      0.4_dp, 0.8_dp, 1.2_dp, 1.6_dp, 2.0_dp] + imag
+    COMPLEX(dp), PARAMETER :: ff_ref(11) = [ &
+      CMPLX(-0.0189512454900413_dp, 0.921964852254317_dp, KIND=dp), &
+      CMPLX( 0.0744589040347774_dp, 0.970153625064826_dp, KIND=dp), &
+      CMPLX( 0.0533930010643974_dp, 1.070622107454540_dp, KIND=dp), &
+      CMPLX(-0.0546475030446207_dp, 1.070932122642730_dp, KIND=dp), &
+      CMPLX(-0.0799250131086865_dp, 0.970396338717971_dp, KIND=dp), &
+      CMPLX( 0.0000000000000000_dp, 0.917151944858831_dp, KIND=dp), &
+      CMPLX( 0.0799250131086865_dp, 0.970396338717971_dp, KIND=dp), &
+      CMPLX( 0.0546475030446202_dp, 1.070932122642730_dp, KIND=dp), &
+      CMPLX(-0.0533930010643974_dp, 1.070622107454540_dp, KIND=dp), &
+      CMPLX(-0.0744589040347774_dp, 0.970153625064826_dp, KIND=dp), &
+      CMPLX( 0.0189512454900413_dp, 0.921964852254317_dp, KIND=dp)]
+
+    COMPLEX(dp), ALLOCATABLE :: ff(:)
+
+    CALL allocate_copy_from_to(pos, analytic_cont%position)
+    CALL allocate_copy_from_to(val, analytic_cont%value)
+    CALL allocate_copy_from_to(weight, analytic_cont%weight)
+
+    CALL aaa_evaluate(analytic_cont, zz, ff)
+    @assertEqual(ff_ref, ff, eps12)
+
+  END SUBROUTINE test_evaluate_tangent
+
+  @test
+  SUBROUTINE test_threshold
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, no_error, no_restriction
+    USE constant_module, ONLY: dp, two_pi_i, sqrt_half
+    USE pFUnit_mod
+
+    TYPE(aaa_approx) analytic_cont
+
+    INTEGER, PARAMETER :: num_point = 49
+    REAL(dp), PARAMETER :: thres_list(6) = [1e-4_dp, 1e-6_dp, 1e-8_dp, 1e-10_dp, 1e-12_dp, 1e-14_dp]
+    INTEGER, PARAMETER :: step_list(6) = [9, 13, 17, 17, 21, 25]
+
+    COMPLEX(dp), ALLOCATABLE :: zz(:), ff(:)
+
+    INTEGER ii
+    INTEGER info
+
+    ALLOCATE(zz(num_point), ff(num_point))
+    zz = [(EXP(two_pi_i * (ii - 1) / num_point), ii = 1, num_point)] * sqrt_half
+    ff = trial_function(zz)
+
+    DO ii = 1, SIZE(thres_list)
+      CALL aaa_generate(thres_list(ii), no_restriction, zz, ff, analytic_cont, info)
+      @assertEqual(no_error, info)
+      @assertEqual(step_list(ii), SIZE(analytic_cont%position))
+    END DO
+
+  CONTAINS
+
+    ELEMENTAL COMPLEX(dp) FUNCTION trial_function(zz) RESULT(ff)
+
+      USE constant_module, ONLY: one, two
+
+      COMPLEX(dp), INTENT(IN) :: zz
+
+      ff = LOG(two - zz**4) / (one - 16.0 * zz**4)
+
+    END FUNCTION trial_function
+
+  END SUBROUTINE test_threshold
+
+  @test
+  SUBROUTINE test_restriction
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, no_error
+    USE constant_module, ONLY: dp, eps8
+    USE pFUnit_mod
+
+    TYPE(aaa_approx) analytic_cont
+
+    INTEGER, PARAMETER :: num_point = 100
+    REAL(dp), ALLOCATABLE :: re(:), im(:)
+    COMPLEX(dp), ALLOCATABLE :: zz(:), ff(:)
+
+    INTEGER max_point
+    INTEGER info
+
+    ALLOCATE(zz(num_point), ff(num_point), re(num_point), im(num_point))
+    CALL RANDOM_NUMBER(re)
+    CALL RANDOM_NUMBER(im)
+    zz = CMPLX(re, im, KIND=dp) 
+    CALL RANDOM_NUMBER(re)
+    CALL RANDOM_NUMBER(im)
+    ff = CMPLX(re, im, KIND=dp) 
+
+    DO max_point = 1, num_point 
+      CALL aaa_generate(eps8, max_point, zz, ff, analytic_cont, info)
+      @assertEqual(no_error, info)
+      @assertGreaterThanOrEqual(max_point, SIZE(analytic_cont%position))
+    END DO
+
+  END SUBROUTINE test_restriction
+
+  @test
+  SUBROUTINE test_pole_residual
+    !
+    USE aaa_module,      ONLY: aaa_approx, aaa_pole_residual, pole_residual, no_error
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp, imag, eps8, eps10, c_zero
+    USE pFUnit_mod
+    !
+    COMPLEX(dp), PARAMETER :: pos(6) = [-2.0_dp, -1.62_dp, -0.1_dp, 0.66_dp, 1.04_dp, 1.8_dp] * imag
+    COMPLEX(dp), PARAMETER :: val(6) = [-0.996272076220750_dp, -0.987751794593964_dp, &
+      -0.155800329221619_dp, 0.776591731340287_dp, 0.926576537839819_dp, 0.993023541875534_dp] * imag
+    COMPLEX(dp), PARAMETER :: weight(6) = [0.254743755442661_dp, -0.308676614582065_dp, &
+      0.169139595289907_dp, -0.581224944817519_dp, 0.660333182924730_dp, -0.193271350770512_dp]
+    COMPLEX(dp), PARAMETER :: pole1 = -3.34743963067030_dp + 0.0783682062633691_dp * imag
+    COMPLEX(dp), PARAMETER :: pole2 = -1.00028819164053_dp + 0.000173762282749467_dp * imag
+    COMPLEX(dp), PARAMETER :: ref_pole(5) = [67.7468519344710_dp * imag, &
+      pole1, -CONJG(pole1), pole2, -CONJG(pole2)]
+    COMPLEX(dp), PARAMETER :: res1 = -1.129791567209568_dp + 0.096777075966768_dp * imag
+    COMPLEX(dp), PARAMETER :: res2 = -0.637643094699188_dp + 0.000552952044049_dp * imag
+    COMPLEX(dp), PARAMETER :: ref_res(5) = [431.9258203763578_dp + c_zero, res1, CONJG(res1), res2, CONJG(res2)] 
+    !
+    TYPE(aaa_approx) analytic_cont
+    TYPE(pole_residual) pole_res
+    INTEGER info
+    !
+    CALL allocate_copy_from_to(pos, analytic_cont%position)
+    CALL allocate_copy_from_to(val, analytic_cont%value)
+    CALL allocate_copy_from_to(weight, analytic_cont%weight)
+    !
+    CALL aaa_pole_residual(analytic_cont, pole_res, info)
+    @assertEqual(no_error, info)
+    @assertEqual(ref_pole, pole_res%pole, eps10)
+    @assertEqual(ref_res(1), pole_res%residual(1), 1e-3_dp)
+    @assertEqual(ref_res(2:5), pole_res%residual(2:), eps8)
+    !
+  END SUBROUTINE test_pole_residual
+
+  @test
+  SUBROUTINE test_error_raised
+
+    USE aaa_module,      ONLY: aaa_approx, aaa_generate, input_error, no_restriction
+    USE constant_module, ONLY: dp, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: zz(1) = 1.0_dp
+    COMPLEX(dp), PARAMETER :: ff(2) = 2.0_dp
+
+    TYPE(aaa_approx) analytic_cont
+
+    INTEGER info
+
+    CALL aaa_generate(eps14, no_restriction, zz, ff, analytic_cont, info)
+    @assertEqual(input_error, info)
+
+  END SUBROUTINE test_error_raised
+
+  @test
+  SUBROUTINE test_select_point_with_maximum_error()
+
+    USE aaa_module,      ONLY: select_point_with_maximum_error
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: actual(5) = [1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp, 5.0_dp]
+    COMPLEX(dp), PARAMETER :: fit(5) = [1.3_dp, 2.2_dp, 3.1_dp, 4.5_dp, 5.4_dp]
+
+    INTEGER point
+
+    point = select_point_with_maximum_error(actual, fit)
+
+    @assertEqual(4, point)
+
+  END SUBROUTINE test_select_point_with_maximum_error
+
+  @test
+  SUBROUTINE test_construct_Cauchy_matrix
+
+    USE aaa_module,      ONLY: construct_Cauchy_matrix
+    USE constant_module, ONLY: dp, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: xx(3) = [1.0_dp, 2.0_dp, 3.0_dp]
+    COMPLEX(dp), PARAMETER :: yy(2) = [4.0_dp, 5.0_dp]
+
+    COMPLEX(dp), ALLOCATABLE :: cauchy_matrix(:,:)
+
+    INTEGER ix, iy
+
+    CALL construct_Cauchy_matrix(xx, yy, cauchy_matrix)
+
+    @assertEqual([SIZE(xx), SIZE(yy)], SHAPE(cauchy_matrix))
+    DO iy = 1, SIZE(yy)
+      DO ix = 1, SIZE(xx)
+        @assertEqual(1.0_dp / (xx(ix) - yy(iy)), cauchy_matrix(ix, iy), eps14)
+      END DO
+    END DO
+
+  END SUBROUTINE test_construct_Cauchy_matrix
+
+  @test
+  SUBROUTINE test_construct_Cauchy_matrix_no_NaN
+
+    USE aaa_module,      ONLY: construct_Cauchy_matrix
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    USE, INTRINSIC :: IEEE_ARITHMETIC, ONLY: IEEE_IS_NAN
+
+    COMPLEX(dp), PARAMETER :: zz(4) = [1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp]
+
+    COMPLEX(dp), ALLOCATABLE :: cauchy_matrix(:,:)
+
+    CALL construct_Cauchy_matrix(zz, zz, cauchy_matrix)
+
+    @assertFalse(ANY(IEEE_IS_NAN(REAL(cauchy_matrix))))
+    @assertFalse(ANY(IEEE_IS_NAN(AIMAG(cauchy_matrix))))
+
+  END SUBROUTINE test_construct_Cauchy_matrix_no_NaN
+
+  @test
+  SUBROUTINE test_construct_Loewner_matrix
+
+    USE aaa_module,      ONLY: construct_Loewner_matrix
+    USE constant_module, ONLY: dp, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: zz(3) = [1.0_dp, 2.0_dp, 3.0_dp]
+    COMPLEX(dp), PARAMETER :: ff(3) = [4.0_dp, 5.0_dp, 6.0_dp]
+
+    COMPLEX(dp), ALLOCATABLE :: loewner_matrix(:,:)
+
+    INTEGER ii, jj
+
+    CALL construct_Loewner_matrix(zz, ff, loewner_matrix)
+
+    @assertEqual([SIZE(zz), SIZE(zz)], SHAPE(loewner_matrix))
+    DO jj = 1, SIZE(zz)
+      DO ii = 1, SIZE(zz)
+        IF (ii == jj) CYCLE
+        @assertEqual((ff(ii) - ff(jj)) / (zz(ii) - zz(jj)), loewner_matrix(ii, jj), eps14)
+      END DO
+    END DO
+
+  END SUBROUTINE test_construct_Loewner_matrix
+
+  @test
+  SUBROUTINE test_extract_submatrix_general
+
+    USE constant_module, ONLY: dp, eps14
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: matrix(3, 4) = RESHAPE( &
+      [1.0_dp, 2.0_dp, 3.0_dp,  4.0_dp,  5.0_dp,  6.0_dp, &
+       7.0_dp, 8.0_dp, 9.0_dp, 10.0_dp, 11.0_dp, 12.0_dp], [3, 4])
+
+    LOGICAL, PARAMETER :: mask_row(3) = [.TRUE., .FALSE., .TRUE.]
+    LOGICAL, PARAMETER :: mask_col(4) = [.TRUE., .FALSE., .TRUE., .TRUE.]
+
+    COMPLEX(dp), PARAMETER :: reference(2, 3) = RESHAPE( &
+      [1.0_dp, 3.0_dp, 7.0_dp, 9.0_dp, 10.0_dp, 12.0_dp] , [2, 3])
+
+    COMPLEX(dp), ALLOCATABLE :: submatrix(:,:)
+
+    CALL test_extract_submatrix(matrix, mask_row, mask_col, submatrix)
+
+    @assertEqual(reference, submatrix, eps14)
+
+  END SUBROUTINE test_extract_submatrix_general
+
+  @test
+  SUBROUTINE test_extract_submatrix_no_column
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), PARAMETER :: matrix(2, 3) = RESHAPE( &
+      [1.0_dp, 2.0_dp, 3.0_dp,  4.0_dp,  5.0_dp,  6.0_dp], [2, 3])
+
+    LOGICAL, PARAMETER :: mask_row(2) = [.TRUE., .FALSE.]
+    LOGICAL, PARAMETER :: mask_col(3) = .FALSE.
+
+    COMPLEX(dp), ALLOCATABLE :: submatrix(:,:)
+
+    CALL test_extract_submatrix(matrix, mask_row, mask_col, submatrix)
+
+  END SUBROUTINE test_extract_submatrix_no_column
+
+  @test
+  SUBROUTINE test_extract_submatrix_no_row
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), PARAMETER :: matrix(1, 1) = 1.0_dp
+
+    LOGICAL, PARAMETER :: mask_row(1) = .FALSE.
+    LOGICAL, PARAMETER :: mask_col(1) = .TRUE.
+
+    COMPLEX(dp), ALLOCATABLE :: submatrix(:,:)
+
+    CALL test_extract_submatrix(matrix, mask_row, mask_col, submatrix)
+
+  END SUBROUTINE test_extract_submatrix_no_row
+
+  SUBROUTINE test_extract_submatrix(matrix, mask_row, mask_col, submatrix)
+
+    USE aaa_module,      ONLY: AND_mask_matrix, extract_submatrix, mask_type
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    COMPLEX(dp), INTENT(IN) :: matrix(:,:)
+    LOGICAL, INTENT(IN) :: mask_row(:), mask_col(:)
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: submatrix(:,:)
+
+    TYPE(mask_type) mask
+    CALL AND_mask_matrix(mask_row, mask_col, mask)
+
+    CALL extract_submatrix(matrix, mask, submatrix)
+
+    @assertEqual([COUNT(mask_row), COUNT(mask_col)], SHAPE(submatrix))
+
+  END SUBROUTINE test_extract_submatrix
+
+  @test
+  SUBROUTINE test_AND_mask_matrix
+
+    USE aaa_module, ONLY: AND_mask_matrix, mask_type
+    USE pFUnit_mod
+
+    LOGICAL, PARAMETER :: mask_row(3) = [.TRUE., .FALSE., .TRUE.]
+    LOGICAL, PARAMETER :: mask_col(4) = [.FALSE., .FALSE., .TRUE., .TRUE.]
+
+    TYPE(mask_type) :: mask
+
+    INTEGER ii, jj
+
+    CALL AND_mask_matrix(mask_row, mask_col, mask)
+    @assertEqual([3, 4], SHAPE(mask%matrix))
+    @assertEqual(COUNT(mask_row), mask%num_row)
+    @assertEqual(COUNT(mask_col), mask%num_col)
+    @assertEqual(mask%num_row * mask%num_col, COUNT(mask%matrix))
+
+    DO jj = 1, SIZE(mask_col)
+      DO ii = 1, SIZE(mask_row)
+        @assertEqual(mask_row(ii).AND.mask_col(jj), mask%matrix(ii, jj))
+      END DO
+    END DO
+
+  END SUBROUTINE test_AND_mask_matrix
+
+END MODULE testAAA_module

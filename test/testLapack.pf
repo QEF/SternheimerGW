@@ -1,0 +1,236 @@
+! This Source Code Form is subject to the terms of the Mozilla Public
+! License, v. 2.0. If a copy of the MPL was not distributed with this
+! file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE testLapack_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+  @test
+  SUBROUTINE testSVD_no_column
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), ALLOCATABLE :: matrix(:,:)
+    REAL(dp), ALLOCATABLE :: ref_sigma(:)
+
+    ALLOCATE(matrix(4, 0), ref_sigma(0))
+
+    CALL testSVD_value(matrix, ref_sigma)
+    CALL testSVD_full(matrix, ref_sigma)
+
+  END SUBROUTINE testSVD_no_column
+
+  @test
+  SUBROUTINE testSVD_no_row
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), ALLOCATABLE :: matrix(:,:)
+    REAL(dp), ALLOCATABLE :: ref_sigma(:)
+
+    ALLOCATE(matrix(0, 3), ref_sigma(0))
+
+    CALL testSVD_value(matrix, ref_sigma)
+    CALL testSVD_full(matrix, ref_sigma)
+
+  END SUBROUTINE testSVD_no_row
+
+  @test
+  SUBROUTINE testSVD_square
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), PARAMETER :: matrix(3,3) = RESHAPE([1.0_dp, 2.0_dp, 3.0_dp, &
+      4.0_dp, 5.0_dp, 6.0_dp, 7.0_dp, 8.0_dp, 9.0_dp], [3, 3])
+
+    REAL(dp), PARAMETER :: ref_sigma(3) = [16.848103352614206_dp, 1.068369514554709_dp, 0.0_dp]
+
+    CALL testSVD_value(matrix, ref_sigma)
+    CALL testSVD_full(matrix, ref_sigma)
+
+  END SUBROUTINE testSVD_square
+
+  @test
+  SUBROUTINE testSVD_value_more_column
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), PARAMETER :: matrix(2,4) = RESHAPE([1.0_dp, 2.0_dp, 3.0_dp, &
+       4.0_dp, 5.0_dp, 6.0_dp, 7.0_dp, 8.0_dp], [2, 4])
+
+    REAL(dp), PARAMETER :: ref_sigma(2) = [14.269095499261484_dp, 0.626828232417543_dp]
+
+    CALL testSVD_value(matrix, ref_sigma)
+    CALL testSVD_full(matrix, ref_sigma)
+
+  END SUBROUTINE testSVD_value_more_column
+
+  @test
+  SUBROUTINE testSVD_value_more_row
+
+    USE constant_module, ONLY: dp
+
+    COMPLEX(dp), PARAMETER :: matrix(3, 2) = RESHAPE([1.0_dp, 2.0_dp, 3.0_dp, 4.0_dp, 5.0_dp, 6.0_dp], [3, 2])
+
+    REAL(dp), PARAMETER :: ref_sigma(2) = [9.508032000695721_dp, 0.772869635673484_dp]
+
+    CALL testSVD_value(matrix, ref_sigma)
+    CALL testSVD_full(matrix, ref_sigma)
+
+  END SUBROUTINE testSVD_value_more_row
+
+  @test
+  SUBROUTINE testSVD_larger_matrix
+
+    USE constant_module, ONLY: dp, imag
+    USE lapack_module,   ONLY: svd, no_error
+    USE pFUnit_mod
+
+    COMPLEX(dp), ALLOCATABLE :: matrix(:,:)
+
+    REAL(dp), ALLOCATABLE :: sigma(:), matrix_re(:,:), matrix_im(:,:)
+    COMPLEX(dp), ALLOCATABLE :: U_matrix(:,:), conj_transpose_V_matrix(:,:)
+
+    INTEGER info
+
+    ALLOCATE(matrix(18,31))
+    ALLOCATE(matrix_re(18,31), matrix_im(18,31))
+
+    CALL random_number(matrix_re)
+    CALL random_number(matrix_im)
+    matrix = matrix_re + matrix_im * imag
+
+    CALL svd(matrix, sigma, U_matrix, conj_transpose_V_matrix, info)
+    @assertEqual(no_error, info)
+   
+  END SUBROUTINE testSVD_larger_matrix
+
+  SUBROUTINE testSVD_value(matrix, ref_sigma)
+
+    USE constant_module, ONLY: dp, eps14
+    USE lapack_module,   ONLY: svd, no_error
+    USE pFUnit_mod  
+
+    COMPLEX(dp), INTENT(IN) :: matrix(:,:)
+    REAL(dp), INTENT(IN) :: ref_sigma(:)
+
+    REAL(dp), ALLOCATABLE :: sigma(:)
+
+    INTEGER info
+
+    CALL svd(matrix, sigma, info)
+    @assertEqual(no_error, info)
+    @assertEqual(SIZE(ref_sigma), SIZE(sigma))
+    @assertEqual(ref_sigma, sigma, eps14)
+
+  END SUBROUTINE testSVD_value
+
+  SUBROUTINE testSVD_full(matrix, ref_sigma)
+
+    USE constant_module, ONLY: dp, eps14, c_zero
+    USE lapack_module,   ONLY: svd, no_error
+    USE pFUnit_mod  
+
+    COMPLEX(dp), INTENT(IN) :: matrix(:,:)
+    REAL(dp), INTENT(IN) :: ref_sigma(:)
+
+    REAL(dp), ALLOCATABLE :: sigma(:)
+    COMPLEX(dp), ALLOCATABLE :: U_matrix(:,:), conj_transpose_V_matrix(:,:)
+
+    COMPLEX(dp), ALLOCATABLE :: usv(:,:)
+
+    INTEGER info
+
+    CALL svd(matrix, sigma, U_matrix, conj_transpose_V_matrix, info)
+    @assertEqual(no_error, info)
+    @assertEqual(SIZE(ref_sigma), SIZE(sigma))
+    @assertEqual(ref_sigma, sigma, eps14)
+    @assertEqual(SIZE(matrix, 1), SHAPE(U_matrix))
+    @assertEqual(SIZE(matrix, 2), SHAPE(conj_transpose_V_matrix))
+
+    CALL multiply_U_sigma_V(usv)
+    @assertEqual(matrix, usv, eps14)
+
+  CONTAINS
+
+    SUBROUTINE multiply_U_sigma_V(usv)
+
+      COMPLEX(dp), INTENT(OUT), ALLOCATABLE :: usv(:,:)
+      INTEGER ii
+
+      ALLOCATE(usv(SIZE(matrix, 1), SIZE(matrix, 2)))
+
+      DO ii = 1, SIZE(sigma)
+        usv(:,ii) = U_matrix(:,ii) * sigma(ii)
+      END DO
+      usv(:,SIZE(sigma) + 1:) = c_zero
+
+      usv = MATMUL(usv, conj_transpose_V_matrix)
+
+    END SUBROUTINE multiply_U_sigma_V
+
+  END SUBROUTINE testSVD_full
+
+
+  @test
+  SUBROUTINE testEigenvalue
+    !
+    USE constant_module, ONLY: dp, c_zero, eps12
+    USE lapack_module,   ONLY: eigenvalue, no_error, rational_vector
+    USE pFUnit_mod
+    !
+    COMPLEX(dp), PARAMETER :: A_matrix(3,3) = RESHAPE([1.0_dp, 2.0_dp, 3.0_dp, &
+      4.0_dp, 5.0_dp, 6.0_dp, 7.0_dp, 8.0_dp, 9.0_dp], [3, 3])
+    COMPLEX(dp), PARAMETER :: B_matrix(3,3) = SQRT(A_matrix)
+    COMPLEX(dp), PARAMETER :: val = CMPLX(3.637966966716842_dp, 1.978382663786218_dp, KIND=dp)
+    COMPLEX(dp), PARAMETER :: ref_eigen(3) = [c_zero, CONJG(val), val]
+    !
+    TYPE(rational_vector) lambda
+    INTEGER info
+    !
+    CALL eigenvalue(A_matrix, B_matrix, lambda, info)
+    @assertEqual(no_error, info)
+    @assertEqual(ref_eigen, lambda%numerator / lambda%denominator, eps12)
+    !
+  END SUBROUTINE testEigenvalue
+
+  @test
+  SUBROUTINE testEigenvalue_infinite
+    !
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp, c_zero, c_one, imag, eps6
+    USE lapack_module,   ONLY: eigenvalue, no_error, rational_vector
+    USE pFUnit_mod
+    !
+    COMPLEX(dp), PARAMETER :: pos(6) = [-2.0_dp, -1.62_dp, -0.1_dp, 0.66_dp, 1.04_dp, 1.8_dp] * imag
+    COMPLEX(dp), PARAMETER :: weight(6) = [0.254743755442661_dp, -0.308676614582065_dp, &
+      0.169139595289907_dp, -0.581224944817519_dp, 0.660333182924730_dp, -0.193271350770512_dp]
+    COMPLEX(dp), PARAMETER :: val1 = -2.985721379469707e-01 - 0.006989988012542 * imag
+    COMPLEX(dp), PARAMETER :: val2 = -9.997118612227224e-01 - 0.000173662167122 * imag
+    COMPLEX(dp), PARAMETER :: ref_inverse_eigen(7) = [c_zero, c_zero, -0.014760833477074 * imag, &
+      val1, -CONJG(val1), val2, -CONJG(val2)]
+    !
+    COMPLEX(dp), ALLOCATABLE :: A_matrix(:,:), B_matrix(:,:)
+    TYPE(rational_vector) lambda
+    INTEGER ii, info
+    !
+    CALL allocate_init_to([SIZE(pos) + 1, SIZE(pos) + 1], c_zero, A_matrix)
+    CALL allocate_init_to([SIZE(pos) + 1, SIZE(pos) + 1], c_zero, B_matrix)
+    ! these kind of arrays are used in AAA
+    DO ii = 1, SIZE(pos)
+      A_matrix(1, ii + 1) = c_one
+      A_matrix(ii + 1, ii + 1) = pos(ii)
+      A_matrix(ii + 1, 1) = weight(ii)
+      B_matrix(ii + 1, ii + 1) = c_one
+    END DO
+    !
+    CALL eigenvalue(A_matrix, B_matrix, lambda, info)
+    @assertEqual(no_error, info)
+    @assertEqual(ref_inverse_eigen, lambda%denominator / lambda%numerator, eps6)
+    ! 
+  END SUBROUTINE testEigenvalue_infinite
+
+END MODULE testLapack_module
