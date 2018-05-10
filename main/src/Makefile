@@ -26,7 +26,7 @@ include ../../module
 include $(ESPRESSO)/make.inc
 
 MODFLAGS = $(BASEMOD_FLAGS) $(MOD_FLAG)$(ESPRESSO)/PW/src $(MOD_FLAG)$(ESPRESSO)/LR_Modules \
-  $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD) $(MOD_FLAG)$(ALGO_MOD) $(MOD_FLAG)$(PHYS_MOD)
+  $(MOD_FLAG)$(VENDOR_MOD) $(MOD_FLAG)$(UTIL_MOD) $(MOD_FLAG)$(DATA_MOD) $(MOD_FLAG)$(ALGO_MOD) $(MOD_FLAG)$(PHYS_MOD)
 
 EXE = gw.x
 
@@ -37,7 +37,7 @@ gw_opening.o\
 gwq_readin.o\
 version.o
 
-GWLIBS = ../../phys/libphys.a ../../algo/libalgo.a ../../data/libdata.a ../../util/src/libutil.a
+GWLIBS = ../../phys/libphys.a ../../algo/libalgo.a ../../data/libdata.a ../../util/src/libutil.a ../../vendor/libvendor.a
 LRMODS = $(ESPRESSO)/LR_Modules/liblrmod.a
 PWOBJS = $(ESPRESSO)/PW/src/libpw.a
 QEMODS = $(ESPRESSO)/Modules/libqemod.a             $(ESPRESSO)/FFTXlib/libqefft.a \
