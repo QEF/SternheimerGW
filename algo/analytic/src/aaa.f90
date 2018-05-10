@@ -278,7 +278,7 @@ FUNCTION aaa_eval(coeff, freq) RESULT (res)
   DO ii = 1, SIZE(coeff, 1)
 
     ! skip points with 0 weight
-    IF (ABS(coeff(ii, 3)) <= eps12) CONTINUE
+    IF (ABS(coeff(ii, 3)) <= eps12) CYCLE
 
     ! check for trivial case
     IF (ABS(coeff(ii, 1) - freq) <= eps12) THEN

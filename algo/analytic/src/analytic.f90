@@ -200,8 +200,7 @@ END SUBROUTINE analytic_coeff
 !> Construct the screened Coulomb interaction for an arbitrary frequency.
 SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcoul)
 
-  USE aaa_module,         ONLY : aaa_eval
-  USE control_gw,         ONLY : model_coul 
+  USE control_gw,         ONLY : model_coul
   USE fft6_module,        ONLY : fft_map_generate
   USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_model
@@ -239,14 +238,8 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !> allocation error flag
   INTEGER ierr
 
-  !> maximum number of points for AAA approximation
-  INTEGER mmax
-
   !> helper array to extract the current coefficients
   COMPLEX(dp), ALLOCATABLE :: coeff(:)
-
-  !> helper array for AAA approximation
-  COMPLEX(dp), ALLOCATABLE :: aaa(:,:)
 
   !> helper array for the frequencies
   COMPLEX(dp), ALLOCATABLE :: freq(:)
@@ -292,20 +285,12 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   !! \f}
   ALLOCATE(coeff(freq_in%num_freq()))
 
-  ! allocate helper array for AAA approximation
-  IF (model_coul == aaa_approx) THEN
-    mmax = SIZE(coeff) / 3
-    ALLOCATE(aaa(mmax, 3))
-
-  END IF
-
   ! create pointer from local to global grid
   CALL fft_map_generate(grid%corr_par_fft, mill, fft_map)
 
   DO igp = 1, grid%corr_par_fft%ngm
     !
     ! get the global corresponding index
-    ! TODO fix image parallelization
     igp_g = fft_map(igp)
 
     DO ig = 1, grid%corr_fft%ngm
@@ -333,8 +318,7 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
       CASE (aaa_approx)
         !
         ! AAA approximation
-        aaa = RESHAPE(coeff(:SIZE(aaa)), [mmax, 3])
-        scrcoul(ig, igp) = aaa_eval(aaa, freq_sym)
+        scrcoul(ig, igp) = aaa_eval(freq_sym, coeff)
 
       CASE DEFAULT
         CALL errore(__FILE__, "No screening model chosen!", 1)
@@ -347,5 +331,43 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
   CALL stop_clock(time_construct_w)
 
 END SUBROUTINE analytic_eval
+
+!> wrapper routine to evaluate AAA approximation
+FUNCTION aaa_eval(freq_sym, coeff) RESULT (res)
+
+  USE analytic_aaa_module,   ONLY: aaa_type => aaa_approx, aaa_evaluate
+  USE analytic_array_module, ONLY: allocate_copy_from_to
+  USE constants,             ONLY: eps12
+  USE kinds,                 ONLY: dp
+
+  !> frequency for which analytic continuation is evaluated
+  COMPLEX(dp), INTENT(IN) :: freq_sym
+
+  !> coefficients used to evaluate analytic continuation
+  COMPLEX(dp), INTENT(IN) :: coeff(:)
+
+  !> resulting analytic continuation
+  COMPLEX(dp) res
+
+  !> temporary array to store the result
+  COMPLEX(dp), ALLOCATABLE :: tmp_res(:)
+
+  !> coefficients stored as analytic continuation type
+  TYPE(aaa_type) aaa
+
+  !> maximum and actual number of points
+  INTEGER mmax, mm
+
+  mmax = SIZE(coeff) / 3
+  mm = COUNT(ABS(coeff(2*mmax + 1:3*mmax)) > eps12)
+
+  CALL allocate_copy_from_to(coeff(1:mm), aaa%position)
+  CALL allocate_copy_from_to(coeff(mmax+1:mmax+mm), aaa%value)
+  CALL allocate_copy_from_to(coeff(2*mmax+1:2*mmax+mm), aaa%weight)
+
+  CALL aaa_evaluate(aaa, [freq_sym], tmp_res)
+  res = tmp_res(1)
+
+END FUNCTION aaa_eval
 
 END MODULE analytic_module
