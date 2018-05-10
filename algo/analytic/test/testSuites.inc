@@ -1,1 +1,2 @@
+ADD_TEST_SUITE(test_aaa_module_suite)
 ADD_TEST_SUITE(test_pade_module_suite)

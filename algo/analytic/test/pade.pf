@@ -120,13 +120,11 @@ CONTAINS
   ! test if the robust Pade approximation works
   !
   @test
-  SUBROUTINE test_pade_robust!(this)
+  SUBROUTINE test_pade_robust
   
     USE kinds,               ONLY: dp
     USE pade_module,         ONLY: pade_robust
     USE pfunit_mod
-  
-!    CLASS(MpiTestMethod) :: this
   
     ! the number of points in the circle
     INTEGER num_point

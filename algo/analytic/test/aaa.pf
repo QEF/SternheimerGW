@@ -1,0 +1,78 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the SternheimerGW code.
+! 
+! Copyright (C) 2010 - 2018
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! SternheimerGW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! SternheimerGW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with SternheimerGW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+MODULE test_aaa_module
+
+CONTAINS
+
+  @test
+  SUBROUTINE compare_aaa_method
+
+    USE aaa_module,            ONLY: aaa_coeff
+    USE analytic_array_module, ONLY: allocate_copy_from_to
+    USE analytic_aaa_module,   ONLY: aaa_approx, aaa_generate, no_error, no_restriction
+    USE constants,             ONLY: eps8
+    USE kinds,                 ONLY: dp
+    USE analytic_sort_module,  ONLY: insertion_sort
+    USE pFUnit_mod
+
+    COMPLEX(dp), PARAMETER :: imag = CMPLX(0.0_dp, 1.0_dp, KIND=dp)
+    COMPLEX(dp), PARAMETER :: zz(11) = [-2.0_dp, -1.62_dp, -1.24_dp, -0.86_dp, -0.48_dp, &
+      -0.1_dp, 0.28_dp, 0.66_dp, 1.04_dp, 1.42_dp, 1.8_dp] * imag
+    COMPLEX(dp), ALLOCATABLE :: ff(:), coeff(:,:)
+    COMPLEX(dp) phase
+    REAL(dp), ALLOCATABLE :: imag_pos(:)
+    TYPE(aaa_approx) aaa_vendor
+    INTEGER info
+    INTEGER, ALLOCATABLE :: map(:)
+
+    ALLOCATE(ff(SIZE(zz)))
+    ff = scaled_tangent(zz)
+
+    CALL aaa_coeff(zz, ff, coeff, eps8)
+    CALL aaa_generate(eps8, no_restriction, zz, ff, aaa_vendor, info)
+    @assertEqual(no_error, info)
+
+    CALL allocate_copy_from_to(AIMAG(coeff(:,1)), imag_pos)
+    CALL insertion_sort(imag_pos, map)
+    phase = aaa_vendor%weight(1) / coeff(map(1), 3)
+
+    @assertEqual(aaa_vendor%position, coeff(map, 1), eps8)
+    @assertEqual(aaa_vendor%value, coeff(map, 2), eps8)
+    @assertEqual(aaa_vendor%weight, coeff(map, 3) * phase, eps8)
+
+  CONTAINS
+
+    ! tan(pi/2 * z) - poles at (2k + 1)
+    ELEMENTAL COMPLEX(dp) FUNCTION scaled_tangent(zz) RESULT(ff)
+
+      USE analytic_constant_module, ONLY: half_pi
+
+      COMPLEX(dp), INTENT(IN) :: zz
+
+      ff = TAN(half_pi * zz)
+
+    END FUNCTION scaled_tangent
+
+  END SUBROUTINE compare_aaa_method
+
+END MODULE test_aaa_module
