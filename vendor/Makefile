@@ -21,15 +21,34 @@
 #
 #------------------------------------------------------------------------------
 include ../module
+include $(ESPRESSO)/make.inc
 
-all: .analytic
+LIB = libvendor.a
+
+all: .analytic module $(LIB)
 
 .analytic:
 	ln -f -s -t analytic $(ESPRESSO)/make.inc
 	make -C analytic/src
 	touch $@
 
-clean:
-	make -C analytic/src clean ; rm .analytic
+module:
+	mkdir -p $@
+	for file in $$(ls */src/*mod); do \
+	  export libname=$$(dirname $$(dirname $$file)); \
+	  mod=$$(basename $$file); \
+	  ln -s $(CURDIR)/$$file; \
+	  mv $$mod $@/$$libname"_"$$mod; \
+	done
 
-.PHONY: all clean
+$(LIB):
+	rm -f $@
+	$(AR) -rcT $@ */src/lib*.a
+
+clean:
+	make -C analytic/src clean ; rm -f .analytic
+	rm -f module/*.mod
+	rm -f $(LIB)
+	
+
+.PHONY: all clean module
