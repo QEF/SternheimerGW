@@ -41,6 +41,9 @@ MODULE analytic_module
   !> Use the AAA rational approximation.
   INTEGER, PARAMETER :: aaa_approx = 4
 
+  !> Use the AAA rational approximation and correct poles
+  INTEGER, PARAMETER :: aaa_pole = 5
+
 CONTAINS
 
 !> Wrapper routine to evaluate the analytic continuation using different methods.
@@ -156,17 +159,18 @@ SUBROUTINE analytic_coeff(model_coul, thres, freq, scrcoul_g)
     CALL pade_coeff_robust(freq%solver, thres, scrcoul_g)
 
   !! 4. AAA rational approximation - evaluate coefficient for a given frequency mesh
-  CASE (aaa_approx)
+  CASE (aaa_approx, aaa_pole)
 
     ! use symmetry to extend the frequency mesh
     CALL freqbins_symm(freq, z, scrcoul_g)
 
     ! allocate helper array
-    ALLOCATE(u(freq%num_freq()))
+    mmax = freq%num_freq() 
+    ALLOCATE(u(mmax))
 
     ! note that AAA will generate 3 coefficients for every input point so
     ! that we can use at most 1/3 of the frequencies
-    mmax = SIZE(u) / 3
+    IF (model_coul == aaa_approx) mmax = mmax / 3
 
     ! evalute AAA approximation for all G and G'
     DO igp = 1, num_g_corr
@@ -179,14 +183,20 @@ SUBROUTINE analytic_coeff(model_coul, thres, freq, scrcoul_g)
         CALL aaa_generate(thres, mmax, z, u, aaa, info)
         CALL errore(__FILE__, 'error occured in AAA approximation', info)
 
-        ! determine number of polynomials generated
-        mm = SIZE(aaa%position)
+        IF (model_coul == aaa_approx) THEN
+          ! determine number of polynomials generated
+          mm = SIZE(aaa%position)
 
-        ! store the coefficients in the same array
-        scrcoul_g(ig, igp, :) = zero
-        scrcoul_g(ig, igp, 0 * mmax + 1 : 0 * mmax + mm) = aaa%position
-        scrcoul_g(ig, igp, 1 * mmax + 1 : 1 * mmax + mm) = aaa%value
-        scrcoul_g(ig, igp, 2 * mmax + 1 : 2 * mmax + mm) = aaa%weight
+          ! store the coefficients in the same array
+          scrcoul_g(ig, igp, :) = zero
+          scrcoul_g(ig, igp, 0 * mmax + 1 : 0 * mmax + mm) = aaa%position
+          scrcoul_g(ig, igp, 1 * mmax + 1 : 1 * mmax + mm) = aaa%value
+          scrcoul_g(ig, igp, 2 * mmax + 1 : 2 * mmax + mm) = aaa%weight
+
+        ELSE
+          ! correct poles of AAA approximation
+          CALL pole_correction(thres, aaa, scrcoul_g(ig, igp, :))
+        END IF
 
       END DO ! ig
     END DO ! igp
@@ -318,7 +328,12 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
       CASE (aaa_approx)
         !
         ! AAA approximation
-        scrcoul(ig, igp) = aaa_eval(freq_sym, coeff)
+        scrcoul(ig, igp) = aaa_approx_eval(freq_sym, coeff)
+
+      CASE (aaa_pole)
+        !
+        ! AAA approximation with pole removal
+        scrcoul(ig, igp) = aaa_pole_eval(freq_sym, coeff)
 
       CASE DEFAULT
         CALL errore(__FILE__, "No screening model chosen!", 1)
@@ -333,7 +348,7 @@ SUBROUTINE analytic_eval(gmapsym, grid, freq_in, scrcoul_coeff, freq_out, scrcou
 END SUBROUTINE analytic_eval
 
 !> wrapper routine to evaluate AAA approximation
-FUNCTION aaa_eval(freq_sym, coeff) RESULT (res)
+FUNCTION aaa_approx_eval(freq_sym, coeff) RESULT (res)
 
   USE analytic_aaa_module,   ONLY: aaa_type => aaa_approx, aaa_evaluate
   USE analytic_array_module, ONLY: allocate_copy_from_to
@@ -368,6 +383,79 @@ FUNCTION aaa_eval(freq_sym, coeff) RESULT (res)
   CALL aaa_evaluate(aaa, [freq_sym], tmp_res)
   res = tmp_res(1)
 
-END FUNCTION aaa_eval
+END FUNCTION aaa_approx_eval
+
+!> correct the poles of AAA by removing weak residual
+SUBROUTINE pole_correction(thres, aaa, coeff)
+
+  USE analytic_aaa_module, ONLY: aaa_type => aaa_approx, aaa_pole_residual, pole_residual, no_error
+  USE kinds,               ONLY: dp
+
+  !> threshold for removing a pole
+  REAL(dp), INTENT(IN) :: thres
+
+  !> the coefficients of the analytic continuation
+  TYPE(aaa_type), INTENT(IN) :: aaa
+
+  !> the poles and residuals of the analytic continuation
+  COMPLEX(dp), INTENT(OUT) :: coeff(:)
+
+  !> complex constant of zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  TYPE(pole_residual) pole_res
+  INTEGER info, ipole, indx, half_size
+
+  CALL aaa_pole_residual(aaa, pole_res, info)
+  CALL errore(__FILE__, 'error determining the poles of the AAA approximation', info)
+
+  half_size = SIZE(coeff) / 2
+  IF (COUNT(ABS(pole_res%residual) > thres) > half_size) THEN
+    CALL errore(__FILE__, &
+      'two many relevant poles, try reducing the coulomb threshold or increasing the number of frequencies', 1)
+  END IF
+
+  coeff = zero ; indx = 0
+  DO ipole = 1, SIZE(pole_res%residual)
+    IF (ABS(pole_res%residual(ipole)) > thres) THEN
+      indx = indx + 1
+      coeff(indx) = pole_res%pole(ipole)
+      coeff(indx + half_size) = pole_res%residual(ipole)
+    END IF
+  END DO
+
+END SUBROUTINE pole_correction
+
+!> evaluate value based on poles and residue 
+FUNCTION aaa_pole_eval(freq_sym, coeff) RESULT (res)
+
+  USE kinds, ONLY: dp
+
+  !> frequency for which analytic continuation is evaluated
+  COMPLEX(dp), INTENT(IN) :: freq_sym
+
+  !> pole and residue of the analytic continuation
+  COMPLEX(dp), INTENT(IN) :: coeff(:)
+
+  !> resulting analytic continuation
+  COMPLEX(dp) res
+
+  !> complex constant of zero
+  COMPLEX(dp), PARAMETER :: zero = CMPLX(0.0_dp, 0.0_dp, KIND = dp)
+
+  COMPLEX(dp) residue, pole
+  INTEGER num_pole, ipole, half_size
+
+  half_size = SIZE(coeff) / 2
+  num_pole = COUNT(ABS(coeff(half_size+1:)) > 0.0_dp)
+
+  res = zero
+  DO ipole = 1, num_pole
+    pole = coeff(ipole)
+    residue = coeff(ipole + half_size)
+    res = res + residue / (freq_sym - pole)
+  END DO
+
+END FUNCTION aaa_pole_eval
 
 END MODULE analytic_module
