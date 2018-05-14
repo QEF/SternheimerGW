@@ -35,6 +35,7 @@ $(LIB): $(MODULE_LIB)
 	$(AR) -rcT $@ $(MODULE_LIB)
 
 module:
+	mkdir -p $@
 	for file in $(MODULE); do \
 	  make -C $$file; \
 	done
