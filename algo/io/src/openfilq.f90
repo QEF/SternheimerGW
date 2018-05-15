@@ -29,7 +29,8 @@ SUBROUTINE openfilq()
  
   USE buffers,          ONLY : open_buffer
   USE control_flags,    ONLY : io_level
-  USE control_gw,       ONLY : tmp_dir_gw, lgamma, do_coulomb
+  USE control_gw,       ONLY : tmp_dir_gw, do_coulomb
+  USE control_lr,       ONLY : lgamma
   USE io_files,         ONLY : tmp_dir, diropn, seqopn, prefix
   USE noncollin_module, ONLY : npol
   USE save_gw,          ONLY : tmp_dir_save

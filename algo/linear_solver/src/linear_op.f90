@@ -46,7 +46,7 @@ CONTAINS
 SUBROUTINE linear_op(current_k, num_g, omega, alpha_pv, psi, A_psi)
 
   USE constants,        ONLY: eps14
-  USE control_gw,       ONLY: nbnd_occ
+  USE control_lr,       ONLY: nbnd_occ
   USE kinds,            ONLY: dp
   USE noncollin_module, ONLY: noncolin, npol
   USE timing_module,    ONLY: time_linear_op

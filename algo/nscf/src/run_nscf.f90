@@ -38,7 +38,8 @@ SUBROUTINE run_nscf(do_band, do_matel, ik, config)
   USE cell_base,         ONLY: at, bg
   USE check_stop,        ONLY: check_stop_now
   USE control_flags,     ONLY: io_level, conv_ions, twfcollect, restart
-  USE control_gw,        ONLY: reduce_io, tmp_dir_gw, lgamma
+  USE control_gw,        ONLY: reduce_io, tmp_dir_gw
+  USE control_lr,        ONLY: lgamma
   USE disp,              ONLY: xk_kpoints, nqs
   USE fft_base,          ONLY: dffts, dfftp
   USE fft_types,         ONLY: fft_type_allocate

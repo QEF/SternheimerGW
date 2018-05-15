@@ -29,8 +29,9 @@ subroutine allocate_gwq
   ! response problem
   !
   USE becmod,                ONLY : bec_type, becp, allocate_bec_type
-  USE control_gw,            ONLY : lgamma
-  USE eqv_gw,                ONLY : evq, vlocq, dmuxc, dvpsi, dvbare
+  USE control_lr,            ONLY : lgamma
+  USE eqv,                   ONLY : evq, vlocq, dmuxc, dvpsi
+  USE eqv_gw,                ONLY : dvbare
   USE fft_base,              ONLY : dfftp, dffts
   USE gvect,                 ONLY : ngm
   USE ions_base,             ONLY : nat, ntyp => nsp

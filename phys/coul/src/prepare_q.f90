@@ -35,7 +35,8 @@ SUBROUTINE prepare_q(do_band, do_iq, setup_pw, iq)
   !  do_band : if .true. the bands need to be calculated before phonon
   
   USE constants,       ONLY : eps6
-  USE control_gw,      ONLY : ldisp, lgamma, do_epsil
+  USE control_gw,      ONLY : ldisp, do_epsil
+  USE control_lr,      ONLY : lgamma
   USE disp,            ONLY : x_q, xk_kpoints
   USE qpoint,          ONLY : xq
   !

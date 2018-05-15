@@ -29,7 +29,7 @@ SUBROUTINE initialize_gw(coulomb)
   !
   USE klist,  ONLY : nks
   USE qpoint, ONLY : nksq, ikks, ikqs
-  USE control_gw, ONLY : lgamma
+  USE control_lr, ONLY : lgamma
 
   IMPLICIT NONE
 

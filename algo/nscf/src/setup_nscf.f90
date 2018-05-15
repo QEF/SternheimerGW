@@ -43,7 +43,8 @@ SUBROUTINE setup_nscf(xq)
   USE cell_base,          ONLY : at, bg
   USE constants,          ONLY : degspin
   USE control_flags,      ONLY : ethr, isolve, david, noinv, use_para_diag, max_cg_iter
-  USE control_gw,         ONLY : newgrid, lgamma
+  USE control_gw,         ONLY : newgrid
+  USE control_lr,         ONLY : lgamma
   USE io_global,          ONLY : stdout
   USE ions_base,          ONLY : nat, ityp
   USE kinds,              ONLY : DP

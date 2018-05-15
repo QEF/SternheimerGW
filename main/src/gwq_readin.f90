@@ -35,14 +35,15 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   USE cell_base,            ONLY : at, alat
   USE constants,            ONLY : RYTOEV, eps12
   USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, twfcollect
-  USE control_gw,           ONLY : maxter, alpha_mix, lgamma, reduce_io, tr2_gw, niter_gw, &
-                                   lmax_gw, tr2_green, lmax_green, nmix_gw, ldisp, lrpa, &
+  USE control_gw,           ONLY : maxter, alpha_mix, reduce_io, tr2_gw, niter_gw, &
+                                   lmax_gw, tr2_green, lmax_green, nmix_gw, ldisp, &
                                    tmp_dir_gw, tmp_dir_coul, eta, do_coulomb, do_sigma_c, &
                                    do_sigma_exx, do_sigma_matel, do_q0_only, maxter_green, &
-                                   maxter_coul, model_coul, & 
-                                   solve_direct, do_epsil, alpha_pv, set_alpha_pv, &
+                                   maxter_coul, model_coul, &
+                                   solve_direct, do_epsil, set_alpha_pv, &
                                    do_imag, newgrid, double_grid, output_t => output, &
                                    plot_coul, method_truncation => truncation
+  USE control_lr,           ONLY : lgamma, lrpa, alpha_pv
   USE debug_module,         ONLY : debug_type
   USE disp,                 ONLY : nq1, nq2, nq3, iq1, iq2, iq3, xk_kpoints, num_k_pts, & 
                                    w_of_q_start, w_of_k_start, w_of_k_stop

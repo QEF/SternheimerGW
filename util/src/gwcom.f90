@@ -27,7 +27,6 @@
 !  
 MODULE eqv_gw
   USE kinds, ONLY :  DP
-  USE eqv
   !
   ! ... The wavefunctions at point k+q 
   !
@@ -59,7 +58,6 @@ END MODULE nlcc_gw
 !
 MODULE control_gw
   USE kinds, ONLY :  DP
-  USE control_lr
   USE gw_type_mod, ONLY : output_type
   !
   ! ... the variables controlling the GW run
@@ -201,8 +199,6 @@ END MODULE disp
 
 MODULE gwsigma
   USE kinds,       ONLY : DP
-  USE cell_base,   ONLY : omega, alat
-  USE qpoint,      ONLY : xq, igkq
 
   SAVE
 
@@ -229,7 +225,6 @@ END MODULE gwsymm
 
 
 MODULE gwcom
-  USE qpoint
   USE eqv_gw
   USE nlcc_gw
   USE control_gw

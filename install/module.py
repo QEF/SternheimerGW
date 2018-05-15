@@ -48,7 +48,7 @@ structure = {
     depend: ["base", "util", "data"],
   },
   "io": {
-    depend: ["base", "pw", "util", "grid"],
+    depend: ["base", "pw", "lrmods", "util", "grid"],
   },
   "linear_solver": {
     depend: ["base", "pw", "lrmods", "util", "data"]

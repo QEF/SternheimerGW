@@ -58,7 +58,8 @@ SUBROUTINE solve_linter(config_global, num_iter, dvbarein, freq, drhoscf)
   USE buffers,              ONLY : save_buffer, get_buffer
   USE check_stop,           ONLY : check_stop_now
   USE constants,            ONLY : eps14
-  USE control_gw,           ONLY : nmix_gw, tr2_gw, lgamma, convt, nbnd_occ, alpha_mix
+  USE control_gw,           ONLY : nmix_gw, tr2_gw, convt, alpha_mix
+  USE control_lr,           ONLY : nbnd_occ, lgamma
   USE dv_of_drho_lr,        ONLY : dv_of_drho
   USE eqv,                  ONLY : dvpsi, evq
   USE fft_base,             ONLY : dfftp, dffts
@@ -655,7 +656,7 @@ END SUBROUTINE
 !! Sets the necessary additional variables.
 SUBROUTINE coulomb_operator(omega, psi, A_psi)
 
-  USE control_gw,       ONLY: alpha_pv
+  USE control_lr,       ONLY: alpha_pv
   USE kinds,            ONLY: dp
   USE linear_op_module, ONLY: linear_op
   USE wvfct,            ONLY: npwx, current_k

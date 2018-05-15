@@ -34,7 +34,7 @@ SUBROUTINE gwq_init(coulomb)
   USE becmod,               ONLY : calbec
   USE buffers,              ONLY : get_buffer
   USE constants,            ONLY : eps8, tpi
-  USE control_gw,           ONLY : lgamma
+  USE control_lr,           ONLY : lgamma
   USE io_global,            ONLY : stdout
   USE ions_base,            ONLY : nat, tau
   USE kinds,                ONLY : DP

@@ -30,7 +30,8 @@ SUBROUTINE coulomb(config, igstart, num_g_corr, num_task, scrcoul)
 !-----------------------------------------------------------------------
   USE constants,        ONLY : eps8
   USE control_gw,       ONLY : solve_direct, niter_gw
-  USE eqv_gw,           ONLY : drhoscfs, dvbare
+  USE eqv,              ONLY : drhoscfs
+  USE eqv_gw,           ONLY : dvbare
   USE fft_base,         ONLY : dfftp, dffts
   USE fft_interfaces,   ONLY : invfft, fwfft
   USE freq_gw,          ONLY : fiu, nfs

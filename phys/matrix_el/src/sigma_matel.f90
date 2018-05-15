@@ -26,7 +26,8 @@ SUBROUTINE sigma_matel(ik0, grid, freq)
   USE buiol,                ONLY : buiol_check_unit
   USE cell_base,            ONLY : tpiba2
   USE constants,            ONLY : RYTOEV, eps14
-  USE control_gw,           ONLY : lgamma, do_imag
+  USE control_gw,           ONLY : do_imag
+  USE control_lr,           ONLY : lgamma
   USE disp,                 ONLY : xk_kpoints
   USE ener,                 ONLY : ef
   USE fft_base,             ONLY : dffts, dfftp

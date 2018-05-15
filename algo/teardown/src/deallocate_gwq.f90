@@ -28,9 +28,9 @@ subroutine deallocate_gwq
 !  deallocates the variables allocated by allocate_gwq
 !
   USE becmod,                ONLY: bec_type, becp, deallocate_bec_type
-  USE control_gw,            ONLY: lgamma, nbnd_occ
-  USE eqv_gw,                ONLY: dmuxc, vlocq, dpsi, dvpsi, evq, &
-                                   dpsim, dpsip, dvbare
+  USE control_lr,            ONLY: lgamma, nbnd_occ
+  USE eqv,                   ONLY: dmuxc, vlocq, dpsi, dvpsi, evq
+  USE eqv_gw,                ONLY: dpsim, dpsip, dvbare
   USE lrus,                  ONLY: becp1
   USE qpoint,                ONLY: eigqts, igkq, ikks, ikqs
 

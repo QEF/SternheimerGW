@@ -306,9 +306,10 @@ CONTAINS
     USE buffers,            ONLY: get_buffer
     USE cell_base,          ONLY: tpiba, at, omega
     USE constants,          ONLY: degspin
-    USE control_gw,         ONLY: output, nbnd_occ, truncation
+    USE control_gw,         ONLY: output, truncation
+    USE control_lr,         ONLY: nbnd_occ 
     USE disp,               ONLY: xk_kpoints
-    USE eqv_gw,             ONLY: evq
+    USE eqv,                ONLY: evq
     USE gvect,              ONLY: mill
     USE io_global,          ONLY: meta_ionode
     USE kinds,              ONLY: dp
