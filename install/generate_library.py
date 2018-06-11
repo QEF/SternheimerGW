@@ -48,6 +48,7 @@ string += '           $(ESPRESSO)/LAXlib/libqela.a               $(ESPRESSO)/Uti
 string += '           $(ESPRESSO)/dft-d3/libdftd3qe.a $(ESPRESSO)/clib/clib.a $(ESPRESSO)/iotk/src/libiotk.a\n'
 string += 'PW_LIB = $(ESPRESSO)/PW/src/libpw.a\n'
 string += 'LR_LIB = $(ESPRESSO)/LR_Modules/liblrmod.a\n'
+string += 'VENDOR_LIB = ' + os.getcwd() + '/vendor/libvendor.a\n'
 string += goto_directory_of_library_to_get_string(module.structure)
 library_file = open('library', 'w')
 library_file.write(string)

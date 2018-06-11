@@ -106,14 +106,7 @@ def generate_link_string(depend_array):
   return result
 
 def link_string(dep):
-  if dep == 'base':
-    return '$(BASE_LIB)'
-  elif dep == 'pw':
-    return '$(PW_LIB)'
-  elif dep == 'lrmods':
-    return '$(LR_LIB)'
-  else:
-    return '$(' + dep.upper() + '_LIB)'
+  return '$(' + dep.upper() + '_LIB)'
 
 def create_makefile_root(struct, key):
   makefile = open('Makefile', 'w')

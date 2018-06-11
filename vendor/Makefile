@@ -20,31 +20,35 @@
 # http://www.gnu.org/licenses/gpl.html .
 #
 #------------------------------------------------------------------------------
-import os
-import module 
+include ../module
+include $(ESPRESSO)/make.inc
 
-os.chdir('..')
+LIB = libvendor.a
 
-def goto_directory_of_module_to_get_string(struct):
-  string = ''
-  for key in struct:
-    os.chdir(key)
-    string += generate_module_string(struct[key], key)
-    os.chdir('..')
-  return string
+all: .analytic module $(LIB)
 
-def generate_module_string(struct, key):
-  string = key.upper() + '_MOD=' + os.getcwd() 
-  if module.depend in struct:
-    string += '/src\n' 
-  else:
-    string += '/module\n'
-    string += goto_directory_of_module_to_get_string(struct)
-  return string 
+.analytic:
+	ln -f -s -t analytic $(ESPRESSO)/make.inc
+	make -C analytic/src
+	touch $@
 
-string = 'ESPRESSO=' + os.getcwd() + '/..\n'
-string += 'VENDOR_MOD=' + os.getcwd() + '/vendor/module\n'
-string += goto_directory_of_module_to_get_string(module.structure)
-module_file = open('module', 'w')
-module_file.write(string)
-module_file.close()
+module:
+	mkdir -p $@
+	for file in $$(ls */src/*mod); do \
+	  export libname=$$(dirname $$(dirname $$file)); \
+	  mod=$$(basename $$file); \
+	  ln -s $(CURDIR)/$$file; \
+	  mv $$mod $@/$$libname"_"$$mod; \
+	done
+
+$(LIB):
+	rm -f $@
+	$(AR) -rcT $@ */src/lib*.a
+
+clean:
+	make -C analytic/src clean ; rm -f .analytic
+	rm -f module/*.mod
+	rm -f $(LIB)
+	
+
+.PHONY: all clean module

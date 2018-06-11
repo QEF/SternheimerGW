@@ -1,0 +1,55 @@
+! This Source Code Form is subject to the terms of the Mozilla Public
+! License, v. 2.0. If a copy of the MPL was not distributed with this
+! file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE testSort_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+  @test
+  SUBROUTINE test_insertion_sort
+    !
+    USE constant_module, ONLY: dp 
+    USE sort_module,     ONLY: insertion_sort
+    USE pfUnit_mod
+    !
+    REAL(dp), ALLOCATABLE :: array(:)
+    INTEGER ii
+    !
+    ALLOCATE(array(7))
+    array = [9, 4, 7, 6, 3, 6, 8]
+    CALL insertion_sort(array)
+    DO ii = 1, SIZE(array) - 1
+      @assertLessThanOrEqual(array(ii), array(ii+1))
+    END DO
+    !
+  END SUBROUTINE test_insertion_sort
+
+  @test
+  SUBROUTINE test_insertion_sort_map
+    !
+    USE constant_module, ONLY: dp 
+    USE sort_module,     ONLY: insertion_sort
+    USE pfUnit_mod
+    !
+    REAL(dp), ALLOCATABLE :: array(:), unsorted_array(:)
+    INTEGER, ALLOCATABLE :: map(:)
+    INTEGER ii
+    INTEGER, PARAMETER :: array_size = 10
+    !
+    ALLOCATE(array(array_size), unsorted_array(array_size))
+    CALL RANDOM_NUMBER(array)
+    unsorted_array = array
+    CALL insertion_sort(array, map)
+    DO ii = 1, SIZE(array) - 1
+      @assertLessThanOrEqual(array(ii), array(ii+1))
+    END DO
+    DO ii = 1, SIZE(array)
+      @assertEqual(array(ii), unsorted_array(map(ii)))
+    END DO
+    !
+  END SUBROUTINE test_insertion_sort_map
+
+END MODULE testSort_module

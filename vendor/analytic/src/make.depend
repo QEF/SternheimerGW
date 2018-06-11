@@ -1,0 +1,9 @@
+aaa.o : array.o
+aaa.o : assert.o
+aaa.o : constant.o
+aaa.o : lapack.o
+array.o : assert.o
+array.o : constant.o
+lapack.o : array.o
+lapack.o : constant.o
+sort.o : constant.o

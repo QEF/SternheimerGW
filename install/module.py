@@ -42,7 +42,7 @@ structure = {
 },
 "algo": {
   "analytic": {
-    depend: ["base", "util", "data", "grid"],
+    depend: ["base", "vendor",  "util", "data", "grid"],
   },
   "grid": {
     depend: ["base", "util", "data"],

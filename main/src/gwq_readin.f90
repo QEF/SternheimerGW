@@ -31,7 +31,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   !    by the self-consistent program.
   !
   !
-  USE analytic_module,      ONLY : aaa_approx, godby_needs, pade_approx, pade_robust
+  USE analytic_module,      ONLY : aaa_approx, aaa_pole, godby_needs, pade_approx, pade_robust
   USE cell_base,            ONLY : at, alat
   USE constants,            ONLY : RYTOEV, eps12
   USE control_flags,        ONLY : restart, lkpoint_dir, iverbosity, twfcollect
@@ -187,6 +187,8 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
     model_coul = pade_robust
   CASE ('aaa')
     model_coul = aaa_approx
+  CASE ('aaa pole')
+    model_coul = aaa_pole
   CASE DEFAULT
     CALL errore(__FILE__, 'unknown screening model' // TRIM(input%model_coul), 1)
   END SELECT ! input%model_coul
@@ -363,7 +365,7 @@ SUBROUTINE gwq_readin(config_coul, config_green, freq, vcut, debug)
   fiu = freq%solver
 
   ! use symmetry for the frequencies (only for Pade or AAA approximation)
-  IF (model_coul == pade_approx .OR. model_coul == aaa_approx) THEN
+  IF (model_coul == pade_approx .OR. model_coul == aaa_approx .OR. model_coul == aaa_pole) THEN
     freq%freq_symm_coul = input%freq_symm_coul
   ELSE
     ! symmetry not implemented for robust Pade and Godby-Needs

@@ -184,7 +184,8 @@ gw_input:
         - 'pade', Pade approximation
         - 'pade robust', robust method to determine Pade approximant, requires the initial
           frequency mesh to be on a circle
-	- 'aaa' adaptive Antoulas-Anderson method for calcuting a rational approximant
+	- 'aaa' adaptive Antoulas-Anderson (AAA) method for calcuting a rational approximant
+	- 'aaa pole' AAA method combined with removal of weak residue
 
   freq_symm_coul:
     type: integer

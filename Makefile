@@ -29,6 +29,7 @@ all: install
 
 install:
 	make -C install
+	make -C vendor
 
 depend: install
 	make -C util depend
@@ -46,6 +47,7 @@ test: install
 
 clean: install
 	make -C install clean
+	make -C vendor clean
 	make -C util clean
 	make -C data clean
 	make -C algo clean
