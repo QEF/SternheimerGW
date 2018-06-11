@@ -21,7 +21,7 @@
 !
 !------------------------------------------------------------------------------ 
 !> Provide wrapper routines around commonly used LAPACK functions.
-MODULE lapack_module
+MODULE lapack_wrapper
 
   IMPLICIT NONE
 
@@ -224,4 +224,4 @@ CONTAINS
 
   END SUBROUTINE qr
 
-END MODULE lapack_module
+END MODULE lapack_wrapper

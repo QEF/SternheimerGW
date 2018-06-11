@@ -35,10 +35,9 @@ all: .analytic module $(LIB)
 module:
 	mkdir -p $@
 	for file in $$(ls */src/*mod); do \
-	  export libname=$$(dirname $$(dirname $$file)); \
 	  mod=$$(basename $$file); \
 	  ln -s $(CURDIR)/$$file; \
-	  mv $$mod $@/$$libname"_"$$mod; \
+	  mv $$mod $@/$$mod; \
 	done
 
 $(LIB):

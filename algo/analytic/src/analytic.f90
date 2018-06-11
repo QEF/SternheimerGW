@@ -49,7 +49,7 @@ CONTAINS
 !> Wrapper routine to evaluate the analytic continuation using different methods.
 SUBROUTINE analytic_coeff(model_coul, thres, freq, scrcoul_g)
 
-  USE analytic_aaa_module,ONLY : aaa_type => aaa_approx, aaa_generate, no_error
+  USE aaa_module,         ONLY : aaa_type => aaa_approx, aaa_generate, no_error
   USE freqbins_module,    ONLY : freqbins_type, freqbins_symm
   USE godby_needs_module, ONLY : godby_needs_coeffs
   USE kinds,              ONLY : dp
@@ -350,10 +350,10 @@ END SUBROUTINE analytic_eval
 !> wrapper routine to evaluate AAA approximation
 FUNCTION aaa_approx_eval(freq_sym, coeff) RESULT (res)
 
-  USE analytic_aaa_module,   ONLY: aaa_type => aaa_approx, aaa_evaluate
-  USE analytic_array_module, ONLY: allocate_copy_from_to
-  USE constants,             ONLY: eps12
-  USE kinds,                 ONLY: dp
+  USE aaa_module,   ONLY: aaa_type => aaa_approx, aaa_evaluate
+  USE array_module, ONLY: allocate_copy_from_to
+  USE constants,    ONLY: eps12
+  USE kinds,        ONLY: dp
 
   !> frequency for which analytic continuation is evaluated
   COMPLEX(dp), INTENT(IN) :: freq_sym
@@ -388,8 +388,8 @@ END FUNCTION aaa_approx_eval
 !> correct the poles of AAA by removing weak residual
 SUBROUTINE pole_correction(thres, aaa, coeff)
 
-  USE analytic_aaa_module, ONLY: aaa_type => aaa_approx, aaa_pole_residual, pole_residual, no_error
-  USE kinds,               ONLY: dp
+  USE aaa_module, ONLY: aaa_type => aaa_approx, aaa_pole_residual, pole_residual, no_error
+  USE kinds,      ONLY: dp
 
   !> threshold for removing a pole
   REAL(dp), INTENT(IN) :: thres

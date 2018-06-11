@@ -178,7 +178,7 @@ CONTAINS
 
     USE constants,     ONLY: eps14
     USE kinds,         ONLY: dp
-    USE lapack_module, ONLY: svd, qr
+    USE lapack_wrapper,ONLY: svd, qr
     USE norm_module,   ONLY: norm
 
     !> The radius of the circle in the complex plane.
