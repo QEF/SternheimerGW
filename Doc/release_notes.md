@@ -11,7 +11,9 @@ Further improvement to real frequency integration. Symmetrize enforcing
 that +w and -w are the same. Fix bug where frequencies are in the wrong
 quadrant.
 
-> compatible QE commit dbc89a8 
+Employ external analytic continuation library.
+
+> compatible QE commit 044408c 
 
 Version 0.14
 ------------
