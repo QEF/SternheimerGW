@@ -27,6 +27,13 @@ all: install
 	make -C phys
 	make -C main
 
+debug: install
+	make -C util debug
+	make -C data
+	make -C algo
+	make -C phys
+	make -C main
+
 install:
 	make -C install
 	make -C vendor
@@ -54,4 +61,4 @@ clean: install
 	make -C phys clean
 	make -C main clean
 
-.PHONY: all install test clean
+.PHONY: all debug install depend test clean

@@ -23,6 +23,9 @@
 all:
 	make -C src
 
+debug:
+	make -C src debug
+
 depend:
 	make -C src depend
 
@@ -33,4 +36,4 @@ clean:
 	make -C src clean
 	if [ -d test ]; then make -C test clean; fi
 
-.PHONY: all test clean depend
+.PHONY: all test clean depend debug
