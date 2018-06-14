@@ -197,6 +197,7 @@ CONTAINS
 
       ! determine map in global array
       ig = map(fft_map(igp))
+      IF (ig == 0) CYCLE
 
       ! set right-hand side
       bb = zero
