@@ -51,7 +51,7 @@ $(LIB) : $(OBJ)
 	$(RANLIB) $@
 
 clean:
-	-rm *.o *.mod $(LIB)
+	-rm -f *.o *.mod $(LIB)
 
 .PHONY: all lib mod depend
 .INTERMEDIATE: tmp.depend

@@ -21,6 +21,7 @@
 #
 #------------------------------------------------------------------------------
 all: install
+	make -C vendor
 	make -C util
 	make -C data
 	make -C algo
@@ -28,6 +29,7 @@ all: install
 	make -C main
 
 debug: install
+	make -C vendor
 	make -C util debug
 	make -C data
 	make -C algo
@@ -36,7 +38,6 @@ debug: install
 
 install:
 	make -C install
-	make -C vendor
 
 depend: install
 	make -C util depend

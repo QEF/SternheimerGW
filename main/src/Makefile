@@ -84,7 +84,7 @@ libgw.a : $(GWOBJS)
 	$(RANLIB) $@
 
 clean :
-	- rm *.x *.o *.a *.mod
+	- rm -f *.x *.o *.a *.mod
 
 .PHONY: all version clean
 .INTERMEDIATE: tmp.depend
