@@ -209,7 +209,7 @@ CONTAINS
 
       ! copy from temporary array to output array
       DO ifreq = 1, num_freq
-        WHERE (map /= 0) green(:num_g_corr, igp, ifreq) = green_part(map, ifreq)
+        WHERE (map > 0.AND.map < num_g) green(:num_g_corr, igp, ifreq) = green_part(map, ifreq)
       END DO ! ifreq
 
       ! debug the solver
