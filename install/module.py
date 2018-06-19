@@ -77,7 +77,7 @@ structure = {
 },
 "phys": {
   "corr": {
-    depend: ["base", "pw", "util", "data", "algo", "coul", "green"],
+    depend: ["base", "pw", "vendor", "util", "data", "algo", "coul", "green"],
   },
   "coul": {
     depend: ["base", "pw", "lrmods", "util", "data", "algo", "postproc"],
@@ -92,7 +92,7 @@ structure = {
     depend: ["base", "pw", "lrmods", "util", "data", "algo"],
   },  
   "postproc": {
-    depend: ["base", "algo"],
+    depend: ["base", "vendor", "algo"],
   },
 },
 }

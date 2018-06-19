@@ -37,22 +37,22 @@ $(LIB): $(MODULE_LIB)
 module:
 	mkdir -p $@
 	for file in $(MODULE); do \
-	  make -C $$file; \
+	  make -C $$file || exit 1; \
 	done
 
 depend:
 	for file in $(MODULE); do \
-	  make -C $$file depend; \
+	  make -C $$file depend || exit 1; \
 	done
 
 test:
 	for file in $(MODULE); do \
-	  make -C $$file test; \
+	  make -C $$file test || exit 1; \
 	done
 
 clean:
 	for file in $(MODULE); do \
-	  make -C $$file clean; \
+	  make -C $$file clean || exit 1; \
 	done
 
 .PHONY: all module depend test clean
