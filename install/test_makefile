@@ -27,7 +27,7 @@
 include ../../../module
 include ../../../library
 include $(ESPRESSO)/make.inc
-ifdef $(PFUNIT)
+ifdef PFUNIT
 include $(PFUNIT)/include/base.mk
 else
 clean:
