@@ -41,6 +41,7 @@ The following SternheimerGW features are tested in this suite
 * adjust the value used for the projection onto the valence band
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * AAA approximation to obtain a denser grid on the imaginary axis
+* pole filter applied to AAA approximation
 * full frequency integration using Pade approximation to interpolate
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
 * obtain the Green's function on the imaginary axis
@@ -54,7 +55,7 @@ The following SternheimerGW features are tested in this suite
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
 * plotting the result of the Godby-Needs plasmon pole model
-* plotting the result of the Pade approximation
+* plotting the result of the AAA approximation
 
 Test case: gw\_bn
 ------------------
@@ -91,6 +92,7 @@ The following SternheimerGW features are tested by this case
 * use the direct solver to determine the dielectric constant
 * full frequency integration using Pade approximation to interpolate
 * AAA approximation to obtain a denser grid on the imaginary axis
+* pole filter applied to AAA approximation
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
@@ -99,7 +101,7 @@ The following SternheimerGW features are tested by this case
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
-* plotting the result of the Pade approximation
+* plotting the result of the AAA approximation
 
 Test case: gw\_li
 ------------------
