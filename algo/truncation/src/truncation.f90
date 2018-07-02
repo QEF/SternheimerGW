@@ -24,7 +24,7 @@
 MODULE truncation_module
 
   USE kinds, ONLY: dp
-  USE coulomb_vcut_module
+  USE coulomb_vcut_mod
 
   IMPLICIT NONE
 

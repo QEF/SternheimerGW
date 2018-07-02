@@ -9,7 +9,7 @@
 ! Adapted to QE by Andrea Ferretti & Layla Martin Samos
 !
 !----------------------------------
-  MODULE coulomb_vcut_module
+  MODULE coulomb_vcut_mod
   !----------------------------------
   !
   IMPLICIT NONE
@@ -416,5 +416,5 @@ end function num_determinant
 
 !!! end tools from sax
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-END MODULE coulomb_vcut_module
+END MODULE coulomb_vcut_mod
 
