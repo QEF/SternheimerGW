@@ -47,6 +47,7 @@ The following SternheimerGW features are tested in this suite
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain the self energy
+* convolute G and W on the real axis to obtain the self energy
 * obtain the exchange self energy
 * overcome the divergence of the Coulomb potential with spherical truncation
 * overcome the divergence of the Coulomb potential with 2d truncation
@@ -97,6 +98,7 @@ The following SternheimerGW features are tested by this case
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain self energy
+* convolute G and W on the real axis to obtain the self energy
 * overcome the divergence of the Coulomb potential with spherical truncation
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands

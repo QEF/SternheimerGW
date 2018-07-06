@@ -23,7 +23,7 @@
   max_iter_coul  = 200
 
   ! configuration of W in the convolution
-  model_coul     = 'aaa'
+  model_coul     = 'aaa pole'
   max_freq_coul  = 80
   num_freq_coul  = 800
   freq_symm_coul = 2

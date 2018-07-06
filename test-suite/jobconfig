@@ -28,7 +28,7 @@ inputs_args = ('scf.in', ''), ('gw.in', ''), ('ws.gw.in', '')
 [gw_c/]
 program = SternheimerGW
 inputs_args = ('scf.in', ''), ('gw.in', ''), ('aaa.gw.in', ''), \
-              ('sym.gw.in', ''), ('plot.gw.in', '')
+              ('real.gw.in', ''), ('sym.gw.in', ''), ('plot.gw.in', '')
 
 [gw_li/]
 program = SternheimerGW
