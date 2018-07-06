@@ -3,7 +3,7 @@
 #
 # This file is part of the SternheimerGW code.
 # 
-# Copyright (C) 2010 - 2017 
+# Copyright (C) 2010 - 2018 
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -43,7 +43,7 @@ then
 elif (( gw == 1 ))
 then
   echo "Running SternheimerGW..."
-  ${PARA_PREFIX} ${SternheimerGW_ROOT}/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
+  ${PARA_PREFIX} ${SternheimerGW_ROOT}/main/bin/gw.x ${PARA_SUFFIX} < $1 > $2 2> $3
 else
   echo "Unknown input file" > /dev/stderr
 fi  

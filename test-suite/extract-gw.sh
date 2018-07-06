@@ -3,7 +3,7 @@
 #
 # This file is part of the SternheimerGW code.
 # 
-# Copyright (C) 2010 - 2017 
+# Copyright (C) 2010 - 2018 
 # Henry Lambert, Martin Schlipf, and Feliciano Giustino
 #
 # SternheimerGW is free software: you can redistribute it and/or modify
@@ -179,8 +179,8 @@ then
 
   # print the screened coulomb of the plotting function
 
-  line_begin_plot=$(grep -n 'Plotting.*approximation' $fname | awk -F":" '{ print $1 }')
-  line_end_plot=$(grep -n 'End of.*approximation' $fname | awk -F":" '{ print $1 }')
+  line_begin_plot=$(grep -n 'Plotting analytic continuation' $fname | awk -F":" '{ print $1 }')
+  line_end_plot=$(grep -n 'End of analytic continuation' $fname | awk -F":" '{ print $1 }')
 
   # loop over elements
   i=0

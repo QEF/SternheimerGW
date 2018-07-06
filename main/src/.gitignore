@@ -1,0 +1,4 @@
+*.x
+version.f90
+version.f90.tmp
+gw_input.f90

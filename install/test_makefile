@@ -1,0 +1,63 @@
+#------------------------------------------------------------------------------
+#
+# This file is part of the SternheimerGW code.
+#
+# Copyright (C) 2010 - 2018
+# Henry Lambert, Martin Schlipf, and Feliciano Giustino
+#
+# SternheimerGW is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# SternheimerGW is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with SternheimerGW. If not, see
+# http://www.gnu.org/licenses/gpl.html .
+#
+#------------------------------------------------------------------------------
+
+.PHONY: all lib
+.DEFAULT_GOAL = all
+
+include ../../../module
+include ../../../library
+include $(ESPRESSO)/make.inc
+ifdef PFUNIT
+include $(PFUNIT)/include/base.mk
+else
+clean:
+endif
+-include make.ext
+
+FFLAGS += -I$(PFUNIT)/mod
+MODFLAGS = -I../src@MOD@
+LIB = ../src/lib@LIB@.a @LINK@
+
+ifeq ($(USEMPI),YES)
+   MPIF90 = mpif90
+   FPPFLAGS += -DUSE_MPI
+endif
+
+EXE = tests$(EXE_EXT)
+SRC = $(wildcard *.pf)
+OBJ = $(SRC:.pf=$(OBJ_EXT))
+
+all: lib $(EXE) $(EXTERN)
+	mpirun -np 4 ./$(EXE)
+
+$(EXE): testSuites.inc $(OBJ) $(LIB)
+	$(MPIF90) -o $@ -I. $(FFLAGS) $(FPPFLAGS) $(PFUNIT)/include/driver.F90 $(OBJ) -L$(PFUNIT)/lib -lpfunit $(LIB) $(LIBS)
+
+%$(OBJ_EXT): %.F90
+	$(MPIF90) -c $(FFLAGS) $(MODFLAGS) $<
+
+%.F90: %.pf
+	$(PFUNIT)/bin/pFUnitParser.py $<  $@
+
+lib:
+	make -C ../src lib

@@ -1,0 +1,379 @@
+! This Source Code Form is subject to the terms of the Mozilla Public
+! License, v. 2.0. If a copy of the MPL was not distributed with this
+! file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE testArray_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+  @test
+  SUBROUTINE testCopy_real
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size = 853
+    REAL(dp), ALLOCATABLE :: ref_array(:), test_array(:)
+
+    ALLOCATE(ref_array(array_size))
+    CALL RANDOM_NUMBER(ref_array)
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_real
+
+  @test
+  SUBROUTINE testCopy_complex
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp, imag
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size = 634
+    REAL(dp), ALLOCATABLE :: ref_real(:), ref_imag(:)
+    COMPLEX(dp), ALLOCATABLE :: ref_array(:), test_array(:)
+
+    ALLOCATE(ref_real(array_size), ref_imag(array_size), ref_array(array_size))
+    CALL RANDOM_NUMBER(ref_real)
+    CALL RANDOM_NUMBER(ref_imag)
+    ref_array = ref_real + imag * ref_imag
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_complex
+
+  @test
+  SUBROUTINE testCopy_integer
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size = 437
+    REAL(dp), ALLOCATABLE :: ref_real(:)
+    INTEGER, ALLOCATABLE :: ref_array(:), test_array(:)
+
+    ALLOCATE(ref_array(array_size), ref_real(array_size))
+    CALL RANDOM_NUMBER(ref_real)
+    ref_array = NINT(array_size * ref_real)
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_integer
+
+  @test
+  SUBROUTINE testCopy_real_2d
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(2) = [138, 13]
+    REAL(dp), ALLOCATABLE :: ref_array(:,:), test_array(:,:)
+
+    ALLOCATE(ref_array(array_size(1), array_size(2)))
+    CALL RANDOM_NUMBER(ref_array)
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_real_2d
+
+  @test
+  SUBROUTINE testCopy_complex_2d
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp, imag
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(2) = [32, 51]
+    REAL(dp), ALLOCATABLE :: ref_real(:,:), ref_imag(:,:)
+    COMPLEX(dp), ALLOCATABLE :: ref_array(:,:), test_array(:,:)
+
+    ALLOCATE(ref_real(array_size(1), array_size(2)), &
+             ref_imag(array_size(1), array_size(2)), &
+             ref_array(array_size(1), array_size(2)))
+    CALL RANDOM_NUMBER(ref_real)
+    CALL RANDOM_NUMBER(ref_imag)
+    ref_array = ref_real + imag * ref_imag
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_complex_2d
+
+  @test
+  SUBROUTINE testCopy_integer_2d
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(2) = [34, 76]
+    REAL(dp), ALLOCATABLE :: ref_real(:,:)
+    INTEGER, ALLOCATABLE :: ref_array(:,:), test_array(:,:)
+
+    ALLOCATE(ref_array(array_size(1), array_size(2)), &
+             ref_real(array_size(1), array_size(2)))
+    CALL RANDOM_NUMBER(ref_real)
+    ref_array = NINT(SIZE(ref_real) * ref_real)
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_integer_2d
+
+  @test
+  SUBROUTINE testCopy_real_3d
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(3) = [12, 15, 8]
+    REAL(dp), ALLOCATABLE :: ref_array(:,:,:), test_array(:,:,:)
+
+    ALLOCATE(ref_array(array_size(1), array_size(2), array_size(3)))
+    CALL RANDOM_NUMBER(ref_array)
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_real_3d
+
+  @test
+  SUBROUTINE testCopy_complex_3d
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp, imag
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(3) = [17, 6, 13]
+    REAL(dp), ALLOCATABLE :: ref_real(:,:,:), ref_imag(:,:,:)
+    COMPLEX(dp), ALLOCATABLE :: ref_array(:,:,:), test_array(:,:,:)
+
+    ALLOCATE(ref_real(array_size(1), array_size(2), array_size(3)), &
+             ref_imag(array_size(1), array_size(2), array_size(3)), &
+             ref_array(array_size(1), array_size(2), array_size(3)))
+    CALL RANDOM_NUMBER(ref_real)
+    CALL RANDOM_NUMBER(ref_imag)
+    ref_array = ref_real + imag * ref_imag
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_complex_3d
+
+  @test
+  SUBROUTINE testCopy_integer_3d
+
+    USE array_module,    ONLY: allocate_copy_from_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(3) = [19, 14, 9]
+    REAL(dp), ALLOCATABLE :: ref_real(:,:,:)
+    INTEGER, ALLOCATABLE :: ref_array(:,:,:), test_array(:,:,:)
+
+    ALLOCATE(ref_array(array_size(1), array_size(2), array_size(3)), &
+             ref_real(array_size(1), array_size(2), array_size(3)))
+    CALL RANDOM_NUMBER(ref_real)
+    ref_array = NINT(SIZE(ref_real) * ref_real)
+
+    CALL allocate_copy_from_to(ref_array, test_array)
+    @assertEqual(ref_array, test_array)
+
+  END SUBROUTINE testCopy_integer_3d
+
+  @test
+  SUBROUTINE testInit_real
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size = 738
+    REAL(dp), PARAMETER :: ref_value = 478.185_dp
+
+    REAL(dp), ALLOCATABLE :: array(:)
+
+    CALL allocate_init_to(array_size, ref_value, array)
+    @assertEqual(array_size, SIZE(array))
+    @assertEqual(ref_value, array)
+
+  END SUBROUTINE testInit_real
+
+  @test
+  SUBROUTINE testInit_complex
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size = 738
+    COMPLEX(dp), PARAMETER :: ref_value = CMPLX(531.83, 348.73, KIND=dp)
+
+    COMPLEX(dp), ALLOCATABLE :: array(:)
+
+    CALL allocate_init_to(array_size, ref_value, array)
+    @assertEqual(array_size, SIZE(array))
+    @assertEqual(ref_value, array)
+
+  END SUBROUTINE testInit_complex
+
+  @test
+  SUBROUTINE testInit_logical
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size = 377
+
+    LOGICAL, ALLOCATABLE :: array(:)
+
+    CALL allocate_init_to(array_size, .TRUE., array)
+    @assertEqual(array_size, SIZE(array))
+    @assertTrue(array)
+
+  END SUBROUTINE testInit_logical
+
+  @test
+  SUBROUTINE testInit_real_2d
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(2) = [45, 12]
+    REAL(dp), PARAMETER :: ref_value = 375.486_dp
+
+    REAL(dp), ALLOCATABLE :: array(:,:)
+
+    CALL allocate_init_to(array_size, ref_value, array)
+    @assertEqual(array_size, SHAPE(array))
+    @assertEqual(ref_value, array)
+
+  END SUBROUTINE testInit_real_2d
+
+  @test
+  SUBROUTINE testInit_complex_2d
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(2) = [34, 75]
+    COMPLEX(dp), PARAMETER :: ref_value = CMPLX(372.76, 972.11, KIND=dp)
+
+    COMPLEX(dp), ALLOCATABLE :: array(:,:)
+
+    CALL allocate_init_to(array_size, ref_value, array)
+    @assertEqual(array_size, SHAPE(array))
+    @assertEqual(ref_value, array)
+
+  END SUBROUTINE testInit_complex_2d
+
+  @test
+  SUBROUTINE testInit_real_3d
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(3) = [13, 17, 7]
+    REAL(dp), PARAMETER :: ref_value = 933.12_dp
+
+    REAL(dp), ALLOCATABLE :: array(:,:,:)
+
+    CALL allocate_init_to(array_size, ref_value, array)
+    @assertEqual(array_size, SHAPE(array))
+    @assertEqual(ref_value, array)
+
+  END SUBROUTINE testInit_real_3d
+
+  @test
+  SUBROUTINE testInit_complex_3d
+
+    USE array_module,    ONLY: allocate_init_to
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, PARAMETER :: array_size(3) = [31, 5, 8]
+    COMPLEX(dp), PARAMETER :: ref_value = CMPLX(765.34, 94.758, KIND=dp)
+
+    COMPLEX(dp), ALLOCATABLE :: array(:,:,:)
+
+    CALL allocate_init_to(array_size, ref_value, array)
+    @assertEqual(array_size, SHAPE(array))
+    @assertEqual(ref_value, array)
+
+  END SUBROUTINE testInit_complex_3d
+
+  @test
+  SUBROUTINE testInit_real_throws_error
+
+    USE array_module,    ONLY: allocate_init_to, array_size_error, no_error
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, ALLOCATABLE :: array_size(:)
+    REAL(dp), PARAMETER :: ref_value = 14.414_dp
+
+    REAL(dp), ALLOCATABLE :: array_2d(:,:), array_3d(:,:,:)
+
+    INTEGER info
+
+    ALLOCATE(array_size(3)) ; array_size = 1
+    CALL allocate_init_to(array_size, ref_value, array_2d, info)
+    @assertEqual(array_size_error, info)
+
+    CALL allocate_init_to(array_size, ref_value, array_3d, info)
+    @assertEqual(no_error, info)
+
+    DEALLOCATE(array_size) ; ALLOCATE(array_size(2)) ; array_size = 1
+    CALL allocate_init_to(array_size, ref_value, array_2d, info)
+    @assertEqual(no_error, info)
+
+    CALL allocate_init_to(array_size, ref_value, array_3d, info)
+    @assertEqual(array_size_error, info)
+
+  END SUBROUTINE testInit_real_throws_error
+
+  @test
+  SUBROUTINE testInit_complex_throws_error
+
+    USE array_module,    ONLY: allocate_init_to, array_size_error, no_error
+    USE constant_module, ONLY: dp
+    USE pFUnit_mod
+
+    INTEGER, ALLOCATABLE :: array_size(:)
+    COMPLEX(dp), PARAMETER :: ref_value = CMPLX(3378.1, 737.3, KIND=dp)
+
+    COMPLEX(dp), ALLOCATABLE :: array_2d(:,:), array_3d(:,:,:)
+
+    INTEGER info
+
+    ALLOCATE(array_size(3)) ; array_size = 1
+    CALL allocate_init_to(array_size, ref_value, array_2d, info)
+    @assertEqual(array_size_error, info)
+
+    CALL allocate_init_to(array_size, ref_value, array_3d, info)
+    @assertEqual(no_error, info)
+
+    DEALLOCATE(array_size) ; ALLOCATE(array_size(2)) ; array_size = 1
+    CALL allocate_init_to(array_size, ref_value, array_2d, info)
+    @assertEqual(no_error, info)
+
+    CALL allocate_init_to(array_size, ref_value, array_3d, info)
+    @assertEqual(array_size_error, info)
+
+  END SUBROUTINE testInit_complex_throws_error
+
+END MODULE testArray_module

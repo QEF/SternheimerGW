@@ -1,0 +1,230 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the SternheimerGW code.
+! 
+! Copyright (C) 2010 - 2018
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! SternheimerGW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! SternheimerGW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with SternheimerGW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+!> This module provides routines to test the Pade approximation
+MODULE test_pade_module
+
+  IMPLICIT NONE
+
+CONTAINS
+
+  !> evaluate a function in the complex plane on a circle around the origin
+  SUBROUTINE pade_problem_evaluate(radius, num_point, func, val)
+
+    USE constants, ONLY: tpi
+    USE kinds,     ONLY: dp
+
+    !> radius of the circle in the complex plane
+    REAL(dp), INTENT(IN) :: radius
+
+    !> number of points constructed on the circle
+    INTEGER,  INTENT(IN) :: num_point
+
+    !> function pointer defining the function in the complex plane
+    INTERFACE
+      FUNCTION func(zz)
+        USE kinds, ONLY: dp
+        !> the position in the complex plane
+        COMPLEX(dp), INTENT(IN) :: zz
+        !> the function value at this point
+        COMPLEX(dp) func
+      END FUNCTION func
+    END INTERFACE
+
+    !> the values of the function on the circle
+    COMPLEX(dp), ALLOCATABLE, INTENT(OUT) :: val(:)
+
+    !> counter on the points in reciprocal space
+    INTEGER ipoint
+
+    !> phase factor between points
+    COMPLEX(dp) phase
+
+    !> position at which the function is evaluated
+    COMPLEX(dp) zz
+
+    !> complex constant of 2 * pi * i
+    COMPLEX(dp), PARAMETER :: c2PiI = CMPLX(0.0_dp, tpi, KIND=dp)
+
+    ! determine phase factor
+    phase = EXP(c2PiI / num_point)
+
+    ! initialize position
+    zz = radius
+
+    ! create output array
+    ALLOCATE(val(num_point))
+    !
+    DO ipoint = 1, num_point
+      !
+      ! evaluate the function on the circle
+      val(ipoint) = func(zz)
+      !
+      ! update position on the circle
+      zz = zz * phase
+      !
+    END DO ! ipoint
+
+  END SUBROUTINE pade_problem_evaluate
+
+  !> wrapper of complex exponential function
+  FUNCTION pade_exp(zz)
+
+    USE kinds, ONLY: dp
+
+    !> argument of the exponential function
+    COMPLEX(dp), INTENT(IN) :: zz
+
+    !> exponential of argument
+    COMPLEX(dp) pade_exp
+
+    pade_exp = EXP(zz)
+
+  END FUNCTION pade_exp
+
+  !> wrapper of complex cosine function
+  FUNCTION pade_cos(zz)
+
+    USE kinds, ONLY: dp
+
+    !> argument of the cosine function
+    COMPLEX(dp), INTENT(IN) :: zz
+
+    !> cosine of the argument
+    COMPLEX(dp) pade_cos
+
+    pade_cos = COS(zz)
+
+  END FUNCTION pade_cos
+
+  !
+  ! test if the robust Pade approximation works
+  !
+  @test
+  SUBROUTINE test_pade_robust
+  
+    USE kinds,               ONLY: dp
+    USE pade_module,         ONLY: pade_robust
+    USE pfunit_mod
+  
+    ! the number of points in the circle
+    INTEGER num_point
+  
+    ! radius of the circle in the complex plane
+    REAL(dp) radius
+  
+    ! the function values evaluated in the complex plane
+    COMPLEX(dp), ALLOCATABLE :: func(:)
+  
+    ! the degree of numerator and denominator of the Pade approximation
+    INTEGER deg_num, deg_den
+  
+    ! Pade coefficients of numerator and denominator
+    COMPLEX(dp), ALLOCATABLE :: coeff_num(:), coeff_den(:)
+  
+    ! tolerance of the calculation
+    REAL(dp) tol, tol_fft
+  
+    ! threshold for the accuracy
+    REAL(dp), PARAMETER :: threshold_exp = 1d-10
+    REAL(dp), PARAMETER :: threshold_cos = 1d-8
+  
+    !
+    ! first test - exponential function
+    !
+    radius = 1.0_dp
+    num_point = 25
+    deg_num = 4
+    deg_den = 4
+    !
+    ! generate function values on circle
+    CALL pade_problem_evaluate(radius, num_point, pade_exp, func)
+    !
+    ! perform Pade extrapolation
+    CALL pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den)
+    !
+    ! compare to results obtained with MATLAB
+    !
+    ! numerator
+    @assertEqual(4, deg_num)
+    @assertEqual(deg_num + 1, SIZE(coeff_num))
+    @assertEqual(1.000000000000000_dp, coeff_num(1), threshold_exp)
+    @assertEqual(0.499999999987559_dp, coeff_num(2), threshold_exp)
+    @assertEqual(0.107142857136564_dp, coeff_num(3), threshold_exp)
+    @assertEqual(0.011904761903482_dp, coeff_num(4), threshold_exp)
+    @assertEqual(5.952380951286663d-4, coeff_num(5), threshold_exp)
+    !
+    ! denominator
+    @assertEqual(4, deg_den)
+    @assertEqual(deg_den + 1, SIZE(coeff_den))
+    @assertEqual( 1.000000000000000_dp, coeff_den(1), threshold_exp)
+    @assertEqual(-0.500000000012441_dp, coeff_den(2), threshold_exp)
+    @assertEqual( 0.107142857149005_dp, coeff_den(3), threshold_exp)
+    @assertEqual(-0.011904761905969_dp, coeff_den(4), threshold_exp)
+    @assertEqual( 5.952380953354424d-4, coeff_den(5), threshold_exp)
+  
+    !
+    ! second test - cosine function
+    !
+    radius = 2.0_dp
+    num_point = 25
+    deg_num = 5
+    deg_den = 11
+    tol = 1d-10
+    tol_fft = 1d-15
+    !
+    ! generate function values on circle
+    CALL pade_problem_evaluate(radius, num_point, pade_cos, func)
+    !
+    ! perform Pade extrapolation
+    CALL pade_robust(radius, func, deg_num, deg_den, coeff_num, coeff_den, tol, tol_fft)
+    !
+    ! compare to results obtained with MATLAB
+    !
+    ! numerator
+    @assertEqual(4, deg_num)
+    @assertEqual(deg_num + 1, SIZE(coeff_num))
+    @assertEqual( 1.000000000000000_dp,  coeff_num(1), threshold_cos)
+    @assertEqual(-5.736142091971364d-19, coeff_num(2), threshold_cos)
+    @assertEqual(-0.450639141234688_dp,  coeff_num(3), threshold_cos)
+    @assertEqual( 2.325721027857943d-19, coeff_num(4), threshold_cos)
+    @assertEqual( 0.018381449098078_dp,  coeff_num(5), threshold_cos)
+    !
+    ! denominator
+    @assertEqual(10, deg_den)
+    @assertEqual(deg_den + 1, SIZE(coeff_den))
+    @assertEqual( 1.000000000000000_dp,  coeff_den( 1), threshold_cos)
+    @assertEqual(-5.736142091971364d-19, coeff_den( 2), threshold_cos)
+    @assertEqual( 0.049360858765312_dp,  coeff_den( 3), threshold_cos)
+    @assertEqual(-5.423500181277404d-20, coeff_den( 4), threshold_cos)
+    @assertEqual( 0.001395211814067_dp,  coeff_den( 5), threshold_cos)
+    @assertEqual(-3.222944976341087d-21, coeff_den( 6), threshold_cos)
+    @assertEqual( 2.979234736799848d-05, coeff_den( 7), threshold_cos)
+    @assertEqual(-1.468353270738426d-22, coeff_den( 8), threshold_cos)
+    @assertEqual( 5.175090814695919d-07, coeff_den( 9), threshold_cos)
+    @assertEqual(-3.717349899090172d-24, coeff_den(10), threshold_cos)
+    @assertEqual( 6.546464226759871d-09, coeff_den(11), threshold_cos)
+   
+  END SUBROUTINE test_pade_robust
+
+END MODULE test_pade_module
+

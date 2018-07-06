@@ -1,0 +1,5 @@
+ADD_TEST_SUITE(testMakefile_suite)
+ADD_TEST_SUITE(testAAA_module_suite)
+ADD_TEST_SUITE(testArray_module_suite)
+ADD_TEST_SUITE(testLapack_module_suite)
+ADD_TEST_SUITE(testSort_module_suite)

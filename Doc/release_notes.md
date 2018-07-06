@@ -1,6 +1,20 @@
 Release notes
 =============
 
+Version 0.15
+------------
+
+Update FFT type to recent change in Quantum Espresso.
+Adjust to renaming of commits in Quantum Espresso.
+
+Further improvement to real frequency integration. Symmetrize enforcing
+that +w and -w are the same. Fix bug where frequencies are in the wrong
+quadrant.
+
+Employ external analytic continuation library.
+
+> compatible QE commit 6.3 7357cdb
+
 Version 0.14
 ------------
 

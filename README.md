@@ -1,4 +1,4 @@
-SternheimerGW
+SternheimerGW [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.884071.svg)](https://doi.org/10.5281/zenodo.884071)
 =============
 The SternheimerGW code evaluates the quasi-particle correction to the DFT
 results in the GW approximation. The Greens function G and the screened

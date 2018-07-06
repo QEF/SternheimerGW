@@ -1,0 +1,150 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the SternheimerGW code.
+! 
+! Copyright (C) 2010 - 2018
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! SternheimerGW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! SternheimerGW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with SternheimerGW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+!
+! test if the linear solver works
+!
+@test
+SUBROUTINE test_gram_schmidt
+
+  USE gram_schmidt_module, ONLY: gram_schmidt
+  USE kinds,               ONLY: dp
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  INTEGER, PARAMETER :: problem_size = 300, half_size = problem_size / 2
+
+  ! the basis that we want to orthonormalize
+  REAL(dp) real_part(problem_size, problem_size)
+  REAL(dp) imag_part(problem_size, problem_size)
+  COMPLEX(dp) basis(problem_size, problem_size)
+  COMPLEX(dp) vector(problem_size, problem_size)
+  COMPLEX(dp) linear_op(problem_size, problem_size)
+  COMPLEX(dp) reference(problem_size, problem_size)
+
+  ! counter variables
+  INTEGER ii, jj
+
+  ! overlap of two vectors
+  COMPLEX(dp) overlap
+
+  ! LAPACK function to evaluate dot product
+  COMPLEX(dp), EXTERNAL :: ZDOTC
+
+  ! complex constants of 1 and 0
+  COMPLEX(dp), PARAMETER :: one = 1.0_dp, zero = 0.0_dp
+
+  !
+  ! assemble random array
+  !
+  CALL RANDOM_NUMBER(real_part)
+  CALL RANDOM_NUMBER(imag_part)
+  basis = CMPLX(real_part, imag_part)
+
+  !
+  ! first test - generate orthonormal basis for half the vectors
+  !
+  CALL gram_schmidt(1, basis(:,:half_size))
+  !
+  ! pairwise check for orthonormality
+  DO ii = 1, half_size
+    DO jj = 1, ii
+      !
+      overlap = ZDOTC(problem_size, basis(:,ii), 1, basis(:,jj), 1)
+      !
+      IF (ii == jj) THEN
+        ! diagonal element should be 1
+        @assertEqual(1.0_dp, REAL(overlap), 1e-14_dp)
+        !
+      ELSE
+        ! off-diagonal elements should vanish
+        @assertEqual(0.0_dp, REAL(overlap), 1e-12_dp)
+        !
+      END IF
+      !
+      ! complex part should always be zero
+      @assertEqual(0.0_dp, AIMAG(overlap), 1e-12_dp)
+      !
+    END DO ! jj
+  END DO ! ii
+
+  !
+  ! second test - extend the orthonormal basis with the other half of the vectors
+  !
+  CALL gram_schmidt(half_size + 1, basis)
+  !
+  ! pairwise check for orthonormality
+  DO ii = 1, problem_size
+    DO jj = 1, ii
+      !
+      overlap = ZDOTC(problem_size, basis(:,ii), 1, basis(:,jj), 1)
+      !
+      IF (ii == jj) THEN
+        ! diagonal element should be 1
+        @assertEqual(1.0_dp, REAL(overlap), 1e-14_dp)
+        !
+      ELSE
+        ! off-diagonal elements should vanish
+        @assertEqual(0.0_dp, REAL(overlap), 1e-12_dp)
+        !
+      END IF
+      !
+      ! complex part should always be zero
+      @assertEqual(0.0_dp, AIMAG(overlap), 1e-12_dp)
+      !
+    END DO ! jj
+  END DO ! ii
+
+  !
+  ! assemble new random arrays
+  !
+  CALL RANDOM_NUMBER(real_part)
+  CALL RANDOM_NUMBER(imag_part)
+  linear_op = CMPLX(real_part, imag_part)
+  CALL RANDOM_NUMBER(real_part)
+  CALL RANDOM_NUMBER(imag_part)
+  vector = CMPLX(real_part, imag_part)
+  !
+  ! basis = linear_op * vector
+  CALL ZGEMM('N', 'N', problem_size, problem_size, problem_size, one, linear_op, problem_size, &
+             vector, problem_size, zero, basis, problem_size)
+
+  !
+  ! third test - generate orthonormal basis for half the vectors
+  !              keeping track of an additional set of vectors
+  !
+  CALL gram_schmidt(1, basis(:,:half_size), vector(:,:half_size))
+  CALL gram_schmidt(half_size + 1, basis, vector)
+  !
+  ! test if basis = linear_op * vector is still fulfilled
+  CALL ZGEMM('N', 'N', problem_size, problem_size, problem_size, one, linear_op, problem_size, &
+             vector, problem_size, zero, reference, problem_size)
+  ! check if all elements of basis are equal to reference
+  DO jj = 1, problem_size
+    DO ii = 1, problem_size
+      @assertEqual(REAL(reference(ii,jj)), REAL(basis(ii,jj)), 1e-10_dp)
+      @assertEqual(AIMAG(reference(ii,jj)), AIMAG(basis(ii,jj)), 1e-10_dp)
+    END DO
+  END DO
+
+END SUBROUTINE test_gram_schmidt

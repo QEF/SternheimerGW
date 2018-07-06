@@ -1,0 +1,7 @@
+*.o
+*.mod
+*.a
+*.x
+module
+library
+Makefile

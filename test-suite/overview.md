@@ -2,7 +2,7 @@
  
   This file is part of the SternheimerGW code.
   
-  Copyright (C) 2010 - 2017 
+  Copyright (C) 2010 - 2018 
   Henry Lambert, Martin Schlipf, and Feliciano Giustino
  
   SternheimerGW is free software: you can redistribute it and/or modify
@@ -41,12 +41,13 @@ The following SternheimerGW features are tested in this suite
 * adjust the value used for the projection onto the valence band
 * Godby-Needs plasmon pole model to obtain a denser grid on the imaginary axis
 * AAA approximation to obtain a denser grid on the imaginary axis
+* pole filter applied to AAA approximation
 * full frequency integration using Pade approximation to interpolate
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
-* obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain the self energy
+* convolute G and W on the real axis to obtain the self energy
 * obtain the exchange self energy
 * overcome the divergence of the Coulomb potential with spherical truncation
 * overcome the divergence of the Coulomb potential with 2d truncation
@@ -55,7 +56,7 @@ The following SternheimerGW features are tested in this suite
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
 * plotting the result of the Godby-Needs plasmon pole model
-* plotting the result of the Pade approximation
+* plotting the result of the AAA approximation
 
 Test case: gw\_bn
 ------------------
@@ -84,9 +85,6 @@ Test case: gw\_c
 
 Evaluate the GW correction for C using the direct solver, imaginary frequency
 integration, and full frequency integration for W.
-Then evaluate the GW correction with a full frequency integration along the
-real axis. In the first part, we use the padecont flag to go to the real axis,
-in the second part, we restart and use the paderobust flag.
 
 The following SternheimerGW features are tested by this case
 
@@ -95,16 +93,17 @@ The following SternheimerGW features are tested by this case
 * use the direct solver to determine the dielectric constant
 * full frequency integration using Pade approximation to interpolate
 * AAA approximation to obtain a denser grid on the imaginary axis
+* pole filter applied to AAA approximation
 * symmetrize the frequency mesh to increase accuracy of Pade approximation
-* obtain the Green's function on the real axis
 * obtain the Green's function on the imaginary axis
 * use the multishift solver to obtain the Green's function
 * convolute G and W on the imaginary axis to obtain self energy
+* convolute G and W on the real axis to obtain the self energy
 * overcome the divergence of the Coulomb potential with spherical truncation
 * evaluate the quasi particle eigenvalues using the Z factor
 * obtain the frequency dependent spectral function for all bands
 * restart from previously calculated W
-* plotting the result of the Pade approximation
+* plotting the result of the AAA approximation
 
 Test case: gw\_li
 ------------------

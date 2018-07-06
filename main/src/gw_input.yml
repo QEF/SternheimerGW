@@ -1,0 +1,419 @@
+#------------------------------------------------------------------------------
+#
+# This file is part of the SternheimerGW code.
+# 
+# Copyright (C) 2010 - 2018
+# Henry Lambert, Martin Schlipf, and Feliciano Giustino
+#
+# SternheimerGW is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# SternheimerGW is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with SternheimerGW. If not, see
+# http://www.gnu.org/licenses/gpl.html .
+#
+#------------------------------------------------------------------------------ 
+#
+# This file documents the input variables for the SternheimerGW code.
+#
+# The format of this file is 
+# namelist_name:
+#   variable_name:
+#     type: real, logical, character, ...
+#     default: specifies the default value of the variable
+#     description: This should decribe the use of the variable to a user
+#
+# You must NOT use the same name for a variable (even if they are in different
+# namelists)
+#
+#------------------------------------------------------------------------------ 
+gw_input:
+
+  # a title describing the calculation
+
+  title:
+    type: character(len=75)
+    default: 'SternheimerGW'
+    description: The title allows to print a small description what this calculation
+      does and is reprinted to the output.
+
+  # variables necessary to extract the results of the PW calculation
+
+  prefix:
+    type: character(len=256)
+    default: 'pwscf'
+    description: Use the prefix variable of the PW calculation.
+
+  outdir:
+    type: character(len=256)
+    default: './'
+    description: Use the outdir variable of the PW calculation.
+
+  # general configuration of the GW calculation
+
+  kpt_grid:
+    type: integer, dimension(3)
+    default: [0, 0, 0]
+    description: The grid used to integrate the density reponse needed for the
+      screened Coulomb interaction. If not set, defaults to the grid used in the
+      scf calculation.
+
+  qpt_grid:
+    type: integer, dimension(3)
+    default: [0, 0, 0]
+    description: The grid used to integrate the screened Coulomb and the exchange
+      contribution to the self energy.
+
+  truncation:
+    type: character(len=80)
+    default: 'on'
+    description: Specifies which method is used to truncate the Coulomb potential.
+      Possible options are
+      - not using any truncation 'none', 'off', 'false', 'no', 'no truncation'
+      - using a spherical truncation 'on', 'true', 'yes', 'spherical', 'spherical truncation'
+      - using a film geometry truncation (expects film in x-y plane)
+        'film', 'film truncation', '2d', '2d truncation'
+      - spherical truncation using the QE coulomb_vcut module 'vcut spherical',
+        'vcut spherical truncation', 'spherical vcut', 'spherical truncation vcut'
+      - Wigner-Seitz truncation using the QE coulomb_vcut module 'wigner-seitz', 'wigner-seitz
+        truncation', 'ws', 'ws truncation'
+
+  num_band:
+    type: integer
+    default: 0
+    description: Number of bands for which the GW correction is evaluated. Note that it
+      has to be larger than the number of occupied states so that the Fermi energy can
+      be calculated.
+
+  int_imag_axis:
+    type: logical
+    default: .TRUE.
+    description: This flag determines whether G and W are convoluted along the imaginary
+      or the real frequency axis.
+
+  eta:
+    type: real(dp)
+    default: 0.1_dp
+    description: Small imaginary component used to shift the real frequencies into the
+      complex plane (in eV).
+ 
+  # configuration of the screened Coulomb interaction
+
+  do_coul:
+    type: logical
+    default: .TRUE.
+    description: Specify whether the screened Coulomb interaction is calculated.
+
+  do_epsil:
+    type: logical
+    default: .FALSE.
+    description: Evaluate only the dielectric function. Note that this will overwrite the
+      settings of do_coul, do_corr, do_exch, and do_matrix_el.
+
+  solve_coul:
+    type: character(len=256)
+    default: 'direct'
+    description: Specify which method is used to solve for the screened Coulomb interaction
+      - 'direct' determine the dielectric function and invert
+      - 'iter' or 'iterative' to determine the inverse of the dielectric function iteratively
+        which requires no matrix inversion and hence less memory
+
+  num_iter_coul:
+    type: integer
+    default: 1000
+    description: Number of iterations for the iterative solver.
+
+  num_mix_coul:
+    type: integer
+    default: 4
+    description: Number of potentials that are mixed in the iterative solver.
+
+  use_symm_coul:
+    type: logical
+    default: .TRUE.
+    description: Use the small group of q to reduce the amount of G vectors for which the
+      linear response is calculated.
+
+  shift_proj:
+    type: real(dp)
+    default: -1.0_dp
+    description: Shift of the projector used in the linear response equation. If negative
+      will be determined automatically (only for semiconductors). For metals set to a
+      small value (1e-5) and converge towards 0 until the dielectric response doesn't change.
+
+  priority_coul:
+    type: integer, dimension(10)
+    default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]
+    description: Order in which the linear solvers are tried for the Coulomb interaction
+      - 1 - BiCGstab(l) with multishift
+      - 2 - BiCGstab(l) without multishift
+      - 3 - linear solver developed for SternheimerGW
+      - 0 - no linear solver
+
+  thres_coul:
+    type: real(dp)
+    default: 1e-4_dp
+    description: The threshold to which the linear solver is converged. For the iterative solver
+      smaller values are necessary (~1e-8).
+
+  max_iter_coul:
+    type: integer
+    default: 1000
+    description: The maximum number of iterations a linear solver will try before aborting.
+
+  lmax_coul:
+    type: integer
+    default: 4
+    description: The parameter lmax controls the number of BiCG steps in the BiCGstab solver
+      before doing an MR step. It has no effect for other solvers.
+
+  model_coul:
+    type: character(len=256)
+    default: 'pade'
+    description: Model used to perform the analytic continuation from the coarse mesh, on which
+      the linear solver works, onto the dense mesh, where the integration is performed.
+      Possible choices
+        - 'gn', 'pp', or 'godby-needs', Godby-Needs plasmon pole model
+        - 'pade', Pade approximation
+        - 'pade robust', robust method to determine Pade approximant, requires the initial
+          frequency mesh to be on a circle
+	- 'aaa' adaptive Antoulas-Anderson (AAA) method for calcuting a rational approximant
+	- 'aaa pole' AAA method combined with removal of weak residue
+
+  freq_symm_coul:
+    type: integer
+    default: 1
+    description: Select which method is used to enforce the W(w) = W(-w) symmetry to improve
+      the accuracy of the Pade approximation. Only works if model_coul is 'pade' or 'aaa'
+      where by default the number of points are doubles. Note that switching off symmetry
+      should only be used for testing purposes.
+      Possible choices
+        - 0 do not use symmetry
+        - 1 for every frequency w /= 0 also add W(-w) with the same value
+        - 2 fit W(w^2) instead of W(w)
+
+  max_freq_coul:
+    type: real(dp)
+    default: 100.0_dp
+    description: Upper boundary of the frequency integration grid when convoluting G and W
+      (in eV). Note that we will integrate from -x to x, where x is the value set here.
+
+  num_freq_coul:
+    type: integer
+    default: 50
+    description: Number of frequency points in the integration grid when convoluting G and W.
+
+  plot_coul:
+    type: logical
+    default: .FALSE.
+    description: Plot the screened Coulomb interaction along the real or imaginary frequency
+      axis with the grid set by max_freq_coul and num_freq_coul. Note that you should reduce
+      the correlation cutoff or the q-point grid otherwise you will write a lot of data.
+      
+  # configuration of the Green's function
+
+  priority_green:
+    type: integer, dimension(10)
+    default: [1, 3, 0, 0, 0, 0, 0, 0, 0, 0]
+    description: Order in which the linear solvers are tried for the Green's function
+      - 1 - BiCGstab with multishift
+      - 2 - BiCGstab without multishift
+      - 3 - linear solver developed for SternheimerGW
+      - 0 - no linear solver
+
+  thres_green:
+    type: real(dp)
+    default: 1e-4_dp
+    description: The threshold to which the linear solver for the Green's function is converged.
+
+  max_iter_green:
+    type: integer
+    default: 1000
+    description: The maximum number of iterations a linear solver will try before aborting.
+
+  lmax_green:
+    type: integer
+    default: 4
+    description: The parameter lmax controls the number of BiCG steps in the BiCGstab solver
+      before doing an MR step. It has no effect for other solvers.
+
+  # configuration of the correlation self energy
+
+  do_corr:
+    type: logical
+    default: .TRUE.
+    description: Determines whether the correlation self energy is evaluated.
+
+  ecut_corr:
+    type: real(dp)
+    default: 15.0_dp
+    description: Energy cutoff used to evaluate the correlation self energy. Important
+      convergence parameter with very significant impact on computation time.
+
+  min_freq_corr:
+    type: real(dp)
+    default: 0.0_dp
+    description: Lower frequency boundary (in eV) for the correlation self energy. Set to 0
+      when using imaginary axis integration or the minimum relevant frequency for integration
+      along the real axis.
+
+  max_freq_corr:
+    type: real(dp)
+    default: 100.0_dp
+    description: Upper frequency boundary (in eV) for the correlation self energy. Convergence
+      parameter when using imaginary axis integration or the maximum relevant frequency for
+      integration along the real axis.
+
+  num_freq_corr:
+    type: integer
+    default: 11
+    description: Number of frequency points for the correlation self energy. Convergence parameter
+      when using imaginary axis integration.
+
+  # configuration of the exchange self energy
+
+  do_exch:
+    type: logical
+    default: .TRUE.
+    description: Determines whether the exchange self energy is evaluated.
+
+  ecut_exch:
+    type: real(dp)
+    default: 20.0_dp
+    description: Energy cutoff used to evaluate the exchange self energy.
+
+  # configuration of the output of the matrix elements
+
+  do_matrix_el:
+    type: logical
+    default: .TRUE.
+    description: Determines whether the matrix elements of the self energy are calculated.
+
+  min_freq_wind:
+    type: real(dp)
+    default: -50.0_dp
+    description: Lower frequency boundary for window in which the matrix elements of the
+      self energy are evaluated (for imaginary frequency integration only).
+
+  max_freq_wind:
+    type: real(dp)
+    default: 30.0_dp
+    description: Upper frequency boundary for window in which the matrix elements of the
+      self energy are evaluated (for imaginary frequency integration only).
+
+  num_freq_wind:
+    type: integer
+    default: 801
+    description: Number of frequency points in window in which the matrix elements of the
+      self energy are evaluated (for imaginary frequency integration only).
+
+  # useful helper variables
+
+  first_qpt:
+    type: integer
+    default: 1
+    description: This can be used to restart a calculation where not all of the q points
+      finished. It determines for which q point the screened Coulomb interaction is evaluated.
+
+  only_one_qpt:
+    type: logical
+    default: .FALSE.
+    description: This can be used for convergence testing or debugging purposes. It will
+      abort the calculation after the screened Coulomb interaction for a single q point is
+      evaluated.
+
+  first_kpt:
+    type: integer
+    default: 1
+    description: This can be used to limit the k points for which the correlation self
+      energy is evaluated. This determines the lower limit, use last_kpt for the upper limit.
+
+  last_kpt:
+    type: integer
+    default: -2
+    description: This can be used to limit the k points for which the correlation self
+      energy is evaluated. This determines the upper limit, use last_kpt for the lower limit.
+      If set to -2 (default), all k points are calculated.
+
+  verbosity:
+    type: character(len=80)
+    default: 'low'
+    description: Verbosity of the output in the NSCF calculation. Set to either 'low'
+      (default) or 'high'.
+
+  debug:
+    type: type(debug_type)
+    description: Allows to activate debugging for various parts of the code. Note that the
+      code must be compiled with 'make debug' to enable debugging.
+
+# defines filename written by SternheimerGW
+
+gw_output:
+
+  directory:
+    type: character(len=256)
+    default: ''
+    description: Directory in which the files generated by SternheimerGW are stored. If
+      not set, it will default to the PW outdir.
+
+  file_coul:
+    type: character(len=256)
+    default: 'coul'
+    description: Extension to filename in which the screened Coulomb matrix is stored. The
+      file generated will have the name prefix.file_coul.
+
+  file_exch:
+    type: character(len=256)
+    default: 'exch'
+    description: Extension to filename in which the exchange contribution is stored. The
+      file generated will have the name prefix.file_exch.
+
+  file_corr:
+    type: character(len=256)
+    default: 'corr'
+    description: Extension to filename in which the correlation contribution is stored. The
+      file generated will have the name prefix.file_corr.
+ 
+  file_sigma:
+    type: character(len=256)
+    default: 'sigma.xml'
+    description: XML file that contains both exchange and correlation contribution and some
+      information to allow reading that information.
+
+  file_dft:
+    type: character(len=256)
+    default: ''
+    description: If set, write the eigenvalues obtained in the DFT calculation along the
+      specified k-point path in this file in a format compatible with bands.x.
+
+  file_gw:
+    type: character(len=256)
+    default: ''
+    description: If set, write the quasi-particle eigenvalues calculation along the
+      specified k-point path in this file in a format compatible with bands.x.
+
+  file_vxc:
+    type: character(len=256)
+    default: ''
+    description: If set, write the expectation value of the exchange-correlation potential along the
+      specified k-point path in this file in a format compatible with bands.x.
+
+  file_hf:
+    type: character(len=256)
+    default: ''
+    description: If set, write the expectation value of the bare HF exchange along the
+      specified k-point path in this file in a format compatible with bands.x.
+
+  file_renorm:
+    type: character(len=256)
+    default: ''
+    description: If set, write the quasi-particle renormalization factor Z along the
+      specified k-point path in this file in a format compatible with bands.x.
+

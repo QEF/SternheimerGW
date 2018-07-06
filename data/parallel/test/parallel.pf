@@ -1,0 +1,827 @@
+!------------------------------------------------------------------------------
+!
+! This file is part of the SternheimerGW code.
+! 
+! Copyright (C) 2010 - 2018
+! Henry Lambert, Martin Schlipf, and Feliciano Giustino
+!
+! SternheimerGW is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! SternheimerGW is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with SternheimerGW. If not, see
+! http://www.gnu.org/licenses/gpl.html .
+!
+!------------------------------------------------------------------------------ 
+! test if distribution of task across process grid works
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_parallel_task(this)
+
+  USE parallel_module, ONLY: parallel_task
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! 32 tasks should be split evenly on 2 and 4, but not on three processes
+  INTEGER, PARAMETER :: num_task_1 = 32
+
+  ! 47 tasks should always have a remainder unless we use only 1 process
+  INTEGER, PARAMETER :: num_task_2 = 47
+
+  ! test if the code works when the number of tasks is smaller than number of processes
+  INTEGER, PARAMETER :: num_task_3 = 2
+
+  ! the MPI communicator, its size, and the rank of this process
+  INTEGER comm, size, rank
+
+  ! result of the tests
+  INTEGER first_task, last_task
+  INTEGER, ALLOCATABLE :: num_task(:)
+
+  comm = this%getMpiCommunicator()
+  size = this%getNumProcesses()
+  rank = this%getProcessRank()
+
+  !
+  ! first test - split num_task_1 tasks over processes
+  !
+  CALL parallel_task(comm, num_task_1, first_task, last_task, num_task)
+  SELECT CASE (size)
+  CASE (1)
+    @assertEqual([32], num_task)
+    @assertEqual(1, first_task)
+    @assertEqual(32, last_task)
+  CASE (2)
+    @assertEqual([16, 16], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(16, last_task)
+    CASE (1)
+      @assertEqual(17, first_task)
+      @assertEqual(32, last_task)
+    END SELECT ! rank
+  CASE (3)
+    @assertEqual([10, 11, 11], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(10, last_task)
+    CASE (1)
+      @assertEqual(11, first_task)
+      @assertEqual(21, last_task)
+    CASE (2)
+      @assertEqual(22, first_task)
+      @assertEqual(32, last_task)
+    END SELECT ! rank
+  CASE (4)
+    @assertEqual([8, 8, 8, 8], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(8, last_task)
+    CASE (1)
+      @assertEqual(9, first_task)
+      @assertEqual(16, last_task)
+    CASE (2)
+      @assertEqual(17, first_task)
+      @assertEqual(24, last_task)
+    CASE (3)
+      @assertEqual(25, first_task)
+      @assertEqual(32, last_task)
+    END SELECT ! rank
+  END SELECT ! size
+
+  !
+  ! second test - split num_task_2 tasks over processes
+  !
+  CALL parallel_task(comm, num_task_2, first_task, last_task, num_task)
+  SELECT CASE (size)
+  CASE (1)
+    @assertEqual([47], num_task)
+    @assertEqual(1, first_task)
+    @assertEqual(47, last_task)
+  CASE (2)
+    @assertEqual([23, 24], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(23, last_task)
+    CASE (1)
+      @assertEqual(24, first_task)
+      @assertEqual(47, last_task)
+    END SELECT ! rank
+  CASE (3)
+    @assertEqual([15, 16, 16], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(15, last_task)
+    CASE (1)
+      @assertEqual(16, first_task)
+      @assertEqual(31, last_task)
+    CASE (2)
+      @assertEqual(32, first_task)
+      @assertEqual(47, last_task)
+    END SELECT ! rank
+  CASE (4)
+    @assertEqual([11, 12, 12, 12], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(11, last_task)
+    CASE (1)
+      @assertEqual(12, first_task)
+      @assertEqual(23, last_task)
+    CASE (2)
+      @assertEqual(24, first_task)
+      @assertEqual(35, last_task)
+    CASE (3)
+      @assertEqual(36, first_task)
+      @assertEqual(47, last_task)
+    END SELECT ! rank
+  END SELECT ! size
+
+  !
+  ! third test - split num_task_3 tasks over processes
+  !
+  CALL parallel_task(comm, num_task_3, first_task, last_task, num_task)
+  SELECT CASE (size)
+  CASE (1)
+    @assertEqual([2], num_task)
+    @assertEqual(1, first_task)
+    @assertEqual(2, last_task)
+  CASE (2)
+    @assertEqual([1, 1], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(1, last_task)
+    CASE (1)
+      @assertEqual(2, first_task)
+      @assertEqual(2, last_task)
+    END SELECT ! rank
+  CASE (3)
+    @assertEqual([0, 1, 1], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(0, last_task)
+    CASE (1)
+      @assertEqual(1, first_task)
+      @assertEqual(1, last_task)
+    CASE (2)
+      @assertEqual(2, first_task)
+      @assertEqual(2, last_task)
+    END SELECT ! rank
+  CASE (4)
+    @assertEqual([0, 0, 1, 1], num_task)
+    SELECT CASE (rank)
+    CASE (0)
+      @assertEqual(1, first_task)
+      @assertEqual(0, last_task)
+    CASE (1)
+      @assertEqual(1, first_task)
+      @assertEqual(0, last_task)
+    CASE (2)
+      @assertEqual(1, first_task)
+      @assertEqual(1, last_task)
+    CASE (3)
+      @assertEqual(2, first_task)
+      @assertEqual(2, last_task)
+    END SELECT ! rank
+  END SELECT ! size
+
+END SUBROUTINE test_parallel_task
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_mp_allgatherv(this)
+
+  USE constants,       ONLY: eps14
+  USE kinds,           ONLY: dp
+  USE parallel_module, ONLY: parallel_task, mp_allgatherv
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! split work across this number of processes
+  INTEGER, PARAMETER :: num_task_total = 13
+
+  ! dimension of first array index
+  INTEGER, PARAMETER :: dim_one = 3
+
+  ! dimension of second array index
+  INTEGER, PARAMETER :: dim_two = 2
+
+  ! first and last task done on this process
+  INTEGER first_task, last_task
+
+  ! number of tasks done on the individual processes
+  INTEGER, ALLOCATABLE :: num_task(:)
+
+  ! loop over the tasks
+  INTEGER itask
+
+  ! loop over dimensions
+  INTEGER ii, jj
+
+  ! the MPI communicator, its size, and the rank of this process
+  INTEGER comm, size, rank
+
+  ! real arrays that are communicated
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:), array_rt(:,:,:)
+
+  ! complex array that are communicated
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:), array_ct(:,:,:)
+
+  comm = this%getMpiCommunicator()
+  size = this%getNumProcesses()
+  rank = this%getProcessRank()
+
+  ! distribute the tasks
+  CALL parallel_task(comm, num_task_total, first_task, last_task, num_task)
+
+  ! fill real vector
+  ALLOCATE(array_rv(num_task_total))
+  array_rv = 0.0_dp
+  DO itask = first_task, last_task
+    array_rv(itask) = REAL(itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_rv)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    @assertEqual(itask, array_rv(itask), eps14)
+  END DO ! itask
+  DEALLOCATE(array_rv)
+
+  ! fill complex vector
+  ALLOCATE(array_cv(num_task_total))
+  array_cv = 0.0_dp
+  DO itask = first_task, last_task
+    array_cv(itask) = CMPLX(itask, -itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_cv)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    @assertEqual( itask, REAL(array_cv(itask)), eps14)
+    @assertEqual(-itask, AIMAG(array_cv(itask)), eps14)
+  END DO ! itask
+  DEALLOCATE(array_cv)
+
+  ! fill real matrix
+  ALLOCATE(array_rm(dim_one, num_task_total))
+  array_rm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_rm(ii, itask) = REAL(100 * ii + itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_rm)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO ii = 1, dim_one
+      @assertEqual(100 * ii + itask, array_rm(ii, itask), eps14)
+    END DO ! ii
+  END DO ! itask
+  DEALLOCATE(array_rm)
+
+  ! fill complex matrix
+  ALLOCATE(array_cm(dim_one, num_task_total))
+  array_cm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_cm(ii, itask) = CMPLX(100 * ii + itask, 100 * ii - itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_cm)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO ii = 1, dim_one
+      @assertEqual(100 * ii + itask, REAL(array_cm(ii, itask)), eps14)
+      @assertEqual(100 * ii - itask, AIMAG(array_cm(ii, itask)), eps14)
+    END DO ! ii
+  END DO ! itask
+  DEALLOCATE(array_cm)
+
+  ! fill real 3d matrix
+  ALLOCATE(array_rt(dim_one, dim_two, num_task_total))
+  array_rt = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_rt(ii, jj, itask) = REAL(10000 * jj + 100 * ii + itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_rt)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual(10000 * jj + 100 * ii + itask, array_rt(ii, jj, itask), eps14)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+  DEALLOCATE(array_rt)
+
+  ! fill complex 3d matrix
+  ALLOCATE(array_ct(dim_one, dim_two, num_task_total))
+  array_ct = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_ct(ii, jj, itask) = CMPLX(10000 * jj + 100 * ii + itask, -10000 * jj + 100 * ii - itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_allgatherv(comm, num_task, array_ct)
+
+  ! no check result
+  DO itask = 1, num_task_total
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual( 10000 * jj + 100 * ii + itask, REAL(array_ct(ii, jj, itask)), eps14)
+        @assertEqual(-10000 * jj + 100 * ii - itask, AIMAG(array_ct(ii, jj, itask)), eps14)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+  DEALLOCATE(array_ct)
+
+END SUBROUTINE test_mp_allgatherv
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_mp_gatherv(this)
+
+  USE constants,       ONLY: eps14
+  USE kinds,           ONLY: dp
+  USE parallel_module, ONLY: parallel_task, mp_gatherv
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! split work across this number of processes
+  INTEGER, PARAMETER :: num_task_total = 17
+
+  ! dimension of first array index
+  INTEGER, PARAMETER :: dim_one = 2
+
+  ! dimension of second array index
+  INTEGER, PARAMETER :: dim_two = 3
+
+  ! collect everything on first process
+  INTEGER, PARAMETER :: root = 0
+
+  ! first and last task done on this process
+  INTEGER first_task, last_task
+
+  ! number of tasks done on the individual processes
+  INTEGER, ALLOCATABLE :: num_task(:)
+
+  ! loop over the tasks
+  INTEGER itask
+
+  ! loop over dimensions
+  INTEGER ii, jj
+
+  ! the rank of this process
+  INTEGER rank
+
+  ! the MPI communicator
+  INTEGER comm
+
+  ! the size of the communicator
+  INTEGER size
+
+  ! this process is root
+  LOGICAL is_root
+
+  ! real arrays that are communicated
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rv_root(:)
+  REAL(dp), ALLOCATABLE :: array_rm(:,:), array_rm_root(:,:)
+  REAL(dp), ALLOCATABLE :: array_rt(:,:,:), array_rt_root(:,:,:)
+
+  ! complex arrays that are communicated
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cv_root(:)
+  COMPLEX(dp), ALLOCATABLE :: array_cm(:,:), array_cm_root(:,:)
+  COMPLEX(dp), ALLOCATABLE :: array_ct(:,:,:), array_ct_root(:,:,:)
+
+  rank = this%getProcessRank()
+  size = this%getNumProcesses()
+  comm = this%getMpiCommunicator()
+  is_root = rank == root
+
+  ! distribute the tasks
+  CALL parallel_task(comm, num_task_total, first_task, last_task, num_task)
+
+  ! fill real vector
+  ALLOCATE(array_rv(num_task(rank + 1)))
+  array_rv = 0.0_dp
+  DO itask = first_task, last_task
+    array_rv(itask - first_task + 1) = REAL(itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_rv, array_rv_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      @assertEqual(itask, array_rv_root(itask), eps14)
+    END DO ! itask
+    DEALLOCATE(array_rv_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_rv_root))
+  END IF
+  DEALLOCATE(array_rv)
+
+  ! fill complex vector
+  ALLOCATE(array_cv(num_task(rank + 1)))
+  array_cv = 0.0_dp
+  DO itask = first_task, last_task
+    array_cv(itask - first_task + 1) = CMPLX(itask, -itask, KIND=dp)
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_cv, array_cv_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      @assertEqual( itask, REAL(array_cv_root(itask)), eps14)
+      @assertEqual(-itask, AIMAG(array_cv_root(itask)), eps14)
+    END DO ! itask
+    DEALLOCATE(array_cv_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_cv_root))
+  END IF
+  DEALLOCATE(array_cv)
+
+  ! fill real array
+  ALLOCATE(array_rm(dim_one, num_task(rank + 1)))
+  array_rm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_rm(ii, itask - first_task + 1) = REAL(100 * ii + itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_rm, array_rm_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO ii = 1, dim_one
+        @assertEqual(100 * ii + itask, array_rm_root(ii, itask), eps14)
+      END DO ! ii
+    END DO ! itask
+    DEALLOCATE(array_rm_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_rm_root))
+  END IF
+  DEALLOCATE(array_rm)
+
+  ! fill complex vector
+  ALLOCATE(array_cm(dim_one, num_task(rank + 1)))
+  array_cm = 0.0_dp
+  DO itask = first_task, last_task
+    DO ii = 1, dim_one
+      array_cm(ii, itask - first_task + 1) = CMPLX(100 * ii + itask, 100 * ii - itask, KIND=dp)
+    END DO ! ii
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_cm, array_cm_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO ii = 1, dim_one
+        @assertEqual(100 * ii + itask, REAL(array_cm_root(ii, itask)), eps14)
+        @assertEqual(100 * ii - itask, AIMAG(array_cm_root(ii, itask)), eps14)
+      END DO ! ii
+    END DO ! itask
+    DEALLOCATE(array_cm_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_cm_root))
+  END IF
+  DEALLOCATE(array_cm)
+
+  ! fill real array
+  ALLOCATE(array_rt(dim_one, dim_two, num_task(rank + 1)))
+  array_rt = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_rt(ii, jj, itask - first_task + 1) = REAL(10000 * jj + 100 * ii + itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_rt, array_rt_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual(10000 * jj + 100 * ii + itask, array_rt_root(ii, jj, itask), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! itask
+    DEALLOCATE(array_rt_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_rt_root))
+  END IF
+  DEALLOCATE(array_rt)
+
+  ! fill complex array
+  ALLOCATE(array_ct(dim_one, dim_two, num_task(rank + 1)))
+  array_ct = 0.0_dp
+  DO itask = first_task, last_task
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_ct(ii, jj, itask - first_task + 1) = &
+          CMPLX(10000 * jj + 100 * ii + itask, -10000 * jj + 100 * ii - itask, KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! itask
+
+  ! communicate the array
+  CALL mp_gatherv(comm, root, num_task, array_ct, array_ct_root)
+
+  ! now check result
+  IF (is_root) THEN
+    DO itask = 1, num_task_total
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual( 10000 * jj + 100 * ii + itask, REAL(array_ct_root(ii, jj, itask)), eps14)
+          @assertEqual(-10000 * jj + 100 * ii - itask, AIMAG(array_ct_root(ii, jj, itask)), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! itask
+    DEALLOCATE(array_ct_root)
+  ELSE
+    @assertFalse(ALLOCATED(array_ct_root))
+  END IF
+  DEALLOCATE(array_ct)
+
+END SUBROUTINE test_mp_gatherv
+
+@test(npes=[1,2,3,4])
+SUBROUTINE test_mp_root_sum(this)
+
+  USE constants,       ONLY: eps14
+  USE kinds,           ONLY: dp
+  USE parallel_module, ONLY: mp_root_sum
+  USE pfunit_mod
+
+  IMPLICIT NONE
+
+  CLASS(MpiTestMethod) :: this
+
+  ! dimension of first array index
+  INTEGER, PARAMETER :: dim_one = 8
+
+  ! dimension of second array index
+  INTEGER, PARAMETER :: dim_two = 5
+
+  ! dimension of third array index
+  INTEGER, PARAMETER :: dim_three = 7
+
+  ! collect everything on first process
+  INTEGER, PARAMETER :: root = 0
+
+  ! real arrays that will be communicated
+  REAL(dp), ALLOCATABLE :: array_rv(:), array_rm(:,:), array_rt(:,:,:)
+
+  ! complex arrays that will be communicated
+  COMPLEX(dp), ALLOCATABLE :: array_cv(:), array_cm(:,:), array_ct(:,:,:)
+
+  ! helper variable
+  REAL(dp) tmp
+
+  ! loop indices
+  INTEGER ii, jj, kk
+
+  ! the MPI communicator, its size, and the rank of this process
+  INTEGER comm, size, rank
+  
+  ! is this the root process
+  LOGICAL is_root
+
+  comm = this%getMpiCommunicator()
+  size = this%getNumProcesses()
+  rank = this%getProcessRank()
+  is_root = rank == root
+ 
+  ! fill real array
+  ALLOCATE(array_rv(dim_one))
+  DO ii = 1, dim_one
+    array_rv(ii) = SQRT(REAL(ii, KIND=dp))
+  END DO ! ii
+
+  CALL mp_root_sum(comm, root, array_rv)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO ii = 1, dim_one
+      @assertEqual(size * SQRT(REAL(ii, KIND=dp)), array_rv(ii), eps14)
+    END DO ! ii
+  ELSE ! not root
+    DO ii = 1, dim_one
+      @assertEqual(SQRT(REAL(ii, KIND=dp)), array_rv(ii), eps14)
+    END DO ! ii
+  END IF ! root
+
+  DEALLOCATE(array_rv)
+
+  ! fill complex array
+  ALLOCATE(array_cv(dim_one))
+  DO ii = 1, dim_one
+    tmp = REAL(ii, KIND=dp)
+    array_cv(ii) = CMPLX(tmp, SQRT(tmp), KIND=dp)
+  END DO ! ii
+
+  CALL mp_root_sum(comm, root, array_cv)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO ii = 1, dim_one
+      tmp = REAL(ii, KIND=dp)
+      @assertEqual(size * tmp, REAL(array_cv(ii)), eps14)
+      @assertEqual(size * SQRT(tmp), AIMAG(array_cv(ii)), eps14)
+    END DO ! ii
+  ELSE ! not root
+    DO ii = 1, dim_one
+      tmp = REAL(ii, KIND=dp)
+      @assertEqual(tmp, REAL(array_cv(ii)), eps14)
+      @assertEqual(SQRT(tmp), AIMAG(array_cv(ii)), eps14)
+    END DO ! ii
+  END IF ! root
+
+  DEALLOCATE(array_cv)
+
+  ! fill real array
+  ALLOCATE(array_rm(dim_one, dim_two))
+  DO jj = 1, dim_two
+    DO ii = 1, dim_one
+      array_rm(ii, jj) = SQRT(REAL(100 * jj + ii, KIND=dp))
+    END DO ! ii
+  END DO ! jj
+
+  CALL mp_root_sum(comm, root, array_rm)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual(size * SQRT(REAL(100 * jj + ii, KIND=dp)), array_rm(ii, jj), eps14)
+      END DO ! ii
+    END DO ! jj
+  ELSE ! not root
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        @assertEqual(SQRT(REAL(100 * jj + ii, KIND=dp)), array_rm(ii, jj), eps14)
+      END DO ! ii
+    END DO ! jj
+  END IF ! root
+
+  DEALLOCATE(array_rm)
+
+  ! fill complex array
+  ALLOCATE(array_cm(dim_one, dim_two))
+  DO jj = 1, dim_two
+    DO ii = 1, dim_one
+      tmp = REAL(100 * jj + ii, KIND=dp)
+      array_cm(ii, jj) = CMPLX(tmp, SQRT(tmp), KIND=dp)
+    END DO ! ii
+  END DO ! jj
+
+  CALL mp_root_sum(comm, root, array_cm)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        tmp = REAL(100 * jj + ii, KIND=dp)
+        @assertEqual(size * tmp, REAL(array_cm(ii, jj)), eps14)
+        @assertEqual(size * SQRT(tmp), AIMAG(array_cm(ii, jj)), eps14)
+      END DO ! ii
+    END DO ! jj
+  ELSE ! not root
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        tmp = REAL(100 * jj + ii, KIND=dp)
+        @assertEqual(tmp, REAL(array_cm(ii, jj)), eps14)
+        @assertEqual(SQRT(tmp), AIMAG(array_cm(ii, jj)), eps14)
+      END DO ! ii
+    END DO ! jj
+  END IF ! root
+
+  DEALLOCATE(array_cm)
+
+  ! fill real array
+  ALLOCATE(array_rt(dim_one, dim_two, dim_three))
+  DO kk = 1, dim_three
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        array_rt(ii, jj, kk) = SQRT(REAL(10000 * kk + 100 * jj + ii, KIND=dp))
+      END DO ! ii
+    END DO ! jj
+  END DO ! kk
+
+  CALL mp_root_sum(comm, root, array_rt)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual(size * SQRT(REAL(10000 * kk + 100 * jj + ii, KIND=dp)), array_rt(ii, jj, kk), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  ELSE ! not root
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          @assertEqual(SQRT(REAL(10000 * kk + 100 * jj + ii, KIND=dp)), array_rt(ii, jj, kk), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  END IF ! root
+
+  DEALLOCATE(array_rt)
+
+  ! fill complex array
+  ALLOCATE(array_ct(dim_one, dim_two, dim_three))
+  DO kk = 1, dim_three
+    DO jj = 1, dim_two
+      DO ii = 1, dim_one
+        tmp = REAL(10000 * kk + 100 * jj + ii, KIND=dp)
+        array_ct(ii, jj, kk) = CMPLX(tmp, SQRT(tmp), KIND=dp)
+      END DO ! ii
+    END DO ! jj
+  END DO ! kk
+
+  CALL mp_root_sum(comm, root, array_ct)
+
+  ! check if array at root contains sum and other array are unmodified
+  IF (is_root) THEN
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          tmp = REAL(10000 * kk + 100 * jj + ii, KIND=dp)
+          @assertEqual(size * tmp, REAL(array_ct(ii, jj, kk)), eps14)
+          @assertEqual(size * SQRT(tmp), AIMAG(array_ct(ii, jj, kk)), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  ELSE ! not root
+    DO kk = 1, dim_three
+      DO jj = 1, dim_two
+        DO ii = 1, dim_one
+          tmp = REAL(10000 * kk + 100 * jj + ii, KIND=dp)
+          @assertEqual(tmp, REAL(array_ct(ii, jj, kk)), eps14)
+          @assertEqual(SQRT(tmp), AIMAG(array_ct(ii, jj, kk)), eps14)
+        END DO ! ii
+      END DO ! jj
+    END DO ! kk
+  END IF ! root
+
+  DEALLOCATE(array_ct)
+
+END SUBROUTINE test_mp_root_sum

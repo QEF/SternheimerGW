@@ -534,7 +534,7 @@
 
      Done epsilon inversion.
      
-     Plotting Godby-Needs approximation
+     Plotting analytic continuation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000000      -0.98384342    -0.00000043
           0.40201005     0.10000000      -0.98410830    -0.00013226
@@ -737,7 +737,7 @@
          79.59798995     0.10000000       0.10298799    -0.00028589
          80.00000000     0.10000000       0.10184866    -0.00028101
 
-     End of Godby-Needs approximaton
+     End of analytic continuation
 
      epsilq       :      0.47s CPU      0.40s WALL (       1 calls)
 
@@ -947,7 +947,7 @@
 
      Done epsilon inversion.
      
-     Plotting Godby-Needs approximation
+     Plotting analytic continuation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000000      -0.72359357     0.00000014
           0.40201005     0.10000000      -0.72402145    -0.00021289
@@ -1150,7 +1150,7 @@
          79.59798995     0.10000000       0.03263481    -0.00008569
          80.00000000     0.10000000       0.03229304    -0.00008433
 
-     End of Godby-Needs approximaton
+     End of analytic continuation
 
      epsilq       :      0.84s CPU      0.68s WALL (       3 calls)
 
@@ -1396,7 +1396,7 @@
 
      Done epsilon inversion.
      
-     Plotting Godby-Needs approximation
+     Plotting analytic continuation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000000      -0.72359316    -0.00000000
           0.40201005     0.10000000      -0.72402104    -0.00021303
@@ -1599,7 +1599,7 @@
          79.59798995     0.10000000       0.03263483    -0.00008570
          80.00000000     0.10000000       0.03229306    -0.00008434
 
-     End of Godby-Needs approximaton
+     End of analytic continuation
 
      epsilq       :      1.23s CPU      0.95s WALL (       5 calls)
 
@@ -1809,7 +1809,7 @@
 
      Done epsilon inversion.
      
-     Plotting Godby-Needs approximation
+     Plotting analytic continuation
                  omega                  W(     1,      1, omega)
           0.00000000     0.10000000      -0.72924598     0.00000015
           0.40201005     0.10000000      -0.72972461    -0.00023816
@@ -2012,7 +2012,7 @@
          79.59798995     0.10000000       0.02950221    -0.00007712
          80.00000000     0.10000000       0.02919461    -0.00007590
 
-     End of Godby-Needs approximaton
+     End of analytic continuation
 
      epsilq       :      1.70s CPU      1.25s WALL (       7 calls)
 Finished Calculating Screened Coulomb

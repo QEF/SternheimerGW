@@ -1,0 +1,2 @@
+select_solver.o : bicgstab.o
+select_solver.o : linear_solver.o
