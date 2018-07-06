@@ -1,7 +1,7 @@
 Release notes
 =============
 
-on develop
+Version 0.15
 ------------
 
 Update FFT type to recent change in Quantum Espresso.
@@ -13,7 +13,7 @@ quadrant.
 
 Employ external analytic continuation library.
 
-> compatible QE commit 044408c 
+> compatible QE commit 6.3 7357cdb
 
 Version 0.14
 ------------

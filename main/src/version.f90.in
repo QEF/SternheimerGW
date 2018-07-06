@@ -93,10 +93,10 @@ MODULE gw_version
   IMPLICIT NONE
   !
   !> Version number set by hand.
-  CHARACTER(*), PARAMETER :: gw_version_number = '0.14'
+  CHARACTER(*), PARAMETER :: gw_version_number = '0.15'
   !> Version number extracted from git describe.
   CHARACTER(*), PARAMETER :: gw_git_describe = 'unknown'
   !> Git commit of QE compatible with the commit of SternheimerGW
-  CHARACTER(*), PARAMETER :: compatible_QE_commit = '402f86a'
+  CHARACTER(*), PARAMETER :: compatible_QE_commit = 'QE 6.3 7357cdb'
   !
 END MODULE gw_version
